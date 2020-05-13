@@ -1,6 +1,6 @@
+from Bio import Phylo
 from phykit.services.base import BaseService
 
-from Bio import Phylo
 
 class Treeness(BaseService):
     def __init__(self, args):
@@ -9,26 +9,28 @@ class Treeness(BaseService):
     def run(self):
         tree = self.read_file()
         treeness = self.calculate_treeness(tree)
+        if treeness:
+            print(f"Treeness score: {treeness}")
 
     def process_args(self, args):
         self.tree_file_path = args.tree
-    
+
     def read_file(self):
-        return Phylo.read(self.tree_file_path, 'newick')
+        return Phylo.read(self.tree_file_path, "newick")
 
     def calculate_treeness(self, tree):
-        # initialize variables for terminal branch length
-        interLen = float(0.0)
+        inter_len = float(0.0)
         # determine internal branch lengths
         for interal in tree.get_nonterminals():
             # only include if a branch length value is present
             if interal.branch_length != None:
-                interLen += interal.branch_length
-
-        # initialize variable for total branch length
-        totalLen = float(0.0)
+                inter_len += interal.branch_length
         # determine total branch length
-        totalLen = tree.total_branch_length()
+        total_len = tree.total_branch_length()
 
-        return float(interLen/totalLen)
-
+        try:
+            treeness = float(inter_len / total_len)
+            return treeness
+        except ZeroDivisionError:
+            print("Invalid tree. Tree should contain branch lengths")
+            return None
