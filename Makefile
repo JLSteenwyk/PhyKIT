@@ -1,5 +1,5 @@
 run:
-	python3 -m phykit-runner treeness ./tests/samples/Yeasts_2832_eMRC_reference_renamed.tree
+	python3 -m phykit-runner treeness ./tests/integration/sample_files/Yeasts_2832_eMRC_reference_renamed.tree
 
 install:
 	# install so clipkit command is available in terminal
