@@ -1,10 +1,9 @@
-from Bio import Phylo
-from phykit.services.base import BaseService
+from phykit.services.tree.base import Tree
 
 
-class Treeness(BaseService):
-    def __init__(self, args):
-        self.process_args(args)
+class Treeness(Tree):
+    def __init__(self, args) -> None:
+        super().__init__(**self.process_args(args))
 
     def run(self):
         tree = self.read_file()
@@ -13,10 +12,7 @@ class Treeness(BaseService):
             print(f"Treeness score: {treeness}")
 
     def process_args(self, args):
-        self.tree_file_path = args.tree
-
-    def read_file(self):
-        return Phylo.read(self.tree_file_path, "newick")
+        return dict(tree_file_path=args.tree)
 
     def calculate_treeness(self, tree):
         inter_len = float(0.0)
