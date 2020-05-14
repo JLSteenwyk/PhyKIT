@@ -1,5 +1,8 @@
-run:
-	python3 -m phykit-runner treeness ./tests/integration/sample_files/Yeasts_2832_eMRC_reference_renamed.tree
+run.treeness:
+	python3 -m phykit-runner treeness ./tests/sample_files/Yeasts_2832_eMRC_reference_renamed.tree
+
+run.internode_labeler:
+	python3 -m phykit-runner internode_labeler ./tests/sample_files/tree_simple.tre
 
 install:
 	# install so clipkit command is available in terminal
