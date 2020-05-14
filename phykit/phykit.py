@@ -10,7 +10,8 @@ from argparse import (
     RawDescriptionHelpFormatter,
 )
 
-from .services.treeness import Treeness
+from .services.tree.treeness import Treeness
+from .services.tree.internode_labeler import InternodeLabeler
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -64,6 +65,13 @@ class Phykit(object):
         parser.add_argument("tree", type=str)
         args = parser.parse_args(sys.argv[2:])
         Treeness(args).run()
+
+    def internode_labeler(self):
+        parser = ArgumentParser()
+        parser.add_argument("tree", type=str)
+        # TODO: add output option?
+        args = parser.parse_args(sys.argv[2:])
+        InternodeLabeler(args).run()
 
 
 if __name__ == "__main__":
