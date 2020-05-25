@@ -4,8 +4,11 @@ run.treeness:
 run.internode_labeler:
 	python3 -m phykit-runner internode_labeler ./tests/sample_files/tree_simple.tre
 
+run.total_tree_length:
+	python3 -m phykit-runner total_tree_length ./tests/sample_files/tree_simple.tre
+
 install:
-	# install so clipkit command is available in terminal
+	# install so phykit command is available in terminal
 	python setup.py install
 
 develop:
