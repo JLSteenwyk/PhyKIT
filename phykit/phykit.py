@@ -11,6 +11,7 @@ from argparse import (
 )
 
 from .services.tree.treeness import Treeness
+from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.internode_labeler import InternodeLabeler
 
 logger = logging.getLogger(__name__)
@@ -27,14 +28,14 @@ class Phykit(object):
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 """\
-                _____  _           _  _______ _______ 
+                 _____  _           _  _______ _______ 
                 |  __ \| |         | |/ /_   _|__   __|
                 | |__) | |__  _   _| ' /  | |    | |   
                 |  ___/| '_ \| | | |  <   | |    | |   
                 | |    | | | | |_| | . \ _| |_   | |   
                 |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                            __/ |                   
-                            |___/   
+                               __/ |                   
+                              |___/   
                             
                 Citation: Steenwyk et al. Journal, journal info, link
 
@@ -65,6 +66,12 @@ class Phykit(object):
         parser.add_argument("tree", type=str)
         args = parser.parse_args(sys.argv[2:])
         Treeness(args).run()
+
+    def total_tree_length(self):
+        parser = ArgumentParser()
+        parser.add_argument("tree", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        TotalTreeLength(args).run()
 
     def internode_labeler(self):
         parser = ArgumentParser()
