@@ -7,6 +7,9 @@ run.internode_labeler:
 run.total_tree_length:
 	python3 -m phykit-runner total_tree_length ./tests/sample_files/tree_simple.tre
 
+run.lb_score:
+	python3 -m phykit-runner lb_score ./tests/sample_files/tree_simple.tre
+
 install:
 	# install so phykit command is available in terminal
 	python setup.py install

@@ -30,3 +30,4 @@ class Treeness(Tree):
         except ZeroDivisionError:
             print("Invalid tree. Tree should contain branch lengths")
             return None
+
