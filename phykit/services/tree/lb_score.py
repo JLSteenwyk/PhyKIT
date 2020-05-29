@@ -16,7 +16,7 @@ class LBScore(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        tree = self.read_file()
+        tree = self.read_tree_file()
         mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance = self.calculate_lb_score(tree)
         if (mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance):
             print(f"mean: {mean}")

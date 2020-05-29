@@ -10,10 +10,14 @@ from argparse import (
     RawDescriptionHelpFormatter,
 )
 
+from .services.alignment.alignment_length import AlignmentLength
+from .services.alignment.variable_sites import VariableSites
+
 from .services.tree.treeness import Treeness
 from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.internode_labeler import InternodeLabeler
 from .services.tree.lb_score import LBScore
+from .services.tree.dvmc import DVMC
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -56,8 +60,17 @@ class Phykit(object):
 
         getattr(self, args.command)()
 
+    ## Tree functions
     def dvmc(self):
-        raise NotImplementedError()
+        parser = ArgumentParser()
+        parser.add_argument(
+            "-r", "--root", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        args = parser.parse_args(sys.argv[2:])
+        DVMC(args).run()
 
     def rcv(self):
         raise NotImplementedError()
@@ -86,6 +99,19 @@ class Phykit(object):
         # TODO: add output option?
         args = parser.parse_args(sys.argv[2:])
         InternodeLabeler(args).run()
+
+    ### Alignment functions
+    def alignment_length(self):
+        parser = ArgumentParser()
+        parser.add_argument("alignment", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        AlignmentLength(args).run()
+
+    def variable_sites(self):
+        parser = ArgumentParser()
+        parser.add_argument("alignment", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        VariableSites(args).run()
 
 
 if __name__ == "__main__":

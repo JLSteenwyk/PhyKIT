@@ -14,7 +14,7 @@ class TestTreeness(object):
     def test_read_file_reads_tree_file_path(self, mocker, args):
         mock_read = mocker.patch("phykit.services.tree.base.Phylo.read")
         t = Treeness(args)
-        t.read_file()
+        t.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
 
     def test_calculate_treeness_zero_branch_len(self, tree_zero_branch_length, args):
