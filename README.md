@@ -7,9 +7,9 @@ Currently, the following functions are implemented in PhyKIT:
 • LB score
 • alignment length calculation
 • number of variable sites calculation; percent variable sites
+• number of parsimony informative sites calculation; percent parsimony informative sites
 
 Functions to add include:
-• number of parsimony informative sites calculation; percent parsimony informative sites
 • Aln. length after removing any site with gaps
 • Average internal branch length
 • CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/

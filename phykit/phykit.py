@@ -19,6 +19,7 @@ from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.internode_labeler import InternodeLabeler
 from .services.tree.lb_score import LBScore
 from .services.tree.dvmc import DVMC
+from .services.tree.internal_branch_stats import InternalBranchStats
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -93,6 +94,12 @@ class Phykit(object):
         parser.add_argument("tree", type=str)
         args = parser.parse_args(sys.argv[2:])
         LBScore(args).run()
+
+    def internal_branch_stats(self):
+        parser = ArgumentParser()
+        parser.add_argument("tree", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        InternalBranchStats(args).run()
 
     def internode_labeler(self):
         parser = ArgumentParser()
