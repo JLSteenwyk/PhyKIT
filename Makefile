@@ -14,6 +14,8 @@ run.lb_score:
 run.internal_branch_stats:
 	python3 -m phykit-runner internal_branch_stats ./tests/sample_files/tree_simple.tre
 
+run.bipartition_support_stats:
+	python3 -m phykit-runner bipartition_support_stats ./tests/sample_files/small_Aspergillus_tree.tre 
 
 ## Run alignment-based functions
 run.alignment_length:
@@ -24,6 +26,9 @@ run.variable_sites:
 
 run.parsimony_informative_sites:
 	python3 -m phykit-runner parsimony_informative_sites ./tests/sample_files/simple.fa
+
+run.alignment_length_no_gaps:
+	python3 -m phykit-runner alignment_length_no_gaps ./tests/sample_files/simple.fa
 
 ## Install, develop, and testing make commands
 install:

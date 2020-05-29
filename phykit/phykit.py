@@ -13,7 +13,9 @@ from argparse import (
 from .services.alignment.alignment_length import AlignmentLength
 from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
+from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
 
+from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.treeness import Treeness
 from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.internode_labeler import InternodeLabeler
@@ -63,6 +65,12 @@ class Phykit(object):
         getattr(self, args.command)()
 
     ## Tree functions
+    def bipartition_support_stats(self):
+        parser = ArgumentParser()
+        parser.add_argument("tree", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        BipartitionSupportStats(args).run()
+
     def dvmc(self):
         parser = ArgumentParser()
         parser.add_argument(
@@ -114,6 +122,12 @@ class Phykit(object):
         parser.add_argument("alignment", type=str)
         args = parser.parse_args(sys.argv[2:])
         AlignmentLength(args).run()
+
+    def alignment_length_no_gaps(self):
+        parser = ArgumentParser()
+        parser.add_argument("alignment", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        AlignmentLengthNoGaps(args).run()
 
     def parsimony_informative_sites(self):
         parser = ArgumentParser()
