@@ -11,6 +11,7 @@ from argparse import (
 )
 
 from .services.alignment.alignment_length import AlignmentLength
+from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
 
 from .services.tree.treeness import Treeness
@@ -106,6 +107,12 @@ class Phykit(object):
         parser.add_argument("alignment", type=str)
         args = parser.parse_args(sys.argv[2:])
         AlignmentLength(args).run()
+
+    def parsimony_informative_sites(self):
+        parser = ArgumentParser()
+        parser.add_argument("alignment", type=str)
+        args = parser.parse_args(sys.argv[2:])
+        ParsimonyInformative(args).run()
 
     def variable_sites(self):
         parser = ArgumentParser()
