@@ -18,7 +18,7 @@ class TestInternodeLabeler(object):
     def test_read_file_reads_tree_file_path(self, mocker, args):
         mock_read = mocker.patch("phykit.services.tree.base.Phylo.read")
         internode_labeler = InternodeLabeler(args)
-        internode_labeler.read_file()
+        internode_labeler.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
 
     def test_add_labels_to_tree(self, tree_simple, args):

@@ -6,7 +6,7 @@ class TotalTreeLength(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        tree = self.read_file()
+        tree = self.read_tree_file()
         total_tree_length = self.calculate_total_tree_length(tree)
         if total_tree_length:
             print(f"Total tree length: {total_tree_length}")
