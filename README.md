@@ -8,14 +8,14 @@ Currently, the following functions are implemented in PhyKIT:
 • alignment length calculation
 • number of variable sites calculation; percent variable sites
 • number of parsimony informative sites calculation; percent parsimony informative sites
+• Average internal branch length
+• Aln. length after removing any site with gaps
+• dvmc
 
 Functions to add include:
-• Aln. length after removing any site with gaps
-• Average internal branch length
 • CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/
 • rcv
 • treeness / rcv
-• dvmc
 • average bipartition support
 • tip-to-tip distance determination
 • protein-to-nucleotide alignment conversion

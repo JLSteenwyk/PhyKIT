@@ -17,12 +17,14 @@ class LBScore(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance = self.calculate_lb_score(tree)
+        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance = self.calculate_lb_score(tree)
         if (mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance):
             print(f"mean: {mean}")
             print(f"median: {median}")
             print(f"25th percentile: {twenty_fifth}")
             print(f"75th percentile: {seventy_fifth}")
+            print(f"minimum: {minimum}")
+            print(f"maximum: {maximum}")
             print(f"standard deviation: {standard_deviation}")
             print(f"variance: {variance}")
 
@@ -75,8 +77,10 @@ class LBScore(Tree):
         median             = stat.median(LBis)
         twenty_fifth       = np.percentile(LBis, 25)
         seventy_fifth      = np.percentile(LBis, 75)
+        minimum            = np.min(LBis)
+        maximum            = np.max(LBis)
         standard_deviation = stat.stdev(LBis)
         variance           = stat.variance(LBis)
 
 
-        return mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance
+        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance

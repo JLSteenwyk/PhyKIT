@@ -42,6 +42,12 @@ def tree_simple_outgroup(mocker):
         line.rstrip('\n') for line in open(f"{here.parent}/sample_files/tree_simple.outgroup.txt")
     ]
 
+@pytest.fixture
+def small_aspergillus_tree(mocker):
+    return Phylo.read(
+        f"{here.parent}/sample_files/small_Aspergillus_tree.tre", "newick",
+    )
+
 # alignment fixtures
 @pytest.fixture
 def alignment_simple(mocker):
