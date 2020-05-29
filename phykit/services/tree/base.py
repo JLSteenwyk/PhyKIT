@@ -3,7 +3,13 @@ from phykit.services.base import BaseService
 
 
 class Tree(BaseService):
-    def __init__(self, *args, tree_file_path, outgroup_taxa_file_path=None, output_file_path=None):
+    def __init__(
+        self,
+        *args,
+        tree_file_path,
+        outgroup_taxa_file_path=None,
+        output_file_path=None
+    ):
         self.tree_file_path = tree_file_path
         self.output_file_path = output_file_path
         self.outgroup_taxa_file_path = outgroup_taxa_file_path

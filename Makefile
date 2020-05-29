@@ -1,3 +1,4 @@
+## Run tree-based functions
 run.treeness:
 	python3 -m phykit-runner treeness ./tests/sample_files/Yeasts_2832_eMRC_reference_renamed.tree
 
@@ -10,6 +11,16 @@ run.total_tree_length:
 run.lb_score:
 	python3 -m phykit-runner lb_score ./tests/sample_files/tree_simple.tre
 
+
+## Run alignment-based functions
+run.alignment_length:
+	python3 -m phykit-runner alignment_length ./tests/sample_files/simple.fa 
+
+run.variable_sites:
+	python3 -m phykit-runner variable_sites ./tests/sample_files/simple.fa
+
+
+## Install, develop, and testing make commands
 install:
 	# install so phykit command is available in terminal
 	python setup.py install

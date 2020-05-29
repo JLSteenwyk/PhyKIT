@@ -15,9 +15,14 @@ def pytest_configure(config):
 
 @pytest.fixture
 def args():
-    kwargs = dict(tree="/some/path/to/file.tre", alignment="/some/path/to/file.fa")
+    kwargs = dict(
+        alignment="/some/path/to/file.fa", 
+        tree="/some/path/to/file.tre", 
+        root="/home/path/to/file.txt"
+        )
     return Namespace(**kwargs)
 
+# tree fixtures
 @pytest.fixture
 def tree_zero_branch_length(mocker):
     return Phylo.read(
@@ -31,6 +36,13 @@ def tree_simple(mocker):
         f"{here.parent}/sample_files/tree_simple.tre", "newick",
     )
 
+@pytest.fixture
+def tree_simple_outgroup(mocker):
+    return [
+        line.rstrip('\n') for line in open(f"{here.parent}/sample_files/tree_simple.outgroup.txt")
+    ]
+
+# alignment fixtures
 @pytest.fixture
 def alignment_simple(mocker):
     return AlignIO.read(open(

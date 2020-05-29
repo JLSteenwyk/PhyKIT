@@ -1,91 +1,85 @@
-import sys
 import getopt
+import logging
+import math
 import os.path
 import statistics as stat
-import logging
+import sys
 
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 import itertools
 import numpy as np
 
+
 from phykit.services.tree.base import Tree
 
-# TODO: how do I read in multiple args?
 class DVMC(Tree):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
     def run(self):
         tree = self.read_tree_file()
-        print(tree)
-        #outgroup = [line.rstrip('\n') for line in open(outgroup_taxa_file_path)]
+        outgroup = [line.rstrip('\n') for line in open(self.outgroup_taxa_file_path)]
+        dvmc = self.calculate_dvmc(tree, outgroup)
 
-        mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance = self.calculate_lb_score(tree)
-        if (mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance):
-            print(f"mean: {mean}")
-            print(f"median: {median}")
-            print(f"25th percentile: {twenty_fifth}")
-            print(f"75th percentile: {seventy_fifth}")
-            print(f"standard deviation: {standard_deviation}")
-            print(f"variance: {variance}")
+        if dvmc:
+            print(f"DVMC: {dvmc}")
 
     def process_args(self, args):
-        root_taxa_file = args.root
-        if not os.path.isfile(root_taxa_file):
-            logger.warning("Input file of taxa to root the tree on does not exist.")
-            sys.exit()
-        return dict(tree_file_path=args.tree, outgroup_taxa_file_path=root_taxa_file)
+        return dict(tree_file_path=args.tree, outgroup_taxa_file_path=args.root)
 
-    def calculate_dvmc(self, tree):
-        print("entering calculating dvmc function")
-        # # get tree tips
-        # tips = []
-        # for tip in tree.get_terminals():
-        #     tips.append(tip.name)
-        
-        # # determine pairwise combinations of tips
-        # combos = list(itertools.combinations(tips, 2))
+    def calculate_dvmc(self, tree, outgroup):
+        # initialize list for outgroup taxa present in the tree
+        out_pres   = []
 
-        # # determine average distance between tips
-        # # avg_dist is PDa
-        # avg_dist = float()
-        # for combo in combos:
-        #     avg_dist+=tree.distance(combo[0], combo[1])
-        # avg_dist = avg_dist/len(combos)
+        # initialize value to hold the number of species
+        num_spp = float(0.0)
 
-        # # calculate average distance of taxon i to all other taxa
-        # # or PDi and save each result to LBi
-        # avg_PDis = []
-        # for tip in tips:
-        #     tips_minus_i = list(set(tips) - set(tip))
-        #     PDi = []
-        #     for tip_minus in tips_minus_i:    
-        #         PDi.append(tree.distance(tip, tip_minus))
-        #     PDi = sum(PDi) / len(PDi)
-        #     avg_PDis.append(PDi)
+        # loop through terminal branch
+        for term in tree.get_terminals():
+            # if outgroup taxa is present, append it to out_pres
+            if term.name in outgroup:
+                out_pres.append(term.name)
 
-        # # use PDis and avgDist to calculate LB values for each taxon
-        # LBis = []
-        # for PDi in avg_PDis:
-        #     try:
-        #         LBis.append((((PDi/avg_dist)-1)*100))
-        #     except ZeroDivisionError:
-        #         print("Invalid tree. Tree should contain branch lengths")
-        #         return None
+        # root tree on outgroup
+        tree.root_with_outgroup(out_pres)
 
-        # ## TODO: fix code to write out output of lb scores per taxa
-        # ## output should have the same name as the input file
-        # # with open(tree + ".LBi-scores.txt", 'w') as f:
-        # #     for tip, LBi in zip(tips, LBis):
-        # #         f.write(str(tip) + "\t" + str(LBi) + "\n")
+        # prune outgroiup taxa from the tree
+        for taxon in out_pres:
+            tree.prune(taxon)
 
-        # mean               = stat.mean(LBis)
-        # median             = stat.median(LBis)
-        # twenty_fifth       = np.percentile(LBis, 25)
-        # seventy_fifth      = np.percentile(LBis, 75)
-        # standard_deviation = stat.stdev(LBis)
-        # variance           = stat.variance(LBis)
+        # determine number of taxa in the tree
+        for term in tree.get_terminals():
+            # add 1 for each tip that is iterated through
+            num_spp+=1
 
+        # initialize list of root to tip distances, the sum
+        # of distances in the tree, the average of distances
+        # in the tree
+        dist = []
+        sum_dist = float(0.0)
+        avg_dist = float(0.0)
 
-        # return mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance
+        # loop through terminal branches and store distances from
+        # the root to the tip in a list
+        for term in tree.get_terminals():
+            # append root to tip distance to dist
+            dist.append((tree.distance(term)))
+            # keep running sum of tree distances
+            sum_dist += tree.distance(term)
+
+        # calculate average tree distance
+        avg_dist = sum_dist/num_spp
+
+        # determine the sum of i=1 to N for (x_i-x_bar)^2
+        sumi2N = float(0.0)
+        for x_i in dist:
+            sumi2N += ((x_i-avg_dist)**2)
+
+        # multiple sumi2N by 1/(N-1) where N is the number of spp
+        # and take the square root
+        dvmc = float(0.0)
+        dvmc = math.sqrt((1/(num_spp-1))*sumi2N) 
+
+        # return result
+        return dvmc

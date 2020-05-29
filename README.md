@@ -21,9 +21,6 @@ Functions to add include:
 • protein-to-nucleotide alignment conversion
 • dvmc (degree of violation of the molecular clock)
 • robinson-foulds distance determination
-• total tree length
-• calculation of the number of variable sites in an alignment
-• calculation of the number of parsimony informative sites in an alignment
 • create concatenation matrix
 
 
