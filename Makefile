@@ -11,6 +11,9 @@ run.total_tree_length:
 run.lb_score:
 	python3 -m phykit-runner lb_score ./tests/sample_files/tree_simple.tre
 
+run.internal_branch_stats:
+	python3 -m phykit-runner internal_branch_stats ./tests/sample_files/tree_simple.tre
+
 
 ## Run alignment-based functions
 run.alignment_length:
@@ -19,6 +22,8 @@ run.alignment_length:
 run.variable_sites:
 	python3 -m phykit-runner variable_sites ./tests/sample_files/simple.fa
 
+run.parsimony_informative_sites:
+	python3 -m phykit-runner parsimony_informative_sites ./tests/sample_files/simple.fa
 
 ## Install, develop, and testing make commands
 install:
