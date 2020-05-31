@@ -11,7 +11,7 @@ import itertools
 import numpy as np
 
 
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 class DVMC(Tree):
     def __init__(self, args) -> None:

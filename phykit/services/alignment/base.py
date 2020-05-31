@@ -1,7 +1,7 @@
 from enum import Enum
 
 from Bio import AlignIO
-from phykit.services.base import BaseService
+from ..base import BaseService
 
 class FileFormat(Enum):
     fasta = "fasta"

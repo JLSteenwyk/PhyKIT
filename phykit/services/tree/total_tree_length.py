@@ -1,4 +1,4 @@
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 
 class TotalTreeLength(Tree):

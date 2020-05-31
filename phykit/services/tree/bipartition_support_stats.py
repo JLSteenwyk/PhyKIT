@@ -8,8 +8,7 @@ import sys
 from Bio import Phylo
 import numpy as np
 
-
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 class BipartitionSupportStats(Tree):
     def __init__(self, args) -> None:
