@@ -1,5 +1,6 @@
 from Bio import Phylo
-from phykit.services.base import BaseService
+
+from ..base import BaseService
 
 
 class Tree(BaseService):

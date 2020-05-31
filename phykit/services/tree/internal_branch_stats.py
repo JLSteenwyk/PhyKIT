@@ -9,7 +9,7 @@ from Bio import Phylo
 import numpy as np
 
 
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 class InternalBranchStats(Tree):
     def __init__(self, args) -> None:

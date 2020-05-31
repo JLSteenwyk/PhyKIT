@@ -8,7 +8,7 @@ from Bio.Phylo.BaseTree import TreeMixin
 import itertools
 import numpy as np
 
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 
 class LBScore(Tree):

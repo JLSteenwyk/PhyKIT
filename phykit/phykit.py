@@ -86,7 +86,16 @@ class Phykit(object):
         raise NotImplementedError()
 
     def treeness(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                TODO: Treeness specific help message
+                """
+            )
+        )
         parser.add_argument("tree", type=str)
         args = parser.parse_args(sys.argv[2:])
         Treeness(args).run()

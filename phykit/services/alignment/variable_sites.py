@@ -1,6 +1,6 @@
 from Bio.Align import MultipleSeqAlignment
 
-from phykit.services.alignment.base import Alignment
+from .base import Alignment
 
 class VariableSites(Alignment):
     def __init__(self, args) -> None:

@@ -11,17 +11,17 @@ Currently, the following functions are implemented in PhyKIT:
 • Average internal branch length
 • Aln. length after removing any site with gaps
 • dvmc
+• average bipartition support
 
 Functions to add include:
 • CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/
 • rcv
 • treeness / rcv
-• average bipartition support
 • tip-to-tip distance determination
 • protein-to-nucleotide alignment conversion
-• dvmc (degree of violation of the molecular clock)
 • robinson-foulds distance determination
 • create concatenation matrix
+• correlated gene-gene evolution
 
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
