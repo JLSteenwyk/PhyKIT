@@ -17,19 +17,23 @@ class InternalBranchStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance = self.calculate_internal_branch_stats(tree)
-        if (mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance):
-            print(f"mean: {mean}")
-            print(f"median: {median}")
-            print(f"25th percentile: {twenty_fifth}")
-            print(f"75th percentile: {seventy_fifth}")
-            print(f"minimum: {minimum}")
-            print(f"maximum: {maximum}")
-            print(f"standard deviation: {standard_deviation}")
-            print(f"variance: {variance}")
+        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, internal_branch_lengths = self.calculate_internal_branch_stats(tree)
+        if not self.verbose:
+            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance):
+                print(f"mean: {mean}")
+                print(f"median: {median}")
+                print(f"25th percentile: {twenty_fifth}")
+                print(f"75th percentile: {seventy_fifth}")
+                print(f"minimum: {minimum}")
+                print(f"maximum: {maximum}")
+                print(f"standard deviation: {standard_deviation}")
+                print(f"variance: {variance}")
+        elif self.verbose:
+            for internal_branch_length in internal_branch_lengths:
+                print(internal_branch_length)
 
     def process_args(self, args):
-        return dict(tree_file_path=args.tree)
+        return dict(tree_file_path=args.tree, verbose=args.verbose)
 
     def calculate_internal_branch_stats(self, tree):
         # save internal branch lengths to internal_branch_lengths
@@ -52,4 +56,4 @@ class InternalBranchStats(Tree):
         minimum            = np.min(internal_branch_lengths)
         maximum            = np.max(internal_branch_lengths)
 
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance
+        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, internal_branch_lengths
