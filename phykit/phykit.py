@@ -22,6 +22,7 @@ from .services.tree.internode_labeler import InternodeLabeler
 from .services.tree.lb_score import LBScore
 from .services.tree.dvmc import DVMC
 from .services.tree.internal_branch_stats import InternalBranchStats
+from .services.tree.patristic_distances import PatristicDistances
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -200,6 +201,147 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         DVMC(args).run()
 
+    def internal_branch_stats(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Internal branch lengths can be useful for tree diagnostics.
+
+                Summary statistics of internal branch lengths include mean,
+                median, 25th percentile, 75th percentile, minimum, maximum,
+                standard deviation, and variance of per taxon LB scores is reported.
+                To obtain all internal branch lengths, use the -v/--verbose option. 
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -v, --verbose               optional argument to print
+                                            all LB score values           
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        InternalBranchStats(args).run()
+
+    def internode_labeler(self):
+        parser = ArgumentParser()
+        parser.add_argument("tree", type=str)
+        # TODO: add output option?
+        args = parser.parse_args(sys.argv[2:])
+        InternodeLabeler(args).run()
+
+    def lb_score(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Lower LB (long branch) scores are thought to be desirable
+                because they are indicative of taxa or trees that likely do
+                not have issues with long branch attraction.
+
+                LB score is calculated from patristic distances (or the sum 
+                of branches between to two taxa). More specifically, it is
+                mean pairwise patristic distance of taxon i compared to
+                all other taxa over the average pairwise patristic distance.
+                Summary statistics reported include mean, median, 25th
+                percentile, 75th percentile, minimum, maximum, standard 
+                deviation, and variance of per taxon LB scores is reported.
+                To obtain LB scores for each taxa, use the -v/--verbose option. 
+
+                LB scores are calculated following Struck, Evolutionary 
+                Bioinformatics (2014), doi: 10.4137/EBO.S14239.
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -v, --verbose               optional argument to print
+                                            all LB score values            
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        LBScore(args).run()
+
+    def patristic_distances(self):
+        # TODO: create unit tests
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Patristic distances describes the distance from tip to tip:
+
+                Summary statistics reported include mean, median, 25th
+                percentile, 75th percentile, minimum, maximum, standard 
+                deviation, and variance of patristic distances across taxa.
+                To obtain all patristic distances, use the -v/--verbose option.
+                With the -v option, the first column will have two taxon names
+                separated by a '-' followed by the patristic distance. Features
+                will be tab separated. 
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -v, --verbose               optional argument to print
+                                            all patristic distances between
+                                            taxa            
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        PatristicDistances(args).run() 
+
     def treeness(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -272,101 +414,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         TotalTreeLength(args).run()
     
-    def lb_score(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                Lower LB (long branch) scores are thought to be desirable
-                because they are indicative of taxa or trees that likely do
-                not have issues with long branch attraction.
-
-                LB score is calculated from patristic distances (or the sum 
-                of branches between to two taxa). More specifically, it is
-                mean pairwise patristic distance of taxon i compared to
-                all other taxa over the average pairwise patristic distance.
-                Summary statistics reported include mean, median, 25th
-                percentile, 75th percentile, minimum, maximum, standard 
-                deviation, and variance of per taxon LB scores is reported.
-                To obtain LB scores for each taxa, use the -v/--verbose option. 
-
-                LB scores are calculated following Struck, Evolutionary 
-                Bioinformatics (2014), doi: 10.4137/EBO.S14239.
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            a tree file
-
-                -v, --verbose               optional argument to print
-                                            all LB score values            
-                """
-            ),
-        )
-        parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        LBScore(args).run()
-
-    def internal_branch_stats(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                Internal branch lengths can be useful for tree diagnostics.
-
-                Summary statistics of internal branch lengths include mean,
-                median, 25th percentile, 75th percentile, minimum, maximum,
-                standard deviation, and variance of per taxon LB scores is reported.
-                To obtain all internal branch lengths, use the -v/--verbose option. 
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            a tree file
-
-                -v, --verbose               optional argument to print
-                                            all LB score values           
-                """
-            ),
-        )
-        parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        InternalBranchStats(args).run()
-
-    def internode_labeler(self):
-        parser = ArgumentParser()
-        parser.add_argument("tree", type=str)
-        # TODO: add output option?
-        args = parser.parse_args(sys.argv[2:])
-        InternodeLabeler(args).run()
 
     ### Alignment functions
     def alignment_length(self):
