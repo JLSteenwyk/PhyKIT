@@ -16,19 +16,23 @@ class BipartitionSupportStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance = self.calculate_bipartition_support_stats(tree)
-        if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance):
-            print(f"mean: {mean}")
-            print(f"median: {median}")
-            print(f"25th percentile: {twenty_fifth}")
-            print(f"75th percentile: {seventy_fifth}")
-            print(f"minimum: {minimum}")
-            print(f"maximum: {maximum}")
-            print(f"standard deviation: {standard_deviation}")
-            print(f"variance: {variance}")
+        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, bs_vals = self.calculate_bipartition_support_stats(tree)
+        if not self.verbose:
+            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance):
+                print(f"mean: {mean}")
+                print(f"median: {median}")
+                print(f"25th percentile: {twenty_fifth}")
+                print(f"75th percentile: {seventy_fifth}")
+                print(f"minimum: {minimum}")
+                print(f"maximum: {maximum}")
+                print(f"standard deviation: {standard_deviation}")
+                print(f"variance: {variance}")
+        elif self.verbose:
+            for bs_val in bs_vals:
+                print(bs_val)
 
     def process_args(self, args):
-        return dict(tree_file_path=args.tree)
+        return dict(tree_file_path=args.tree, verbose=args.verbose)
 
     def calculate_bipartition_support_stats(self, tree):
         # initialize list to hold bootstrap values
@@ -49,4 +53,4 @@ class BipartitionSupportStats(Tree):
         minimum            = np.min(bs_vals)
         maximum            = np.max(bs_vals)
 
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance
+        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, bs_vals
