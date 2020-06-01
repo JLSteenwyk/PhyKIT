@@ -17,19 +17,23 @@ class LBScore(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance = self.calculate_lb_score(tree)
-        if (mean, median, twenty_fifth, seventy_fifth, standard_deviation, variance):
-            print(f"mean: {mean}")
-            print(f"median: {median}")
-            print(f"25th percentile: {twenty_fifth}")
-            print(f"75th percentile: {seventy_fifth}")
-            print(f"minimum: {minimum}")
-            print(f"maximum: {maximum}")
-            print(f"standard deviation: {standard_deviation}")
-            print(f"variance: {variance}")
+        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis = self.calculate_lb_score(tree)
+        if not self.verbose:
+            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis):
+                print(f"mean: {mean}")
+                print(f"median: {median}")
+                print(f"25th percentile: {twenty_fifth}")
+                print(f"75th percentile: {seventy_fifth}")
+                print(f"minimum: {minimum}")
+                print(f"maximum: {maximum}")
+                print(f"standard deviation: {standard_deviation}")
+                print(f"variance: {variance}")
+        elif self.verbose:
+            for tip, LBi in zip(tips, LBis):
+                print(f"{tip}\t{LBi}")
 
     def process_args(self, args):
-        return dict(tree_file_path=args.tree)
+        return dict(tree_file_path=args.tree, verbose=args.verbose)
 
     def calculate_lb_score(self, tree):
         # get tree tips
@@ -67,12 +71,6 @@ class LBScore(Tree):
                 print("Invalid tree. Tree should contain branch lengths")
                 return None
 
-        ## TODO: fix code to write out output of lb scores per taxa
-        ## output should have the same name as the input file
-        # with open(tree + ".LBi-scores.txt", 'w') as f:
-        #     for tip, LBi in zip(tips, LBis):
-        #         f.write(str(tip) + "\t" + str(LBi) + "\n")
-
         mean               = stat.mean(LBis)
         median             = stat.median(LBis)
         twenty_fifth       = np.percentile(LBis, 25)
@@ -83,4 +81,4 @@ class LBScore(Tree):
         variance           = stat.variance(LBis)
 
 
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance
+        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis
