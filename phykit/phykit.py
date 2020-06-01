@@ -66,8 +66,19 @@ class Phykit(object):
 
     ## Tree functions
     def bipartition_support_stats(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                Calculate summary statistics for bipartition support. Summary
+                statistics include mean, median, 25th percentile, 75th percentile,
+                minimum, maximum, standard deviation, and variance. 
+                """
+            ),
+        )
         parser.add_argument("tree", type=str)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         BipartitionSupportStats(args).run()
 
