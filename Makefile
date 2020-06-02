@@ -30,6 +30,9 @@ run.parsimony_informative_sites:
 run.alignment_length_no_gaps:
 	python3 -m phykit-runner alignment_length_no_gaps ./tests/sample_files/simple.fa
 
+run.rcv:
+	python3 -m phykit-runner rcv ./tests/sample_files/simple.fa
+
 ## Install, develop, and testing make commands
 install:
 	# install so phykit command is available in terminal

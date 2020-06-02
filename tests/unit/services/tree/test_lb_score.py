@@ -23,7 +23,7 @@ class TestLBScore(object):
 
     def test_calculate_treeness(self, tree_simple, args):
         t = LBScore(args)
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance = t.calculate_lb_score(tree_simple)
+        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis = t.calculate_lb_score(tree_simple)
         assert isinstance(mean, float)
         assert isinstance(median, float)
         assert isinstance(twenty_fifth, float)

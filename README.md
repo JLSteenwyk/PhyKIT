@@ -12,13 +12,13 @@ Currently, the following functions are implemented in PhyKIT:
 • Aln. length after removing any site with gaps
 • dvmc
 • average bipartition support
+• patristic distance determination
 
 Functions to add include:
 • CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/
 • rcv
 • treeness / rcv
-• tip-to-tip distance determination
-• protein-to-nucleotide alignment conversion
+• protein-to-nucleotide (pal2nal) alignment conversion
 • robinson-foulds distance determination
 • create concatenation matrix
 • correlated gene-gene evolution

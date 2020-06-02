@@ -18,7 +18,7 @@ class TestBipartitionSupportStats(object):
 
     def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):
         t = BipartitionSupportStats(args)
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance = t.calculate_bipartition_support_stats(small_aspergillus_tree)
+        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, bs_vals = t.calculate_bipartition_support_stats(small_aspergillus_tree)
         assert isinstance(mean, float)
         assert isinstance(median, (int or float))
         assert isinstance(twenty_fifth, float)

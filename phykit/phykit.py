@@ -14,6 +14,7 @@ from .services.alignment.alignment_length import AlignmentLength
 from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
 from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
+from .services.alignment.rcv import RelativeCompositionVariability
 
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.treeness import Treeness
@@ -537,7 +538,44 @@ class Phykit(object):
         ParsimonyInformative(args).run()
 
     def rcv(self):
-        raise NotImplementedError()
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Lower RCV (relative composition variability) values are thought
+                to be desirable because they represent a lower composition bias.
+
+                RCV describes the average variability in composition between taxa. 
+
+                Calculate RCV following Phillips and Penny, Molecular Phylogenetics
+                and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file          
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        RelativeCompositionVariability(args).run()
+
 
     def variable_sites(self):
         parser = ArgumentParser(add_help=True,
