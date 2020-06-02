@@ -18,7 +18,9 @@ def args():
     kwargs = dict(
         alignment="/some/path/to/file.fa", 
         tree="/some/path/to/file.tre", 
-        root="/home/path/to/file.txt", 
+        root="/home/path/to/file.txt",
+        tree_zero="/some/path/to/file.tre",
+        tree_one="/some/path/to/file.tre",
         verbose=None
         )
     return Namespace(**kwargs)
@@ -35,6 +37,12 @@ def tree_zero_branch_length(mocker):
 def tree_simple(mocker):
     return Phylo.read(
         f"{here.parent}/sample_files/tree_simple.tre", "newick",
+    )
+
+@pytest.fixture
+def tree_simple_other(mocker):
+    return Phylo.read(
+        f"{here.parent}/sample_files/tree_simple_other_topology.tre", "newick",
     )
 
 @pytest.fixture
