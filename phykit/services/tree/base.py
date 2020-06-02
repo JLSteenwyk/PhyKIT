@@ -10,7 +10,7 @@ class Tree(BaseService):
         tree_file_path,
         outgroup_taxa_file_path=None,
         output_file_path=None,
-        verbose
+        verbose=None
     ):
         self.tree_file_path = tree_file_path
         self.output_file_path = output_file_path

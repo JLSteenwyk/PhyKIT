@@ -18,7 +18,8 @@ def args():
     kwargs = dict(
         alignment="/some/path/to/file.fa", 
         tree="/some/path/to/file.tre", 
-        root="/home/path/to/file.txt"
+        root="/home/path/to/file.txt", 
+        verbose=None
         )
     return Namespace(**kwargs)
 
