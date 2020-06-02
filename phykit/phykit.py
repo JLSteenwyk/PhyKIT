@@ -24,6 +24,7 @@ from .services.tree.lb_score import LBScore
 from .services.tree.dvmc import DVMC
 from .services.tree.internal_branch_stats import InternalBranchStats
 from .services.tree.patristic_distances import PatristicDistances
+from .services.tree.rf_distance import RobinsonFouldsDistance
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -135,6 +136,9 @@ class Phykit(object):
 
                 To obtain all bipartition support values, use the -v/--verbose option.
 
+                Usage:
+                phykit bipartition_support_stats <file> 
+
                 Options
                 =====================================================
                 <file>                      first argument after 
@@ -184,6 +188,9 @@ class Phykit(object):
                 Calculate degree of violation of the molecular clock (or DVMC) in a tree
                 following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
 
+                Usage:
+                phykit dvmc <file> 
+
                 Options
                 =====================================================
                 -t, --tree <file>           input file tree name
@@ -225,6 +232,9 @@ class Phykit(object):
                 median, 25th percentile, 75th percentile, minimum, maximum,
                 standard deviation, and variance of per taxon LB scores is reported.
                 To obtain all internal branch lengths, use the -v/--verbose option. 
+
+                Usage:
+                phykit internal_branch_stats <file> 
 
                 Options
                 =====================================================
@@ -282,6 +292,9 @@ class Phykit(object):
                 LB scores are calculated following Struck, Evolutionary 
                 Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
+                Usage:
+                phykit lb_score <file> 
+
                 Options
                 =====================================================
                 <file>                      first argument after 
@@ -299,7 +312,6 @@ class Phykit(object):
         LBScore(args).run()
 
     def patristic_distances(self):
-        # TODO: create unit tests
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
@@ -316,7 +328,7 @@ class Phykit(object):
                             
                 Citation: Steenwyk et al. Journal, journal info, link
 
-                Patristic distances describes the distance from tip to tip:
+                Patristic distances describes the distance from tip to tip.
 
                 Summary statistics reported include mean, median, 25th
                 percentile, 75th percentile, minimum, maximum, standard 
@@ -325,6 +337,9 @@ class Phykit(object):
                 With the -v option, the first column will have two taxon names
                 separated by a '-' followed by the patristic distance. Features
                 will be tab separated. 
+
+                Usage:
+                phykit patristic_distances <file> 
 
                 Options
                 =====================================================
@@ -342,6 +357,52 @@ class Phykit(object):
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         PatristicDistances(args).run() 
+
+    def rf_distance(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Low (RF) Robinson-Foulds distances reflect greater similarity between
+                two phylogenies. This function prints out two values, the plain
+                RF value and the normalized RF value, which are separated by a tab.
+                Normalized RF values are calculated by taking the plain RF value and
+                dividing it by 2(n-3) where n is the number of tips in the phylogeny. 
+
+                RF distances are calculated following Robinson & Foulds, Mathematical 
+                Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
+
+                Usage:
+                phykit rf_distance <tree_file_zero> <tree_file_one>
+
+                Options
+                =====================================================
+                <tree_file_zero>            first argument after 
+                                            function name should be
+                                            an alignment file
+
+                <tree_file_one>             first argument after 
+                                            function name should be
+                                            an alignment file           
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tree_one", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        RobinsonFouldsDistance(args).run()
 
     def treeness(self):
         parser = ArgumentParser(add_help=True,
@@ -371,6 +432,9 @@ class Phykit(object):
                 Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
                 Phillips and Penny, Molecular Phylogenetics and Evolution
                 (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Usage:
+                phykit rf_distance <file>
 
                 Options
                 =====================================================
@@ -402,6 +466,9 @@ class Phykit(object):
                 Citation: Steenwyk et al. Journal, journal info, link
 
                 Calculate total tree length, which is a sum of all branches. 
+
+                Usage:
+                phykit total_tree_length <file>
 
                 Options
                 =====================================================
@@ -440,6 +507,9 @@ class Phykit(object):
                 Association between alignment length and phylogenetic signal
                 was determined by Shen et al., Genome Biology and Evolution (2016),
                 doi: 10.1093/gbe/evw179.
+
+                Usage:
+                phykit alignment_length <file>
 
                 Options
                 =====================================================
@@ -483,6 +553,9 @@ class Phykit(object):
                 et al., Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
 
+                Usage:
+                phykit alignment_length_no_gaps <file>
+
                 Options
                 =====================================================
                 <file>                      first argument after 
@@ -525,6 +598,9 @@ class Phykit(object):
                 et al., Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
 
+                Usage:
+                phykit parsimony_informative_sites <file>
+
                 Options
                 =====================================================
                 <file>                      first argument after 
@@ -554,8 +630,6 @@ class Phykit(object):
                             
                 Citation: Steenwyk et al. Journal, journal info, link
 
-                Citation: Steenwyk et al. Journal, journal info, link
-
                 Lower RCV (relative composition variability) values are thought
                 to be desirable because they represent a lower composition bias.
 
@@ -563,6 +637,9 @@ class Phykit(object):
 
                 Calculate RCV following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Usage:
+                phykit rcv <file>
 
                 Options
                 =====================================================
@@ -575,7 +652,6 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         RelativeCompositionVariability(args).run()
-
 
     def variable_sites(self):
         parser = ArgumentParser(add_help=True,
@@ -606,6 +682,9 @@ class Phykit(object):
                 phylogenetic signal was determined by Shen et al.,
                 Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
+
+                Usage:
+                phykit variable_sites <file>
 
                 Options
                 =====================================================
