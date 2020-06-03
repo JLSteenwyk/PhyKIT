@@ -75,15 +75,4 @@ class DNAThreader(BaseService):
                             NTwin = (AA - gap_count) * 3
                             pal2nal[gene_id] += n_seq[NTwin : NTwin + 3]
 
-                # TODO: do we need to port this?
-                ## this commented code will check if the nucleotide window
-                ## translates to the corresponding codon
-                # if Pseq[AA] != Nseq[NTwin:NTwin+3].translate():
-                #     print("\nAmino acid position", AA, "(",Pseq[AA],")", "does not correspond to codon")
-                #     print(Nseq[NTwin:NTwin+3], "in nucleotide window", NTwin,"-",NTwin+3)
-                #     print(Nseq[NTwin:NTwin+3], "translates to", Nseq[NTwin:NTwin+3].translate())
-                #     print("Nucleotides cannot be threaded ontop of the protein sequence.")
-                #     print("Exiting now...\n")
-                #     sys.exit()
-
         return pal2nal
