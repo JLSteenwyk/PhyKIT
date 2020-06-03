@@ -23,6 +23,10 @@ Functions to add include:
 • create concatenation matrix
 • correlated gene-gene evolution
 • print ascii tree
-
+• print tree labels
+• rename tree tips
+• compare two trees
+• long termini (terminal branches with tips longer than xx the median terminal branch length)
+• the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
