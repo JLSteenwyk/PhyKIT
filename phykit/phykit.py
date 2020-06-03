@@ -25,6 +25,7 @@ from .services.tree.dvmc import DVMC
 from .services.tree.internal_branch_stats import InternalBranchStats
 from .services.tree.patristic_distances import PatristicDistances
 from .services.tree.rf_distance import RobinsonFouldsDistance
+from .services.tree.treeness_over_rcv import TreenessOverRCV
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -60,6 +61,21 @@ class Phykit(object):
                 to see the help message for the command 'treeness', execute
                 phykit treeness -h or phykit treeness --help.
 
+                Alignment-based commands
+                ========================
+                alignment_length
+                    - calculates alignment length
+                alignment_length_no_gaps
+                    - calculates alignment length after removing sites with gaps
+                parsimony_informative_sites
+                    - calculates the number and percentage of parsimony
+                      informative sites in an alignment
+                rcv
+                    - calculates relative composition variability in an alignment
+                variable_sites
+                    - calculates the number and percentage of variable sites
+                      in an alignment
+
                 Tree-based commands
                 ===================
                 bipartition_support_stats
@@ -78,21 +94,16 @@ class Phykit(object):
                 internode_labeler
                     - create labels at internodes in a phylogeny
 
-                Alignment-based commands
-                ========================
-                alignment_length
-                    - calculates alignment length
-                alignment_length_no_gaps
-                    - calculates alignment length after removing sites with gaps
-                parsimony_informative_sites
-                    - calculates the number and percentage of parsimony
-                      informative sites in an alignment
-                rcv
-                    - calculates relative composition variability in an alignment
-                    NOTE: NOT YET IMPLEMENTED
-                variable_sites
-                    - calculates the number and percentage of variable sites
-                      in an alignment
+                Alignment- and tree-based commands
+                ==================================
+                treeness_over_rcv
+                    - calculates treeness/rcv, treeness, and rcv
+
+                Helper commands
+                ===============
+                • create concatenation matrix
+                • protein-to-nucleotide (pal2nal) alignment conversion
+                
                 
 
                                         
@@ -404,50 +415,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         RobinsonFouldsDistance(args).run()
 
-    def treeness(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                Higher treeness values are thought to be desirable because they
-                represent a higher signal-to-noise ratio.
-
-                Treeness describes the proportion of tree distance on internal
-                branches. Treeness can be used as a measure of the signal-to-noise
-                ratio in a phylogeny. 
-
-                Calculate treeness (also referred to as stemminess) following
-                Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
-                Phillips and Penny, Molecular Phylogenetics and Evolution
-                (2003), doi: 10.1016/S1055-7903(03)00057-5.
-
-                Usage:
-                phykit rf_distance <file>
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            a tree file
-                """
-            ),
-        )
-        parser.add_argument("tree", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        Treeness(args).run()
-
     def total_tree_length(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -481,7 +448,103 @@ class Phykit(object):
         parser.add_argument("tree", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         TotalTreeLength(args).run()
-    
+
+    def treeness(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Higher treeness values are thought to be desirable because they
+                represent a higher signal-to-noise ratio.
+
+                Treeness describes the proportion of tree distance on internal
+                branches. Treeness can be used as a measure of the signal-to-noise
+                ratio in a phylogeny. 
+
+                Calculate treeness (also referred to as stemminess) following
+                Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
+                Phillips and Penny, Molecular Phylogenetics and Evolution
+                (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Usage:
+                phykit treeness <file>
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            a tree file
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        Treeness(args).run()
+
+    def treeness_over_rcv(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Higher treeness/RCV values are thought to be desirable because
+                they harbor a high signal-to-noise ratio are least susceptible
+                to composition bias.
+
+                PhyKIT reports three tab delimited values:
+                col1: treeness/RCV
+                col2: treeness
+                col3: RCV
+
+                Treeness describes the proportion of tree distance on internal
+                branches. RCV
+
+                Calculate treeness/RCV following Phillips and Penny, Molecular 
+                Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Usage:
+                phykit treeness_over_rcv <file>
+
+                Options
+                =====================================================
+                -a/--alignment              an alignment file
+                
+                -t/--tree                   a tree file
+                """
+            ),
+        )
+        parser.add_argument(
+            "-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        args = parser.parse_args(sys.argv[2:])
+        TreenessOverRCV(args).run()
+
 
     ### Alignment functions
     def alignment_length(self):
