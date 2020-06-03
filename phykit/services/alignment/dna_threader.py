@@ -1,9 +1,9 @@
 from Bio import SeqIO, SeqRecord
 
-from phykit.services.base import BaseService
+from .base import Alignment
 
 
-class DNAThreader(BaseService):
+class DNAThreader(Alignment):
     """
     Threads DNA on top of protein alignment
     """
@@ -15,24 +15,19 @@ class DNAThreader(BaseService):
         self.include_stop_codon = args.stop
         self.protein_file_path = args.protein
         self.nucleotide_file_path = args.nucleotide
-
+        
     def run(self):
-        prot = self.read(self.protein_file_path)
-        nucl = self.read(self.nucleotide_file_path)
+        prot = self.read_file(self.protein_file_path)
+        nucl = self.read_file(self.nucleotide_file_path)
 
         pal2nal = self.thread(prot, nucl)
 
-        # print out threaded DNA alignment
-        for entry in range(0, len(PROTa)):
-            print(">{}\n{}".format(PROTa[entry].id, pal2nal[PROTa[entry].id]))
+        if pal2nal:
+            for record in pal2nal:
+                print(f">{record}\n{pal2nal[record]}")
 
     def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
-
-    def print_threaded_alignment(self, pal2nal: dict, protein: SeqRecord) -> None:
-        for protein_seq_record in protein:
-            gene_id = protein_seq_record.id
-            print(f">{gene_id}\n{pal2nal[gene_id]}")
 
     def thread(self, protein: SeqRecord, nucleotide: SeqRecord) -> dict:
         # protein alignment to nucleotide alignment

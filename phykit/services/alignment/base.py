@@ -14,9 +14,18 @@ class FileFormat(Enum):
     stockholm = "stockholm"
 
 class Alignment(BaseService):
-    def __init__(self, *args, alignment_file_path, output_file_path=None):
+    def __init__(
+        self,
+        *args,
+        alignment_file_path,
+        output_file_path=None,
+        protein_file_path=None,
+        nucleotide_file_path=None 
+    ):
         self.alignment_file_path = alignment_file_path
         self.output_file_path = output_file_path
+        self.protein_file_path = protein_file_path,
+        self.nucleotide_file_path = nucleotide_file_path 
 
     def get_alignment_and_format(self):
         """
