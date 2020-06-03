@@ -10,12 +10,12 @@ from argparse import (
     RawDescriptionHelpFormatter,
 )
 
-from .services.dna_threader import DNAThreader
 from .services.alignment.alignment_length import AlignmentLength
 from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
 from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
 from .services.alignment.rcv import RelativeCompositionVariability
+from .services.alignment.dna_threader import DNAThreader
 
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.treeness import Treeness
@@ -270,26 +270,6 @@ class Phykit(object):
         # TODO: add output option?
         args = parser.parse_args(sys.argv[2:])
         InternodeLabeler(args).run()
-
-    def thread_dna(self):
-        parser = ArgumentParser()
-        parser.add_argument(
-            "-p",
-            type=str,
-            help="Single or multiple protein fasta alignment. Genes should appear in the same order as the genes in the nucleotide alignment fasta file specified with the -n parameter",
-        )
-        parser.add_argument(
-            "-n",
-            type=str,
-            help="Single or multiple nucleotide fasta. Genes should appear in the same order as the genes in the protein alignment fasta file specified with the -p parameter",
-        )
-        parser.add_argument(
-            "-s",
-            type=bool,
-            help="Should stop codons be kept in the resulting alignments",
-        )
-        args = parser.parse_args(sys.argv[2:])
-        DNAThreader(args).run()
 
     def lb_score(self):
         parser = ArgumentParser(add_help=True,
@@ -781,6 +761,61 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         VariableSites(args).run()
+
+    ### Helper commands
+    def thread_dna(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Thread DNA sequence onto a protein alignment to create a
+                codon-based alignment. Note, sequences should occur in the
+                same order in the protein and nucleotide alignment.
+
+                Usage:
+                phykit thread_dna -p <file> -n <file> [-s]
+
+                Options
+                =====================================================
+                -p/--protein                protein alignment file
+
+                -n/--nucleotide             nucleotide alignment file
+
+                -s/--stop                   boolean for whether or not
+                                            stop codons should be kept
+                """
+            ),
+        )
+        parser.add_argument(
+            "-p", "--protein",
+            type=str,
+            help=SUPPRESS
+        )
+        parser.add_argument(
+            "-n", "--nucleotide",
+            type=str,
+            help=SUPPRESS
+        )
+        parser.add_argument(
+            "-s", "--stop",
+            type=bool,
+            help=SUPPRESS
+        )
+        args = parser.parse_args(sys.argv[2:])
+        DNAThreader(args).run()
+
 
 
 if __name__ == "__main__":
