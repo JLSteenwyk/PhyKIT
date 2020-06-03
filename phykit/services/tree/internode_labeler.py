@@ -1,4 +1,4 @@
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 
 class InternodeLabeler(Tree):
@@ -6,7 +6,7 @@ class InternodeLabeler(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        tree = self.read_file()
+        tree = self.read_tree_file()
         tree_with_labels = self.add_labels_to_tree(tree)
         self.write_tree_file(tree_with_labels, self.output_file_path)
 
