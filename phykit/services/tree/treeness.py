@@ -1,4 +1,4 @@
-from phykit.services.tree.base import Tree
+from .base import Tree
 
 
 class Treeness(Tree):
@@ -6,7 +6,7 @@ class Treeness(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        tree = self.read_file()
+        tree = self.read_tree_file()
         treeness = self.calculate_treeness(tree)
         if treeness:
             print(f"Treeness score: {treeness}")
@@ -30,3 +30,4 @@ class Treeness(Tree):
         except ZeroDivisionError:
             print("Invalid tree. Tree should contain branch lengths")
             return None
+
