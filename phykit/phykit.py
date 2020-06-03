@@ -10,6 +10,7 @@ from argparse import (
     RawDescriptionHelpFormatter,
 )
 
+from .services.dna_threader import DNAThreader
 from .services.alignment.alignment_length import AlignmentLength
 from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
@@ -269,6 +270,26 @@ class Phykit(object):
         # TODO: add output option?
         args = parser.parse_args(sys.argv[2:])
         InternodeLabeler(args).run()
+
+    def thread_dna(self):
+        parser = ArgumentParser()
+        parser.add_argument(
+            "-p",
+            type=str,
+            help="Single or multiple protein fasta alignment. Genes should appear in the same order as the genes in the nucleotide alignment fasta file specified with the -n parameter",
+        )
+        parser.add_argument(
+            "-n",
+            type=str,
+            help="Single or multiple nucleotide fasta. Genes should appear in the same order as the genes in the protein alignment fasta file specified with the -p parameter",
+        )
+        parser.add_argument(
+            "-s",
+            type=bool,
+            help="Should stop codons be kept in the resulting alignments",
+        )
+        args = parser.parse_args(sys.argv[2:])
+        DNAThreader(args).run()
 
     def lb_score(self):
         parser = ArgumentParser(add_help=True,
