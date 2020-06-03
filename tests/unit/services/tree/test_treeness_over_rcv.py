@@ -18,7 +18,7 @@ class TestTreenessOverRCV(object):
         t.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
 
-    def test_calculate_treeness(self, args):
+    def test_calculate_treeness_over_rcv(self, args):
         t = TreenessOverRCV(args)
         treeness = 0.12599722400563595
         rcv = 0.36
