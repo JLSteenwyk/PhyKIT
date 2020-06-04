@@ -23,7 +23,7 @@ class DVMC(Tree):
         dvmc = self.calculate_dvmc(tree, outgroup)
 
         if dvmc:
-            print(f"DVMC: {dvmc}")
+            print(f"{dvmc}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, outgroup_taxa_file_path=args.root)

@@ -121,6 +121,224 @@ class Phykit(object):
 
         getattr(self, args.command)()
 
+        ### Alignment functions
+
+    ## Alignment functions
+    def alignment_length(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Longer alignments are associated with strong phylogenetic signal.
+
+                Length of the input alignment is calculated using this function.
+                Association between alignment length and phylogenetic signal
+                was determined by Shen et al., Genome Biology and Evolution (2016),
+                doi: 10.1093/gbe/evw179.
+
+                Usage:
+                phykit alignment_length <file>
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file           
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        AlignmentLength(args).run()
+
+    def alignment_length_no_gaps(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Longer alignments when excluding sites with gaps is
+                associated with strong phylogenetic signal.
+
+                PhyKIT reports three tab delimited values:
+                col1: number of sites without gaps
+                col2: total number of sites
+                col3: percentage of sites without gaps
+
+                Association between alignment length when excluding sites
+                with gaps and phylogenetic signal was determined by Shen 
+                et al., Genome Biology and Evolution (2016), 
+                doi: 10.1093/gbe/evw179.
+
+                Usage:
+                phykit alignment_length_no_gaps <file>
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file          
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        AlignmentLengthNoGaps(args).run()
+
+    def parsimony_informative_sites(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                The number of parsimony informative sites in an alignment
+                is associated with strong phylogenetic signal.
+
+                PhyKIT reports three tab delimited values:
+                col1: number of parsimony informative sites
+                col2: total number of sites
+                col3: percentage of parsimony informative sites
+
+                Association between the number of parsimony informative
+                sites and phylogenetic signal was determined by Shen 
+                et al., Genome Biology and Evolution (2016), 
+                doi: 10.1093/gbe/evw179.
+
+                Usage:
+                phykit parsimony_informative_sites <file>
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file          
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        ParsimonyInformative(args).run()
+
+    def rcv(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Lower RCV (relative composition variability) values are thought
+                to be desirable because they represent a lower composition bias.
+
+                RCV describes the average variability in composition between taxa. 
+
+                Calculate RCV following Phillips and Penny, Molecular Phylogenetics
+                and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Usage:
+                phykit rcv <file>
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file          
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        RelativeCompositionVariability(args).run()
+
+    def variable_sites(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                The number of variable sites in an alignment is 
+                associated with strong phylogenetic signal.
+
+                PhyKIT reports three tab delimited values:
+                col1: number of variable sites
+                col2: total number of sites
+                col3: percentage of variable sites
+
+                Association between the number of variable sites and
+                phylogenetic signal was determined by Shen et al.,
+                Genome Biology and Evolution (2016), 
+                doi: 10.1093/gbe/evw179.
+
+                Usage:
+                phykit variable_sites <file>
+
+                Options
+                =====================================================
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file          
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        VariableSites(args).run()
+
+
     ## Tree functions
     def bipartition_support_stats(self):
         parser = ArgumentParser(add_help=True,
@@ -264,6 +482,7 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         InternalBranchStats(args).run()
 
+    # TODO: fix documentation and finish writing function
     def internode_labeler(self):
         parser = ArgumentParser()
         parser.add_argument("tree", type=str)
@@ -546,223 +765,8 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         TreenessOverRCV(args).run()
 
-
-    ### Alignment functions
-    def alignment_length(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                Longer alignments are associated with strong phylogenetic signal.
-
-                Length of the input alignment is calculated using this function.
-                Association between alignment length and phylogenetic signal
-                was determined by Shen et al., Genome Biology and Evolution (2016),
-                doi: 10.1093/gbe/evw179.
-
-                Usage:
-                phykit alignment_length <file>
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            an alignment file           
-                """
-            ),
-        )
-        parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        AlignmentLength(args).run()
-
-    def alignment_length_no_gaps(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                Longer alignments when excluding sites with gaps is
-                associated with strong phylogenetic signal.
-
-                PhyKIT reports three tab delimited values:
-                col1: number of sites without gaps
-                col2: total number of sites
-                col3: percentage of sites without gaps
-
-                Association between alignment length when excluding sites
-                with gaps and phylogenetic signal was determined by Shen 
-                et al., Genome Biology and Evolution (2016), 
-                doi: 10.1093/gbe/evw179.
-
-                Usage:
-                phykit alignment_length_no_gaps <file>
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            an alignment file          
-                """
-            ),
-        )
-        parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        AlignmentLengthNoGaps(args).run()
-
-    def parsimony_informative_sites(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                The number of parsimony informative sites in an alignment
-                is associated with strong phylogenetic signal.
-
-                PhyKIT reports three tab delimited values:
-                col1: number of parsimony informative sites
-                col2: total number of sites
-                col3: percentage of parsimony informative sites
-
-                Association between the number of parsimony informative
-                sites and phylogenetic signal was determined by Shen 
-                et al., Genome Biology and Evolution (2016), 
-                doi: 10.1093/gbe/evw179.
-
-                Usage:
-                phykit parsimony_informative_sites <file>
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            an alignment file          
-                """
-            ),
-        )
-        parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        ParsimonyInformative(args).run()
-
-    def rcv(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                Lower RCV (relative composition variability) values are thought
-                to be desirable because they represent a lower composition bias.
-
-                RCV describes the average variability in composition between taxa. 
-
-                Calculate RCV following Phillips and Penny, Molecular Phylogenetics
-                and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
-
-                Usage:
-                phykit rcv <file>
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            an alignment file          
-                """
-            ),
-        )
-        parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        RelativeCompositionVariability(args).run()
-
-    def variable_sites(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
-
-                The number of variable sites in an alignment is 
-                associated with strong phylogenetic signal.
-
-                PhyKIT reports three tab delimited values:
-                col1: number of variable sites
-                col2: total number of sites
-                col3: percentage of variable sites
-
-                Association between the number of variable sites and
-                phylogenetic signal was determined by Shen et al.,
-                Genome Biology and Evolution (2016), 
-                doi: 10.1093/gbe/evw179.
-
-                Usage:
-                phykit variable_sites <file>
-
-                Options
-                =====================================================
-                <file>                      first argument after 
-                                            function name should be
-                                            an alignment file          
-                """
-            ),
-        )
-        parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        VariableSites(args).run()
-
     ### Helper commands
+    # TODO: thread DNA unit tests
     def thread_dna(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -815,8 +819,6 @@ class Phykit(object):
         )
         args = parser.parse_args(sys.argv[2:])
         DNAThreader(args).run()
-
-
 
 if __name__ == "__main__":
     Phykit()

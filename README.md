@@ -28,5 +28,7 @@ Functions to add include:
 • compare two trees
 • long termini (terminal branches with tips longer than xx the median terminal branch length)
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
+• GC content calculation
+• A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
