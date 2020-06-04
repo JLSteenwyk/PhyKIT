@@ -16,10 +16,10 @@ Currently, the following functions are implemented in PhyKIT:
 • rcv
 • plain robinson-foulds distance; normalized robinson-foulds distance
 • treeness / rcv
+• protein-to-nucleotide (pal2nal) alignment conversion
 
 Functions to add include:
 • CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/
-• protein-to-nucleotide (pal2nal) alignment conversion
 • create concatenation matrix
 • correlated gene-gene evolution
 • print ascii tree
