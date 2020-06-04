@@ -692,6 +692,7 @@ class Phykit(object):
         TreenessOverRCV(args).run()
 
     ### Helper commands
+    # TODO: write unit tests
     def create_concatenation_matrix(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
