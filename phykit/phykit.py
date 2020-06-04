@@ -35,13 +35,8 @@ logger.addHandler(ch)
 
 
 class Phykit(object):
-    def __init__(self):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                """\
+
+    help_header = """
                  _____  _           _  _______ _______ 
                 |  __ \| |         | |/ /_   _|__   __|
                 | |__) | |__  _   _| ' /  | |    | |   
@@ -52,6 +47,16 @@ class Phykit(object):
                               |___/   
                             
                 Citation: Steenwyk et al. Journal, journal info, link
+    """
+
+    def __init__(self):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
 
                 PhyKIT helps with all things phylogenetics and phylogenomics.
 
@@ -129,17 +134,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Longer alignments are associated with strong phylogenetic signal.
 
@@ -168,17 +164,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Longer alignments when excluding sites with gaps is
                 associated with strong phylogenetic signal.
@@ -213,17 +200,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 The number of parsimony informative sites in an alignment
                 is associated with strong phylogenetic signal.
@@ -258,17 +236,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Lower RCV (relative composition variability) values are thought
                 to be desirable because they represent a lower composition bias.
@@ -298,17 +267,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 The number of variable sites in an alignment is 
                 associated with strong phylogenetic signal.
@@ -345,17 +305,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
                 
                 High bipartition support values are thought to be desirable because
                 they are indicative of greater certainty in the tree topology.
@@ -391,17 +342,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Lower DVMC (degree of violation of the molecular clock) values are
                 thought to be desirable because they are indicative of a lower degree of
@@ -444,17 +386,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Internal branch lengths can be useful for tree diagnostics.
 
@@ -495,17 +428,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Lower LB (long branch) scores are thought to be desirable
                 because they are indicative of taxa or trees that likely do
@@ -547,17 +471,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Patristic distances describes the distance from tip to tip.
 
@@ -594,17 +509,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Low (RF) Robinson-Foulds distances reflect greater similarity between
                 two phylogenies. This function prints out two values, the plain
@@ -640,17 +546,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Calculate total tree length, which is a sum of all branches. 
 
@@ -674,17 +571,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Higher treeness values are thought to be desirable because they
                 represent a higher signal-to-noise ratio.
@@ -718,17 +606,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Higher treeness/RCV values are thought to be desirable because
                 they harbor a high signal-to-noise ratio are least susceptible
@@ -772,17 +651,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header}
 
                 Thread DNA sequence onto a protein alignment to create a
                 codon-based alignment. Note, sequences should occur in the
