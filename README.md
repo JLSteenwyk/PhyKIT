@@ -18,11 +18,10 @@ Currently, the following functions are implemented in PhyKIT:
 • treeness / rcv
 • protein-to-nucleotide (pal2nal) alignment conversion
 • long termini (terminal branches with tips longer than xx the median terminal branch length)
-
+• create concatenation matrix
 
 Functions to add include:
 • CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/
-• create concatenation matrix
 • correlated gene-gene evolution
 • print ascii tree
 • print tree labels
@@ -31,6 +30,7 @@ Functions to add include:
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
 • GC content calculation
 • A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
+• tree and alignment file format conversion
 
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
