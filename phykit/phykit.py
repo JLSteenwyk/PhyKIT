@@ -27,6 +27,7 @@ from .services.tree.internal_branch_stats import InternalBranchStats
 from .services.tree.patristic_distances import PatristicDistances
 from .services.tree.rf_distance import RobinsonFouldsDistance
 from .services.tree.treeness_over_rcv import TreenessOverRCV
+from .services.tree.spurious_sequence import SpuriousSequence
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -83,6 +84,9 @@ class Phykit(object):
                     - calculates summary statistics for bipartition support
                 dvmc 
                     - reports the degree of violation of the molecular clock
+                spurious_sequence
+                    - identifies putatively spurious sequences by identifying
+                      branch lengths that are atypically long
                 treeness
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
@@ -102,8 +106,10 @@ class Phykit(object):
 
                 Helper commands
                 ===============
+                thread_dna
+                    - thread dna sequences over a protein alignment
                 • create concatenation matrix
-                • protein-to-nucleotide (pal2nal) alignment conversion
+                
                 
                 
 
@@ -634,6 +640,53 @@ class Phykit(object):
         parser.add_argument("tree_one", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         RobinsonFouldsDistance(args).run()
+
+    # TODO: create unit test for this function
+    def spurious_sequence(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                """\
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Citation: Steenwyk et al. Journal, journal info, link
+
+                Identifies potentially spurious sequences and reports
+                tips in the phylogeny that could possibly be removed
+                from the underlying multiple sequence alignments. PhyKIT
+                does so by identifying and reporting long terminal branches
+                defined as branches that are 20 times the median length of
+                internal and terminal branches.
+                
+                Using this method to identify potentially spurious sequences
+                was, to my knowledge, first introduced by Shen et al., (2018)
+                Cell doi: 10.1016/j.cell.2018.10.023.                
+
+                Usage:
+                phykit spurious_sequence <FILL>
+
+                Options
+                =====================================================
+                <FILL>                      FILL         
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-factor", "--factor",
+            type=float, required=False,
+            help=SUPPRESS
+        )
+        args = parser.parse_args(sys.argv[2:])
+        SpuriousSequence(args).run()
 
     def total_tree_length(self):
         parser = ArgumentParser(add_help=True,
