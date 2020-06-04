@@ -37,6 +37,9 @@ run.patristic_distances:
 run.rf_distance:
 	python3 -m phykit-runner rf_distance ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_other_topology.tre
 
+run.spurious_sequence:
+	python3 -m phykit-runner spurious_sequence ./tests/sample_files/tree_simple.tre  
+
 run.total_tree_length:
 	python3 -m phykit-runner total_tree_length ./tests/sample_files/tree_simple.tre
 

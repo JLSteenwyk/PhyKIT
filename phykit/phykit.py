@@ -663,25 +663,32 @@ class Phykit(object):
                 tips in the phylogeny that could possibly be removed
                 from the underlying multiple sequence alignments. PhyKIT
                 does so by identifying and reporting long terminal branches
-                defined as branches that are 20 times the median length of
-                internal and terminal branches.
+                defined as branches that are equal to or 20 times the median
+                length of internal and terminal branches.
                 
                 Using this method to identify potentially spurious sequences
                 was, to my knowledge, first introduced by Shen et al., (2018)
                 Cell doi: 10.1016/j.cell.2018.10.023.                
 
                 Usage:
-                phykit spurious_sequence <FILL>
+                phykit spurious_sequence <file> [-f 20]
 
                 Options
                 =====================================================
-                <FILL>                      FILL         
+                <file>                      first argument after 
+                                            function name should be
+                                            an alignment file
+
+                -f/--factor                 factor to multiply median
+                                            branch length by to calculate
+                                            the threshold of long branches.
+                                            Default: 20
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument(
-            "-factor", "--factor",
+            "-f", "--factor",
             type=float, required=False,
             help=SUPPRESS
         )

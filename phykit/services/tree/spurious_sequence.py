@@ -12,9 +12,16 @@ class SpuriousSequence(Tree):
         factor = self.factor
         name_and_branch_len, threshold, median = self.identify_spurious_sequence(tree, factor)
         
+        counter = 0
         for name, length in name_and_branch_len.items():
             if length >= threshold:
                 print(f"{name}\t{length}\t{threshold}\t{median}")
+                counter += 1
+        
+        # if no terminal branch is longer than the one specified
+        # inform the user and print "None"
+        if counter == 0:
+            print("None")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, factor=args.factor)
@@ -38,7 +45,7 @@ class SpuriousSequence(Tree):
         median = stat.median(branch_lengths)
 
         if factor is None:
-            factor = 2
+            factor = 20
 
         threshold = median*factor
 
