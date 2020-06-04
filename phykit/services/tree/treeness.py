@@ -9,7 +9,7 @@ class Treeness(Tree):
         tree = self.read_tree_file()
         treeness = self.calculate_treeness(tree)
         if treeness:
-            print(f"Treeness score: {treeness}")
+            print(f"{treeness}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree)
