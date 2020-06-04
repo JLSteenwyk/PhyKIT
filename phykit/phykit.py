@@ -11,6 +11,7 @@ from argparse import (
 )
 
 from .services.alignment.alignment_length import AlignmentLength
+from .services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
 from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
 from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
@@ -50,6 +51,7 @@ class Phykit(object):
                 Citation: Steenwyk et al. Journal, journal info, link
     """
 
+    # TODO: create shorthand aliases for functions
     def __init__(self):
         parser = ArgumentParser(
             add_help=True,
@@ -111,14 +113,10 @@ class Phykit(object):
 
                 Helper commands
                 ===============
+                create_concatenation_matrix
+                    - create concatenation matrix from a set of alignments
                 thread_dna
                     - thread dna sequences over a protein alignment
-                • create concatenation matrix
-                
-                
-                
-
-                                        
                 """
             ),
         )
@@ -131,8 +129,6 @@ class Phykit(object):
             sys.exit(1)
 
         getattr(self, args.command)()
-
-        ### Alignment functions
 
     ## Alignment functions
     def alignment_length(self):
@@ -553,17 +549,8 @@ class Phykit(object):
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
-                """\
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Citation: Steenwyk et al. Journal, journal info, link
+                f"""\
+                {self.help_header} 
 
                 Identifies potentially spurious sequences and reports
                 tips in the phylogeny that could possibly be removed
@@ -705,6 +692,56 @@ class Phykit(object):
         TreenessOverRCV(args).run()
 
     ### Helper commands
+    def create_concatenation_matrix(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Create a concatenated alignment file. This function is 
+                used to help in the construction of multi-locus data
+                matrices.
+
+                PhyKIT will output three files:
+                1) A fasta file with '.fa' appended to the prefix specified
+                   with the -p/--prefix parameter.
+                2) A partition file ready for input into RAxML or IQ-tree.
+                3) An occupancy file that summarizes the taxon occupancy
+                   per sequence.
+
+                Usage:
+                phykit create_concatenation_matrix -a <file> -p <string>
+
+                Options
+                =====================================================
+                -a/--alignment              alignment list file.
+                                            File should contain a single
+                                            column list of alignment
+                                            sequences to concatenate into
+                                            a single matrix. Provide
+                                            path to files relative to
+                                            working directory or provide
+                                            absolute path.
+
+                -p/--prefix                 prefix of output files
+                """
+            ),
+        )
+        parser.add_argument(
+            "-a", "--alignment_list",
+            type=str,
+            help=SUPPRESS
+        )
+        parser.add_argument(
+            "-p", "--prefix",
+            type=str,
+            help=SUPPRESS
+        )
+        args = parser.parse_args(sys.argv[2:])
+        CreateConcatenationMatrix(args).run()
+
     # TODO: thread DNA unit tests
     def thread_dna(self):
         parser = ArgumentParser(add_help=True,
