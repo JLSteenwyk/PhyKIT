@@ -788,5 +788,5 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         DNAThreader(args).run()
 
-if __name__ == "__main__":
+def main(argv=None):
     Phykit()
