@@ -53,6 +53,7 @@ run.treeness_over_rcv:
 ## Helper commands
 run.create_concatenation_matrix:
 	python3 phykit-runner.py create_concatenation_matrix -a tests/sample_files/alignment_list_for_create_concat_matrix.txt -p test
+
 run.thread_dna:
 	python3 -m phykit-runner thread_dna -p ./tests/sample_files/EOG091N44MS.fa.mafft -n ./tests/sample_files/EOG091N44MS.fa
 

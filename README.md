@@ -26,11 +26,13 @@ Functions to add include:
 • print ascii tree
 • print tree labels
 • rename tree tips
+• rename names in alignments
 • compare two trees
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
 • GC content calculation
 • A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
 • tree and alignment file format conversion
+• branch length multiplier
 
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
