@@ -1,17 +1,5 @@
-from enum import Enum
-
-from Bio import AlignIO
 from ..base import BaseService
-
-class FileFormat(Enum):
-    fasta = "fasta"
-    clustal = "clustal"
-    maf = "maf"
-    mauve = "mauve"
-    phylip = "phylip"
-    phylip_seq = "phylip-sequential"
-    phylip_rel = "phylip-relaxed"
-    stockholm = "stockholm"
+from ...helpers.files import get_alignment_and_format as get_alignment_and_format_helper
 
 class Alignment(BaseService):
     def __init__(
@@ -35,20 +23,7 @@ class Alignment(BaseService):
         """
         automatic file type determination
         """
-
-        # if file format is provided, read the file according to the user's file format
-        for fileFormat in FileFormat:
-            try:
-                alignment = AlignIO.read(open(self.alignment_file_path), fileFormat.value)
-                return alignment, fileFormat.value
-            # the following exceptions refer to skipping over errors
-            # associated with reading the wrong input file
-            except ValueError:
-                continue
-            except AssertionError:
-                continue
-
-        raise Exception("Input file could not be read")
+        return get_alignment_and_format_helper(self.alignment_file_path)
 
     def calculate_alignment_length(self, alignment):
         """

@@ -123,12 +123,24 @@ class Phykit(object):
         parser.add_argument("command", help=SUPPRESS)
         args = parser.parse_args(sys.argv[1:2])
 
-        if not hasattr(self, args.command):
+        # command is part of the possible commands (i.e., the long form
+        # commands, run). Otherwise, assume it is an alias and look to the
+        # run_alias function
+        if hasattr(self, args.command):
+            getattr(self, args.command)()
+        else:
+            self.run_alias(args.command)
+
+    def run_alias(self, command):
+        if command == 'align_len':
+            return self.alignment_length()
+        elif command in ['alias1', 'alias2']:
+            # return self.
+            pass
+        else:
             print("Invalid command option. See help for more details.")
             parser.print_help()
             sys.exit(1)
-
-        getattr(self, args.command)()
 
     ## Alignment functions
     def alignment_length(self):

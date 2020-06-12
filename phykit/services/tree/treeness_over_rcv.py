@@ -3,8 +3,8 @@ from enum import Enum
 from Bio import AlignIO
 
 from .base import Tree
-from .treeness import Treeness
 from ..alignment.rcv import RelativeCompositionVariability
+from ...helpers.files import get_alignment_and_format as get_alignment_and_format_helper
 
 class FileFormat(Enum):
     fasta = "fasta"
@@ -21,11 +21,17 @@ class TreenessOverRCV(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        tree = self.read_tree_file()
-        alignment, alignment_format = self.get_alignment_and_format()
+        alignment, alignment_format = get_alignment_and_format_helper(self.alignment_file_path)
         
         # calculate treeness
-        treeness = Treeness.calculate_treeness(self, tree)
+        # TODO: move calculate_treeness to base Tree class
+        # then calculate treeness like: `treeness = self.calculate_treeness()`
+        # 
+        # Whenever two classes are inheriting from the same base
+        # move that function to the base
+        # tree = self.read_tree_file()
+        # treeness = self.calculate_treeness(tree)
+        treeness = self.calculate_treeness()
         
         # calculate rcv
         aln_len = alignment.get_alignment_length()
@@ -46,22 +52,22 @@ class TreenessOverRCV(Tree):
         return treeness_over_rcv
 
     # TODO: import this function from alignment base
-    def get_alignment_and_format(self):
-        """
-        automatic file type determination
-        """
+    # def get_alignment_and_format(self):
+    #     """
+    #     automatic file type determination
+    #     """
 
-        # if file format is provided, read the file according to the user's file format
-        for fileFormat in FileFormat:
-            try:
-                alignment = AlignIO.read(open(self.alignment_file_path), fileFormat.value)
-                return alignment, fileFormat.value
-            # the following exceptions refer to skipping over errors
-            # associated with reading the wrong input file
-            except ValueError:
-                continue
-            except AssertionError:
-                continue
+    #     # if file format is provided, read the file according to the user's file format
+    #     for fileFormat in FileFormat:
+    #         try:
+    #             alignment = AlignIO.read(open(self.alignment_file_path), fileFormat.value)
+    #             return alignment, fileFormat.value
+    #         # the following exceptions refer to skipping over errors
+    #         # associated with reading the wrong input file
+    #         except ValueError:
+    #             continue
+    #         except AssertionError:
+    #             continue
 
-        raise Exception("Input file could not be read")
+    #     raise Exception("Input file could not be read")
 
