@@ -17,20 +17,19 @@ class InternalBranchStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, internal_branch_lengths = self.calculate_internal_branch_stats(tree)
-        if not self.verbose:
-            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance):
-                print(f"mean: {mean}")
-                print(f"median: {median}")
-                print(f"25th percentile: {twenty_fifth}")
-                print(f"75th percentile: {seventy_fifth}")
-                print(f"minimum: {minimum}")
-                print(f"maximum: {maximum}")
-                print(f"standard deviation: {standard_deviation}")
-                print(f"variance: {variance}")
-        elif self.verbose:
+        internal_branch_lengths, stats = self.calculate_internal_branch_stats(tree)
+        if self.verbose:
             for internal_branch_length in internal_branch_lengths:
                 print(internal_branch_length)
+        else:
+            print(f"mean: {stats['mean']}")
+            print(f"median: {stats['median']}")
+            print(f"25th percentile: {stats['twenty_fifth']}")
+            print(f"75th percentile: {stats['seventy_fifth']}")
+            print(f"minimum: {stats['minimum']}")
+            print(f"maximum: {stats['maximum']}")
+            print(f"standard deviation: {stats['standard_deviation']}")
+            print(f"variance: {stats['variance']}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
@@ -47,13 +46,15 @@ class InternalBranchStats(Tree):
             print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
             sys.exit()
         
-        mean               = stat.mean(internal_branch_lengths)
-        median             = stat.median(internal_branch_lengths)
-        twenty_fifth       = np.percentile(internal_branch_lengths, 25)
-        seventy_fifth      = np.percentile(internal_branch_lengths, 75)
-        standard_deviation = stat.stdev(internal_branch_lengths)
-        variance           = stat.variance(internal_branch_lengths)
-        minimum            = np.min(internal_branch_lengths)
-        maximum            = np.max(internal_branch_lengths)
+        stats = dict(
+            mean               = stat.mean(internal_branch_lengths),
+            median             = stat.median(internal_branch_lengths),
+            twenty_fifth       = np.percentile(internal_branch_lengths, 25),
+            seventy_fifth      = np.percentile(internal_branch_lengths, 75),
+            standard_deviation = stat.stdev(internal_branch_lengths),
+            variance           = stat.variance(internal_branch_lengths),
+            minimum            = np.min(internal_branch_lengths),
+            maximum            = np.max(internal_branch_lengths)
+        )
 
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, internal_branch_lengths
+        return internal_branch_lengths, stats

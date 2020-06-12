@@ -17,20 +17,19 @@ class LBScore(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis = self.calculate_lb_score(tree)
-        if not self.verbose:
-            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis):
-                print(f"mean: {mean}")
-                print(f"median: {median}")
-                print(f"25th percentile: {twenty_fifth}")
-                print(f"75th percentile: {seventy_fifth}")
-                print(f"minimum: {minimum}")
-                print(f"maximum: {maximum}")
-                print(f"standard deviation: {standard_deviation}")
-                print(f"variance: {variance}")
-        elif self.verbose:
+        tips, LBis, stats = self.calculate_lb_score(tree)
+        if self.verbose:
             for tip, LBi in zip(tips, LBis):
                 print(f"{tip}\t{LBi}")
+        else:
+            print(f"mean: {stats['mean']}")
+            print(f"median: {stats['median']}")
+            print(f"25th percentile: {stats['twenty_fifth']}")
+            print(f"75th percentile: {stats['seventy_fifth']}")
+            print(f"minimum: {stats['minimum']}")
+            print(f"maximum: {stats['maximum']}")
+            print(f"standard deviation: {stats['standard_deviation']}")
+            print(f"variance: {stats['variance']}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
@@ -71,14 +70,15 @@ class LBScore(Tree):
                 print("Invalid tree. Tree should contain branch lengths")
                 return None
 
-        mean               = stat.mean(LBis)
-        median             = stat.median(LBis)
-        twenty_fifth       = np.percentile(LBis, 25)
-        seventy_fifth      = np.percentile(LBis, 75)
-        minimum            = np.min(LBis)
-        maximum            = np.max(LBis)
-        standard_deviation = stat.stdev(LBis)
-        variance           = stat.variance(LBis)
-
-
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, tips, LBis
+        stats = dict(
+            mean               = stat.mean(LBis),
+            median             = stat.median(LBis),
+            twenty_fifth       = np.percentile(LBis, 25),
+            seventy_fifth      = np.percentile(LBis, 75),
+            minimum            = np.min(LBis),
+            maximum            = np.max(LBis),
+            standard_deviation = stat.stdev(LBis),
+            variance           = stat.variance(LBis)
+        )
+        
+        return tips, LBis, stats

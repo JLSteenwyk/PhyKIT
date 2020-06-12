@@ -16,20 +16,20 @@ class BipartitionSupportStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, bs_vals = self.calculate_bipartition_support_stats(tree)
-        if not self.verbose:
-            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance):
-                print(f"mean: {mean}")
-                print(f"median: {median}")
-                print(f"25th percentile: {twenty_fifth}")
-                print(f"75th percentile: {seventy_fifth}")
-                print(f"minimum: {minimum}")
-                print(f"maximum: {maximum}")
-                print(f"standard deviation: {standard_deviation}")
-                print(f"variance: {variance}")
-        elif self.verbose:
+        bs_vals, stats = self.calculate_bipartition_support_stats(tree)
+        if self.verbose:
             for bs_val in bs_vals:
                 print(bs_val)
+        else:
+            print(f"mean: {stats['mean']}")
+            print(f"median: {stats['median']}")
+            print(f"25th percentile: {stats['twenty_fifth']}")
+            print(f"75th percentile: {stats['seventy_fifth']}")
+            print(f"minimum: {stats['minimum']}")
+            print(f"maximum: {stats['maximum']}")
+            print(f"standard deviation: {stats['standard_deviation']}")
+            print(f"variance: {stats['variance']}")
+            
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
@@ -44,13 +44,15 @@ class BipartitionSupportStats(Tree):
             if terminal.confidence != None:
                 bs_vals.append(terminal.confidence)
         
-        mean               = stat.mean(bs_vals)
-        median             = stat.median(bs_vals)
-        twenty_fifth       = np.percentile(bs_vals, 25)
-        seventy_fifth      = np.percentile(bs_vals, 75)
-        standard_deviation = stat.stdev(bs_vals)
-        variance           = stat.variance(bs_vals)
-        minimum            = np.min(bs_vals)
-        maximum            = np.max(bs_vals)
+        stats = dict(
+            mean               = stat.mean(bs_vals),
+            median             = stat.median(bs_vals),
+            twenty_fifth       = np.percentile(bs_vals, 25),
+            seventy_fifth      = np.percentile(bs_vals, 75),
+            standard_deviation = stat.stdev(bs_vals),
+            variance           = stat.variance(bs_vals),
+            minimum            = np.min(bs_vals),
+            maximum            = np.max(bs_vals)
+        )
 
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, bs_vals
+        return bs_vals, stats
