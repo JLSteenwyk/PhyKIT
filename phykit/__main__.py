@@ -3,5 +3,4 @@ import sys
 
 from .phykit import Phykit
 
-Phykit(sys.argv)
-# main(sys.argv[1:])
+Phykit()

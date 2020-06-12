@@ -1,5 +1,5 @@
 from os import path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
 
@@ -16,7 +16,7 @@ setup(
     author="Jacob L. Steenwyk",
     author_email="jlsteenwyk@gmail.com",
     url="https://github.com/jlsteenwyk/phykit",
-    packages=["phykit"],
+    packages=find_packages(),
     entry_points={"console_scripts": ["phykit = phykit.phykit:main"]},
     version="0.0.1",
     include_package_data=True,

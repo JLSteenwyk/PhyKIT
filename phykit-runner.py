@@ -8,4 +8,3 @@ from phykit.phykit import Phykit
 
 if __name__ == "__main__":
     Phykit()
-    # main(sys.argv[1:])
