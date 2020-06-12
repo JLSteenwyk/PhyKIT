@@ -17,20 +17,19 @@ class PatristicDistances(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, patristic_distances, combos = self.calculate_patristic_distances(tree)
-        if not self.verbose:
-            if (mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance):
-                print(f"mean: {mean}")
-                print(f"median: {median}")
-                print(f"25th percentile: {twenty_fifth}")
-                print(f"75th percentile: {seventy_fifth}")
-                print(f"minimum: {minimum}")
-                print(f"maximum: {maximum}")
-                print(f"standard deviation: {standard_deviation}")
-                print(f"variance: {variance}")
-        elif self.verbose:
+        patristic_distances, combos, stats = self.calculate_patristic_distances(tree)
+        if self.verbose:
             for combo, patristic_distance in zip(combos, patristic_distances):
                 print(f"{combo[0]}-{combo[1]}\t{patristic_distance}")
+        else:
+            print(f"mean: {stats['mean']}")
+            print(f"median: {stats['median']}")
+            print(f"25th percentile: {stats['twenty_fifth']}")
+            print(f"75th percentile: {stats['seventy_fifth']}")
+            print(f"minimum: {stats['minimum']}")
+            print(f"maximum: {stats['maximum']}")
+            print(f"standard deviation: {stats['standard_deviation']}")
+            print(f"variance: {stats['variance']}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
@@ -49,14 +48,15 @@ class PatristicDistances(Tree):
         for combo in combos:
             patristic_distances.append(tree.distance(combo[0], combo[1]))
 
-        mean               = stat.mean(patristic_distances)
-        median             = stat.median(patristic_distances)
-        twenty_fifth       = np.percentile(patristic_distances, 25)
-        seventy_fifth      = np.percentile(patristic_distances, 75)
-        minimum            = np.min(patristic_distances)
-        maximum            = np.max(patristic_distances)
-        standard_deviation = stat.stdev(patristic_distances)
-        variance           = stat.variance(patristic_distances)
-
-
-        return mean, median, twenty_fifth, seventy_fifth, minimum, maximum, standard_deviation, variance, patristic_distances, combos
+        stats = dict(
+            mean=stat.mean(patristic_distances),
+            median=stat.median(patristic_distances),
+            twenty_fifth=np.percentile(patristic_distances, 25),
+            seventy_fifth=np.percentile(patristic_distances, 75),
+            minimum=np.min(patristic_distances),
+            maximum=np.max(patristic_distances),
+            standard_deviation=stat.stdev(patristic_distances),
+            variance=stat.variance(patristic_distances)
+        )
+        
+        return patristic_distances, combos, stats
