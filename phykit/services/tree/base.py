@@ -12,6 +12,7 @@ class Tree(BaseService):
         outgroup_taxa_file_path=None,
         output_file_path=None,
         factor=None,
+        remove=None,
         verbose=None
     ):
         self.tree_file_path = tree_file_path
@@ -22,6 +23,7 @@ class Tree(BaseService):
         self.tree_format = "newick"
         self.verbose = verbose
         self.factor = factor
+        self.remove = remove
 
     def read_tree_file(self):
         return Phylo.read(self.tree_file_path, self.tree_format)
