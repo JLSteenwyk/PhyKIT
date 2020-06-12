@@ -21,7 +21,8 @@ def args():
         root="/home/path/to/file.txt",
         tree_zero="/some/path/to/file.tre",
         tree_one="/some/path/to/file.tre",
-        verbose=None
+        verbose=None,
+        remove=None
         )
     return Namespace(**kwargs)
 

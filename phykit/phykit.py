@@ -29,6 +29,7 @@ from .services.tree.patristic_distances import PatristicDistances
 from .services.tree.rf_distance import RobinsonFouldsDistance
 from .services.tree.treeness_over_rcv import TreenessOverRCV
 from .services.tree.spurious_sequence import SpuriousSequence
+from .services.tree.print_tree import PrintTree
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -517,6 +518,40 @@ class Phykit(object):
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         PatristicDistances(args).run() 
+
+    def print_tree(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Print ascii tree of input phylogeny.
+
+                Phylogeny can be printed with or without branch lengths.
+                By default, the phylogeny will be printed with branch lengths
+                but branch lengths can be removed using the -r/--remove argument.
+
+                Usage:
+                phykit print_tree <file> 
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -r, --remove                optional argument to print
+                                            the phylogeny without branch
+                                            lengths       
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-r", "--remove", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        PrintTree(args).run()
 
     def rf_distance(self):
         parser = ArgumentParser(add_help=True,

@@ -34,6 +34,9 @@ run.lb_score:
 run.patristic_distances:
 	python3 -m phykit-runner patristic_distances ./tests/sample_files/tree_simple.tre
 
+run.print_tree:
+	python3 -m phykit-runner print_tree ./tests/sample_files/tree_simple.tre
+
 run.rf_distance:
 	python3 -m phykit-runner rf_distance ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_other_topology.tre
 

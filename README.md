@@ -19,11 +19,10 @@ Currently, the following functions are implemented in PhyKIT:
 • protein-to-nucleotide (pal2nal) alignment conversion
 • long termini (terminal branches with tips longer than xx the median terminal branch length)
 • create concatenation matrix
+• print ascii tree
 
 Functions to add include:
-• CAM site determination https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3956930/
 • correlated gene-gene evolution
-• print ascii tree
 • print tree labels
 • rename tree tips
 • rename names in alignments
