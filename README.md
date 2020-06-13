@@ -32,7 +32,6 @@ Functions to add include:
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
 • tree and alignment file format conversion
 • branch length multiplier
-• including a outlier branch length detection method like treeShrink https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4620-2#Sec22
 
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
