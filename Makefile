@@ -5,6 +5,12 @@ run.alignment_length:
 run.alignment_length_no_gaps:
 	python3 -m phykit-runner alignment_length_no_gaps ./tests/sample_files/simple.fa
 
+run.gc_content:
+	python3 phykit-runner.py gc_content ./tests/sample_files/simple.fa
+
+run.rename_fasta_entries:
+	python3 phykit-runner.py rename_fasta_entries ./tests/sample_files/simple.fa -i tests/sample_files/simple_fasta_idmap.txt 
+
 run.parsimony_informative_sites:
 	python3 -m phykit-runner parsimony_informative_sites ./tests/sample_files/simple.fa
 
