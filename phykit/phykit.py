@@ -22,6 +22,7 @@ from .services.alignment.rename_fasta_entries import RenameFastaEntries
 from .services.alignment.pairwise_identity import PairwiseIdentity
 
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
+from .services.tree.branch_length_multiplier import BranchLengthMultiplier
 from .services.tree.treeness import Treeness
 from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.internode_labeler import InternodeLabeler
@@ -301,6 +302,7 @@ class Phykit(object):
         ParsimonyInformative(args).run()
 
     # TODO: write unit tests
+    # TODO: consider renaming to evolutionary_rate
     def pairwise_identity(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -490,6 +492,47 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         BipartitionSupportStats(args).run()
 
+    # TODO: create unit test for this function
+    def branch_length_multiplier(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header} 
+
+                Multiply branch lengths in a phylogeny by a given factor.
+                
+                This can help modify reference trees when conducting simulations
+                or other analyses.              
+
+                Usage:
+                phykit branch_length_multiplier <tree> -f n [-o/--output]
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            an tree file
+
+                -f/--factor                 factor to multiply branch 
+                                            lengths by 
+
+                -o/--output                 optional argument to name 
+                                            the outputted tree file
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-f", "--factor",
+            type=float, required=True,
+            help=SUPPRESS
+        )
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        BranchLengthMultiplier(args).run()
+
     def dvmc(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -588,8 +631,8 @@ class Phykit(object):
                                             function name should be
                                             a tree file
 
-                -o/--output                 optional argument to print
-                                            all LB score values           
+                -o/--output                 optional argument to name 
+                                            the outputted tree file
                 """
             ),
         )

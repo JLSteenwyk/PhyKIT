@@ -28,6 +28,9 @@ run.variable_sites:
 run.bipartition_support_stats:
 	python3 -m phykit-runner bipartition_support_stats ./tests/sample_files/small_Aspergillus_tree.tre 
 
+run.branch_length_multiplier:
+	python3 phykit-runner.py branch_length_multiplier ./tests/sample_files/tree_simple.tre -f 2
+
 run.dvmc:
 	python3 -m phykit-runner dvmc -t ./tests/sample_files/tree_simple.tre -r ./tests/sample_files/tree_simple.outgroup.txt
 
