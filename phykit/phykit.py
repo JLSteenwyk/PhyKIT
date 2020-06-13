@@ -12,11 +12,13 @@ from argparse import (
 
 from .services.alignment.alignment_length import AlignmentLength
 from .services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
+from .services.alignment.gc_content import GCContent
 from .services.alignment.parsimony_informative_sites import ParsimonyInformative
 from .services.alignment.variable_sites import VariableSites
 from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
 from .services.alignment.rcv import RelativeCompositionVariability
 from .services.alignment.dna_threader import DNAThreader
+from .services.alignment.rename_fasta_entries import RenameFastaEntries
 
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.treeness import Treeness
@@ -79,11 +81,15 @@ class Phykit(object):
                     - calculates alignment length
                 alignment_length_no_gaps
                     - calculates alignment length after removing sites with gaps
+                gc_content
+                    - calculate GC content of a fasta entries or entries thereof
                 parsimony_informative_sites
                     - calculates the number and percentage of parsimony
                       informative sites in an alignment
                 rcv
                     - calculates relative composition variability in an alignment
+                rename_fasta_entries
+                    - rename entries in a fasta file
                 variable_sites
                     - calculates the number and percentage of variable sites
                       in an alignment
@@ -141,6 +147,7 @@ class Phykit(object):
         else:
             self.run_alias(args.command)
 
+    ## Aliases
     def run_alias(self, command):
         if command == 'align_len':
             return self.alignment_length()
@@ -219,6 +226,40 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         AlignmentLengthNoGaps(args).run()
 
+    # TODO: write tests
+    def gc_content(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+                
+                Calculate GC content of a fasta file.
+
+                If there are multiple entries, use the -v/--verbose option
+                to determine the GC content of each fasta entry.
+
+                Usage:
+                phykit gc_content <file> 
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be
+                                            a fasta file 
+            
+                -v, --verbose               optional argument to print
+                                            all bipartition support
+                                            values
+                """
+            ),
+        )
+        parser.add_argument("fasta", type=str, help=SUPPRESS)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        GCContent(args).run()
+
     def parsimony_informative_sites(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -285,6 +326,47 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         RelativeCompositionVariability(args).run()
+
+    # TODO: write test
+    def rename_fasta_entries(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Renames fasta entries.
+
+                Renaming fasta entries will follow the scheme of a tab-delimited
+                file wherein the first column is the current tip name and the
+                second column is the desired tip name in the resulting 
+                phylogeny. 
+
+                Usage:
+                phykit rename_fasta_entries <fasta> 
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be
+                                            a fasta file
+
+                -i/--idmap                  identifier map of current tip
+                                            names (col1) and desired tip
+                                            names (col2)
+
+                -o/--output                 optional argument to write
+                                            the renamed fasta file to          
+                """
+            ),
+        )
+        parser.add_argument("fasta", type=str, help=SUPPRESS)
+        parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
+        # TODO: write in functionality of using the output argument
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        RenameFastaEntries(args).run()
 
     def variable_sites(self):
         parser = ArgumentParser(add_help=True,

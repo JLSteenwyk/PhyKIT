@@ -6,11 +6,14 @@ class Alignment(BaseService):
         self,
         *args,
         alignment_file_path=None,
+        fasta=None,
         output_file_path=None,
         protein_file_path=None,
         nucleotide_file_path=None,
         alignment_list=None,
-        prefix=None
+        prefix=None,
+        idmap=None,
+        verbose=None
     ):
         self.alignment_file_path = alignment_file_path
         self.output_file_path = output_file_path
@@ -18,6 +21,9 @@ class Alignment(BaseService):
         self.nucleotide_file_path = nucleotide_file_path 
         self.alignment_list = alignment_list
         self.prefix = prefix
+        self.fasta = fasta
+        self.idmap = idmap
+        self.verbose = verbose
 
     def get_alignment_and_format(self):
         """
