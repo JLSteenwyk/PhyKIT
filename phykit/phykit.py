@@ -30,6 +30,7 @@ from .services.tree.rf_distance import RobinsonFouldsDistance
 from .services.tree.treeness_over_rcv import TreenessOverRCV
 from .services.tree.spurious_sequence import SpuriousSequence
 from .services.tree.print_tree import PrintTree
+from .services.tree.tip_labels import TipLabels
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -92,9 +93,13 @@ class Phykit(object):
                     - calculates summary statistics for bipartition support
                 dvmc 
                     - reports the degree of violation of the molecular clock
+                print_tree
+                    - prints ascii tree
                 spurious_sequence
                     - identifies putatively spurious sequences by identifying
                       branch lengths that are atypically long
+                tip_labels
+                    - print leaf names in a phylogeny
                 treeness
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
@@ -432,9 +437,32 @@ class Phykit(object):
 
     # TODO: fix documentation and finish writing function
     def internode_labeler(self):
-        parser = ArgumentParser()
-        parser.add_argument("tree", type=str)
-        # TODO: add output option?
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Appends numerical identifiers to bipartitions. 
+
+                Usage:
+                phykit internode_labeler <file> 
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -o/--output                 optional argument to print
+                                            all LB score values           
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        # TODO: write in functionality of using the output argument
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         InternodeLabeler(args).run()
 
@@ -519,6 +547,7 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         PatristicDistances(args).run() 
 
+    # TODO: unit test
     def print_tree(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -634,6 +663,32 @@ class Phykit(object):
         )
         args = parser.parse_args(sys.argv[2:])
         SpuriousSequence(args).run()
+
+    # TODO: unit test
+    def tip_labels(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Calculate total tree length, which is a sum of all branches. 
+
+                Usage:
+                phykit total_tree_length <file>
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        TipLabels(args).run()
 
     def total_tree_length(self):
         parser = ArgumentParser(add_help=True,

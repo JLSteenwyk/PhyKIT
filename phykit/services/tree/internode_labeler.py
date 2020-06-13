@@ -14,7 +14,7 @@ class InternodeLabeler(Tree):
         tree_file_path = args.tree
         return dict(
             tree_file_path=tree_file_path,
-            output_file_path=f"{tree_file_path}.internodeLabels.tree",
+            output_file_path=f"{tree_file_path}.internode_labels.tre",
         )
 
     def add_labels_to_tree(self, tree):

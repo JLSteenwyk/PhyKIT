@@ -20,10 +20,10 @@ Currently, the following functions are implemented in PhyKIT:
 • long termini (terminal branches with tips longer than xx the median terminal branch length)
 • create concatenation matrix
 • print ascii tree
+• print tree tip names
 
 Functions to add include:
 • correlated gene-gene evolution
-• print tree labels
 • rename tree tips
 • rename names in alignments
 • compare two trees
@@ -32,6 +32,7 @@ Functions to add include:
 • A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
 • tree and alignment file format conversion
 • branch length multiplier
+• including a outlier branch length detection method like treeShrink https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4620-2#Sec22
 
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
