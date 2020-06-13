@@ -14,6 +14,9 @@ run.rename_fasta_entries:
 run.parsimony_informative_sites:
 	python3 -m phykit-runner parsimony_informative_sites ./tests/sample_files/simple.fa
 
+run.pairwise_identity:
+	python3 phykit-runner.py pairwise_identity ./tests/sample_files/simple.fa
+
 run.rcv:
 	python3 -m phykit-runner rcv ./tests/sample_files/simple.fa
 

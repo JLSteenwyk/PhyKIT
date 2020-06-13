@@ -24,12 +24,12 @@ Currently, the following functions are implemented in PhyKIT:
 • rename tree tips
 • rename names in alignments
 • GC content calculation
+• A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
 
 Functions to add include:
 • correlated gene-gene evolution
 • compare two trees
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
-• A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
 • tree and alignment file format conversion
 • branch length multiplier
 • including a outlier branch length detection method like treeShrink https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4620-2#Sec22
