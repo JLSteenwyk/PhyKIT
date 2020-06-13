@@ -19,6 +19,7 @@ from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
 from .services.alignment.rcv import RelativeCompositionVariability
 from .services.alignment.dna_threader import DNAThreader
 from .services.alignment.rename_fasta_entries import RenameFastaEntries
+from .services.alignment.pairwise_identity import PairwiseIdentity
 
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.treeness import Treeness
@@ -83,6 +84,9 @@ class Phykit(object):
                     - calculates alignment length after removing sites with gaps
                 gc_content
                     - calculate GC content of a fasta entries or entries thereof
+                pairwise_identity
+                    - calculates average pairwise identify among sequences in
+                      an alignment file
                 parsimony_informative_sites
                     - calculates the number and percentage of parsimony
                       informative sites in an alignment
@@ -295,6 +299,49 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         ParsimonyInformative(args).run()
+
+    # TODO: write unit tests
+    def pairwise_identity(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Calculate the average pairwise identity between two
+                sequences. Pairwise identities can be used as proxies
+                for the evolutionary rate of sequences.
+
+                Pairwise identity is defined as the number of identical
+                columns between two aligned sequences divided by the
+                number of columns in the alignment. Summary statistics
+                are reported but with the verbose option, all pairwise
+                identities will be reported.
+
+                An example of pairwise identities being used as a proxy
+                for evolutionary rate can be found here: Chen et al. 
+                Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
+
+                Usage:
+                phykit pairwise_identity <alignment>
+
+                Options
+                =====================================================
+                <alignment>                 first argument after 
+                                            function name should be
+                                            an alignment file  
+
+                -v, --verbose               optional argument to print
+                                            all bipartition support
+                                            values        
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        PairwiseIdentity(args).run()
 
     def rcv(self):
         parser = ArgumentParser(add_help=True,
