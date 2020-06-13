@@ -21,10 +21,10 @@ Currently, the following functions are implemented in PhyKIT:
 • create concatenation matrix
 • print ascii tree
 • print tree tip names
+• rename tree tips
 
 Functions to add include:
 • correlated gene-gene evolution
-• rename tree tips
 • rename names in alignments
 • compare two trees
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!

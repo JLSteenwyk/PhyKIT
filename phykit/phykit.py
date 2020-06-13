@@ -31,6 +31,7 @@ from .services.tree.treeness_over_rcv import TreenessOverRCV
 from .services.tree.spurious_sequence import SpuriousSequence
 from .services.tree.print_tree import PrintTree
 from .services.tree.tip_labels import TipLabels
+from .services.tree.rename_tree_tips import RenameTreeTips
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -95,6 +96,9 @@ class Phykit(object):
                     - reports the degree of violation of the molecular clock
                 print_tree
                     - prints ascii tree
+                rename_tree_tips
+                    - renames tips in a phylogeny according to a file with
+                      the desired new tip names
                 spurious_sequence
                     - identifies putatively spurious sequences by identifying
                       branch lengths that are atypically long
@@ -581,6 +585,47 @@ class Phykit(object):
         parser.add_argument("-r", "--remove", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         PrintTree(args).run()
+
+    # TODO: fix documentation and finish writing function
+    def rename_tree_tips(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Renames tips in a phylogeny.
+
+                Renaming tip files will follow the scheme of a tab-delimited
+                file wherein the first column is the current tip name and the
+                second column is the desired tip name in the resulting 
+                phylogeny. 
+
+                Usage:
+                phykit rename_tree_tips <file> 
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -i/--idmap                  identifier map of current tip
+                                            names (col1) and desired tip
+                                            names (col2)
+
+                -o/--output                 optional argument to write
+                                            the renamed tree files to          
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
+        # TODO: write in functionality of using the output argument
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        RenameTreeTips(args).run()
 
     def rf_distance(self):
         parser = ArgumentParser(add_help=True,
