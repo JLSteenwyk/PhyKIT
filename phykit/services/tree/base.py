@@ -7,6 +7,7 @@ class Tree(BaseService):
         self,
         *args,
         tree_file_path,
+        idmap=None,
         alignment_file_path=None,
         tree1_file_path=None,
         outgroup_taxa_file_path=None,
@@ -24,6 +25,7 @@ class Tree(BaseService):
         self.verbose = verbose
         self.factor = factor
         self.remove = remove
+        self.idmap = idmap
 
     def read_tree_file(self):
         return Phylo.read(self.tree_file_path, self.tree_format)

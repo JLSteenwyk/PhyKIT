@@ -1,0 +1,8 @@
+raccoon	coon
+bear	hairy_beary
+sea_lion	lionel
+seal	sealia
+monkey	monkey_bars
+cat	cat_cars
+weasel	whistling_weasel
+dog	dogomite

@@ -37,6 +37,9 @@ run.patristic_distances:
 run.print_tree:
 	python3 -m phykit-runner print_tree ./tests/sample_files/tree_simple.tre
 
+run.rename_tree_tips:
+	python3 phykit-runner.py rename_tree_tips ./tests/sample_files/tree_simple.tre -i ./tests/sample_files/tree_simple_idmap.txt
+
 run.rf_distance:
 	python3 -m phykit-runner rf_distance ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_other_topology.tre
 
@@ -45,7 +48,7 @@ run.spurious_sequence:
 
 run.tip_labels:
 	python3 -m phykit-runner tip_labels ./tests/sample_files/tree_simple.tre
-	
+
 run.total_tree_length:
 	python3 -m phykit-runner total_tree_length ./tests/sample_files/tree_simple.tre
 
