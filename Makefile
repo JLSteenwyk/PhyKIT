@@ -43,6 +43,9 @@ run.rf_distance:
 run.spurious_sequence:
 	python3 -m phykit-runner spurious_sequence ./tests/sample_files/tree_simple.tre  
 
+run.tip_labels:
+	python3 -m phykit-runner tip_labels ./tests/sample_files/tree_simple.tre
+	
 run.total_tree_length:
 	python3 -m phykit-runner total_tree_length ./tests/sample_files/tree_simple.tre
 
