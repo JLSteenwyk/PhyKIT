@@ -29,7 +29,10 @@ run.bipartition_support_stats:
 	python3 -m phykit-runner bipartition_support_stats ./tests/sample_files/small_Aspergillus_tree.tre 
 
 run.branch_length_multiplier:
-	python3 phykit-runner.py branch_length_multiplier ./tests/sample_files/tree_simple.tre -f 2
+	python3 -m phykit-runner.py branch_length_multiplier ./tests/sample_files/tree_simple.tre -f 2
+
+run.covarying_evolutionary_rates:
+	python3 phykit-runner.py covarying_evolutionary_rates ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_1.tre -r ./tests/sample_files/tree_simple_2.tre  
 
 run.dvmc:
 	python3 -m phykit-runner dvmc -t ./tests/sample_files/tree_simple.tre -r ./tests/sample_files/tree_simple.outgroup.txt

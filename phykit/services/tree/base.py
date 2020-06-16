@@ -14,7 +14,8 @@ class Tree(BaseService):
         output_file_path=None,
         factor=None,
         remove=None,
-        verbose=None
+        verbose=None,
+        reference=None
     ):
         self.tree_file_path = tree_file_path
         self.tree1_file_path = tree1_file_path
@@ -26,12 +27,16 @@ class Tree(BaseService):
         self.factor = factor
         self.remove = remove
         self.idmap = idmap
+        self.reference = reference
 
     def read_tree_file(self):
         return Phylo.read(self.tree_file_path, self.tree_format)
 
     def read_tree1_file(self):
         return Phylo.read(self.tree1_file_path, self.tree_format)
+
+    def read_reference_tree_file(self):
+        return Phylo.read(self.reference, self.tree_format)
 
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)

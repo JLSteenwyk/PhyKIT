@@ -23,6 +23,7 @@ from .services.alignment.pairwise_identity import PairwiseIdentity
 
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.branch_length_multiplier import BranchLengthMultiplier
+from .services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
 from .services.tree.treeness import Treeness
 from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.internode_labeler import InternodeLabeler
@@ -103,6 +104,8 @@ class Phykit(object):
                 ===================
                 bipartition_support_stats
                     - calculates summary statistics for bipartition support
+                covarying_evolutionary_rates
+                    - calculates correlation in the evolutionary rate of two trees
                 dvmc 
                     - reports the degree of violation of the molecular clock
                 print_tree
@@ -532,6 +535,59 @@ class Phykit(object):
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         BranchLengthMultiplier(args).run()
+
+    # write unit tests
+    def covarying_evolutionary_rates(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Genes that have covarying evolutionary histories tend to have 
+                similar functions and expressions.
+
+                Input two trees and calculate the correlation of branch lengths
+                between the tree trees. The two input trees do not have to have
+                the same taxa. This function will first prune both trees to have
+                the same tips. Additionally, branch lengths must be corrected. 
+                Branch length correction is typically done using the putative
+                species tree's branch lengths. As recommended by the original
+                method developers, outlier branches are removed. Outlier branches
+                have a relative evolutionary rate greater than five.
+
+                Method is empirically evaluated by Clark et al., Genome Research
+                (2012), doi: 10.1101/gr.132647.111.
+
+                Usage:
+                phykit covarying_evolutionary_rates <file> 
+
+                Options
+                =====================================================
+                <tree_file_zero>            first argument after 
+                                            function name should be
+                                            an alignment file
+
+                <tree_file_one>             first argument after 
+                                            function name should be
+                                            an alignment file 
+
+                <reference_tree_file>       a tree to correct branch
+                                            lengths by in the two input
+                                            trees. Typically, this is a
+                                            putative species tree.
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tree_one", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-r", "--reference", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        CovaryingEvolutionaryRates(args).run()
 
     def dvmc(self):
         parser = ArgumentParser(add_help=True,
