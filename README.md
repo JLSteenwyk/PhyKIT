@@ -25,13 +25,13 @@ Currently, the following functions are implemented in PhyKIT:
 • rename names in alignments
 • GC content calculation
 • A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
+• branch length multiplier
 
 Functions to add include:
 • correlated gene-gene evolution
 • compare two trees
 • the ratio of the mean internal branch lengths to the mean terminal branch lengths -- this would be a new statistic so test it!
 • tree and alignment file format conversion
-• branch length multiplier
 
 
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
