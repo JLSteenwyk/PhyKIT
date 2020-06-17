@@ -10,35 +10,40 @@ from argparse import (
     RawDescriptionHelpFormatter,
 )
 
+# Alignment-based functions
 from .services.alignment.alignment_length import AlignmentLength
-from .services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
-from .services.alignment.gc_content import GCContent
-from .services.alignment.parsimony_informative_sites import ParsimonyInformative
-from .services.alignment.variable_sites import VariableSites
 from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
-from .services.alignment.rcv import RelativeCompositionVariability
-from .services.alignment.dna_threader import DNAThreader
-from .services.alignment.rename_fasta_entries import RenameFastaEntries
+from .services.alignment.gc_content import GCContent
 from .services.alignment.pairwise_identity import PairwiseIdentity
+from .services.alignment.parsimony_informative_sites import ParsimonyInformative
+from .services.alignment.rcv import RelativeCompositionVariability
+from .services.alignment.rename_fasta_entries import RenameFastaEntries
+from .services.alignment.variable_sites import VariableSites
 
+# Tree-based functions
 from .services.tree.bipartition_support_stats import BipartitionSupportStats
 from .services.tree.branch_length_multiplier import BranchLengthMultiplier
 from .services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
-from .services.tree.treeness import Treeness
-from .services.tree.total_tree_length import TotalTreeLength
-from .services.tree.internode_labeler import InternodeLabeler
-from .services.tree.lb_score import LBScore
 from .services.tree.dvmc import DVMC
 from .services.tree.internal_branch_stats import InternalBranchStats
+from .services.tree.internode_labeler import InternodeLabeler
+from .services.tree.lb_score import LBScore
+from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.patristic_distances import PatristicDistances
+from .services.tree.print_tree import PrintTree
+from .services.tree.rename_tree_tips import RenameTreeTips
 from .services.tree.rf_distance import RobinsonFouldsDistance
 from .services.tree.spurious_sequence import SpuriousSequence
-from .services.tree.print_tree import PrintTree
 from .services.tree.tip_labels import TipLabels
-from .services.tree.rename_tree_tips import RenameTreeTips
+from .services.tree.treeness import Treeness
 
-from .services.tree.treeness_over_rcv import TreenessOverRCV
+# Alignment- and tree-based functions
 from .services.tree.saturation import Saturation
+from .services.tree.treeness_over_rcv import TreenessOverRCV
+
+# Helper functions
+from .services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
+from .services.alignment.dna_threader import DNAThreader
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -82,7 +87,7 @@ class Phykit(object):
 
                 Alignment-based commands
                 ========================
-                alignment_length
+                alignment_length (alias: aln_len)
                     - calculates alignment length
                 alignment_length_no_gaps
                     - calculates alignment length after removing sites with gaps
@@ -106,15 +111,29 @@ class Phykit(object):
                 ===================
                 bipartition_support_stats
                     - calculates summary statistics for bipartition support
+                branch_length_multiplier
+                    - multiply all branch lengths by a specified factor
                 covarying_evolutionary_rates
                     - calculates correlation in the evolutionary rate of two trees
                 dvmc 
                     - reports the degree of violation of the molecular clock
+                internal_branch_stats
+                    - calculates summary statistics for internal branch lengths 
+                internode_labeler
+                    - create labels at internodes in a phylogeny
+                lb_score
+                    - calculates lb (long branch) score for taxa in a phylogeny
+                total_tree_length
+                    - calculates total tree length
+                patristic_distances
+                    - calculate all pairwise distances between tips in a tree
                 print_tree
                     - prints ascii tree
                 rename_tree_tips
                     - renames tips in a phylogeny according to a file with
                       the desired new tip names
+                rf_distance
+                    - calculates Robinson-Foulds distance between two trees
                 spurious_sequence
                     - identifies putatively spurious sequences by identifying
                       branch lengths that are atypically long
@@ -123,15 +142,7 @@ class Phykit(object):
                 treeness
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
-                total_tree_length
-                    - calculates total tree length
-                lb_score
-                    - calculates lb (long branch) score for taxa in a phylogeny
-                internal_branch_stats
-                    - calculates summary statistics for internal branch lengths 
-                internode_labeler
-                    - create labels at internodes in a phylogeny
-
+             
                 Alignment- and tree-based commands
                 ==================================
                 saturation
@@ -162,7 +173,7 @@ class Phykit(object):
 
     ## Aliases
     def run_alias(self, command):
-        if command == 'align_len':
+        if command == 'aln_len':
             return self.alignment_length()
         elif command in ['alias1', 'alias2']:
             # return self.
