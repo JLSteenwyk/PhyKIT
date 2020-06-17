@@ -32,11 +32,13 @@ from .services.tree.dvmc import DVMC
 from .services.tree.internal_branch_stats import InternalBranchStats
 from .services.tree.patristic_distances import PatristicDistances
 from .services.tree.rf_distance import RobinsonFouldsDistance
-from .services.tree.treeness_over_rcv import TreenessOverRCV
 from .services.tree.spurious_sequence import SpuriousSequence
 from .services.tree.print_tree import PrintTree
 from .services.tree.tip_labels import TipLabels
 from .services.tree.rename_tree_tips import RenameTreeTips
+
+from .services.tree.treeness_over_rcv import TreenessOverRCV
+from .services.tree.saturation import Saturation
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -132,6 +134,9 @@ class Phykit(object):
 
                 Alignment- and tree-based commands
                 ==================================
+                saturation
+                    - calculates saturation by examining the slope of
+                      patristic distance and uncorrected distances
                 treeness_over_rcv
                     - calculates treeness/rcv, treeness, and rcv
 
@@ -1022,6 +1027,51 @@ class Phykit(object):
         parser.add_argument("tree", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         Treeness(args).run()
+
+    ## Alignment and tree functions
+    # TODO: write unit tests
+    def saturation(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Saturation is defined as sequences in multiple sequence
+                alignments that have undergone numerous substitutions such
+                that the distances between taxa are underestimated.
+
+                Data with no saturation will have a value of 1. Completely
+                saturated data will have a value of 0.  
+
+                Saturation is calculated following Philippe et al., PLoS Biology
+                (2011), doi: 10.1371/journal.pbio.1000602.
+
+                Usage:
+                phykit saturation -a <alignment> -t <tree>
+
+                Options
+                =====================================================
+                -a/--alignment              an alignment file
+                
+                -t/--tree                   a tree file
+
+                -v/--verbose                print out patristic distances
+                                            and uncorrected distances used
+                                            to determine saturation
+                """
+            ),
+        )
+        parser.add_argument(
+            "-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        Saturation(args).run()
 
     def treeness_over_rcv(self):
         parser = ArgumentParser(add_help=True,
