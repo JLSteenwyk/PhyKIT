@@ -58,6 +58,9 @@ run.rename_tree_tips:
 run.rf_distance:
 	python3 -m phykit-runner rf_distance ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_other_topology.tre
 
+run.saturation:
+	python3 phykit-runner.py saturation -t ./tests/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile -a ./tests/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit
+
 run.spurious_sequence:
 	python3 -m phykit-runner spurious_sequence ./tests/sample_files/tree_simple.tre  
 

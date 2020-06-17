@@ -31,4 +31,7 @@ Currently, the following functions are implemented in PhyKIT:
 
 
 Functions to add include:
+• Create function to prune tips from a tree
+• Rename alignment record names
+
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
