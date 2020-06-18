@@ -31,14 +31,17 @@ class Alignment(BaseService):
         """
         return get_alignment_and_format_helper(self.alignment_file_path)
 
-    def calculate_alignment_length(self, alignment):
+    def calculate_alignment_length(self):
         """
         calculate alignment length
         """
         aln_len = alignment.get_alignment_length()
         return aln_len
 
-    def calculate_rcv(self, alignment, aln_len):
+    def calculate_rcv(self):
+        alignment, _ = self.get_alignment_and_format()
+        aln_len = self.calculate_alignment_length(alignment)
+
         # string to hold all sequences
         concat_seq = ''
         # initialize a counter for the number of sequences in the input fasta file

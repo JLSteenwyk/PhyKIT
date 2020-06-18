@@ -8,14 +8,8 @@ class RelativeCompositionVariability(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        # get alignment and alignment format
-        alignment, alignment_format = self.get_alignment_and_format()
-
-        # get alignment length
-        aln_len = self.calculate_alignment_length(alignment)
-
         # calc rcv and print val
-        relative_composition_variability = self.calculate_rcv(alignment, aln_len)
+        relative_composition_variability = self.calculate_rcv()
         print(f"{relative_composition_variability}")
 
     def process_args(self, args):

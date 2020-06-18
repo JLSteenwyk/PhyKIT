@@ -29,6 +29,7 @@ class Saturation(Tree):
         tree = self.read_tree_file()
 
         # combinations of tip names
+        # TODO: break out into helpers 
         tips = []
         for term in tree.get_terminals():
             tips.append(term.name)
@@ -40,6 +41,8 @@ class Saturation(Tree):
         aln_len = alignment.get_alignment_length()
 
         for combo in combos:
+            # TODO: break out pd calculation and pairiwise identity
+            # calc into helpers
             # calculate pd
             patristic_distances.append(tree.distance(combo[0], combo[1]))
             # calculate pairwise identity

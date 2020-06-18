@@ -4,7 +4,7 @@ from Bio import AlignIO
 
 from .base import Tree
 from ..alignment.base import Alignment
-from ...helpers.files import get_alignment_and_format as get_alignment_and_format_helper
+from ...helpers.files import get_alignment_and_format
 
 class FileFormat(Enum):
     fasta = "fasta"
@@ -21,16 +21,13 @@ class TreenessOverRCV(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment, alignment_format = get_alignment_and_format_helper(self.alignment_file_path)
-        
         # calculate treeness
         treeness = self.calculate_treeness()
         
         # calculate rcv
-        aln_len = alignment.get_alignment_length()
-        # TODO: check this with Thomas...still using self as arg...
-        relative_composition_variability = Alignment.calculate_rcv(self, alignment, aln_len)
-        
+        aln = Alignment(alignment_file_path=self.alignment_file_path)
+        relative_composition_variability = aln.calculate_rcv()
+
         # calculate treeness/rcv
         treeness_over_rcv = self.calculate_treeness_over_rcv(treeness, relative_composition_variability)
         
