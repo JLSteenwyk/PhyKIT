@@ -31,6 +31,7 @@ from .services.tree.lb_score import LBScore
 from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.patristic_distances import PatristicDistances
 from .services.tree.print_tree import PrintTree
+from .services.tree.prune_tree import PruneTree
 from .services.tree.rename_tree_tips import RenameTreeTips
 from .services.tree.rf_distance import RobinsonFouldsDistance
 from .services.tree.spurious_sequence import SpuriousSequence
@@ -129,6 +130,8 @@ class Phykit(object):
                     - calculate all pairwise distances between tips in a tree
                 print_tree
                     - prints ascii tree
+                prune_tree
+                    - prune taxa from a phylogeny
                 rename_tree_tips
                     - renames tips in a phylogeny according to a file with
                       the desired new tip names
@@ -829,6 +832,46 @@ class Phykit(object):
         parser.add_argument("-r", "--remove", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         PrintTree(args).run()
+
+    # TODO: unit test
+    def prune_tree(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Prune tips from a phylogeny.
+
+                Provide a single column file with the names of the tips
+                in the input phylogeny you would like to prune from the
+                tree.
+
+                Usage:
+                phykit prune_tree <tree> <list_of_taxa> [-o/--output]
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                <list_of_taxa>                single column file with the
+                                            names of the tips to remove
+                                            from the phylogeny 
+
+                -o/--output                 name of output file for the
+                                            pruned phylogeny. (Default:
+                                            is adding the suffix '.pruned')     
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        PruneTree(args).run()
 
     # TODO: fix documentation and finish writing function
     def rename_tree_tips(self):
