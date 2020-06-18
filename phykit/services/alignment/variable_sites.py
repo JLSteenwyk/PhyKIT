@@ -16,6 +16,7 @@ class VariableSites(Alignment):
         return dict(alignment_file_path=args.alignment)
 
     def calculate_variable_sites(self, alignment):
+        # TODO: use base aln length function
         aln_len = alignment.get_alignment_length()
         
         var_sites = 0

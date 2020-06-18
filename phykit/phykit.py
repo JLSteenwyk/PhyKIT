@@ -68,6 +68,8 @@ class Phykit(object):
     """
 
     # TODO: create shorthand aliases for functions
+    # TODO: consider reorganizing into types of analysis rather than
+    # input file
     def __init__(self):
         parser = ArgumentParser(
             add_help=True,

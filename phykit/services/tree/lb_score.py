@@ -10,6 +10,8 @@ import numpy as np
 
 from .base import Tree
 
+from ...helpers.stats_summary import calculate_summary_statistics, print_summary_statistics
+
 
 class LBScore(Tree):
     def __init__(self, args) -> None:
@@ -17,19 +19,14 @@ class LBScore(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        tips, LBis, stats = self.calculate_lb_score(tree)
+        tips, LBis = self.calculate_lb_score(tree)
+        # TODO: follow this scaffold when reporting summary statistics
         if self.verbose:
             for tip, LBi in zip(tips, LBis):
                 print(f"{tip}\t{LBi}")
         else:
-            print(f"mean: {stats['mean']}")
-            print(f"median: {stats['median']}")
-            print(f"25th percentile: {stats['twenty_fifth']}")
-            print(f"75th percentile: {stats['seventy_fifth']}")
-            print(f"minimum: {stats['minimum']}")
-            print(f"maximum: {stats['maximum']}")
-            print(f"standard deviation: {stats['standard_deviation']}")
-            print(f"variance: {stats['variance']}")
+            stats = calculate_summary_statistics(LBis)
+            print_summary_statistics(stats)
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
@@ -69,16 +66,5 @@ class LBScore(Tree):
             except ZeroDivisionError:
                 print("Invalid tree. Tree should contain branch lengths")
                 return None
-
-        stats = dict(
-            mean               = stat.mean(LBis),
-            median             = stat.median(LBis),
-            twenty_fifth       = np.percentile(LBis, 25),
-            seventy_fifth      = np.percentile(LBis, 75),
-            minimum            = np.min(LBis),
-            maximum            = np.max(LBis),
-            standard_deviation = stat.stdev(LBis),
-            variance           = stat.variance(LBis)
-        )
         
-        return tips, LBis, stats
+        return tips, LBis
