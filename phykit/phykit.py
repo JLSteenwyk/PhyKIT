@@ -88,23 +88,23 @@ class Phykit(object):
 
                 Alignment-based commands
                 ========================
-                alignment_length (alias: aln_len)
+                alignment_length (alias: aln_len; al)
                     - calculates alignment length
-                alignment_length_no_gaps
+                alignment_length_no_gaps (alias: aln_len_no_gaps; alng)
                     - calculates alignment length after removing sites with gaps
-                gc_content
+                gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
-                pairwise_identity
+                pairwise_identity (alias: pi)
                     - calculates average pairwise identify among sequences in
                       an alignment file
-                parsimony_informative_sites
+                parsimony_informative_sites (alias: pis)
                     - calculates the number and percentage of parsimony
                       informative sites in an alignment
-                rcv
+                relative_composition_variability (alias: rcv)
                     - calculates relative composition variability in an alignment
-                rename_fasta_entries
+                rename_fasta_entries (alias: rename_fasta)
                     - rename entries in a fasta file
-                variable_sites
+                variable_sites (alias: vs)
                     - calculates the number and percentage of variable sites
                       in an alignment
 
@@ -176,16 +176,28 @@ class Phykit(object):
 
     ## Aliases
     def run_alias(self, command):
-        if command == 'aln_len':
+        if command in ['aln_len', 'al']:
             return self.alignment_length()
-        elif command in ['alias1', 'alias2']:
-            # return self.
-            pass
+        elif command in ['aln_len_no_gaps', 'alng']:
+            return self.alignment_length_no_gaps()
+        elif command == 'gc':
+            return self.gc_content()
+        elif command == 'pi':
+            return self.pairwise_identity()
+        elif command == 'pis':
+            return self.parsimony_informative_sites()
+        elif command == 'relative_composition_variability':
+            return self.rcv()
+        elif command == 'rename_fasta':
+            return self.rename_fasta_entries()
+        elif command == 'vs':
+            return self.variable_sites()
         else:
             print("Invalid command option. See help for more details.")
             parser.print_help()
             sys.exit(1)
 
+    # TODO: include alias in help messages
     ## Alignment functions
     def alignment_length(self):
         parser = ArgumentParser(add_help=True,
@@ -198,16 +210,17 @@ class Phykit(object):
                 Longer alignments are associated with strong phylogenetic signal.
 
                 Length of the input alignment is calculated using this function.
+                
                 Association between alignment length and phylogenetic signal
                 was determined by Shen et al., Genome Biology and Evolution (2016),
                 doi: 10.1093/gbe/evw179.
 
                 Usage:
-                phykit alignment_length <file>
+                phykit alignment_length <alignment>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <alignment>                 first argument after 
                                             function name should be
                                             an alignment file           
                 """
@@ -239,11 +252,11 @@ class Phykit(object):
                 doi: 10.1093/gbe/evw179.
 
                 Usage:
-                phykit alignment_length_no_gaps <file>
+                phykit alignment_length_no_gaps <alignment>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <alignment>                 first argument after 
                                             function name should be
                                             an alignment file          
                 """
@@ -265,7 +278,7 @@ class Phykit(object):
                 Calculate GC content of a fasta file.
 
                 If there are multiple entries, use the -v/--verbose option
-                to determine the GC content of each fasta entry.
+                to determine the GC content of each fasta entry separately.
 
                 Usage:
                 phykit gc_content <file> 
@@ -306,14 +319,14 @@ class Phykit(object):
                 Association between the number of parsimony informative
                 sites and phylogenetic signal was determined by Shen 
                 et al., Genome Biology and Evolution (2016), 
-                doi: 10.1093/gbe/evw179.
+                doi: 10.1093/gbe/evw179
 
                 Usage:
-                phykit parsimony_informative_sites <file>
+                phykit parsimony_informative_sites <alignment>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <alignment>                 first argument after 
                                             function name should be
                                             an alignment file          
                 """
@@ -333,9 +346,9 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate the average pairwise identity between two
-                sequences. Pairwise identities can be used as proxies
-                for the evolutionary rate of sequences.
+                Calculate the average pairwise identity among sequences.
+                Pairwise identities can be used as proxies for the
+                evolutionary rate of sequences.
 
                 Pairwise identity is defined as the number of identical
                 columns between two aligned sequences divided by the
@@ -348,7 +361,7 @@ class Phykit(object):
                 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
                 Usage:
-                phykit pairwise_identity <alignment>
+                phykit pairwise_identity <alignment> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -376,19 +389,21 @@ class Phykit(object):
                 {self.help_header}
 
                 Lower RCV (relative composition variability) values are thought
-                to be desirable because they represent a lower composition bias.
+                to be desirable because they represent a lower composition bias
+                in an alignment.
 
-                RCV describes the average variability in composition between taxa. 
+                More specifically, RCV describes the average variability in 
+                composition among taxa. 
 
                 Calculate RCV following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
                 Usage:
-                phykit rcv <file>
+                phykit rcv <alignment>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <alignment>                 first argument after 
                                             function name should be
                                             an alignment file          
                 """
@@ -415,7 +430,8 @@ class Phykit(object):
                 phylogeny. 
 
                 Usage:
-                phykit rename_fasta_entries <fasta> 
+                phykit rename_fasta_entries <fasta> -i/--idmap <idmap.txt>
+                    [-o/--output <output_file>] 
 
                 Options
                 =====================================================
@@ -495,11 +511,11 @@ class Phykit(object):
                 To obtain all bipartition support values, use the -v/--verbose option.
 
                 Usage:
-                phykit bipartition_support_stats <file> 
+                phykit bipartition_support_stats <tree> [-v/--verbose]
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <tree>                      first argument after 
                                             function name should be
                                             a tree file 
             
@@ -529,7 +545,7 @@ class Phykit(object):
                 or other analyses.              
 
                 Usage:
-                phykit branch_length_multiplier <tree> -f n [-o/--output]
+                phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>]
 
                 Options
                 =====================================================
@@ -565,7 +581,7 @@ class Phykit(object):
                 {self.help_header}
 
                 Genes that have covarying evolutionary histories tend to have 
-                similar functions and expressions.
+                similar functions and expression levels.
 
                 Input two trees and calculate the correlation of branch lengths
                 between the tree trees. The two input trees do not have to have
@@ -580,7 +596,8 @@ class Phykit(object):
                 (2012), doi: 10.1101/gr.132647.111.
 
                 Usage:
-                phykit covarying_evolutionary_rates <file> 
+                phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
+                    [-r/--reference <reference_tree_file>]
 
                 Options
                 =====================================================
@@ -592,7 +609,7 @@ class Phykit(object):
                                             function name should be
                                             an alignment file 
 
-                <reference_tree_file>       a tree to correct branch
+                -r/--reference              a tree to correct branch
                                             lengths by in the two input
                                             trees. Typically, this is a
                                             putative species tree.
@@ -632,13 +649,13 @@ class Phykit(object):
                 following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
 
                 Usage:
-                phykit dvmc <file> 
+                phykit dvmc -t/--tree <newick_tree> -r/--root <root_taxa>
 
                 Options
                 =====================================================
-                -t, --tree <file>           input file tree name
+                -t, --tree                  input file tree name
             
-                -r, --root <file>           single column file with
+                -r, --root                  single column file with
                                             tip names of root taxa
                 """
             ),
@@ -668,7 +685,7 @@ class Phykit(object):
                 To obtain all internal branch lengths, use the -v/--verbose option. 
 
                 Usage:
-                phykit internal_branch_stats <file> 
+                phykit internal_branch_stats <file> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -695,10 +712,12 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Appends numerical identifiers to bipartitions. 
+                Appends numerical identifiers to bipartitions in place
+                of support values. This is helpful for pointing to
+                specific internodes in supplementary files or otherwise. 
 
                 Usage:
-                phykit internode_labeler <file> 
+                phykit internode_labeler <file> [-o/--output <file>]
 
                 Options
                 =====================================================
@@ -742,11 +761,11 @@ class Phykit(object):
                 Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
                 Usage:
-                phykit lb_score <file> 
+                phykit lb_score <tree> [-v/--verbose]
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <tree>                      first argument after 
                                             function name should be
                                             a tree file
 
@@ -779,7 +798,7 @@ class Phykit(object):
                 will be tab separated. 
 
                 Usage:
-                phykit patristic_distances <file> 
+                phykit patristic_distances <file> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -814,7 +833,7 @@ class Phykit(object):
                 but branch lengths can be removed using the -r/--remove argument.
 
                 Usage:
-                phykit print_tree <file> 
+                phykit print_tree <tree> [-r/--remove]
 
                 Options
                 =====================================================
@@ -849,7 +868,7 @@ class Phykit(object):
                 tree.
 
                 Usage:
-                phykit prune_tree <tree> <list_of_taxa> [-o/--output]
+                phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>]
 
                 Options
                 =====================================================
@@ -890,7 +909,8 @@ class Phykit(object):
                 phylogeny. 
 
                 Usage:
-                phykit rename_tree_tips <file> 
+                phykit rename_tree_tips <tree> -i/--idmap <idmap.txt>
+                    [-o/--output <output_file>] 
 
                 Options
                 =====================================================
@@ -938,11 +958,11 @@ class Phykit(object):
                 =====================================================
                 <tree_file_zero>            first argument after 
                                             function name should be
-                                            an alignment file
+                                            a tree file
 
-                <tree_file_one>             first argument after 
+                <tree_file_one>             second argument after 
                                             function name should be
-                                            an alignment file           
+                                            a tree file           
                 """
             ),
         )
@@ -983,7 +1003,7 @@ class Phykit(object):
                 -f/--factor                 factor to multiply median
                                             branch length by to calculate
                                             the threshold of long branches.
-                                            Default: 20
+                                            (Default: 20)
                 """
             ),
         )
@@ -1008,7 +1028,7 @@ class Phykit(object):
                 Calculate total tree length, which is a sum of all branches. 
 
                 Usage:
-                phykit total_tree_length <file>
+                phykit total_tree_length <tree>
 
                 Options
                 =====================================================
@@ -1033,11 +1053,11 @@ class Phykit(object):
                 Calculate total tree length, which is a sum of all branches. 
 
                 Usage:
-                phykit total_tree_length <file>
+                phykit total_tree_length <tree>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <tree>                      first argument after 
                                             function name should be
                                             a tree file
                 """
@@ -1068,11 +1088,11 @@ class Phykit(object):
                 (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
                 Usage:
-                phykit treeness <file>
+                phykit treeness <tree>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <tree>                      first argument after 
                                             function name should be
                                             a tree file
                 """
@@ -1103,7 +1123,7 @@ class Phykit(object):
                 (2011), doi: 10.1371/journal.pbio.1000602.
 
                 Usage:
-                phykit saturation -a <alignment> -t <tree>
+                phykit saturation -a <alignment> -t <tree> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -1151,7 +1171,7 @@ class Phykit(object):
                 Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
                 Usage:
-                phykit treeness_over_rcv <file>
+                phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
 
                 Options
                 =====================================================
@@ -1196,8 +1216,8 @@ class Phykit(object):
 
                 Options
                 =====================================================
-                -a/--alignment              alignment list file.
-                                            File should contain a single
+                -a/--alignment              alignment list file. File
+                                            should contain a single
                                             column list of alignment
                                             sequences to concatenate into
                                             a single matrix. Provide
