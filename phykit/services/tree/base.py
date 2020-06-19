@@ -6,7 +6,7 @@ class Tree(BaseService):
     def __init__(
         self,
         *args,
-        tree_file_path,
+        tree_file_path=None,
         idmap=None,
         alignment_file_path=None,
         tree1_file_path=None,
@@ -16,7 +16,9 @@ class Tree(BaseService):
         remove=None,
         verbose=None,
         reference=None,
-        list_of_taxa=None
+        list_of_taxa=None,
+        trees=None,
+        groups=None
     ):
         self.tree_file_path = tree_file_path
         self.tree1_file_path = tree1_file_path
@@ -30,6 +32,9 @@ class Tree(BaseService):
         self.idmap = idmap
         self.reference = reference
         self.list_of_taxa = list_of_taxa
+        self.trees = trees
+        self.groups = groups
+
 
     def read_tree_file(self):
         return Phylo.read(self.tree_file_path, self.tree_format)

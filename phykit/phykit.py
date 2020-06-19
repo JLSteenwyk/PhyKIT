@@ -30,6 +30,7 @@ from .services.tree.internode_labeler import InternodeLabeler
 from .services.tree.lb_score import LBScore
 from .services.tree.total_tree_length import TotalTreeLength
 from .services.tree.patristic_distances import PatristicDistances
+from .services.tree.polytomy_test import PolytomyTest
 from .services.tree.print_tree import PrintTree
 from .services.tree.prune_tree import PruneTree
 from .services.tree.rename_tree_tips import RenameTreeTips
@@ -818,6 +819,61 @@ class Phykit(object):
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         PatristicDistances(args).run() 
+
+    # TODO: write unit tests
+    def polytomy_test(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Polytomy tests can be used to identify putative radiations
+                as well as identify well supported alternative topologies.
+
+                The polytomy testing function takes as input a file with
+                the three groups of taxa to test the relationships for and
+                a single column file with the names of the desired tree files
+                to use for polytomy testing. Next, the script to examine
+                support for the grouping of the three taxa using triplets
+                and gene support frequencies. 
+
+                This function can account for uncertainty in gene trees - 
+                that is, the input phylogenies can have collapsed bipartitions.
+
+                Thereafter, a chi-squared test is conducted to determine if there
+                is evidence to reject the null hypothesis wherein the null 
+                hypothesis is that the three possible topologies among the three
+                groups are equally supported. This test is done individually for
+                triplets and then again for gene support frequencies.
+
+                Usage:
+                phykit polytomy_test <file> [-v/--verbose]
+
+                Options
+                =====================================================
+                -t, --trees                 single column file with names
+                                            of phylogenies to use for
+                                            polytomy testing
+
+                -g, --groups                a tab-delimited file with the
+                                            grouping designations to test.
+                                            Lines starting with comments 
+                                            are not considered. Names
+                                            of individual taxa should be
+                                            separated by a semi-colon  ';'
+                                            
+                For example, the groups file
+                #labels group0  group1  group2
+                name_of_test    tip_name_A;tip_name_B   tip_name_C  tip_name_D;tip_name_E
+                """
+            ),
+        )
+        parser.add_argument("-t", "--trees", type=str, help=SUPPRESS)
+        parser.add_argument("-g", "--groups", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        PolytomyTest(args).run() 
 
     # TODO: unit test
     def print_tree(self):
