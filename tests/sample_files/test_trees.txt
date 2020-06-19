@@ -1,0 +1,10 @@
+./tests/sample_files/test_trees.0.tre
+./tests/sample_files/test_trees.1.tre
+./tests/sample_files/test_trees.2.tre
+./tests/sample_files/test_trees.3.tre
+./tests/sample_files/test_trees.4.tre
+./tests/sample_files/test_trees.5.tre
+./tests/sample_files/test_trees.6.tre
+./tests/sample_files/test_trees.7.tre
+./tests/sample_files/test_trees.8.tre
+./tests/sample_files/test_trees.9.tre

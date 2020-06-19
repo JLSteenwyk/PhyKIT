@@ -49,6 +49,9 @@ run.lb_score:
 run.patristic_distances:
 	python3 -m phykit-runner patristic_distances ./tests/sample_files/tree_simple.tre
 
+run.polytomy_test:
+	python3 phykit-runner.py polytomy_test -t ./tests/sample_files/test_trees.txt -g ./tests/sample_files/test_trees_groups.txt
+
 run.print_tree:
 	python3 -m phykit-runner print_tree ./tests/sample_files/tree_simple.tre
 

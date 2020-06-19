@@ -30,5 +30,8 @@ Currently, the following functions are implemented in PhyKIT:
 • Saturation
 • Create function to prune tips from a tree
 
+• Integrate polytomy testing function
+• create function to compare two trees
+
 =============================================
 Consider writing a function that conducts objective desirability-based integration of multiple statistics
