@@ -113,55 +113,55 @@ class Phykit(object):
 
                 Tree-based commands
                 ===================
-                bipartition_support_stats
+                bipartition_support_stats (alias: bss)
                     - calculates summary statistics for bipartition support
-                branch_length_multiplier
+                branch_length_multiplier (alias: blm)
                     - multiply all branch lengths by a specified factor
-                covarying_evolutionary_rates
+                covarying_evolutionary_rates (alias: cover)
                     - calculates correlation in the evolutionary rate of two trees
-                dvmc 
+                degree_of_violation_of_a_molecular_clock (alias: dvmc)
                     - reports the degree of violation of the molecular clock
-                internal_branch_stats
+                internal_branch_stats (alias: ibs)
                     - calculates summary statistics for internal branch lengths 
-                internode_labeler
+                internode_labeler (alias: il)
                     - create labels at internodes in a phylogeny
-                lb_score
+                long_branch_score (alias: lb_score; lbs)
                     - calculates lb (long branch) score for taxa in a phylogeny
-                total_tree_length
+                total_tree_length (alias: tree_len)
                     - calculates total tree length
-                patristic_distances
+                patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
-                print_tree
+                print_tree (alias: print)
                     - prints ascii tree
-                prune_tree
+                prune_tree (alias: prune)
                     - prune taxa from a phylogeny
-                rename_tree_tips
+                rename_tree_tips (alias: rename_tree)
                     - renames tips in a phylogeny according to a file with
                       the desired new tip names
-                rf_distance
+                robinson_foulds_distance (alias: rf_distance; rf)
                     - calculates Robinson-Foulds distance between two trees
-                spurious_sequence
+                spurious_sequence (alias: spurious_seq; ss)
                     - identifies putatively spurious sequences by identifying
                       branch lengths that are atypically long
-                tip_labels
+                tip_labels (alias: labels)
                     - print leaf names in a phylogeny
-                treeness
+                treeness (alias: tness)
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
              
                 Alignment- and tree-based commands
                 ==================================
-                saturation
+                saturation (alias: sat)
                     - calculates saturation by examining the slope of
                       patristic distance and uncorrected distances
-                treeness_over_rcv
+                treeness_over_rcv (alias: toverr)
                     - calculates treeness/rcv, treeness, and rcv
 
                 Helper commands
                 ===============
-                create_concatenation_matrix
+                create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments
-                thread_dna
+                thread_dna (alias: pal2nal; p2n)
                     - thread dna sequences over a protein alignment
                 """
             ),
@@ -179,6 +179,7 @@ class Phykit(object):
 
     ## Aliases
     def run_alias(self, command):
+        # Alignment aliases
         if command in ['aln_len', 'al']:
             return self.alignment_length()
         elif command in ['aln_len_no_gaps', 'alng']:
@@ -195,6 +196,49 @@ class Phykit(object):
             return self.rename_fasta_entries()
         elif command == 'vs':
             return self.variable_sites()
+        # Tree aliases
+        elif command == 'bss':
+            return self.bipartition_support_stats()
+        elif command == 'blm':
+            return self.branch_length_multiplier()
+        elif command == 'cover':
+            return self.covarying_evolutionary_rates()
+        elif command == 'degree_of_violation_of_a_molecular_clock':
+            return self.dvmc()
+        elif command == 'ibs':
+            return self.internal_branch_stats()
+        elif command == 'il':
+            return self.internode_labeler()
+        elif command in ['long_branch_score', 'lbs']:
+            return self.lb_score()
+        elif command == 'tree_len':
+            return self.total_tree_length
+        elif command == 'pd':
+            return self.patristic_distances()
+        elif command == 'print':
+            return self.print_tree()
+        elif command == 'prune':
+            return self.prune_tree()
+        elif command == 'rename_tree':
+            return self.rename_tree_tips()
+        elif command in ['robinson_foulds_distance', 'rf']:
+            return self.rf_distance()
+        elif command in ['spurious_seq', 'ss']:
+            return self.spurious_sequence()
+        elif command == 'labels':
+            return self.tip_labels()
+        elif command == 'tness':
+            return self.treeness()
+        # Alignment- and tree-based aliases
+        elif command == 'sat':
+            return self.saturation()
+        elif command == 'toverr':
+            return self.treeness_over_rcv()
+        # Helper aliases
+        elif command in ['create_concat', 'cc']:
+            return self.create_concatenation_matrix()
+        elif command in ['pal2nal', 'p2n']:
+            return self.thread_dna()
         else:
             print("Invalid command option. See help for more details.")
             parser.print_help()
@@ -1310,8 +1354,12 @@ class Phykit(object):
                 {self.help_header}
 
                 Thread DNA sequence onto a protein alignment to create a
-                codon-based alignment. Note, sequences should occur in the
-                same order in the protein and nucleotide alignment.
+                codon-based alignment. 
+                
+                This function requires input alignments are in fasta format.
+                Codon alignments are then printed to stdout. Note, sequences
+                should occur in the same order in the protein and nucleotide
+                alignment.
 
                 Usage:
                 phykit thread_dna -p <file> -n <file> [-s]
