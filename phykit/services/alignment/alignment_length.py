@@ -7,8 +7,8 @@ class AlignmentLength(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment, file_format = self.get_alignment_and_format()
-        aln_len = self.calculate_alignment_length(alignment)
+        alignment, _ = self.get_alignment_and_format()
+        aln_len = alignment.get_alignment_length()
         if aln_len:
             print(f"{aln_len}")
 

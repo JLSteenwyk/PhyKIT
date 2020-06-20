@@ -8,14 +8,14 @@ run.alignment_length_no_gaps:
 run.gc_content:
 	python3 phykit-runner.py gc_content ./tests/sample_files/simple.fa
 
-run.rename_fasta_entries:
-	python3 phykit-runner.py rename_fasta_entries ./tests/sample_files/simple.fa -i tests/sample_files/simple_fasta_idmap.txt 
+run.pairwise_identity:
+	python3 phykit-runner.py pairwise_identity ./tests/sample_files/simple.fa
 
 run.parsimony_informative_sites:
 	python3 -m phykit-runner parsimony_informative_sites ./tests/sample_files/simple.fa
 
-run.pairwise_identity:
-	python3 phykit-runner.py pairwise_identity ./tests/sample_files/simple.fa
+run.rename_fasta_entries:
+	python3 phykit-runner.py rename_fasta_entries ./tests/sample_files/simple.fa -i tests/sample_files/simple_fasta_idmap.txt 
 
 run.rcv:
 	python3 -m phykit-runner rcv ./tests/sample_files/simple.fa
@@ -29,7 +29,7 @@ run.bipartition_support_stats:
 	python3 -m phykit-runner bipartition_support_stats ./tests/sample_files/small_Aspergillus_tree.tre 
 
 run.branch_length_multiplier:
-	python3 -m phykit-runner.py branch_length_multiplier ./tests/sample_files/tree_simple.tre -f 2
+	python3 phykit-runner.py branch_length_multiplier ./tests/sample_files/tree_simple.tre -f 2
 
 run.covarying_evolutionary_rates:
 	python3 phykit-runner.py covarying_evolutionary_rates ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_1.tre -r ./tests/sample_files/tree_simple_2.tre  
@@ -54,6 +54,9 @@ run.polytomy_test:
 
 run.print_tree:
 	python3 -m phykit-runner print_tree ./tests/sample_files/tree_simple.tre
+
+run.prune_tree:
+	python3 phykit-runner.py prune ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_prune.txt
 
 run.rename_tree_tips:
 	python3 phykit-runner.py rename_tree_tips ./tests/sample_files/tree_simple.tre -i ./tests/sample_files/tree_simple_idmap.txt

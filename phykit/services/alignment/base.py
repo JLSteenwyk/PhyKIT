@@ -40,7 +40,7 @@ class Alignment(BaseService):
 
     def calculate_rcv(self):
         alignment, _ = self.get_alignment_and_format()
-        aln_len = self.calculate_alignment_length(alignment)
+        aln_len = alignment.get_alignment_length()
 
         # string to hold all sequences
         concat_seq = ''
