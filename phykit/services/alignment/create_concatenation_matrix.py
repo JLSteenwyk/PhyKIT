@@ -1,7 +1,7 @@
 import statistics as stat
-
 from Bio import SeqIO, SeqRecord
 from Bio.Seq import Seq
+from textwrap import dedent
 
 from .base import Alignment
 
@@ -40,17 +40,22 @@ class CreateConcatenationMatrix(Alignment):
         file_occupancy = prefix + ".occupancy"
 
         # print log message
-        print("\n"+"-"*(len("- General features -")))
-        print("| General features |")
-        print("-"*(len("- General features -")))
-        print("Total number of taxa:", len(taxa))
-        print("Total number of alignments:", len(alignments))
-        print("\n\n"+"-"*(len("- Output files -")))
-        print("| Output files |")
-        print("-"*(len("- Output files -")))
-        print("partition file output:", file_partition)
-        print("concatenated fasta output:", fasta_output)
-        print("occupancy report:", file_occupancy)
+        start_message = dedent(f"""
+            --------------------
+            | General features |
+            --------------------
+            Total number of taxa: {len(taxa)}
+            Total number of alignments: {len(alignments)}
+
+
+            ----------------
+            | Output files |
+            ----------------
+            Partition file output: {file_partition}
+            Concatenated fasta output: {fasta_output}
+            Occupancy report: {file_occupancy}
+        """)
+        print(start_message)
 
         # # assigning placeholders for lengths
         first_len    = 1
