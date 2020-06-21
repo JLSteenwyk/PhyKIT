@@ -1,3 +1,0 @@
-12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit
-12_YPR190C_Anc_7.547_codon_aln.fasta.clipkit
-12_YPR189W_Anc_7.546_codon_aln.fasta.clipkit
