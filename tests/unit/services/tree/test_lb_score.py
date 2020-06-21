@@ -1,8 +1,16 @@
 import pytest
+from argparse import Namespace
 from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.lb_score import LBScore
+
+
+@pytest.fixture
+def args():
+    kwargs = dict(tree="/some/path/to/file.tre", verbose=None)
+    return Namespace(**kwargs)
+
 
 class TestLBScore(object):
     def test_init_sets_tree_file_path(self, args):
@@ -23,24 +31,27 @@ class TestLBScore(object):
 
     def test_calculate_treeness(self, tree_simple, args):
         t = LBScore(args)
-        tips, LBis, stats = t.calculate_lb_score(tree_simple)
-        assert isinstance(stats['mean'], float)
-        assert isinstance(stats['median'], float)
-        assert isinstance(stats['twenty_fifth'], float)
-        assert isinstance(stats['seventy_fifth'], float)
-        assert isinstance(stats['standard_deviation'], float)
-        assert isinstance(stats['variance'], float)
-        assert isinstance(stats['minimum'], float)
-        assert isinstance(stats['maximum'], float)
-        assert isclose(stats['mean'], -12.50000000000002, rel_tol=0.001)
-        assert isclose(stats['median'], -27.80598423286591, rel_tol=0.001)
-        assert isclose(stats['twenty_fifth'], -31.04918307557076, rel_tol=0.001)
-        assert isclose(stats['seventy_fifth'], -12.903859858133497, rel_tol=0.001)
-        assert isclose(stats['standard_deviation'], 35.26687859163367, rel_tol=0.001)
-        assert isclose(stats['variance'], 1243.7527255970294, rel_tol=0.001)
-        assert isclose(stats['minimum'], -39.283360704291205, rel_tol=0.001)
-        assert isclose(stats['maximum'], 65.67086344271493, rel_tol=0.001)
-
-
-
-
+        tips, LBis = t.calculate_lb_score(tree_simple)
+        expected_tips = [
+            "raccoon",
+            "bear",
+            "sea_lion",
+            "seal",
+            "monkey",
+            "cat",
+            "weasel",
+            "dog",
+        ]
+        expected_LBis = [
+            -27.07902352846223,
+            -39.283360704291205,
+            -31.053612361805104,
+            -31.04770664682598,
+            65.67086344271493,
+            12.796396820175548,
+            -28.5329449372696,
+            -21.470612084236517,
+        ]
+        assert tips == expected_tips
+        for idx, value in enumerate(LBis):
+            assert isclose(value, expected_LBis[idx], rel_tol=0.001)

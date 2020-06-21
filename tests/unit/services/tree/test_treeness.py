@@ -1,8 +1,15 @@
 import pytest
+from argparse import Namespace
 from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.treeness import Treeness
+
+
+@pytest.fixture
+def args():
+    kwargs = dict(tree="/some/path/to/file.tre",)
+    return Namespace(**kwargs)
 
 
 class TestTreeness(object):

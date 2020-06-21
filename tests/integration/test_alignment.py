@@ -49,9 +49,9 @@ class TestAlignment(object):
 			----------------
 			| Output files |
 			----------------
-			partition file output: output/create_concat_matrix.partition
-			concatenated fasta output: output/create_concat_matrix.fa
-			occupancy report: output/create_concat_matrix.occupancy
+			Partition file output: output/create_concat_matrix.partition
+			Concatenated fasta output: output/create_concat_matrix.fa
+			Occupancy report: output/create_concat_matrix.occupancy
 			"""
         )
         testargs = [
@@ -68,4 +68,3 @@ class TestAlignment(object):
             call(expected_start_message),
             call("Complete!\n"),
         ]
-

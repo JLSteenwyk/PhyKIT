@@ -1,8 +1,15 @@
 import pytest
+from argparse import Namespace
 from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.total_tree_length import TotalTreeLength
+
+
+@pytest.fixture
+def args():
+    kwargs = dict(tree="/some/path/to/file.tre",)
+    return Namespace(**kwargs)
 
 
 class TestTotalTreeLength(object):
@@ -17,7 +24,9 @@ class TestTotalTreeLength(object):
         t.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
 
-    def test_calculate_total_tree_length_zero_branch_len(self, tree_zero_branch_length, args):
+    def test_calculate_total_tree_length_zero_branch_len(
+        self, tree_zero_branch_length, args
+    ):
         t = TotalTreeLength(args)
         res = t.calculate_total_tree_length(tree_zero_branch_length)
         assert res == 0

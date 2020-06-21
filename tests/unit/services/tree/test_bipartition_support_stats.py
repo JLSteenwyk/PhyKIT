@@ -1,8 +1,16 @@
 import pytest
+from argparse import Namespace
 from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.bipartition_support_stats import BipartitionSupportStats
+
+
+@pytest.fixture
+def args():
+    kwargs = dict(tree="/some/path/to/file.tre", verbose=None)
+    return Namespace(**kwargs)
+
 
 class TestBipartitionSupportStats(object):
     def test_init_sets_tree_file_path(self, args):
@@ -19,17 +27,17 @@ class TestBipartitionSupportStats(object):
     def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):
         t = BipartitionSupportStats(args)
         bs_vals, stats = t.calculate_bipartition_support_stats(small_aspergillus_tree)
-        assert isinstance(stats['mean'], float)
-        assert isinstance(stats['median'], (int or float))
-        assert isinstance(stats['twenty_fifth'], float)
-        assert isinstance(stats['seventy_fifth'], float)
-        assert isinstance(stats['standard_deviation'], float)
-        assert isinstance(stats['variance'], float)
-        assert isclose(stats['mean'], 95.71428571428571, rel_tol=0.001)
-        assert isclose(stats['median'], 100, rel_tol=0.001)
-        assert isclose(stats['twenty_fifth'], 92.5, rel_tol=0.001)
-        assert isclose(stats['seventy_fifth'], 100.0, rel_tol=0.001)
-        assert isclose(stats['standard_deviation'], 7.319250547113999, rel_tol=0.001)
-        assert isclose(stats['variance'], 53.57142857142857, rel_tol=0.001)
-        assert isclose(stats['minimum'], 85, rel_tol=0.001)
-        assert isclose(stats['maximum'], 100, rel_tol=0.001)
+        assert isinstance(stats["mean"], float)
+        assert isinstance(stats["median"], (int or float))
+        assert isinstance(stats["twenty_fifth"], float)
+        assert isinstance(stats["seventy_fifth"], float)
+        assert isinstance(stats["standard_deviation"], float)
+        assert isinstance(stats["variance"], float)
+        assert isclose(stats["mean"], 95.71428571428571, rel_tol=0.001)
+        assert isclose(stats["median"], 100, rel_tol=0.001)
+        assert isclose(stats["twenty_fifth"], 92.5, rel_tol=0.001)
+        assert isclose(stats["seventy_fifth"], 100.0, rel_tol=0.001)
+        assert isclose(stats["standard_deviation"], 7.319250547113999, rel_tol=0.001)
+        assert isclose(stats["variance"], 53.57142857142857, rel_tol=0.001)
+        assert isclose(stats["minimum"], 85, rel_tol=0.001)
+        assert isclose(stats["maximum"], 100, rel_tol=0.001)

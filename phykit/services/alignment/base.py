@@ -31,7 +31,7 @@ class Alignment(BaseService):
         """
         return get_alignment_and_format_helper(self.alignment_file_path)
 
-    def calculate_alignment_length(self):
+    def calculate_alignment_length(self, alignment):
         """
         calculate alignment length
         """

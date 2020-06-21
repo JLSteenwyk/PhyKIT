@@ -6,6 +6,12 @@ from math import isclose
 from phykit.services.tree.internode_labeler import InternodeLabeler
 
 
+@pytest.fixture
+def args():
+    kwargs = dict(tree="/some/path/to/file.tre",)
+    return Namespace(**kwargs)
+
+
 class TestInternodeLabeler(object):
     def test_init_sets_tree_file_path(self, args):
         internode_labeler = InternodeLabeler(args)
@@ -13,7 +19,7 @@ class TestInternodeLabeler(object):
 
     def test_init_sets_output_file_path(self, args):
         internode_labeler = InternodeLabeler(args)
-        assert internode_labeler.output_file_path == f"{args.tree}.internodeLabels.tree"
+        assert internode_labeler.output_file_path == f"{args.tree}.internode_labels.tre"
 
     def test_read_file_reads_tree_file_path(self, mocker, args):
         mock_read = mocker.patch("phykit.services.tree.base.Phylo.read")

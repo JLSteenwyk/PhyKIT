@@ -4,6 +4,13 @@ from math import isclose
 
 from phykit.services.alignment.variable_sites import VariableSites
 
+
+@pytest.fixture
+def args():
+    kwargs = dict(alignment="/some/path/to/file.fa")
+    return Namespace(**kwargs)
+
+
 class TestVariableSites(object):
     def test_init_sets_alignment_file_path(self, args):
         vs = VariableSites(args)
@@ -12,7 +19,9 @@ class TestVariableSites(object):
 
     def test_variable_sites(self, alignment_simple, args):
         vs = VariableSites(args)
-        var_sites, aln_len, var_sites_per = vs.calculate_variable_sites(alignment_simple)
+        var_sites, aln_len, var_sites_per = vs.calculate_variable_sites(
+            alignment_simple
+        )
         assert isinstance(var_sites, int)
         assert isinstance(aln_len, int)
         assert isinstance(var_sites_per, float)
