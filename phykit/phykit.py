@@ -10,42 +10,41 @@ from argparse import (
     RawDescriptionHelpFormatter,
 )
 
-# Alignment-based functions
-from .services.alignment.alignment_length import AlignmentLength
-from .services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
-from .services.alignment.gc_content import GCContent
-from .services.alignment.pairwise_identity import PairwiseIdentity
-from .services.alignment.parsimony_informative_sites import ParsimonyInformative
-from .services.alignment.rcv import RelativeCompositionVariability
-from .services.alignment.rename_fasta_entries import RenameFastaEntries
-from .services.alignment.variable_sites import VariableSites
+from .services.alignment import (
+    AlignmentLength,
+    AlignmentLengthNoGaps,
+    CreateConcatenationMatrix,
+    DNAThreader,
+    GCContent,
+    PairwiseIdentity,
+    ParsimonyInformative,
+    RelativeCompositionVariability,
+    RenameFastaEntries,
+    VariableSites
+)
 
-# Tree-based functions
-from .services.tree.bipartition_support_stats import BipartitionSupportStats
-from .services.tree.branch_length_multiplier import BranchLengthMultiplier
-from .services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
-from .services.tree.dvmc import DVMC
-from .services.tree.internal_branch_stats import InternalBranchStats
-from .services.tree.internode_labeler import InternodeLabeler
-from .services.tree.lb_score import LBScore
-from .services.tree.total_tree_length import TotalTreeLength
-from .services.tree.patristic_distances import PatristicDistances
-from .services.tree.polytomy_test import PolytomyTest
-from .services.tree.print_tree import PrintTree
-from .services.tree.prune_tree import PruneTree
-from .services.tree.rename_tree_tips import RenameTreeTips
-from .services.tree.rf_distance import RobinsonFouldsDistance
-from .services.tree.spurious_sequence import SpuriousSequence
-from .services.tree.tip_labels import TipLabels
-from .services.tree.treeness import Treeness
+from .services.tree import (
+    BipartitionSupportStats,
+    BranchLengthMultiplier,
+    CovaryingEvolutionaryRates,
+    DVMC,
+    InternalBranchStats,
+    InternodeLabeler,
+    LBScore,
+    TotalTreeLength,
+    PatristicDistances,
+    PolytomyTest,
+    PrintTree,
+    PruneTree,
+    RenameTreeTips,
+    RobinsonFouldsDistance,
+    Saturation,
+    SpuriousSequence,
+    TipLabels,
+    Treeness,
+    TreenessOverRCV
+)
 
-# Alignment- and tree-based functions
-from .services.tree.saturation import Saturation
-from .services.tree.treeness_over_rcv import TreenessOverRCV
-
-# Helper functions
-from .services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
-from .services.alignment.dna_threader import DNAThreader
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
