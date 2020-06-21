@@ -6,7 +6,7 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-REQUIRES = ["biopython==1.76"]
+REQUIRES = ["biopython==1.76", "scipy==1.4.1"]
 
 setup(
     name="phykit",
