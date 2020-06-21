@@ -1,8 +1,18 @@
 import pytest
+from argparse import Namespace
 from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.rf_distance import RobinsonFouldsDistance
+
+
+@pytest.fixture
+def args():
+    kwargs = dict(
+        tree_zero="/some/path/to/file.tre", tree_one="/some/path/to/file.tre",
+    )
+    return Namespace(**kwargs)
+
 
 class TestRobinsonFouldsDistance(object):
     def test_init_sets_tree_file_path(self, args):
@@ -20,7 +30,9 @@ class TestRobinsonFouldsDistance(object):
 
     def test_calculate_patristic_distances(self, tree_simple, tree_simple_other, args):
         rf = RobinsonFouldsDistance(args)
-        plain_rf, normalized_rf = rf.calculate_robinson_foulds_distance(tree_simple, tree_simple_other)
+        plain_rf, normalized_rf = rf.calculate_robinson_foulds_distance(
+            tree_simple, tree_simple_other
+        )
         assert isinstance(plain_rf, int)
         assert isinstance(normalized_rf, float)
         assert plain_rf == 8

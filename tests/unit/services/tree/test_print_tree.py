@@ -1,8 +1,16 @@
 import pytest
+from argparse import Namespace
 from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.print_tree import PrintTree
+
+
+@pytest.fixture
+def args():
+    kwargs = dict(tree="/some/path/to/file.tre", remove=None)
+    return Namespace(**kwargs)
+
 
 class TestPrintTree(object):
     def test_init_sets_tree_file_path(self, args):
