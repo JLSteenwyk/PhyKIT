@@ -29,8 +29,8 @@ Currently, the following functions are implemented in PhyKIT:
 • correlated gene-gene evolution
 • Saturation
 • Create function to prune tips from a tree
-
 • Integrate polytomy testing function
+
 
 
 =============================================
