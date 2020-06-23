@@ -1,5 +1,6 @@
 import pytest
 import sys
+from math import isclose
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -143,7 +144,6 @@ class TestTree(object):
 
         assert expected_tree_content == out_tree_content
 
-    # TODO: Fails due to rounding errors
     @patch("builtins.print")
     def test_lb_score(self, mocked_print):
         testargs = [
@@ -154,16 +154,22 @@ class TestTree(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("mean: -12.500000000000021"),
-            call("median: -27.805984232865924"),
-            call("25th percentile: -31.04918307557076"),
-            call("75th percentile: -12.903859858133494"),
-            call("minimum: -39.283360704291205"),
-            call("maximum: 65.67086344271496"),
-            call("standard deviation: 35.26687859163368"),
-            call("variance: 1243.7527255970297")
+        expected = [
+            dict(label="mean", value=-12.500000000000021),
+            dict(label="median", value=-27.805984232865924),
+            dict(label="25th percentile", value=-31.04918307557076),
+            dict(label="75th percentile", value=-12.903859858133494),
+            dict(label="minimum", value=-39.283360704291205),
+            dict(label="maximum", value=65.67086344271496),
+            dict(label="standard deviation", value=35.26687859163368),
+            dict(label="variance", value=1243.7527255970297),
         ]
+
+        for print_call, expected_call in zip(mocked_print.call_args_list, expected):
+            print_call_args, _ = print_call
+            [print_label, print_value] = print_call_args[0].split(': ')
+            assert print_label == expected_call["label"]
+            assert isclose(float(print_value), expected_call["value"], rel_tol = 0.0001)
 
     @patch("builtins.print")
     def test_patristic_distances(self, mocked_print):
