@@ -63,7 +63,7 @@ class Saturation(Tree):
             for combo, pairwise_identity, patristic_distance in zip(combos, pairwise_identities, patristic_distances):
                 print(f"{combo[0]}-{combo[1]}\t{pairwise_identity}\t{patristic_distance}")
         else:
-            print(r_value**2)
+            print(str(r_value**2))
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, alignment_file_path=args.alignment, verbose=args.verbose)

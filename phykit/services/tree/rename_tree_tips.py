@@ -32,5 +32,5 @@ class RenameTreeTips(Tree):
         return dict(
             tree_file_path=tree_file_path, 
             idmap=args.idmap,
-            output_file_path=f"{tree_file_path}.internode_labels.tre"
+            output_file_path=f"{tree_file_path}.renamed.tre"
             )
