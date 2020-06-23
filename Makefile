@@ -103,9 +103,9 @@ develop:
 test: test.unit test.integration
 
 test.unit:
-	python -m pytest -m "not integration"
+	python3 -m pytest -m "not integration"
 
 test.integration:
 	rm -rf output/
 	mkdir output/
-	python -m pytest --basetemp=output -m "integration"
+	python3 -m pytest --basetemp=output -m "integration"
