@@ -18,7 +18,8 @@ class Tree(BaseService):
         reference=None,
         list_of_taxa=None,
         trees=None,
-        groups=None
+        groups=None,
+        support=None
     ):
         self.tree_file_path = tree_file_path
         self.tree1_file_path = tree1_file_path
@@ -34,6 +35,7 @@ class Tree(BaseService):
         self.list_of_taxa = list_of_taxa
         self.trees = trees
         self.groups = groups
+        self.support = support
 
 
     def read_tree_file(self):

@@ -53,6 +53,26 @@ class TestTree(object):
         assert expected_tree_content == out_tree_content
 
     @patch("builtins.print")
+    def test_branch_length_multiplier(self, mocked_print):
+        testargs = [
+            "phykit",
+            "collapse_branches",
+            f"{here.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "-s",
+            "100",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        with open(f"{here.parent}/expected/small_Aspergillus_tree.tre.collapsed_100.0.tre", "r") as expected_tree:
+            expected_tree_content = expected_tree.read()
+
+        with open(f"{here.parent.parent}/sample_files/small_Aspergillus_tree.tre.collapsed_100.0.tre", "r") as out_tree:
+            out_tree_content = out_tree.read()
+
+        assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
     def test_covarying_evolutionary_rates(self, mocked_print):
         expected_result = "0.6768674714051391\t0.06522847778914183"
         testargs = [

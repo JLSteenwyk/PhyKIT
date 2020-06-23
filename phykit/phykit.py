@@ -26,6 +26,7 @@ from .services.alignment import (
 from .services.tree import (
     BipartitionSupportStats,
     BranchLengthMultiplier,
+    CollapseBranches,
     CovaryingEvolutionaryRates,
     DVMC,
     InternalBranchStats,
@@ -115,6 +116,8 @@ class Phykit(object):
                     - calculates summary statistics for bipartition support
                 branch_length_multiplier (alias: blm)
                     - multiply all branch lengths by a specified factor
+                collapse_branches (alias: collapse; cb)
+                    - collapses branches according to bipartition support
                 covarying_evolutionary_rates (alias: cover)
                     - calculates correlation in the evolutionary rate of two trees
                 degree_of_violation_of_a_molecular_clock (alias: dvmc)
@@ -199,6 +202,8 @@ class Phykit(object):
             return self.bipartition_support_stats()
         elif command == 'blm':
             return self.branch_length_multiplier()
+        elif command in ['collapse', 'cb']:
+            return self.collapse_branches()
         elif command == 'cover':
             return self.covarying_evolutionary_rates()
         elif command == 'degree_of_violation_of_a_molecular_clock':
@@ -615,6 +620,46 @@ class Phykit(object):
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         BranchLengthMultiplier(args).run()
+
+    # TODO: create unit test for this function
+    def collapse_branches(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header} 
+
+                Collapse branches on a phylogeny according to bipartition support.
+                Bipartitions will be collapsed if they are less than the user specified
+                value.              
+
+                Usage:
+                phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>]
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            an tree file
+
+                -s/--support                bipartitions with support less
+                                            than this value will be collapsed
+
+                -o/--output                 optional argument to name 
+                                            the outputted tree file
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-s", "--support",
+            type=float, required=True,
+            help=SUPPRESS
+        )
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        CollapseBranches(args).run()
 
     # write unit tests
     def covarying_evolutionary_rates(self):

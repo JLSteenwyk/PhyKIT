@@ -31,6 +31,9 @@ run.bipartition_support_stats:
 run.branch_length_multiplier:
 	python3 phykit-runner.py branch_length_multiplier ./tests/sample_files/tree_simple.tre -f 2
 
+run.collapse_branches:
+	python3 phykit-runner.py collapse_branches ./tests/sample_files/small_Aspergillus_tree.tre -s 100
+
 run.covarying_evolutionary_rates:
 	python3 phykit-runner.py covarying_evolutionary_rates ./tests/sample_files/tree_simple.tre ./tests/sample_files/tree_simple_1.tre -r ./tests/sample_files/tree_simple_2.tre  
 
@@ -38,7 +41,7 @@ run.dvmc:
 	python3 -m phykit-runner dvmc -t ./tests/sample_files/tree_simple.tre -r ./tests/sample_files/tree_simple.outgroup.txt
 
 run.internal_branch_stats:
-	python3 -m phykit-runner internal_branch_stats ./tests/sample_files/tree_simple.tre
+	python3 -m phykit-runner collapse_branches ./tests/sample_files/tree_simple.tre
 
 run.internode_labeler:
 	python3 -m phykit-runner internode_labeler ./tests/sample_files/tree_simple.tre

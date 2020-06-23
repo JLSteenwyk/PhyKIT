@@ -17,3 +17,4 @@ from .spurious_sequence import SpuriousSequence
 from .tip_labels import TipLabels
 from .treeness import Treeness
 from .treeness_over_rcv import TreenessOverRCV
+from .collapse_branches import CollapseBranches
