@@ -12,6 +12,17 @@ here = Path(__file__)
 def pytest_configure(config):
     config.addinivalue_line("markers", "integration: mark as integration test")
 
+# alignment fixtures
+@pytest.fixture
+def alignment_simple(mocker):
+    return AlignIO.read(open(f"{here.parent}/sample_files/simple.fa"), "fasta")
+
+@pytest.fixture
+def alignments(mocker):
+    alignment_list = f"{here.parent}/sample_files/alignment_list_for_create_concat_matrix.txt"
+    alignments = [line.rstrip('\n') for line in open(alignment_list)]
+    return alignments
+
 
 # tree fixtures
 @pytest.fixture
@@ -47,8 +58,3 @@ def small_aspergillus_tree(mocker):
         f"{here.parent}/sample_files/small_Aspergillus_tree.tre", "newick",
     )
 
-
-# alignment fixtures
-@pytest.fixture
-def alignment_simple(mocker):
-    return AlignIO.read(open(f"{here.parent}/sample_files/simple.fa"), "fasta")
