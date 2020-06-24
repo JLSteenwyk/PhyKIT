@@ -35,6 +35,7 @@ class CreateConcatenationMatrix(Alignment):
             for indiv in alignment:
                 if indiv.name not in taxa:
                     taxa.append(indiv.name)
+
         return taxa
     
     def start_message_print(
