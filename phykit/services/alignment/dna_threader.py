@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from Bio import SeqIO, SeqRecord
 
 from .base import Alignment
@@ -24,50 +26,113 @@ class DNAThreader(Alignment):
 
         if pal2nal:
             for record in pal2nal:
-                print(f">{record}\n{pal2nal[record]}")
+                print(f">{record}\n{''.join(pal2nal[record])}")
 
-    def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
+    def read_file(
+        self,
+        file_path: str,
+        file_format: str = "fasta"
+    ) -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
 
-    def thread(self, protein: SeqRecord, nucleotide: SeqRecord) -> dict:
+    def thread(
+        self,
+        protein: SeqRecord,
+        nucleotide: SeqRecord
+    ) -> dict:
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
         for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
-            gene_id = protein_seq_record.id
+            # get gene id and sequences
+            gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
 
-            # save protein sequence to p_seq
-            p_seq = protein_seq_record.seq
-
-            # save nucleotide sequence to n_seq
-            n_seq = nucleotide_seq_record.seq
-
-            pal2nal[gene_id] = ""
+            # initialize gap counter and gene in pal2nal dict
             gap_count = 0
+            pal2nal[gene_id] = []
 
             # loop through the sequence
-            for AA in range(0, (int(len(p_seq)) + 1) - 1, 1):
-                if self.include_stop_codon:
-                    # if AA is a gap insert a codon of gaps
-                    if p_seq[AA] == "-":
-                        pal2nal[gene_id] += "---"
-                        gap_count += 1
-                    # if AA is not a gap, insert the corresponding codon
-                    elif p_seq[AA] != "-":
-                        NTwin = (AA - gap_count) * 3
-                        pal2nal[gene_id] += n_seq[NTwin : NTwin + 3]
+            for aa_idx in range(0, len(p_seq), 1):
+                # if AA is a gap insert a codon of gaps
+                if p_seq[aa_idx] == "-":
+                    pal2nal = self.add_gap(pal2nal, gene_id)
+                    gap_count += 1
                 else:
-                    # if AA is a gap insert a codon of gaps
-                    if p_seq[AA] == "-":
-                        pal2nal[gene_id] += "---"
-                        gap_count += 1
-                    # if AA is not a gap, insert the corresponding codon
-                    elif p_seq[AA] != "-":
+                    if self.include_stop_codon:
+                        # if AA is not a gap, insert the corresponding codon
+                        if p_seq[aa_idx] != "-":
+                            pal2nal = self.add_codon(
+                                aa_idx,
+                                gap_count,
+                                n_seq,
+                                gene_id,
+                                pal2nal
+                            )
+                    else:
                         # if AA is a stop or ambiguous insert a codon of gaps
-                        if p_seq[AA] == "X" or p_seq[AA] == "*":
-                            pal2nal[gene_id] += "---"
+                        if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
+                            pal2nal = self.add_gap(pal2nal, gene_id)
                         else:
-                            NTwin = (AA - gap_count) * 3
-                            pal2nal[gene_id] += n_seq[NTwin : NTwin + 3]
+                            pal2nal = self.add_codon(
+                                aa_idx,
+                                gap_count,
+                                n_seq,
+                                gene_id,
+                                pal2nal
+                            )
+        return pal2nal
+
+    def get_id_and_seqs(
+        self,
+        protein_seq_record: SeqRecord,
+        nucleotide_seq_record: SeqRecord
+    ):
+        """
+        get gene id, protein sequence, and nucleotide sequence
+        """
+
+        # save gene id to gene_id
+        gene_id = protein_seq_record.id
+
+        # save protein sequence to p_seq
+        p_seq = protein_seq_record.seq
+
+        # save nucleotide sequence to n_seq
+        n_seq = nucleotide_seq_record.seq
+
+        return gene_id, p_seq, n_seq
+
+    def add_gap(
+        self,
+        pal2nal: dict,
+        gene_id: str
+    ) -> dict:
+        """
+        add a gap to the growing sequence
+        """
+
+        pal2nal[gene_id].append("---")
 
         return pal2nal
+
+    def add_codon(
+        self,
+        aa_idx: int,
+        gap_count: int,
+        n_seq: SeqRecord,
+        gene_id: str,
+        pal2nal: dict
+    ) -> dict:
+        """
+        add a gap to the growing sequence
+        """
+
+        nt_window = (aa_idx - gap_count) * 3
+        pal2nal[gene_id].append(n_seq[nt_window : nt_window + 3]._data)
+
+        return pal2nal
+
+
+
+
+
