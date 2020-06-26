@@ -10,7 +10,7 @@ import numpy as np
 
 from .base import Tree
 
-from ...helpers.stats_summary import calculate_summary_statistics, print_summary_statistics
+from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
 
 
 class LBScore(Tree):
@@ -20,12 +20,11 @@ class LBScore(Tree):
     def run(self):
         tree = self.read_tree_file()
         tips, LBis = self.calculate_lb_score(tree)
-        # TODO: follow this scaffold when reporting summary statistics
         if self.verbose:
             for tip, LBi in zip(tips, LBis):
                 print(f"{tip}\t{LBi}")
         else:
-            stats = calculate_summary_statistics(LBis)
+            stats = calculate_summary_statistics_from_arr(LBis)
             print_summary_statistics(stats)
 
     def process_args(self, args):

@@ -5,43 +5,45 @@ from Bio.Align import MultipleSeqAlignment
 import numpy as np
 
 from .base import Alignment
+from ...helpers.stats_summary import calculate_summary_statistics_from_dict, print_summary_statistics
 
 class PairwiseIdentity(Alignment):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
     def run(self):
+        # get aln
         alignment, alignment_format = self.get_alignment_and_format()
-        pairwise_identities, stats = self.calculate_pairwise_identities(alignment)
+        
+        # get entry indices
+        entries = self.get_entry_indices(alignment)
+
+        # determine pairwise combinations of entry indices
+        combos = list(itertools.combinations(entries, 2))
+
+        pairwise_identities, stats = self.calculate_pairwise_identities(alignment, combos)
+        
         if self.verbose:
             for pair, identity in pairwise_identities.items():
                 print(f"{pair}\t{identity}")
         else:
-            print(f"mean: {stats['mean']}")
-            print(f"median: {stats['median']}")
-            print(f"25th percentile: {stats['twenty_fifth']}")
-            print(f"75th percentile: {stats['seventy_fifth']}")
-            print(f"minimum: {stats['minimum']}")
-            print(f"maximum: {stats['maximum']}")
-            print(f"standard deviation: {stats['standard_deviation']}")
-            print(f"variance: {stats['variance']}")
+            print_summary_statistics(stats)
 
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment, verbose=args.verbose)
 
-    def calculate_pairwise_identities(self, alignment):
-        # get aln length
-        aln_len = alignment.get_alignment_length()
-        
-        # get entry indices
+    def get_entry_indices(self, alignment) -> list:
         entries = []
         entries_count = 0
         for record in alignment:
             entries.append(entries_count)
-            entries_count += 1
+            entries_count+=1
 
-        # determine pairwise combinations of entry indices
-        combos = list(itertools.combinations(entries, 2))
+        return entries
+
+    def calculate_pairwise_identities(self, alignment, combos):
+        # get aln length
+        aln_len = alignment.get_alignment_length()
 
         # determine pairwise identity of each combination
         pairwise_identities = {}
@@ -55,15 +57,6 @@ class PairwiseIdentity(Alignment):
             ids = alignment[combo[0]].id + '-' + alignment[combo[1]].id
             pairwise_identities[ids] = identities / aln_len
 
-        stats = dict(
-            mean=stat.mean([*pairwise_identities.values()]),
-            median=stat.median([*pairwise_identities.values()]),
-            twenty_fifth=np.percentile([*pairwise_identities.values()], 25),
-            seventy_fifth=np.percentile([*pairwise_identities.values()], 75),
-            minimum=np.min([*pairwise_identities.values()]),
-            maximum=np.max([*pairwise_identities.values()]),
-            standard_deviation=stat.stdev([*pairwise_identities.values()]),
-            variance=stat.variance([*pairwise_identities.values()])
-        )
+        stats = calculate_summary_statistics_from_dict(pairwise_identities)
 
         return pairwise_identities, stats

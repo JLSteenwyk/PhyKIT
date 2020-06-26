@@ -3,13 +3,12 @@ import statistics as stat
 import numpy as np
 
 
-def calculate_summary_statistics(
+def calculate_summary_statistics_from_arr(
     arr    
 ):
     """
     calcuate summary statistics for an input list
     """
-    # TODO: break out stats calculations to a base function
     stats = dict(
         mean               = stat.mean(arr),
         median             = stat.median(arr),
@@ -19,6 +18,25 @@ def calculate_summary_statistics(
         maximum            = np.max(arr),
         standard_deviation = stat.stdev(arr),
         variance           = stat.variance(arr)
+    )
+
+    return stats
+
+def calculate_summary_statistics_from_dict(
+    dat: dict    
+):
+    """
+    calcuate summary statistics for a dictionary
+    """
+    stats = dict(
+        mean=stat.mean([*dat.values()]),
+        median=stat.median([*dat.values()]),
+        twenty_fifth=np.percentile([*dat.values()], 25),
+        seventy_fifth=np.percentile([*dat.values()], 75),
+        minimum=np.min([*dat.values()]),
+        maximum=np.max([*dat.values()]),
+        standard_deviation=stat.stdev([*dat.values()]),
+        variance=stat.variance([*dat.values()])
     )
 
     return stats
