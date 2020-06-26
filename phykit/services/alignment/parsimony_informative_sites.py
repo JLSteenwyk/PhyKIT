@@ -15,29 +15,51 @@ class ParsimonyInformative(Alignment):
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)
 
-    def calculate_parsimony_informative_sites(self, alignment):
+    def get_number_of_occurences_per_character(
+        alignment, idx: int
+    ) -> dict:
+
+        # obtain sequence at position, remove gaps, and make
+        # all characters uppercase
+        seq_at_position = ""
+        seq_at_position += alignment[:, idx]
+        seq_at_position = seq_at_position.upper().replace("-", "")
+        num_occurences = {}
+        for char in set(seq_at_position.replace("-", "")):
+            num_occurences[char] = seq_at_position.count(char)
+
+        return num_occurences
+
+    def count_if_parsimony_informative(
+        self,
+        num_occurences: dict,
+        pi_sites: int
+    ):
+        # create a dictionary of characters that occur at least twice
+        d = dict((k, v) for k, v in num_occurences.items() if v >= 2)
+
+        # determine number of characters that occur at least twice
+        if len(d) >= 2:
+            pi_sites += 1 
+        
+        return pi_sites
+
+    def calculate_parsimony_informative_sites(
+        self,
+        alignment
+    ):
+        # get aln length
         aln_len = alignment.get_alignment_length()
         
         pi_sites = 0
         # count number of parsimony informative sites
-        for i in range(0, aln_len, int(1)):
-            # obtain sequence at position, remove gaps, and make
-            # all characters uppercase
-            seq_at_position = ""
-            seq_at_position += alignment[:, i]
-            seq_at_position = seq_at_position.upper().replace("-", "")
-            num_occurences = {}
-            for char in set(seq_at_position.replace("-", "")):
-                num_occurences[char] = seq_at_position.count(char)
+        for idx in range(0, aln_len, int(1)):
+            # count occurneces of each character at site idx
+            num_occurences = self.get_number_of_occurences_per_character(alignment, idx) 
 
-            # create a dictionary of characters that occur at least twice
-            d = dict((k, v) for k, v in num_occurences.items() if v >= 2)
+            # add one to pi_sites if site idx is parsimony informative
+            pi_sites = self.count_if_parsimony_informative(num_occurences, pi_sites)
 
-            # determine number of characters that occur at least twice
-            if len(d) >= 2:
-                pi_sites += 1 
-
-        
         # calculate percent of variable sites
         pi_sites_per = (pi_sites / aln_len)*100
         
