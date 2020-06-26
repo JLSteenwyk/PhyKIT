@@ -80,12 +80,12 @@ class CreateConcatenationMatrix(Alignment):
 
         with open(fasta_output, "w") as final_fasta_file: 
             for x in concat:
-                concatenated = Seq("")
+                concatenated = []
                 for s in concat[x]:
-                    concatenated += s
+                    concatenated.append(s._data)
                 concat[x] = concatenated
-                entry = '>'+x+"\n"+concat[x]+"\n"
-                final_fasta_file.write(str(entry))     
+                entry = f">{x}\n{''.join(concat[x])}\n"
+                final_fasta_file.write(str(entry))   
 
     def occupancy_file_write(
         self,
@@ -107,7 +107,7 @@ class CreateConcatenationMatrix(Alignment):
             percent_occupancy = num_present/(num_present+num_missing)
             if num_missing == 0:
                 missing_taxa = ["None"]
-            entry = str(fasta)+'\t'+str(num_present)+'\t'+str(num_missing)+'\t'+str(percent_occupancy)+'\t'+';'.join(missing_taxa)+'\t'+';'.join(og_taxa)+"\n"
+            entry = f"{str(fasta)}\t{str(num_present)}\t{str(num_missing)}\t{str(percent_occupancy)}\t{';'.join(missing_taxa)}\t{';'.join(og_taxa)}\n"
             f.write(str(entry))
 
     def partition_file_write(
@@ -142,8 +142,8 @@ class CreateConcatenationMatrix(Alignment):
         for indiv in missing_taxa:
             indiv_record = SeqRecord(Seq(missing_seq), 
                 id = indiv, name = indiv, description = indiv)
-            concat[indiv].append(indiv_record.seq) 
-
+            concat[indiv].append(indiv_record.seq)
+            
         return concat 
 
     def create_record_for_present_taxa(
