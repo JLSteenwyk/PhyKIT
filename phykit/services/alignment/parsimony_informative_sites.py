@@ -16,7 +16,9 @@ class ParsimonyInformative(Alignment):
         return dict(alignment_file_path=args.alignment)
 
     def get_number_of_occurences_per_character(
-        alignment, idx: int
+        self,
+        alignment,
+        idx: int
     ) -> dict:
 
         # obtain sequence at position, remove gaps, and make
