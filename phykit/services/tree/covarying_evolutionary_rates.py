@@ -49,21 +49,11 @@ class CovaryingEvolutionaryRates(Tree):
 
         # remove corrected BLs greater than 5
         outlier_indices = []
-        for idx in range(0, len(tree_zero_corr_branch_lengths)): 
-            if tree_zero_corr_branch_lengths[idx] > 5 or tree_zero_corr_branch_lengths[idx] < -5: 
-                outlier_indices.append(idx) 
-        for idx in range(0, len(tree_one_corr_branch_lengths)): 
-            if tree_one_corr_branch_lengths[idx] > 5 or tree_one_corr_branch_lengths[idx] < -5:
-                if idx not in outlier_indices: 
-                    outlier_indices.append(idx)  
-        tree_zero_corr_branch_lengths = [i for j, i in enumerate(tree_zero_corr_branch_lengths) if j not in outlier_indices]
-        tree_one_corr_branch_lengths = [i for j, i in enumerate(tree_one_corr_branch_lengths) if j not in outlier_indices]
+        outlier_indices = self.get_indices_of_outlier_branch_lengths(tree_zero_corr_branch_lengths, outlier_indices)
+        outlier_indices = self.get_indices_of_outlier_branch_lengths(tree_one_corr_branch_lengths, outlier_indices)
 
-        corrected_branch_lengths = []
-        temp_branch_lengths = []
-        temp_branch_lengths.append(tree_zero_corr_branch_lengths)
-        temp_branch_lengths.append(tree_one_corr_branch_lengths)
-        corrected_branch_lengths.append(temp_branch_lengths) 
+        tree_zero_corr_branch_lengths = self.remove_outliers_based_on_indices(tree_zero_corr_branch_lengths, outlier_indices)
+        tree_one_corr_branch_lengths = self.remove_outliers_based_on_indices(tree_one_corr_branch_lengths, outlier_indices)
 
         # standardize values for final correction
         tree_zero_corr_branch_lengths = zscore(tree_zero_corr_branch_lengths)
@@ -86,6 +76,26 @@ class CovaryingEvolutionaryRates(Tree):
             reference=args.reference,
             verbose=args.verbose
         )
+
+    def get_indices_of_outlier_branch_lengths(self, corr_branch_lengths, outlier_indices):
+        """
+        create index for branch lengths that 
+        have an absolute value greater than 5
+        """
+        for idx in range(0, len(corr_branch_lengths)): 
+            if corr_branch_lengths[idx] > 5 or corr_branch_lengths[idx] < -5:
+                if idx not in outlier_indices: 
+                    outlier_indices.append(idx)
+        
+        return outlier_indices
+
+    def remove_outliers_based_on_indices(self, corr_branch_lengths, outlier_indices):
+        """
+        remove value if the value is an outlier according
+        to the outlier indices list
+        """
+        corr_branch_lengths = [i for j, i in enumerate(corr_branch_lengths) if j not in outlier_indices]
+        return corr_branch_lengths
 
     def tip_names(
         self, tree
