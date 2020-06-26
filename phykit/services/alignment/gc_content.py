@@ -29,18 +29,16 @@ class GCContent(Alignment):
         for record in records:
             entry_and_seq[record.id] = str(record.seq)
 
-        regex_pattern = re.compile('[GgCc]')
         if self.verbose:
             for entry, seq in entry_and_seq.items():
-                seq = seq.replace('-', '')
-                matches = regex_pattern.findall(seq)
+                seq, matches = self.find_matches_and_remove_gaps(seq)
                 print(f"{entry}\t{len(matches)/len(seq)}")
         else:
-            all_seqs = ''
+            all_seqs = []
             for entry, seq in entry_and_seq.items():
-                all_seqs += seq
-            all_seqs = all_seqs.replace('-', '')
-            matches = regex_pattern.findall(all_seqs)
+                all_seqs.append(seq)
+            all_seqs = ''.join(all_seqs)
+            all_seqs, matches = self.find_matches_and_remove_gaps(all_seqs)
             print(f"{len(matches)/len(all_seqs)}")
             
 
@@ -49,6 +47,13 @@ class GCContent(Alignment):
             fasta=args.fasta, 
             verbose=args.verbose
         )
+
+    def find_matches_and_remove_gaps(self, seq: str):
+        regex_pattern = re.compile('[GgCc]')
+        seq = seq.replace('-', '')
+        matches = regex_pattern.findall(seq)
+        return seq, matches
+
 
     def determine_file_type_fasta_file(self, fasta):
         # automatically determine file type and read in the fasta file
