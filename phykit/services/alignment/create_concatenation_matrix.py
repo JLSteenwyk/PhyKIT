@@ -1,4 +1,5 @@
 import statistics as stat
+import sys
 from textwrap import dedent
 from typing import Tuple
 
@@ -21,6 +22,20 @@ class CreateConcatenationMatrix(Alignment):
             prefix=args.prefix
         )
 
+    def read_alignment_paths(
+        self,
+        alignment_list_path: str
+    ) -> list:
+        """
+        Read alignment paths into a list 
+        """
+        try:
+            with open(alignment_list_path) as f:
+                return [line.rstrip('\n') for line in f]
+        except FileNotFoundError:
+            print("Alignment list file (-a) is not found. Please check pathing.")
+            sys.exit()
+
     def get_taxa_names(
         self,
         alignment_paths: list
@@ -32,8 +47,8 @@ class CreateConcatenationMatrix(Alignment):
             for seq_record in alignment:
                 taxa.add(seq_record.name)
 
-        return list(taxa)
-    
+        return list(sorted(taxa))
+
     def print_start_message(
         self,
         taxa: list,
@@ -65,66 +80,50 @@ class CreateConcatenationMatrix(Alignment):
 
         print(start_message)
 
-    def fasta_file_write(
+    def get_list_of_taxa_and_records(
         self,
-        fasta_output: str,
-        concat: dict
-    ) -> None:
+        alignment_path: str
+    ) -> Tuple[list, list]:
         """
-        join seqs of genes in value (list) and write to concat_fa 
+        get list of a taxa and their records
         """
-        with open(fasta_output, "w") as final_fasta_file: 
-            for x in concat:
-                concatenated = []
-                for s in concat[x]:
-                    concatenated.append(s._data)
-                concat[x] = concatenated
-                entry = f">{x}\n{''.join(concat[x])}\n"
-                final_fasta_file.write(str(entry))   
+        # list for keeping track of taxa per USCO
+        og_taxa = []
+        # open alignment file
+        records = list(SeqIO.parse(alignment_path, "fasta"))
 
-    def occupancy_file_write(
+        # create lists of USCOtaxa and missing_taxa
+        for record in records:
+            # append taxa per USCO to USCOtaxa
+            og_taxa.append(record.id)
+
+        return og_taxa, records
+
+    def determine_missing_sequences(
         self,
-        file_occupancy: str,
-        og_taxa: list,
-        missing_taxa: list,
-        fasta: str
-    ) -> None:
+        taxa: list,
+        og_taxa: list
+    ) -> list:
         """
-        write partition file to detail boundaries in the concat alignment
+        determine taxa not present in an alignment file
         """
-        with open(file_occupancy, "a") as f:
-            # determine number of present taxa
-            num_present = len(og_taxa)
-            # determine number of missing taxa
-            num_missing = len(missing_taxa)
-            # determine percent occupied
-            percent_occupancy = num_present/(num_present+num_missing)
-            if num_missing == 0:
-                missing_taxa = ["None"]
-            entry = f"{str(fasta)}\t{str(num_present)}\t{str(num_missing)}\t{str(percent_occupancy)}\t{';'.join(missing_taxa)}\t{';'.join(og_taxa)}\n"
-            f.write(str(entry))
+        missing_taxa = list(set(taxa)-set(og_taxa))
 
-    def partition_file_write(
+        return missing_taxa
+
+    def create_missing_seq_str(
         self,
-        file_partition: str,
-        og_len: int,
-        field_one: str,
-        fasta: str,
-        first_len: int,
-        second_len: int
-    ) -> Tuple[int, int]:
+        records: list
+    ) -> Tuple[str, int]:
         """
-        append to partition file
+        create a placeholder string for sequences with missing taxa
         """
-        with open(file_partition, "a") as f:
-            # second value in partition file
-            second_len += og_len
-            entry = f"{field_one}, {str(fasta)}={str(first_len)}-{str(second_len)}\n"
-            f.write(str(entry))
-            # add to first value for partition file
-            first_len += og_len
-
-        return first_len, second_len
+        og_len = ''
+        missing_seq = ''
+        og_len = len(records[0].seq)
+        missing_seq = og_len * '?'
+    
+        return missing_seq, og_len
 
     def create_missing_taxa_sequence(
         self,
@@ -154,64 +153,83 @@ class CreateConcatenationMatrix(Alignment):
 
         return concat
 
-    def create_missing_seq_str(
+    def add_to_partition_info(
         self,
-        records: list
-    ) -> Tuple[str, int]:
+        partition_info: list,
+        og_len: int,
+        field_one: str,
+        fasta: str,
+        first_len: int,
+        second_len: int
+    ) -> Tuple[list, int, int]:
         """
-        create a placeholder string for sequences with missing taxa
+        append to partition file
         """
-        og_len = ''
-        missing_seq = ''
-        og_len = len(records[0].seq)
-        missing_seq = og_len * '?'
-    
-        return missing_seq, og_len
+        # second value in partition file
+        second_len += og_len
+        # add partition file entry to partition_info
+        entry = f"{field_one}, {str(fasta)}={str(first_len)}-{str(second_len)}\n"
+        partition_info.append(entry)
+        # add to first value for partition file
+        first_len += og_len
 
-    def determine_missing_sequences(
+        return partition_info, first_len, second_len
+
+    def add_to_occupancy_info(
         self,
-        taxa: list,
-        og_taxa: list
+        occupancy_info: list,
+        og_taxa: list,
+        missing_taxa: list,
+        fasta: str
     ) -> list:
         """
-        determine taxa not present in an alignment file
+        write partition file to detail boundaries in the concat alignment
         """
-        missing_taxa = list(set(taxa)-set(og_taxa))
 
-        return missing_taxa
+        # determine number of present taxa
+        num_present = len(og_taxa)
+        # determine number of missing taxa
+        num_missing = len(missing_taxa)
+        # determine percent occupied
+        percent_occupancy = num_present/(num_present+num_missing)
+        # handle missing taxa
+        if num_missing == 0:
+            missing_taxa = ["None"]
+        entry = f"{str(fasta)}\t{str(num_present)}\t{str(num_missing)}\t{str(percent_occupancy)}\t{';'.join(missing_taxa)}\t{';'.join(og_taxa)}\n"
+        occupancy_info.append(entry)
+        
+        return occupancy_info
 
-    def get_list_of_taxa_and_records(
+    def fasta_file_write(
         self,
-        alignment_path: str
-    ) -> Tuple[list, list]:
+        fasta_output: str,
+        concat: dict
+    ) -> None:
         """
-        get list of a taxa and their records
+        join seqs of genes in value (list) and write to concat_fa 
         """
-        # list for keeping track of taxa per USCO
-        og_taxa = []
-        # open alignment file
-        records = list(SeqIO.parse(alignment_path, "fasta"))
+        with open(fasta_output, "w") as final_fasta_file: 
+            for x in concat:
+                concatenated = []
+                for s in concat[x]:
+                    concatenated.append(s._data)
+                concat[x] = concatenated
+                entry = f">{x}\n{''.join(concat[x])}\n"
+                final_fasta_file.write(str(entry))   
 
-        # create lists of USCOtaxa and missing_taxa
-        for record in records:
-            # append taxa per USCO to USCOtaxa
-            og_taxa.append(record.id)
-
-        return og_taxa, records
-
-    def read_alignment_paths(self, alignment_list_path: str) -> list:
+    def write_occupancy_or_partition_file(
+        self,
+        list_of_lists: list,
+        output_file_name: str
+    ) -> None:
         """
-        Read alignment paths into a list 
+        loops through occupancy or partition file information and writes
+        them to the corresponding output file
         """
-        # TODO: handle I/O exception here (try & except)
-        with open(alignment_list_path) as f:
-            return [line.rstrip('\n') for line in f]
 
-    def create_output_files(self, file_partition, file_occupancy):
-        # create an empty file_partition
-        open(file_partition, "w")
-        # create an empty occupancy per OG file
-        open(file_occupancy, "w")
+        with open(output_file_name, "w") as f:
+            for entry in list_of_lists:
+                f.write(entry)
 
     def create_concatenation_matrix(
         self,
@@ -246,7 +264,10 @@ class CreateConcatenationMatrix(Alignment):
         # string for first field of partition file
         field_one = 'AUTO'
 
-        self.create_output_files(file_partition, file_occupancy)
+        # create empty lists to contain information for the 
+        # partition and occupancy files
+        partition_info = []
+        occupancy_info = []
 
         # loop through alignment files
         for alignment_path in alignment_paths:
@@ -281,11 +302,9 @@ class CreateConcatenationMatrix(Alignment):
                 concatenated_seqs
             )
 
-            # append to partition file
-            # TODO: refactor partition file and occupancy file writing
-            # write data structures to list of lists
-            first_len, second_len = self.partition_file_write(
-                file_partition,
+            # append partition to to partition info
+            partition_info, first_len, second_len = self.add_to_partition_info(
+                partition_info,
                 og_len,
                 field_one,
                 alignment_path,
@@ -293,9 +312,9 @@ class CreateConcatenationMatrix(Alignment):
                 second_len
             )
 
-            # append to occupancy file
-            self.occupancy_file_write(
-                file_occupancy,
+            # append occupancy data to occupancy info
+            occupancy_info = self.add_to_occupancy_info(
+                occupancy_info,
                 og_taxa,
                 missing_taxa,
                 alignment_path
@@ -306,5 +325,9 @@ class CreateConcatenationMatrix(Alignment):
             fasta_output,
             concatenated_seqs
         )
+
+        # write out occupancy and partition file
+        self.write_occupancy_or_partition_file(occupancy_info, file_occupancy)
+        self.write_occupancy_or_partition_file(partition_info, file_partition)
 
         print("Complete!\n")

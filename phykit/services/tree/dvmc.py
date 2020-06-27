@@ -33,7 +33,7 @@ class DVMC(Tree):
         out_pres   = []
 
         # initialize value to hold the number of species
-        num_spp = float(0.0)
+        num_spp = int(0.0)
 
         # loop through terminal branch
         for term in tree.get_terminals():
@@ -76,8 +76,8 @@ class DVMC(Tree):
         for x_i in dist:
             sumi2N += ((x_i-avg_dist)**2)
 
-        # multiple sumi2N by 1/(N-1) where N is the number of spp
-        # and take the square root
+        # multiply sumi2N by 1/(N-1) where N is the number of spp
+        # and then take the square root
         dvmc = float(0.0)
         dvmc = math.sqrt((1/(num_spp-1))*sumi2N) 
 
