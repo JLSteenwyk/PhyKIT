@@ -14,7 +14,7 @@ class FileFormat(Enum):
     stockholm = "stockholm"
 
 
-def get_alignment_and_format(alignment_file_path):
+def get_alignment_and_format(alignment_file_path: str):
     # if file format is provided, read the file according to the user's file format
     for fileFormat in FileFormat:
         try:
@@ -28,3 +28,7 @@ def get_alignment_and_format(alignment_file_path):
             continue
 
     raise Exception("Input file could not be read")
+
+def read_single_column_file_to_list(single_col_file_path: str) -> list:
+    with open(single_col_file_path) as f:
+        return [line.rstrip('\n') for line in f]

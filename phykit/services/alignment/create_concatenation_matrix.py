@@ -8,6 +8,7 @@ from Bio.Seq import Seq
 
 from .base import Alignment
 
+from ...helpers.files import read_single_column_file_to_list
 
 class CreateConcatenationMatrix(Alignment):
     def __init__(self, args) -> None:
@@ -30,8 +31,7 @@ class CreateConcatenationMatrix(Alignment):
         Read alignment paths into a list 
         """
         try:
-            with open(alignment_list_path) as f:
-                return [line.rstrip('\n') for line in f]
+            return read_single_column_file_to_list(alignment_list_path)
         except FileNotFoundError:
             print("Alignment list file (-a) is not found. Please check pathing.")
             sys.exit()

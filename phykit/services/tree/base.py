@@ -62,6 +62,19 @@ class Tree(BaseService):
         
         return tips
 
+    def prune_tree_using_taxa_list(
+        self,
+        tree,
+        taxa_to_prune: list
+    ):
+        """
+        prune taxa from tree
+        """
+        for taxon in taxa_to_prune:
+            tree.prune(taxon)
+        
+        return tree
+
     def calculate_treeness(self, tree=None, print_value=False):
         if not tree:
             tree = self.read_tree_file()
