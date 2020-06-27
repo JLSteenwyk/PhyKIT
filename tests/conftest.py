@@ -18,6 +18,10 @@ def alignment_simple(mocker):
     return AlignIO.read(open(f"{here.parent}/sample_files/simple.fa"), "fasta")
 
 @pytest.fixture
+def alignment_complex(mocker):
+    return AlignIO.read(open(f"{here.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit"), "fasta")
+
+@pytest.fixture
 def alignments(mocker):
     alignment_list = f"{here.parent}/sample_files/alignment_list_for_create_concat_matrix.txt"
     alignments = [line.rstrip('\n') for line in open(alignment_list)]

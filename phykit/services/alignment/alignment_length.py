@@ -9,8 +9,7 @@ class AlignmentLength(Alignment):
     def run(self):
         alignment, _ = self.get_alignment_and_format()
         aln_len = alignment.get_alignment_length()
-        if aln_len:
-            print(f"{aln_len}")
+        print(aln_len)
 
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)

@@ -13,35 +13,31 @@ class CreateConcatenationMatrix(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment_list = self.alignment_list
-        prefix = self.prefix
-        
-        self.create_concatenation_matrix(alignment_list, prefix)
+        self.create_concatenation_matrix(self.alignment_list_path, self.prefix)
 
     def process_args(self, args) -> dict:
         return dict(
-            alignment_list=args.alignment_list,
+            alignment_list_path=args.alignment_list,
             prefix=args.prefix
         )
 
     def get_taxa_names(
         self,
-        alignments: list
+        alignment_paths: list
     ) -> list:
         # get taxa names
-        taxa = []
-        for alignment in alignments:
-            alignment = SeqIO.parse(alignment, "fasta")
-            for indiv in alignment:
-                if indiv.name not in taxa:
-                    taxa.append(indiv.name)
+        taxa = set()
+        for alignment_path in alignment_paths:
+            alignment = SeqIO.parse(alignment_path, "fasta")
+            for seq_record in alignment:
+                taxa.add(seq_record.name)
 
-        return taxa
+        return list(taxa)
     
-    def start_message_print(
+    def print_start_message(
         self,
         taxa: list,
-        alignments: list,
+        alignment_paths: list,
         file_partition: str,
         fasta_output: str,
         file_occupancy: str
@@ -56,7 +52,7 @@ class CreateConcatenationMatrix(Alignment):
             | General features |
             --------------------
             Total number of taxa: {len(taxa)}
-            Total number of alignments: {len(alignments)}
+            Total number of alignments: {len(alignment_paths)}
 
 
             ----------------
@@ -77,7 +73,6 @@ class CreateConcatenationMatrix(Alignment):
         """
         join seqs of genes in value (list) and write to concat_fa 
         """
-
         with open(fasta_output, "w") as final_fasta_file: 
             for x in concat:
                 concatenated = []
@@ -97,12 +92,11 @@ class CreateConcatenationMatrix(Alignment):
         """
         write partition file to detail boundaries in the concat alignment
         """
-
         with open(file_occupancy, "a") as f:
             # determine number of present taxa
-            num_present  = len(og_taxa)
+            num_present = len(og_taxa)
             # determine number of missing taxa
-            num_missing  = len(missing_taxa)
+            num_missing = len(missing_taxa)
             # determine percent occupied
             percent_occupancy = num_present/(num_present+num_missing)
             if num_missing == 0:
@@ -125,7 +119,7 @@ class CreateConcatenationMatrix(Alignment):
         with open(file_partition, "a") as f:
             # second value in partition file
             second_len += og_len
-            entry = field_one+", "+str(fasta)+"="+str(first_len)+"-"+str(second_len)+"\n"
+            entry = f"{field_one}, {str(fasta)}={str(first_len)}-{str(second_len)}\n"
             f.write(str(entry))
             # add to first value for partition file
             first_len += og_len
@@ -138,7 +132,6 @@ class CreateConcatenationMatrix(Alignment):
         missing_seq: str,
         concat: dict
     ) -> dict:
-
         for indiv in missing_taxa:
             indiv_record = SeqRecord(Seq(missing_seq), 
                 id = indiv, name = indiv, description = indiv)
@@ -168,11 +161,10 @@ class CreateConcatenationMatrix(Alignment):
         """
         create a placeholder string for sequences with missing taxa
         """
-
-        og_len     = ''
+        og_len = ''
         missing_seq = ''
-        og_len   = len(records[0].seq)
-        missing_seq = og_len*'?'
+        og_len = len(records[0].seq)
+        missing_seq = og_len * '?'
     
         return missing_seq, og_len
 
@@ -184,22 +176,21 @@ class CreateConcatenationMatrix(Alignment):
         """
         determine taxa not present in an alignment file
         """
-
         missing_taxa = list(set(taxa)-set(og_taxa))
 
         return missing_taxa
 
     def get_list_of_taxa_and_records(
         self,
-        fasta: str
+        alignment_path: str
     ) -> Tuple[list, list]:
         """
         get list of a taxa and their records
         """
         # list for keeping track of taxa per USCO
-        og_taxa    = []
+        og_taxa = []
         # open alignment file
-        records = list(SeqIO.parse(fasta, "fasta"))
+        records = list(SeqIO.parse(alignment_path, "fasta"))
 
         # create lists of USCOtaxa and missing_taxa
         for record in records:
@@ -208,25 +199,38 @@ class CreateConcatenationMatrix(Alignment):
 
         return og_taxa, records
 
+    def read_alignment_paths(self, alignment_list_path: str) -> list:
+        """
+        Read alignment paths into a list 
+        """
+        # TODO: handle I/O exception here (try & except)
+        with open(alignment_list_path) as f:
+            return [line.rstrip('\n') for line in f]
+
+    def create_output_files(self, file_partition, file_occupancy):
+        # create an empty file_partition
+        open(file_partition, "w")
+        # create an empty occupancy per OG file
+        open(file_occupancy, "w")
+
     def create_concatenation_matrix(
         self,
-        alignment_list: str,
+        alignment_list_path: str,
         prefix: str
-    ):
-        # read lists into python lists
-        alignments  = [line.rstrip('\n') for line in open(alignment_list)]
+    ) -> None:
+        alignment_paths = self.read_alignment_paths(alignment_list_path)
 
-        taxa = self.get_taxa_names(alignments)
+        taxa = self.get_taxa_names(alignment_paths)
 
-        # assignment the output file names
-        file_partition = prefix + ".partition"
-        fasta_output   = prefix + ".fa"
-        file_occupancy = prefix + ".occupancy"
+        # assign the output file names
+        file_partition = f"{prefix}.partition"
+        fasta_output = f"{prefix}.fa"
+        file_occupancy = f"{prefix}.occupancy"
 
         # print log message
-        self.start_message_print(
+        self.print_start_message(
             taxa,
-            alignments,
+            alignment_paths,
             file_partition,
             fasta_output,
             file_occupancy
@@ -237,22 +241,19 @@ class CreateConcatenationMatrix(Alignment):
         second_len   = 0
 
         # create a dictionary with keys as taxa and empty list values
-        concat = {key: [] for key in taxa}
+        concatenated_seqs = {key: [] for key in taxa}
 
         # string for first field of partition file
         field_one = 'AUTO'
 
-        # create an empty file_partition
-        open(file_partition, "w")
-        # create an empty occupancy per OG file
-        open(file_occupancy, "w")
+        self.create_output_files(file_partition, file_occupancy)
 
-        # loop through USCOs files
-        for fasta in alignments:
+        # loop through alignment files
+        for alignment_path in alignment_paths:
 
             # create a list of taxa and records
             og_taxa, records = self.get_list_of_taxa_and_records(
-                fasta
+                alignment_path
             )
                 
             # initialize list and determine missing taxa
@@ -267,25 +268,27 @@ class CreateConcatenationMatrix(Alignment):
             )
 
             # create missing taxa sequence
-            concat = self.create_missing_taxa_sequence(
+            concatenated_seqs = self.create_missing_taxa_sequence(
                 missing_taxa,
                 missing_seq,
-                concat
+                concatenated_seqs
             )      
 
             # create record for present data
-            concat = self.create_record_for_present_taxa(
+            concatenated_seqs = self.create_record_for_present_taxa(
                 records,
                 og_taxa,
-                concat
+                concatenated_seqs
             )
 
             # append to partition file
+            # TODO: refactor partition file and occupancy file writing
+            # write data structures to list of lists
             first_len, second_len = self.partition_file_write(
                 file_partition,
                 og_len,
                 field_one,
-                fasta,
+                alignment_path,
                 first_len,
                 second_len
             )
@@ -295,17 +298,13 @@ class CreateConcatenationMatrix(Alignment):
                 file_occupancy,
                 og_taxa,
                 missing_taxa,
-                fasta
+                alignment_path
             )
 
         # write output fasta file
         self.fasta_file_write(
             fasta_output,
-            concat
+            concatenated_seqs
         )
 
-        # print log message
         print("Complete!\n")
-            
-            
-
