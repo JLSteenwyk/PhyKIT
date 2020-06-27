@@ -1364,8 +1364,8 @@ class Phykit(object):
                 -a/--alignment              alignment list file. File
                                             should contain a single
                                             column list of alignment
-                                            sequences to concatenate into
-                                            a single matrix. Provide
+                                            sequence files to concatenate 
+                                            into a single matrix. Provide
                                             path to files relative to
                                             working directory or provide
                                             absolute path.

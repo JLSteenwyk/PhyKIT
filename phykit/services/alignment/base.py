@@ -10,7 +10,7 @@ class Alignment(BaseService):
         output_file_path=None,
         protein_file_path=None,
         nucleotide_file_path=None,
-        alignment_list=None,
+        alignment_list_path=None,
         prefix=None,
         idmap=None,
         verbose=None
@@ -19,7 +19,7 @@ class Alignment(BaseService):
         self.output_file_path = output_file_path
         self.protein_file_path = protein_file_path,
         self.nucleotide_file_path = nucleotide_file_path 
-        self.alignment_list = alignment_list
+        self.alignment_list_path = alignment_list_path
         self.prefix = prefix
         self.fasta = fasta
         self.idmap = idmap
@@ -30,13 +30,6 @@ class Alignment(BaseService):
         automatic file type determination
         """
         return get_alignment_and_format_helper(self.alignment_file_path)
-
-    def calculate_alignment_length(self, alignment):
-        """
-        calculate alignment length
-        """
-        aln_len = alignment.get_alignment_length()
-        return aln_len
 
     def calculate_rcv(self):
         alignment, _ = self.get_alignment_and_format()

@@ -13,7 +13,7 @@ here = Path(__file__)
 class TestAlignment(object):
     @patch("builtins.print")
     def test_alignment_length(self, mocked_print):
-        expected_result = "6"
+        expected_result = 6
         testargs = [
             "phykit",
             "alignment_length",
