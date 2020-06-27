@@ -10,8 +10,9 @@ from Bio.Phylo.BaseTree import TreeMixin
 import itertools
 import numpy as np
 
-
 from .base import Tree
+
+from ...helpers.files import read_single_column_file_to_list
 
 class DVMC(Tree):
     def __init__(self, args) -> None:
@@ -19,39 +20,38 @@ class DVMC(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        outgroup = [line.rstrip('\n') for line in open(self.outgroup_taxa_file_path)]
+        outgroup = read_single_column_file_to_list(self.outgroup_taxa_file_path)
         dvmc = self.calculate_dvmc(tree, outgroup)
 
-        if dvmc:
-            print(f"{dvmc}")
+        print(f"{dvmc}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, outgroup_taxa_file_path=args.root)
 
-    def calculate_dvmc(self, tree, outgroup):
-        # initialize list for outgroup taxa present in the tree
-        out_pres   = []
-
-        # initialize value to hold the number of species
-        num_spp = int(0.0)
-
+    def get_names_of_outgroup_taxa_that_are_present(
+        self,
+        outgroup: list,
+        tree: Tree
+    ) -> list:
+        # initialize list for outgroup taxa that are present in tree
+        out_pres = []
         # loop through terminal branch
         for term in tree.get_terminals():
             # if outgroup taxa is present, append it to out_pres
             if term.name in outgroup:
                 out_pres.append(term.name)
 
-        # root tree on outgroup
-        tree.root_with_outgroup(out_pres)
+        return out_pres
 
-        # prune outgroiup taxa from the tree
-        for taxon in out_pres:
-            tree.prune(taxon)
+    def calculate_dvmc(self, tree: Tree, outgroup: list):
+        # get names of outgroup taxa in tree
+        out_pres = self.get_names_of_outgroup_taxa_that_are_present(outgroup, tree)
+
+        # prune outgroup taxa from tree
+        tree = self.prune_tree_using_taxa_list(tree, outgroup)
 
         # determine number of taxa in the tree
-        for term in tree.get_terminals():
-            # add 1 for each tip that is iterated through
-            num_spp+=1
+        num_spp = tree.count_terminals()
 
         # initialize list of root to tip distances, the sum
         # of distances in the tree, the average of distances
