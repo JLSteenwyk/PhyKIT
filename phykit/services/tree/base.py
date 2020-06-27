@@ -50,6 +50,18 @@ class Tree(BaseService):
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
 
+    def get_tip_names_from_tree(
+        self, tree
+        ):
+        """
+        get tip names from a tree
+        """
+        tips = []
+        for tip in tree.get_terminals():
+            tips.append(tip.name)
+        
+        return tips
+
     def calculate_treeness(self, tree=None, print_value=False):
         if not tree:
             tree = self.read_tree_file()

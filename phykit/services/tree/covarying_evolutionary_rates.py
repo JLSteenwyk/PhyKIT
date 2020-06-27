@@ -24,9 +24,9 @@ class CovaryingEvolutionaryRates(Tree):
         ## - Branch lengths will also be part of output
 
         # get tree tip names
-        tree_zero_tips = self.tip_names(tree_zero)
-        tree_one_tips = self.tip_names(tree_one)
-        tree_ref_tips = self.tip_names(tree_ref)
+        tree_zero_tips = self.get_tip_names_from_tree(tree_zero)
+        tree_one_tips = self.get_tip_names_from_tree(tree_one)
+        tree_ref_tips = self.get_tip_names_from_tree(tree_ref)
 
         # get shared tips between the two trees
         shared_tree_tips = self.shared_tips(tree_zero_tips, tree_one_tips)
