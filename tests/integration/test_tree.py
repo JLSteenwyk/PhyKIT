@@ -90,7 +90,7 @@ class TestTree(object):
     
     @patch("builtins.print")
     def test_dvmc(self, mocked_print):
-        expected_result = "45.626234713649126"
+        expected_result = "42.80162365633575"
         testargs = [
             "phykit",
             "dvmc",
