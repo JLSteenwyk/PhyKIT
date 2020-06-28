@@ -330,7 +330,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_total_tree_length(self, mocked_print):
-        expected_result = "277.27722"
+        expected_result = 277.27722
         testargs = [
             "phykit",
             "total_tree_length",
@@ -342,7 +342,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_treeness(self, mocked_print):
-        expected_result = "0.18990700507564479"
+        expected_result = 0.18990700507564479
         testargs = [
             "phykit",
             "treeness",

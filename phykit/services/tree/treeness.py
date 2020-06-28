@@ -8,8 +8,7 @@ class Treeness(Tree):
     def run(self):
         tree = self.read_tree_file()
         treeness = self.calculate_treeness(tree)
-        if treeness:
-            print(f"{treeness}")
+        print(treeness)
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree)

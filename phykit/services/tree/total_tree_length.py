@@ -8,8 +8,7 @@ class TotalTreeLength(Tree):
     def run(self):
         tree = self.read_tree_file()
         total_tree_length = self.calculate_total_tree_length(tree)
-        if total_tree_length:
-            print(f"{total_tree_length}")
+        print(total_tree_length)
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree)
