@@ -1,5 +1,6 @@
 from enum import Enum
 import itertools
+from typing import Tuple
 
 from Bio import AlignIO
 import scipy
@@ -28,43 +29,95 @@ class Saturation(Tree):
         # read in tree
         tree = self.read_tree_file()
 
-        # combinations of tip names
-        # TODO: break out into helpers 
-        tips = []
-        for term in tree.get_terminals():
-            tips.append(term.name)
+        # get tip and tip combinations
+        tips = self.get_tip_names_from_tree(tree)
         combos = list(itertools.combinations(tips, 2))
 
-        # get pds and pairwise identifies per pair
+        # for pairwise combinations, calculate patristic
+        # distances and pairwise identities
+        patristic_distances, pairwise_identities = self.loop_through_combos_and_calculate_pds_and_pis(
+            combos,
+            alignment,
+            tree
+        )
+            
+        # calculate linear regression
+        _, _, r_value, _, _ = scipy.stats.linregress(pairwise_identities, patristic_distances)
+    
+        # report res
+        self.print_res(
+            self.verbose,
+            combos,
+            pairwise_identities,
+            patristic_distances,
+            r_value
+        )
+
+    def process_args(self, args):
+        return dict(
+            tree_file_path=args.tree,
+            alignment_file_path=args.alignment,
+            verbose=args.verbose
+        )
+
+    def loop_through_combos_and_calculate_pds_and_pis(
+        self,
+        combos: list, 
+        alignment,
+        tree
+    ) -> Tuple[list, list]:
+        """
+        loop through all taxon combinations and determine
+        their patristic distance and pairwise identity
+        """
         patristic_distances = []
         pairwise_identities = []
         aln_len = alignment.get_alignment_length()
-
         for combo in combos:
-            # TODO: break out pd calculation and pairiwise identity
-            # calc into helpers
             # calculate pd
             patristic_distances.append(tree.distance(combo[0], combo[1]))
             # calculate pairwise identity
-            identities = 0
-            for record in alignment:
-                if record.name == combo[0]:
-                    seq_one = record.seq
-                elif record.name == combo[1]:
-                    seq_two = record.seq
-            for idx in range(0, aln_len):
-                if seq_one[idx] == seq_two[idx]:
-                    identities += 1
-            pairwise_identities.append(identities / aln_len)
+            pairwise_identities = self.calculate_pairwise_identities(
+                alignment, pairwise_identities, aln_len, combo
+            )
+        return patristic_distances, pairwise_identities
 
-        slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(pairwise_identities, patristic_distances)
-    
-        if self.verbose:
+    def calculate_pairwise_identities(
+        self,
+        alignment,
+        pairwise_identities: list,
+        aln_len: int,
+        combo: tuple
+    ) -> list:
+        """
+        calculate pairwise identities for a given combo
+        """
+        identities = 0
+        for record in alignment:
+            if record.name == combo[0]:
+                seq_one = record.seq
+            elif record.name == combo[1]:
+                seq_two = record.seq
+        for idx in range(0, aln_len):
+            if seq_one[idx] == seq_two[idx]:
+                identities += 1
+        pairwise_identities.append(identities / aln_len)
+
+        return pairwise_identities
+
+    def print_res(
+        self,
+        verbose: bool,
+        combos: list,
+        pairwise_identities: list,
+        patristic_distances: list,
+        r_value: float
+    ) -> None:
+        """
+        print results to stdout
+        """
+        if verbose:
             for combo, pairwise_identity, patristic_distance in zip(combos, pairwise_identities, patristic_distances):
                 print(f"{combo[0]}-{combo[1]}\t{pairwise_identity}\t{patristic_distance}")
         else:
             print(str(r_value**2))
-
-    def process_args(self, args):
-        return dict(tree_file_path=args.tree, alignment_file_path=args.alignment, verbose=args.verbose)
-
