@@ -24,7 +24,7 @@ class DVMC(Tree):
         outgroup = read_single_column_file_to_list(self.outgroup_taxa_file_path)
         dvmc = self.determine_dvmc(tree, outgroup)
 
-        print(f"{dvmc}")
+        print(dvmc)
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, outgroup_taxa_file_path=args.root)
@@ -84,6 +84,8 @@ class DVMC(Tree):
         # and then take the square root
         dvmc = float(0.0)
         dvmc = math.sqrt((1/(num_spp-1))*sumi2N) 
+
+        return dvmc
 
     def determine_dvmc(self, tree: Tree, outgroup: list):
         # get names of outgroup taxa in tree

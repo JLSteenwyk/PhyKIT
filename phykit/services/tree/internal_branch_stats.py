@@ -11,6 +11,8 @@ import numpy as np
 
 from .base import Tree
 
+from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
+
 class InternalBranchStats(Tree):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
@@ -22,39 +24,38 @@ class InternalBranchStats(Tree):
             for internal_branch_length in internal_branch_lengths:
                 print(internal_branch_length)
         else:
-            print(f"mean: {stats['mean']}")
-            print(f"median: {stats['median']}")
-            print(f"25th percentile: {stats['twenty_fifth']}")
-            print(f"75th percentile: {stats['seventy_fifth']}")
-            print(f"minimum: {stats['minimum']}")
-            print(f"maximum: {stats['maximum']}")
-            print(f"standard deviation: {stats['standard_deviation']}")
-            print(f"variance: {stats['variance']}")
+            print_summary_statistics(stats)
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
 
-    def calculate_internal_branch_stats(self, tree):
-        # save internal branch lengths to internal_branch_lengths
+    def get_internal_branch_lengths(self, tree) -> list:
+        """
+        loop through tree and get all internal branch lengths
+        """
         internal_branch_lengths = []
         for internal_branch in tree.get_nonterminals():
             if internal_branch.branch_length != None:
                 internal_branch_lengths.append(internal_branch.branch_length)
 
-        # If the phylogeny had no branch lengths, inform user and quit
+        return internal_branch_lengths
+
+    def check_tree_has_branch_lengths(self, internal_branch_lengths:list) -> None:
+        """
+        if tree has no branch lengths, exit
+        """
         if len(internal_branch_lengths) == 0:
             print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
             sys.exit()
+
+    def calculate_internal_branch_stats(self, tree):
+        # save internal branch lengths to internal_branch_lengths
+        internal_branch_lengths = self.get_internal_branch_lengths(tree)
         
-        stats = dict(
-            mean               = stat.mean(internal_branch_lengths),
-            median             = stat.median(internal_branch_lengths),
-            twenty_fifth       = np.percentile(internal_branch_lengths, 25),
-            seventy_fifth      = np.percentile(internal_branch_lengths, 75),
-            standard_deviation = stat.stdev(internal_branch_lengths),
-            variance           = stat.variance(internal_branch_lengths),
-            minimum            = np.min(internal_branch_lengths),
-            maximum            = np.max(internal_branch_lengths)
-        )
+        # If the phylogeny had no branch lengths, inform user and quit
+        self.check_tree_has_branch_lengths(internal_branch_lengths)
+        
+        # calculate summary stats
+        stats = calculate_summary_statistics_from_arr(internal_branch_lengths)
 
         return internal_branch_lengths, stats
