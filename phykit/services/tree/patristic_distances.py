@@ -2,6 +2,7 @@ import sys
 import getopt
 import os.path
 import statistics as stat
+from typing import Tuple
 
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
@@ -10,6 +11,7 @@ import numpy as np
 
 from .base import Tree
 
+from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
 
 class PatristicDistances(Tree):
     def __init__(self, args) -> None:
@@ -22,24 +24,12 @@ class PatristicDistances(Tree):
             for combo, patristic_distance in zip(combos, patristic_distances):
                 print(f"{combo[0]}-{combo[1]}\t{patristic_distance}")
         else:
-            print(f"mean: {stats['mean']}")
-            print(f"median: {stats['median']}")
-            print(f"25th percentile: {stats['twenty_fifth']}")
-            print(f"75th percentile: {stats['seventy_fifth']}")
-            print(f"minimum: {stats['minimum']}")
-            print(f"maximum: {stats['maximum']}")
-            print(f"standard deviation: {stats['standard_deviation']}")
-            print(f"variance: {stats['variance']}")
+            print_summary_statistics(stats)
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, verbose=args.verbose)
 
-    def calculate_patristic_distances(self, tree):
-        # get tree tips
-        tips = []
-        for tip in tree.get_terminals():
-            tips.append(tip.name)
-        
+    def calculate_distance_between_pairs(self, tips: list, tree) -> Tuple[list, list]:
         # determine pairwise combinations of tips
         combos = list(itertools.combinations(tips, 2))
 
@@ -48,15 +38,16 @@ class PatristicDistances(Tree):
         for combo in combos:
             patristic_distances.append(tree.distance(combo[0], combo[1]))
 
-        stats = dict(
-            mean=stat.mean(patristic_distances),
-            median=stat.median(patristic_distances),
-            twenty_fifth=np.percentile(patristic_distances, 25),
-            seventy_fifth=np.percentile(patristic_distances, 75),
-            minimum=np.min(patristic_distances),
-            maximum=np.max(patristic_distances),
-            standard_deviation=stat.stdev(patristic_distances),
-            variance=stat.variance(patristic_distances)
-        )
+        return combos, patristic_distances
+
+    def calculate_patristic_distances(self, tree):
+        # get tree tips
+        tips = self.get_tip_names_from_tree(tree)
+        
+        # get distances between pairs of taxa
+        combos, patristic_distances = self.calculate_distance_between_pairs(tips, tree)
+        
+        # calculate summary stats
+        stats = calculate_summary_statistics_from_arr(patristic_distances)
         
         return patristic_distances, combos, stats
