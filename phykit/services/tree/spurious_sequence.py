@@ -1,7 +1,7 @@
 import statistics as stat
+from typing import Tuple
 
 from .base import Tree
-
 
 class SpuriousSequence(Tree):
     def __init__(self, args) -> None:
@@ -27,6 +27,21 @@ class SpuriousSequence(Tree):
         return dict(tree_file_path=args.tree, factor=args.factor)
 
     def identify_spurious_sequence(self, tree, factor):
+        branch_lengths, name_and_branch_len = self.get_branch_lengths_and_their_names(tree)
+
+        median = stat.median(branch_lengths)
+
+        if factor is None:
+            factor = 20
+
+        threshold = median*factor
+
+        return name_and_branch_len, threshold, median
+    
+    def get_branch_lengths_and_their_names(
+        self,
+        tree
+    ) -> Tuple[list, list]:
         # initialize a list to hold branch lengths and a
         # dictionary with terminal names and the branch
         # lengths that lead up to them.
@@ -42,14 +57,5 @@ class SpuriousSequence(Tree):
         for internal in tree.get_nonterminals():
             branch_lengths.append(terminal.branch_length)
 
-        median = stat.median(branch_lengths)
-
-        if factor is None:
-            factor = 20
-
-        threshold = median*factor
-
-        return(name_and_branch_len, threshold, median)
-            
-            
+        return branch_lengths, name_and_branch_len      
 
