@@ -12,9 +12,15 @@ class InternodeLabeler(Tree):
 
     def process_args(self, args):
         tree_file_path = args.tree
+
+        if args.output is None:
+            output_file_path = f"{tree_file_path}.internode_labels.tre"
+        else:
+            output_file_path = f"{args.output}"
+
         return dict(
             tree_file_path=tree_file_path,
-            output_file_path=f"{tree_file_path}.internode_labels.tre",
+            output_file_path=output_file_path,
         )
 
     def add_labels_to_tree(self, tree):
