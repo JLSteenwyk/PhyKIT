@@ -53,7 +53,7 @@ class Tree(BaseService):
 
     def get_tip_names_from_tree(
         self, tree
-        ):
+        ) -> list:
         """
         get tip names from a tree
         """
