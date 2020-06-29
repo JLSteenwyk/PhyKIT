@@ -32,7 +32,7 @@ class TreenessOverRCV(Tree):
         treeness_over_rcv = self.calculate_treeness_over_rcv(treeness, relative_composition_variability)
         
         # print results
-        print(f"{treeness_over_rcv}\t{treeness}\t{relative_composition_variability}")
+        print(f"{round(treeness_over_rcv, 4)}\t{round(treeness, 4)}\t{round(relative_composition_variability, 4)}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, alignment_file_path=args.alignment)

@@ -67,7 +67,7 @@ class CovaryingEvolutionaryRates(Tree):
             for val_zero, val_one in zip(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths):
                 print(val_zero, val_one)
         else:
-            print(f"{corr[0]}\t{corr[1]}")
+            print(f"{round(corr[0], 4)}\t{round(corr[1], 6)}")
 
     def process_args(self, args):
         return dict(

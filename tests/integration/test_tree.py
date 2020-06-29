@@ -23,14 +23,14 @@ class TestTree(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 95.71428571428571"),
+            call("mean: 95.7143"),
             call("median: 100"),
             call("25th percentile: 92.5"),
             call("75th percentile: 100.0"),
             call("minimum: 85"),
             call("maximum: 100"),
-            call("standard deviation: 7.319250547113999"),
-            call("variance: 53.57142857142857")
+            call("standard deviation: 7.3193"),
+            call("variance: 53.5714")
         ]
 
     @patch("builtins.print")
@@ -75,7 +75,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates(self, mocked_print):
-        expected_result = "0.6768674714051391\t0.06522847778914183"
+        expected_result = "0.6769\t0.065228"
         testargs = [
             "phykit",
             "covarying_evolutionary_rates",
@@ -90,7 +90,7 @@ class TestTree(object):
     
     @patch("builtins.print")
     def test_dvmc(self, mocked_print):
-        expected_result = 42.80162365633575
+        expected_result = 42.8016
         testargs = [
             "phykit",
             "dvmc",
@@ -114,19 +114,18 @@ class TestTree(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 6.987232"),
-            call("median: 3.87382"),
+            call("mean: 6.9872"),
+            call("median: 3.8738"),
             call("25th percentile: 2.0946"),
-            call("75th percentile: 7.52973"),
+            call("75th percentile: 7.5297"),
             call("minimum: 0.846"),
-            call("maximum: 20.59201"),
-            call("standard deviation: 8.011401268758792"),
-            call("variance: 64.18255028907")
+            call("maximum: 20.592"),
+            call("standard deviation: 8.0114"),
+            call("variance: 64.1826")
         ]
 
     @patch("builtins.print")
     def test_internode_labeler(self, mocked_print):
-        expected_result = "42.80162365633575"
         testargs = [
             "phykit",
             "internode_labeler",
@@ -155,14 +154,14 @@ class TestTree(object):
             Phykit()
 
         expected = [
-            dict(label="mean", value=-12.500000000000021),
-            dict(label="median", value=-27.805984232865924),
-            dict(label="25th percentile", value=-31.04918307557076),
-            dict(label="75th percentile", value=-12.903859858133494),
-            dict(label="minimum", value=-39.283360704291205),
-            dict(label="maximum", value=65.67086344271496),
-            dict(label="standard deviation", value=35.26687859163368),
-            dict(label="variance", value=1243.7527255970297),
+            dict(label="mean", value=-12.5),
+            dict(label="median", value=-27.806),
+            dict(label="25th percentile", value=-31.0492),
+            dict(label="75th percentile", value=-12.9039),
+            dict(label="minimum", value=-39.2834),
+            dict(label="maximum", value=65.6709),
+            dict(label="standard deviation", value=35.2669),
+            dict(label="variance", value=1243.7527),
         ]
 
         for print_call, expected_call in zip(mocked_print.call_args_list, expected):
@@ -182,14 +181,14 @@ class TestTree(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 76.19737857142857"),
-            call("median: 49.588789999999996"),
-            call("25th percentile: 40.50536"),
-            call("75th percentile: 108.13853"),
+            call("mean: 76.1974"),
+            call("median: 49.5888"),
+            call("25th percentile: 40.5054"),
+            call("75th percentile: 108.1385"),
             call("minimum: 24.0"),
-            call("maximum: 152.88127"),
-            call("standard deviation: 45.46979239234539"),
-            call("variance: 2067.5020202029905")
+            call("maximum: 152.8813"),
+            call("standard deviation: 45.4698"),
+            call("variance: 2067.502")
         ]
 
     @patch("builtins.print")
@@ -209,7 +208,7 @@ class TestTree(object):
             call("Gene Support Frequency Results"),
             call("=============================="),
             call("chi-squared: 20.0"),
-            call("p-value: 5e-05"),
+            call("p-value: 4.5e-05"),
             call("total genes: 10"),
             call("0-1: 10"),
             call("0-2: 0"),
@@ -226,7 +225,6 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_prune(self, mocked_print):
-        expected_result = "42.80162365633575"
         testargs = [
             "phykit",
             "prune",
@@ -247,7 +245,6 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_rename_tree_tips(self, mocked_print):
-        expected_result = "42.80162365633575"
         testargs = [
             "phykit",
             "rename_tree_tips",
@@ -282,7 +279,7 @@ class TestTree(object):
     
     @patch("builtins.print")
     def test_saturation(self, mocked_print):
-        expected_result = "0.8450918939348693"
+        expected_result = 0.8451
         testargs = [
             "phykit",
             "saturation",
@@ -330,7 +327,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_total_tree_length(self, mocked_print):
-        expected_result = 277.27722
+        expected_result = 277.2772
         testargs = [
             "phykit",
             "total_tree_length",
@@ -342,7 +339,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_treeness(self, mocked_print):
-        expected_result = 0.18990700507564479
+        expected_result = 0.1899
         testargs = [
             "phykit",
             "treeness",
@@ -354,7 +351,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_treeness_over_rcv(self, mocked_print):
-        expected_result = "0.3499922889045443\t0.12599722400563595\t0.36"
+        expected_result = "0.35\t0.126\t0.36"
         testargs = [
             "phykit",
             "treeness_over_rcv",
