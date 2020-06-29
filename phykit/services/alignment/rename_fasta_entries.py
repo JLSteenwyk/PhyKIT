@@ -18,10 +18,15 @@ class RenameFastaEntries(Alignment):
 
         
     def process_args(self, args):
+        if args.output is None:
+            output_file_path = f"{args.fasta}.renamed.fa"
+        else:
+            output_file_path = f"{args.output}"
+
         return dict(
             fasta=args.fasta, 
             idmap=args.idmap,
-            output_file_path=f"{args.fasta}.renamed.fa"
+            output_file_path=output_file_path
         )
 
     def replace_ids_and_write(self, output_file_path, records, idmap):

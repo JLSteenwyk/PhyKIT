@@ -17,10 +17,15 @@ class BranchLengthMultiplier(Tree):
         self.write_tree_file(tree_mod, self.output_file_path)
 
     def process_args(self, args):
+        if args.output is None:
+            output_file_path = f"{args.tree}.factor_{args.factor}.tre"
+        else:
+            output_file_path = f"{args.output}"
+
         return dict(
             tree_file_path=args.tree,
             factor=args.factor,
-            output_file_path=f"{args.tree}.factor_{args.factor}.tre"
+            output_file_path=output_file_path
         )
 
     def multiply_branch_lengths_by_factor(self, tree, factor):
