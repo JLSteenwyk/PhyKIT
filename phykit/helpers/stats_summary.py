@@ -46,11 +46,11 @@ def print_summary_statistics(
 ):
     """
     """
-    print(f"mean: {stats['mean']}")
-    print(f"median: {stats['median']}")
-    print(f"25th percentile: {stats['twenty_fifth']}")
-    print(f"75th percentile: {stats['seventy_fifth']}")
-    print(f"minimum: {stats['minimum']}")
-    print(f"maximum: {stats['maximum']}")
-    print(f"standard deviation: {stats['standard_deviation']}")
-    print(f"variance: {stats['variance']}")
+    print(f"mean: {round(stats['mean'], 4)}")
+    print(f"median: {round(stats['median'], 4)}")
+    print(f"25th percentile: {round(stats['twenty_fifth'], 4)}")
+    print(f"75th percentile: {round(stats['seventy_fifth'], 4)}")
+    print(f"minimum: {round(stats['minimum'], 4)}")
+    print(f"maximum: {round(stats['maximum'], 4)}")
+    print(f"standard deviation: {round(stats['standard_deviation'], 4)}")
+    print(f"variance: {round(stats['variance'], 4)}")

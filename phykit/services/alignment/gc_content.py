@@ -39,7 +39,7 @@ class GCContent(Alignment):
                 all_seqs.append(seq)
             all_seqs = ''.join(all_seqs)
             all_seqs, matches = self.find_matches_and_remove_gaps(all_seqs)
-            print(f"{len(matches)/len(all_seqs)}")
+            print(f"{round(len(matches)/len(all_seqs), 4)}")
             
 
     def process_args(self, args):
