@@ -9,7 +9,7 @@ class AlignmentLengthNoGaps(Alignment):
     def run(self):
         alignment, alignment_format = self.get_alignment_and_format()
         aln_len_no_gaps, aln_len, aln_len_no_gaps_per = self.calculate_alignment_length_no_gaps(alignment)
-        print(f"{aln_len_no_gaps}\t{aln_len}\t{aln_len_no_gaps_per}")
+        print(f"{aln_len_no_gaps}\t{aln_len}\t{round(aln_len_no_gaps_per, 4)}")
 
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)

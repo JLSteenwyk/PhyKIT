@@ -41,7 +41,7 @@ run.dvmc:
 	python3 -m phykit-runner dvmc -t ./tests/sample_files/tree_simple.tre -r ./tests/sample_files/tree_simple.outgroup.txt
 
 run.internal_branch_stats:
-	python3 -m phykit-runner collapse_branches ./tests/sample_files/tree_simple.tre
+	python3 -m phykit-runner internal_branch_stats ./tests/sample_files/tree_simple.tre
 
 run.internode_labeler:
 	python3 -m phykit-runner internode_labeler ./tests/sample_files/tree_simple.tre

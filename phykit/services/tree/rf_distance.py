@@ -20,7 +20,7 @@ class RobinsonFouldsDistance(Tree):
         tree_one = self.read_tree1_file()
         plain_rf, normalized_rf = self.calculate_robinson_foulds_distance(tree_zero, tree_one)
         
-        print(f"{plain_rf}\t{normalized_rf}")
+        print(f"{plain_rf}\t{round(normalized_rf, 4)}")
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree_zero, tree1_file_path=args.tree_one)
