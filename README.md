@@ -1,36 +1,46 @@
-Phylogenetics and Phylogenomics toolKIT
+PhyKIT is a collection of functions that help users explore alignments and
+trees. For example, PhyKIT can calculate statistics and parameters of alignments
+and trees that are associated with phylogenetic signal, assist in creating 
+concatenated or codon-based alignments for tree inference, among other functions.
+  
 
-Currently, the following functions are implemented in PhyKIT:
-• treeness
-• total tree length
-• internode labeler
-• LB score
-• alignment length calculation
-• number of variable sites calculation; percent variable sites
-• number of parsimony informative sites calculation; percent parsimony informative sites
-• Average internal branch length
-• Aln. length after removing any site with gaps
-• dvmc
-• average bipartition support
-• patristic distance determination
-• rcv
-• plain robinson-foulds distance; normalized robinson-foulds distance
-• treeness / rcv
-• protein-to-nucleotide (pal2nal) alignment conversion
-• long termini (terminal branches with tips longer than xx the median terminal branch length)
-• create concatenation matrix
-• print ascii tree
-• print tree tip names
-• rename tree tips
-• rename names in alignments
-• GC content calculation
-• A proxy of evolutionary rate https://academic.oup.com/gbe/article/9/8/1998/4060518
-• branch length multiplier
-• correlated gene-gene evolution
-• Saturation
-• Create function to prune tips from a tree
-• Integrate polytomy testing function
 
+Functions that calculate measures of phylogenetic signal include: 
+- alignment_length
+- alignment_length_no_gaps
+- bipartition_support_stats
+- gc_content
+- internal_branch_stats
+- long_branch_score
+- parsimony_informative_sites
+- relative_composition_variability
+- saturation 
+- treeness
+- treeness_over_rcv
+- variable_sites
+
+Functions that perform calculations on multiple trees include:
+- covarying_evolutionary_rates
+- polytomy_test
+- robinson_foulds_distance
+
+Functions that help edit/manipulative or view alignments or trees include:
+- rename_fasta_entries
+- branch_length_multiplier
+- collapse_branches
+- internode_labeler
+- print_tree
+- prune_tree
+- rename_tree_tips
+
+Functions that help build alignments for tree inference include:
+- create_concatenation_matrix
+- thread_dna
+
+Other functions that help understand alignments or trees include:
+- pairwise_identity
+- patristic_distances
+- spurious_sequence
 
 
 =============================================

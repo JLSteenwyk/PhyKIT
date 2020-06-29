@@ -17,8 +17,12 @@ class CollapseBranches(Tree):
         self.write_tree_file(tree, self.output_file_path)
 
     def process_args(self, args):
+        if args.output is None:
+            output_file_path = f"{args.tree}.collapsed_{args.support}.tre"
+        else:
+            output_file_path = f"{args.output}"
         return dict(
             tree_file_path=args.tree,
             support=args.support,
-            output_file_path=f"{args.tree}.collapsed_{args.support}.tre",
+            output_file_path=output_file_path,
         )

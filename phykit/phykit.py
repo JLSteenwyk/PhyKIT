@@ -68,8 +68,6 @@ class Phykit(object):
                 Citation: Steenwyk et al. Journal, journal info, link
     """
     
-    # TODO: consider reorganizing into types of analysis rather than
-    # input file
     def __init__(self):
         parser = ArgumentParser(
             add_help=True,
@@ -79,14 +77,25 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                PhyKIT helps with all things phylogenetics and phylogenomics.
+                PhyKIT helps with building and understanding phylogenetic trees.
+
+                More specifically, PhyKIT is a collection of functions that perform
+                various operations on multiple sequence alignments and newick tree
+                files. Generally, all functions are designed to help understand
+                the contents of alignments (e.g., gc content or the number of parsimony
+                informative sites) and the shape of trees (e.g., treeness, degree of
+                violation of a molecular clock).
 
                 Usage: phykit <command> [optional command arguments]
 
                 Command specific help messages can be viewed by adding a 
                 -h/--help argument after the command. For example, to see the
                 to see the help message for the command 'treeness', execute
-                phykit treeness -h or phykit treeness --help.
+                "phykit treeness -h" or "phykit treeness --help".
+
+                Lastly, each function comes with aliases to save the user some
+                key strokes. For example, to get the help message for the 'treeness'
+                function, you can type "phykit tness -h".
 
                 Alignment-based commands
                 ========================
@@ -94,11 +103,13 @@ class Phykit(object):
                     - calculates alignment length
                 alignment_length_no_gaps (alias: aln_len_no_gaps; alng)
                     - calculates alignment length after removing sites with gaps
+                create_concatenation_matrix (alias: create_concat; cc)
+                    - create concatenation matrix from a set of alignments                    
                 gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
                 pairwise_identity (alias: pi)
                     - calculates average pairwise identify among sequences in
-                      an alignment file
+                      an alignment file. This is a proxy for evolutionary rate
                 parsimony_informative_sites (alias: pis)
                     - calculates the number and percentage of parsimony
                       informative sites in an alignment
@@ -106,6 +117,8 @@ class Phykit(object):
                     - calculates relative composition variability in an alignment
                 rename_fasta_entries (alias: rename_fasta)
                     - rename entries in a fasta file
+                thread_dna (alias: pal2nal; p2n)
+                    - thread dna sequences over a protein alignment
                 variable_sites (alias: vs)
                     - calculates the number and percentage of variable sites
                       in an alignment
@@ -132,6 +145,9 @@ class Phykit(object):
                     - calculates total tree length
                 patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
+                polytomy_test
+                    - conducts a polytomy test using triplet and gene
+                      support frequencies
                 print_tree (alias: print)
                     - prints ascii tree
                 prune_tree (alias: prune)
@@ -157,20 +173,13 @@ class Phykit(object):
                       patristic distance and uncorrected distances
                 treeness_over_rcv (alias: toverr)
                     - calculates treeness/rcv, treeness, and rcv
-
-                Helper commands
-                ===============
-                create_concatenation_matrix (alias: create_concat; cc)
-                    - create concatenation matrix from a set of alignments
-                thread_dna (alias: pal2nal; p2n)
-                    - thread dna sequences over a protein alignment
                 """
             ),
         )
         parser.add_argument("command", help=SUPPRESS)
         args = parser.parse_args(sys.argv[1:2])
 
-        # command is part of the possible commands (i.e., the long form
+        # if command is part of the possible commands (i.e., the long form
         # commands, run). Otherwise, assume it is an alias and look to the
         # run_alias function
         if hasattr(self, args.command):
@@ -214,22 +223,24 @@ class Phykit(object):
             return self.internode_labeler()
         elif command in ['long_branch_score', 'lbs']:
             return self.lb_score()
-        elif command == 'tree_len':
-            return self.total_tree_length
         elif command == 'pd':
             return self.patristic_distances()
-        elif command == 'print':
+        elif command in ['polyt_test', 'ptt']:
+            return self.polytomy_test()
+        elif command in ['print', 'pt']:
             return self.print_tree()
         elif command == 'prune':
             return self.prune_tree()
         elif command == 'rename_tree':
             return self.rename_tree_tips()
-        elif command in ['robinson_foulds_distance', 'rf']:
+        elif command in ['robinson_foulds_distance', 'rf_dist', 'rf']:
             return self.rf_distance()
         elif command in ['spurious_seq', 'ss']:
             return self.spurious_sequence()
         elif command == 'labels':
             return self.tip_labels()
+        elif command == 'tree_len':
+            return self.total_tree_length
         elif command == 'tness':
             return self.treeness()
         # Alignment- and tree-based aliases
@@ -257,13 +268,15 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Longer alignments are associated with strong phylogenetic signal.
-
                 Length of the input alignment is calculated using this function.
+
+                Longer alignments are associated with strong phylogenetic signal.
                 
                 Association between alignment length and phylogenetic signal
                 was determined by Shen et al., Genome Biology and Evolution (2016),
                 doi: 10.1093/gbe/evw179.
+
+                Aliases: aln_len, al
 
                 Usage:
                 phykit alignment_length <alignment>
@@ -288,6 +301,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate alignment length excluding sites with gaps.
+
                 Longer alignments when excluding sites with gaps is
                 associated with strong phylogenetic signal.
 
@@ -300,6 +315,8 @@ class Phykit(object):
                 with gaps and phylogenetic signal was determined by Shen 
                 et al., Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
+
+                Aliases: aln_len_no_gaps, alng
 
                 Usage:
                 phykit alignment_length_no_gaps <alignment>
@@ -327,11 +344,19 @@ class Phykit(object):
                 
                 Calculate GC content of a fasta file.
 
+                GC content is negatively correlated to phylogenetic signal.
+
                 If there are multiple entries, use the -v/--verbose option
                 to determine the GC content of each fasta entry separately.
 
+                Association between GC content and phylogenetic signal was
+                determined by Shen et al., Genome Biology and Evolution (2016), 
+                doi: 10.1093/gbe/evw179.
+
+                Alias: gc
+
                 Usage:
-                phykit gc_content <file> 
+                phykit gc_content <fasta> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -340,8 +365,8 @@ class Phykit(object):
                                             a fasta file 
             
                 -v, --verbose               optional argument to print
-                                            all bipartition support
-                                            values
+                                            the GC content of each fasta
+                                            entry
                 """
             ),
         )
@@ -350,6 +375,52 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         GCContent(args).run()
 
+    # TODO: write unit tests
+    # TODO: consider renaming to evolutionary_rate
+    def pairwise_identity(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Calculate the average pairwise identity among sequences.
+                
+                Pairwise identities can be used as proxies for the
+                evolutionary rate of sequences.
+
+                Pairwise identity is defined as the number of identical
+                columns between two aligned sequences divided by the
+                number of columns in the alignment. Summary statistics
+                are reported but with the verbose option, all pairwise
+                identities will be reported.
+
+                An example of pairwise identities being used as a proxy
+                for evolutionary rate can be found here: Chen et al. 
+                Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
+
+                Alias: pi
+
+                Usage:
+                phykit pairwise_identity <alignment> [-v/--verbose]
+
+                Options
+                =====================================================
+                <alignment>                 first argument after 
+                                            function name should be
+                                            an alignment file  
+
+                -v, --verbose               optional argument to print
+                                            identity per pair       
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        PairwiseIdentity(args).run()
+
     def parsimony_informative_sites(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -357,6 +428,9 @@ class Phykit(object):
             description=textwrap.dedent(
                 f"""\
                 {self.help_header}
+
+                Calculate the number and percentage of parismony
+                informative sites in an alignment.
 
                 The number of parsimony informative sites in an alignment
                 is associated with strong phylogenetic signal.
@@ -370,6 +444,8 @@ class Phykit(object):
                 sites and phylogenetic signal was determined by Shen 
                 et al., Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179
+
+                Alias: pis
 
                 Usage:
                 phykit parsimony_informative_sites <alignment>
@@ -386,50 +462,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         ParsimonyInformative(args).run()
 
-    # TODO: write unit tests
-    # TODO: consider renaming to evolutionary_rate
-    def pairwise_identity(self):
-        parser = ArgumentParser(add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
-            description=textwrap.dedent(
-                f"""\
-                {self.help_header}
-
-                Calculate the average pairwise identity among sequences.
-                Pairwise identities can be used as proxies for the
-                evolutionary rate of sequences.
-
-                Pairwise identity is defined as the number of identical
-                columns between two aligned sequences divided by the
-                number of columns in the alignment. Summary statistics
-                are reported but with the verbose option, all pairwise
-                identities will be reported.
-
-                An example of pairwise identities being used as a proxy
-                for evolutionary rate can be found here: Chen et al. 
-                Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
-
-                Usage:
-                phykit pairwise_identity <alignment> [-v/--verbose]
-
-                Options
-                =====================================================
-                <alignment>                 first argument after 
-                                            function name should be
-                                            an alignment file  
-
-                -v, --verbose               optional argument to print
-                                            all bipartition support
-                                            values        
-                """
-            ),
-        )
-        parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
-        PairwiseIdentity(args).run()
-
     def rcv(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -438,18 +470,19 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Lower RCV (relative composition variability) values are thought
-                to be desirable because they represent a lower composition bias
-                in an alignment.
+                Calculate RCV (relative composition variability) for an alignment.
 
-                More specifically, RCV describes the average variability in 
-                composition among taxa. 
+                Lower RCV values are thought to be desirable because they represent
+                a lower composition bias in an alignment. Statistically, RCV describes
+                the average variability in composition among taxa. 
 
                 Calculate RCV following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
+                Alias: rcv
+
                 Usage:
-                phykit rcv <alignment>
+                phykit relative_composition_variability <alignment>
 
                 Options
                 =====================================================
@@ -475,13 +508,15 @@ class Phykit(object):
                 Renames fasta entries.
 
                 Renaming fasta entries will follow the scheme of a tab-delimited
-                file wherein the first column is the current tip name and the
-                second column is the desired tip name in the resulting 
-                phylogeny. 
+                file wherein the first column is the current fasta entry name and
+                the second column is the new fasta entry name in the resulting 
+                output alignment. 
+
+                Alias: rename_fasta
 
                 Usage:
-                phykit rename_fasta_entries <fasta> -i/--idmap <idmap.txt>
-                    [-o/--output <output_file>] 
+                phykit rename_fasta_entries <fasta> -i/--idmap <idmap>
+                    [-o/--output <output_file>]
 
                 Options
                 =====================================================
@@ -494,13 +529,16 @@ class Phykit(object):
                                             names (col2)
 
                 -o/--output                 optional argument to write
-                                            the renamed fasta file to          
+                                            the renamed fasta file to.
+                                            Default output has the same 
+                                            name as the input file with
+                                            the suffix ".renamed.fa" added
+                                            to it.
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
-        # TODO: write in functionality of using the output argument
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         RenameFastaEntries(args).run()
@@ -512,6 +550,8 @@ class Phykit(object):
             description=textwrap.dedent(
                 f"""\
                 {self.help_header}
+
+                Calculate the number of variable sites in an alignment.
 
                 The number of variable sites in an alignment is 
                 associated with strong phylogenetic signal.
@@ -526,12 +566,14 @@ class Phykit(object):
                 Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
 
+                Alias: vs
+
                 Usage:
-                phykit variable_sites <file>
+                phykit variable_sites <alignment>
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <alignment>                 first argument after 
                                             function name should be
                                             an alignment file          
                 """
@@ -552,13 +594,15 @@ class Phykit(object):
                 {self.help_header}
                 
                 High bipartition support values are thought to be desirable because
-                they are indicative of greater certainty in the tree topology.
+                they are indicative of greater certainty in tree topology.
 
                 Calculate summary statistics for bipartition support. Summary
                 statistics include mean, median, 25th percentile, 75th percentile,
                 minimum, maximum, standard deviation, and variance. 
 
                 To obtain all bipartition support values, use the -v/--verbose option.
+
+                Alias: bss
 
                 Usage:
                 phykit bipartition_support_stats <tree> [-v/--verbose]
@@ -576,7 +620,13 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            required=False,
+            help=SUPPRESS
+        )
         args = parser.parse_args(sys.argv[2:])
         BipartitionSupportStats(args).run()
 
@@ -594,6 +644,8 @@ class Phykit(object):
                 This can help modify reference trees when conducting simulations
                 or other analyses.              
 
+                Alias: blm
+
                 Usage:
                 phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>]
 
@@ -607,7 +659,11 @@ class Phykit(object):
                                             lengths by 
 
                 -o/--output                 optional argument to name 
-                                            the outputted tree file
+                                            the outputted tree file.
+                                            Default output will have 
+                                            the same name as the input
+                                            file but with the suffix 
+                                            ".factor_(n).tre"
                 """
             ),
         )
@@ -634,6 +690,8 @@ class Phykit(object):
                 Bipartitions will be collapsed if they are less than the user specified
                 value.              
 
+                Alias: collapse, cb
+
                 Usage:
                 phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>]
 
@@ -647,7 +705,12 @@ class Phykit(object):
                                             than this value will be collapsed
 
                 -o/--output                 optional argument to name 
-                                            the outputted tree file
+                                            the outputted tree file.
+                                            Default output will have 
+                                            the same name as the input
+                                            file but with the suffix 
+                                            ".collapsed_(support).tre""
+
                 """
             ),
         )
@@ -670,6 +733,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Determine if two genes have a signature of coevolving with one another.
+
                 Genes that have covarying evolutionary histories tend to have 
                 similar functions and expression levels.
 
@@ -682,12 +747,18 @@ class Phykit(object):
                 method developers, outlier branches are removed. Outlier branches
                 have a relative evolutionary rate greater than five.
 
+                PhyKIT reports three tab delimited values:
+                col1: correlation coefficient
+                col2: p-value
+
                 Method is empirically evaluated by Clark et al., Genome Research
                 (2012), doi: 10.1101/gr.132647.111.
 
+                Alias: cover
+
                 Usage:
                 phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
-                    [-r/--reference <reference_tree_file>]
+                    -r/--reference <reference_tree_file>
 
                 Options
                 =====================================================
@@ -723,9 +794,10 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Lower DVMC (degree of violation of the molecular clock) values are
-                thought to be desirable because they are indicative of a lower degree of
-                violation in the molecular clock assumption.
+                Calculate DVMC (degree of violation of the molecular clock) of a tree.
+
+                Lower DVMC values are thought to be desirable because they are indicative
+                of a lower degree of violation in the molecular clock assumption.
 
                 Typically, outgroup taxa are not included in molecular clock analysis. Thus,
                 prior to calculating DVMC from a single gene tree, outgroup taxa are pruned
@@ -738,8 +810,11 @@ class Phykit(object):
                 Calculate degree of violation of the molecular clock (or DVMC) in a tree
                 following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
 
+                Alias: dvmc
+
                 Usage:
-                phykit dvmc -t/--tree <newick_tree> -r/--root <root_taxa>
+                phykit degree_of_violation_of_a_molecular_clock -t/--tree <tree>
+                    -r/--root <root_taxa>
 
                 Options
                 =====================================================
@@ -767,6 +842,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate summary statistics for internal branch lengths in a tree.
+
                 Internal branch lengths can be useful for tree diagnostics.
 
                 Summary statistics of internal branch lengths include mean,
@@ -774,12 +851,14 @@ class Phykit(object):
                 standard deviation, and variance of per taxon LB scores is reported.
                 To obtain all internal branch lengths, use the -v/--verbose option. 
 
+                Alias: ibs
+
                 Usage:
-                phykit internal_branch_stats <file> [-v/--verbose]
+                phykit internal_branch_stats <tree> [-v/--verbose]
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <tree>                      first argument after 
                                             function name should be
                                             a tree file
 
@@ -789,7 +868,13 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            required=False,
+            help=SUPPRESS
+        )
         args = parser.parse_args(sys.argv[2:])
         InternalBranchStats(args).run()
 
@@ -805,6 +890,8 @@ class Phykit(object):
                 Appends numerical identifiers to bipartitions in place
                 of support values. This is helpful for pointing to
                 specific internodes in supplementary files or otherwise. 
+
+                Alias: il
 
                 Usage:
                 phykit internode_labeler <file> [-o/--output <file>]
@@ -834,6 +921,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate LB (long branch) scores in a phylogeny.
+
                 Lower LB (long branch) scores are thought to be desirable
                 because they are indicative of taxa or trees that likely do
                 not have issues with long branch attraction.
@@ -850,8 +939,10 @@ class Phykit(object):
                 LB scores are calculated following Struck, Evolutionary 
                 Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
+                Alias: lb_score, lbs
+
                 Usage:
-                phykit lb_score <tree> [-v/--verbose]
+                phykit long_branch_score <tree> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -877,6 +968,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate patristic distances in a phylogeny.
+
                 Patristic distances describes the distance from tip to tip.
 
                 Summary statistics reported include mean, median, 25th
@@ -887,12 +980,14 @@ class Phykit(object):
                 separated by a '-' followed by the patristic distance. Features
                 will be tab separated. 
 
+                Alias: pd
+
                 Usage:
-                phykit patristic_distances <file> [-v/--verbose]
+                phykit patristic_distances <tree> [-v/--verbose]
 
                 Options
                 =====================================================
-                <file>                      first argument after 
+                <tree>                      first argument after 
                                             function name should be
                                             a tree file
 
@@ -916,6 +1011,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Conduct a polytomy test for three clades in a phylogeny.
+
                 Polytomy tests can be used to identify putative radiations
                 as well as identify well supported alternative topologies.
 
@@ -933,10 +1030,12 @@ class Phykit(object):
                 is evidence to reject the null hypothesis wherein the null 
                 hypothesis is that the three possible topologies among the three
                 groups are equally supported. This test is done individually for
-                triplets and then again for gene support frequencies.
+                triplets and gene support frequencies.
+
+                Alias: polyt_test, ptt
 
                 Usage:
-                phykit polytomy_test <file> [-v/--verbose]
+                phykit polytomy_test -t/--trees <trees> -g/--groups <groups>
 
                 Options
                 =====================================================
@@ -977,6 +1076,8 @@ class Phykit(object):
                 By default, the phylogeny will be printed with branch lengths
                 but branch lengths can be removed using the -r/--remove argument.
 
+                Alias: print, pt
+
                 Usage:
                 phykit print_tree <tree> [-r/--remove]
 
@@ -1012,6 +1113,8 @@ class Phykit(object):
                 in the input phylogeny you would like to prune from the
                 tree.
 
+                Alias: prune
+
                 Usage:
                 phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>]
 
@@ -1026,8 +1129,11 @@ class Phykit(object):
                                             from the phylogeny 
 
                 -o/--output                 name of output file for the
-                                            pruned phylogeny. (Default:
-                                            is adding the suffix '.pruned')     
+                                            pruned phylogeny. 
+                                            Default output will have 
+                                            the same name as the input
+                                            file but with the suffix 
+                                            ".pruned"    
                 """
             ),
         )
@@ -1053,6 +1159,8 @@ class Phykit(object):
                 second column is the desired tip name in the resulting 
                 phylogeny. 
 
+                Alias: rename_tree
+
                 Usage:
                 phykit rename_tree_tips <tree> -i/--idmap <idmap.txt>
                     [-o/--output <output_file>] 
@@ -1068,13 +1176,16 @@ class Phykit(object):
                                             names (col2)
 
                 -o/--output                 optional argument to write
-                                            the renamed tree files to          
+                                            the renamed tree files to.
+                                            Default output will have 
+                                            the same name as the input
+                                            file but with the suffix 
+                                            ".renamed"          
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
-        # TODO: write in functionality of using the output argument
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         RenameTreeTips(args).run()
@@ -1087,17 +1198,21 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Low (RF) Robinson-Foulds distances reflect greater similarity between
-                two phylogenies. This function prints out two values, the plain
-                RF value and the normalized RF value, which are separated by a tab.
-                Normalized RF values are calculated by taking the plain RF value and
-                dividing it by 2(n-3) where n is the number of tips in the phylogeny. 
+                Calculate (RF) Robinson-Foulds distance between two trees.
+
+                Low RF distances reflect greater similarity between two phylogenies. 
+                This function prints out two values, the plain RF value and the
+                normalized RF value, which are separated by a tab. Normalized RF values
+                are calculated by taking the plain RF value and dividing it by 2(n-3)
+                where n is the number of tips in the phylogeny. 
 
                 RF distances are calculated following Robinson & Foulds, Mathematical 
                 Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
 
+                Alias: rf_distance, rf_dist, rf
+
                 Usage:
-                phykit rf_distance <tree_file_zero> <tree_file_one>
+                phykit robinson_foulds_distance <tree_file_zero> <tree_file_one>
 
                 Options
                 =====================================================
@@ -1125,6 +1240,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header} 
 
+                Determines potentially spurious orthologs using branch lengths.
+
                 Identifies potentially spurious sequences and reports
                 tips in the phylogeny that could possibly be removed
                 from the underlying multiple sequence alignments. PhyKIT
@@ -1135,6 +1252,8 @@ class Phykit(object):
                 Using this method to identify potentially spurious sequences
                 was, to my knowledge, first introduced by Shen et al., (2018)
                 Cell doi: 10.1016/j.cell.2018.10.023.                
+
+                Alias: spurious_seq, ss
 
                 Usage:
                 phykit spurious_sequence <file> [-f 20]
@@ -1170,10 +1289,12 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate total tree length, which is a sum of all branches. 
+                Prints the labels a phylogeny.
+
+                Alias: labels
 
                 Usage:
-                phykit total_tree_length <tree>
+                phykit tip_labels <tree>
 
                 Options
                 =====================================================
@@ -1196,6 +1317,8 @@ class Phykit(object):
                 {self.help_header}
 
                 Calculate total tree length, which is a sum of all branches. 
+
+                Alias: tree_len
 
                 Usage:
                 phykit total_tree_length <tree>
@@ -1220,6 +1343,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate treeness statistic for a phylogeny.
+
                 Higher treeness values are thought to be desirable because they
                 represent a higher signal-to-noise ratio.
 
@@ -1231,6 +1356,8 @@ class Phykit(object):
                 Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
                 Phillips and Penny, Molecular Phylogenetics and Evolution
                 (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Alias: tness
 
                 Usage:
                 phykit treeness <tree>
@@ -1257,6 +1384,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate saturation for a given tree and alignment.
+
                 Saturation is defined as sequences in multiple sequence
                 alignments that have undergone numerous substitutions such
                 that the distances between taxa are underestimated.
@@ -1266,6 +1395,8 @@ class Phykit(object):
 
                 Saturation is calculated following Philippe et al., PLoS Biology
                 (2011), doi: 10.1371/journal.pbio.1000602.
+
+                Alias: sat
 
                 Usage:
                 phykit saturation -a <alignment> -t <tree> [-v/--verbose]
@@ -1300,6 +1431,8 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
+                Calculate treeness/RCV for a given alignment and tree.
+
                 Higher treeness/RCV values are thought to be desirable because
                 they harbor a high signal-to-noise ratio are least susceptible
                 to composition bias.
@@ -1314,6 +1447,8 @@ class Phykit(object):
 
                 Calculate treeness/RCV following Phillips and Penny, Molecular 
                 Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+
+                Alias: toverr
 
                 Usage:
                 phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
@@ -1355,6 +1490,8 @@ class Phykit(object):
                 2) A partition file ready for input into RAxML or IQ-tree.
                 3) An occupancy file that summarizes the taxon occupancy
                    per sequence.
+
+                Alias: create_concat, cc
 
                 Usage:
                 phykit create_concatenation_matrix -a <file> -p <string>
@@ -1403,6 +1540,8 @@ class Phykit(object):
                 Codon alignments are then printed to stdout. Note, sequences
                 should occur in the same order in the protein and nucleotide
                 alignment.
+
+                Alias: pal2nal, p2n
 
                 Usage:
                 phykit thread_dna -p <file> -n <file> [-s]
