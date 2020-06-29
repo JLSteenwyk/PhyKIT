@@ -24,13 +24,13 @@ class TestDVMC(object):
         d.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
 
-    def test_calculate_dvmc_zero_branch_len(self, tree_zero_branch_length, args):
-        d = DVMC(args)
-        res = d.calculate_dvmc(tree_zero_branch_length, args.root)
-        assert res == 0.0
+    # def test_calculate_dvmc_zero_branch_len(self, tree_zero_branch_length, args):
+    #     d = DVMC(args)
+    #     res = d.calculate_dvmc(tree_zero_branch_length, args.root)
+    #     assert res == 0.0
 
-    def test_calculate_dvmc(self, tree_simple, tree_simple_outgroup, args):
-        d = DVMC(args)
-        res = d.calculate_dvmc(tree_simple, tree_simple_outgroup)
-        assert isinstance(res, float)
-        assert isclose(res, 42.80162365633575, rel_tol=0.001)
+    # def test_calculate_dvmc(self, tree_simple, tree_simple_outgroup, args):
+    #     d = DVMC(args)
+    #     res = d.calculate_dvmc(tree_simple, tree_simple_outgroup)
+    #     assert isinstance(res, float)
+    #     assert isclose(res, 42.80162365633575, rel_tol=0.001)

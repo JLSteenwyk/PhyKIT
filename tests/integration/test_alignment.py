@@ -119,7 +119,7 @@ class TestAlignment(object):
 
     @patch("builtins.print")
     def test_gc_content(self, mocked_print):
-        expected_result = "0.22727272727272727"
+        expected_result = "0.2273"
         testargs = [
             "phykit",
             "gc_content",
@@ -141,14 +141,14 @@ class TestAlignment(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.4666666666666667"),
+            call("mean: 0.4667"),
             call("median: 0.5"),
-            call("25th percentile: 0.3333333333333333"),
+            call("25th percentile: 0.3333"),
             call("75th percentile: 0.625"),
-            call("minimum: 0.16666666666666666"),
-            call("maximum: 0.8333333333333334"),
-            call("standard deviation: 0.2194268628681278"),
-            call("variance: 0.048148148148148155")
+            call("minimum: 0.1667"),
+            call("maximum: 0.8333"),
+            call("standard deviation: 0.2194"),
+            call("variance: 0.0481")
         ]
     
     @patch("builtins.print")
@@ -165,7 +165,7 @@ class TestAlignment(object):
 
     @patch("builtins.print")
     def test_rcv(self, mocked_print):
-        expected_result = "0.36"
+        expected_result = 0.36
         testargs = [
             "phykit",
             "rcv",
@@ -197,7 +197,7 @@ class TestAlignment(object):
 
     @patch("builtins.print")
     def test_variable_sites(self, mocked_print):
-        expected_result = "4\t6\t66.66666666666666"
+        expected_result = "4\t6\t66.6667"
         testargs = [
             "phykit",
             "variable_sites",

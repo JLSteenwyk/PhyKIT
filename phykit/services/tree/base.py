@@ -1,4 +1,5 @@
 from Bio import Phylo
+from typing import Tuple
 
 from ..base import BaseService
 
@@ -52,7 +53,7 @@ class Tree(BaseService):
 
     def get_tip_names_from_tree(
         self, tree
-        ):
+        ) -> list:
         """
         get tip names from a tree
         """
