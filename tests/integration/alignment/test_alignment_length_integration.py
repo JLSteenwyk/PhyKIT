@@ -34,3 +34,18 @@ class TestAlignmentLength(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_alignment_length_incorrect_input_file(self, mocked_print):
+        expected_result = "Input file could not be read. Please check input file argument."
+        testargs = [
+            "phykit",
+            "alignment_length",
+            f"{here.parent.parent.parent}/sample_files/test_trees.txt",
+        ]
+
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2

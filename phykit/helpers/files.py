@@ -1,4 +1,5 @@
 from enum import Enum
+import sys
 
 from Bio import AlignIO
 
@@ -27,7 +28,9 @@ def get_alignment_and_format(alignment_file_path: str):
         except AssertionError:
             continue
 
-    raise Exception("Input file could not be read")
+    print("Input file could not be read. Please check arguments")
+    sys.exit(0)
+    # raise Exception("Input file could not be read.")
 
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     with open(single_col_file_path) as f:
