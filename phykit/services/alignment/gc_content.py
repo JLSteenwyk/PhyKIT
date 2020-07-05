@@ -1,5 +1,6 @@
 from enum import Enum
 import re
+import sys
 
 from Bio import SeqIO
 
@@ -39,7 +40,12 @@ class GCContent(Alignment):
                 all_seqs.append(seq)
             all_seqs = ''.join(all_seqs)
             all_seqs, matches = self.find_matches_and_remove_gaps(all_seqs)
-            print(f"{round(len(matches)/len(all_seqs), 4)}")
+            try:
+                gc_content = round(len(matches)/len(all_seqs), 4)
+            except ZeroDivisionError:
+                print("Input file has an unacceptable format. Please check input file argument.")
+                sys.exit()
+            print(gc_content)
             
 
     def process_args(self, args):
