@@ -9,12 +9,7 @@ class ParsimonyInformative(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        try:
-            alignment, _ = self.get_alignment_and_format()
-        except FileNotFoundError:
-            print("Input corresponds to no such file or directory.")
-            print("Please double checking pathing and filenames")
-            sys.exit()
+        alignment, _ = self.get_alignment_and_format()
         pi_sites, aln_len, pi_sites_per = self.calculate_parsimony_informative_sites(alignment)
         if (pi_sites, aln_len, pi_sites_per):
             print(f"{pi_sites}\t{aln_len}\t{round(pi_sites_per, 4)}")
