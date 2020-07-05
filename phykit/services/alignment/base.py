@@ -1,3 +1,5 @@
+import sys
+
 from ..base import BaseService
 from ...helpers.files import get_alignment_and_format as get_alignment_and_format_helper
 
@@ -29,7 +31,13 @@ class Alignment(BaseService):
         """
         automatic file type determination
         """
-        return get_alignment_and_format_helper(self.alignment_file_path)
+        try:
+            return get_alignment_and_format_helper(self.alignment_file_path)
+        except FileNotFoundError:
+            print("Input corresponds to no such file or directory.")
+            print("Please double checking pathing and filenames")
+            sys.exit()
+        
 
     def calculate_rcv(self):
         alignment, _ = self.get_alignment_and_format()
