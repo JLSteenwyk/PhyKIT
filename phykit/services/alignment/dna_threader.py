@@ -1,3 +1,4 @@
+import sys
 from typing import Tuple
 
 from Bio import SeqIO, SeqRecord
@@ -19,14 +20,17 @@ class DNAThreader(Alignment):
         self.nucleotide_file_path = args.nucleotide
         
     def run(self):
-        prot = self.read_file(self.protein_file_path)
+        try:
+            prot = self.read_file(self.protein_file_path)
+        except FileNotFoundError:
+            print("file not found sorry")
+            sys.exit()
         nucl = self.read_file(self.nucleotide_file_path)
 
         pal2nal = self.thread(prot, nucl)
 
-        if pal2nal:
-            for record in pal2nal:
-                print(f">{record}\n{''.join(pal2nal[record])}")
+        for record in pal2nal:
+            print(f">{record}\n{''.join(pal2nal[record])}")
 
     def read_file(
         self,
@@ -43,44 +47,49 @@ class DNAThreader(Alignment):
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
-        for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
-            # get gene id and sequences
-            gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
+        try:
+            for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
+                # get gene id and sequences
+                gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
 
-            # initialize gap counter and gene in pal2nal dict
-            gap_count = 0
-            pal2nal[gene_id] = []
+                # initialize gap counter and gene in pal2nal dict
+                gap_count = 0
+                pal2nal[gene_id] = []
 
-            # loop through the sequence
-            for aa_idx in range(0, len(p_seq), 1):
-                # if AA is a gap insert a codon of gaps
-                if p_seq[aa_idx] == "-":
-                    pal2nal = self.add_gap(pal2nal, gene_id)
-                    gap_count += 1
-                else:
-                    if self.include_stop_codon:
-                        # if AA is not a gap, insert the corresponding codon
-                        if p_seq[aa_idx] != "-":
-                            pal2nal = self.add_codon(
-                                aa_idx,
-                                gap_count,
-                                n_seq,
-                                gene_id,
-                                pal2nal
-                            )
+                # loop through the sequence
+                for aa_idx in range(0, len(p_seq), 1):
+                    # if AA is a gap insert a codon of gaps
+                    if p_seq[aa_idx] == "-":
+                        pal2nal = self.add_gap(pal2nal, gene_id)
+                        gap_count += 1
                     else:
-                        # if AA is a stop or ambiguous insert a codon of gaps
-                        if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
-                            pal2nal = self.add_gap(pal2nal, gene_id)
+                        if self.include_stop_codon:
+                            # if AA is not a gap, insert the corresponding codon
+                            if p_seq[aa_idx] != "-":
+                                pal2nal = self.add_codon(
+                                    aa_idx,
+                                    gap_count,
+                                    n_seq,
+                                    gene_id,
+                                    pal2nal
+                                )
                         else:
-                            pal2nal = self.add_codon(
-                                aa_idx,
-                                gap_count,
-                                n_seq,
-                                gene_id,
-                                pal2nal
-                            )
-        return pal2nal
+                            # if AA is a stop or ambiguous insert a codon of gaps
+                            if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
+                                pal2nal = self.add_gap(pal2nal, gene_id)
+                            else:
+                                pal2nal = self.add_codon(
+                                    aa_idx,
+                                    gap_count,
+                                    n_seq,
+                                    gene_id,
+                                    pal2nal
+                                )
+            return pal2nal
+        except FileNotFoundError:
+            print("One input correspond to no such file or directory.")
+            print("Please double checking pathing and filenames")
+            sys.exit()
 
     def get_id_and_seqs(
         self,
