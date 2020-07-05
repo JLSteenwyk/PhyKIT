@@ -20,11 +20,7 @@ class DNAThreader(Alignment):
         self.nucleotide_file_path = args.nucleotide
         
     def run(self):
-        try:
-            prot = self.read_file(self.protein_file_path)
-        except FileNotFoundError:
-            print("file not found sorry")
-            sys.exit()
+        prot = self.read_file(self.protein_file_path)
         nucl = self.read_file(self.nucleotide_file_path)
 
         pal2nal = self.thread(prot, nucl)
@@ -87,7 +83,7 @@ class DNAThreader(Alignment):
                                 )
             return pal2nal
         except FileNotFoundError:
-            print("One input correspond to no such file or directory.")
+            print("One input corresponds to no such file or directory.")
             print("Please double checking pathing and filenames")
             sys.exit()
 
