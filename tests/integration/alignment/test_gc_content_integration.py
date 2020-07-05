@@ -60,6 +60,18 @@ class TestGCContent(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_gc_content_alias(self, mocked_print):
+        expected_result = 0.3
+        testargs = [
+            "phykit",
+            "gc",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_2.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
     def test_gc_content_incorrect_input_file(self, mocked_print):
         testargs = [
             "phykit",

@@ -48,6 +48,18 @@ class TestVariableSites(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_variable_sites_alias(self, mocked_print):
+        expected_result = "1\t3\t33.3333"
+        testargs = [
+            "phykit",
+            "vs",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_1.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
     def test_variable_sites_incorrect_input_file(self, mocked_print):
         testargs = [
             "phykit",

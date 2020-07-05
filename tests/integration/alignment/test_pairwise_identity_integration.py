@@ -75,6 +75,27 @@ class TestPairwiseIdentity(object):
         ]
 
     @patch("builtins.print")
+    def test_pairwise_identity_alias(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pi",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_1.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("mean: 0.8333"),
+            call("median: 0.8333"),
+            call("25th percentile: 0.6667"),
+            call("75th percentile: 1.0"),
+            call("minimum: 0.6667"),
+            call("maximum: 1.0"),
+            call("standard deviation: 0.1826"),
+            call("variance: 0.0333")
+        ]
+
+    @patch("builtins.print")
     def test_pairwise_identity_incorrect_input_file(self, mocked_print):
         testargs = [
             "phykit",
