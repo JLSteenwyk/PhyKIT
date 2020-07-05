@@ -36,6 +36,30 @@ class TestAlignmentLength(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_alignment_length_test_alias0(self, mocked_print):
+        expected_result = 9
+        testargs = [
+            "phykit",
+            "aln_len",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_0.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_alignment_length_test_alias1(self, mocked_print):
+        expected_result = 9
+        testargs = [
+            "phykit",
+            "al",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_0.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
     def test_alignment_length_incorrect_input_file(self, mocked_print):
         expected_result = "Input file could not be read. Please check input file argument."
         testargs = [

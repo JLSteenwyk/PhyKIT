@@ -48,6 +48,18 @@ class TestRCV(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_rcv_alias(self, mocked_print):
+        expected_result = 0.25
+        testargs = [
+            "phykit",
+            "relative_composition_variability",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_1.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
     def test_rcv_incorrect_input_file(self, mocked_print):
         testargs = [
             "phykit",

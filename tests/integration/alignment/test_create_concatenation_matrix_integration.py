@@ -123,12 +123,49 @@ class TestCreateConcatenationMatrix(object):
         assert expected_occupency_content == out_occupency_content
         assert expected_partition_content == out_partition_content
 
+
     @patch("builtins.print")
     def test_create_concatenation_matrix_wrong_input_file(self, mocked_print):
         prefix = "./tests/sample_files/test_alignment_concat_123"
         testargs = [
             "phykit",
             "create_concatenation_matrix",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_123.tx",
+            "-p",
+            prefix,
+        ]
+
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_create_concatenation_matrix_alias0(self, mocked_print):
+        prefix = "./tests/sample_files/test_alignment_concat_123"
+        testargs = [
+            "phykit",
+            "create_concat",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_123.tx",
+            "-p",
+            prefix,
+        ]
+
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_create_concatenation_matrix_alias1(self, mocked_print):
+        prefix = "./tests/sample_files/test_alignment_concat_123"
+        testargs = [
+            "phykit",
+            "cc",
             "-a",
             f"{here.parent.parent.parent}/sample_files/test_alignment_123.tx",
             "-p",

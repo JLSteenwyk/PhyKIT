@@ -48,6 +48,18 @@ class TestParsimonyInformativeSites(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_parsimony_informative_sites_alias(self, mocked_print):
+        expected_result = "0\t3\t0.0"
+        testargs = [
+            "phykit",
+            "pis",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_1.fa",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
     def test_parsimony_informative_sites_incorrect_input_file(self, mocked_print):
         testargs = [
             "phykit",
