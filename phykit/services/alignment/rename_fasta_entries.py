@@ -1,3 +1,5 @@
+import sys
+
 from Bio import SeqIO
 
 from .base import Alignment
@@ -36,21 +38,31 @@ class RenameFastaEntries(Alignment):
         idmap and write to output file
         """
         with open(output_file_path, 'w') as output_file_path:
-            for record in records:
-                if record.id in idmap:
-                    # replace ID
-                    record.id = idmap[record.id]
-                    # remove description
-                    record.description = ''
-                SeqIO.write(record, output_file_path, "fasta")
+            try:
+                for record in records:
+                    if record.id in idmap:
+                        # replace ID
+                        record.id = idmap[record.id]
+                        # remove description
+                        record.description = ''
+                    SeqIO.write(record, output_file_path, "fasta")
+            except FileNotFoundError:
+                print(f"{self.fasta} corresponds to no such file or directory.")
+                print("Please double checking pathing and filenames")
+                sys.exit()
 
     def idmap_to_dictionary(self, idmap:str) -> dict:
         """
         read idmap into a dictionary
         """
         idmap={}
-        with open(self.idmap) as identifiers:
-            for line in identifiers:
-                (key, val) = line.split()
-                idmap[key] = val
-        return idmap
+        try:
+            with open(self.idmap) as identifiers:
+                for line in identifiers:
+                    (key, val) = line.split()
+                    idmap[key] = val
+            return idmap
+        except FileNotFoundError:
+            print(f"{self.idmap} corresponds to no such file or directory.")
+            print("Please double checking pathing and filenames")
+            sys.exit()
