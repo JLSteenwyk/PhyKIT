@@ -13,48 +13,7 @@ here = Path(__file__)
 @pytest.mark.integration
 class TestTree(object):
     @patch("builtins.print")
-    def test_bipartition_support_stats(self, mocked_print):
-        testargs = [
-            "phykit",
-            "bipartition_support_stats",
-            f"{here.parent.parent}/sample_files/small_Aspergillus_tree.tre",
-        ]
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-
-        assert mocked_print.mock_calls == [
-            call("mean: 95.7143"),
-            call("median: 100"),
-            call("25th percentile: 92.5"),
-            call("75th percentile: 100.0"),
-            call("minimum: 85"),
-            call("maximum: 100"),
-            call("standard deviation: 7.3193"),
-            call("variance: 53.5714")
-        ]
-
-    @patch("builtins.print")
-    def test_branch_length_multiplier(self, mocked_print):
-        testargs = [
-            "phykit",
-            "branch_length_multiplier",
-            f"{here.parent.parent}/sample_files/tree_simple.tre",
-            "-f",
-            "2",
-        ]
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-
-        with open(f"{here.parent}/expected/tree_simple.tre.factor_2.0.tre", "r") as expected_tree:
-            expected_tree_content = expected_tree.read()
-
-        with open(f"{here.parent.parent}/sample_files/tree_simple.tre.factor_2.0.tre", "r") as out_tree:
-            out_tree_content = out_tree.read()
-
-        assert expected_tree_content == out_tree_content
-
-    @patch("builtins.print")
-    def test_branch_length_multiplier(self, mocked_print):
+    def test_collapse_branches(self, mocked_print):
         testargs = [
             "phykit",
             "collapse_branches",
