@@ -50,10 +50,20 @@ class Tree(BaseService):
             sys.exit()
 
     def read_tree1_file(self):
-        return Phylo.read(self.tree1_file_path, self.tree_format)
+        try:
+            return Phylo.read(self.tree1_file_path, self.tree_format)
+        except FileNotFoundError:
+            print(f"{self.tree1_file_path} corresponds to no such file or directory.")
+            print("Please checking filename and pathing")
+            sys.exit()
 
     def read_reference_tree_file(self):
-        return Phylo.read(self.reference, self.tree_format)
+        try:
+            return Phylo.read(self.reference, self.tree_format)
+        except FileNotFoundError:
+            print(f"{self.reference} corresponds to no such file or directory.")
+            print("Please checking filename and pathing")
+            sys.exit()
 
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
