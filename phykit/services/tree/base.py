@@ -1,5 +1,7 @@
-from Bio import Phylo
+import sys
 from typing import Tuple
+
+from Bio import Phylo
 
 from ..base import BaseService
 
@@ -40,7 +42,12 @@ class Tree(BaseService):
 
 
     def read_tree_file(self):
-        return Phylo.read(self.tree_file_path, self.tree_format)
+        try:
+            return Phylo.read(self.tree_file_path, self.tree_format)
+        except FileNotFoundError:
+            print(f"{self.tree_file_path} corresponds to no such file or directory.")
+            print("Please checking filename and pathing")
+            sys.exit()
 
     def read_tree1_file(self):
         return Phylo.read(self.tree1_file_path, self.tree_format)
