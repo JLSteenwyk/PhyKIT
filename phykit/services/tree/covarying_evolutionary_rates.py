@@ -65,7 +65,7 @@ class CovaryingEvolutionaryRates(Tree):
         
         if self.verbose:
             for val_zero, val_one in zip(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths):
-                print(val_zero, val_one)
+                print(f"{round(val_zero, 4)}\t{round(val_one, 4)}")
         else:
             print(f"{round(corr[0], 4)}\t{round(corr[1], 6)}")
 

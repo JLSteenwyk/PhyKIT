@@ -22,7 +22,7 @@ class InternalBranchStats(Tree):
         internal_branch_lengths, stats = self.calculate_internal_branch_stats(tree)
         if self.verbose:
             for internal_branch_length in internal_branch_lengths:
-                print(internal_branch_length)
+                print(round(internal_branch_length, 4))
         else:
             print_summary_statistics(stats)
 
