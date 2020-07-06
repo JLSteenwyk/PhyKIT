@@ -161,7 +161,7 @@ class TestDNAThreader(object):
             """>3\nAAATTTGGG"""  
         )
         expected_result_3 = dedent(
-            """>4\nAAATTTGGG"""  
+            """>4\nAAATTT---"""  
         )
         testargs = [
             "phykit",
@@ -170,8 +170,7 @@ class TestDNAThreader(object):
             f"{here.parent.parent.parent}/sample_files/test_alignment.prot.faa",
             "-n",
             f"{here.parent.parent.parent}/sample_files/test.nucl.fna",
-            "-s",
-            "True",
+            "-s"
         ]
 
         with patch.object(sys, "argv", testargs):

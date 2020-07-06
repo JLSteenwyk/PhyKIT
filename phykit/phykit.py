@@ -46,6 +46,8 @@ from .services.tree import (
     TreenessOverRCV
 )
 
+from .helpers.boolean_argument_parsing import str2bool
+
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -1553,7 +1555,9 @@ class Phykit(object):
                 -n/--nucleotide             nucleotide alignment file
 
                 -s/--stop                   boolean for whether or not
-                                            stop codons should be kept
+                                            stop codons should be kept. 
+                                            If used, stop codons will 
+                                            be removed.
                 """
             ),
         )
@@ -1569,7 +1573,9 @@ class Phykit(object):
         )
         parser.add_argument(
             "-s", "--stop",
-            type=bool,
+            type=str2bool, 
+            nargs='?',
+            default=True,
             help=SUPPRESS
         )
         args = parser.parse_args(sys.argv[2:])
