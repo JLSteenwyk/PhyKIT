@@ -22,7 +22,7 @@ class PatristicDistances(Tree):
         patristic_distances, combos, stats = self.calculate_patristic_distances(tree)
         if self.verbose:
             for combo, patristic_distance in zip(combos, patristic_distances):
-                print(f"{combo[0]}-{combo[1]}\t{patristic_distance}")
+                print(f"{combo[0]}-{combo[1]}\t{round(patristic_distance, 4)}")
         else:
             print_summary_statistics(stats)
 
