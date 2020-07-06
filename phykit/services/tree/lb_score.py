@@ -22,7 +22,7 @@ class LBScore(Tree):
         tips, LBis = self.calculate_lb_score(tree)
         if self.verbose:
             for tip, LBi in zip(tips, LBis):
-                print(f"{tip}\t{LBi}")
+                print(f"{tip}\t{round(LBi, 4)}")
         else:
             stats = calculate_summary_statistics_from_arr(LBis)
             print_summary_statistics(stats)
