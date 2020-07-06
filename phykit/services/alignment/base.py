@@ -37,8 +37,7 @@ class Alignment(BaseService):
             print("Input corresponds to no such file or directory.")
             print("Please double checking pathing and filenames")
             sys.exit()
-        
-
+            
     def calculate_rcv(self):
         alignment, _ = self.get_alignment_and_format()
         aln_len = alignment.get_alignment_length()

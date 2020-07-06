@@ -33,7 +33,7 @@ class GCContent(Alignment):
         if self.verbose:
             for entry, seq in entry_and_seq.items():
                 seq, matches = self.find_matches_and_remove_gaps(seq)
-                print(f"{entry}\t{len(matches)/len(seq)}")
+                print(f"{entry}\t{round(len(matches)/len(seq), 4)}")
         else:
             all_seqs = []
             for entry, seq in entry_and_seq.items():

@@ -104,3 +104,4 @@ class TestRenameFastaEntries(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+        
