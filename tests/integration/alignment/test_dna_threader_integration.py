@@ -181,3 +181,71 @@ class TestDNAThreader(object):
             call(expected_result_2),
             call(expected_result_3)
         ]
+
+    @patch("builtins.print")
+    def test_dna_threader_alias_stop_codon_true(self, mocked_print):
+        expected_result_0 = dedent(
+            """>1\nAAAGGG---"""
+        )
+        expected_result_1 = dedent(
+            """>2\nAAATTTGGG"""  
+        )
+        expected_result_2 = dedent(
+            """>3\nAAATTTGGG"""  
+        )
+        expected_result_3 = dedent(
+            """>4\nAAATTT---"""  
+        )
+        testargs = [
+            "phykit",
+            "p2n",
+            "-p",
+            f"{here.parent.parent.parent}/sample_files/test_alignment.prot.faa",
+            "-n",
+            f"{here.parent.parent.parent}/sample_files/test.nucl.fna",
+            "-s",
+            "0",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(expected_result_0),
+            call(expected_result_1),
+            call(expected_result_2),
+            call(expected_result_3)
+        ]
+
+    @patch("builtins.print")
+    def test_dna_threader_alias_stop_codon_true(self, mocked_print):
+        expected_result_0 = dedent(
+            """>1\nAAAGGG---"""
+        )
+        expected_result_1 = dedent(
+            """>2\nAAATTTGGG"""  
+        )
+        expected_result_2 = dedent(
+            """>3\nAAATTTGGG"""  
+        )
+        expected_result_3 = dedent(
+            """>4\nAAATTTGGG"""  
+        )
+        testargs = [
+            "phykit",
+            "p2n",
+            "-p",
+            f"{here.parent.parent.parent}/sample_files/test_alignment.prot.faa",
+            "-n",
+            f"{here.parent.parent.parent}/sample_files/test.nucl.fna",
+            "-s",
+            "1",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(expected_result_0),
+            call(expected_result_1),
+            call(expected_result_2),
+            call(expected_result_3)
+        ]
