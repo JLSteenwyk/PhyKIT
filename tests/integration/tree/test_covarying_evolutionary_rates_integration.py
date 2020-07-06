@@ -43,6 +43,30 @@ class TestCovaryingEvolutionaryRates(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_covarying_evolutionary_rates_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "cover",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "-v"
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(f"{-0.1297}\t{-1.2712}"),
+            call(f"{0.3588}\t{1.9021}"),
+            call(f"{0.3588}\t{0.179}"),
+            call(f"{1.2555}\t{0.7115}"),
+            call(f"{0.3588}\t{-0.1114}"),
+            call(f"{0.3588}\t{0.179}"),
+            call(f"{-0.1375}\t{-0.1157}"),
+            call(f"{-2.4235}\t{-1.4731}")
+        ]
+
+    @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree0(self, mocked_print):
         expected_result = "0.6769\t0.065228"
         testargs = [

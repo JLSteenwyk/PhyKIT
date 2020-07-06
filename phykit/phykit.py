@@ -760,7 +760,7 @@ class Phykit(object):
 
                 Usage:
                 phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
-                    -r/--reference <reference_tree_file>
+                    -r/--reference <reference_tree_file> [-v/--verbose]
 
                 Options
                 =====================================================
@@ -776,6 +776,10 @@ class Phykit(object):
                                             lengths by in the two input
                                             trees. Typically, this is a
                                             putative species tree.
+
+                -v/--verbose                print out corrected branch
+                                            lengths shared between
+                                            tree 0 and tree 1
                 """
             ),
         )
