@@ -67,3 +67,24 @@ class TestBipartitionSupportStats(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_bipartition_support_stats_alias(self, mocked_print):
+        testargs = [
+            "phykit",
+            "bss",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("mean: 95.7143"),
+            call("median: 100"),
+            call("25th percentile: 92.5"),
+            call("75th percentile: 100.0"),
+            call("minimum: 85"),
+            call("maximum: 100"),
+            call("standard deviation: 7.3193"),
+            call("variance: 53.5714")
+        ]
