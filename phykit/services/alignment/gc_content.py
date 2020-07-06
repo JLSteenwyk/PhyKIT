@@ -6,6 +6,8 @@ from Bio import SeqIO
 
 from .base import Alignment
 
+from ...helpers.files import get_alignment_and_format
+
 class FileFormat(Enum):
     fasta = "fasta"
     clustal = "clustal"
@@ -22,7 +24,7 @@ class GCContent(Alignment):
 
     def run(self):
         # create biopython object of sequences
-        records, file_format = self.determine_file_type_fasta_file(self.fasta)
+        records, _ = get_alignment_and_format(self.fasta)
         
         # initialize and populate dict for
         # holding the entry sequences
@@ -59,19 +61,3 @@ class GCContent(Alignment):
         seq = seq.replace('-', '')
         matches = regex_pattern.findall(seq)
         return seq, matches
-
-
-    def determine_file_type_fasta_file(self, fasta):
-        # automatically determine file type and read in the fasta file
-        for fileFormat in FileFormat:
-            try:
-                records = SeqIO.parse(fasta, fileFormat.value)
-                return records, fileFormat.value
-            # the following exceptions refer to skipping over errors
-            # associated with reading the wrong input file
-            except ValueError:
-                continue
-            except AssertionError:
-                continue
-
-        raise Exception("Input file could not be read")
