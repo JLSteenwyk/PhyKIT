@@ -15,7 +15,6 @@ class FileFormat(Enum):
     mauve = "mauve"
     phylip = "phylip"
     phylip_seq = "phylip-sequential"
-    phylip_rel = "phylip-relaxed"
     stockholm = "stockholm"
 
 class GCContent(Alignment):

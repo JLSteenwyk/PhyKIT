@@ -60,6 +60,18 @@ class TestGCContent(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
+    def test_gc_content_phylip_sequential(self, mocked_print):
+        expected_result = 0.2273
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/simple_aln.phylip-sequential",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
     def test_gc_content_stockholm(self, mocked_print):
         expected_result = 0.2273
         testargs = [
