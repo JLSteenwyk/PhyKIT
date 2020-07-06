@@ -84,3 +84,25 @@ class TestGCContent(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_gc_content_verbose(self, mocked_print):
+        expected_result0 = "1\t0.5"
+        expected_result1 = "2\t0.3333"
+        expected_result2 = "3\t0.3333"
+        expected_result3 = "4\t0.0"
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_2.fa",
+            "-v",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(expected_result0),
+            call(expected_result1),
+            call(expected_result2),
+            call(expected_result3),
+        ]
