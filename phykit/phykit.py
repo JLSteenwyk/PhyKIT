@@ -147,22 +147,22 @@ class Phykit(object):
                     - calculates total tree length
                 patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
-                polytomy_test
+                polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using triplet and gene
                       support frequencies
-                print_tree (alias: print)
+                print_tree (alias: print; pt)
                     - prints ascii tree
                 prune_tree (alias: prune)
                     - prune taxa from a phylogeny
-                rename_tree_tips (alias: rename_tree)
+                rename_tree_tips (alias: rename_tree; rename_tips)
                     - renames tips in a phylogeny according to a file with
                       the desired new tip names
-                robinson_foulds_distance (alias: rf_distance; rf)
+                robinson_foulds_distance (alias: rf_distance; rf_dist; rf)
                     - calculates Robinson-Foulds distance between two trees
                 spurious_sequence (alias: spurious_seq; ss)
                     - identifies putatively spurious sequences by identifying
                       branch lengths that are atypically long
-                tip_labels (alias: labels)
+                tip_labels (alias: tree_labels; labels; tl)
                     - print leaf names in a phylogeny
                 treeness (alias: tness)
                     - reports treeness or stemminess, a measure of signal-to-
@@ -239,7 +239,7 @@ class Phykit(object):
             return self.rf_distance()
         elif command in ['spurious_seq', 'ss']:
             return self.spurious_sequence()
-        elif command == 'labels':
+        elif command in ['labels', 'tree_labels', 'tl']:
             return self.tip_labels()
         elif command == 'tree_len':
             return self.total_tree_length
@@ -1308,7 +1308,7 @@ class Phykit(object):
 
                 Prints the labels a phylogeny.
 
-                Alias: labels
+                Alias: tree_labels; labels; tl
 
                 Usage:
                 phykit tip_labels <tree>
