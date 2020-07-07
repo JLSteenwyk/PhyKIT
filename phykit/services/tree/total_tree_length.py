@@ -17,9 +17,5 @@ class TotalTreeLength(Tree):
         total_len = float(0.0)
         total_len = tree.total_branch_length()
 
-        try:
-            if isinstance(total_len, (int, float)):
-                return total_len
-        except ZeroDivisionError:
-            print("Invalid tree. Tree should contain branch lengths")
-            return None
+        if isinstance(total_len, (int, float)):
+            return total_len
