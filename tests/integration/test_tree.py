@@ -13,18 +13,6 @@ here = Path(__file__)
 @pytest.mark.integration
 class TestTree(object):
     @patch("builtins.print")
-    def test_total_tree_length(self, mocked_print):
-        expected_result = 277.2772
-        testargs = [
-            "phykit",
-            "total_tree_length",
-            f"{here.parent.parent}/sample_files/tree_simple.tre",
-        ]
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-        assert mocked_print.mock_calls == [call(expected_result)]
-
-    @patch("builtins.print")
     def test_treeness(self, mocked_print):
         expected_result = 0.1899
         testargs = [
