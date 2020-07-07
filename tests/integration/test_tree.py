@@ -13,34 +13,6 @@ here = Path(__file__)
 @pytest.mark.integration
 class TestTree(object):
     @patch("builtins.print")
-    def test_rf_distance(self, mocked_print):
-        expected_result = "8\t0.8"
-        testargs = [
-            "phykit",
-            "rf_distance",
-            f"{here.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent}/sample_files/tree_simple_other_topology.tre",
-        ]
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-        assert mocked_print.mock_calls == [call(expected_result)]
-    
-    @patch("builtins.print")
-    def test_saturation(self, mocked_print):
-        expected_result = 0.8451
-        testargs = [
-            "phykit",
-            "saturation",
-            "-t",
-            f"{here.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
-            "-a",
-            f"{here.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
-        ]
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-        assert mocked_print.mock_calls == [call(expected_result)]
-
-    @patch("builtins.print")
     def test_spurious_sequence(self, mocked_print):
         expected_result = "None"
         testargs = [

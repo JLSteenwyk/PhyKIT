@@ -118,6 +118,6 @@ class Saturation(Tree):
         """
         if verbose:
             for combo, pairwise_identity, patristic_distance in zip(combos, pairwise_identities, patristic_distances):
-                print(f"{combo[0]}-{combo[1]}\t{pairwise_identity}\t{patristic_distance}")
+                print(f"{combo[0]}-{combo[1]}\t{round(pairwise_identity,4)}\t{round(patristic_distance, 4)}")
         else:
             print(round(r_value**2, 4))
