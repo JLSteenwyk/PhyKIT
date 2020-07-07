@@ -15,7 +15,7 @@ class SpuriousSequence(Tree):
         counter = 0
         for name, length in name_and_branch_len.items():
             if length >= threshold:
-                print(f"{name}\t{length}\t{threshold}\t{median}")
+                print(f"{name}\t{round(length, 4)}\t{round(threshold, 4)}\t{round(median, 4)}")
                 counter += 1
         
         # if no terminal branch is longer than the one specified
