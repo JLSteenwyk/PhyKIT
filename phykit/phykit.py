@@ -242,7 +242,7 @@ class Phykit(object):
         elif command in ['labels', 'tree_labels', 'tl']:
             return self.tip_labels()
         elif command == 'tree_len':
-            return self.total_tree_length
+            return self.total_tree_length()
         elif command == 'tness':
             return self.treeness()
         # Alignment- and tree-based aliases
