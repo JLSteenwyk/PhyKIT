@@ -13,26 +13,6 @@ here = Path(__file__)
 @pytest.mark.integration
 class TestTree(object):
     @patch("builtins.print")
-    def test_prune(self, mocked_print):
-        testargs = [
-            "phykit",
-            "prune",
-            f"{here.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent}/sample_files/tree_simple_prune.txt",
-        ]
-
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-
-        with open(f"{here.parent}/expected/tree_simple.tre.pruned", "r") as expected_tree:
-            expected_tree_content = expected_tree.read()
-
-        with open(f"{here.parent.parent}/sample_files/tree_simple.tre.pruned", "r") as out_tree:
-            out_tree_content = out_tree.read()
-
-        assert expected_tree_content == out_tree_content
-
-    @patch("builtins.print")
     def test_rename_tree_tips(self, mocked_print):
         testargs = [
             "phykit",

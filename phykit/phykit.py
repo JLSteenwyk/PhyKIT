@@ -233,7 +233,7 @@ class Phykit(object):
             return self.print_tree()
         elif command == 'prune':
             return self.prune_tree()
-        elif command == 'rename_tree':
+        elif command in ['rename_tree', 'rename_tips']:
             return self.rename_tree_tips()
         elif command in ['robinson_foulds_distance', 'rf_dist', 'rf']:
             return self.rf_distance()
@@ -1165,7 +1165,7 @@ class Phykit(object):
                 second column is the desired tip name in the resulting 
                 phylogeny. 
 
-                Alias: rename_tree
+                Alias: rename_tree, rename_tips
 
                 Usage:
                 phykit rename_tree_tips <tree> -i/--idmap <idmap.txt>

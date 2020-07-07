@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from Bio import Phylo
 
@@ -37,10 +38,15 @@ class RenameTreeTips(Tree):
         read two column file to dictionary
         """
         idmap={}
-        with open(self.idmap) as identifiers:
-            for line in identifiers:
-                (key, val) = line.split()
-                idmap[key] = val
+        try:
+            with open(self.idmap) as identifiers:
+                for line in identifiers:
+                    (key, val) = line.split()
+                    idmap[key] = val
+        except FileNotFoundError:
+            print(f"{self.idmap} corresponds to no such file.")
+            print("Please check file name and pathing")
+            sys.exit()
 
         return idmap
 
