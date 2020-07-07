@@ -13,18 +13,6 @@ here = Path(__file__)
 @pytest.mark.integration
 class TestTree(object):
     @patch("builtins.print")
-    def test_treeness(self, mocked_print):
-        expected_result = 0.1899
-        testargs = [
-            "phykit",
-            "treeness",
-            f"{here.parent.parent}/sample_files/Yeasts_2832_eMRC_reference_renamed.tree",
-        ]
-        with patch.object(sys, "argv", testargs):
-            Phykit()
-        assert mocked_print.mock_calls == [call(expected_result)]
-
-    @patch("builtins.print")
     def test_treeness_over_rcv(self, mocked_print):
         expected_result = "0.35\t0.126\t0.36"
         testargs = [
