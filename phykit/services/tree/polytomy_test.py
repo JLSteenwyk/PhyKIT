@@ -48,16 +48,30 @@ class PolytomyTest(Tree):
 
     def read_in_groups(self, groups) -> list:
         groups_arr = []
-        for line in open(self.groups):
-            line = line.strip()
-            if not line.startswith("#"):
-                line = line.split("\t")
-                temp = []
-                temp.append(line[0])
-                temp.append(line[1].split(";"))
-                temp.append(line[2].split(";"))
-                temp.append(line[3].split(";"))
-                groups_arr.append(temp)
+        try:
+            for line in open(self.groups):
+                line = line.strip()
+                if not line.startswith("#"):
+                    try:
+                        line = line.split("\t")
+                        temp = []
+                        temp.append(line[0])
+                        temp.append(line[1].split(";"))
+                        temp.append(line[2].split(";"))
+                        temp.append(line[3].split(";"))
+                        groups_arr.append(temp)
+                    except IndexError:
+                        print(f"{self.groups} contains an indexing error.")
+                        print("Please format the groups file (-g) as a four column tab-delimited file with column 1 being the name of the test")
+                        print("col2: the tip names of one group (; separated)")
+                        print("col3: the tip names of a second group (; separated)")
+                        print("col4: the tip names of a third group (; separated)")
+                        sys.exit()
+                        
+        except FileNotFoundError:
+            print(f"{self.groups} corresponds to no such file.")
+            print("Please check filename and pathing again.")
+            sys.exit()
         return groups_arr
 
     def loop_through_trees_and_examine_sister_support_among_triplets(
@@ -71,14 +85,19 @@ class PolytomyTest(Tree):
         """
         summary = {}
         # loop through trees
-        for tree_file in trees_file_path:
-            tree = Phylo.read(tree_file, 'newick')
-            # get tip names
-            tips = self.get_tip_names_from_tree(tree)
+        try:
+            for tree_file in trees_file_path:
+                tree = Phylo.read(tree_file, 'newick')
+                # get tip names
+                tips = self.get_tip_names_from_tree(tree)
 
-            # examine all triplets and their support for 
-            # any sister pairing
-            summary = self.examine_all_triplets_and_sister_pairing(tips, tree_file, summary, groups_of_groups)
+                # examine all triplets and their support for 
+                # any sister pairing
+                summary = self.examine_all_triplets_and_sister_pairing(tips, tree_file, summary, groups_of_groups)
+        except FileNotFoundError:
+            print(f"{tree_file} corresponds to no such file.")
+            print("Please check file name and pathing")
+            sys.exit()
         
         return summary
 

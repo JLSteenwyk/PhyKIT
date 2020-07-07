@@ -227,7 +227,7 @@ class Phykit(object):
             return self.lb_score()
         elif command == 'pd':
             return self.patristic_distances()
-        elif command in ['polyt_test', 'ptt']:
+        elif command in ['polyt_test', 'ptt', 'polyt']:
             return self.polytomy_test()
         elif command in ['print', 'pt']:
             return self.print_tree()
@@ -1038,7 +1038,7 @@ class Phykit(object):
                 groups are equally supported. This test is done individually for
                 triplets and gene support frequencies.
 
-                Alias: polyt_test, ptt
+                Alias: polyt_test, polyt, ptt
 
                 Usage:
                 phykit polytomy_test -t/--trees <trees> -g/--groups <groups>
