@@ -1,0 +1,4 @@
+/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree0.tre
+/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree1.tre
+/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree2.tre
+/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree3.tre
