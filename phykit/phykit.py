@@ -56,7 +56,6 @@ logger.addHandler(ch)
 
 
 class Phykit(object):
-
     help_header = """
                  _____  _           _  _______ _______ 
                 |  __ \| |         | |/ /_   _|__   __|
@@ -248,7 +247,7 @@ class Phykit(object):
         # Alignment- and tree-based aliases
         elif command == 'sat':
             return self.saturation()
-        elif command == 'toverr':
+        elif command in ['toverr', 'tor']:
             return self.treeness_over_rcv()
         # Helper aliases
         elif command in ['create_concat', 'cc']:
@@ -1459,13 +1458,10 @@ class Phykit(object):
                 col2: treeness
                 col3: RCV
 
-                Treeness describes the proportion of tree distance on internal
-                branches. RCV
-
                 Calculate treeness/RCV following Phillips and Penny, Molecular 
                 Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
-                Alias: toverr
+                Alias: toverr, tor
 
                 Usage:
                 phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
