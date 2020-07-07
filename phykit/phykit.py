@@ -108,13 +108,13 @@ class Phykit(object):
                     - create concatenation matrix from a set of alignments                    
                 gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
-                pairwise_identity (alias: pi)
+                pairwise_identity (alias: pairwise_id, pi)
                     - calculates average pairwise identify among sequences in
                       an alignment file. This is a proxy for evolutionary rate
                 parsimony_informative_sites (alias: pis)
                     - calculates the number and percentage of parsimony
                       informative sites in an alignment
-                relative_composition_variability (alias: rcv)
+                relative_composition_variability (alias: rel_comp_var, rcv)
                     - calculates relative composition variability in an alignment
                 rename_fasta_entries (alias: rename_fasta)
                     - rename entries in a fasta file
@@ -197,11 +197,11 @@ class Phykit(object):
             return self.alignment_length_no_gaps()
         elif command == 'gc':
             return self.gc_content()
-        elif command == 'pi':
+        elif command in ['pairwise_id', 'pi']:
             return self.pairwise_identity()
         elif command == 'pis':
             return self.parsimony_informative_sites()
-        elif command == 'relative_composition_variability':
+        elif command in ['rel_comp_var', 'relative_composition_variability']:
             return self.rcv()
         elif command == 'rename_fasta':
             return self.rename_fasta_entries()
@@ -394,14 +394,14 @@ class Phykit(object):
                 Pairwise identity is defined as the number of identical
                 columns between two aligned sequences divided by the
                 number of columns in the alignment. Summary statistics
-                are reported but with the verbose option, all pairwise
-                identities will be reported.
+                are reported unless used with the verbose option in which
+                all pairwise identities will be reported.
 
                 An example of pairwise identities being used as a proxy
                 for evolutionary rate can be found here: Chen et al. 
                 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
-                Alias: pi
+                Alias: pairwise_id, pi
 
                 Usage:
                 phykit pairwise_identity <alignment> [-v/--verbose]
@@ -480,7 +480,7 @@ class Phykit(object):
                 Calculate RCV following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
-                Alias: rcv
+                Alias: rel_comp_var, rcv
 
                 Usage:
                 phykit relative_composition_variability <alignment>
