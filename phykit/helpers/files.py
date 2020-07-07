@@ -27,9 +27,10 @@ def get_alignment_and_format(alignment_file_path: str):
             continue
         except AssertionError:
             continue
-
-    print("Input file could not be read. Please check arguments")
-    sys.exit(0)
+        except FileNotFoundError:
+            print(f"{alignment_file_path} corresponds to not such file.")
+            print("Please check file name and pathing")
+            sys.exit(0)
 
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     try:
