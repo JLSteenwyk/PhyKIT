@@ -1257,6 +1257,14 @@ class Phykit(object):
                 does so by identifying and reporting long terminal branches
                 defined as branches that are equal to or 20 times the median
                 length of internal and terminal branches.
+
+                PhyKIT reports the following information
+                col1: name of tip that is a putatively spurious sequence
+                col2: length of branch leading to putatively spurious sequence
+                col3: threshold used to identify putatively spurious sequences
+                col4: median branch length in the phylogeny
+
+                If there are no putatively spurious sequences, "None" is reported.
                 
                 Using this method to identify potentially spurious sequences
                 was, to my knowledge, first introduced by Shen et al., (2018)
