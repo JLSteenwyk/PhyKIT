@@ -106,3 +106,26 @@ class TestRenameTreeTips(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_rename_tree_tips_custom_output(self, mocked_print):
+        testargs = [
+            "phykit",
+            "rename_tips",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-i",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_idmap.txt",
+            "-o",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_renamed_custom_out.tre"
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        with open(f"{here.parent.parent}/expected/tree_simple_renamed_custom_out.tre", "r") as expected_tree:
+            expected_tree_content = expected_tree.read()
+
+        with open(f"{here.parent.parent.parent}/sample_files/tree_simple_renamed_custom_out.tre", "r") as out_tree:
+            out_tree_content = out_tree.read()
+
+        assert expected_tree_content == out_tree_content
