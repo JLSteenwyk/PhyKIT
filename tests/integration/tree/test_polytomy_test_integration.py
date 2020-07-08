@@ -36,10 +36,10 @@ class TestTree(object):
             call("1-2: 0"),
             call("\nTriplet Results"),
             call("==============="),
-            call("chi-squared: 400.0"),
+            call("chi-squared: 320.0"),
             call("p-value: 0.0"),
-            call("total triplets: 200"),
-            call("0-1: 200"),
+            call("total triplets: 160"),
+            call("0-1: 160"),
             call("0-2: 0"),
             call("1-2: 0")
         ]
