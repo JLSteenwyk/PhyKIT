@@ -21,7 +21,7 @@ class PolytomyTest(Tree):
         groups_arr = self.read_in_groups(self.groups)
 
         # determine groups of groups
-        groups_of_groups = self.determine_groups_of_groups(groups_arr)
+        groups_of_groups, outgroup_taxa = self.determine_groups_of_groups(groups_arr)
 
         # read trees into list
         trees_file_path = read_single_column_file_to_list(self.trees)
@@ -30,7 +30,8 @@ class PolytomyTest(Tree):
         # examine sister relationships among all triplets
         summary = self.loop_through_trees_and_examine_sister_support_among_triplets(
             trees_file_path,
-            groups_of_groups
+            groups_of_groups,
+            outgroup_taxa
         )
 
         # count triplet and gene support frequencies for different sister relationships
@@ -59,6 +60,7 @@ class PolytomyTest(Tree):
                         temp.append(line[1].split(";"))
                         temp.append(line[2].split(";"))
                         temp.append(line[3].split(";"))
+                        temp.append(line[4].split(";"))
                         groups_arr.append(temp)
                     except IndexError:
                         print(f"{self.groups} contains an indexing error.")
@@ -66,6 +68,7 @@ class PolytomyTest(Tree):
                         print("col2: the tip names of one group (; separated)")
                         print("col3: the tip names of a second group (; separated)")
                         print("col4: the tip names of a third group (; separated)")
+                        print("col5: the tip names of the outgroup taxa (; separated)")
                         sys.exit()
                         
         except FileNotFoundError:
@@ -77,7 +80,8 @@ class PolytomyTest(Tree):
     def loop_through_trees_and_examine_sister_support_among_triplets(
         self,
         trees_file_path: str,
-        groups_of_groups: dict
+        groups_of_groups: dict,
+        outgroup_taxa: list
     ) -> dict:
         """
         go through all trees and all triplets of all trees. For each triplet,
@@ -93,7 +97,13 @@ class PolytomyTest(Tree):
 
                 # examine all triplets and their support for 
                 # any sister pairing
-                summary = self.examine_all_triplets_and_sister_pairing(tips, tree_file, summary, groups_of_groups)
+                summary = self.examine_all_triplets_and_sister_pairing(
+                    tips,
+                    tree_file,
+                    summary,
+                    groups_of_groups,
+                    outgroup_taxa
+                )
         except FileNotFoundError:
             print(f"{tree_file} corresponds to no such file.")
             print("Please check file name and pathing")
@@ -112,15 +122,18 @@ class PolytomyTest(Tree):
             for i in range(1, 4):
                 temp.append([taxon_name for taxon_name in group[i]])
             groups_of_groups[group[0]] = (temp)
+
+        outgroup_taxa = [taxon_name for taxon_name in group[4]]
         
-        return groups_of_groups
+        return groups_of_groups, outgroup_taxa
 
     def examine_all_triplets_and_sister_pairing(
         self,
         tips: list,
         tree_file: str,
         summary: dict,
-        groups_of_groups: dict
+        groups_of_groups: dict,
+        outgroup_taxa: list
     ) -> dict:
         """
         evaluate all triplets for sister relationships. Polytomies
@@ -130,8 +143,8 @@ class PolytomyTest(Tree):
         triplet_tips = itertools.combinations(tips, 3)
         for triplet in triplet_tips:
             # obtain tree of the triplet
-            tree = self.get_triplet_tree(tips, triplet, tree_file)
-            
+            tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
+
             for _, groups in groups_of_groups.items():
                 # see if there any intersctions between
                 # the triplet and the the group
@@ -187,8 +200,6 @@ class PolytomyTest(Tree):
         else:
             return False
 
-        return num_int
-
     def sister_relationship_counter(
         self,
         tree_file: str,
@@ -213,7 +224,8 @@ class PolytomyTest(Tree):
         self,
         tips: list,
         triplet: tuple,
-        tree_file: str
+        tree_file: str, 
+        outgroup_taxa: list
     ) -> Tree:
         """
         get a tree object of only the triplet of interest
@@ -222,6 +234,9 @@ class PolytomyTest(Tree):
         tips_to_prune = list(set(tips)- set(list(triplet)))
         tree = Phylo.read(tree_file, 'newick')
         
+        # root tree on outgroup taxa
+        tree.root_with_outgroup(outgroup_taxa)
+
         # prune to a triplet
         tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
 
