@@ -58,5 +58,6 @@ class GCContent(Alignment):
     def find_matches_and_remove_gaps(self, seq: str):
         regex_pattern = re.compile('[GgCc]')
         seq = seq.replace('-', '')
+        seq = seq.replace('?', '')
         matches = regex_pattern.findall(seq)
         return seq, matches
