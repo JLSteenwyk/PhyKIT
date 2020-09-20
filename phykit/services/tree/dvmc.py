@@ -91,11 +91,11 @@ class DVMC(Tree):
         # get names of outgroup taxa in tree
         out_pres = self.get_names_of_outgroup_taxa_that_are_present(outgroup, tree)
 
-        # root tree on outgroup
-        tree.root_with_outgroup(out_pres)
+        # # root tree on outgroup
+        # tree.root_with_outgroup(out_pres)
 
         # prune outgroup taxa from tree
-        tree = self.prune_tree_using_taxa_list(tree, outgroup)
+        tree = self.prune_tree_using_taxa_list(tree, out_pres)
 
         # loop through terminal branches and store 
         # distances from the root to the tip in a list.
