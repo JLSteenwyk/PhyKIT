@@ -34,14 +34,14 @@ class TestTree(object):
             call("0-1: 10"),
             call("0-2: 0"),
             call("1-2: 0"),
-            call("\nTriplet Results"),
-            call("==============="),
-            call("chi-squared: 320.0"),
-            call("p-value: 0.0"),
-            call("total triplets: 160"),
-            call("0-1: 160"),
-            call("0-2: 0"),
-            call("1-2: 0")
+            # call("\nTriplet Results"),
+            # call("==============="),
+            # call("chi-squared: 320.0"),
+            # call("p-value: 0.0"),
+            # call("total triplets: 160"),
+            # call("0-1: 160"),
+            # call("0-2: 0"),
+            # call("1-2: 0")
         ]
 
     @patch("builtins.print")
@@ -66,14 +66,14 @@ class TestTree(object):
             call("0-1: 2"),
             call("0-2: 2"),
             call("1-2: 0"),
-            call("\nTriplet Results"),
-            call("==============="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total triplets: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0")
+            # call("\nTriplet Results"),
+            # call("==============="),
+            # call("chi-squared: 2.0"),
+            # call("p-value: 0.367879"),
+            # call("total triplets: 4"),
+            # call("0-1: 2"),
+            # call("0-2: 2"),
+            # call("1-2: 0")
         ]
 
     @patch("builtins.print")
@@ -162,14 +162,14 @@ class TestTree(object):
             call("0-1: 2"),
             call("0-2: 2"),
             call("1-2: 0"),
-            call("\nTriplet Results"),
-            call("==============="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total triplets: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0")
+            # call("\nTriplet Results"),
+            # call("==============="),
+            # call("chi-squared: 2.0"),
+            # call("p-value: 0.367879"),
+            # call("total triplets: 4"),
+            # call("0-1: 2"),
+            # call("0-2: 2"),
+            # call("1-2: 0")
         ]
 
     @patch("builtins.print")
@@ -194,14 +194,14 @@ class TestTree(object):
             call("0-1: 2"),
             call("0-2: 2"),
             call("1-2: 0"),
-            call("\nTriplet Results"),
-            call("==============="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total triplets: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0")
+            # call("\nTriplet Results"),
+            # call("==============="),
+            # call("chi-squared: 2.0"),
+            # call("p-value: 0.367879"),
+            # call("total triplets: 4"),
+            # call("0-1: 2"),
+            # call("0-2: 2"),
+            # call("1-2: 0")
         ]
 
     @patch("builtins.print")
@@ -226,12 +226,12 @@ class TestTree(object):
             call("0-1: 2"),
             call("0-2: 2"),
             call("1-2: 0"),
-            call("\nTriplet Results"),
-            call("==============="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total triplets: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0")
+            # call("\nTriplet Results"),
+            # call("==============="),
+            # call("chi-squared: 2.0"),
+            # call("p-value: 0.367879"),
+            # call("total triplets: 4"),
+            # call("0-1: 2"),
+            # call("0-2: 2"),
+            # call("1-2: 0")
         ]
