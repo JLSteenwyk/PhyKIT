@@ -90,10 +90,10 @@ class PolytomyTest(Tree):
         summary = {}
         # loop through trees
         try:
-            cnt = 0
+            #cnt = 0
             for tree_file in trees_file_path:
-                cnt+=1
-                print(f"processing tree {cnt} of {len(trees_file_path)}")
+                #cnt+=1
+                #print(f"processing tree {cnt} of {len(trees_file_path)}")
                 tree = Phylo.read(tree_file, 'newick')
                 # get tip names
                 tips = self.get_tip_names_from_tree(tree)
