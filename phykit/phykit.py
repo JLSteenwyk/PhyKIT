@@ -147,7 +147,7 @@ class Phykit(object):
                 patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
                 polytomy_test (alias: polyt_test; polyt; ptt)
-                    - conducts a polytomy test using triplet and gene
+                    - conducts a polytomy test using gene
                       support frequencies
                 print_tree (alias: print; pt)
                     - prints ascii tree
@@ -853,7 +853,7 @@ class Phykit(object):
 
                 Summary statistics of internal branch lengths include mean,
                 median, 25th percentile, 75th percentile, minimum, maximum,
-                standard deviation, and variance of per taxon LB scores is reported.
+                standard deviation, and variance of among branch lengths.
                 To obtain all internal branch lengths, use the -v/--verbose option. 
 
                 Alias: ibs
@@ -1034,8 +1034,7 @@ class Phykit(object):
                 Thereafter, a chi-squared test is conducted to determine if there
                 is evidence to reject the null hypothesis wherein the null 
                 hypothesis is that the three possible topologies among the three
-                groups are equally supported. This test is done individually for
-                triplets and gene support frequencies.
+                groups are equally supported. This test is done using gene support frequencies.
 
                 Alias: polyt_test, polyt, ptt
 
