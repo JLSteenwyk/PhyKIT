@@ -42,7 +42,7 @@ class PolytomyTest(Tree):
 
         # print results
         self.print_gene_support_freq_res(gene_support_freq_res, gene_support_freq, trees_file_path)
-        self.print_triplet_based_res(triplet_res, triplet_group_counts)
+        # self.print_triplet_based_res(triplet_res, triplet_group_counts)
     
     def process_args(self, args):
         return dict(trees=args.trees, groups=args.groups)
@@ -90,7 +90,10 @@ class PolytomyTest(Tree):
         summary = {}
         # loop through trees
         try:
+            cnt = 0
             for tree_file in trees_file_path:
+                cnt+=1
+                print(f"processing tree {cnt} of {len(trees_file_path)}")
                 tree = Phylo.read(tree_file, 'newick')
                 # get tip names
                 tips = self.get_tip_names_from_tree(tree)
@@ -140,32 +143,40 @@ class PolytomyTest(Tree):
         in input trees are accounted for
         """
         # get all combinations of three tips
-        triplet_tips = itertools.combinations(tips, 3)
+        identifier = list(groups_of_groups.keys())[0]
+        triplet_tips = (list(itertools.product(*groups_of_groups[identifier])))
         for triplet in triplet_tips:
             # obtain tree of the triplet
             tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
-
-            for _, groups in groups_of_groups.items():
-                # see if there any intersctions between
-                # the triplet and the the group
-                num_groups_represented = self.count_number_of_groups_in_triplet(triplet, groups)
-                
-                # if one taxa is represented from each group, 
-                # use the triplet
-                tip_names = []
-                if num_groups_represented == 3:
-                    # get names in triplet and set tree branch lengths to 1
-                    tip_names = self.get_tip_names_from_tree(tree)
-                    self.set_branch_lengths_in_tree_to_one(tree)
-
-                    # determine sisters and add to sister pair counter
-                    summary = self.determine_sisters_and_add_to_counter(
-                        tip_names,
-                        tree,
-                        tree_file,
-                        groups,
-                        summary
-                    )
+            cnt=0
+            try:
+                for leaf in tree.get_terminals():
+                    cnt+=1
+            except AttributeError:
+                continue
+            if tree and cnt==3:
+                for _, groups in groups_of_groups.items():
+                    # see if there any intersctions between
+                    # the triplet and the the group
+                    num_groups_represented = self.count_number_of_groups_in_triplet(triplet, groups)
+                    
+                    # if one taxa is represented from each group, 
+                    # use the triplet
+                    tip_names = []
+                    if num_groups_represented == 3:
+                        # get names in triplet and set tree branch lengths to 1
+                        tip_names = self.get_tip_names_from_tree(tree)
+                        self.set_branch_lengths_in_tree_to_one(tree)
+                        # determine sisters and add to sister pair counter
+                        summary = self.determine_sisters_and_add_to_counter(
+                            tip_names,
+                            tree,
+                            tree_file,
+                            groups,
+                            summary
+                        )
+            else:
+                continue
 
         return summary
 
@@ -232,15 +243,21 @@ class PolytomyTest(Tree):
         """
         # determine tips that are not in the triplet of interest
         tips_to_prune = list(set(tips)- set(list(triplet)))
+        # determine tips that in the outgroup
+        outgroup_present = [value for value in tips if value in outgroup_taxa]
         tree = Phylo.read(tree_file, 'newick')
         
         # root tree on outgroup taxa
-        tree.root_with_outgroup(outgroup_taxa)
+        try:
+            tree.root_with_outgroup(outgroup_present)
 
-        # prune to a triplet
-        tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
+            # prune to a triplet
+            tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
 
-        return tree
+            return tree
+        except ValueError:
+            tree = False
+            return tree
 
     def determine_sisters_from_triplet(
         self,
@@ -377,7 +394,7 @@ class PolytomyTest(Tree):
         print(f"==============================")
         print(f"chi-squared: {round(gene_support_freq_res.statistic, 4)}")
         print(f"p-value: {round(gene_support_freq_res.pvalue, 6)}")
-        print(f"total genes: {len(trees_file_path)}")
+        print(f"total genes: {(gene_support_freq['0-1'] + gene_support_freq['0-2'] + gene_support_freq['1-2'])}")
         print(f"0-1: {gene_support_freq['0-1']}")
         print(f"0-2: {gene_support_freq['0-2']}")
         print(f"1-2: {gene_support_freq['1-2']}")
