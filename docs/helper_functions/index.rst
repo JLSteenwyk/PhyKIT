@@ -4,7 +4,7 @@
    :target: https://jlsteenwyk.com/PhyKIT
 
 
-Advanced Usage
+Usage
 ==============
 
 ^^^^^
