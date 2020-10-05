@@ -525,8 +525,8 @@ class Phykit(object):
                                             function name should be
                                             a fasta file
 
-                -i/--idmap                  identifier map of current tip
-                                            names (col1) and desired tip
+                -i/--idmap                  identifier map of current FASTA
+                                            names (col1) and desired FASTA
                                             names (col2)
 
                 -o/--output                 optional argument to write
@@ -593,11 +593,10 @@ class Phykit(object):
             description=textwrap.dedent(
                 f"""\
                 {self.help_header}
-                
+                Calculate summary statistics for bipartition support.
+
                 High bipartition support values are thought to be desirable because
                 they are indicative of greater certainty in tree topology.
-
-                Calculate summary statistics for bipartition support.
 
                 To obtain all bipartition support values, use the -v/--verbose option.
 
@@ -706,7 +705,7 @@ class Phykit(object):
                                             Default output will have 
                                             the same name as the input
                                             file but with the suffix 
-                                            ".collapsed_(support).tre""
+                                            ".collapsed_(support).tre"
 
                 """
             ),
@@ -811,8 +810,7 @@ class Phykit(object):
                 taxa representation, this will allow the user to use one <root file> for all trees.
                 Lastly, an empty root file can be used if the user does not wish to prune outgroup taxa. 
 
-                Calculate degree of violation of the molecular clock (or DVMC) in a tree
-                following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
+                Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
 
                 Alias: dvmc
 
@@ -864,7 +862,7 @@ class Phykit(object):
                                             a tree file
 
                 -v, --verbose               optional argument to print
-                                            all LB score values           
+                                            all internal branch lengths
                 """
             ),
         )
@@ -1043,7 +1041,7 @@ class Phykit(object):
                                             of individual taxa should be
                                             separated by a semi-colon  ';'
                                             
-                For example, the groups file
+                For example, the groups file could look like the following:
                 #labels group0  group1  group2
                 name_of_test    tip_name_A;tip_name_B   tip_name_C  tip_name_D;tip_name_E
                 """
@@ -1263,7 +1261,7 @@ class Phykit(object):
                 =====================================================
                 <file>                      first argument after 
                                             function name should be
-                                            an alignment file
+                                            an tree file
 
                 -f/--factor                 factor to multiply median
                                             branch length by to calculate
@@ -1289,7 +1287,7 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Prints the labels a phylogeny.
+                Prints the tip labels (or names) a phylogeny.
 
                 Alias: tree_labels; labels; tl
 
