@@ -35,7 +35,7 @@ To install from source, use the following commands:
 	make install
 
 If you run into permission errors when executing *make install*, create a 
-virtual environemnt for your installation:
+virtual environment for your installation:
 
 .. code-block:: shell
 
@@ -59,15 +59,13 @@ Get the help message from PhyKIT:
 
 |
 
-
 ^^^^
 
 .. toctree::
 	:maxdepth: 4
 
 	about/index
-	analytic_functions/index
-	helper_functions/index
+	usage/index
 	frequently_asked_questions/index
 
 ^^^^
