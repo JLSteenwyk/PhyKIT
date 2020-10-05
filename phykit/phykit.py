@@ -84,6 +84,12 @@ class Phykit(object):
                 (e.g., gc content or the number of parsimony informative sites) and the shape
                 of trees (e.g., treeness, degree of violation of a molecular clock).
 
+                Some help messages indicate that summary statistics are reported (e.g., 
+                bipartition_support_stats). Summary statistics include mean, median, 25th percentile,
+                75th percentile, minimum, maximum, standard deviation, and variance. These functions
+                typically have a verbose option that allows users to get the underlying data
+                used to calculate summary statistics. 
+
                 Usage: phykit <command> [optional command arguments]
 
                 Command specific help messages can be viewed by adding a 
@@ -253,11 +259,10 @@ class Phykit(object):
         elif command in ['pal2nal', 'p2n']:
             return self.thread_dna()
         else:
-            print("Invalid command option. See help for more details.")
+            print("Invalid command option. See help for a complete list of commands and aliases.")
             parser.print_help()
             sys.exit(1)
 
-    # TODO: include alias in help messages
     ## Alignment functions
     def alignment_length(self):
         parser = ArgumentParser(add_help=True,
@@ -267,7 +272,7 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Length of the input alignment is calculated using this function.
+                Length of an input alignment is calculated using this function.
 
                 Longer alignments are associated with strong phylogenetic signal.
                 
@@ -332,7 +337,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         AlignmentLengthNoGaps(args).run()
 
-    # TODO: write tests
     def gc_content(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -343,7 +347,7 @@ class Phykit(object):
                 
                 Calculate GC content of a fasta file.
 
-                GC content is negatively correlated to phylogenetic signal.
+                GC content is negatively correlated with phylogenetic signal.
 
                 If there are multiple entries, use the -v/--verbose option
                 to determine the GC content of each fasta entry separately.
@@ -374,8 +378,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         GCContent(args).run()
 
-    # TODO: write unit tests
-    # TODO: consider renaming to evolutionary_rate
     def pairwise_identity(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -390,8 +392,8 @@ class Phykit(object):
                 evolutionary rate of sequences.
 
                 Pairwise identity is defined as the number of identical
-                columns between two aligned sequences divided by the
-                number of columns in the alignment. Summary statistics
+                columns (including gaps) between two aligned sequences divided
+                by the number of columns in the alignment. Summary statistics
                 are reported unless used with the verbose option in which
                 all pairwise identities will be reported.
 
@@ -442,7 +444,8 @@ class Phykit(object):
                 Association between the number of parsimony informative
                 sites and phylogenetic signal was determined by Shen 
                 et al., Genome Biology and Evolution (2016), 
-                doi: 10.1093/gbe/evw179
+                doi: 10.1093/gbe/evw179 and Steenwyk et al., bioRxiv
+                (2020), doi: 10.1101/2020.06.08.140384.
 
                 Alias: pis
 
@@ -473,9 +476,9 @@ class Phykit(object):
 
                 Lower RCV values are thought to be desirable because they represent
                 a lower composition bias in an alignment. Statistically, RCV describes
-                the average variability in composition among taxa. 
+                the average variability in sequence composition among taxa. 
 
-                Calculate RCV following Phillips and Penny, Molecular Phylogenetics
+                RCV is calculated following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
                 Alias: rel_comp_var, rcv
@@ -495,7 +498,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         RelativeCompositionVariability(args).run()
 
-    # TODO: write test
     def rename_fasta_entries(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -595,9 +597,7 @@ class Phykit(object):
                 High bipartition support values are thought to be desirable because
                 they are indicative of greater certainty in tree topology.
 
-                Calculate summary statistics for bipartition support. Summary
-                statistics include mean, median, 25th percentile, 75th percentile,
-                minimum, maximum, standard deviation, and variance. 
+                Calculate summary statistics for bipartition support.
 
                 To obtain all bipartition support values, use the -v/--verbose option.
 
@@ -629,7 +629,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         BipartitionSupportStats(args).run()
 
-    # TODO: create unit test for this function
     def branch_length_multiplier(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -676,7 +675,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         BranchLengthMultiplier(args).run()
 
-    # TODO: create unit test for this function
     def collapse_branches(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -723,7 +721,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         CollapseBranches(args).run()
 
-    # write unit tests
     def covarying_evolutionary_rates(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -732,26 +729,29 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Determine if two genes have a signature of coevolving with one another.
+                Determine if two genes have a signature of covariation with one another.
 
                 Genes that have covarying evolutionary histories tend to have 
                 similar functions and expression levels.
 
-                Input two trees and calculate the correlation of branch lengths
-                between the tree trees. The two input trees do not have to have
-                the same taxa. This function will first prune both trees to have
-                the same tips. Additionally, branch lengths must be corrected. 
-                Branch length correction is typically done using the putative
-                species tree's branch lengths. As recommended by the original
-                method developers, outlier branches are removed. Outlier branches
-                have a relative evolutionary rate greater than five.
+                Input two phylogenies and calculate the correlation among relative 
+                evolutionary rates between the two phylogenies. The two input trees 
+                do not have to have the same taxa. This function will first prune both
+                trees to have the same tips. To transform branch lengths into relative
+                rates, PhyKIT uses the putative species tree's branch lengths, which is
+                inputted by the user. As recommended by the original method developers,
+                outlier branche lengths are removed. Outlier branches have a relative 
+                evolutionary rate greater than five.
 
-                PhyKIT reports three tab delimited values:
+                PhyKIT reports two tab delimited values:
                 col1: correlation coefficient
                 col2: p-value
 
                 Method is empirically evaluated by Clark et al., Genome Research
-                (2012), doi: 10.1101/gr.132647.111.
+                (2012), doi: 10.1101/gr.132647.111. Normalization method using a 
+                species tree follows Sato et al., Bioinformatics (2005), doi: 
+                10.1093/bioinformatics/bti564. 
+
 
                 Alias: cover
 
@@ -797,7 +797,7 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate DVMC (degree of violation of the molecular clock) of a tree.
+                Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.
 
                 Lower DVMC values are thought to be desirable because they are indicative
                 of a lower degree of violation in the molecular clock assumption.
@@ -808,7 +808,8 @@ class Phykit(object):
                 file, which is specified using the -r/--root file. If the tip name does not
                 exist in the input tree, rather than raising an error/warning message, the tip  
                 name is skipped. If the user wants to calculate DVMC for phylogenies with incomplete
-                taxa representation, this will allow the user to use one <root file> for all trees. 
+                taxa representation, this will allow the user to use one <root file> for all trees.
+                Lastly, an empty root file can be used if the user does not wish to prune outgroup taxa. 
 
                 Calculate degree of violation of the molecular clock (or DVMC) in a tree
                 following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
@@ -845,13 +846,10 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate summary statistics for internal branch lengths in a tree.
+                Calculate summary statistics for internal branch lengths in a phylogeny.
 
-                Internal branch lengths can be useful for tree diagnostics.
+                Internal branch lengths can be useful for phylogeny diagnostics.
 
-                Summary statistics of internal branch lengths include mean,
-                median, 25th percentile, 75th percentile, minimum, maximum,
-                standard deviation, and variance of among branch lengths.
                 To obtain all internal branch lengths, use the -v/--verbose option. 
 
                 Alias: ibs
@@ -881,7 +879,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         InternalBranchStats(args).run()
 
-    # TODO: fix documentation and finish writing function
     def internode_labeler(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -911,7 +908,6 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        # TODO: write in functionality of using the output argument
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         InternodeLabeler(args).run()
@@ -924,20 +920,18 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate LB (long branch) scores in a phylogeny.
+                Calculate long branch (LB) scores in a phylogeny.
 
-                Lower LB (long branch) scores are thought to be desirable
-                because they are indicative of taxa or trees that likely do
+                Lower LB scores are thought to be desirable because
+                they are indicative of taxa or trees that likely do
                 not have issues with long branch attraction.
 
-                LB score is calculated from patristic distances (or the sum 
-                of branches between to two taxa). More specifically, it is
-                mean pairwise patristic distance of taxon i compared to
-                all other taxa over the average pairwise patristic distance.
-                Summary statistics reported include mean, median, 25th
-                percentile, 75th percentile, minimum, maximum, standard 
-                deviation, and variance of per taxon LB scores is reported.
-                To obtain LB scores for each taxa, use the -v/--verbose option. 
+                LB score is the mean pairwise patristic distance of
+                taxon i compared to all other taxa over the average 
+                pairwise patristic distance. 
+        
+                PhyKIT reports summary statistics. To obtain LB scores
+                for each taxa, use the -v/--verbose option. 
 
                 LB scores are calculated following Struck, Evolutionary 
                 Bioinformatics (2014), doi: 10.4137/EBO.S14239.
@@ -971,13 +965,10 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate patristic distances in a phylogeny.
+                Calculate summary statistics among patristic distances in a phylogeny.
 
-                Patristic distances describes the distance from tip to tip.
+                Patristic distances are all tip-to-tip distances in a phylogeny.
 
-                Summary statistics reported include mean, median, 25th
-                percentile, 75th percentile, minimum, maximum, standard 
-                deviation, and variance of patristic distances across taxa.
                 To obtain all patristic distances, use the -v/--verbose option.
                 With the -v option, the first column will have two taxon names
                 separated by a '-' followed by the patristic distance. Features
@@ -1005,7 +996,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         PatristicDistances(args).run() 
 
-    # TODO: write unit tests
     def polytomy_test(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1032,7 +1022,8 @@ class Phykit(object):
                 Thereafter, a chi-squared test is conducted to determine if there
                 is evidence to reject the null hypothesis wherein the null 
                 hypothesis is that the three possible topologies among the three
-                groups are equally supported. This test is done using gene support frequencies.
+                groups are equally supported. This test is done using gene support
+                frequencies.
 
                 Alias: polyt_test, polyt, ptt
 
@@ -1063,7 +1054,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         PolytomyTest(args).run() 
 
-    # TODO: unit test
     def print_tree(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1100,7 +1090,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         PrintTree(args).run()
 
-    # TODO: unit test
     def prune_tree(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1145,7 +1134,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         PruneTree(args).run()
 
-    # TODO: fix documentation and finish writing function
     def rename_tree_tips(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1200,7 +1188,7 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                Calculate (RF) Robinson-Foulds distance between two trees.
+                Calculate Robinson-Foulds (RF) distance between two trees.
 
                 Low RF distances reflect greater similarity between two phylogenies. 
                 This function prints out two values, the plain RF value and the
@@ -1208,8 +1196,9 @@ class Phykit(object):
                 are calculated by taking the plain RF value and dividing it by 2(n-3)
                 where n is the number of tips in the phylogeny. 
 
-                PhyKIT will print out both the plain RF distance (col 1) and the
-                normalized RF distance (col 2).
+                PhyKIT will print out 
+                col 1; the plain RF distance and 
+                col 2: the normalized RF distance.
 
                 RF distances are calculated following Robinson & Foulds, Mathematical 
                 Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
@@ -1236,7 +1225,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         RobinsonFouldsDistance(args).run()
 
-    # TODO: create unit test for this function
     def spurious_sequence(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1245,14 +1233,14 @@ class Phykit(object):
                 f"""\
                 {self.help_header} 
 
-                Determines potentially spurious orthologs using branch lengths.
+                Determines potentially spurious homologs using branch lengths.
 
                 Identifies potentially spurious sequences and reports
                 tips in the phylogeny that could possibly be removed
-                from the underlying multiple sequence alignments. PhyKIT
+                from the associated multiple sequence alignment. PhyKIT
                 does so by identifying and reporting long terminal branches
                 defined as branches that are equal to or 20 times the median
-                length of internal and terminal branches.
+                length of all branches.
 
                 PhyKIT reports the following information
                 col1: name of tip that is a putatively spurious sequence
@@ -1293,7 +1281,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         SpuriousSequence(args).run()
 
-    # TODO: unit test
     def tip_labels(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1361,9 +1348,9 @@ class Phykit(object):
                 Higher treeness values are thought to be desirable because they
                 represent a higher signal-to-noise ratio.
 
-                Treeness describes the proportion of tree distance on internal
-                branches. Treeness can be used as a measure of the signal-to-noise
-                ratio in a phylogeny. 
+                Treeness describes the proportion of the tree distance found on
+                internal branches. Treeness can be used as a measure of the 
+                signal-to-noise ratio in a phylogeny. 
 
                 Calculate treeness (also referred to as stemminess) following
                 Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
@@ -1388,7 +1375,6 @@ class Phykit(object):
         Treeness(args).run()
 
     ## Alignment and tree functions
-    # TODO: write unit tests
     def saturation(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1406,8 +1392,8 @@ class Phykit(object):
                 Data with no saturation will have a value of 1. Completely
                 saturated data will have a value of 0.  
 
-                Saturation is calculated following Philippe et al., PLoS Biology
-                (2011), doi: 10.1371/journal.pbio.1000602.
+                Saturation is calculated following Philippe et al., PLoS 
+                Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
                 Alias: sat
 
@@ -1481,7 +1467,6 @@ class Phykit(object):
         TreenessOverRCV(args).run()
 
     ### Helper commands
-    # TODO: write unit tests
     def create_concatenation_matrix(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1534,7 +1519,6 @@ class Phykit(object):
         args = parser.parse_args(sys.argv[2:])
         CreateConcatenationMatrix(args).run()
 
-    # TODO: thread DNA unit tests
     def thread_dna(self):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -1548,8 +1532,8 @@ class Phykit(object):
                 
                 This function requires input alignments are in fasta format.
                 Codon alignments are then printed to stdout. Note, sequences
-                should occur in the same order in the protein and nucleotide
-                alignment.
+                are assumed to occur in the same order in the protein and 
+                nucleotide alignment.
 
                 Alias: pal2nal, p2n
 
