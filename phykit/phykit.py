@@ -78,14 +78,11 @@ class Phykit(object):
                 f"""\
                 {self.help_header}
 
-                PhyKIT helps with building and understanding phylogenetic trees.
+                PhyKIT helps process and analyze multiple sequence alignments and phylogenies.
 
-                More specifically, PhyKIT is a collection of functions that perform
-                various operations on multiple sequence alignments and newick tree
-                files. Generally, all functions are designed to help understand
-                the contents of alignments (e.g., gc content or the number of parsimony
-                informative sites) and the shape of trees (e.g., treeness, degree of
-                violation of a molecular clock).
+                Generally, all functions are designed to help understand the contents of alignments
+                (e.g., gc content or the number of parsimony informative sites) and the shape
+                of trees (e.g., treeness, degree of violation of a molecular clock).
 
                 Usage: phykit <command> [optional command arguments]
 
@@ -96,7 +93,8 @@ class Phykit(object):
 
                 Lastly, each function comes with aliases to save the user some
                 key strokes. For example, to get the help message for the 'treeness'
-                function, you can type "phykit tness -h".
+                function, you can type "phykit tness -h". All aliases are specified
+                in parentheses after the long form of the function name. 
 
                 Alignment-based commands
                 ========================
