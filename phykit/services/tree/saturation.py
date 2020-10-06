@@ -93,6 +93,8 @@ class Saturation(Tree):
         calculate pairwise identities for a given combo
         """
         identities = 0
+        seq_one = ''
+        seq_two = ''
         for record in alignment:
             if record.name == combo[0]:
                 seq_one = record.seq
