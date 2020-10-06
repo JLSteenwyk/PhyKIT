@@ -66,6 +66,7 @@ Get the help message from PhyKIT:
 
 	about/index
 	usage/index
+	tutorials/index
 	frequently_asked_questions/index
 
 ^^^^
