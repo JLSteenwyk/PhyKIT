@@ -18,17 +18,34 @@ bipartition_support_stats). Summary statistics include mean, median, 25th percen
 typically have a verbose option that allows users to get the underlying data
 used to calculate summary statistics. 
 
-Usage: phykit <command> [optional command arguments]
+|
+
+General usage: 
+
+.. code-block:: shell
+
+   phykit <command> [optional command arguments]
 
 Command specific help messages can be viewed by adding a 
 -h/\\-\\-help argument after the command. For example, to see the
-to see the help message for the command 'treeness', execute
-"phykit treeness -h" or "phykit treeness \\-\\-help".
+to see the help message for the command 'treeness', execute:
+
+.. code-block:: shell
+
+   phykit treeness -h 
+   # or
+   phykit treeness --help
+
 
 Lastly, each function comes with aliases to save the user some
 key strokes. For example, to get the help message for the 'treeness'
-function, you can type "phykit tness -h". All aliases are specified
-in parentheses after the long form of the function name. 
+function, you can type:
+
+.. code-block:: shell
+
+   phykit tness -h
+   
+All possible function names are specified at the top of each function section. 
 
 Alignment-based functions
 -------------------------
