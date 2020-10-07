@@ -260,5 +260,42 @@ PhyKIT is a toolkit for processing and analyzing multiple sequence alignments an
 If you found clipkit useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: [BIORXIV LINK](NA).
 <br /><br />
 
-
 ---
+
+This documentation covers downloading and installing PhyKIT. Details about each function as well as tutorials for using PhyKIT are available in the <a href="https://jlsteenwyk.com/PhyKIT/">online documentation</a>.
+
+<br />
+
+**Installation** <br />
+To install, use the following commands:
+```shell
+pip install phykit
+```
+
+<br />
+
+To install from source, use the following commands:
+```shell
+git clone https://github.com/JLSteenwyk/PhyKIT.git
+cd PhyKIT/
+make install
+```
+
+If you run into permission errors when executing make install, create a virtual environment for your installation:
+```shell
+git clone https://github.com/JLSteenwyk/PhyKIT.git
+cd PhyKIT/
+python -m venv .venv
+source .venv/bin/activate
+make install
+```
+Note, the virtual environment must be activated to use phykit.
+
+<br />
+To test phykit installation, launch the help message
+
+```shell
+phykit -h
+```
+
+
