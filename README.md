@@ -1,47 +1,40 @@
-PhyKIT is a collection of functions that help users explore alignments and
-trees. For example, PhyKIT can calculate statistics and parameters of alignments
-and trees that are associated with phylogenetic signal, assist in creating 
-concatenated or codon-based alignments for tree inference, among other functions.
-  
+<p align="center">
+  <a href="https://github.com/jlsteenwyk/phykit">
+    <img src="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/docs/_static/img/logo.jpg" alt="Logo" width="400">
+  </a>
+  <p align="center">
+    <a href="https://jlsteenwyk.com/PhyKIT/">Docs</a>
+    ·
+    <a href="https://github.com/jlsteenwyk/phykit/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/jlsteenwyk/phykit/issues">Request Feature</a>
+  </p>
+    <p align="center">
+        <a href="https://lbesson.mit-license.org/" alt="License">
+            <img src="https://img.shields.io/badge/License-MIT-blue.svg">
+        </a>
+        <a href="https://pypi.org/project/phykit/" alt="PyPI - Python Version">
+            <img src="https://img.shields.io/pypi/pyversions/phykit">
+        </a>
+        <a href="https://github.com/JLSteenwyk/PhyKIT/actions" alt="Build">
+            <img src="https://img.shields.io/github/workflow/status/jlsteenwyk/phykit/CI/master">
+        </a>
+        <a href="https://codecov.io/gh/jlsteenwyk/phykit" alt="Coverage">
+          <img src="https://codecov.io/gh/jlsteenwyk/phykit/branch/master/graph/badge.svg?token=0J49I6441V">
+        </a>
+        <a href="https://github.com/jlsteenwyk/phykit/graphs/contributors" alt="Contributors">
+            <img src="https://img.shields.io/github/contributors/jlsteenwyk/phykit">
+        </a>
+        <a href="https://twitter.com/intent/follow?screen_name=jlsteenwyk" alt="Author Twitter">
+            <img src="https://img.shields.io/twitter/follow/jlsteenwyk?style=social&logo=twitter"
+                alt="follow on Twitter">
+        </a>
+    </p>
+</p>
+
+PhyKIT is a toolkit for processing and analyzing multiple sequence alignments and phylogenies.<br /><br />
+If you found clipkit useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: [BIORXIV LINK](NA).
+<br /><br />
 
 
-Functions that calculate measures of phylogenetic signal include: 
-- alignment_length
-- alignment_length_no_gaps
-- bipartition_support_stats
-- gc_content
-- internal_branch_stats
-- long_branch_score
-- parsimony_informative_sites
-- relative_composition_variability
-- saturation 
-- treeness
-- treeness_over_rcv
-- variable_sites
-
-Functions that perform calculations on multiple trees include:
-- covarying_evolutionary_rates
-- polytomy_test
-- robinson_foulds_distance
-
-Functions that help edit/manipulative or view alignments or trees include:
-- rename_fasta_entries
-- branch_length_multiplier
-- collapse_branches
-- internode_labeler
-- print_tree
-- prune_tree
-- rename_tree_tips
-
-Functions that help build alignments for tree inference include:
-- create_concatenation_matrix
-- thread_dna
-
-Other functions that help understand alignments or trees include:
-- pairwise_identity
-- patristic_distances
-- spurious_sequence
-
-
-=============================================
-Consider writing a function that conducts objective desirability-based integration of multiple statistics
+---

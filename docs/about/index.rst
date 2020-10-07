@@ -83,8 +83,8 @@ More Team Members
 ^^^^^
 
 PhyKIT has been made possible by other key personnel including `Antonis Rokas
-<https://as.vanderbilt.edu/rokaslab/>`_, Yuanning Li, and `Xing-Xing
-Shen <https://xingxingshen.github.io/>`_.
+<https://as.vanderbilt.edu/rokaslab/>`_, `Abigail L. Labella <abigailleavittlabella.com>`_,
+Yuanning Li, and `Xing-Xing Shen <https://xingxingshen.github.io/>`_.
 
 |
 
@@ -109,6 +109,32 @@ tree of life, and the evolution of human pregnancy. Find out more information at
 
 .. |TwitterRokas| image:: ../_static/img/Twitter.png
    :target: https://twitter.com/RokasLab
+   :width: 4.5%
+
+|
+
+|ALLabella|
+|GoogleScholarLabella| |GitHubLabella| |TwitterLabella| 
+
+I am a postdoctoral scholar at Vanderbilt University in the lab of Dr. Antonis Rokas. My research
+uses evolution to understand the relationship between phenotype, genotype, and environment. This
+includes the evolution of human birth timing and disorders of pregnancy, and the evolution of silent
+codon positions in yeasts. During my research career I have worked with fungi, humans, beetles, fishes,
+limpets, clams, and lizards! For more information visit her `personal website <abigailleavittlabella.com>`_.
+
+.. |ALLabella| image:: ../_static/img/Labella.jpg
+   :width: 35%
+
+.. |GoogleScholarLabella| image:: ../_static/img/GoogleScholar.png
+   :target: https://scholar.google.com/citations?user=rxdDvjEAAAAJ&hl=en&oi=ao
+   :width: 4.5%
+
+.. |TwitterLabella| image:: ../_static/img/Twitter.png
+   :target: https://twitter.com/AbbeAtSea
+   :width: 4.5%
+
+.. |GitHubLabella| image:: ../_static/img/Github.png
+   :target: https://github.com/alabella19
    :width: 4.5%
 
 |
@@ -139,7 +165,6 @@ and 3) exploring insect species and ecological diversity. Find out more informat
    :target: https://github.com/xingxingshen
    :width: 4.5%
 
-|
 
 Information about other team members coming soon!
 

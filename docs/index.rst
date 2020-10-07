@@ -9,7 +9,7 @@
 PhyKIT, a toolkit for the UNIX shell environment with 30 functions that process multiple
 sequence alignments and phylogenies for broad applications
 
-If you found clipkit useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: |doiLink|_.
+If you found PhyKIT useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: |doiLink|_.
 
 .. _doiLink: BIORXIV LINK
 .. |doiLink| replace:: TEXT
