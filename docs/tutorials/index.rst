@@ -69,7 +69,7 @@ to exclude alignment gaps, use the following option
 
 .. code-block:: shell
 
-   phykit aln_len_no_gaps ./docs/data/Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa 
+   phykit aln_len_no_gaps Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa 
    321     624     51.4423
 
 col1: number of sites without gaps |br|
