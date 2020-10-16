@@ -116,3 +116,20 @@ class TestCovaryingEvolutionaryRates(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_incorrect_tree_topology(self, mocked_print):
+        expected_result = "0.6769\t0.065228"
+        testargs = [
+            "phykit",
+            "cover",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_3_incorrect_topology.tre ",
+        ]
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2
