@@ -7,6 +7,7 @@ from scipy.stats import zscore
 from scipy.stats.stats import pearsonr
 
 from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
 from .base import Tree
 
@@ -41,6 +42,9 @@ class CovaryingEvolutionaryRates(Tree):
         tree_zero = self.prune_tips(tree_zero, tree_zero_tips_to_prune)
         tree_one = self.prune_tips(tree_one, tree_one_tips_to_prune)
         tree_ref = self.prune_tips(tree_ref, tree_ref_tips_to_prune)
+
+        # check that the input trees have the same topology
+        self.determine_if_trees_differ(tree_zero, tree_one, tree_ref)
 
         # obtain corrected branch lengths where branch lengths
         # are corrected by the species tree branch length
@@ -143,6 +147,58 @@ class CovaryingEvolutionaryRates(Tree):
         for tip in tips:
             tree.prune(tip)
         return(tree)
+
+    def determine_if_trees_differ(self, tree_zero, tree_one, tree_ref):
+        """
+        determine if the trees differ from one another
+        """
+        differences = 0
+        differences = self.compare_trees(differences, tree_zero, tree_one)
+        differences = self.compare_trees(differences, tree_zero, tree_ref)
+        differences = self.compare_trees(differences, tree_one, tree_ref)
+        
+        if differences > 0:
+            print("Input trees differ in topology.")
+            print("Please ensure input phylogenies all have the same topology.")
+            sys.exit()
+
+    def compare_trees(
+        self,
+        plain_rf: int,
+        tree_zero: Tree,
+        tree_one: Tree
+    ) -> int:
+        # loop through tree_zero and find similar clade in tree_one
+        for clade_zero in tree_zero.get_nonterminals():
+            # initialize and populate a list of tip names in tree_zero
+            tip_names_zero = self.get_tip_names_from_tree(clade_zero)
+            # get common ancestor of tree_zero tip names in tree_one
+            clade_one = tree_one.common_ancestor(tip_names_zero)
+            # initialize and populate a list of tip names in tree_one
+            tip_names_one = self.get_tip_names_from_tree(clade_one)
+
+            # compare the list of tip names
+            plain_rf = self.determine_if_clade_differs(
+                plain_rf,
+                tip_names_zero,
+                tip_names_one
+            )
+
+        return plain_rf
+            
+    def determine_if_clade_differs(
+        self,
+        plain_rf: int,
+        tip_names_zero: list,
+        tip_names_one: list
+        ) -> int:
+        """
+        if clade differs, add 1 to plain_rf value
+        """
+        if set(tip_names_zero) != set(tip_names_one):
+            plain_rf +=1
+        
+        return plain_rf
 
     def correct_branch_lengths(
         self, 
