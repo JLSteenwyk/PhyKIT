@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/jlsteenwyk/phykit">
-    <img src="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/docs/_static/img/logo.png" alt="Logo" width="400">
+    <img src="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/docs/_static/img/phykit_logo.png" alt="Logo" width="400">
   </a>
   <p align="center">
     <a href="https://jlsteenwyk.com/PhyKIT/">Docs</a>
