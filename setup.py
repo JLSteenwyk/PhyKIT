@@ -31,6 +31,7 @@ setup(
     author_email="jlsteenwyk@gmail.com",
     url="https://github.com/jlsteenwyk/phykit",
     packages=find_packages(),
+    classifiers=CLASSIFIERS,
     entry_points={"console_scripts": ["phykit = phykit.phykit:main"]},
     version=about["__version__"],
     include_package_data=True,
