@@ -1,0 +1,506 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Tutorials &#8212; phykit  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../_static/flavicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FAQ" href="../frequently_asked_questions/index.html" />
+    <link rel="prev" title="Usage" href="../usage/index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <a class="reference external image-reference" href="https://jlsteenwyk.com/PhyKIT"><img alt="../_images/logo3.png" class="align-center" src="../_images/logo3.png" style="width: 55%;" /></a>
+<div class="section" id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
+<hr class="docutils" />
+<p>PhyKIT can be used for a multitude of different types of analyses. Documentation here
+provides a step-by-step outline for how to conduct three different types of analyses.</p>
+<ol class="arabic simple">
+<li><p>summarizing information content among multiple sequence alignments and phylogenies for diagnostic purposes,</p></li>
+<li><p>evaluating gene-gene covariation to identify genes of shared function and screen for novel gene function, and</p></li>
+<li><p>identify polytomies in species phylogenies, which are suggestive of rapid radiation or diversification events</p></li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="section" id="summarizing-information-content">
+<h2>1. Summarizing information content<a class="headerlink" href="#summarizing-information-content" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p>PhyKIT implements numerous functions that can be used to examine the information content and help researchers
+summarize information content and identify potential biases in multiple sequence alignments and phylogenies.</p>
+<p>Among other uses, one use of summarizing information content is to facilitate subsampling larger phylogenomic
+data matrices to further explore tree space during species-level tree inference or for divergence time estimation.
+(<a class="reference external" href="https://www.nature.com/articles/nature12130">Salichos and Rokas 2013</a>;
+<a class="reference external" href="https://www.pnas.org/content/114/35/E7282">Liu et al. 2017</a>;
+<a class="reference external" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0197433">Smith et al. 2018</a>;
+<a class="reference external" href="https://www.cell.com/cell/fulltext/S0092-8674(18)31332-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867418313321%3Fshowall%3Dtrue">Shen et al. 2018</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1">2020</a>;
+<a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>;
+<a class="reference external" href="https://peerj.com/articles/7747/">Walker et al. 2019</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1">Li et al. 2020</a>)</p>
+<p>The information content summarized in the remainder of this section are associated with strong phylogenetic signal
+(or robust and accurate tree inference). When subsampling genes, a researcher could take a fraction of the best
+scoring phylogenies to reinfer species-level relationships or divergence times (e.g., robustly supported phylogenies
+and genes that do not violate clock-like patterns of evolution).</p>
+<p>In this tutorial, we will use the following test multiple sequence alignment and phylogenetic tree, which came
+from <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>. <br/></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/b3b8b32d2254e806d4a91204bf0614ce/Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa"><code class="xref download docutils literal notranslate"><span class="pre">Multiple</span> <span class="pre">sequence</span> <span class="pre">alignment</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/610bbf71e4c2f0ed3ef43e0e2bbe1905/Steenwyk_etal_mBio_2019_EOG091N44MS.tre"><code class="xref download docutils literal notranslate"><span class="pre">Single-gene</span> <span class="pre">phylogeny</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="section" id="alignment-length">
+<h3>Alignment length<a class="headerlink" href="#alignment-length" title="Permalink to this headline">¶</a></h3>
+<p>Alignment length and the length of an alignment excluding sites with gaps is associated with
+robust and accurate tree inferences
+(<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
+Calculate alignment length with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit aln_len Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+<span class="m">624</span>
+</pre></div>
+</div>
+<p>to exclude alignment gaps, use the following option</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit aln_len_no_gaps Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+<span class="m">321</span>     <span class="m">624</span>     <span class="m">51</span>.4423
+</pre></div>
+</div>
+<p>col1: number of sites without gaps <br/>
+col2: total number of sites <br/>
+col3: percentage of sites without gaps</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="bipartition-support-statistics">
+<h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Permalink to this headline">¶</a></h3>
+<p>High average bipartition in a phylogeny is associated with robust bipartition support
+(<a class="reference external" href="https://www.nature.com/articles/nature12130">Salichos and Rokas 2013</a>;
+<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>). Thus,
+genes with high bipartition support values have greater certainty among bipartitions.
+Calculate bipartition support summary statistics with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit bss Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+mean: <span class="m">88</span>.6437
+median: <span class="m">99</span>
+25th percentile: <span class="m">83</span>.0
+75th percentile: <span class="m">100</span>.0
+minimum: <span class="m">28</span>
+maximum: <span class="m">100</span>
+standard deviation: <span class="m">18</span>.5504
+variance: <span class="m">344</span>.1157
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="long-branch-score">
+<h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Permalink to this headline">¶</a></h3>
+<p>Long branch scores (or LB scores) help determine taxa that may be contributing to long-branch
+problems
+(<a class="reference external" href="https://journals.sagepub.com/doi/10.4137/EBO.S14239">Struck 2014</a>;).
+Similarly, the standard deviation of LB scores among taxa can be used as a measure of heterogeneity.
+To calculate summary statistics of LB scores for all taxa in a given phylogeny, use the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit lb_score Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+mean: -1.1111
+median: -14.4566
+25th percentile: -17.8686
+75th percentile: -3.4048
+minimum: -23.7982
+maximum: <span class="m">211</span>.1845
+standard deviation: <span class="m">39</span>.1931
+variance: <span class="m">1536</span>.0987
+</pre></div>
+</div>
+<p>LB scores of individual taxa are also information to diagnose taxa driving long-branch problems.
+The lower the values, the less susceptible the taxon is to long-branch problems. To get
+the LB score of each taxa, use the verbose option:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit lb_score Steenwyk_etal_mBio_2019_EOG091N44MS.tre --verbose
+Aspergillus_aculeatus   -13.7403
+Aspergillus_arachidicola        -15.382
+Aspergillus_parasiticus -15.2214
+Aspergillus_sojae       -15.2627
+Aspergillus_flavus      -14.7755
+Aspergillus_oryzae      -14.7755
+Aspergillus_bombycis    -11.1987
+...                     ...
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="parsimony-informative-sites">
+<h3>Parsimony informative sites<a class="headerlink" href="#parsimony-informative-sites" title="Permalink to this headline">¶</a></h3>
+<p>The number of parsimony informative sites in an alignment is associated with strong phylogenetic signal.
+(<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.06.08.140384v1">Steenwyk et al. 2020</a>).
+Calculate the number of parsimony informative sites in an alignment with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit pis Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+<span class="m">517</span>     <span class="m">624</span>     <span class="m">82</span>.8526
+</pre></div>
+</div>
+<p>col1: number of parsimony informative sites <br/>
+col2: total number of sites <br/>
+col3: percentage of parsimony informative sites</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="saturation">
+<h3>Saturation<a class="headerlink" href="#saturation" title="Permalink to this headline">¶</a></h3>
+<p>Saturation in a multiple sequence alignments is driven by sites with multiple substitutions and results in
+the alignment underestimating real genetic distances among taxa. Values of 1 have no saturation and values
+of 0 are completely saturated by multiple substitutions
+(<a class="reference external" href="https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1000602">Philippe et al. 2011</a>).
+Estimate saturation with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit sat -a Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa -t teenwyk_etal_mBio_2019_EOG091N44MS.tre
+<span class="m">0</span>.6835
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="treeness-divided-by-relative-composition-variability">
+<h3>Treeness divided by relative composition variability<a class="headerlink" href="#treeness-divided-by-relative-composition-variability" title="Permalink to this headline">¶</a></h3>
+<p>Treeness divided by relative composition variability (treeness/RCV) is associated with strong
+phylogenetic signal. Higher treeness and lower RCV values are indicative of a lower potential for
+bias (composition-based or otherwise) and a lower degree of composition bias. Thus, higher treeness/RCV
+values are indicative of genes less susceptible to composition and other biases.
+(<a class="reference external" href="https://academic.oup.com/auk/article-abstract/105/3/565/5193152?redirectedFrom=fulltext">Lanyon 1988</a>;
+<a class="reference external" href="http://people.bu.edu/msoren/Phillips.pdf">Phillips and Penny 2003</a>;
+<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
+Calculate treeness/RCV using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit toverr -a Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa -t Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+<span class="m">3</span>.9773  <span class="m">0</span>.5136  <span class="m">0</span>.1291
+</pre></div>
+</div>
+<p>col1: treeness/RCV <br/>
+col2: treeness <br/>
+col3: RCV</p>
+<p>To individually calculate treeness, a measure of signal-to-noise among branch lengths
+(<a class="reference external" href="https://academic.oup.com/auk/article-abstract/105/3/565/5193152?redirectedFrom=fulltext">Lanyon 1988</a>;
+<a class="reference external" href="http://people.bu.edu/msoren/Phillips.pdf">Phillips and Penny 2003</a>),
+and RCV, a measure of composition bias (<a class="reference external" href="http://people.bu.edu/msoren/Phillips.pdf">Phillips and Penny 2003</a>),
+use the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate treeness</span>
+phykit tness Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+<span class="m">0</span>.5136
+
+<span class="c1"># calculate RCV</span>
+phykit rcv Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+<span class="m">0</span>.1291
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="variable-sites">
+<h3>Variable sites<a class="headerlink" href="#variable-sites" title="Permalink to this headline">¶</a></h3>
+<p>The number of variable sites in an alignment is associated with strong phylogenetic signal.
+(<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
+Calculate the number of variable sites with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit vs Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+<span class="m">555</span>     <span class="m">624</span>     <span class="m">88</span>.9423
+</pre></div>
+</div>
+<p>col1: number of variable sites <br/>
+col2: total number of sites <br/>
+col3: percentage of variable sites</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="evaluating-gene-gene-covariation">
+<h2>2. Evaluating gene-gene covariation<a class="headerlink" href="#evaluating-gene-gene-covariation" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p>Identifying genes that significantly covary (or coevolve) with one another is known to accurately and sensitively
+identify genes with shared functions, are coexpressed, and/or are part of the same multimeric complexes
+(<a class="reference external" href="https://academic.oup.com/bioinformatics/article/21/17/3482/212654">Sato et al. 2005</a>;
+<a class="reference external" href="https://genome.cshlp.org/content/22/4/714.full">Clark et al. 2012</a>).
+Furthermore, gene-gene covariation serves as a powerful evolution-based genetic screen for predicting gene function
+(<a class="reference external" href="https://www.pnas.org/content/116/39/19593">Brunette et al. 2019</a>).</p>
+<p>PhyKIT implements a mirror-tree-based method to identify genes that covary with one another. In principle, PhyKIT
+determines if two trees have similar branch length properties throughout the phylogeny. Thus, each input phylogeny
+must have the same topology. However, there are other steps that must be done prior to evaluating covariation
+between two genes.</p>
+<p>To provide a comprehensive tutorial, we will start with the sequence alignments for three genes and their constrained
+tree topologies that match the putative species tree from <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1.abstract">Shen et al. 2020</a>.</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/baacaa62787a1e1b03db323b16d03049/gene_gene_covariation_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">gene_gene_covariation_tutorial.tar.gz</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="section" id="step-0-prepare-data">
+<h3>Step 0: Prepare data<a class="headerlink" href="#step-0-prepare-data" title="Permalink to this headline">¶</a></h3>
+<p>The mirror tree method for determining significant gene-gene covariation requires that both input phylogenies have the same topology.
+As a result, gene trees must be constrained to the species tree, which is typically inferred from whole genome or proteome data.
+In the present tutorial, the species tree has already been inferred. Additionally, the guide trees used to constrain the gene trees
+have been generated. These trees were generated by pruning the species tree to match the taxon representation of the sequences in
+the multiple sequence alignment.</p>
+</div>
+<div class="section" id="step-1-estimate-gene-tree-branch-lengths">
+<h3>Step 1: Estimate gene tree branch lengths<a class="headerlink" href="#step-1-estimate-gene-tree-branch-lengths" title="Permalink to this headline">¶</a></h3>
+<p>To infer the constrained tree, we will use <a class="reference external" href="http://www.iqtree.org/">IQ-TREE2</a>. The species tree (or guide tree) is specified
+with the <em>-g</em> argument. Lastly, the best-fitting substitution model was specified according to what was reported in
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1.abstract">Shen et al. 2020</a> supplementary data; however,
+if the best-fitting model is unknown, this will have to be determined prior to estimating gene tree branch lengths.</p>
+<p>Estimate the gene tree branch lengths using the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># infer constrain trees</span>
+iqtree2 -s Shen_etal_SciAdv_2020_NDC80.fa -g Shen_etal_SciAdv_2020_NDC80.constrained.tre -pre Shen_etal_SciAdv_2020_NDC80 -m JTT+G4+F
+iqtree2 -s Shen_etal_SciAdv_2020_NUF2.fa -g Shen_etal_SciAdv_2020_NUF2.constrained.tre -pre Shen_etal_SciAdv_2020_NUF2 -m LG+G4
+iqtree2 -s Shen_etal_SciAdv_2020_SEC7.fa -g Shen_etal_SciAdv_2020_SEC7.constrained.tre -pre Shen_etal_SciAdv_2020_SEC7 -m LG+G4
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-2-evaluate-gene-gene-covariation">
+<h3>Step 2: Evaluate gene-gene covariation<a class="headerlink" href="#step-2-evaluate-gene-gene-covariation" title="Permalink to this headline">¶</a></h3>
+<p>When determining gene-gene covariation, it is best to use a high significance threshold for correlation coefficients.
+I consider a threshold of 0.825 to be very conservative and that 0.8 is often sufficiently conservative. I like to be cautious
+so I recommend using a threshold of 0.825.</p>
+<p>To evaluate gene-gene covariation, execute the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate gene-gene covariation between NUF2 and SEC7</span>
+phykit cover Shen_etal_SciAdv_2020_NUF2.treefile Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+<span class="m">0</span>.7496  <span class="m">0</span>.0
+
+<span class="c1"># Evaluate gene-gene covariation between NDC80 and SEC7</span>
+phykit cover Shen_etal_SciAdv_2020_NDC80.treefile Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+<span class="m">0</span>.763   <span class="m">0</span>.0
+</pre></div>
+</div>
+<p>Given our thresholds, neither <em>NUF2</em> nor <em>NDC80</em> significantly covary with <em>SEC7</em>. Next, evaluate gene-gene covariation between
+<em>NUF2</em> and <em>NDC80</em>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate gene-gene covariation between NUF2 and NDC80</span>
+phykit cover Shen_etal_SciAdv_2020_NUF2.treefile Shen_etal_SciAdv_2020_NDC80.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+<span class="m">0</span>.8448  <span class="m">0</span>.0
+</pre></div>
+</div>
+<p>These two genes significantly covary with one another. This raises the hypothesis that these two genes have shared function. A literature-
+based examination of these genes reveals the encoded proteins are part of the same kinetochore-associated complex termed the
+<a class="reference external" href="https://www.yeastgenome.org/complex/CPX-548">NDC80 complex</a>. Thus, PhyKIT is useful for determining gene-gene covariation, which can be
+driven by shared function, coexpression, and/or are part of the same multimeric complexes.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="identifying-signatures-of-rapid-radiations">
+<h2>3. Identifying signatures of rapid radiations<a class="headerlink" href="#identifying-signatures-of-rapid-radiations" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p>Signatures of rapid radiations or diversification events can be identified by pinpointing polytomies in a putative species tree
+(<a class="reference external" href="https://www.mdpi.com/2073-4425/9/3/132">Sayyari and Mirarab 2018</a>;
+<a class="reference external" href="https://www.nature.com/articles/s41586-019-1693-2">One Thousand Plant Transcriptomes Initiative 2019</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1">Li et al. 2020</a>).</p>
+<p>PhyKIT uses a gene-based approach to evaluate polytomies. In other words, PhyKIT will determine what topology each gene supports.
+Thereafter, PhyKIT will conduct a chi-squared test to determine if there is equal support among gene trees for the various topologies.
+In the chi-squared test, the null hypothesis is that there is equal support among gene trees for the various topologies and the
+alternative hypothesis is that there is unequal support for the various topologies. Thus, failing to reject the null hypothesis
+would indicate that there is a polytomy where as rejecting the null hypothesis would indicate there is no polytomy.
+The various topologies examined by PhyKIT are determined by the groups file. Formatting this file will be explained later.</p>
+<p>To demonstrate how to identify polytomies, we will use a subset of 250 gene phylogenies from
+<a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>.</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/825af78eae72758221fb88615fc165e6/polytomy_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">polytomy_tutorial.tar.gz</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="section" id="id14">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+<p>For this tutorial, the data has already been formatted for the user. There are two input files for the polytomy testing function:</p>
+<ol class="arabic simple">
+<li><p>a file that specifies the location of gene trees</p></li>
+<li><p>a file that specifies the groups to test</p></li>
+</ol>
+<p>Thus, this tutorial assumes that gene phylogenies have already been inferred and the area of the phylogeny that the user wishes to
+test for a polytomy has already been identified.</p>
+<p>Examination of the first file reveals that that it is a single column file that specifies the pathing of gene phylogenies to use
+during polytomy testing. Examination of the second file reveals that groups are specified using a tab-separated five column file.</p>
+<p><em>column 1:</em> an identifier for the test, which is not used by PhyKIT. Instead, this column is intended to be for the user to write any
+keywords or notes that can help remind them of what they were testing.</p>
+<p><em>column 2-4:</em> the tip names in the groups. Each column represents a single group to conduct polytomy testing for. If a group has multiple
+taxa, separate each tip name using a semi-colon ‘;’. For example, in <em>groups_file0.txt</em> there is one group with <em>Aspergillus_persii;Aspergillus_sclerotiorum</em>
+wherein this group has two taxa, <em>Aspergillus_persii</em> and <em>Aspergillus_sclerotiorum</em>.</p>
+<p><em>column 5:</em> the outgroup taxa. This column specifies the name of outgroup taxa, which are used to root the gene trees prior to
+determining what topology they support.</p>
+</div>
+<div class="section" id="step-1-conduct-polytomy-test">
+<h3>Step 1: Conduct polytomy test<a class="headerlink" href="#step-1-conduct-polytomy-test" title="Permalink to this headline">¶</a></h3>
+<p>Among the groups that have already been predetermined for the user, we will first conduct a polytomy test for <em>groups_file0.txt</em>. To
+execute the polytomy test, use the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit ptt -t filamentous_fungi_250_trees.txt -g groups_file0.txt
+Gene Support Frequency <span class="nv">Results</span>
+<span class="o">==============================</span>
+chi-squared: <span class="m">19</span>.425
+p-value: <span class="m">6</span>.1e-05
+total genes: <span class="m">240</span>
+<span class="m">0</span>-1: <span class="m">103</span>
+<span class="m">0</span>-2: <span class="m">49</span>
+<span class="m">1</span>-2: <span class="m">88</span>
+</pre></div>
+</div>
+<p><em>Note,</em> if you are getting an error, it may be due to improper pathing in <em>filamentous_fungi_250_trees.txt.</em> Please check this file and
+modify it accordingly.</p>
+<p>We will now go over the output of PhyKIT. PhyKIT will report the <em>chi-squared</em> value, the <em>p</em> value, the total number of genes used, followed
+by the support of sister relationships examined. Here, the <em>chi-squared</em> value is very high and the <em>p</em> value is very low indicating
+that the null hypothesis was rejected and that there is no evidence of a polytomy. The total number of genes used during the polytomy
+test was 240. However, you may have noticed that there were 250 genes used as input. This discrepancy is not an error but may be caused by
+two different reasons. (1) 10 genes were unable to be used due to incomplete taxon representation in the groups and (2) PhyKIT can account
+for gene phylogenies uncertainty (i.e., gene phylogenies with collapsed bipartitions), which may render the support of a given gene tree
+to be uncertain and therefore not be used during polytomy testing.</p>
+<p>Next, the section <em>0-1, 0-2,</em> and <em>1-2</em> refers to the sister relationships between the groups. Group 0 is specified in column 2 of the
+groups file while group 1 and group 2 are specified in columns 3 and 4, respectively. Thus, <em>0-1</em> refers to the following topology
+<em>(((0,1),2),outgroup);</em> whereas <em>0-2</em> and <em>1-2</em> refers to the following topologies <em>(((0,2),1),outgroup);</em> and <em>(((1,2),0),outgroup);</em>,
+respectively. PhyKIT identified that 103 gene phylogenies support <em>(((0,1),2),outgroup);</em> whereas 49 and 88 gene phylogenies support
+the topologies <em>(((0,2),1),outgroup);</em> and <em>(((1,2),0),outgroup);</em>, respectively.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Next, conduct a polytomy test using the other group file using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit ptt -t filamentous_fungi_250_trees.txt -g groups_file1.txt
+Gene Support Frequency <span class="nv">Results</span>
+<span class="o">==============================</span>
+chi-squared: <span class="m">0</span>.129
+p-value: <span class="m">0</span>.937521
+total genes: <span class="m">248</span>
+<span class="m">0</span>-1: <span class="m">84</span>
+<span class="m">0</span>-2: <span class="m">84</span>
+<span class="m">1</span>-2: <span class="m">80</span>
+</pre></div>
+</div>
+<p>In contrast to the previous test, the <em>chi-squared</em> value is very low and the <em>p</em> value is very high indicating a failure to reject the null
+hypothesis. Thus, there is a signature of rapid radiation or diversification event for these groups. Additional details provided by PhyKIT
+reveal 248 genes were used during the polytomy test and that there is nearly equal support for the various topologies.</p>
+<p>Taken together, this tutorial reveals how to identify signatures of rapid radiation or diversification events in phylogenomic data.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169242151-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169242151-1');
+</script>
+
+<link href='http://fonts.googleapis.com/css?family=Oxygen:300,400,700' rel='stylesheet'>
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+
+
+<div id="logo">
+    <center>
+        <a href="../index.html"><img src="../_static/img/sidebar_logo.png" height="150" alt="PhyKIT logo"/></a>
+    </center>
+</div>
+
+<div id="gh-buttons">
+    <a class="github-button" href="https://github.com/jlsteenwyk/phykit" aria-label="View jlsteenwyk/phykit on GitHub" data-style="mega">Source</a>
+    <a class="github-button" href="https://github.com/jlsteenwyk/phykit/issues" data-icon="octicon-issue-opened" aria-label="Issue jlsteenwyk/phykit on GitHub" data-style="mega">Issue</a>
+</div><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#summarizing-information-content">1. Summarizing information content</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#saturation">Saturation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#treeness-divided-by-relative-composition-variability">Treeness divided by relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluating-gene-gene-covariation">2. Evaluating gene-gene covariation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-0-prepare-data">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-estimate-gene-tree-branch-lengths">Step 1: Estimate gene tree branch lengths</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-evaluate-gene-gene-covariation">Step 2: Evaluate gene-gene covariation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#identifying-signatures-of-rapid-radiations">3. Identifying signatures of rapid radiations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id14">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-conduct-polytomy-test">Step 1: Conduct polytomy test</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../usage/index.html" title="previous chapter">Usage</a></li>
+      <li>Next: <a href="../frequently_asked_questions/index.html" title="next chapter">FAQ</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020 Jacob L. Steenwyk.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/tutorials/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

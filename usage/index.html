@@ -1,0 +1,840 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Usage &#8212; phykit  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../_static/flavicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorials" href="../tutorials/index.html" />
+    <link rel="prev" title="About" href="../about/index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <a class="reference external image-reference" href="https://jlsteenwyk.com/PhyKIT"><img alt="../_images/logo4.png" class="align-center" src="../_images/logo4.png" style="width: 55%;" /></a>
+<div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>PhyKIT helps process and analyze multiple sequence alignments and phylogenies.</p>
+<p>Generally, all functions are designed to help understand the contents of alignments
+(e.g., gc content or the number of parsimony informative sites) and the shape
+of trees (e.g., treeness, degree of violation of a molecular clock).</p>
+<p>Some help messages indicate that summary statistics are reported (e.g.,
+bipartition_support_stats). Summary statistics include mean, median, 25th percentile,
+75th percentile, minimum, maximum, standard deviation, and variance. These functions
+typically have a verbose option that allows users to get the underlying data
+used to calculate summary statistics.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>General usage:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit &lt;command&gt; <span class="o">[</span>optional <span class="nb">command</span> arguments<span class="o">]</span>
+</pre></div>
+</div>
+<p>Command specific help messages can be viewed by adding a
+-h/--help argument after the command. For example, to see the
+to see the help message for the command ‘treeness’, execute:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit treeness -h
+<span class="c1"># or</span>
+phykit treeness --help
+</pre></div>
+</div>
+<p>Lastly, each function comes with aliases to save the user some
+key strokes. For example, to get the help message for the ‘treeness’
+function, you can type:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit tness -h
+</pre></div>
+</div>
+<p>All possible function names are specified at the top of each function section.</p>
+<div class="section" id="alignment-based-functions">
+<h2>Alignment-based functions<a class="headerlink" href="#alignment-based-functions" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<div class="section" id="alignment-length">
+<h3>Alignment length<a class="headerlink" href="#alignment-length" title="Permalink to this headline">¶</a></h3>
+<p>Function names: alignment_length; aln_len; al</p>
+<p>Length of an input alignment is calculated using this function.</p>
+<p>Longer alignments are associated with strong phylogenetic signal.</p>
+<p>Association between alignment length and phylogenetic signal
+was determined by Shen et al., Genome Biology and Evolution (2016),
+doi: 10.1093/gbe/evw179.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit aln_len &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="alignment-length-no-gaps">
+<h3>Alignment length no gaps<a class="headerlink" href="#alignment-length-no-gaps" title="Permalink to this headline">¶</a></h3>
+<p>Function names: alignment_length_no_gaps; aln_len_no_gaps; alng</p>
+<p>Calculate alignment length excluding sites with gaps.</p>
+<p>Longer alignments when excluding sites with gaps is
+associated with strong phylogenetic signal.</p>
+<p>PhyKIT reports three tab delimited values:
+col1: number of sites without gaps
+col2: total number of sites
+col3: percentage of sites without gaps</p>
+<p>Association between alignment length when excluding sites
+with gaps and phylogenetic signal was determined by Shen
+et al., Genome Biology and Evolution (2016),
+doi: 10.1093/gbe/evw179.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit aln_len_no_gaps &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="create-concatenation-matrix">
+<h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Permalink to this headline">¶</a></h3>
+<p>Function names: create_concatenation_matrix, create_concat, cc</p>
+<p>Create a concatenated alignment file. This function is
+used to help in the construction of multi-locus data
+matrices.</p>
+<p>PhyKIT will output three files:
+1) A fasta file with ‘.fa’ appended to the prefix specified with the -p/--prefix parameter.
+2) A partition file ready for input into RAxML or IQ-tree.
+3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit create_concat -a &lt;file&gt; -p &lt;string&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: alignment list file. File should contain a single column list of alignment
+sequence files to concatenate into a single matrix. Provide path to files relative to
+working directory or provide absolute path. <br/>
+<em>-p/--prefix</em>: prefix of output files</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="guanine-cytosine-gc-content">
+<h3>Guanine-cytosine (GC) content<a class="headerlink" href="#guanine-cytosine-gc-content" title="Permalink to this headline">¶</a></h3>
+<p>Function names: gc_content; gc</p>
+<p>Calculate GC content of a fasta file.</p>
+<p>GC content is negatively correlated with phylogenetic signal.</p>
+<p>If there are multiple entries, use the -v/--verbose option
+to determine the GC content of each fasta entry separately.
+Association between GC content and phylogenetic signal was
+determined by Shen et al., Genome Biology and Evolution (2016),
+doi: 10.1093/gbe/evw179.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit gc_content &lt;fasta&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
+<em>-v/--verbose</em>: optional argument to print the GC content of each fasta
+entry</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="pairwise-identity">
+<h3>Pairwise identity<a class="headerlink" href="#pairwise-identity" title="Permalink to this headline">¶</a></h3>
+<p>Function names: pairwise_identity; pairwise_id, pi</p>
+<p>Calculate the average pairwise identity among sequences.</p>
+<p>Pairwise identities can be used as proxies for the evolutionary rate of sequences.</p>
+<p>Pairwise identity is defined as the number of identical
+columns (including gaps) between two aligned sequences divided
+by the number of columns in the alignment. Summary statistics
+are reported unless used with the verbose option in which
+all pairwise identities will be reported.</p>
+<p>An example of pairwise identities being used as a proxy
+for evolutionary rate can be found here: Chen et al.
+Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit pairwise_identity &lt;alignment&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-v/--verbose</em>: optional argument to print identity per pair</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="parsimony-informative-sites">
+<h3>Parsimony informative sites<a class="headerlink" href="#parsimony-informative-sites" title="Permalink to this headline">¶</a></h3>
+<p>Function names: parsimony_informative_sites; pis</p>
+<p>Calculate the number and percentage of parismony
+informative sites in an alignment.</p>
+<p>The number of parsimony informative sites in an alignment
+is associated with strong phylogenetic signal.</p>
+<p>PhyKIT reports three tab delimited values:
+col1: number of parsimony informative sites
+col2: total number of sites
+col3: percentage of parsimony informative sites</p>
+<p>Association between the number of parsimony informative
+sites and phylogenetic signal was determined by Shen
+et al., Genome Biology and Evolution (2016),
+doi: 10.1093/gbe/evw179 and Steenwyk et al., bioRxiv
+(2020), doi: 10.1101/2020.06.08.140384.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit parsimony_informative_sites &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="relative-composition-variability">
+<h3>Relative composition variability<a class="headerlink" href="#relative-composition-variability" title="Permalink to this headline">¶</a></h3>
+<p>Function names: relative_composition_variability; rel_comp_var; rcv</p>
+<p>Calculate RCV (relative composition variability) for an alignment.</p>
+<p>Lower RCV values are thought to be desirable because they represent
+a lower composition bias in an alignment. Statistically, RCV describes
+the average variability in sequence composition among taxa.</p>
+<p>RCV is calculated following Phillips and Penny, Molecular Phylogenetics
+and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+Alias:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit relative_composition_variability &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="rename-fasta-entries">
+<h3>Rename FASTA entries<a class="headerlink" href="#rename-fasta-entries" title="Permalink to this headline">¶</a></h3>
+<p>Function names: rename_fasta_entries; rename_fasta</p>
+<p>Renames fasta entries.</p>
+<p>Renaming fasta entries will follow the scheme of a tab-delimited
+file wherein the first column is the current fasta entry name and
+the second column is the new fasta entry name in the resulting
+output alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit rename_fasta_entries &lt;fasta&gt; -i/--idmap &lt;idmap&gt; <span class="o">[</span>-o/--output &lt;output_file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-i/--idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="protein-to-nucleotide-alignment">
+<h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Permalink to this headline">¶</a></h3>
+<p>Function names: thread_dna; pal2nal, p2n</p>
+<p>Thread DNA sequence onto a protein alignment to create a
+codon-based alignment.</p>
+<p>This function requires input alignments are in fasta format.
+Codon alignments are then printed to stdout. Note, sequences
+are assumed to occur in the same order in the protein and
+nucleotide alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit thread_dna -p &lt;file&gt; -n &lt;file&gt; <span class="o">[</span>-s<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-p/--protein</em>: protein alignment file <br/>
+<em>-n/--nucleotide</em>: nucleotide alignment file <br/>
+<em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
+If used, stop codons will be removed.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="variable-sites">
+<h3>Variable sites<a class="headerlink" href="#variable-sites" title="Permalink to this headline">¶</a></h3>
+<p>Function names: variable_sites; vs</p>
+<p>Calculate the number of variable sites in an alignment.</p>
+<p>The number of variable sites in an alignment is
+associated with strong phylogenetic signal.
+PhyKIT reports three tab delimited values:
+col1: number of variable sites
+col2: total number of sites
+col3: percentage of variable sites</p>
+<p>Association between the number of variable sites and
+phylogenetic signal was determined by Shen et al.,
+Genome Biology and Evolution (2016),
+doi: 10.1093/gbe/evw179.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit variable_sites &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+</div>
+</div>
+<div class="section" id="tree-based-functions">
+<h2>Tree-based functions<a class="headerlink" href="#tree-based-functions" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<div class="section" id="bipartition-support-statistics">
+<h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Permalink to this headline">¶</a></h3>
+<p>Function names: bipartition_support_stats; bss</p>
+<p>Calculate summary statistics for bipartition support.</p>
+<p>High bipartition support values are thought to be desirable because
+they are indicative of greater certainty in tree topology.</p>
+<p>To obtain all bipartition support values, use the -v/--verbose option.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit bipartition_support_stats &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-v/--verbose</em>: optional argument to print all bipartition support values</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="branch-length-multiplier">
+<h3>Branch length multiplier<a class="headerlink" href="#branch-length-multiplier" title="Permalink to this headline">¶</a></h3>
+<p>Function names: bipartition_support_stats; bss</p>
+<p>Multiply branch lengths in a phylogeny by a given factor.</p>
+<p>This can help modify reference trees when conducting simulations
+or other analyses.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit branch_length_multiplier &lt;tree&gt; -f n <span class="o">[</span>-o--output &lt;output_file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-f/--factor</em>: factor to multiply branch lengths by <br/>
+<em>-o/--output</em>: optional argument to name the outputted tree file. Default
+output will have the same name as the input file but with the suffix “.factor_(n).tre”</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="collapse-bipartitions">
+<h3>Collapse bipartitions<a class="headerlink" href="#collapse-bipartitions" title="Permalink to this headline">¶</a></h3>
+<p>Function names: collapse_branches, collapse, cb</p>
+<p>Collapse branches on a phylogeny according to bipartition support.</p>
+<p>Bipartitions will be collapsed if they are less than the user specified
+value.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit collapse_branches &lt;tree&gt; -s/--support n <span class="o">[</span>-o/--output &lt;output_file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-s/--support</em>: bipartitions with support less than this value will be
+collapsed <br/>
+<em>-o/--output</em>: optional argument to name the outputted tree file. Default
+output will have the same name as the input file but with the suffix
+“.collapsed_(support).tre”</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="covarying-evolutionary-rates">
+<h3>Covarying evolutionary rates<a class="headerlink" href="#covarying-evolutionary-rates" title="Permalink to this headline">¶</a></h3>
+<p>Function names: covarying_evolutionary_rates; cover</p>
+<p>Determine if two genes have a signature of covariation with one another.
+Genes that have covarying evolutionary histories tend to have
+similar functions and expression levels.</p>
+<p>Input two phylogenies and calculate the correlation among relative
+evolutionary rates between the two phylogenies. The two input trees
+do not have to have the same taxa. This function will first prune both
+trees to have the same tips. To transform branch lengths into relative
+rates, PhyKIT uses the putative species tree’s branch lengths, which is
+inputted by the user. As recommended by the original method developers,
+outlier branche lengths are removed. Outlier branches have a relative
+evolutionary rate greater than five.</p>
+<p>PhyKIT reports two tab delimited values:
+col1: correlation coefficient
+col2: p-value</p>
+<p>Method is empirically evaluated by Clark et al., Genome Research
+(2012), doi: 10.1101/gr.132647.111. Normalization method using a
+species tree follows Sato et al., Bioinformatics (2005), doi:
+10.1093/bioinformatics/bti564.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit covarying_evolutionary_rates &lt;tree_file_zero&gt; &lt;tree_file_one&gt; -r/--reference &lt;reference_tree_file&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>&lt;tree_file_one&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
+this is a putative species tree. <br/>
+<em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="degree-of-violation-of-the-molecular-clock">
+<h3>Degree of violation of the molecular clock<a class="headerlink" href="#degree-of-violation-of-the-molecular-clock" title="Permalink to this headline">¶</a></h3>
+<p>Function names: degree_of_violation_of_a_molecular_clock, dvmc</p>
+<p>Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.</p>
+<p>Lower DVMC values are thought to be desirable because they are indicative
+of a lower degree of violation in the molecular clock assumption.</p>
+<p>Typically, outgroup taxa are not included in molecular clock analysis. Thus,
+prior to calculating DVMC from a single gene tree, outgroup taxa are pruned
+from the phylogeny. PhyKIT will prune taxa using tip names from a single column
+file, which is specified using the -r/–root file. If the tip name does not
+exist in the input tree, rather than raising an error/warning message, the tip
+name is skipped. If the user wants to calculate DVMC for phylogenies with incomplete
+taxa representation, this will allow the user to use one &lt;root file&gt; for all trees.
+Lastly, an empty root file can be used if the user does not wish to prune outgroup taxa.</p>
+<p>Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit degree_of_violation_of_a_molecular_clock -t/--tree &lt;tree&gt;  -r/--root &lt;root_taxa&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: input file tree name <br/>
+<em>-r/--root</em>: single column file with tip names of root taxa</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="internal-branch-statistics">
+<h3>Internal branch statistics<a class="headerlink" href="#internal-branch-statistics" title="Permalink to this headline">¶</a></h3>
+<p>Function names: internal_branch_stats; ibs</p>
+<p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
+<p>Internal branch lengths can be useful for phylogeny diagnostics.</p>
+<p>To obtain all internal branch lengths, use the -v/--verbose option.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit internal_branch_stats &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-v/--verbose</em>: optional argument to print all internal branch lengths</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="internode-labeler">
+<h3>Internode labeler<a class="headerlink" href="#internode-labeler" title="Permalink to this headline">¶</a></h3>
+<p>Function names: internode_labeler; il</p>
+<p>Appends numerical identifiers to bipartitions in place of support values.
+This is helpful for pointing to specific internodes in supplementary files
+or otherwise.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit internode_labeler &lt;file&gt; <span class="o">[</span>-o/--output &lt;file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-o/--output</em>: optional argument to name the outputted tree file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="long-branch-score">
+<h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Permalink to this headline">¶</a></h3>
+<p>Function names: lb_score; lb_score; lbs</p>
+<p>Calculate long branch (LB) scores in a phylogeny.</p>
+<p>Lower LB scores are thought to be desirable because
+they are indicative of taxa or trees that likely do
+not have issues with long branch attraction.</p>
+<p>LB score is the mean pairwise patristic distance of
+taxon i compared to all other taxa over the average
+pairwise patristic distance.</p>
+<p>PhyKIT reports summary statistics. To obtain LB scores
+for each taxa, use the -v/–verbose option.</p>
+<p>LB scores are calculated following Struck, Evolutionary
+Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit long_branch_score &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-o/--output</em>: optional argument to print all LB score values</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="patristic-distances">
+<h3>Patristic distances<a class="headerlink" href="#patristic-distances" title="Permalink to this headline">¶</a></h3>
+<p>Function names: patristic_distances; pd</p>
+<p>Calculate summary statistics among patristic distances in a phylogeny.</p>
+<p>Patristic distances are all tip-to-tip distances in a phylogeny.</p>
+<p>To obtain all patristic distances, use the -v/–verbose option.
+With the -v option, the first column will have two taxon names
+separated by a ‘-‘ followed by the patristic distance. Features
+will be tab separated.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit patristic_distances &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-o/--output</em>: optional argument to print all tip-to-tip distances</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="polytomy-testing">
+<h3>Polytomy testing<a class="headerlink" href="#polytomy-testing" title="Permalink to this headline">¶</a></h3>
+<p>Function names: polytomy_test; polyt_test; polyt; ptt</p>
+<p>Conduct a polytomy test for three clades in a phylogeny.</p>
+<p>Polytomy tests can be used to identify putative radiations
+as well as identify well supported alternative topologies.</p>
+<p>The polytomy testing function takes as input a file with
+the three groups of taxa to test the relationships for and
+a single column file with the names of the desired tree files
+to use for polytomy testing. Next, the script to examine
+support for the grouping of the three taxa using triplets
+and gene support frequencies.</p>
+<p>This function can account for uncertainty in gene trees -
+that is, the input phylogenies can have collapsed bipartitions.</p>
+<p>Thereafter, a chi-squared test is conducted to determine if there
+is evidence to reject the null hypothesis wherein the null
+hypothesis is that the three possible topologies among the three
+groups are equally supported. This test is done using gene support
+frequencies.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit polytomy_test -t/--trees &lt;trees&gt; -g/--groups &lt;groups&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--trees &lt;trees&gt;</em>: single column file with the names of
+phylogenies to use for polytomy testing <br/>
+<em>-g/--groups</em>: a tab-delimited file with the grouping designations
+to test. Lines starting with commetns are not considered. Names of
+individual taxa should be separated by a semi-colon ‘;’</p>
+<p>For example, the groups file could look like the following:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1">#label group0  group1  group2</span>
+name_of_test    tip_name_A<span class="p">;</span>tip_name_B   tip_name_C  tip_name_D<span class="p">;</span>tip_name_E
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="print-tree">
+<h3>Print tree<a class="headerlink" href="#print-tree" title="Permalink to this headline">¶</a></h3>
+<p>Function names: print_tree; print; pt</p>
+<p>Print ascii tree of input phylogeny.</p>
+<p>Phylogeny can be printed with or without branch lengths.
+By default, the phylogeny will be printed with branch lengths
+but branch lengths can be removed using the -r/–remove argument.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit print_tree &lt;tree&gt; <span class="o">[</span>-r/--remove<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-r/--remove</em>: optional argument to print the phylogeny without branch
+lengths</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="prune-tree">
+<h3>Prune tree<a class="headerlink" href="#prune-tree" title="Permalink to this headline">¶</a></h3>
+<p>Function names: prune_tree; prune</p>
+<p>Prune tips from a phylogeny.</p>
+<p>Provide a single column file with the names of the tips
+in the input phylogeny you would like to prune from the
+tree.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit prune_tree &lt;tree&gt; &lt;list_of_taxa&gt; <span class="o">[</span>-o/--output &lt;output_file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>&lt;list_of_taxa&gt;</em>: single column file with the names of the tips to remove
+from the phylogeny <br/>
+<em>-o/--output</em>: name of output file for the pruned phylogeny.
+Default output will have the same name as the input file but with the suffix
+“.pruned”</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="rename-tree-tips">
+<h3>Rename tree tips<a class="headerlink" href="#rename-tree-tips" title="Permalink to this headline">¶</a></h3>
+<p>Function names: rename_tree; rename_tips</p>
+<p>Renames tips in a phylogeny.</p>
+<p>Renaming tip files will follow the scheme of a tab-delimited
+file wherein the first column is the current tip name and the
+second column is the desired tip name in the resulting
+phylogeny.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit rename_tree_tips &lt;tree&gt; -i/--idmap &lt;idmap.txt&gt; <span class="o">[</span>-o/--output &lt;output_file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-i/--idmap</em>: identifier map of current tip names (col1) and desired
+tip names (col2) <br/>
+<em>-o/--output</em>: optional argument to write the renamed tree files to. Default
+output will have the same name as the input file but with the suffix “.renamed”</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="robinson-foulds-distance">
+<h3>Robinson-Foulds distance<a class="headerlink" href="#robinson-foulds-distance" title="Permalink to this headline">¶</a></h3>
+<p>Function names: robinson_foulds_distance; rf_distance; rf_dist; rf</p>
+<p>Calculate Robinson-Foulds (RF) distance between two trees.</p>
+<p>Low RF distances reflect greater similarity between two phylogenies.
+This function prints out two values, the plain RF value and the
+normalized RF value, which are separated by a tab. Normalized RF values
+are calculated by taking the plain RF value and dividing it by 2(n-3)
+where n is the number of tips in the phylogeny.</p>
+<p>PhyKIT will print out
+col 1; the plain RF distance and
+col 2: the normalized RF distance.</p>
+<p>RF distances are calculated following Robinson &amp; Foulds, Mathematical
+Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit robinson_foulds_distance &lt;tree_file_zero&gt; &lt;tree_file_one&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file
+<em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="spurious-homolog-identification">
+<h3>Spurious homolog identification<a class="headerlink" href="#spurious-homolog-identification" title="Permalink to this headline">¶</a></h3>
+<p>Function names: spurious_sequence; spurious_seq; ss</p>
+<p>Determines potentially spurious homologs using branch lengths.</p>
+<p>Identifies potentially spurious sequences and reports
+tips in the phylogeny that could possibly be removed
+from the associated multiple sequence alignment. PhyKIT
+does so by identifying and reporting long terminal branches
+defined as branches that are equal to or 20 times the median
+length of all branches.</p>
+<p>PhyKIT reports the following information
+col1: name of tip that is a putatively spurious sequence
+col2: length of branch leading to putatively spurious sequence
+col3: threshold used to identify putatively spurious sequences
+col4: median branch length in the phylogeny</p>
+<p>If there are no putatively spurious sequences, “None” is reported.</p>
+<p>Using this method to identify potentially spurious sequences
+was, to my knowledge, first introduced by Shen et al., (2018)
+Cell doi: 10.1016/j.cell.2018.10.023.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit robinson_foulds_distance &lt;tree_file_zero&gt; &lt;tree_file_one&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;file&gt;</em>: first argument after function name should be a tree file
+<em>-f/--factor</em>: factor to multiply median branch length by to calculate
+the threshold of long branches. (Default: 20)</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="print-tip-labels">
+<h3>Print tip labels<a class="headerlink" href="#print-tip-labels" title="Permalink to this headline">¶</a></h3>
+<p>Function names: tip_labels tree_labels; labels; tl</p>
+<p>Prints the tip labels (or names) a phylogeny.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit tip_labels &lt;tree&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="total-tree-length">
+<h3>Total tree length<a class="headerlink" href="#total-tree-length" title="Permalink to this headline">¶</a></h3>
+<p>Function names: total_tree_length; tree_len</p>
+<p>Calculate total tree length, which is a sum of all branches.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit total_tree_length &lt;tree&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="treeness">
+<h3>Treeness<a class="headerlink" href="#treeness" title="Permalink to this headline">¶</a></h3>
+<p>Function names: treeness; tness</p>
+<p>Calculate treeness statistic for a phylogeny.</p>
+<p>Higher treeness values are thought to be desirable because they
+represent a higher signal-to-noise ratio.</p>
+<p>Treeness describes the proportion of the tree distance found on
+internal branches. Treeness can be used as a measure of the
+signal-to-noise ratio in a phylogeny.</p>
+<p>Calculate treeness (also referred to as stemminess) following
+Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
+Phillips and Penny, Molecular Phylogenetics and Evolution
+(2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit total_tree_length &lt;tree&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="alignment-and-tree-based-functions">
+<h2>Alignment- and tree-based functions<a class="headerlink" href="#alignment-and-tree-based-functions" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<div class="section" id="saturation">
+<h3>Saturation<a class="headerlink" href="#saturation" title="Permalink to this headline">¶</a></h3>
+<p>Function names: saturation; sat</p>
+<p>Calculate saturation for a given tree and alignment.</p>
+<p>Saturation is defined as sequences in multiple sequence
+alignments that have undergone numerous substitutions such
+that the distances between taxa are underestimated.</p>
+<p>Data with no saturation will have a value of 1. Completely
+saturated data will have a value of 0.</p>
+<p>Saturation is calculated following Philippe et al., PLoS
+Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit saturation -a &lt;alignment&gt; -t &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: an alignment file <br/>
+<em>-t/--tree</em>: a tree file <br/>
+<em>-v/--verbose</em>: print out patristic distances and uncorrected <br/>
+distances used to determine saturation</p>
+</div>
+<div class="section" id="treeness-over-rcv">
+<h3>Treeness over RCV<a class="headerlink" href="#treeness-over-rcv" title="Permalink to this headline">¶</a></h3>
+<p>Function names: treeness_over_rcv; toverr; tor</p>
+<p>Calculate treeness/RCV for a given alignment and tree.</p>
+<p>Higher treeness/RCV values are thought to be desirable because
+they harbor a high signal-to-noise ratio are least susceptible
+to composition bias.</p>
+<p>PhyKIT reports three tab delimited values:
+col1: treeness/RCV
+col2: treeness
+col3: RCV</p>
+<p>Calculate treeness/RCV following Phillips and Penny, Molecular
+Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit treeness_over_rcv -a/--alignment &lt;alignment&gt; -t/--tree &lt;tree&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: an alignment file <br/>
+<em>-t/--tree</em>: a tree file</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169242151-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169242151-1');
+</script>
+
+<link href='http://fonts.googleapis.com/css?family=Oxygen:300,400,700' rel='stylesheet'>
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+
+
+<div id="logo">
+    <center>
+        <a href="../index.html"><img src="../_static/img/sidebar_logo.png" height="150" alt="PhyKIT logo"/></a>
+    </center>
+</div>
+
+<div id="gh-buttons">
+    <a class="github-button" href="https://github.com/jlsteenwyk/phykit" aria-label="View jlsteenwyk/phykit on GitHub" data-style="mega">Source</a>
+    <a class="github-button" href="https://github.com/jlsteenwyk/phykit/issues" data-icon="octicon-issue-opened" aria-label="Issue jlsteenwyk/phykit on GitHub" data-style="mega">Issue</a>
+</div><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability">Relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rename-fasta-entries">Rename FASTA entries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#branch-length-multiplier">Branch length multiplier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#internode-labeler">Internode labeler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#prune-tree">Prune tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robinson-foulds-distance">Robinson-Foulds distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spurious-homolog-identification">Spurious homolog identification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#print-tip-labels">Print tip labels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#total-tree-length">Total tree length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#treeness">Treeness</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#alignment-and-tree-based-functions">Alignment- and tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#saturation">Saturation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#treeness-over-rcv">Treeness over RCV</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../about/index.html" title="previous chapter">About</a></li>
+      <li>Next: <a href="../tutorials/index.html" title="next chapter">Tutorials</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020 Jacob L. Steenwyk.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/usage/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

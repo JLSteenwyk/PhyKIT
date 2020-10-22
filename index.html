@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Quick Start &#8212; phykit  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="shortcut icon" href="_static/flavicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="About" href="about/index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <a class="reference external image-reference" href="https://jlsteenwyk.com/PhyKIT"><img alt="_images/logo2.png" class="align-center" src="_images/logo2.png" style="width: 55%;" /></a>
+<hr class="docutils" />
+<p>PhyKIT, a toolkit for the UNIX shell environment with 30 functions that process multiple
+sequence alignments and phylogenies for broad applications</p>
+<p>If you found PhyKIT useful, please cite <em>MANUSCRIPT TITLE</em>. bioRxiv. doi: <a class="reference external" href="BIORXIVLINK">TEXT</a>.</p>
+<div class="section" id="quick-start">
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h1>
+<p><strong>1) Installation</strong></p>
+<p>To install, use the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip install phykit
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>To install from source, use the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/JLSteenwyk/PhyKIT.git
+<span class="nb">cd</span> PhyKIT/
+make install
+</pre></div>
+</div>
+<p>If you run into permission errors when executing <em>make install</em>, create a
+virtual environment for your installation:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/JLSteenwyk/PhyKIT.git
+<span class="nb">cd</span> PhyKIT/
+python -m venv .venv
+<span class="nb">source</span> .venv/bin/activate
+make install
+</pre></div>
+</div>
+<p>Note, the virtual environment must be activated to use phykit.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>2) Usage</strong></p>
+<p>Get the help message from PhyKIT:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit -h
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<hr class="docutils" />
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="about/index.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="about/index.html#the-developers">The Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="about/index.html#more-team-members">More Team Members</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/index.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/index.html#alignment-based-functions">Alignment-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#alignment-length">Alignment length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#create-concatenation-matrix">Create concatenation matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#pairwise-identity">Pairwise identity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#relative-composition-variability">Relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#rename-fasta-entries">Rename FASTA entries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#variable-sites">Variable sites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage/index.html#tree-based-functions">Tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#bipartition-support-statistics">Bipartition support statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#branch-length-multiplier">Branch length multiplier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#collapse-bipartitions">Collapse bipartitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#internal-branch-statistics">Internal branch statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#internode-labeler">Internode labeler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#long-branch-score">Long branch score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#patristic-distances">Patristic distances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#polytomy-testing">Polytomy testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#print-tree">Print tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#prune-tree">Prune tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#rename-tree-tips">Rename tree tips</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#robinson-foulds-distance">Robinson-Foulds distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#spurious-homolog-identification">Spurious homolog identification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#print-tip-labels">Print tip labels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#total-tree-length">Total tree length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#treeness">Treeness</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage/index.html#alignment-and-tree-based-functions">Alignment- and tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#saturation">Saturation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#treeness-over-rcv">Treeness over RCV</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#summarizing-information-content">1. Summarizing information content</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#alignment-length">Alignment length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#bipartition-support-statistics">Bipartition support statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#long-branch-score">Long branch score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#saturation">Saturation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#treeness-divided-by-relative-composition-variability">Treeness divided by relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#variable-sites">Variable sites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#evaluating-gene-gene-covariation">2. Evaluating gene-gene covariation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#step-0-prepare-data">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#step-1-estimate-gene-tree-branch-lengths">Step 1: Estimate gene tree branch lengths</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#step-2-evaluate-gene-gene-covariation">Step 2: Evaluate gene-gene covariation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#identifying-signatures-of-rapid-radiations">3. Identifying signatures of rapid radiations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#id14">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/index.html#step-1-conduct-polytomy-test">Step 1: Conduct polytomy test</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+</div>
+<hr class="docutils" />
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169242151-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169242151-1');
+</script>
+
+<link href='http://fonts.googleapis.com/css?family=Oxygen:300,400,700' rel='stylesheet'>
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+
+
+<div id="logo">
+    <center>
+        <a href="#"><img src="_static/img/sidebar_logo.png" height="150" alt="PhyKIT logo"/></a>
+    </center>
+</div>
+
+<div id="gh-buttons">
+    <a class="github-button" href="https://github.com/jlsteenwyk/phykit" aria-label="View jlsteenwyk/phykit on GitHub" data-style="mega">Source</a>
+    <a class="github-button" href="https://github.com/jlsteenwyk/phykit/issues" data-icon="octicon-issue-opened" aria-label="Issue jlsteenwyk/phykit on GitHub" data-style="mega">Issue</a>
+</div><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="about/index.html" title="next chapter">About</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020 Jacob L. Steenwyk.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
