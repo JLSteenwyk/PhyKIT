@@ -3,6 +3,8 @@
 import logging
 import sys
 import textwrap
+from .version import __version__
+
 from argparse import (
     ArgumentParser,
     RawTextHelpFormatter,
@@ -56,7 +58,7 @@ logger.addHandler(ch)
 
 
 class Phykit(object):
-    help_header = """
+    help_header = f"""
                  _____  _           _  _______ _______ 
                 |  __ \| |         | |/ /_   _|__   __|
                 | |__) | |__  _   _| ' /  | |    | |   
@@ -66,6 +68,7 @@ class Phykit(object):
                                __/ |                   
                               |___/   
                             
+                Version: {__version__}
                 Citation: Steenwyk et al. Journal, journal info, link
     """
     
@@ -194,6 +197,9 @@ class Phykit(object):
 
     ## Aliases
     def run_alias(self, command):
+        # version
+        if command in ['v']:
+            return self.version()
         # Alignment aliases
         if command in ['aln_len', 'al']:
             return self.alignment_length()
