@@ -32,8 +32,8 @@
     </p>
 </p>
 
-PhyKIT is a toolkit for processing and analyzing multiple sequence alignments and phylogenies.<br /><br />
-If you found clipkit useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: [BIORXIV LINK](NA).
+PhyKIT is a UNIX shell toolkit for processing and analyzing phylogenomic data.<br /><br />
+If you found PhyKIT useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: [BIORXIV LINK](NA).
 <br /><br />
 
 ---
