@@ -43,29 +43,44 @@ This documentation covers downloading and installing PhyKIT. Details about each 
 <br />
 
 **Installation** <br />
-To install, use the following commands:
+To install using *pip*, we strongly recommend building a virtual environment to avoid software dependency issues. To do so, execute the following commands:
 ```shell
+# create virtual environment
+python -m venv .venv
+# activate virtual environment
+source .venv/bin/activate
+# install phykit
 pip install phykit
+```
+
+Note, the virtual environment must be activated to use phykit.
+
+After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:
+```shell
+# deactivate virtual environment
+deactivate
 ```
 
 <br />
 
-To install from source, use the following commands:
+Similarly, to install from source, we strongly recommend using a virtual environment. To do so, use the following commands:
 ```shell
+# download
 git clone https://github.com/JLSteenwyk/PhyKIT.git
 cd PhyKIT/
-make install
-```
-
-If you run into permission errors when executing make install, create a virtual environment for your installation:
-```shell
-git clone https://github.com/JLSteenwyk/PhyKIT.git
-cd PhyKIT/
+# create virtual environment
 python -m venv .venv
+# activate virtual environment
 source .venv/bin/activate
+# install
 make install
 ```
-Note, the virtual environment must be activated to use phykit.
+To deactivate your virtual environment, use the following command:
+```shell
+# deactivate virtual environment
+deactivate
+```
+**Note, the virtual environment must be activated to use phykit.**
 
 <br />
 To test phykit installation, launch the help message
@@ -73,5 +88,3 @@ To test phykit installation, launch the help message
 ```shell
 phykit -h
 ```
-
-
