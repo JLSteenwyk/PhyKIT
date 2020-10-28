@@ -33,7 +33,7 @@
 </p>
 
 PhyKIT is a UNIX shell toolkit for processing and analyzing phylogenomic data.<br /><br />
-If you found PhyKIT useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: [BIORXIV LINK](NA).
+If you found PhyKIT useful, please cite *PhyKIT: a UNIX shell toolkit for processing and analyzing phylogenomic data*. bioRxiv. doi: [10.1101/2020.10.27.358143](https://www.biorxiv.org/content/10.1101/2020.10.27.358143v1).
 <br /><br />
 
 ---
