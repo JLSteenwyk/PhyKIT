@@ -19,34 +19,50 @@ Quick Start
 -----------
 **1) Installation**
 
-To install, use the following commands:
+To install using *pip*, we strongly recommend building a virtual environment to avoid 
+software dependency issues. To do so, execute the following commands:
 
 .. code-block:: shell
 
+	# create virtual environment
+	python -m venv .venv
+	# activate virtual environment
+	source .venv/bin/activate
+	# install phykit
 	pip install phykit
 
 |
 
-To install from source, use the following commands:
+**Note, the virtual environment must be activated to use phykit.**
+
+After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:
+
+.. code-block:: shell
+	# deactivate virtual environment
+	deactivate
+
+Similarly, to install from source, we strongly recommend using a virtual environment. To do so, use the
+following commands:
 
 .. code-block:: shell
 
+	# download
 	git clone https://github.com/JLSteenwyk/PhyKIT.git
 	cd PhyKIT/
-	make install
-
-If you run into permission errors when executing *make install*, create a 
-virtual environment for your installation:
-
-.. code-block:: shell
-
-	git clone https://github.com/JLSteenwyk/PhyKIT.git
-	cd PhyKIT/
+	# create virtual environment
 	python -m venv .venv
+	# activate virtual environment
 	source .venv/bin/activate
+	# install
 	make install
 
-Note, the virtual environment must be activated to use phykit.
+To deactivate your virtual environment, use the following command:
+
+.. code-block:: shell
+	# deactivate virtual environment
+	deactivate
+
+**Note, the virtual environment must be activated to use phykit.**
 
 |
 

@@ -53,7 +53,7 @@ source .venv/bin/activate
 pip install phykit
 ```
 
-Note, the virtual environment must be activated to use phykit.
+**Note, the virtual environment must be activated to use phykit.**
 
 After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:
 ```shell
