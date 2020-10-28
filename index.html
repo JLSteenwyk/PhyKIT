@@ -42,29 +42,36 @@ analyzing phylogenomic data</em>. bioRxiv. doi: <a class="reference external" hr
 <div class="section" id="quick-start">
 <h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h1>
 <p><strong>1) Installation</strong></p>
-<p>To install, use the following commands:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip install phykit
+<p>To install using <em>pip</em>, we strongly recommend building a virtual environment to avoid
+software dependency issues. To do so, execute the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># create virtual environment</span>
+python -m venv .venv
+<span class="c1"># activate virtual environment</span>
+<span class="nb">source</span> .venv/bin/activate
+<span class="c1"># install phykit</span>
+pip install phykit
 </pre></div>
 </div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p>To install from source, use the following commands:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/JLSteenwyk/PhyKIT.git
+<p><strong>Note, the virtual environment must be activated to use phykit.</strong></p>
+<p>After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:</p>
+<p>Similarly, to install from source, we strongly recommend using a virtual environment. To do so, use the
+following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># download</span>
+git clone https://github.com/JLSteenwyk/PhyKIT.git
 <span class="nb">cd</span> PhyKIT/
-make install
-</pre></div>
-</div>
-<p>If you run into permission errors when executing <em>make install</em>, create a
-virtual environment for your installation:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/JLSteenwyk/PhyKIT.git
-<span class="nb">cd</span> PhyKIT/
+<span class="c1"># create virtual environment</span>
 python -m venv .venv
+<span class="c1"># activate virtual environment</span>
 <span class="nb">source</span> .venv/bin/activate
+<span class="c1"># install</span>
 make install
 </pre></div>
 </div>
-<p>Note, the virtual environment must be activated to use phykit.</p>
+<p>To deactivate your virtual environment, use the following command:</p>
+<p><strong>Note, the virtual environment must be activated to use phykit.</strong></p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
