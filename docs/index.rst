@@ -9,10 +9,11 @@
 PhyKIT, a toolkit for the UNIX shell environment with 30 functions that process multiple
 sequence alignments and phylogenies for broad applications
 
-If you found PhyKIT useful, please cite *MANUSCRIPT TITLE*. bioRxiv. doi: |doiLink|_.
+If you found PhyKIT useful, please cite *PhyKIT: a UNIX shell toolkit for processing and
+analyzing phylogenomic data*. bioRxiv. doi: |doiLink|_.
 
-.. _doiLink: BIORXIV LINK
-.. |doiLink| replace:: TEXT
+.. _doiLink: https://www.biorxiv.org/content/10.1101/2020.10.27.358143v1
+.. |doiLink| replace:: 10.1101/2020.10.27.358143
 
 Quick Start
 -----------
