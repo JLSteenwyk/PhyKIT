@@ -25,6 +25,8 @@
         <a href="https://github.com/jlsteenwyk/phykit/graphs/contributors" alt="Contributors">
             <img src="https://img.shields.io/github/contributors/jlsteenwyk/phykit">
         </a>
+        <a href="https://badge.fury.io/py/phykit"><img src="https://badge.fury.io/py/phykit.svg" alt="PyPI version" height="18"></a>
+        <a href="https://img.shields.io/pypi/dm/phykit"><img src="https://img.shields.io/pypi/dm/phykit" alt="PyPI version" height="18"></a>
         <a href="https://twitter.com/intent/follow?screen_name=jlsteenwyk" alt="Author Twitter">
             <img src="https://img.shields.io/twitter/follow/jlsteenwyk?style=social&logo=twitter"
                 alt="follow on Twitter">
