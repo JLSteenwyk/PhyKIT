@@ -25,8 +25,7 @@
         <a href="https://github.com/jlsteenwyk/phykit/graphs/contributors" alt="Contributors">
             <img src="https://img.shields.io/github/contributors/jlsteenwyk/phykit">
         </a>
-        <a href="https://badge.fury.io/py/phykit"><img src="https://badge.fury.io/py/phykit.svg" alt="PyPI version" height="18"></a>
-        <a href="https://img.shields.io/pypi/dm/phykit"><img src="https://img.shields.io/pypi/dm/phykit" alt="PyPI version" height="18"></a>
+        <a href="https://img.shields.io/pypi/dm/phykit"><img src="https://img.shields.io/pypi/dm/phykit" alt="PyPI version" height="20"></a>
         <a href="https://twitter.com/intent/follow?screen_name=jlsteenwyk" alt="Author Twitter">
             <img src="https://img.shields.io/twitter/follow/jlsteenwyk?style=social&logo=twitter"
                 alt="follow on Twitter">
@@ -46,7 +45,7 @@ This documentation covers downloading and installing PhyKIT. Details about each 
 
 **Installation** <br />
 
-**If you have trouble install PhyKIT, please contact the lead developer, Jacob L. Steenwyk, via [email](https://jlsteenwyk.com/contact.html) or [twitter](https://twitter.com/jlsteenwyk) to get help.**
+**If you are having trouble installing PhyKIT, please contact the lead developer, Jacob L. Steenwyk, via [email](https://jlsteenwyk.com/contact.html) or [twitter](https://twitter.com/jlsteenwyk) to get help.**
 
 To install using *pip*, we strongly recommend building a virtual environment to avoid software dependency issues. To do so, execute the following commands:
 ```shell
