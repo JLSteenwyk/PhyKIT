@@ -45,6 +45,9 @@ This documentation covers downloading and installing PhyKIT. Details about each 
 <br />
 
 **Installation** <br />
+
+**If you have trouble install PhyKIT, please contact the lead developer, Jacob L. Steenwyk, via [email](https://jlsteenwyk.com/contact.html) or [twitter](https://twitter.com/jlsteenwyk) to get help.**
+
 To install using *pip*, we strongly recommend building a virtual environment to avoid software dependency issues. To do so, execute the following commands:
 ```shell
 # create virtual environment
