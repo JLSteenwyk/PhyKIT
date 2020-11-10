@@ -131,10 +131,9 @@ class CreateConcatenationMatrix(Alignment):
         missing_seq: str,
         concat: dict
     ) -> dict:
+
         for indiv in missing_taxa:
-            indiv_record = SeqRecord(Seq(missing_seq), 
-                id = indiv, name = indiv, description = indiv)
-            concat[indiv].append(indiv_record.seq)
+            concat[indiv].append(missing_seq)
             
         return concat 
 
@@ -212,7 +211,12 @@ class CreateConcatenationMatrix(Alignment):
             for x in concat:
                 concatenated = []
                 for s in concat[x]:
-                    concatenated.append(s._data)
+                    try:
+                        # if a seq object
+                        concatenated.append(s._data)
+                    except AttributeError:
+                        # if a string
+                        concatenated.append(s)
                 concat[x] = concatenated
                 entry = f">{x}\n{''.join(concat[x])}\n"
                 final_fasta_file.write(str(entry))   
