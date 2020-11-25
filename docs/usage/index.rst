@@ -761,7 +761,7 @@ Phillips and Penny, Molecular Phylogenetics and Evolution
 
 .. code-block:: shell
 
-   phykit total_tree_length <tree>
+   phykit treeness <tree>
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file
