@@ -19,7 +19,7 @@ The Developers
 ^^^^^
 
 PhyKIT is developed and maintained by `Jacob L. Steenwyk <https://jlsteenwyk.github.io/>`_
-and `Thomas J. Buida III <www.tjbiii.com>`_.
+and `Thomas J. Buida III <https://tjbiii.com/>`_.
 
 |
 
@@ -116,11 +116,11 @@ tree of life, and the evolution of human pregnancy. Find out more information at
 |ALLabella|
 |GoogleScholarLabella| |GitHubLabella| |TwitterLabella| 
 
-I am a postdoctoral scholar at Vanderbilt University in the lab of Dr. Antonis Rokas. My research
-uses evolution to understand the relationship between phenotype, genotype, and environment. This
-includes the evolution of human birth timing and disorders of pregnancy, and the evolution of silent
-codon positions in yeasts. During my research career I have worked with fungi, humans, beetles, fishes,
-limpets, clams, and lizards! For more information visit her `personal website <abigailleavittlabella.com>`_.
+`Abigail L. LaBella <https://www.abigailleavittlabella.com/>`_  am a postdoctoral scholar at Vanderbilt University in the 
+lab of Dr. Antonis Rokas. Her research uses evolution to understand the relationship between phenotype, genotype, and environment. 
+This includes the evolution of human birth timing and disorders of pregnancy, and the evolution of silent
+codon positions in yeasts. During her research career she has worked with fungi, humans, beetles, fishes,
+limpets, clams, and lizards! For more information visit her `personal website <https://www.abigailleavittlabella.com/>`_.
 
 .. |ALLabella| image:: ../_static/img/Labella.jpg
    :width: 35%
