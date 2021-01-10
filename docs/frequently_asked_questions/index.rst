@@ -16,6 +16,8 @@ FAQ
 Please contact the main software developer via `email <https://jlsteenwyk.com/contact.html>`_ or 
 `twitter <https://twitter.com/jlsteenwyk>`_.
 
+|
+
 **I am having trouble install PhyKIT, what should I do?**
 
 Please install PhyKIT using a virtual environment as directed in the installation instructions.
