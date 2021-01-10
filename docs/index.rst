@@ -6,7 +6,7 @@
 ^^^^^
 
 
-PhyKIT, a toolkit for the UNIX shell environment with 30 functions that process multiple
+PhyKIT, a toolkit for the UNIX shell environment with numerous functions that process multiple
 sequence alignments and phylogenies for broad applications
 
 If you found PhyKIT useful, please cite *PhyKIT: a UNIX shell toolkit for processing and
@@ -31,15 +31,16 @@ software dependency issues. To do so, execute the following commands:
 	# install phykit
 	pip install phykit
 
-|
-
 **Note, the virtual environment must be activated to use phykit.**
 
 After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:
 
 .. code-block:: shell
+
 	# deactivate virtual environment
 	deactivate
+
+|
 
 Similarly, to install from source, we strongly recommend using a virtual environment. To do so, use the
 following commands:
@@ -59,6 +60,7 @@ following commands:
 To deactivate your virtual environment, use the following command:
 
 .. code-block:: shell
+
 	# deactivate virtual environment
 	deactivate
 
