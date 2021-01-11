@@ -1,14 +1,7 @@
-.. image:: ../_static/img/logo.png
-   :width: 55%
-   :align: center
-   :target: https://jlsteenwyk.com/PhyKIT
-
-
 About
 =====
 
-^^^^^
-**Phy**\logenetics and **Phy**\logenomics tool**KIT** (**Phy<sup>2</sup>KIT**) was developed as
+**Phy**\logenomics tool\ **KIT** (**PhyKIT**) was developed as
 part of `Jacob L. Steenwyk <https://jlsteenwyk.github.io/>`_'s graduate thesis work. 
 
 |
@@ -24,6 +17,7 @@ and `Thomas J. Buida III <https://tjbiii.com/>`_.
 |
 
 |JLSteenwyk|
+
 |GoogleScholarSteenwyk| |GitHubSteenwyk| |TwitterSteenwyk| 
 
 `Jacob L. Steenwyk <https://jlsteenwyk.github.io/>`_ is a Howard Hughes Medical Institute
@@ -52,6 +46,7 @@ through diverse avenues of community engagement. Find out more information at hi
 |
 
 |TJBuida|
+
 |GitHubBuida| |TwitterBuida|
 
 `Thomas J. Buida III <http://tjbiii.com/>`_ is a senior software and data engineer at
@@ -89,6 +84,7 @@ Yuanning Li, and `Xing-Xing Shen <https://xingxingshen.github.io/>`_.
 |
 
 |ARokas|
+
 |GoogleScholarRokas| |TwitterRokas| 
 
 `Antonis Rokas <https://as.vanderbilt.edu/rokaslab/>`_ is the Cornelius Vanderbilt Chair in 
@@ -114,6 +110,7 @@ tree of life, and the evolution of human pregnancy. Find out more information at
 |
 
 |ALLabella|
+
 |GoogleScholarLabella| |GitHubLabella| |TwitterLabella| 
 
 `Abigail L. LaBella <https://www.abigailleavittlabella.com/>`_  am a postdoctoral scholar at Vanderbilt University in the 
@@ -140,6 +137,7 @@ limpets, clams, and lizards! For more information visit her `personal website <h
 |
 
 |XXShen|
+
 |GoogleScholarShen| |GitHubShen| |TwitterShen| 
 
 `Xing-Xing Shen <https://xingxingshen.github.io/>`_ is an Assistant Professor of Institute of
