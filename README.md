@@ -87,6 +87,16 @@ deactivate
 **Note, the virtual environment must be activated to use phykit.**
 
 <br />
+
+To install via anaconda, execute the following command:
+```shell
+conda install -c jlsteenwyk phykit
+```
+Visit here for more information:
+https://anaconda.org/JLSteenwyk/phykit
+
+<br />
+
 To test phykit installation, launch the help message
 
 ```shell

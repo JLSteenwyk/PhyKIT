@@ -141,3 +141,6 @@ cython_debug/
 output/
 
 .vscode/
+
+# notes file
+submitting_to_conda.txt
