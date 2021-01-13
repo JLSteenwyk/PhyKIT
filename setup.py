@@ -37,3 +37,10 @@ setup(
     include_package_data=True,
     install_requires=REQUIRES,
 )
+
+## push new version to pypi
+# rm -rf dist
+# python setup.py sdist bdist_wheel --universal
+# twine upload dist/* -r pypi
+# then push to anaconda
+# 
