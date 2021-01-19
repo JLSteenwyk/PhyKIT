@@ -20,7 +20,7 @@ CLASSIFIERS = [
     'Topic :: Scientific/Engineering',
 ]
 
-REQUIRES = ["biopython==1.76", "scipy==1.4.1"]
+REQUIRES = ["biopython==1.76", "numpy==1.18.2", "scipy==1.4.1"]
 
 setup(
     name="phykit",
