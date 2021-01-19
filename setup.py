@@ -6,10 +6,6 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-about = {}
-with open(path.join(here, 'phykit', 'version.py'), encoding="utf-8") as f:
-    exec(f.read(), about)
-
 CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
@@ -33,7 +29,7 @@ setup(
     packages=find_packages(),
     classifiers=CLASSIFIERS,
     entry_points={"console_scripts": ["phykit = phykit.phykit:main"]},
-    version=about["__version__"],
+    version=0.0.8,
     include_package_data=True,
     install_requires=REQUIRES,
 )
