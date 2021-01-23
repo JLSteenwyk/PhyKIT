@@ -89,7 +89,7 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "body_max_width": "900px",
     'logo_only': True,
-    'analytics_id': 'G-6BY79BGH55'
+    'analytics_id': 'UA-104875636-1'
 }
 html_logo = '_static/img/logo.png'
 html_show_sourcelink = False
