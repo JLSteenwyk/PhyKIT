@@ -155,3 +155,77 @@ class TestPrintTree(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_print_tree_remove_branch_lengths_short(self, mocked_print):
+        expected_result = """
+             ____ Aspergillus_fischeri_IBT_3003
+            |
+            |     ____ Aspergillus_fischeri_IBT_3007
+            |    |
+            |____|     ____ Aspergillus_fischeri_NRRL181.GCF_0001...
+            |    |    |
+            |    |____|     ____ Aspergillus_fischeri_NRRL4585
+            |         |    |
+            |         |    |               ____ Aspergillus_fumigatus_Af293
+            _|         |____|          ____|
+            |              |         |    |____ Aspergillus_fumigatus_CEA10
+            |              |     ____|
+            |              |    |    |     ____ Aspergillus_fumigatus_HMR_AF_270
+            |              |____|    |____|
+            |                   |         |____ Aspergillus_fumigatus_Z5
+            |                   |
+            |                   |____ Aspergillus_oerlinghausenensis_CBS139183
+            |
+            |____ Aspergillus_fischeri_NRRL4161
+        """
+        
+        testargs = [
+            "phykit",
+            "print",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "-r"
+        ]
+
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_print_tree_remove_branch_lengths_long(self, mocked_print):
+        expected_result = """
+             ____ Aspergillus_fischeri_IBT_3003
+            |
+            |     ____ Aspergillus_fischeri_IBT_3007
+            |    |
+            |____|     ____ Aspergillus_fischeri_NRRL181.GCF_0001...
+            |    |    |
+            |    |____|     ____ Aspergillus_fischeri_NRRL4585
+            |         |    |
+            |         |    |               ____ Aspergillus_fumigatus_Af293
+            _|         |____|          ____|
+            |              |         |    |____ Aspergillus_fumigatus_CEA10
+            |              |     ____|
+            |              |    |    |     ____ Aspergillus_fumigatus_HMR_AF_270
+            |              |____|    |____|
+            |                   |         |____ Aspergillus_fumigatus_Z5
+            |                   |
+            |                   |____ Aspergillus_oerlinghausenensis_CBS139183
+            |
+            |____ Aspergillus_fischeri_NRRL4161
+        """
+        
+        testargs = [
+            "phykit",
+            "print",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "--remove"
+        ]
+
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2

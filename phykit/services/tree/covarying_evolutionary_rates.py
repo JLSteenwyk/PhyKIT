@@ -104,18 +104,6 @@ class CovaryingEvolutionaryRates(Tree):
         corr_branch_lengths = [i for j, i in enumerate(corr_branch_lengths) if j not in outlier_indices]
         return corr_branch_lengths
 
-    def tip_names(
-        self, tree
-        ):
-        """
-        get tip names from a tree
-        """
-
-        tips = []
-        for tip in tree.get_terminals():
-            tips.append(tip.name)
-        return(tips)
-
     def shared_tips(
         self, 
         a,
