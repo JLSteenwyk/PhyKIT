@@ -34,7 +34,10 @@ class GCContent(Alignment):
         if self.verbose:
             for entry, seq in entry_and_seq.items():
                 seq, matches = self.find_matches_and_remove_gaps(seq)
-                print(f"{entry}\t{round(len(matches)/len(seq), 4)}")
+                try:
+                    print(f"{entry}\t{round(len(matches)/len(seq), 4)}")
+                except BrokenPipeError:
+                    pass
         else:
             all_seqs = []
             for entry, seq in entry_and_seq.items():
@@ -44,9 +47,15 @@ class GCContent(Alignment):
             try:
                 gc_content = round(len(matches)/len(all_seqs), 4)
             except ZeroDivisionError:
-                print("Input file has an unacceptable format. Please check input file argument.")
-                sys.exit()
-            print(gc_content)
+                try:
+                    print("Input file has an unacceptable format. Please check input file argument.")
+                    sys.exit()
+                except BrokenPipeError:
+                    pass
+            try:
+                print(gc_content)
+            except BrokenPipeError:
+                pass
             
 
     def process_args(self, args):

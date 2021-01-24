@@ -22,8 +22,11 @@ class BipartitionSupportStats(Tree):
         stats = calculate_summary_statistics_from_arr(bs_vals)  
 
         if self.verbose:
-            for bs_val in bs_vals:
-                print(bs_val)
+            try:
+                for bs_val in bs_vals:
+                    print(bs_val)
+            except BrokenPipeError:
+                pass
         else:
             print_summary_statistics(stats)
 

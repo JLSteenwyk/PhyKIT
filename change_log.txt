@@ -1,3 +1,4 @@
 Major changes to PhyKIT are summarized here.
 
-To date, there have been no major changes since publication.
+0.0.9
+  - PhyKIT now handles error stemming from piping output

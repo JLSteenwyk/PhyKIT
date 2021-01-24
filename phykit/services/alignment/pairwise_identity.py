@@ -24,8 +24,11 @@ class PairwiseIdentity(Alignment):
         pairwise_identities, stats = self.calculate_pairwise_identities(alignment, combos)
         
         if self.verbose:
-            for pair, identity in pairwise_identities.items():
-                print(f"{pair}\t{identity}")
+            try:
+                for pair, identity in pairwise_identities.items():
+                    print(f"{pair}\t{identity}")
+            except BrokenPipeError:
+                pass
         else:
             print_summary_statistics(stats)
 

@@ -20,9 +20,13 @@ class InternalBranchStats(Tree):
     def run(self):
         tree = self.read_tree_file()
         internal_branch_lengths, stats = self.calculate_internal_branch_stats(tree)
+
         if self.verbose:
-            for internal_branch_length in internal_branch_lengths:
-                print(round(internal_branch_length, 4))
+            try:
+                for internal_branch_length in internal_branch_lengths:
+                    print(round(internal_branch_length, 4))
+            except BrokenPipeError:
+                pass
         else:
             print_summary_statistics(stats)
 
@@ -45,8 +49,11 @@ class InternalBranchStats(Tree):
         if tree has no branch lengths, exit
         """
         if len(internal_branch_lengths) == 0:
-            print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
-            sys.exit()
+            try:
+                print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
+                sys.exit()
+            except BrokenPipeError:
+                pass
 
     def calculate_internal_branch_stats(self, tree):
         # save internal branch lengths to internal_branch_lengths

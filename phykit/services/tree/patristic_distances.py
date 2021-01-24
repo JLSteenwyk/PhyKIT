@@ -21,8 +21,11 @@ class PatristicDistances(Tree):
         tree = self.read_tree_file()
         patristic_distances, combos, stats = self.calculate_patristic_distances(tree)
         if self.verbose:
-            for combo, patristic_distance in zip(combos, patristic_distances):
-                print(f"{combo[0]}-{combo[1]}\t{round(patristic_distance, 4)}")
+            try:
+                for combo, patristic_distance in zip(combos, patristic_distances):
+                    print(f"{combo[0]}-{combo[1]}\t{round(patristic_distance, 4)}")
+            except BrokenPipeError:
+                pass
         else:
             print_summary_statistics(stats)
 

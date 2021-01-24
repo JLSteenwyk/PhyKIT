@@ -29,9 +29,12 @@ class DNAThreader(Alignment):
         for record in pal2nal:
             sequence = ''.join(pal2nal[record])
             sequence = [sequence[i:i+60] for i in range(0, len(pal2nal[record]), 60)]
-            print(f">{record}")
-            for seq in sequence:
-                print(f"{seq}")
+            try:
+                print(f">{record}")
+                for seq in sequence:
+                    print(f"{seq}")
+            except BrokenPipeError:
+                pass
 
 
     def read_file(
@@ -89,9 +92,12 @@ class DNAThreader(Alignment):
                                 )
             return pal2nal
         except FileNotFoundError:
-            print("One input corresponds to no such file or directory.")
-            print("Please double checking pathing and filenames")
-            sys.exit()
+            try:
+                print("One input corresponds to no such file or directory.")
+                print("Please double checking pathing and filenames")
+                sys.exit()
+            except BrokenPipeError:
+                pass
 
     def get_id_and_seqs(
         self,

@@ -44,9 +44,12 @@ class RenameTreeTips(Tree):
                     (key, val) = line.split()
                     idmap[key] = val
         except FileNotFoundError:
-            print(f"{self.idmap} corresponds to no such file.")
-            print("Please check file name and pathing")
-            sys.exit()
+            try:
+                print(f"{self.idmap} corresponds to no such file.")
+                print("Please check file name and pathing")
+                sys.exit()
+            except BrokenPipeError:
+                pass
 
         return idmap
 

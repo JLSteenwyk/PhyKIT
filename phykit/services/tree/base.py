@@ -45,25 +45,34 @@ class Tree(BaseService):
         try:
             return Phylo.read(self.tree_file_path, self.tree_format)
         except FileNotFoundError:
-            print(f"{self.tree_file_path} corresponds to no such file or directory.")
-            print("Please checking filename and pathing")
-            sys.exit()
+            try:
+                print(f"{self.tree_file_path} corresponds to no such file or directory.")
+                print("Please checking filename and pathing")
+                sys.exit()
+            except BrokenPipeError:
+                pass
 
     def read_tree1_file(self):
         try:
             return Phylo.read(self.tree1_file_path, self.tree_format)
         except FileNotFoundError:
-            print(f"{self.tree1_file_path} corresponds to no such file or directory.")
-            print("Please checking filename and pathing")
-            sys.exit()
+            try:
+                print(f"{self.tree1_file_path} corresponds to no such file or directory.")
+                print("Please checking filename and pathing")
+                sys.exit()
+            except BrokenPipeError:
+                pass
 
     def read_reference_tree_file(self):
         try:
             return Phylo.read(self.reference, self.tree_format)
         except FileNotFoundError:
-            print(f"{self.reference} corresponds to no such file or directory.")
-            print("Please checking filename and pathing")
-            sys.exit()
+            try:
+                print(f"{self.reference} corresponds to no such file or directory.")
+                print("Please checking filename and pathing")
+                sys.exit()
+            except BrokenPipeError:
+                pass
 
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
@@ -108,9 +117,15 @@ class Tree(BaseService):
 
         try:
             treeness = float(inter_len / total_len)
-            if print_value:
-                print(f"{treeness}")
-            return treeness
+            try:
+                if print_value:
+                    print(f"{treeness}")
+                return treeness
+            except BrokenPipeError:
+                pass
         except ZeroDivisionError:
-            print("Invalid tree. Tree should contain branch lengths")
-            return None
+            try:
+                print("Invalid tree. Tree should contain branch lengths")
+                return None
+            except BrokenPipeError:
+                pass

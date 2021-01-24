@@ -63,18 +63,24 @@ class PolytomyTest(Tree):
                         temp.append(line[4].split(";"))
                         groups_arr.append(temp)
                     except IndexError:
-                        print(f"{self.groups} contains an indexing error.")
-                        print("Please format the groups file (-g) as a four column tab-delimited file with column 1 being the name of the test")
-                        print("col2: the tip names of one group (; separated)")
-                        print("col3: the tip names of a second group (; separated)")
-                        print("col4: the tip names of a third group (; separated)")
-                        print("col5: the tip names of the outgroup taxa (; separated)")
-                        sys.exit()
+                        try:
+                            print(f"{self.groups} contains an indexing error.")
+                            print("Please format the groups file (-g) as a four column tab-delimited file with column 1 being the name of the test")
+                            print("col2: the tip names of one group (; separated)")
+                            print("col3: the tip names of a second group (; separated)")
+                            print("col4: the tip names of a third group (; separated)")
+                            print("col5: the tip names of the outgroup taxa (; separated)")
+                            sys.exit()
+                        except BrokenPipeError:
+                            pass
                         
         except FileNotFoundError:
-            print(f"{self.groups} corresponds to no such file.")
-            print("Please check filename and pathing again.")
-            sys.exit()
+            try:
+                print(f"{self.groups} corresponds to no such file.")
+                print("Please check filename and pathing again.")
+                sys.exit()
+            except BrokenPipeError:
+                pass
         return groups_arr
 
     def loop_through_trees_and_examine_sister_support_among_triplets(
@@ -108,9 +114,12 @@ class PolytomyTest(Tree):
                     outgroup_taxa
                 )
         except FileNotFoundError:
-            print(f"{tree_file} corresponds to no such file.")
-            print("Please check file name and pathing")
-            sys.exit()
+            try:
+                print(f"{tree_file} corresponds to no such file.")
+                print("Please check file name and pathing")
+                sys.exit()
+            except BrokenPipeError:
+                pass
         
         return summary
 
@@ -372,14 +381,17 @@ class PolytomyTest(Tree):
         """
         print results to stdout for user
         """
-        print(f"\nTriplet Results")
-        print(f"===============")
-        print(f"chi-squared: {round(triplet_res.statistic, 4)}")
-        print(f"p-value: {round(triplet_res.pvalue, 6)}")
-        print(f"total triplets: {sum(triplet_group_counts.values())}")
-        print(f"0-1: {triplet_group_counts['g0g1_count']}")
-        print(f"0-2: {triplet_group_counts['g0g2_count']}")
-        print(f"1-2: {triplet_group_counts['g1g2_count']}")
+        try:
+            print(f"\nTriplet Results")
+            print(f"===============")
+            print(f"chi-squared: {round(triplet_res.statistic, 4)}")
+            print(f"p-value: {round(triplet_res.pvalue, 6)}")
+            print(f"total triplets: {sum(triplet_group_counts.values())}")
+            print(f"0-1: {triplet_group_counts['g0g1_count']}")
+            print(f"0-2: {triplet_group_counts['g0g2_count']}")
+            print(f"1-2: {triplet_group_counts['g1g2_count']}")
+        except BrokenPipeError:
+            pass
 
     def print_gene_support_freq_res(
         self,
@@ -390,11 +402,14 @@ class PolytomyTest(Tree):
         """
         print results to stdout for user
         """
-        print(f"Gene Support Frequency Results")
-        print(f"==============================")
-        print(f"chi-squared: {round(gene_support_freq_res.statistic, 4)}")
-        print(f"p-value: {round(gene_support_freq_res.pvalue, 6)}")
-        print(f"total genes: {(gene_support_freq['0-1'] + gene_support_freq['0-2'] + gene_support_freq['1-2'])}")
-        print(f"0-1: {gene_support_freq['0-1']}")
-        print(f"0-2: {gene_support_freq['0-2']}")
-        print(f"1-2: {gene_support_freq['1-2']}")
+        try:
+            print(f"Gene Support Frequency Results")
+            print(f"==============================")
+            print(f"chi-squared: {round(gene_support_freq_res.statistic, 4)}")
+            print(f"p-value: {round(gene_support_freq_res.pvalue, 6)}")
+            print(f"total genes: {(gene_support_freq['0-1'] + gene_support_freq['0-2'] + gene_support_freq['1-2'])}")
+            print(f"0-1: {gene_support_freq['0-1']}")
+            print(f"0-2: {gene_support_freq['0-2']}")
+            print(f"1-2: {gene_support_freq['1-2']}")
+        except BrokenPipeError:
+            pass

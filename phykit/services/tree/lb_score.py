@@ -21,8 +21,11 @@ class LBScore(Tree):
         tree = self.read_tree_file()
         tips, LBis = self.calculate_lb_score(tree)
         if self.verbose:
-            for tip, LBi in zip(tips, LBis):
-                print(f"{tip}\t{round(LBi, 4)}")
+            try:
+                for tip, LBi in zip(tips, LBis):
+                    print(f"{tip}\t{round(LBi, 4)}")
+            except BrokenPipeError:
+                pass
         else:
             stats = calculate_summary_statistics_from_arr(LBis)
             print_summary_statistics(stats)
@@ -79,8 +82,11 @@ class LBScore(Tree):
             try:
                 LBis.append((((PDi/avg_dist)-1)*100))
             except ZeroDivisionError:
-                print("Invalid tree. Tree should contain branch lengths")
-                return None
+                try:
+                    print("Invalid tree. Tree should contain branch lengths")
+                    return None
+                except BrokenPipeError:
+                    pass
         
         return LBis
 
