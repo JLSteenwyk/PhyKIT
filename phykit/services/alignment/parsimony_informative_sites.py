@@ -11,8 +11,11 @@ class ParsimonyInformative(Alignment):
     def run(self):
         alignment, _ = self.get_alignment_and_format()
         pi_sites, aln_len, pi_sites_per = self.calculate_parsimony_informative_sites(alignment)
-        if (pi_sites, aln_len, pi_sites_per):
-            print(f"{pi_sites}\t{aln_len}\t{round(pi_sites_per, 4)}")
+        try:
+            if (pi_sites, aln_len, pi_sites_per):
+                print(f"{pi_sites}\t{aln_len}\t{round(pi_sites_per, 4)}")
+        except BrokenPipeError:
+            pass
 
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)

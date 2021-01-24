@@ -19,7 +19,10 @@ class PrintTree(Tree):
             for leaf in tree.get_terminals():
                 leaf.branch_length = None
 
-        Phylo.draw_ascii(tree)
+        try:
+            Phylo.draw_ascii(tree)
+        except BrokenPipeError:
+            pass
     
     def process_args(self, args):
         return dict(tree_file_path=args.tree, remove=args.remove)

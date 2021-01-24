@@ -10,7 +10,10 @@ class RelativeCompositionVariability(Alignment):
     def run(self):
         # calc rcv and print val
         relative_composition_variability = self.calculate_rcv()
-        print(round(relative_composition_variability, 4))
+        try:
+            print(round(relative_composition_variability, 4))
+        except BrokenPipeError:
+            pass
 
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)

@@ -15,13 +15,19 @@ class SpuriousSequence(Tree):
         counter = 0
         for name, length in name_and_branch_len.items():
             if length >= threshold:
-                print(f"{name}\t{round(length, 4)}\t{round(threshold, 4)}\t{round(median, 4)}")
+                try:
+                    print(f"{name}\t{round(length, 4)}\t{round(threshold, 4)}\t{round(median, 4)}")
+                except BrokenPipeError:
+                    pass
                 counter += 1
         
         # if no terminal branch is longer than the one specified
         # inform the user and print "None"
         if counter == 0:
-            print("None")
+            try:
+                print("None")
+            except BrokenPipeError:
+                pass
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, factor=args.factor)

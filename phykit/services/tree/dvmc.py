@@ -24,7 +24,10 @@ class DVMC(Tree):
         outgroup = read_single_column_file_to_list(self.outgroup_taxa_file_path)
         dvmc = self.determine_dvmc(tree, outgroup)
 
-        print(round(dvmc, 4))
+        try:
+            print(round(dvmc, 4))
+        except BrokenPipeError:
+            pass
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, outgroup_taxa_file_path=args.root)

@@ -78,7 +78,10 @@ class CreateConcatenationMatrix(Alignment):
             Occupancy report: {file_occupancy}
         """)
 
-        print(start_message)
+        try:
+            print(start_message)
+        except BrokenPipeError:
+            pass
 
 
     def get_list_of_taxa_and_records(
