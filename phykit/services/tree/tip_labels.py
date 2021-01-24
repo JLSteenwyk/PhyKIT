@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from Bio import Phylo
 
@@ -11,8 +12,12 @@ class TipLabels(Tree):
     def run(self):
         tree = self.read_tree_file()
         
-        for leaf in tree.get_terminals():
-            print(leaf.name)
+        try:
+            for leaf in tree.get_terminals():
+                print(leaf.name)
+        except BrokenPipeError:
+            pass
+        sys.stderr.close()
     
     def process_args(self, args):
         return dict(tree_file_path=args.tree)
