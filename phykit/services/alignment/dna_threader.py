@@ -25,8 +25,14 @@ class DNAThreader(Alignment):
 
         pal2nal = self.thread(prot, nucl)
 
+
         for record in pal2nal:
-            print(f">{record}\n{''.join(pal2nal[record])}")
+            sequence = ''.join(pal2nal[record])
+            sequence = [sequence[i:i+60] for i in range(0, len(pal2nal[record]), 60)]
+            print(f">{record}")
+            for seq in sequence:
+                print(f"{seq}")
+
 
     def read_file(
         self,
