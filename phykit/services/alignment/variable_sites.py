@@ -9,11 +9,9 @@ class VariableSites(Alignment):
     def run(self):
         alignment, alignment_format = self.get_alignment_and_format()
         var_sites, aln_len, var_sites_per = self.calculate_variable_sites(alignment)
-        try:
-            if (var_sites, aln_len, var_sites_per):
-                print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
-        except BrokenPipeError:
-            pass
+        if (var_sites, aln_len, var_sites_per):
+            print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
+
 
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)

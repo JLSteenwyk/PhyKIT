@@ -26,8 +26,18 @@ class TestBrokenPipeError(object):
         exit_status = os.system(cmd)
         assert exit_status == 0
 
-    def test_gc_content_BrokenPipeError(self):
+    def test_pairwise_identity_BrokenPipeError(self):
         cmd = "phykit pi ./tests/sample_files/12_YPR189W_Anc_7.546_codon_aln.fasta.clipkit -v | head -n 1"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+    
+    def test_variable_sites_BrokenPipeError(self):
+        cmd = "phykit vs ./tests/sample_files/12_YPR189W_Anc_7.546_codon_aln.fasta.clipkit -v | head -n 1"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    def test_bipartition_support_stats_BrokenPipeError(self):
+        cmd = "phykit bss ./tests/sample_files/small_Aspergillus_tre_rooted.tree -v | head -n 1"
         exit_status = os.system(cmd)
         assert exit_status == 0
 
