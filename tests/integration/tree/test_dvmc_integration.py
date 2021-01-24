@@ -73,3 +73,20 @@ class TestDVMC(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_dvmc_wrong_file_path(self, mocked_print):
+        testargs = [
+            "phykit",
+            "dvmc",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-r",
+            f"no_file"
+        ]
+
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2

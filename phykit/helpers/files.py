@@ -28,7 +28,7 @@ def get_alignment_and_format(alignment_file_path: str):
         except AssertionError:
             continue
         except FileNotFoundError:
-            print(f"{alignment_file_path} corresponds to not such file.")
+            print(f"{alignment_file_path} corresponds to no such file.")
             print("Please check file name and pathing")
             sys.exit(0)
 
