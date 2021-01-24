@@ -17,7 +17,6 @@ class TipLabels(Tree):
                 print(leaf.name)
         except BrokenPipeError:
             pass
-        sys.stderr.close()
     
     def process_args(self, args):
         return dict(tree_file_path=args.tree)

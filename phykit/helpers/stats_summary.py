@@ -1,4 +1,5 @@
 import statistics as stat
+import sys
 
 import numpy as np
 
@@ -46,11 +47,14 @@ def print_summary_statistics(
 ):
     """
     """
-    print(f"mean: {round(stats['mean'], 4)}")
-    print(f"median: {round(stats['median'], 4)}")
-    print(f"25th percentile: {round(stats['twenty_fifth'], 4)}")
-    print(f"75th percentile: {round(stats['seventy_fifth'], 4)}")
-    print(f"minimum: {round(stats['minimum'], 4)}")
-    print(f"maximum: {round(stats['maximum'], 4)}")
-    print(f"standard deviation: {round(stats['standard_deviation'], 4)}")
-    print(f"variance: {round(stats['variance'], 4)}")
+    try:
+        print(f"mean: {round(stats['mean'], 4)}")
+        print(f"median: {round(stats['median'], 4)}")
+        print(f"25th percentile: {round(stats['twenty_fifth'], 4)}")
+        print(f"75th percentile: {round(stats['seventy_fifth'], 4)}")
+        print(f"minimum: {round(stats['minimum'], 4)}")
+        print(f"maximum: {round(stats['maximum'], 4)}")
+        print(f"standard deviation: {round(stats['standard_deviation'], 4)}")
+        print(f"variance: {round(stats['variance'], 4)}")
+    except BrokenPipeError:
+        pass

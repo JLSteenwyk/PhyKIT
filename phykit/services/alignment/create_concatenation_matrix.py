@@ -80,6 +80,7 @@ class CreateConcatenationMatrix(Alignment):
 
         print(start_message)
 
+
     def get_list_of_taxa_and_records(
         self,
         alignment_path: str
