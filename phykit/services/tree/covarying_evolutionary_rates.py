@@ -125,11 +125,9 @@ class CovaryingEvolutionaryRates(Tree):
         if len(a_set.intersection(b_set)) > 0: 
             return(list(a_set.intersection(b_set)))   
         else: 
-            try:
-                print("no common tips") 
-                sys.exit()
-            except BrokenPipeError:
-                pass
+            print("no common tips") 
+            sys.exit()
+ 
     
     def prune_tips(
         self, tree, tips
@@ -152,12 +150,9 @@ class CovaryingEvolutionaryRates(Tree):
         differences = self.compare_trees(differences, tree_one, tree_ref)
         
         if differences > 0:
-            try:
-                print("Input trees differ in topology.")
-                print("Please ensure input phylogenies all have the same topology.")
-                sys.exit()
-            except BrokenPipeError:
-                pass
+            print("Input trees differ in topology.")
+            print("Please ensure input phylogenies all have the same topology.")
+            sys.exit()
 
     def compare_trees(
         self,

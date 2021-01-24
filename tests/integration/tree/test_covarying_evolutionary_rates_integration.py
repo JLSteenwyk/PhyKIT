@@ -152,7 +152,6 @@ class TestCovaryingEvolutionaryRates(object):
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_tree_topologies_do_not_match(self, mocked_print):
-        expected_result = "0.6769\t0.065228"
         testargs = [
             "phykit",
             "cover",
@@ -166,3 +165,18 @@ class TestCovaryingEvolutionaryRates(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates(self, mocked_print):
+        expected_result = "0.5826\t0.169897"
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_outlier_branch.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]

@@ -49,11 +49,9 @@ class InternalBranchStats(Tree):
         if tree has no branch lengths, exit
         """
         if len(internal_branch_lengths) == 0:
-            try:
-                print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
-                sys.exit()
-            except BrokenPipeError:
-                pass
+            print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
+            sys.exit()
+
 
     def calculate_internal_branch_stats(self, tree):
         # save internal branch lengths to internal_branch_lengths
