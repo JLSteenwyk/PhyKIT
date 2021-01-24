@@ -45,34 +45,28 @@ class Tree(BaseService):
         try:
             return Phylo.read(self.tree_file_path, self.tree_format)
         except FileNotFoundError:
-            try:
-                print(f"{self.tree_file_path} corresponds to no such file or directory.")
-                print("Please checking filename and pathing")
-                sys.exit()
-            except BrokenPipeError:
-                pass
+            print(f"{self.tree_file_path} corresponds to no such file or directory.")
+            print("Please checking filename and pathing")
+            sys.exit()
+
 
     def read_tree1_file(self):
         try:
             return Phylo.read(self.tree1_file_path, self.tree_format)
         except FileNotFoundError:
-            try:
-                print(f"{self.tree1_file_path} corresponds to no such file or directory.")
-                print("Please checking filename and pathing")
-                sys.exit()
-            except BrokenPipeError:
-                pass
+            print(f"{self.tree1_file_path} corresponds to no such file or directory.")
+            print("Please checking filename and pathing")
+            sys.exit()
+
 
     def read_reference_tree_file(self):
         try:
             return Phylo.read(self.reference, self.tree_format)
         except FileNotFoundError:
-            try:
-                print(f"{self.reference} corresponds to no such file or directory.")
-                print("Please checking filename and pathing")
-                sys.exit()
-            except BrokenPipeError:
-                pass
+            print(f"{self.reference} corresponds to no such file or directory.")
+            print("Please checking filename and pathing")
+            sys.exit()
+
 
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
