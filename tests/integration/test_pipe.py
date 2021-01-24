@@ -1,0 +1,33 @@
+import os
+import pytest
+import subprocess
+import sys
+from mock import patch, call
+from pathlib import Path
+
+from phykit.phykit import Phykit
+
+here = Path(__file__)
+
+@pytest.mark.integration
+class TestBrokenPipeError(object):
+    def test_dna_threader_BrokenPipeError(self):
+        cmd = "phykit thread_dna -p ./tests/sample_files/EOG091N44MS.fa.mafft -n ./tests/sample_files/EOG091N44MS.fa | head -n 2"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    def test_create_concatenation_matrix_BrokenPipeError(self):
+        cmd = "phykit create_concatenation_matrix -a ./tests/sample_files/alignment_list_for_create_concat_matrix.txt -p test | head -n 2"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    def test_gc_content_BrokenPipeError(self):
+        cmd = "phykit gc_content ./tests/sample_files/EOG091N44MS.fa.mafft -v | head -n 1"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    def test_gc_content_BrokenPipeError(self):
+        cmd = "phykit pi ./tests/sample_files/12_YPR189W_Anc_7.546_codon_aln.fasta.clipkit -v | head -n 1"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
