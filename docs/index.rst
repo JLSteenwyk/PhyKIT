@@ -68,6 +68,15 @@ To deactivate your virtual environment, use the following command:
 
 |
 
+To install via anaconda, execute the following command:
+
+.. code-block:: shell
+
+	conda install -c jlsteenwyk phykit
+
+Visit here for more information:
+https://anaconda.org/JLSteenwyk/phykit
+
 **2) Usage**
 
 Get the help message from PhyKIT:
