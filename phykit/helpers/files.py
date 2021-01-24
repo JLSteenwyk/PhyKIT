@@ -30,7 +30,7 @@ def get_alignment_and_format(alignment_file_path: str):
         except FileNotFoundError:
             print(f"{alignment_file_path} corresponds to no such file.")
             print("Please check file name and pathing")
-            sys.exit(0)
+            sys.exit()
 
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     try:

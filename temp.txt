@@ -1,0 +1,4 @@
+monkey
+cat
+weasel
+dog
