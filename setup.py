@@ -29,7 +29,7 @@ setup(
     packages=find_packages(),
     classifiers=CLASSIFIERS,
     entry_points={"console_scripts": ["phykit = phykit.phykit:main"]},
-    version="0.0.9",
+    version="0.1.0",
     include_package_data=True,
     install_requires=REQUIRES,
 )
