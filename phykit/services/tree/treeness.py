@@ -8,10 +8,8 @@ class Treeness(Tree):
     def run(self):
         tree = self.read_tree_file()
         treeness = self.calculate_treeness(tree)
-        try:
-            print(round(treeness, 4))
-        except BrokenPipeError:
-            pass
+        print(round(treeness, 4))
+
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree)

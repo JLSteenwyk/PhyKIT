@@ -24,10 +24,8 @@ class SpuriousSequence(Tree):
         # if no terminal branch is longer than the one specified
         # inform the user and print "None"
         if counter == 0:
-            try:
-                print("None")
-            except BrokenPipeError:
-                pass
+            print("None")
+
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree, factor=args.factor)

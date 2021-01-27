@@ -10,7 +10,6 @@ class TipLabels(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        
         try:
             for leaf in tree.get_terminals():
                 print(leaf.name)
