@@ -1,6 +1,8 @@
 from os import path
 from setuptools import setup, find_packages
 
+from .version import __version__
+
 here = path.abspath(path.dirname(__file__))
 
 with open(path.join(here, "README.md")) as f:
@@ -29,7 +31,7 @@ setup(
     packages=find_packages(),
     classifiers=CLASSIFIERS,
     entry_points={"console_scripts": ["phykit = phykit.phykit:main"]},
-    version="0.1.0",
+    version=__version__,
     include_package_data=True,
     install_requires=REQUIRES,
 )
