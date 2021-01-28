@@ -1,7 +1,7 @@
 from os import path
 from setuptools import setup, find_packages
 
-from .version import __version__
+from phykit.version import __version__
 
 here = path.abspath(path.dirname(__file__))
 
