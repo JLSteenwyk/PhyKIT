@@ -7,3 +7,8 @@ Major changes to PhyKIT are summarized here.
   - Added function (sum_of_pairs_score; sops; sop) to calculate
     the quality of an alignment given an input query alignment
     and a reference alignment to compare it to
+
+0.1.3
+  - Added function (column_score; cs) to calculate the quality of
+    an alignment given an input query alignment and a reference
+    alignment to compare it to
