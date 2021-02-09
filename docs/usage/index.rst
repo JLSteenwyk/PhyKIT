@@ -96,6 +96,32 @@ Options: |br|
 
 |
 
+Column score
+############
+Function names: column_score; cs
+
+Calculates column score.
+
+Column is an accuracy metric for a multiple alignment relative
+to a reference alignment. It is calculated by summing the correctly
+aligned columns over all columns in an alignment. Thus, values range
+from 0 to 1 and higher values indicate more accurate alignments.
+
+Column score is calculated following Thompson et al., Nucleic
+Acids Research (1999), doi: 10.1093/nar/27.13.2682.
+
+.. code-block:: shell
+
+	phykit column_score <alignment> --reference <reference_alignment>
+
+Options: |br|
+*<alignment>*: first argument after function name should be a query
+fasta alignment file to be scored for accuracy |br|
+*-r/\\-\\-reference*: reference alignment to compare the query alignment
+to
+
+|
+
 Create concatenation matrix
 ###########################
 Function names: create_concatenation_matrix, create_concat, cc
@@ -245,6 +271,32 @@ output alignment.
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
+
+|
+
+Sum-of-pairs score
+##################
+Function names: sum_of_pairs_score; sops; sop
+
+Calculates sum-of-pairs score.
+
+Sum-of-pairs is an accuracy metric for a multiple alignment relative
+to a reference alignment. It is calculated by summing the correctly
+aligned residue pairs over all pairs of sequences. Thus, values range
+from 0 to 1 and higher values indicate more accurate alignments.
+
+Column score is calculated following Thompson et al., Nucleic
+Acids Research (1999), doi: 10.1093/nar/27.13.2682.
+
+.. code-block:: shell
+
+	phykit sum_of_pairs_score <alignment> --reference <reference_alignment>
+
+Options: |br|
+*<alignment>*: first argument after function name should be a query
+fasta alignment file to be scored for accuracy |br|
+*-r/\\-\\-reference*: reference alignment to compare the query alignment
+to
 
 |
 
