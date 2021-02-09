@@ -22,6 +22,7 @@ from .services.alignment import (
     ParsimonyInformative,
     RelativeCompositionVariability,
     RenameFastaEntries,
+    SumOfPairsScore,
     VariableSites
 )
 
@@ -125,6 +126,8 @@ class Phykit(object):
                     - calculates relative composition variability in an alignment
                 rename_fasta_entries (alias: rename_fasta)
                     - rename entries in a fasta file
+                sum_of_pairs_score (alias: sops; sop)
+                    - calculate sum-of-pairs score between a reference and query alignments
                 thread_dna (alias: pal2nal; p2n)
                     - thread dna sequences over a protein alignment
                 variable_sites (alias: vs)
@@ -215,6 +218,8 @@ class Phykit(object):
             return self.rcv()
         elif command == 'rename_fasta':
             return self.rename_fasta_entries()
+        elif command in ['sum_of_pairs_score', 'sops', 'sop']:
+            return self.sum_of_pairs_score()
         elif command == 'vs':
             return self.variable_sites()
         # Tree aliases
@@ -549,6 +554,43 @@ class Phykit(object):
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         RenameFastaEntries(args).run()
+
+    def sum_of_pairs_score(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Calculates sum-of-pairs score.
+
+                Sum-of-pairs is an accuracy metric for a multiple alignment relative
+                to a reference alignment. It is calculated by summing the correctly
+                aligned residue pairs over all pairs of sequences. Thus, values range
+                from 0 to 1 and higher values indicate more accurate alignments.
+
+                Alias: sum_of_pairs_score, sops, sop
+
+                Usage:
+                phykit sum_of_pairs_score <fasta> -r/--reference <ref.aln>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be a
+                                            query fasta alignment file
+                                            to be scored for accuracy
+
+                -r/--reference              reference fasta alignment to 
+                                            compare query alignment to
+                """
+            ),
+        )
+        parser.add_argument("fasta", type=str, help=SUPPRESS)
+        parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        SumOfPairsScore(args).run()
 
     def variable_sites(self):
         parser = ArgumentParser(add_help=True,
