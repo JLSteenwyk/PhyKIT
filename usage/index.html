@@ -92,12 +92,14 @@
 <li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability">Relative composition variability</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-fasta-entries">Rename FASTA entries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
 </ul>
@@ -270,6 +272,28 @@ doi: 10.1093/gbe/evw179.</p>
 <div class="line"><br /></div>
 </div>
 </div>
+<div class="section" id="column-score">
+<h3>Column score<a class="headerlink" href="#column-score" title="Permalink to this headline">¶</a></h3>
+<p>Function names: column_score; cs</p>
+<p>Calculates column score.</p>
+<p>Column is an accuracy metric for a multiple alignment relative
+to a reference alignment. It is calculated by summing the correctly
+aligned columns over all columns in an alignment. Thus, values range
+from 0 to 1 and higher values indicate more accurate alignments.</p>
+<p>Column score is calculated following Thompson et al., Nucleic
+Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit column_score &lt;alignment&gt; --reference &lt;reference_alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a query
+fasta alignment file to be scored for accuracy <br/>
+<em>-r/--reference</em>: reference alignment to compare the query alignment
+to</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
 <div class="section" id="create-concatenation-matrix">
 <h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Permalink to this headline">¶</a></h3>
 <p>Function names: create_concatenation_matrix, create_concat, cc</p>
@@ -394,6 +418,28 @@ output alignment.</p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>-i/--idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="sum-of-pairs-score">
+<h3>Sum-of-pairs score<a class="headerlink" href="#sum-of-pairs-score" title="Permalink to this headline">¶</a></h3>
+<p>Function names: sum_of_pairs_score; sops; sop</p>
+<p>Calculates sum-of-pairs score.</p>
+<p>Sum-of-pairs is an accuracy metric for a multiple alignment relative
+to a reference alignment. It is calculated by summing the correctly
+aligned residue pairs over all pairs of sequences. Thus, values range
+from 0 to 1 and higher values indicate more accurate alignments.</p>
+<p>Column score is calculated following Thompson et al., Nucleic
+Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit sum_of_pairs_score &lt;alignment&gt; --reference &lt;reference_alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a query
+fasta alignment file to be scored for accuracy <br/>
+<em>-r/--reference</em>: reference alignment to compare the query alignment
+to</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

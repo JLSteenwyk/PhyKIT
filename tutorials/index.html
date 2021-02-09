@@ -111,6 +111,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#step-1-conduct-polytomy-test">Step 1: Conduct polytomy test</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluating-the-accuracy-of-a-multiple-sequence-alignment">4. Evaluating the accuracy of a multiple sequence alignment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-0-generate-query-alignments">Step 0: Generate query alignments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-score-each-alignment">Step 1: Score each alignment</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../frequently_asked_questions/index.html">FAQ</a></li>
@@ -540,6 +545,82 @@ total genes: <span class="m">248</span>
 hypothesis. Thus, there is a signature of rapid radiation or diversification event for these groups. Additional details provided by PhyKIT
 reveal 248 genes were used during the polytomy test and that there is nearly equal support for the various topologies.</p>
 <p>Taken together, this tutorial reveals how to identify signatures of rapid radiation or diversification events in phylogenomic data.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="evaluating-the-accuracy-of-a-multiple-sequence-alignment">
+<h2>4. Evaluating the accuracy of a multiple sequence alignment<a class="headerlink" href="#evaluating-the-accuracy-of-a-multiple-sequence-alignment" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p>Evaluating the accuracy of multiple sequence alignments is an appropriate way to benchmark multiple sequence alignment strategies.
+Two popular methods to assess multiple sequence alignment accuracy are sum-of-pairs score and column score, which were introduced by
+Thompson et al., Nucleic Acids Research (1999), doi: 10.1093/nar/27.13.2682. Sum-of-pairs is calculated by summing the correctly
+aligned residue pairs over all pairs of sequences. Column score is calculated by summing the correctly aligned columns over all
+columns in an alignment. Both metrics range from 0 to 1 and higher values indicate more accurate alignments. Correctly aligned
+pairs or columns require knowing some ground truth of what the correct alignment is. Thus, a reference alignment that is
+perfectly (or near-perfectly) aligned is required. A reference alignment can be generated using simulations or be obtained from
+publicly available databases such as BAliBASE 4 (<a class="reference external" href="http://www.lbgi.fr/balibase/">http://www.lbgi.fr/balibase/</a>). For this tutorial we will use a reference alignment
+from BAliBASE.</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/1fd76132a6e0df73727f2e3628e402bb/msa_accuracy.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">msa_accuracy.tar.gz</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="section" id="step-0-generate-query-alignments">
+<h3>Step 0: Generate query alignments<a class="headerlink" href="#step-0-generate-query-alignments" title="Permalink to this headline">¶</a></h3>
+<p>In the <em>msa_accuracy</em> directory, there are two fasta files: <em>BBA0001_query.faa</em>, an unaligned set of sequences and <em>BBA0001_reference.faa</em>,
+the reference alignment. We will align <em>BBA0001_query.faa</em> using three different strategies implemented in Mafft, v.7.475
+(<a class="reference external" href="https://mafft.cbrc.jp/alignment/software/">https://mafft.cbrc.jp/alignment/software/</a>), and evaluate the accuracy of each strategy.</p>
+<p>To do so, please ensure Mafft is installed and then execute the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># first alignment</span>
+mafft --localpair BBA0001_query.faa &gt; BBA0001_query.localpair.faa
+
+<span class="c1"># second alignment</span>
+mafft --genafpair BBA0001_query.faa &gt; BBA0001_query.genafpair.faa
+
+<span class="c1"># third alignment</span>
+mafft --globalpair BBA0001_query.faa &gt; BBA0001_query.globalpair.faa
+</pre></div>
+</div>
+<p>To gain some initial insight as to whether the alignments differ, we can look at the length
+of each alignment using the <em>aln_len</em> function</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> i in <span class="k">$(</span>ls *pair.faa<span class="k">)</span> <span class="p">;</span> <span class="k">do</span> phykit aln_len <span class="nv">$i</span> <span class="p">;</span> <span class="k">done</span>
+<span class="m">1560</span>
+<span class="m">1464</span>
+<span class="m">1497</span>
+</pre></div>
+</div>
+<p>However, alignment length is not a measurement of accuracy. Thus, we will score each alignment
+using the <em>sum_of_pairs_score</em> and <em>column_score</em> functions.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="step-1-score-each-alignment">
+<h3>Step 1: Score each alignment<a class="headerlink" href="#step-1-score-each-alignment" title="Permalink to this headline">¶</a></h3>
+<p>For both functions, the first argument is the query alignment and the <em>-r/--reference</em> argument specifies the reference alignment.
+We will programmatically score each alignment using the same for loop that was used to calculate alignment length.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span> -e <span class="s2">&quot;BAliBASE_id_and_aln_strategy\tsop\tcs&quot;</span>
+<span class="k">for</span> i in <span class="k">$(</span>ls *pair.faa<span class="k">)</span>
+<span class="k">do</span>
+   <span class="nv">sop</span><span class="o">=</span><span class="k">$(</span>phykit sum_of_pairs_score <span class="nv">$i</span> -r BBA0001_reference.faa<span class="k">)</span>
+   <span class="nv">cs</span><span class="o">=</span><span class="k">$(</span>phykit column_score <span class="nv">$i</span> -r BBA0001_reference.faa<span class="k">)</span>
+   <span class="nb">echo</span> -e <span class="s2">&quot;</span><span class="nv">$i</span><span class="s2">\t</span><span class="nv">$sop</span><span class="s2">\t</span><span class="nv">$cs</span><span class="s2">&quot;</span>
+<span class="k">done</span>
+BAliBASE_id_and_aln_strategy sop     cs
+BBA0001_query.genafpair.faa  <span class="m">0</span>.8964  <span class="m">0</span>.2943
+BBA0001_query.globalpair.faa <span class="m">0</span>.9025  <span class="m">0</span>.292
+BBA0001_query.localpair.faa  <span class="m">0</span>.8992  <span class="m">0</span>.2959
+</pre></div>
+</div>
+<p>Examination of the output reveals that the <em>globalpair</em> strategy has more correctly aligned pairs because it has a higher sum-of-pairs
+score whereas the <em>localpair</em> strategy has more correctly aligned columns. Of note, the column scores are generally low, which
+reflects a potential limitation of column score wherein column score is sensitive to alignment errors.</p>
+<p>In summary, calculating sum-of-pairs score and column score can help assess the accuracy of multiple sequence alignment strategies.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 </div>
 </div>
 </div>
