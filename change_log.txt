@@ -2,3 +2,8 @@ Major changes to PhyKIT are summarized here.
 
 0.0.9
   - PhyKIT now handles error stemming from piping output
+
+0.1.2
+  - Added function (sum_of_pairs_score; sops; sop) to calculate
+    the quality of an alignment given an input query alignment
+    and a reference alignment to compare it to

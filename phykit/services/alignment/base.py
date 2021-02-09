@@ -15,6 +15,7 @@ class Alignment(BaseService):
         alignment_list_path=None,
         prefix=None,
         idmap=None,
+        reference=None,
         verbose=None
     ):
         self.alignment_file_path = alignment_file_path
@@ -25,6 +26,7 @@ class Alignment(BaseService):
         self.prefix = prefix
         self.fasta = fasta
         self.idmap = idmap
+        self.reference = reference
         self.verbose = verbose
 
     def get_alignment_and_format(self):

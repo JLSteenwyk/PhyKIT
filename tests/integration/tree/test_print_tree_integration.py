@@ -3,6 +3,7 @@ import sys
 from math import isclose
 from mock import patch, call
 from pathlib import Path
+import sys
 from textwrap import dedent
 
 from phykit.phykit import Phykit
@@ -39,6 +40,7 @@ class TestPrintTree(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
+
     @patch("builtins.print")
     def test_print_tree1(self, mocked_print):
         expected_result = """
@@ -69,6 +71,7 @@ class TestPrintTree(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
+
 
     @patch("builtins.print")
     def test_print_tree_wrong_input(self, mocked_print):
@@ -119,6 +122,7 @@ class TestPrintTree(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+        
 
     @patch("builtins.print")
     def test_print_tree_alias1(self, mocked_print):

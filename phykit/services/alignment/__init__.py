@@ -7,4 +7,5 @@ from .pairwise_identity import PairwiseIdentity
 from .parsimony_informative_sites import ParsimonyInformative
 from .rcv import RelativeCompositionVariability
 from .rename_fasta_entries import RenameFastaEntries
+from .sum_of_pairs_score import SumOfPairsScore
 from .variable_sites import VariableSites
