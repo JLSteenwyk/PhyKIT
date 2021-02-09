@@ -15,6 +15,7 @@ from argparse import (
 from .services.alignment import (
     AlignmentLength,
     AlignmentLengthNoGaps,
+    ColumnScore,
     CreateConcatenationMatrix,
     DNAThreader,
     GCContent,
@@ -112,6 +113,8 @@ class Phykit(object):
                     - calculates alignment length
                 alignment_length_no_gaps (alias: aln_len_no_gaps; alng)
                     - calculates alignment length after removing sites with gaps
+                column_score (alias: cs)
+                    - calculate column score between a reference and query alignment
                 create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments                    
                 gc_content (alias: gc)
@@ -127,7 +130,7 @@ class Phykit(object):
                 rename_fasta_entries (alias: rename_fasta)
                     - rename entries in a fasta file
                 sum_of_pairs_score (alias: sops; sop)
-                    - calculate sum-of-pairs score between a reference and query alignments
+                    - calculate sum-of-pairs score between a reference and query alignment
                 thread_dna (alias: pal2nal; p2n)
                     - thread dna sequences over a protein alignment
                 variable_sites (alias: vs)
@@ -208,6 +211,8 @@ class Phykit(object):
             return self.alignment_length()
         elif command in ['aln_len_no_gaps', 'alng']:
             return self.alignment_length_no_gaps()
+        elif command in 'cs':
+            return self.column_score()
         elif command == 'gc':
             return self.gc_content()
         elif command in ['pairwise_id', 'pi']:
@@ -347,6 +352,43 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         AlignmentLengthNoGaps(args).run()
+
+    def column_score(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Calculates column score.
+
+                Column is an accuracy metric for a multiple alignment relative
+                to a reference alignment. It is calculated by summing the correctly
+                aligned columns over all columns in an alignment. Thus, values range
+                from 0 to 1 and higher values indicate more accurate alignments.
+
+                Alias: cs
+
+                Usage:
+                phykit column_score <fasta> -r/--reference <ref.aln>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be a
+                                            query fasta alignment file
+                                            to be scored for accuracy
+
+                -r/--reference              reference fasta alignment to 
+                                            compare query alignment to
+                """
+            ),
+        )
+        parser.add_argument("fasta", type=str, help=SUPPRESS)
+        parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        ColumnScore(args).run()
 
     def gc_content(self):
         parser = ArgumentParser(add_help=True,
