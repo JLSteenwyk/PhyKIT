@@ -71,7 +71,9 @@ class Phykit(object):
                               |___/   
                             
                 Version: {__version__}
-                Citation: Steenwyk et al. Journal, journal info, link
+                Citation: Steenwyk et al. PhyKIT: a broadly applicable UNIX shell toolkit for 
+                processing and analyzing phylogenomic data. doi: 10.1093/bioinformatics/btab096
+
     """
     
     def __init__(self):
