@@ -262,7 +262,8 @@ Renames fasta entries.
 Renaming fasta entries will follow the scheme of a tab-delimited
 file wherein the first column is the current fasta entry name and
 the second column is the new fasta entry name in the resulting 
-output alignment. 
+output alignment. Note, the input fasta file does not need to be
+an alignment file.
 
 .. code-block:: shell
 
