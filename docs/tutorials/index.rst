@@ -164,7 +164,7 @@ Estimate saturation with the following command:
 
 .. code-block:: shell
 
-   phykit sat -a Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa -t teenwyk_etal_mBio_2019_EOG091N44MS.tre
+   phykit sat -a Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa -t Steenwyk_etal_mBio_2019_EOG091N44MS.tre
    0.6835
 
 |

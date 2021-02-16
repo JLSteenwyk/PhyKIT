@@ -1205,7 +1205,7 @@ class Phykit(object):
                                             function name should be
                                             a tree file
 
-                <list_of_taxa>                single column file with the
+                <list_of_taxa>              single column file with the
                                             names of the tips to remove
                                             from the phylogeny 
 
