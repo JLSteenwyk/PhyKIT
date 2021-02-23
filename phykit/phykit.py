@@ -71,8 +71,8 @@ class Phykit(object):
                               |___/   
                             
                 Version: {__version__}
-                Citation: Steenwyk et al. PhyKIT: a broadly applicable UNIX shell toolkit for 
-                processing and analyzing phylogenomic data. doi: 10.1093/bioinformatics/btab096
+                Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
+                https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675
 
     """
     
