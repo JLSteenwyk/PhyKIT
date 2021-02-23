@@ -89,12 +89,14 @@ Get the help message from PhyKIT:
 
 ^^^^
 
+
 .. toctree::
 	:maxdepth: 4
 
 	about/index
 	usage/index
 	tutorials/index
+	other_software/index
 	frequently_asked_questions/index
 
 ^^^^
