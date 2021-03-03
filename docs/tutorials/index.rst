@@ -25,16 +25,27 @@ data matrices to further explore tree space during species-level tree inference 
 (`Salichos and Rokas 2013 <https://www.nature.com/articles/nature12130>`_;
 `Liu et al. 2017 <https://www.pnas.org/content/114/35/E7282>`_;
 `Smith et al. 2018 <https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0197433>`_;
-`Shen et al. 2018 <https://www.cell.com/cell/fulltext/S0092-8674(18)31332-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867418313321%3Fshowall%3Dtrue>`_;
-`2020 <https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1>`_;
+`Shen et al. 2018 <https://www.cell.com/cell/fulltext/S0092-8674(18)31332-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867418313321%3Fshowall%3Dtrue>`_
+& `2020 <https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1>`_;
 `Steenwyk et al. 2019 <https://mbio.asm.org/content/10/4/e00925-19>`_;
 `Walker et al. 2019 <https://peerj.com/articles/7747/>`_;
 `Li et al. 2020 <https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1>`_)
 
+
 The information content summarized in the remainder of this section are associated with strong phylogenetic signal
 (or robust and accurate tree inference). When subsampling genes, a researcher could take a fraction of the best
 scoring phylogenies to reinfer species-level relationships or divergence times (e.g., robustly supported phylogenies
-and genes that do not violate clock-like patterns of evolution). 
+and genes that do not violate clock-like patterns of evolution).
+
+For example, in `Steenwyk et al. 2019 <https://mbio.asm.org/content/10/4/e00925-19>`_, we subsampled the complete
+phylogenomic data matrix for 50% of genes that had the best score for various matrices. Using the subsampled matrices,
+we reinferred species trees and compared the topologies across all species-level phylogenies. Bipartitions that were
+not recovered in all analyses were considered unstable. The following figure depicts the general pipeline we used (note,
+some of the metrics have been modified following newer insights).
+
+.. image:: ../_static/img/subsampling_pipeline.png  
+   :align: center
+   :width: 80%
 
 In this tutorial, we will use the following test multiple sequence alignment and phylogenetic tree, which came
 from `Steenwyk et al. 2019 <https://mbio.asm.org/content/10/4/e00925-19>`_. |br|
@@ -507,3 +518,9 @@ In summary, calculating sum-of-pairs score and column score can help assess the 
 .. |br| raw:: html
 
   <br/>
+
+img.align-center {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
