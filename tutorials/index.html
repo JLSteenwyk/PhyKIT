@@ -107,7 +107,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#identifying-signatures-of-rapid-radiations">3. Identifying signatures of rapid radiations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id14">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id15">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-conduct-polytomy-test">Step 1: Conduct polytomy test</a></li>
 </ul>
 </li>
@@ -205,8 +205,8 @@ data matrices to further explore tree space during species-level tree inference 
 (<a class="reference external" href="https://www.nature.com/articles/nature12130">Salichos and Rokas 2013</a>;
 <a class="reference external" href="https://www.pnas.org/content/114/35/E7282">Liu et al. 2017</a>;
 <a class="reference external" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0197433">Smith et al. 2018</a>;
-<a class="reference external" href="https://www.cell.com/cell/fulltext/S0092-8674(18)31332-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867418313321%3Fshowall%3Dtrue">Shen et al. 2018</a>;
-<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1">2020</a>;
+<a class="reference external" href="https://www.cell.com/cell/fulltext/S0092-8674(18)31332-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867418313321%3Fshowall%3Dtrue">Shen et al. 2018</a>
+&amp; <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1">2020</a>;
 <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>;
 <a class="reference external" href="https://peerj.com/articles/7747/">Walker et al. 2019</a>;
 <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1">Li et al. 2020</a>)</p>
@@ -214,6 +214,12 @@ data matrices to further explore tree space during species-level tree inference 
 (or robust and accurate tree inference). When subsampling genes, a researcher could take a fraction of the best
 scoring phylogenies to reinfer species-level relationships or divergence times (e.g., robustly supported phylogenies
 and genes that do not violate clock-like patterns of evolution).</p>
+<p>For example, in <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>, we subsampled the complete
+phylogenomic data matrix for 50% of genes that had the best score for various matrices. Using the subsampled matrices,
+we reinferred species trees and compared the topologies across all species-level phylogenies. Bipartitions that were
+not recovered in all analyses were considered unstable. The following figure depicts the general pipeline we used (note,
+some of the metrics have been modified following newer insights).</p>
+<a class="reference internal image-reference" href="../_images/subsampling_pipeline.png"><img alt="../_images/subsampling_pipeline.png" class="align-center" src="../_images/subsampling_pipeline.png" style="width: 80%;" /></a>
 <p>In this tutorial, we will use the following test multiple sequence alignment and phylogenetic tree, which came
 from <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>. <br/></p>
 <p class="centered">
@@ -479,8 +485,8 @@ The various topologies examined by PhyKIT are determined by the groups file. For
 <a class="reference download internal" download="" href="../_downloads/825af78eae72758221fb88615fc165e6/polytomy_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">polytomy_tutorial.tar.gz</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="section" id="id14">
-<h3>Step 0: Prepare data<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id15">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
 <p>For this tutorial, the data has already been formatted for the user. There are two input files for the polytomy testing function:</p>
 <ol class="arabic simple">
 <li><p>a file that specifies the location of gene trees</p></li>
@@ -622,6 +628,13 @@ reflects a potential limitation of column score wherein column score is sensitiv
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+<dl class="simple">
+<dt>img.align-center {</dt><dd><p>margin-left: auto;
+margin-right: auto;
+display: block;</p>
+</dd>
+</dl>
+<p>}</p>
 </div>
 </div>
 </div>
