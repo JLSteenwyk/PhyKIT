@@ -27,7 +27,7 @@ class TestTree(object):
 
     @patch("builtins.print")
     def test_rf_distance_trees_with_different_tips(self, mocked_print):
-        expected_result = "5\t0.8333"
+        expected_result = "4\t0.6667"
         testargs = [
             "phykit",
             "rf_distance",
@@ -37,6 +37,20 @@ class TestTree(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_rf_distance_trees_with_case_that_needs_rooting(self, mocked_print):
+        expected_result = "6\t0.75"
+        testargs = [
+            "phykit",
+            "rf_distance",
+            f"{here.parent.parent.parent}/sample_files/treehouse-2021-03-04_grp00.tre",
+            f"{here.parent.parent.parent}/sample_files/OG0000096.fa.orthosnap.0.fa.mafft.clipkit.treefile.renamed",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
 
     @patch("builtins.print")
     def test_rf_distance_alias0(self, mocked_print):

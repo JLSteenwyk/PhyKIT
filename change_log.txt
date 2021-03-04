@@ -19,3 +19,7 @@ Major changes to PhyKIT are summarized here.
   will first determine shared tips between the two trees and prune both trees
   to a common set of tips. Next, PhyKIT will calculate the Robinson Foulds 
   distance.
+
+1.0.3
+  - Added rooting procedure before calculating RF to handle comparing
+  unrooted and rooted trees
