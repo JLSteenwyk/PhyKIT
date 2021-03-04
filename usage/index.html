@@ -133,6 +133,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../other_software/index.html">Other software</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../frequently_asked_questions/index.html">FAQ</a></li>
 </ul>
@@ -198,7 +199,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="usage">
-<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
 <p>PhyKIT helps process and analyze multiple sequence alignments and phylogenies.</p>
 <p>Generally, all functions are designed to help understand the contents of alignments
 (e.g., gc content or the number of parsimony informative sites) and the shape
@@ -785,7 +786,11 @@ output will have the same name as the input file but with the suffix “.renamed
 This function prints out two values, the plain RF value and the
 normalized RF value, which are separated by a tab. Normalized RF values
 are calculated by taking the plain RF value and dividing it by 2(n-3)
-where n is the number of tips in the phylogeny.</p>
+where n is the number of tips in the phylogeny. Prior to calculating
+an RF value, PhyKIT will first determine the number of shared tips
+between the two input phylogenies and prune them to a common set of
+tips. Thus, users can input trees with different topologies and
+infer an RF value among subtrees with shared tips.</p>
 <p>PhyKIT will print out
 col 1; the plain RF distance and
 col 2: the normalized RF distance.</p>
@@ -820,7 +825,7 @@ col4: median branch length in the phylogeny</p>
 <p>Using this method to identify potentially spurious sequences
 was, to my knowledge, first introduced by Shen et al., (2018)
 Cell doi: 10.1016/j.cell.2018.10.023.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit robinson_foulds_distance &lt;tree_file_zero&gt; &lt;tree_file_one&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit spurious_seq &lt;file&gt; -f/<span class="se">\\</span>-<span class="se">\\</span>-factor
 </pre></div>
 </div>
 <p>Options: <br/>

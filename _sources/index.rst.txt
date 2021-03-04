@@ -96,8 +96,8 @@ Get the help message from PhyKIT:
 	about/index
 	usage/index
 	tutorials/index
+	change_log/index
 	other_software/index
 	frequently_asked_questions/index
 
 ^^^^
-
