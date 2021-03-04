@@ -1284,7 +1284,11 @@ class Phykit(object):
                 This function prints out two values, the plain RF value and the
                 normalized RF value, which are separated by a tab. Normalized RF values
                 are calculated by taking the plain RF value and dividing it by 2(n-3)
-                where n is the number of tips in the phylogeny. 
+                where n is the number of tips in the phylogeny. Prior to calculating
+                an RF value, PhyKIT will first determine the number of shared tips
+                between the two input phylogenies and prune them to a common set of
+                tips. Thus, users can input trees with different topologies and 
+                infer an RF value among subtrees with shared tips.
 
                 PhyKIT will print out 
                 col 1; the plain RF distance and 

@@ -83,6 +83,30 @@ class Tree(BaseService):
         
         return tips
 
+    def shared_tips(
+        self, 
+        a,
+        b
+        ):
+        """
+        Determines what tips are shared between two trees
+        -------------------------------------------------
+        argv: a
+            list of tips from one tree
+        argv: b
+            list of tips from a second tree
+        """ 
+
+        a_set = set(a) 
+        b_set = set(b) 
+        
+        # check length  
+        if len(a_set.intersection(b_set)) > 0: 
+            return(list(a_set.intersection(b_set)))   
+        else: 
+            print("no common tips") 
+            sys.exit()
+
     def prune_tree_using_taxa_list(
         self,
         tree,

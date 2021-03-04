@@ -18,6 +18,18 @@ class RobinsonFouldsDistance(Tree):
     def run(self):
         tree_zero = self.read_tree_file()
         tree_one = self.read_tree1_file()
+
+        # get tree tip names
+        tree_zero_tips = self.get_tip_names_from_tree(tree_zero)
+        tree_one_tips = self.get_tip_names_from_tree(tree_one)
+
+        # determine shared tips, tips to prune, and prune tips
+        shared_tree_tips = self.shared_tips(tree_zero_tips, tree_one_tips)
+        tree_zero_tips_to_prune = list(set(tree_zero_tips) - set(shared_tree_tips))
+        tree_one_tips_to_prune = list(set(tree_one_tips) - set(shared_tree_tips))
+        tree_zero = self.prune_tree_using_taxa_list(tree_zero, tree_zero_tips_to_prune)
+        tree_one = self.prune_tree_using_taxa_list(tree_one, tree_one_tips_to_prune)
+
         plain_rf, normalized_rf = self.calculate_robinson_foulds_distance(tree_zero, tree_one)
         
         print(f"{plain_rf}\t{round(normalized_rf, 4)}")
