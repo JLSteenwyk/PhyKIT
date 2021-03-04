@@ -113,6 +113,12 @@ test.integration:
 	mkdir output/
 	python3 -m pytest --basetemp=output -m "integration"
 
+test.fast:
+	python -m pytest -m "not (integration or slow)"
+	rm -rf output/
+	mkdir output/
+	python -m pytest --basetemp=output -m "integration and not slow"
+
 # used by GitHub actions during CI workflow
 test.coverage: coverage.unit coverage.integration
 

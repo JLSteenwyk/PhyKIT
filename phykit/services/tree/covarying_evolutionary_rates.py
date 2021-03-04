@@ -104,29 +104,29 @@ class CovaryingEvolutionaryRates(Tree):
         corr_branch_lengths = [i for j, i in enumerate(corr_branch_lengths) if j not in outlier_indices]
         return corr_branch_lengths
 
-    def shared_tips(
-        self, 
-        a,
-        b
-        ):
-        """
-        Determines what tips are shared between two trees
-        -------------------------------------------------
-        argv: a
-            list of tips from one tree
-        argv: b
-            list of tips from a second tree
-        """ 
+    # def shared_tips(
+    #     self, 
+    #     a,
+    #     b
+    #     ):
+    #     """
+    #     Determines what tips are shared between two trees
+    #     -------------------------------------------------
+    #     argv: a
+    #         list of tips from one tree
+    #     argv: b
+    #         list of tips from a second tree
+    #     """ 
 
-        a_set = set(a) 
-        b_set = set(b) 
+    #     a_set = set(a) 
+    #     b_set = set(b) 
         
-        # check length  
-        if len(a_set.intersection(b_set)) > 0: 
-            return(list(a_set.intersection(b_set)))   
-        else: 
-            print("no common tips") 
-            sys.exit()
+    #     # check length  
+    #     if len(a_set.intersection(b_set)) > 0: 
+    #         return(list(a_set.intersection(b_set)))   
+    #     else: 
+    #         print("no common tips") 
+    #         sys.exit()
  
     
     def prune_tips(
