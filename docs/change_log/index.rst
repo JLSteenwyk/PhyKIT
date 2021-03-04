@@ -23,3 +23,6 @@ rf_distance; rf_dist; rf) now can take trees that differ in topology. PhyKIT
 will first determine shared tips between the two trees and prune both trees
 to a common set of tips. Next, PhyKIT will calculate the Robinson Foulds 
 distance.
+
+**1.0.3**: added rooting procedure before calculating RF to handle comparing unrooted and
+rooted trees

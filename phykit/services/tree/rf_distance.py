@@ -30,6 +30,13 @@ class RobinsonFouldsDistance(Tree):
         tree_zero = self.prune_tree_using_taxa_list(tree_zero, tree_zero_tips_to_prune)
         tree_one = self.prune_tree_using_taxa_list(tree_one, tree_one_tips_to_prune)
 
+        tip_for_rooting = ''
+        for term in tree_zero.get_terminals():
+            tip_for_rooting = term.name
+            break
+        tree_zero.root_with_outgroup(tip_for_rooting)
+        tree_one.root_with_outgroup(tip_for_rooting)
+
         plain_rf, normalized_rf = self.calculate_robinson_foulds_distance(tree_zero, tree_one)
         
         print(f"{plain_rf}\t{round(normalized_rf, 4)}")
@@ -57,14 +64,13 @@ class RobinsonFouldsDistance(Tree):
         tree_one: Tree
     ) -> int:
         # loop through tree_zero and find similar clade in tree_one
-        for clade_zero in tree_zero.get_nonterminals():
+        for clade_zero in tree_zero.get_nonterminals()[1:]:
             # initialize and populate a list of tip names in tree_zero
             tip_names_zero = self.get_tip_names_from_tree(clade_zero)
             # get common ancestor of tree_zero tip names in tree_one
             clade_one = tree_one.common_ancestor(tip_names_zero)
             # initialize and populate a list of tip names in tree_one
             tip_names_one = self.get_tip_names_from_tree(clade_one)
-
             # compare the list of tip names
             plain_rf = self.determine_if_clade_differs(
                 plain_rf,
