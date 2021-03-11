@@ -94,6 +94,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
@@ -314,6 +315,23 @@ matrices.</p>
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
 <em>-p/--prefix</em>: prefix of output files</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="faidx">
+<h3>Faidx<a class="headerlink" href="#faidx" title="Permalink to this headline">¶</a></h3>
+<p>Function names: faidx; get_entry; ge</p>
+<p>Extracts sequence entry from fasta file.</p>
+<p>This function works similarly to the faidx function
+in samtools, but does not requiring an indexing function.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit faidx &lt;fasta&gt; -e/--entry &lt;fasta entry&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
+<em>-v/--verbose</em>: entry name to be extracted from the inputted fasta file
+entry</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
