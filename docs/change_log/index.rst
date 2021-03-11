@@ -24,5 +24,8 @@ will first determine shared tips between the two trees and prune both trees
 to a common set of tips. Next, PhyKIT will calculate the Robinson Foulds 
 distance.
 
-**1.0.3**: added rooting procedure before calculating RF to handle comparing unrooted and
-rooted trees
+**1.0.3**: added rooting procedure before calculating RF to handle comparing unrooted
+and rooted trees
+
+**1.1.0**: added faidx (alias: get_entry; ge) function to extract fasta entries from a
+multi-fasta file

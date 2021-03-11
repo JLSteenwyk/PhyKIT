@@ -23,3 +23,7 @@ Major changes to PhyKIT are summarized here.
 1.0.3
   - Added rooting procedure before calculating RF to handle comparing
   unrooted and rooted trees
+
+1.1.0
+  - Added faidx (alias: get_entry; ge) function to extract fasta entries
+  from a multi-fasta file

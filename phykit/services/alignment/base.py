@@ -16,7 +16,8 @@ class Alignment(BaseService):
         prefix=None,
         idmap=None,
         reference=None,
-        verbose=None
+        verbose=None,
+        entry=None
     ):
         self.alignment_file_path = alignment_file_path
         self.output_file_path = output_file_path
@@ -28,6 +29,7 @@ class Alignment(BaseService):
         self.idmap = idmap
         self.reference = reference
         self.verbose = verbose
+        self.entry = entry
 
     def get_alignment_and_format(self):
         """
