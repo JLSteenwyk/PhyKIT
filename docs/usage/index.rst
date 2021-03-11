@@ -149,6 +149,26 @@ working directory or provide absolute path. |br|
 
 |
 
+Faidx
+#####
+Function names: faidx; get_entry; ge
+
+Extracts sequence entry from fasta file.
+
+This function works similarly to the faidx function 
+in samtools, but does not requiring an indexing function.
+
+.. code-block:: shell
+
+	phykit faidx <fasta> -e/--entry <fasta entry>
+
+Options: |br|
+*<fasta>*: first argument after function name should be a fasta file |br|
+*-v/\\-\\-verbose*: entry name to be extracted from the inputted fasta file
+entry
+
+|
+
 Guanine-cytosine (GC) content
 #############################
 Function names: gc_content; gc

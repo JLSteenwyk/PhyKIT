@@ -3,6 +3,7 @@ from .alignment_length_no_gaps import AlignmentLengthNoGaps
 from .column_score import ColumnScore
 from .create_concatenation_matrix import CreateConcatenationMatrix
 from .dna_threader import DNAThreader
+from .faidx import Faidx
 from .gc_content import GCContent
 from .pairwise_identity import PairwiseIdentity
 from .parsimony_informative_sites import ParsimonyInformative

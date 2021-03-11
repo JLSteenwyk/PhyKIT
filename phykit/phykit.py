@@ -18,6 +18,7 @@ from .services.alignment import (
     ColumnScore,
     CreateConcatenationMatrix,
     DNAThreader,
+    Faidx,
     GCContent,
     PairwiseIdentity,
     ParsimonyInformative,
@@ -118,7 +119,9 @@ class Phykit(object):
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
                 create_concatenation_matrix (alias: create_concat; cc)
-                    - create concatenation matrix from a set of alignments                    
+                    - create concatenation matrix from a set of alignments
+                faidx (alias: get_entry; ge)
+                    - extract query fasta entry from multi-fasta file              
                 gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
                 pairwise_identity (alias: pairwise_id, pi)
@@ -215,6 +218,8 @@ class Phykit(object):
             return self.alignment_length_no_gaps()
         elif command in 'cs':
             return self.column_score()
+        elif command in ['get_entry', 'ge']:
+            return self.faidx()
         elif command == 'gc':
             return self.gc_content()
         elif command in ['pairwise_id', 'pi']:
@@ -391,6 +396,40 @@ class Phykit(object):
         parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
         args = parser.parse_args(sys.argv[2:])
         ColumnScore(args).run()
+
+    def faidx(self):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {self.help_header}
+
+                Extracts sequence entry from fasta file.
+
+                This function works similarly to the faidx function 
+                in samtools, but does not requiring an indexing function.
+
+                Alias: get_entry; ge
+
+                Usage:
+                phykit faidx <fasta> -e/--entry <fasta entry>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be a
+                                            query fasta file
+
+                -e/--entry                  entry name to be extracted
+                                            from the inputted fasta file
+                """
+            ),
+        )
+        parser.add_argument("fasta", type=str, help=SUPPRESS)
+        parser.add_argument("-e","--entry", type=str, help=SUPPRESS)
+        args = parser.parse_args(sys.argv[2:])
+        Faidx(args).run()
 
     def gc_content(self):
         parser = ArgumentParser(add_help=True,
