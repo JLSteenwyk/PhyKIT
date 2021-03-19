@@ -27,3 +27,7 @@ Major changes to PhyKIT are summarized here.
 1.1.0
   - Added faidx (alias: get_entry; ge) function to extract fasta entries
   from a multi-fasta file
+
+1.1.2
+  - Added faidx (alias: get_entry; ge) function to extract fasta entries
+  from a multi-fasta file

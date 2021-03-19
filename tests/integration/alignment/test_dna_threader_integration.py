@@ -17,31 +17,13 @@ class TestDNAThreader(object):
             """>200_S38"""
         )
         expected_result_1 = dedent(
-            """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctac"""
+            """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctacgcaacacttggttatctcacaacataccacgacaatgcccccacaacaccaccacca------aatgtccccgacgcagcaccagccctagcaaagatcaccaagaactcatcatcaccgccagtcccagcagccatcgcaaataaagtggggggtgcagctgctgttgcgggcaatgca---tcacccccacaggcgcct---------cct---------------------------------------------caacaacccggagct---------gcgcca---gggagagcagtagaaggtgaagatcccaaccttcctcccgcgccagactcgcccagcacgtttgcaagccggcagcgggagcttgcgcgcgatctcattatcaaagaacagcagatcgagtaccttatctccgtgcttcccgggattggcgcctctgaggctgaacaagaaaccagaatccaggacctggagaccgagcttagagacgtcgagaaggagcgcgctgcgaaagtgcgggagttgaaaaagttgaggactcggttggaggatgttcttggcgctgtcgctgtgggtatccacggggatggttactctcaaaac---------"""
         )
         expected_result_2 = dedent(
-            """gcaacacttggttatctcacaacataccacgacaatgcccccacaacaccaccacca---"""
-        )
-        expected_result_3 = dedent(
-            """---aatgtccccgacgcagcaccagccctagcaaagatcaccaagaactcatcatcaccg"""
-        )
-        expected_result_4 = dedent(
-            """ccagtcccagcagccatcgcaaataaagtggggggtgcagctgctgttgcgggcaatgca"""
-        )
-        expected_result_5 = dedent(
             """>203_S40"""
         )
-        expected_result_6 = dedent(
-            """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctac"""
-        )
-        expected_result_7 = dedent(
-            """gcaacacttggttatctcacaacataccacgacaatgcccccacaacaccaccacca---"""
-        )
-        expected_result_8 = dedent(
-            """---aatgtccccgacgcagcaccagccctagcaaagatcaccaagaactcatcatcacca"""
-        )
-        expected_result_9 = dedent(
-            """ccagtcccagcagccatcgcaaataaagtggggggtgcagctgctgttgcgggcaatgca"""
+        expected_result_3 = dedent(
+            """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctacgcaacacttggttatctcacaacataccacgacaatgcccccacaacaccaccacca------aatgtccccgacgcagcaccagccctagcaaagatcaccaagaactcatcatcaccaccagtcccagcagccatcgcaaataaagtggggggtgcagctgctgttgcgggcaatgca---tcacccccacaggcgcct---------cct---------------------------------------------caacaacccggagct---------gcgcca---gggagagcagtagaaggtgaagatcccaaccttcctcccgcgccagactcgcccagcacgtttgcaagccggcagcgggagcttgcgcgcgatctcattatcaaagaacagcagatcgagtaccttatctccgtgcttcccgggattggcgcctctgaggctgaacaagaaaccagaatccaggacctggagaccgagcttagagacgtcgagaaggagcgcgctgcgaaagtgcgggagttgaaaaagttgaggactcggttggaggatgttcttggcgctgtcgctgtgggtatccacggggatggttactctcaaaac---------"""
         )
 
         testargs = [
@@ -60,12 +42,6 @@ class TestDNAThreader(object):
             call(expected_result_1),
             call(expected_result_2),
             call(expected_result_3),
-            call(expected_result_4),
-            call(expected_result_5),
-            call(expected_result_6),
-            call(expected_result_7),
-            call(expected_result_8),
-            call(expected_result_9),
         ]
 
     @patch("builtins.print")
