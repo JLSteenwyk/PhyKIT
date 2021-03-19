@@ -28,14 +28,8 @@ class DNAThreader(Alignment):
 
         for record in pal2nal:
             sequence = ''.join(pal2nal[record])
-            sequence = [sequence[i:i+60] for i in range(0, len(pal2nal[record]), 60)]
-            try:
-                print(f">{record}")
-                for seq in sequence:
-                    print(f"{seq}")
-            except BrokenPipeError:
-                pass
-
+            print(f">{record}")
+            print(f"{sequence}")
 
     def read_file(
         self,
