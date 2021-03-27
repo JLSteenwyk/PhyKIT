@@ -201,10 +201,13 @@ class Phykit(object):
         # if command is part of the possible commands (i.e., the long form
         # commands, run). Otherwise, assume it is an alias and look to the
         # run_alias function
-        if hasattr(self, args.command):
-            getattr(self, args.command)()
-        else:
-            self.run_alias(args.command)
+        try:
+            if hasattr(self, args.command):
+                getattr(self, args.command)()
+            else:
+                self.run_alias(args.command)
+        except NameError:
+            sys.exit()
 
     ## Aliases
     def run_alias(self, command):
@@ -285,6 +288,14 @@ class Phykit(object):
             print("Invalid command option. See help for a complete list of commands and aliases.")
             parser.print_help()
             sys.exit(1)
+
+    ## print version
+    def version(self):
+        print(textwrap.dedent(
+            f"""\
+            {self.help_header}
+            """
+        ))
 
     ## Alignment functions
     def alignment_length(self):
