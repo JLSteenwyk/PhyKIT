@@ -29,3 +29,7 @@ and rooted trees
 
 **1.1.0**: added faidx (alias: get_entry; ge) function to extract fasta entries from a
 multi-fasta file
+
+**1.2.0**: added command line interfaces for all functions so that each command 
+can easily be executed. For example, 'phykit aln_len -h' can now be
+called using 'pk_aln_len -h'

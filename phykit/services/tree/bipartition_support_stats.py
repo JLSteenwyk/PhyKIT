@@ -17,9 +17,7 @@ class BipartitionSupportStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        bs_vals = self.get_bipartition_support_vals(tree)
-
-        stats = calculate_summary_statistics_from_arr(bs_vals)  
+        bs_vals = self.get_bipartition_support_vals(tree) 
 
         if self.verbose:
             try:
@@ -28,6 +26,7 @@ class BipartitionSupportStats(Tree):
             except BrokenPipeError:
                 pass
         else:
+            stats = calculate_summary_statistics_from_arr(bs_vals) 
             print_summary_statistics(stats)
 
     def process_args(self, args):
