@@ -89,6 +89,12 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-usage">General usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calling-functions">Calling functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#function-aliases">Function aliases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#command-line-interfaces">Command line interfaces</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
@@ -213,7 +219,11 @@ used to calculate summary statistics.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p>General usage:</p>
+<div class="section" id="general-usage">
+<h2>General usage<a class="headerlink" href="#general-usage" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<div class="section" id="calling-functions">
+<h3>Calling functions<a class="headerlink" href="#calling-functions" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit &lt;command&gt; <span class="o">[</span>optional <span class="nb">command</span> arguments<span class="o">]</span>
 </pre></div>
 </div>
@@ -225,19 +235,45 @@ to see the help message for the command ‘treeness’, execute:</p>
 phykit treeness --help
 </pre></div>
 </div>
-<p>Lastly, each function comes with aliases to save the user some
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="function-aliases">
+<h3>Function aliases<a class="headerlink" href="#function-aliases" title="Permalink to this headline">¶</a></h3>
+<p>Each function comes with aliases to save the user some
 key strokes. For example, to get the help message for the ‘treeness’
 function, you can type:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit tness -h
 </pre></div>
 </div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="command-line-interfaces">
+<h3>Command line interfaces<a class="headerlink" href="#command-line-interfaces" title="Permalink to this headline">¶</a></h3>
+<p>As of version 1.2.0, all functions (including aliases) can be executed using
+a command line interface that starts with <em>pk_</em>. For example, instead of typing
+the previous command to get the help message of the treeness function, you can type:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pk_treeness -h
+<span class="c1"># or</span>
+pk_tness -h
+</pre></div>
+</div>
 <p>All possible function names are specified at the top of each function section.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
 <div class="section" id="alignment-based-functions">
 <h2>Alignment-based functions<a class="headerlink" href="#alignment-based-functions" title="Permalink to this headline">¶</a></h2>
 <hr class="docutils" />
 <div class="section" id="alignment-length">
 <h3>Alignment length<a class="headerlink" href="#alignment-length" title="Permalink to this headline">¶</a></h3>
-<p>Function names: alignment_length; aln_len; al</p>
+<p>Function names: alignment_length; aln_len; al <br/>
+Command line interface: pk_alignment_length; pk_aln_len; pk_al</p>
 <p>Length of an input alignment is calculated using this function.</p>
 <p>Longer alignments are associated with strong phylogenetic signal.</p>
 <p>Association between alignment length and phylogenetic signal
@@ -254,7 +290,8 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <div class="section" id="alignment-length-no-gaps">
 <h3>Alignment length no gaps<a class="headerlink" href="#alignment-length-no-gaps" title="Permalink to this headline">¶</a></h3>
-<p>Function names: alignment_length_no_gaps; aln_len_no_gaps; alng</p>
+<p>Function names: alignment_length_no_gaps; aln_len_no_gaps; alng <br/>
+Command line interface: pk_alignment_length_no_gaps; pk_aln_len_no_gaps; pk_alng</p>
 <p>Calculate alignment length excluding sites with gaps.</p>
 <p>Longer alignments when excluding sites with gaps is
 associated with strong phylogenetic signal.</p>
@@ -277,7 +314,8 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <div class="section" id="column-score">
 <h3>Column score<a class="headerlink" href="#column-score" title="Permalink to this headline">¶</a></h3>
-<p>Function names: column_score; cs</p>
+<p>Function names: column_score; cs <br/>
+Command line interface: pk_column_score; pk_cs</p>
 <p>Calculates column score.</p>
 <p>Column is an accuracy metric for a multiple alignment relative
 to a reference alignment. It is calculated by summing the correctly
@@ -299,7 +337,8 @@ to</p>
 </div>
 <div class="section" id="create-concatenation-matrix">
 <h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Permalink to this headline">¶</a></h3>
-<p>Function names: create_concatenation_matrix, create_concat, cc</p>
+<p>Function names: create_concatenation_matrix, create_concat, cc <br/>
+Command line interface: pk_create_concatenation_matrix, pk_create_concat, pk_cc</p>
 <p>Create a concatenated alignment file. This function is
 used to help in the construction of multi-locus data
 matrices.</p>
@@ -321,7 +360,8 @@ working directory or provide absolute path. <br/>
 </div>
 <div class="section" id="faidx">
 <h3>Faidx<a class="headerlink" href="#faidx" title="Permalink to this headline">¶</a></h3>
-<p>Function names: faidx; get_entry; ge</p>
+<p>Function names: faidx; get_entry; ge <br/>
+Command line interface: pk_faidx; pk_get_entry; pk_ge</p>
 <p>Extracts sequence entry from fasta file.</p>
 <p>This function works similarly to the faidx function
 in samtools, but does not requiring an indexing function.</p>
@@ -338,7 +378,8 @@ entry</p>
 </div>
 <div class="section" id="guanine-cytosine-gc-content">
 <h3>Guanine-cytosine (GC) content<a class="headerlink" href="#guanine-cytosine-gc-content" title="Permalink to this headline">¶</a></h3>
-<p>Function names: gc_content; gc</p>
+<p>Function names: gc_content; gc <br/>
+Command line interface: pk_gc_content; pk_gc</p>
 <p>Calculate GC content of a fasta file.</p>
 <p>GC content is negatively correlated with phylogenetic signal.</p>
 <p>If there are multiple entries, use the -v/--verbose option
@@ -359,7 +400,8 @@ entry</p>
 </div>
 <div class="section" id="pairwise-identity">
 <h3>Pairwise identity<a class="headerlink" href="#pairwise-identity" title="Permalink to this headline">¶</a></h3>
-<p>Function names: pairwise_identity; pairwise_id, pi</p>
+<p>Function names: pairwise_identity; pairwise_id, pi <br/>
+Command line interface: pk_pairwise_identity; pk_pairwise_id, pk_pi</p>
 <p>Calculate the average pairwise identity among sequences.</p>
 <p>Pairwise identities can be used as proxies for the evolutionary rate of sequences.</p>
 <p>Pairwise identity is defined as the number of identical
@@ -382,7 +424,8 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 </div>
 <div class="section" id="parsimony-informative-sites">
 <h3>Parsimony informative sites<a class="headerlink" href="#parsimony-informative-sites" title="Permalink to this headline">¶</a></h3>
-<p>Function names: parsimony_informative_sites; pis</p>
+<p>Function names: parsimony_informative_sites; pis <br/>
+Command line interface: pk_parsimony_informative_sites; pk_pis</p>
 <p>Calculate the number and percentage of parismony
 informative sites in an alignment.</p>
 <p>The number of parsimony informative sites in an alignment
@@ -407,7 +450,8 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., bioRxiv
 </div>
 <div class="section" id="relative-composition-variability">
 <h3>Relative composition variability<a class="headerlink" href="#relative-composition-variability" title="Permalink to this headline">¶</a></h3>
-<p>Function names: relative_composition_variability; rel_comp_var; rcv</p>
+<p>Function names: relative_composition_variability; rel_comp_var; rcv <br/>
+Command line interface: pk_relative_composition_variability; pk_rel_comp_var; pk_rcv</p>
 <p>Calculate RCV (relative composition variability) for an alignment.</p>
 <p>Lower RCV values are thought to be desirable because they represent
 a lower composition bias in an alignment. Statistically, RCV describes
@@ -426,7 +470,8 @@ Alias:</p>
 </div>
 <div class="section" id="rename-fasta-entries">
 <h3>Rename FASTA entries<a class="headerlink" href="#rename-fasta-entries" title="Permalink to this headline">¶</a></h3>
-<p>Function names: rename_fasta_entries; rename_fasta</p>
+<p>Function names: rename_fasta_entries; rename_fasta <br/>
+Command line interface: pk_rename_fasta_entries; pk_rename_fasta</p>
 <p>Renames fasta entries.</p>
 <p>Renaming fasta entries will follow the scheme of a tab-delimited
 file wherein the first column is the current fasta entry name and
@@ -445,7 +490,8 @@ an alignment file.</p>
 </div>
 <div class="section" id="sum-of-pairs-score">
 <h3>Sum-of-pairs score<a class="headerlink" href="#sum-of-pairs-score" title="Permalink to this headline">¶</a></h3>
-<p>Function names: sum_of_pairs_score; sops; sop</p>
+<p>Function names: sum_of_pairs_score; sops; sop <br/>
+Command line interface: pk_sum_of_pairs_score; pk_sops; pk_sop</p>
 <p>Calculates sum-of-pairs score.</p>
 <p>Sum-of-pairs is an accuracy metric for a multiple alignment relative
 to a reference alignment. It is calculated by summing the correctly
@@ -467,7 +513,8 @@ to</p>
 </div>
 <div class="section" id="protein-to-nucleotide-alignment">
 <h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Permalink to this headline">¶</a></h3>
-<p>Function names: thread_dna; pal2nal, p2n</p>
+<p>Function names: thread_dna; pal2nal, p2n <br/>
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
 <p>Thread DNA sequence onto a protein alignment to create a
 codon-based alignment.</p>
 <p>This function requires input alignments are in fasta format.
@@ -488,7 +535,8 @@ If used, stop codons will be removed.</p>
 </div>
 <div class="section" id="variable-sites">
 <h3>Variable sites<a class="headerlink" href="#variable-sites" title="Permalink to this headline">¶</a></h3>
-<p>Function names: variable_sites; vs</p>
+<p>Function names: variable_sites; vs <br/>
+Command line interface: pk_variable_sites; pk_vs</p>
 <p>Calculate the number of variable sites in an alignment.</p>
 <p>The number of variable sites in an alignment is
 associated with strong phylogenetic signal.
@@ -505,6 +553,9 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 </div>
 </div>
 <div class="section" id="tree-based-functions">
@@ -512,7 +563,8 @@ doi: 10.1093/gbe/evw179.</p>
 <hr class="docutils" />
 <div class="section" id="bipartition-support-statistics">
 <h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Permalink to this headline">¶</a></h3>
-<p>Function names: bipartition_support_stats; bss</p>
+<p>Function names: bipartition_support_stats; bss <br/>
+Command line interface: pk_bipartition_support_stats; pk_bss</p>
 <p>Calculate summary statistics for bipartition support.</p>
 <p>High bipartition support values are thought to be desirable because
 they are indicative of greater certainty in tree topology.</p>
@@ -529,7 +581,8 @@ they are indicative of greater certainty in tree topology.</p>
 </div>
 <div class="section" id="branch-length-multiplier">
 <h3>Branch length multiplier<a class="headerlink" href="#branch-length-multiplier" title="Permalink to this headline">¶</a></h3>
-<p>Function names: bipartition_support_stats; bss</p>
+<p>Function names: bipartition_support_stats; bss <br/>
+Command line interface: pk_bipartition_support_stats; pk_bss</p>
 <p>Multiply branch lengths in a phylogeny by a given factor.</p>
 <p>This can help modify reference trees when conducting simulations
 or other analyses.</p>
@@ -547,7 +600,8 @@ output will have the same name as the input file but with the suffix “.factor_
 </div>
 <div class="section" id="collapse-bipartitions">
 <h3>Collapse bipartitions<a class="headerlink" href="#collapse-bipartitions" title="Permalink to this headline">¶</a></h3>
-<p>Function names: collapse_branches, collapse, cb</p>
+<p>Function names: collapse_branches, collapse, cb <br/>
+Command line interface: pk_collapse_branches, pk_collapse, pk_cb</p>
 <p>Collapse branches on a phylogeny according to bipartition support.</p>
 <p>Bipartitions will be collapsed if they are less than the user specified
 value.</p>
@@ -567,7 +621,8 @@ output will have the same name as the input file but with the suffix
 </div>
 <div class="section" id="covarying-evolutionary-rates">
 <h3>Covarying evolutionary rates<a class="headerlink" href="#covarying-evolutionary-rates" title="Permalink to this headline">¶</a></h3>
-<p>Function names: covarying_evolutionary_rates; cover</p>
+<p>Function names: covarying_evolutionary_rates; cover <br/>
+Command line interface: pk_covarying_evolutionary_rates; pk_cover</p>
 <p>Determine if two genes have a signature of covariation with one another.
 Genes that have covarying evolutionary histories tend to have
 similar functions and expression levels.</p>
@@ -601,7 +656,8 @@ this is a putative species tree. <br/>
 </div>
 <div class="section" id="degree-of-violation-of-the-molecular-clock">
 <h3>Degree of violation of the molecular clock<a class="headerlink" href="#degree-of-violation-of-the-molecular-clock" title="Permalink to this headline">¶</a></h3>
-<p>Function names: degree_of_violation_of_a_molecular_clock, dvmc</p>
+<p>Function names: degree_of_violation_of_a_molecular_clock, dvmc <br/>
+Command line interface: pk_degree_of_violation_of_a_molecular_clock, pk_dvmc</p>
 <p>Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.</p>
 <p>Lower DVMC values are thought to be desirable because they are indicative
 of a lower degree of violation in the molecular clock assumption.</p>
@@ -626,7 +682,8 @@ Lastly, an empty root file can be used if the user does not wish to prune outgro
 </div>
 <div class="section" id="internal-branch-statistics">
 <h3>Internal branch statistics<a class="headerlink" href="#internal-branch-statistics" title="Permalink to this headline">¶</a></h3>
-<p>Function names: internal_branch_stats; ibs</p>
+<p>Function names: internal_branch_stats; ibs <br/>
+Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
 <p>Internal branch lengths can be useful for phylogeny diagnostics.</p>
 <p>To obtain all internal branch lengths, use the -v/--verbose option.</p>
@@ -642,7 +699,8 @@ Lastly, an empty root file can be used if the user does not wish to prune outgro
 </div>
 <div class="section" id="internode-labeler">
 <h3>Internode labeler<a class="headerlink" href="#internode-labeler" title="Permalink to this headline">¶</a></h3>
-<p>Function names: internode_labeler; il</p>
+<p>Function names: internode_labeler; il <br/>
+Command line interface: pk_internode_labeler; pk_il</p>
 <p>Appends numerical identifiers to bipartitions in place of support values.
 This is helpful for pointing to specific internodes in supplementary files
 or otherwise.</p>
@@ -658,7 +716,8 @@ or otherwise.</p>
 </div>
 <div class="section" id="long-branch-score">
 <h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Permalink to this headline">¶</a></h3>
-<p>Function names: lb_score; lb_score; lbs</p>
+<p>Function names: lb_score; lb_score; lbs <br/>
+Command line interface: pk_lb_score; pk_lb_score; pk_lbs</p>
 <p>Calculate long branch (LB) scores in a phylogeny.</p>
 <p>Lower LB scores are thought to be desirable because
 they are indicative of taxa or trees that likely do
@@ -682,7 +741,8 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 </div>
 <div class="section" id="patristic-distances">
 <h3>Patristic distances<a class="headerlink" href="#patristic-distances" title="Permalink to this headline">¶</a></h3>
-<p>Function names: patristic_distances; pd</p>
+<p>Function names: patristic_distances; pd <br/>
+Command line interface: pk_patristic_distances; pk_pd</p>
 <p>Calculate summary statistics among patristic distances in a phylogeny.</p>
 <p>Patristic distances are all tip-to-tip distances in a phylogeny.</p>
 <p>To obtain all patristic distances, use the -v/–verbose option.
@@ -701,7 +761,8 @@ will be tab separated.</p>
 </div>
 <div class="section" id="polytomy-testing">
 <h3>Polytomy testing<a class="headerlink" href="#polytomy-testing" title="Permalink to this headline">¶</a></h3>
-<p>Function names: polytomy_test; polyt_test; polyt; ptt</p>
+<p>Function names: polytomy_test; polyt_test; polyt; ptt <br/>
+Command line interface: pk_polytomy_test; pk_polyt_test; pk_polyt; pk_ptt</p>
 <p>Conduct a polytomy test for three clades in a phylogeny.</p>
 <p>Polytomy tests can be used to identify putative radiations
 as well as identify well supported alternative topologies.</p>
@@ -738,7 +799,8 @@ name_of_test    tip_name_A<span class="p">;</span>tip_name_B   tip_name_C  tip_n
 </div>
 <div class="section" id="print-tree">
 <h3>Print tree<a class="headerlink" href="#print-tree" title="Permalink to this headline">¶</a></h3>
-<p>Function names: print_tree; print; pt</p>
+<p>Function names: print_tree; print; pt <br/>
+Command line interface: pk_print_tree; pk_print; pk_pt</p>
 <p>Print ascii tree of input phylogeny.</p>
 <p>Phylogeny can be printed with or without branch lengths.
 By default, the phylogeny will be printed with branch lengths
@@ -756,7 +818,8 @@ lengths</p>
 </div>
 <div class="section" id="prune-tree">
 <h3>Prune tree<a class="headerlink" href="#prune-tree" title="Permalink to this headline">¶</a></h3>
-<p>Function names: prune_tree; prune</p>
+<p>Function names: prune_tree; prune <br/>
+Command line interface: pk_prune_tree; pk_prune</p>
 <p>Prune tips from a phylogeny.</p>
 <p>Provide a single column file with the names of the tips
 in the input phylogeny you would like to prune from the
@@ -777,7 +840,8 @@ Default output will have the same name as the input file but with the suffix
 </div>
 <div class="section" id="rename-tree-tips">
 <h3>Rename tree tips<a class="headerlink" href="#rename-tree-tips" title="Permalink to this headline">¶</a></h3>
-<p>Function names: rename_tree; rename_tips</p>
+<p>Function names: rename_tree; rename_tips <br/>
+Command line interface: pk_rename_tree; pk_rename_tips</p>
 <p>Renames tips in a phylogeny.</p>
 <p>Renaming tip files will follow the scheme of a tab-delimited
 file wherein the first column is the current tip name and the
@@ -798,7 +862,8 @@ output will have the same name as the input file but with the suffix “.renamed
 </div>
 <div class="section" id="robinson-foulds-distance">
 <h3>Robinson-Foulds distance<a class="headerlink" href="#robinson-foulds-distance" title="Permalink to this headline">¶</a></h3>
-<p>Function names: robinson_foulds_distance; rf_distance; rf_dist; rf</p>
+<p>Function names: robinson_foulds_distance; rf_distance; rf_dist; rf <br/>
+Command line interface: pk_robinson_foulds_distance; pk_rf_distance; pk_rf_dist; pk_rf</p>
 <p>Calculate Robinson-Foulds (RF) distance between two trees.</p>
 <p>Low RF distances reflect greater similarity between two phylogenies.
 This function prints out two values, the plain RF value and the
@@ -826,7 +891,8 @@ Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.</p>
 </div>
 <div class="section" id="spurious-homolog-identification">
 <h3>Spurious homolog identification<a class="headerlink" href="#spurious-homolog-identification" title="Permalink to this headline">¶</a></h3>
-<p>Function names: spurious_sequence; spurious_seq; ss</p>
+<p>Function names: spurious_sequence; spurious_seq; ss <br/>
+Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss</p>
 <p>Determines potentially spurious homologs using branch lengths.</p>
 <p>Identifies potentially spurious sequences and reports
 tips in the phylogeny that could possibly be removed
@@ -856,7 +922,8 @@ the threshold of long branches. (Default: 20)</p>
 </div>
 <div class="section" id="print-tip-labels">
 <h3>Print tip labels<a class="headerlink" href="#print-tip-labels" title="Permalink to this headline">¶</a></h3>
-<p>Function names: tip_labels tree_labels; labels; tl</p>
+<p>Function names: tip_labels; tree_labels; labels; tl <br/>
+Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 <p>Prints the tip labels (or names) a phylogeny.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit tip_labels &lt;tree&gt;
 </pre></div>
@@ -869,7 +936,8 @@ the threshold of long branches. (Default: 20)</p>
 </div>
 <div class="section" id="total-tree-length">
 <h3>Total tree length<a class="headerlink" href="#total-tree-length" title="Permalink to this headline">¶</a></h3>
-<p>Function names: total_tree_length; tree_len</p>
+<p>Function names: total_tree_length; tree_len <br/>
+Command line interface: pk_total_tree_length; pk_tree_len</p>
 <p>Calculate total tree length, which is a sum of all branches.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit total_tree_length &lt;tree&gt;
 </pre></div>
@@ -882,7 +950,8 @@ the threshold of long branches. (Default: 20)</p>
 </div>
 <div class="section" id="treeness">
 <h3>Treeness<a class="headerlink" href="#treeness" title="Permalink to this headline">¶</a></h3>
-<p>Function names: treeness; tness</p>
+<p>Function names: treeness; tness <br/>
+Command line interface: pk_treeness; pk_tness</p>
 <p>Calculate treeness statistic for a phylogeny.</p>
 <p>Higher treeness values are thought to be desirable because they
 represent a higher signal-to-noise ratio.</p>
@@ -908,7 +977,8 @@ Phillips and Penny, Molecular Phylogenetics and Evolution
 <hr class="docutils" />
 <div class="section" id="saturation">
 <h3>Saturation<a class="headerlink" href="#saturation" title="Permalink to this headline">¶</a></h3>
-<p>Function names: saturation; sat</p>
+<p>Function names: saturation; sat <br/>
+Command line interface: pk_saturation; pk_sat</p>
 <p>Calculate saturation for a given tree and alignment.</p>
 <p>Saturation is defined as sequences in multiple sequence
 alignments that have undergone numerous substitutions such
@@ -928,7 +998,8 @@ distances used to determine saturation</p>
 </div>
 <div class="section" id="treeness-over-rcv">
 <h3>Treeness over RCV<a class="headerlink" href="#treeness-over-rcv" title="Permalink to this headline">¶</a></h3>
-<p>Function names: treeness_over_rcv; toverr; tor</p>
+<p>Function names: treeness_over_rcv; toverr; tor <br/>
+Command line interface: pk_treeness_over_rcv; pk_toverr; pk_tor</p>
 <p>Calculate treeness/RCV for a given alignment and tree.</p>
 <p>Higher treeness/RCV values are thought to be desirable because
 they harbor a high signal-to-noise ratio are least susceptible

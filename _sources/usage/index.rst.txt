@@ -17,7 +17,13 @@ used to calculate summary statistics.
 
 |
 
-General usage: 
+General usage
+-------------
+
+^^^^^
+
+Calling functions
+#################
 
 .. code-block:: shell
 
@@ -33,16 +39,38 @@ to see the help message for the command 'treeness', execute:
    # or
    phykit treeness --help
 
+|
 
-Lastly, each function comes with aliases to save the user some
+Function aliases
+################
+
+Each function comes with aliases to save the user some
 key strokes. For example, to get the help message for the 'treeness'
 function, you can type:
 
 .. code-block:: shell
 
    phykit tness -h
-   
+
+|
+
+Command line interfaces
+#######################
+
+As of version 1.2.0, all functions (including aliases) can be executed using
+a command line interface that starts with *pk_*. For example, instead of typing
+the previous command to get the help message of the treeness function, you can type:
+
+.. code-block:: shell
+
+   pk_treeness -h
+   # or
+   pk_tness -h
+
+
 All possible function names are specified at the top of each function section. 
+
+|
 
 Alignment-based functions
 -------------------------
@@ -51,7 +79,8 @@ Alignment-based functions
 
 Alignment length
 ################
-Function names: alignment_length; aln_len; al
+Function names: alignment_length; aln_len; al |br|
+Command line interface: pk_alignment_length; pk_aln_len; pk_al
 
 Length of an input alignment is calculated using this function.
 
@@ -72,7 +101,8 @@ Options: |br|
 
 Alignment length no gaps
 ########################
-Function names: alignment_length_no_gaps; aln_len_no_gaps; alng
+Function names: alignment_length_no_gaps; aln_len_no_gaps; alng |br|
+Command line interface: pk_alignment_length_no_gaps; pk_aln_len_no_gaps; pk_alng
 
 Calculate alignment length excluding sites with gaps.
 
@@ -100,7 +130,8 @@ Options: |br|
 
 Column score
 ############
-Function names: column_score; cs
+Function names: column_score; cs |br|
+Command line interface: pk_column_score; pk_cs
 
 Calculates column score.
 
@@ -126,7 +157,8 @@ to
 
 Create concatenation matrix
 ###########################
-Function names: create_concatenation_matrix, create_concat, cc
+Function names: create_concatenation_matrix, create_concat, cc |br|
+Command line interface: pk_create_concatenation_matrix, pk_create_concat, pk_cc
 
 Create a concatenated alignment file. This function is 
 used to help in the construction of multi-locus data
@@ -151,7 +183,8 @@ working directory or provide absolute path. |br|
 
 Faidx
 #####
-Function names: faidx; get_entry; ge
+Function names: faidx; get_entry; ge |br|
+Command line interface: pk_faidx; pk_get_entry; pk_ge
 
 Extracts sequence entry from fasta file.
 
@@ -171,7 +204,8 @@ entry
 
 Guanine-cytosine (GC) content
 #############################
-Function names: gc_content; gc
+Function names: gc_content; gc |br|
+Command line interface: pk_gc_content; pk_gc
 
 Calculate GC content of a fasta file.
 
@@ -196,7 +230,8 @@ entry
 
 Pairwise identity
 #################
-Function names: pairwise_identity; pairwise_id, pi
+Function names: pairwise_identity; pairwise_id, pi |br|
+Command line interface: pk_pairwise_identity; pk_pairwise_id, pk_pi
 
 Calculate the average pairwise identity among sequences.
 
@@ -224,7 +259,8 @@ Options: |br|
 
 Parsimony informative sites
 ###########################
-Function names: parsimony_informative_sites; pis
+Function names: parsimony_informative_sites; pis |br|
+Command line interface: pk_parsimony_informative_sites; pk_pis
 
 Calculate the number and percentage of parismony
 informative sites in an alignment.
@@ -254,7 +290,8 @@ Options: |br|
 
 Relative composition variability
 ################################
-Function names: relative_composition_variability; rel_comp_var; rcv
+Function names: relative_composition_variability; rel_comp_var; rcv |br|
+Command line interface: pk_relative_composition_variability; pk_rel_comp_var; pk_rcv
 
 Calculate RCV (relative composition variability) for an alignment.
 
@@ -277,7 +314,8 @@ Options: |br|
 
 Rename FASTA entries
 ####################
-Function names: rename_fasta_entries; rename_fasta
+Function names: rename_fasta_entries; rename_fasta |br|
+Command line interface: pk_rename_fasta_entries; pk_rename_fasta
 
 Renames fasta entries.
 
@@ -299,7 +337,8 @@ Options: |br|
 
 Sum-of-pairs score
 ##################
-Function names: sum_of_pairs_score; sops; sop
+Function names: sum_of_pairs_score; sops; sop |br|
+Command line interface: pk_sum_of_pairs_score; pk_sops; pk_sop
 
 Calculates sum-of-pairs score.
 
@@ -325,7 +364,8 @@ to
 
 Protein-to-nucleotide alignment
 ###############################
-Function names: thread_dna; pal2nal, p2n
+Function names: thread_dna; pal2nal, p2n |br|
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
 
 Thread DNA sequence onto a protein alignment to create a
 codon-based alignment. 
@@ -349,7 +389,8 @@ If used, stop codons will be removed.
 
 Variable sites
 ##############
-Function names: variable_sites; vs
+Function names: variable_sites; vs |br|
+Command line interface: pk_variable_sites; pk_vs
 
 Calculate the number of variable sites in an alignment.
 
@@ -372,6 +413,8 @@ doi: 10.1093/gbe/evw179.
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file
 
+|
+
 Tree-based functions
 --------------------
 
@@ -379,7 +422,8 @@ Tree-based functions
 
 Bipartition support statistics
 ##############################
-Function names: bipartition_support_stats; bss
+Function names: bipartition_support_stats; bss |br|
+Command line interface: pk_bipartition_support_stats; pk_bss
 
 Calculate summary statistics for bipartition support.
 
@@ -400,7 +444,8 @@ Options: |br|
 
 Branch length multiplier
 ########################
-Function names: bipartition_support_stats; bss
+Function names: bipartition_support_stats; bss |br|
+Command line interface: pk_bipartition_support_stats; pk_bss
 
 Multiply branch lengths in a phylogeny by a given factor.
                 
@@ -421,7 +466,8 @@ output will have the same name as the input file but with the suffix ".factor_(n
 
 Collapse bipartitions
 #####################
-Function names: collapse_branches, collapse, cb
+Function names: collapse_branches, collapse, cb |br|
+Command line interface: pk_collapse_branches, pk_collapse, pk_cb
 
 Collapse branches on a phylogeny according to bipartition support.
 
@@ -444,7 +490,8 @@ output will have the same name as the input file but with the suffix
 
 Covarying evolutionary rates
 ############################
-Function names: covarying_evolutionary_rates; cover
+Function names: covarying_evolutionary_rates; cover |br|
+Command line interface: pk_covarying_evolutionary_rates; pk_cover
 
 Determine if two genes have a signature of covariation with one another.
 Genes that have covarying evolutionary histories tend to have 
@@ -483,7 +530,8 @@ this is a putative species tree. |br|
 
 Degree of violation of the molecular clock
 ##########################################
-Function names: degree_of_violation_of_a_molecular_clock, dvmc
+Function names: degree_of_violation_of_a_molecular_clock, dvmc |br|
+Command line interface: pk_degree_of_violation_of_a_molecular_clock, pk_dvmc
 
 Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.
 
@@ -513,7 +561,8 @@ Options: |br|
 
 Internal branch statistics
 ##########################
-Function names: internal_branch_stats; ibs
+Function names: internal_branch_stats; ibs |br|
+Command line interface: pk_internal_branch_stats; pk_ibs
 
 Calculate summary statistics for internal branch lengths in a phylogeny.
 
@@ -533,7 +582,8 @@ Options: |br|
 
 Internode labeler
 #################
-Function names: internode_labeler; il
+Function names: internode_labeler; il |br|
+Command line interface: pk_internode_labeler; pk_il
 
 Appends numerical identifiers to bipartitions in place of support values.
 This is helpful for pointing to specific internodes in supplementary files
@@ -551,7 +601,8 @@ Options: |br|
 
 Long branch score
 #################
-Function names: lb_score; lb_score; lbs
+Function names: lb_score; lb_score; lbs |br|
+Command line interface: pk_lb_score; pk_lb_score; pk_lbs
 
 Calculate long branch (LB) scores in a phylogeny.
 
@@ -581,7 +632,8 @@ Options: |br|
 
 Patristic distances
 ###################
-Function names: patristic_distances; pd
+Function names: patristic_distances; pd |br|
+Command line interface: pk_patristic_distances; pk_pd
 
 Calculate summary statistics among patristic distances in a phylogeny.
 
@@ -604,7 +656,8 @@ Options: |br|
 
 Polytomy testing
 ################
-Function names: polytomy_test; polyt_test; polyt; ptt
+Function names: polytomy_test; polyt_test; polyt; ptt |br|
+Command line interface: pk_polytomy_test; pk_polyt_test; pk_polyt; pk_ptt
 
 Conduct a polytomy test for three clades in a phylogeny.
 
@@ -649,7 +702,8 @@ For example, the groups file could look like the following:
 
 Print tree
 ##########
-Function names: print_tree; print; pt
+Function names: print_tree; print; pt |br|
+Command line interface: pk_print_tree; pk_print; pk_pt
 
 Print ascii tree of input phylogeny.
 
@@ -670,7 +724,8 @@ lengths
 
 Prune tree
 ##########
-Function names: prune_tree; prune
+Function names: prune_tree; prune |br|
+Command line interface: pk_prune_tree; pk_prune
 
 Prune tips from a phylogeny.
 
@@ -694,7 +749,8 @@ Default output will have the same name as the input file but with the suffix
 
 Rename tree tips
 ################
-Function names: rename_tree; rename_tips
+Function names: rename_tree; rename_tips |br|
+Command line interface: pk_rename_tree; pk_rename_tips
 
 Renames tips in a phylogeny.
 
@@ -718,7 +774,8 @@ output will have the same name as the input file but with the suffix ".renamed"
 
 Robinson-Foulds distance
 ########################
-Function names: robinson_foulds_distance; rf_distance; rf_dist; rf
+Function names: robinson_foulds_distance; rf_distance; rf_dist; rf |br|
+Command line interface: pk_robinson_foulds_distance; pk_rf_distance; pk_rf_dist; pk_rf
 
 Calculate Robinson-Foulds (RF) distance between two trees.
 
@@ -751,7 +808,8 @@ Options: |br|
 
 Spurious homolog identification
 ###############################
-Function names: spurious_sequence; spurious_seq; ss
+Function names: spurious_sequence; spurious_seq; ss |br|
+Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss
 
 Determines potentially spurious homologs using branch lengths.
 
@@ -787,7 +845,8 @@ the threshold of long branches. (Default: 20)
 
 Print tip labels
 ################
-Function names: tip_labels tree_labels; labels; tl
+Function names: tip_labels; tree_labels; labels; tl |br|
+Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl
 
 Prints the tip labels (or names) a phylogeny.
 
@@ -802,7 +861,8 @@ Options: |br|
 
 Total tree length
 #################
-Function names: total_tree_length; tree_len
+Function names: total_tree_length; tree_len |br|
+Command line interface: pk_total_tree_length; pk_tree_len
 
 Calculate total tree length, which is a sum of all branches.
 
@@ -817,7 +877,8 @@ Options: |br|
 
 Treeness
 ########
-Function names: treeness; tness
+Function names: treeness; tness |br|
+Command line interface: pk_treeness; pk_tness
 
 Calculate treeness statistic for a phylogeny.
 
@@ -849,7 +910,8 @@ Alignment- and tree-based functions
 
 Saturation
 ##########
-Function names: saturation; sat
+Function names: saturation; sat |br|
+Command line interface: pk_saturation; pk_sat
 
 Calculate saturation for a given tree and alignment.
 
@@ -875,7 +937,8 @@ distances used to determine saturation
 
 Treeness over RCV
 #################
-Function names: treeness_over_rcv; toverr; tor
+Function names: treeness_over_rcv; toverr; tor |br|
+Command line interface: pk_treeness_over_rcv; pk_toverr; pk_tor
 
 Calculate treeness/RCV for a given alignment and tree.
 
