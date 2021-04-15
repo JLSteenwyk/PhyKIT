@@ -59,6 +59,21 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
+help_header = f"""
+                 _____  _           _  _______ _______ 
+                |  __ \| |         | |/ /_   _|__   __|
+                | |__) | |__  _   _| ' /  | |    | |   
+                |  ___/| '_ \| | | |  <   | |    | |   
+                | |    | | | | |_| | . \ _| |_   | |   
+                |_|    |_| |_|\__, |_|\_\_____|  |_|   
+                               __/ |                   
+                              |___/   
+                            
+                Version: {__version__}
+                Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
+                https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675
+
+"""
 
 class Phykit(object):
     help_header = f"""
@@ -203,87 +218,87 @@ class Phykit(object):
         # run_alias function
         try:
             if hasattr(self, args.command):
-                getattr(self, args.command)()
+                getattr(self, args.command)(sys.argv[2:])
             else:
-                self.run_alias(args.command)
+                self.run_alias(args.command, sys.argv[2:])
         except NameError:
             sys.exit()
 
     ## Aliases
-    def run_alias(self, command):
+    def run_alias(self, command, argv):
         # version
         if command in ['v']:
             return self.version()
         # Alignment aliases
         if command in ['aln_len', 'al']:
-            return self.alignment_length()
+            return self.alignment_length(argv)
         elif command in ['aln_len_no_gaps', 'alng']:
-            return self.alignment_length_no_gaps()
+            return self.alignment_length_no_gaps(argv)
         elif command in 'cs':
-            return self.column_score()
+            return self.column_score(argv)
         elif command in ['get_entry', 'ge']:
-            return self.faidx()
+            return self.faidx(argv)
         elif command == 'gc':
-            return self.gc_content()
+            return self.gc_content(argv)
         elif command in ['pairwise_id', 'pi']:
-            return self.pairwise_identity()
+            return self.pairwise_identity(argv)
         elif command == 'pis':
-            return self.parsimony_informative_sites()
+            return self.parsimony_informative_sites(argv)
         elif command in ['rel_comp_var', 'relative_composition_variability']:
-            return self.rcv()
+            return self.rcv(argv)
         elif command == 'rename_fasta':
-            return self.rename_fasta_entries()
+            return self.rename_fasta_entries(argv)
         elif command in ['sum_of_pairs_score', 'sops', 'sop']:
-            return self.sum_of_pairs_score()
+            return self.sum_of_pairs_score(argv)
         elif command == 'vs':
-            return self.variable_sites()
+            return self.variable_sites(argv)
         # Tree aliases
         elif command == 'bss':
-            return self.bipartition_support_stats()
+            return self.bipartition_support_stats(argv)
         elif command == 'blm':
-            return self.branch_length_multiplier()
+            return self.branch_length_multiplier(argv)
         elif command in ['collapse', 'cb']:
-            return self.collapse_branches()
+            return self.collapse_branches(argv)
         elif command == 'cover':
-            return self.covarying_evolutionary_rates()
+            return self.covarying_evolutionary_rates(argv)
         elif command == 'degree_of_violation_of_a_molecular_clock':
-            return self.dvmc()
+            return self.dvmc(argv)
         elif command == 'ibs':
-            return self.internal_branch_stats()
+            return self.internal_branch_stats(argv)
         elif command == 'il':
-            return self.internode_labeler()
+            return self.internode_labeler(argv)
         elif command in ['long_branch_score', 'lbs']:
-            return self.lb_score()
+            return self.lb_score(argv)
         elif command == 'pd':
-            return self.patristic_distances()
+            return self.patristic_distances(argv)
         elif command in ['polyt_test', 'ptt', 'polyt']:
-            return self.polytomy_test()
+            return self.polytomy_test(argv)
         elif command in ['print', 'pt']:
-            return self.print_tree()
+            return self.print_tree(argv)
         elif command == 'prune':
-            return self.prune_tree()
+            return self.prune_tree(argv)
         elif command in ['rename_tree', 'rename_tips']:
-            return self.rename_tree_tips()
+            return self.rename_tree_tips(argv)
         elif command in ['robinson_foulds_distance', 'rf_dist', 'rf']:
-            return self.rf_distance()
+            return self.rf_distance(argv)
         elif command in ['spurious_seq', 'ss']:
-            return self.spurious_sequence()
+            return self.spurious_sequence(argv)
         elif command in ['labels', 'tree_labels', 'tl']:
-            return self.tip_labels()
+            return self.tip_labels(argv)
         elif command == 'tree_len':
-            return self.total_tree_length()
+            return self.total_tree_length(argv)
         elif command == 'tness':
-            return self.treeness()
+            return self.treeness(argv)
         # Alignment- and tree-based aliases
         elif command == 'sat':
-            return self.saturation()
+            return self.saturation(argv)
         elif command in ['toverr', 'tor']:
-            return self.treeness_over_rcv()
+            return self.treeness_over_rcv(argv)
         # Helper aliases
         elif command in ['create_concat', 'cc']:
-            return self.create_concatenation_matrix()
+            return self.create_concatenation_matrix(argv)
         elif command in ['pal2nal', 'p2n']:
-            return self.thread_dna()
+            return self.thread_dna(argv)
         else:
             print("Invalid command option. See help for a complete list of commands and aliases.")
             parser.print_help()
@@ -298,13 +313,14 @@ class Phykit(object):
         ))
 
     ## Alignment functions
-    def alignment_length(self):
+    @staticmethod
+    def alignment_length(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Length of an input alignment is calculated using this function.
 
@@ -328,16 +344,17 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         AlignmentLength(args).run()
 
-    def alignment_length_no_gaps(self):
+    @staticmethod
+    def alignment_length_no_gaps(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate alignment length excluding sites with gaps.
 
@@ -368,16 +385,17 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
 
-    def column_score(self):
+    @staticmethod
+    def column_score(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculates column score.
 
@@ -405,16 +423,17 @@ class Phykit(object):
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         ColumnScore(args).run()
 
-    def faidx(self):
+    @staticmethod
+    def faidx(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Extracts sequence entry from fasta file.
 
@@ -439,16 +458,17 @@ class Phykit(object):
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-e","--entry", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         Faidx(args).run()
 
-    def gc_content(self):
+    @staticmethod
+    def gc_content(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
                 
                 Calculate GC content of a fasta file.
 
@@ -480,16 +500,17 @@ class Phykit(object):
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         GCContent(args).run()
 
-    def pairwise_identity(self):
+    @staticmethod
+    def pairwise_identity(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate the average pairwise identity among sequences.
                 
@@ -524,16 +545,17 @@ class Phykit(object):
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 
-    def parsimony_informative_sites(self):
+    @staticmethod
+    def parsimony_informative_sites(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate the number and percentage of parismony
                 informative sites in an alignment.
@@ -566,16 +588,17 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         ParsimonyInformative(args).run()
 
-    def rcv(self):
+    @staticmethod
+    def rcv(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate RCV (relative composition variability) for an alignment.
 
@@ -600,16 +623,17 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         RelativeCompositionVariability(args).run()
 
-    def rename_fasta_entries(self):
+    @staticmethod
+    def rename_fasta_entries(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Renames fasta entries.
 
@@ -646,16 +670,17 @@ class Phykit(object):
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         RenameFastaEntries(args).run()
 
-    def sum_of_pairs_score(self):
+    @staticmethod
+    def sum_of_pairs_score(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculates sum-of-pairs score.
 
@@ -683,16 +708,17 @@ class Phykit(object):
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         SumOfPairsScore(args).run()
 
-    def variable_sites(self):
+    @staticmethod
+    def variable_sites(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate the number of variable sites in an alignment.
 
@@ -723,18 +749,19 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         VariableSites(args).run()
 
 
     ## Tree functions
-    def bipartition_support_stats(self):
+    @staticmethod
+    def bipartition_support_stats(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
                 Calculate summary statistics for bipartition support.
 
                 High bipartition support values are thought to be desirable because
@@ -767,16 +794,17 @@ class Phykit(object):
             required=False,
             help=SUPPRESS
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         BipartitionSupportStats(args).run()
 
-    def branch_length_multiplier(self):
+    @staticmethod
+    def branch_length_multiplier(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header} 
+                {help_header} 
 
                 Multiply branch lengths in a phylogeny by a given factor.
                 
@@ -813,16 +841,17 @@ class Phykit(object):
             help=SUPPRESS
         )
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         BranchLengthMultiplier(args).run()
 
-    def collapse_branches(self):
+    @staticmethod
+    def collapse_branches(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header} 
+                {help_header} 
 
                 Collapse branches on a phylogeny according to bipartition support.
                 Bipartitions will be collapsed if they are less than the user specified
@@ -859,16 +888,17 @@ class Phykit(object):
             help=SUPPRESS
         )
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         CollapseBranches(args).run()
 
-    def covarying_evolutionary_rates(self):
+    @staticmethod
+    def covarying_evolutionary_rates(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Determine if two genes have a signature of covariation with one another.
 
@@ -927,16 +957,17 @@ class Phykit(object):
             "-r", "--reference", type=str, required=True, help=SUPPRESS, metavar=""
         )
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         CovaryingEvolutionaryRates(args).run()
 
-    def dvmc(self):
+    @staticmethod
+    def dvmc(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.
 
@@ -975,16 +1006,17 @@ class Phykit(object):
         parser.add_argument(
             "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         DVMC(args).run()
 
-    def internal_branch_stats(self):
+    @staticmethod
+    def internal_branch_stats(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate summary statistics for internal branch lengths in a phylogeny.
 
@@ -1016,16 +1048,17 @@ class Phykit(object):
             required=False,
             help=SUPPRESS
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         InternalBranchStats(args).run()
 
-    def internode_labeler(self):
+    @staticmethod
+    def internode_labeler(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Appends numerical identifiers to bipartitions in place
                 of support values. This is helpful for pointing to
@@ -1049,16 +1082,17 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         InternodeLabeler(args).run()
 
-    def lb_score(self):
+    @staticmethod
+    def lb_score(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate long branch (LB) scores in a phylogeny.
 
@@ -1094,16 +1128,17 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         LBScore(args).run()
 
-    def patristic_distances(self):
+    @staticmethod
+    def patristic_distances(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate summary statistics among patristic distances in a phylogeny.
 
@@ -1133,16 +1168,17 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         PatristicDistances(args).run() 
 
-    def polytomy_test(self):
+    @staticmethod
+    def polytomy_test(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Conduct a polytomy test for three clades in a phylogeny.
 
@@ -1191,16 +1227,17 @@ class Phykit(object):
         )
         parser.add_argument("-t", "--trees", type=str, help=SUPPRESS)
         parser.add_argument("-g", "--groups", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         PolytomyTest(args).run() 
 
-    def print_tree(self):
+    @staticmethod
+    def print_tree(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Print ascii tree of input phylogeny.
 
@@ -1227,16 +1264,17 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--remove", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         PrintTree(args).run()
 
-    def prune_tree(self):
+    @staticmethod
+    def prune_tree(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Prune tips from a phylogeny.
 
@@ -1271,16 +1309,17 @@ class Phykit(object):
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         PruneTree(args).run()
 
-    def rename_tree_tips(self):
+    @staticmethod
+    def rename_tree_tips(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Renames tips in a phylogeny.
 
@@ -1317,16 +1356,17 @@ class Phykit(object):
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         RenameTreeTips(args).run()
 
-    def rf_distance(self):
+    @staticmethod
+    def rf_distance(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate Robinson-Foulds (RF) distance between two trees.
 
@@ -1366,16 +1406,17 @@ class Phykit(object):
         )
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
         parser.add_argument("tree_one", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         RobinsonFouldsDistance(args).run()
 
-    def spurious_sequence(self):
+    @staticmethod
+    def spurious_sequence(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header} 
+                {help_header} 
 
                 Determines potentially spurious homologs using branch lengths.
 
@@ -1422,16 +1463,17 @@ class Phykit(object):
             type=float, required=False,
             help=SUPPRESS
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         SpuriousSequence(args).run()
 
-    def tip_labels(self):
+    @staticmethod
+    def tip_labels(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Prints the tip labels (or names) a phylogeny.
 
@@ -1449,16 +1491,17 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         TipLabels(args).run()
 
-    def total_tree_length(self):
+    @staticmethod
+    def total_tree_length(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate total tree length, which is a sum of all branches. 
 
@@ -1476,16 +1519,17 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         TotalTreeLength(args).run()
 
-    def treeness(self):
+    @staticmethod
+    def treeness(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate treeness statistic for a phylogeny.
 
@@ -1515,17 +1559,18 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         Treeness(args).run()
 
     ## Alignment and tree functions
-    def saturation(self):
+    @staticmethod
+    def saturation(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate saturation for a given tree and alignment.
 
@@ -1563,16 +1608,17 @@ class Phykit(object):
             "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
         )
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         Saturation(args).run()
 
-    def treeness_over_rcv(self):
+    @staticmethod
+    def treeness_over_rcv(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Calculate treeness/RCV for a given alignment and tree.
 
@@ -1607,17 +1653,18 @@ class Phykit(object):
         parser.add_argument(
             "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         TreenessOverRCV(args).run()
 
     ### Helper commands
-    def create_concatenation_matrix(self):
+    @staticmethod
+    def create_concatenation_matrix(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Create a concatenated alignment file. This function is 
                 used to help in the construction of multi-locus data
@@ -1660,16 +1707,17 @@ class Phykit(object):
             type=str,
             help=SUPPRESS
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         CreateConcatenationMatrix(args).run()
 
-    def thread_dna(self):
+    @staticmethod
+    def thread_dna(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
                 f"""\
-                {self.help_header}
+                {help_header}
 
                 Thread DNA sequence onto a protein alignment to create a
                 codon-based alignment. 
@@ -1714,8 +1762,112 @@ class Phykit(object):
             default=True,
             help=SUPPRESS
         )
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         DNAThreader(args).run()
 
 def main(argv=None):
     Phykit()
+
+# Alignment-based functions
+def alignment_length(argv=None):
+    Phykit.alignment_length(sys.argv[1:])
+
+def alignment_length_no_gaps(argv=None):
+    Phykit.alignment_length_no_gaps(sys.argv[1:])
+
+def column_score(argv=None):
+    Phykit.column_score(sys.argv[1:])
+
+def faidx(argv=None):
+    Phykit.faidx(sys.argv[1:])
+
+def gc_content(argv=None):
+    Phykit.gc_content(sys.argv[1:])
+
+def pairwise_identity(argv=None):
+    Phykit.pairwise_identity(sys.argv[1:])
+
+def parsimony_informative_sites(argv=None):
+    Phykit.parsimony_informative_sites(sys.argv[1:])
+
+def rcv(argv=None):
+    Phykit.rcv(sys.argv[1:])
+
+def rename_fasta_entries(argv=None):
+    Phykit.rename_fasta_entries(sys.argv[1:])
+
+def sum_of_pairs_score(argv=None):
+    Phykit.sum_of_pairs_score(sys.argv[1:])
+
+def variable_sites(argv=None):
+    Phykit.variable_sites(sys.argv[1:])
+
+# Tree-based functions
+def bipartition_support_stats(argv=None):
+    Phykit.bipartition_support_stats(sys.argv[1:])
+
+def branch_length_multiplier(argv=None):
+    Phykit.branch_length_multiplier(sys.argv[1:])
+
+def collapse_branches(argv=None):
+    Phykit.collapse_branches(sys.argv[1:])
+
+def covarying_evolutionary_rates(argv=None):
+    Phykit.covarying_evolutionary_rates(sys.argv[1:])
+
+def dvmc(argv=None):
+    Phykit.dvmc(sys.argv[1:])
+
+def internal_branch_stats(argv=None):
+    Phykit.internal_branch_stats(sys.argv[1:])
+
+def internode_labeler(argv=None):
+    Phykit.internode_labeler(sys.argv[1:])
+
+def lb_score(argv=None):
+    Phykit.lb_score(sys.argv[1:])
+
+def patristic_distances(argv=None):
+    Phykit.patristic_distances(sys.argv[1:])
+
+def polytomy_test(argv=None):
+    Phykit.polytomy_test(sys.argv[1:])
+
+def print_tree(argv=None):
+    Phykit.print_tree(sys.argv[1:])
+
+def prune_tree(argv=None):
+    Phykit.prune_tree(sys.argv[1:])
+
+def rename_tree_tips(argv=None):
+    Phykit.rename_tree_tips(sys.argv[1:])
+
+def rf_distance(argv=None):
+    Phykit.rf_distance(sys.argv[1:])
+
+def spurious_sequence(argv=None):
+    Phykit.spurious_sequence(sys.argv[1:])
+
+def tip_labels(argv=None):
+    Phykit.tip_labels(sys.argv[1:])
+
+def total_tree_length(argv=None):
+    Phykit.total_tree_length(sys.argv[1:])
+
+def treeness(argv=None):
+    Phykit.treeness(sys.argv[1:])
+
+# Alignment- and tree-based functions
+def saturation(argv=None):
+    Phykit.saturation(sys.argv[1:])
+
+def treeness_over_rcv(argv=None):
+    Phykit.treeness_over_rcv(sys.argv[1:])
+
+# Helper functions
+def create_concatenation_matrix(argv=None):
+    Phykit.create_concatenation_matrix(sys.argv[1:])
+
+def thread_dna(argv=None):
+    Phykit.thread_dna(sys.argv[1:])
+
