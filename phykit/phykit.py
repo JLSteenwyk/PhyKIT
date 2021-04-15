@@ -330,7 +330,10 @@ class Phykit(object):
                 was determined by Shen et al., Genome Biology and Evolution (2016),
                 doi: 10.1093/gbe/evw179.
 
-                Aliases: aln_len, al
+                Aliases:
+                  alignment_length, aln_len, al
+                Command line interfaces:
+                  pk_alignment_length, pk_aln_len, pk_al
 
                 Usage:
                 phykit alignment_length <alignment>
@@ -371,7 +374,10 @@ class Phykit(object):
                 et al., Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
 
-                Aliases: aln_len_no_gaps, alng
+                Aliases:
+                  alignment_length_no_gaps, aln_len_no_gaps, alng
+                Command line interfaces: 
+                  pk_alignment_length_no_gaps, pk_aln_len_no_gaps, pk_alng
 
                 Usage:
                 phykit alignment_length_no_gaps <alignment>
@@ -404,7 +410,10 @@ class Phykit(object):
                 aligned columns over all columns in an alignment. Thus, values range
                 from 0 to 1 and higher values indicate more accurate alignments.
 
-                Alias: cs
+                Aliases:
+                  column_score, cs
+                Command line interfaces: 
+                  pk_column_score, pk_cs
 
                 Usage:
                 phykit column_score <fasta> -r/--reference <ref.aln>
@@ -440,7 +449,11 @@ class Phykit(object):
                 This function works similarly to the faidx function 
                 in samtools, but does not requiring an indexing function.
 
-                Alias: get_entry; ge
+                Aliases:
+                  faidx, get_entry; ge
+                Command line interfaces: 
+                  pk_faidx, pk_get_entry, pk_ge
+                  
 
                 Usage:
                 phykit faidx <fasta> -e/--entry <fasta entry>
@@ -481,7 +494,10 @@ class Phykit(object):
                 determined by Shen et al., Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
 
-                Alias: gc
+                Aliases:
+                  gc_content, gc
+                Command line interfaces: 
+                  pk_gc_content, pk_gc
 
                 Usage:
                 phykit gc_content <fasta> [-v/--verbose]
@@ -527,7 +543,10 @@ class Phykit(object):
                 for evolutionary rate can be found here: Chen et al. 
                 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
-                Alias: pairwise_id, pi
+                Aliases:
+                  pairwise_identity, pairwise_id, pi
+                Command line interfaces:
+                  pk_pairwise_identity, pk_pairwise_id, pk_pi
 
                 Usage:
                 phykit pairwise_identity <alignment> [-v/--verbose]
@@ -574,7 +593,10 @@ class Phykit(object):
                 doi: 10.1093/gbe/evw179 and Steenwyk et al., bioRxiv
                 (2020), doi: 10.1101/2020.06.08.140384.
 
-                Alias: pis
+                Aliases: 
+                  parsimony_informative_sites, pis
+                Command line interfaces:
+                  pk_parsimony_informative_sites, pk_pis
 
                 Usage:
                 phykit parsimony_informative_sites <alignment>
@@ -609,7 +631,10 @@ class Phykit(object):
                 RCV is calculated following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
-                Alias: rel_comp_var, rcv
+                Aliases: 
+                  relative_composition_variability, rel_comp_var, rcv
+                Command line interfaces:
+                  pk_relative_composition_variability, pk_rel_comp_var, pk_rcv
 
                 Usage:
                 phykit relative_composition_variability <alignment>
@@ -642,7 +667,10 @@ class Phykit(object):
                 the second column is the new fasta entry name in the resulting 
                 output alignment. 
 
-                Alias: rename_fasta
+                Aliases:
+                  rename_fasta_entries, rename_fasta
+                Command line interfaces: 
+                  pk_rename_fasta_entries, pk_rename_fasta
 
                 Usage:
                 phykit rename_fasta_entries <fasta> -i/--idmap <idmap>
@@ -689,7 +717,10 @@ class Phykit(object):
                 aligned residue pairs over all pairs of sequences. Thus, values range
                 from 0 to 1 and higher values indicate more accurate alignments.
 
-                Alias: sum_of_pairs_score, sops, sop
+                Aliases:
+                  sum_of_pairs_score, sops, sop 
+                Command line interfaces: 
+                  pk_sum_of_pairs_score, pk_sops, pk_sop
 
                 Usage:
                 phykit sum_of_pairs_score <fasta> -r/--reference <ref.aln>
@@ -735,7 +766,10 @@ class Phykit(object):
                 Genome Biology and Evolution (2016), 
                 doi: 10.1093/gbe/evw179.
 
-                Alias: vs
+                Aliases:
+                  variable_sites, vs
+                Command line interfaces: 
+                  pk_variable_sites, pk_vs
 
                 Usage:
                 phykit variable_sites <alignment>
@@ -769,7 +803,10 @@ class Phykit(object):
 
                 To obtain all bipartition support values, use the -v/--verbose option.
 
-                Alias: bss
+                Aliases:
+                  bipartition_support_stats, bss
+                Command line interfaces:
+                  bipartition_support_stats, bss
 
                 Usage:
                 phykit bipartition_support_stats <tree> [-v/--verbose]
@@ -811,7 +848,10 @@ class Phykit(object):
                 This can help modify reference trees when conducting simulations
                 or other analyses.              
 
-                Alias: blm
+                Alias:
+                  branch_length_multiplier, blm
+                Command line interfaces:
+                  pk_branch_length_multiplier, pk_blm
 
                 Usage:
                 phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>]
@@ -857,7 +897,10 @@ class Phykit(object):
                 Bipartitions will be collapsed if they are less than the user specified
                 value.              
 
-                Alias: collapse, cb
+                Aliases:
+                  collapse_branches, collapse, cb
+                Command line interfaces:
+                  pk_collapse_branches, pk_collapse, pk_cb
 
                 Usage:
                 phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>]
@@ -924,7 +967,10 @@ class Phykit(object):
                 10.1093/bioinformatics/bti564. 
 
 
-                Alias: cover
+                Aliases:
+                  covarying_evolutionary_rates, cover
+                Command line interfaces:
+                  pk_covarying_evolutionary_rates, pk_cover
 
                 Usage:
                 phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
@@ -969,7 +1015,7 @@ class Phykit(object):
                 f"""\
                 {help_header}
 
-                Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.
+                Calculate degree of violation of a molecular clock (or DVMC) in a phylogeny.
 
                 Lower DVMC values are thought to be desirable because they are indicative
                 of a lower degree of violation in the molecular clock assumption.
@@ -985,7 +1031,10 @@ class Phykit(object):
 
                 Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
 
-                Alias: dvmc
+                Aliases:
+                  degree_of_violation_of_a_molecular_clock, dvmc
+                Command line interfaces:
+                  pk_degree_of_violation_of_a_molecular_clock, pk_dvmc
 
                 Usage:
                 phykit degree_of_violation_of_a_molecular_clock -t/--tree <tree>
@@ -1024,7 +1073,10 @@ class Phykit(object):
 
                 To obtain all internal branch lengths, use the -v/--verbose option. 
 
-                Alias: ibs
+                Aliases:
+                  internal_branch_stats, ibs
+                Command line interfaces:
+                  pk_internal_branch_stats, pk_ibs
 
                 Usage:
                 phykit internal_branch_stats <tree> [-v/--verbose]
@@ -1064,7 +1116,10 @@ class Phykit(object):
                 of support values. This is helpful for pointing to
                 specific internodes in supplementary files or otherwise. 
 
-                Alias: il
+                Alias:
+                  internode_labeler, il
+                Command line interfaces: 
+                  pk_internode_labeler, pk_il
 
                 Usage:
                 phykit internode_labeler <file> [-o/--output <file>]
@@ -1110,7 +1165,10 @@ class Phykit(object):
                 LB scores are calculated following Struck, Evolutionary 
                 Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
-                Alias: lb_score, lbs
+                Aliases:
+                  long_branch_score, lb_score, lbs
+                Command line interfaces:
+                  pk_long_branch_score, pk_lb_score, pk_lbs
 
                 Usage:
                 phykit long_branch_score <tree> [-v/--verbose]
@@ -1149,7 +1207,10 @@ class Phykit(object):
                 separated by a '-' followed by the patristic distance. Features
                 will be tab separated. 
 
-                Alias: pd
+                Aliases:
+                  patristic_distances, pd
+                Command line interfaces: 
+                  pk_patristic_distances, pk_pd
 
                 Usage:
                 phykit patristic_distances <tree> [-v/--verbose]
@@ -1201,7 +1262,10 @@ class Phykit(object):
                 groups are equally supported. This test is done using gene support
                 frequencies.
 
-                Alias: polyt_test, polyt, ptt
+                Aliases:
+                  polytomy_test, polyt_test, polyt, ptt
+                Command line interfaces: 
+                  pk_polytomy_test, pk_polyt_test, pk_polyt, pk_ptt
 
                 Usage:
                 phykit polytomy_test -t/--trees <trees> -g/--groups <groups>
@@ -1245,7 +1309,10 @@ class Phykit(object):
                 By default, the phylogeny will be printed with branch lengths
                 but branch lengths can be removed using the -r/--remove argument.
 
-                Alias: print, pt
+                Aliases:
+                  print_tree, print, pt
+                Command line interfaces:
+                  pk_print_tree, pk_print, pk_pt
 
                 Usage:
                 phykit print_tree <tree> [-r/--remove]
@@ -1282,7 +1349,10 @@ class Phykit(object):
                 in the input phylogeny you would like to prune from the
                 tree.
 
-                Alias: prune
+                Aliases: 
+                  prune_tree, prune
+                Command line interfaces: 
+                  pk_prune_tree, pk_prune
 
                 Usage:
                 phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>]
@@ -1328,7 +1398,10 @@ class Phykit(object):
                 second column is the desired tip name in the resulting 
                 phylogeny. 
 
-                Alias: rename_tree, rename_tips
+                Aliases:
+                  rename_tree_tips, rename_tree, rename_tips
+                Command line interfaces: 
+                  pk_rename_tree_tips, pk_rename_tree, pk_rename_tips
 
                 Usage:
                 phykit rename_tree_tips <tree> -i/--idmap <idmap.txt>
@@ -1387,7 +1460,10 @@ class Phykit(object):
                 RF distances are calculated following Robinson & Foulds, Mathematical 
                 Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
 
-                Alias: rf_distance, rf_dist, rf
+                Aliases:
+                  robinson_foulds_distance, rf_distance, rf_dist, rf
+                Command line interfaces: 
+                  pk_robinson_foulds_distance, pk_rf_distance, pk_rf_dist, pk_rf
 
                 Usage:
                 phykit robinson_foulds_distance <tree_file_zero> <tree_file_one>
@@ -1439,7 +1515,10 @@ class Phykit(object):
                 was, to my knowledge, first introduced by Shen et al., (2018)
                 Cell doi: 10.1016/j.cell.2018.10.023.                
 
-                Alias: spurious_seq, ss
+                Aliases:
+                  spurious_sequence, spurious_seq, ss
+                Command line interfaces:
+                  pk_spurious_sequence, pk_spurious_seq, pk_ss
 
                 Usage:
                 phykit spurious_sequence <file> [-f 20]
@@ -1477,7 +1556,10 @@ class Phykit(object):
 
                 Prints the tip labels (or names) a phylogeny.
 
-                Alias: tree_labels; labels; tl
+                Aliases:
+                  tip_labels, tree_labels; labels; tl
+                Command line interfaces: 
+                  pk_tip_labels, pk_tree_labels; pk_labels; pk_tl
 
                 Usage:
                 phykit tip_labels <tree>
@@ -1505,7 +1587,10 @@ class Phykit(object):
 
                 Calculate total tree length, which is a sum of all branches. 
 
-                Alias: tree_len
+                Aliases:
+                  total_tree_length, tree_len
+                Command line interfaces: 
+                  pk_total_tree_length, pk_tree_len
 
                 Usage:
                 phykit total_tree_length <tree>
@@ -1545,7 +1630,10 @@ class Phykit(object):
                 Phillips and Penny, Molecular Phylogenetics and Evolution
                 (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
-                Alias: tness
+                Aliases:
+                  treeness, tness
+                Command line interfaces:
+                  pk_treeness, pk_tness
 
                 Usage:
                 phykit treeness <tree>
@@ -1584,7 +1672,10 @@ class Phykit(object):
                 Saturation is calculated following Philippe et al., PLoS 
                 Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
-                Alias: sat
+                Aliases: 
+                  saturation, sat
+                Command line interfaces:
+                  pk_saturation, pk_sat
 
                 Usage:
                 phykit saturation -a <alignment> -t <tree> [-v/--verbose]
@@ -1634,7 +1725,10 @@ class Phykit(object):
                 Calculate treeness/RCV following Phillips and Penny, Molecular 
                 Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
-                Alias: toverr, tor
+                Aliases:
+                  treeness_over_rcv, toverr, tor
+                Command line interfaces:
+                  pk_treeness_over_rcv, pk_toverr, pk_tor
 
                 Usage:
                 phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
@@ -1677,7 +1771,10 @@ class Phykit(object):
                 3) An occupancy file that summarizes the taxon occupancy
                    per sequence.
 
-                Alias: create_concat, cc
+                Aliases:
+                  create_concatenation_matrix, create_concat, cc
+                Command line interfaces: 
+                  pk_create_concatenation_matrix, pk_create_concat, pk_cc
 
                 Usage:
                 phykit create_concatenation_matrix -a <file> -p <string>
@@ -1727,7 +1824,10 @@ class Phykit(object):
                 are assumed to occur in the same order in the protein and 
                 nucleotide alignment.
 
-                Alias: pal2nal, p2n
+                Aliases:
+                  thread_dna, pal2nal, p2n
+                Command line interfaces:
+                  pk_thread_dna, pk_pal2nal, pk_p2n
 
                 Usage:
                 phykit thread_dna -p <file> -n <file> [-s]
