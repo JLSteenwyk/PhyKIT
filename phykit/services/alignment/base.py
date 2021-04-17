@@ -39,7 +39,7 @@ class Alignment(BaseService):
             return get_alignment_and_format_helper(self.alignment_file_path)
         except FileNotFoundError:
             print("Input corresponds to no such file or directory.")
-            print("Please double checking pathing and filenames")
+            print("Please double check pathing and filenames")
             sys.exit()
             
     def calculate_rcv(self):

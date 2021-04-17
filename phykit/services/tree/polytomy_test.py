@@ -373,25 +373,25 @@ class PolytomyTest(Tree):
 
         return triplet_res, gene_support_freq_res
 
-    def print_triplet_based_res(
-        self,
-        triplet_res,
-        triplet_group_counts: dict
-    ) -> None:
-        """
-        print results to stdout for user
-        """
-        try:
-            print(f"\nTriplet Results")
-            print(f"===============")
-            print(f"chi-squared: {round(triplet_res.statistic, 4)}")
-            print(f"p-value: {round(triplet_res.pvalue, 6)}")
-            print(f"total triplets: {sum(triplet_group_counts.values())}")
-            print(f"0-1: {triplet_group_counts['g0g1_count']}")
-            print(f"0-2: {triplet_group_counts['g0g2_count']}")
-            print(f"1-2: {triplet_group_counts['g1g2_count']}")
-        except BrokenPipeError:
-            pass
+    # def print_triplet_based_res(
+    #     self,
+    #     triplet_res,
+    #     triplet_group_counts: dict
+    # ) -> None:
+    #     """
+    #     print results to stdout for user
+    #     """
+    #     try:
+    #         print(f"\nTriplet Results")
+    #         print(f"===============")
+    #         print(f"chi-squared: {round(triplet_res.statistic, 4)}")
+    #         print(f"p-value: {round(triplet_res.pvalue, 6)}")
+    #         print(f"total triplets: {sum(triplet_group_counts.values())}")
+    #         print(f"0-1: {triplet_group_counts['g0g1_count']}")
+    #         print(f"0-2: {triplet_group_counts['g0g2_count']}")
+    #         print(f"1-2: {triplet_group_counts['g1g2_count']}")
+    #     except BrokenPipeError:
+    #         pass
 
     def print_gene_support_freq_res(
         self,

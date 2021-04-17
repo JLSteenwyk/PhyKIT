@@ -48,7 +48,7 @@ class RenameFastaEntries(Alignment):
                     SeqIO.write(record, output_file_path, "fasta")
             except FileNotFoundError:
                 print(f"{self.fasta} corresponds to no such file or directory.")
-                print("Please double checking pathing and filenames")
+                print("Please double check pathing and filenames")
                 sys.exit()
 
 
@@ -64,7 +64,7 @@ class RenameFastaEntries(Alignment):
                     idmap[key] = val
             return idmap
         except FileNotFoundError:
-            print(f"{self.idmap} corresponds to no such file or directory.")
+            print(f"{self.idmap} corresponds to no such file or directory. rbuh")
             print("Please double checking pathing and filenames")
             sys.exit()
 
