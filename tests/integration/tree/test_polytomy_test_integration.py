@@ -86,11 +86,40 @@ class TestTree(object):
             "-g",
             f"{here.parent.parent.parent}/sample_files/polyt_test_groups.tx",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        mocked_print.assert_has_calls([
+            call("Please check filename and pathing again."),
+        ])
+        
+
+    @patch("builtins.print")
+    def test_polytomy_test_incorrect_group_formatting(self, mocked_print):
+        testargs = [
+            "phykit",
+            "polytomy_test",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/polyt_test_trees.txt",
+            "-g",
+            f"{here.parent.parent.parent}/sample_files/polyt_test_groups_three_tabs.txt",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        mocked_print.assert_has_calls([
+            call("Please format the groups file (-g) as a four column tab-delimited file with column 1 being the name of the test"),
+            call("col2: the tip names of one group (; separated)"),
+            call("col3: the tip names of a second group (; separated)"),
+            call("col4: the tip names of a third group (; separated)"),
+            call("col5: the tip names of the outgroup taxa (; separated)"),
+        ])
+            
 
     @patch("builtins.print")
     def test_polytomy_test_incorrect_trees_path(self, mocked_print):
@@ -102,11 +131,14 @@ class TestTree(object):
             "-g",
             f"{here.parent.parent.parent}/sample_files/polyt_test_groups.txt",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        mocked_print.assert_has_calls([
+            call("Please check file name and pathing"),
+        ])
 
     @patch("builtins.print")
     def test_polytomy_test_incorrect_path_within_trees_file(self, mocked_print):
