@@ -108,3 +108,27 @@ class TestPairwiseIdentity(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_pairwise_identity_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "-v",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("1-2\t0.8333333333333334"),
+            call("1-3\t0.5"),
+            call("1-4\t0.16666666666666666"),
+            call("1-5\t0.16666666666666666"),
+            call("2-3\t0.6666666666666666"),
+            call("2-4\t0.3333333333333333"),
+            call("2-5\t0.3333333333333333"),
+            call("3-4\t0.6666666666666666"),
+            call("3-5\t0.5"),
+            call("4-5\t0.5"),
+        ]
