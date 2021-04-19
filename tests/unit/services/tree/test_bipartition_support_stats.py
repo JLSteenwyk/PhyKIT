@@ -1,10 +1,13 @@
 import pytest
+import sys
+
 from argparse import Namespace
 from Bio import Phylo
 from math import isclose
+from mock import patch, call
 
+from phykit.phykit import Phykit
 from phykit.services.tree.bipartition_support_stats import BipartitionSupportStats
-
 
 @pytest.fixture
 def args():
@@ -23,6 +26,24 @@ class TestBipartitionSupportStats(object):
         t = BipartitionSupportStats(args)
         t.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
+
+    @patch("builtins.print")
+    def test_bad_file_path(self, mocked_print):
+        testargs = [
+            "phykit",
+            "bss",
+            "some/file/path",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
+
+        assert pytest_wrapped_e.type == SystemExit
+        mocked_print.assert_has_calls([
+            call("Please check filename and pathing"),
+        ])
+
 
     # def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):
     #     t = BipartitionSupportStats(args)
