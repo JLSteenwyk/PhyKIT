@@ -151,3 +151,19 @@ class TestLBScore(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_lb_score_zero_division_error(self, mocked_print):
+        testargs = [
+            "phykit",
+            "lbs",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_blm_5.tre.factor_0.0.tre",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
+        
+        assert mocked_print.mock_calls == [
+            call("Invalid tree. Tree should contain branch lengths"),
+        ]

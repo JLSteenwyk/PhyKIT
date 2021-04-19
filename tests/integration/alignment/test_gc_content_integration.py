@@ -106,3 +106,19 @@ class TestGCContent(object):
             call(expected_result2),
             call(expected_result3),
         ]
+
+    @patch("builtins.print")
+    def test_gc_content_zero_division(self, mocked_print):
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/zero_length_alignment.fa",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
+        
+        assert mocked_print.mock_calls == [
+            call("Input file has an unacceptable format. Please check input file argument."),
+        ]

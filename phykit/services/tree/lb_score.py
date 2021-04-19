@@ -84,7 +84,7 @@ class LBScore(Tree):
             except ZeroDivisionError:
                 try:
                     print("Invalid tree. Tree should contain branch lengths")
-                    return None
+                    sys.exit()
                 except BrokenPipeError:
                     pass
         
