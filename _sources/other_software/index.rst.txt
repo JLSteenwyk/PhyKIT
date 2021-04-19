@@ -17,7 +17,7 @@ ClipKIT
 
 A multiple sequence alignment trimming software for accurate phylogenomic inference
 
-`Publication PDF <https://jlsteenwyk.com/publication_pdfs/2019_Steenwyk_and_Rokas_BMC_Research_Notes.pdf>`_;
+`Publication PDF <https://jlsteenwyk.com/publication_pdfs/2020_Steenwyk_etal_PLOS_Biology.pdf>`_;
 `Documentation <https://jlsteenwyk.com/ClipKIT/>`_;
 `Source code <https://github.com/JLSteenwyk/ClipKIT>`_
 
