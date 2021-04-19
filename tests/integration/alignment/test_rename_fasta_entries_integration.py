@@ -83,11 +83,14 @@ class TestRenameFastaEntries(object):
             f"{here.parent.parent.parent}/sample_files/simple_fasta_idmap.txt",
         ]
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        mocked_print.assert_has_calls([
+            call("Please double check pathing and filenames"),
+        ])
 
     @patch("builtins.print")
     def test_rename_fasta_entries_incorrect_input_idmap_file(self, mocked_print):
@@ -99,9 +102,12 @@ class TestRenameFastaEntries(object):
             f"{here.parent.parent.parent}/sample_files/simple_fasta_idmap.tx",
         ]
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        mocked_print.assert_has_calls([
+            call("Please double check pathing and filenames"),
+        ])
         
