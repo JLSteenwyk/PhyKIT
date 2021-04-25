@@ -276,8 +276,8 @@ col3: percentage of parsimony informative sites
 Association between the number of parsimony informative
 sites and phylogenetic signal was determined by Shen 
 et al., Genome Biology and Evolution (2016), 
-doi: 10.1093/gbe/evw179 and Steenwyk et al., bioRxiv
-(2020), doi: 10.1101/2020.06.08.140384.
+doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
+(2020), doi: 10.1371/journal.pbio.3001007.
 
 .. code-block:: shell
 
