@@ -12,7 +12,7 @@ sequence alignments and phylogenies for broad applications
 If you found PhyKIT useful, please cite *PhyKIT: a broadly applicable UNIX shell toolkit for processing
 and analyzing phylogenomic data*. Bioinformatics. doi: |doiLink|_.
 
-.. _doiLink: https://www.biorxiv.org/content/10.1101/2020.10.27.358143v1
+.. _doiLink: https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675?redirectedFrom=fulltext
 .. |doiLink| replace:: 10.1093/bioinformatics/btab096
 
 Quick Start
