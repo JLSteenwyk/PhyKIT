@@ -4,6 +4,7 @@ from .covarying_evolutionary_rates import CovaryingEvolutionaryRates
 from .dvmc import DVMC
 from .internal_branch_stats import InternalBranchStats
 from .internode_labeler import InternodeLabeler
+from .last_common_ancestor_subtree import LastCommonAncestorSubtree
 from .lb_score import LBScore
 from .total_tree_length import TotalTreeLength
 from .patristic_distances import PatristicDistances

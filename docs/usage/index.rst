@@ -599,6 +599,26 @@ Options: |br|
 
 |
 
+Last common ancestor subtree
+############################
+Function names: last_common_ancestor_subtree; lca_subtree |br|
+Command line interface: pk_last_common_ancestor_subtree; pk_lca_subtree
+
+Obtains subtree from a phylogeny by getting the last common ancestor
+from a list of taxa.
+
+.. code-block:: shell
+
+   phykit last_common_ancestor_subtree <file> <list_of_taxa> [-o/--output <file>]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*<list_of_taxa>*: second argument after function name should be a single column
+file with the list of taxa to get the last common ancestor subtree for
+*-o/\\-\\-output*: optional argument to print all LB score values
+
+|
+
 Long branch score
 #################
 Function names: lb_score; lb_score; lbs |br|
