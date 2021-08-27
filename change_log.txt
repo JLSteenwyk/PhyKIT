@@ -36,3 +36,7 @@ Major changes to PhyKIT are summarized here.
   - Added command line interfaces for all functions so that each command 
   can more easily be executed. For example, 'phykit aln_len -h' can now be
   called using 'pk_aln_len -h'
+
+1.2.2
+  - Added function to get the subtree of the last common ancestor among
+  a set of taxa

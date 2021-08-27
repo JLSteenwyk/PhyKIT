@@ -76,6 +76,8 @@ setup(
             "pk_ibs = phykit.phykit:internal_branch_stats",
             "pk_internode_labeler = phykit.phykit:internode_labeler",
             "pk_il = phykit.phykit:internode_labeler",
+            "pk_last_common_ancestor_subtree = phykit.phykit:last_common_ancestor_subtree",
+            "pk_lca_subtree = phykit.phykit:last_common_ancestor_subtree",
             "pk_lb_score = phykit.phykit:lb_score",
             "pk_long_branch_score = phykit.phykit:lb_score",
             "pk_lbs = phykit.phykit:lb_score",

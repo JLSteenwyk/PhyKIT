@@ -36,6 +36,7 @@ from .services.tree import (
     DVMC,
     InternalBranchStats,
     InternodeLabeler,
+    LastCommonAncestorSubtree,
     LBScore,
     TotalTreeLength,
     PatristicDistances,
@@ -173,6 +174,8 @@ class Phykit(object):
                     - calculates summary statistics for internal branch lengths 
                 internode_labeler (alias: il)
                     - create labels at internodes in a phylogeny
+                last_common_ancestor_subtree (alias: lca_subtree)
+                    - get last common ancestor of a set of taxa
                 long_branch_score (alias: lb_score; lbs)
                     - calculates lb (long branch) score for taxa in a phylogeny
                 total_tree_length (alias: tree_len)
@@ -267,6 +270,8 @@ class Phykit(object):
             return self.internal_branch_stats(argv)
         elif command == 'il':
             return self.internode_labeler(argv)
+        elif command in ['lca_subtree']:
+            return self.last_common_ancestor_subtree(argv)
         elif command in ['long_branch_score', 'lbs']:
             return self.lb_score(argv)
         elif command == 'pd':
@@ -1139,6 +1144,46 @@ class Phykit(object):
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         InternodeLabeler(args).run()
+
+    @staticmethod
+    def last_common_ancestor_subtree(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Obtains subtree from a phylogeny by getting
+                the last common ancestor from a list of taxa. 
+
+                Alias:
+                  last_common_ancestor_subtree, lca_subtree
+                Command line interfaces: 
+                  pk_last_common_ancestor_subtree, pk_lca_subtree
+
+                Usage:
+                phykit last_common_ancestor_subtree <file> [-o/--output <file>]
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                <list_of_taxa>              list of taxa to get the last
+                                            common ancestor subtree for
+
+                -o/--output                 optional argument to name 
+                                            the outputted tree file
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        LastCommonAncestorSubtree(args).run()
 
     @staticmethod
     def lb_score(argv):
