@@ -159,25 +159,26 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h1>
 <hr class="docutils" />
 <p>Major changes to PhyKIT are summarized here.</p>
-<p><strong>0.0.9</strong>: PhyKIT now handles error stemming from piping output</p>
-<p><strong>0.1.2</strong>: Added function (sum_of_pairs_score; sops; sop) to calculate
-the quality of an alignment given an input query alignment
-and a reference alignment to compare it to</p>
-<p><strong>0.1.3</strong>: Added function (column_score; cs) to calculate the quality of
-an alignment given an input query alignment and a reference
-alignment to compare it to</p>
+<p><strong>1.2.2</strong>:a dded function to get the subtree of the last common ancestor among a set of taxa</p>
+<p><strong>1.2.0</strong>: added command line interfaces for all functions so that each command
+can easily be executed. For example, ‘phykit aln_len -h’ can now be
+called using ‘pk_aln_len -h’</p>
+<p><strong>1.1.0</strong>: added faidx (alias: get_entry; ge) function to extract fasta entries from a
+multi-fasta file</p>
+<p><strong>1.0.3</strong>: added rooting procedure before calculating RF to handle comparing unrooted
+and rooted trees</p>
 <p><strong>1.0.2</strong>: function that calculates Robinson Foulds distance (robinson_foulds_distance;
 rf_distance; rf_dist; rf) now can take trees that differ in topology. PhyKIT
 will first determine shared tips between the two trees and prune both trees
 to a common set of tips. Next, PhyKIT will calculate the Robinson Foulds
 distance.</p>
-<p><strong>1.0.3</strong>: added rooting procedure before calculating RF to handle comparing unrooted
-and rooted trees</p>
-<p><strong>1.1.0</strong>: added faidx (alias: get_entry; ge) function to extract fasta entries from a
-multi-fasta file</p>
-<p><strong>1.2.0</strong>: added command line interfaces for all functions so that each command
-can easily be executed. For example, ‘phykit aln_len -h’ can now be
-called using ‘pk_aln_len -h’</p>
+<p><strong>0.1.3</strong>: Added function (column_score; cs) to calculate the quality of
+an alignment given an input query alignment and a reference
+alignment to compare it to</p>
+<p><strong>0.1.2</strong>: Added function (sum_of_pairs_score; sops; sop) to calculate
+the quality of an alignment given an input query alignment
+and a reference alignment to compare it to</p>
+<p><strong>0.0.9</strong>: PhyKIT now handles error stemming from piping output</p>
 </div>
 
 
