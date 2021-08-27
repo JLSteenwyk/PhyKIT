@@ -8,7 +8,7 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**1.2.2**:a dded function to get the subtree of the last common ancestor among a set of taxa
+**1.2.2**: added function to get the subtree of the last common ancestor among a set of taxa
 
 **1.2.0**: added command line interfaces for all functions so that each command 
 can easily be executed. For example, 'phykit aln_len -h' can now be
