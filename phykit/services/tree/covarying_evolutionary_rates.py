@@ -138,7 +138,8 @@ class CovaryingEvolutionaryRates(Tree):
 
         for tip in tips:
             tree.prune(tip)
-        return(tree)
+        
+        return tree
 
     def determine_if_trees_differ(self, tree_zero, tree_one, tree_ref):
         """
@@ -187,6 +188,7 @@ class CovaryingEvolutionaryRates(Tree):
         """
         if clade differs, add 1 to plain_rf value
         """
+
         if set(tip_names_zero) != set(tip_names_one):
             plain_rf +=1
         
