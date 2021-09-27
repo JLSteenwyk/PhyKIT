@@ -273,13 +273,13 @@ class TestBrokenPipeError(object):
     def test_pk_last_common_ancestor_subtree(self):
         cmd = "pk_last_common_ancestor_subtree -h"
         exit_status = os.system(cmd)
-        assert exit_status == 256
+        assert exit_status == 0
 
     @pytest.mark.slow
     def test_pk_lca_subtree(self):
         cmd = "pk_lca_subtree -h"
         exit_status = os.system(cmd)
-        assert exit_status == 256
+        assert exit_status == 0
 
     @pytest.mark.slow
     def test_pk_lb_score(self):
