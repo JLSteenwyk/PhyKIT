@@ -1163,7 +1163,8 @@ class Phykit(object):
                   pk_last_common_ancestor_subtree, pk_lca_subtree
 
                 Usage:
-                phykit last_common_ancestor_subtree <file> [-o/--output <file>]
+                phykit last_common_ancestor_subtree <file> <list_of_taxa> 
+                [-o/--output <file>]
 
                 Options
                 =====================================================
@@ -1968,6 +1969,9 @@ def internal_branch_stats(argv=None):
 
 def internode_labeler(argv=None):
     Phykit.internode_labeler(sys.argv[1:])
+
+def last_common_ancestor_subtree(argv=None):
+    Phykit.last_common_ancestor_subtree(sys.argv[1:])
 
 def lb_score(argv=None):
     Phykit.lb_score(sys.argv[1:])
