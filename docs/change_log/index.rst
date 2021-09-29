@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.3.0**: Added function that estimates the evolutionary rate of a gene using tree-based
+properties. Function name is 'evolutionary_rate' or 'evo_rate' 
+
 **1.2.2**: added function to get the subtree of the last common ancestor among a set of taxa
 
 **1.2.0**: added command line interfaces for all functions so that each command 
