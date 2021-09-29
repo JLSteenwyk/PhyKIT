@@ -244,7 +244,19 @@ class TestBrokenPipeError(object):
         cmd = "pk_degree_of_violation_of_a_molecular_clock -h"
         exit_status = os.system(cmd)
         assert exit_status == 0
-    
+
+    @pytest.mark.slow
+    def test_pk_evo_rate(self):
+        cmd = "pk_evo_rate -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_evolutionary_rate(self):
+        cmd = "pk_evolutionary_rate -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
     @pytest.mark.slow
     def test_pk_internal_branch_stats(self):
         cmd = "pk_internal_branch_stats -h"

@@ -72,6 +72,8 @@ setup(
             "pk_cover = phykit.phykit:covarying_evolutionary_rates",
             "pk_dvmc = phykit.phykit:dvmc",
             "pk_degree_of_violation_of_a_molecular_clock = phykit.phykit:dvmc",
+            "pk_evo_rate = phykit.phykit:evolutionary_rate",
+            "pk_evolutionary_rate = phykit.phykit:evolutionary_rate",
             "pk_internal_branch_stats = phykit.phykit:internal_branch_stats",
             "pk_ibs = phykit.phykit:internal_branch_stats",
             "pk_internode_labeler = phykit.phykit:internode_labeler",

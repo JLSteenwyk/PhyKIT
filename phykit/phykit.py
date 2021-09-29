@@ -34,6 +34,7 @@ from .services.tree import (
     CollapseBranches,
     CovaryingEvolutionaryRates,
     DVMC,
+    EvolutionaryRate,
     InternalBranchStats,
     InternodeLabeler,
     LastCommonAncestorSubtree,
@@ -170,6 +171,8 @@ class Phykit(object):
                     - calculates correlation in the evolutionary rate of two trees
                 degree_of_violation_of_a_molecular_clock (alias: dvmc)
                     - reports the degree of violation of the molecular clock
+                evolutionary_rate (alias: evo_rate)
+                    - reports a tree-based estimation of evolutionary rate for a gene
                 internal_branch_stats (alias: ibs)
                     - calculates summary statistics for internal branch lengths 
                 internode_labeler (alias: il)
@@ -266,6 +269,8 @@ class Phykit(object):
             return self.covarying_evolutionary_rates(argv)
         elif command == 'degree_of_violation_of_a_molecular_clock':
             return self.dvmc(argv)
+        elif command == 'evo_rate':
+            return self.evolutionary_rate(argv)
         elif command == 'ibs':
             return self.internal_branch_stats(argv)
         elif command == 'il':
@@ -811,7 +816,7 @@ class Phykit(object):
                 Aliases:
                   bipartition_support_stats, bss
                 Command line interfaces:
-                  bipartition_support_stats, bss
+                  pk_bipartition_support_stats, pk_bss
 
                 Usage:
                 phykit bipartition_support_stats <tree> [-v/--verbose]
@@ -1062,6 +1067,42 @@ class Phykit(object):
         )
         args = parser.parse_args(argv)
         DVMC(args).run()
+
+    @staticmethod
+    def evolutionary_rate(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+                Calculate a tree-based estimation of the evolutionary rate of a gene.
+
+                Evolutionary rate is the total tree length divided by the number
+                of terminals.
+
+                Calculate evolutionary rate following Telford et al., Proceedings
+                of the Royal Society B (2014).
+
+                Aliases:
+                  evolutionary_rate, evo_rate
+                Command line interfaces:
+                  pk_evolutionary_rate, pk_evo_rate
+
+                Usage:
+                phykit evolutionary_rate <tree>
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file 
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        EvolutionaryRate(args).run()
 
     @staticmethod
     def internal_branch_stats(argv):
@@ -1963,6 +2004,9 @@ def covarying_evolutionary_rates(argv=None):
 
 def dvmc(argv=None):
     Phykit.dvmc(sys.argv[1:])
+
+def evolutionary_rate(argv=None):
+    Phykit.evolutionary_rate(sys.argv[1:])
 
 def internal_branch_stats(argv=None):
     Phykit.internal_branch_stats(sys.argv[1:])
