@@ -117,6 +117,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internode-labeler">Internode labeler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#last-common-ancestor-subtree">Last common ancestor subtree</a></li>
@@ -677,6 +678,24 @@ Lastly, an empty root file can be used if the user does not wish to prune outgro
 <p>Options: <br/>
 <em>-t/--tree</em>: input file tree name <br/>
 <em>-r/--root</em>: single column file with tip names of root taxa</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="evolutionary-rate">
+<h3>Evolutionary rate<a class="headerlink" href="#evolutionary-rate" title="Permalink to this headline">¶</a></h3>
+<p>Function names: evolutionary_rate, evo_rate <br/>
+Command line interface: pk_evolutionary_rate, pk_evo_rate</p>
+<p>Calculate a tree-based estimation of the evolutionary rate of a gene.</p>
+<p>Evolutionary rate is the total tree length divided by the number
+of terminals.</p>
+<p>Calculate evolutionary rate following Telford et al., Proceedings
+of the Royal Society B (2014).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit evolutionary_rate &lt;tree&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: input file tree name</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

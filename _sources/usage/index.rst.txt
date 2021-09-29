@@ -559,6 +559,28 @@ Options: |br|
 
 |
 
+Evolutionary rate
+#################
+Function names: evolutionary_rate, evo_rate |br|
+Command line interface: pk_evolutionary_rate, pk_evo_rate
+
+Calculate a tree-based estimation of the evolutionary rate of a gene.
+
+Evolutionary rate is the total tree length divided by the number
+of terminals.
+
+Calculate evolutionary rate following Telford et al., Proceedings
+of the Royal Society B (2014). 
+
+.. code-block:: shell
+
+   phykit evolutionary_rate <tree>
+
+Options: |br|
+*-t/\\-\\-tree*: input file tree name
+
+|
+
 Internal branch statistics
 ##########################
 Function names: internal_branch_stats; ibs |br|
