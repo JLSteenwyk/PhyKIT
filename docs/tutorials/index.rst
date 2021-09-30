@@ -6,7 +6,7 @@ Tutorials
 ^^^^^
 
 PhyKIT can be used for a multitude of different types of analyses. Documentation here 
-provides a step-by-step outline for how to conduct three different types of analyses.
+provides a step-by-step outline for how to conduct different types of analyses.
 
 1. summarizing information content among multiple sequence alignments and phylogenies for diagnostic purposes,
 2. evaluating gene-gene covariation to identify genes of shared function and screen for novel gene function, and
