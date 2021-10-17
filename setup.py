@@ -15,10 +15,11 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'Topic :: Scientific/Engineering',
 ]
 
-REQUIRES = ["biopython==1.76", "numpy==1.18.2", "scipy==1.4.1"]
+REQUIRES = ["biopython>=1.79", "numpy>=1.18.2", "scipy>=1.4.1", "cython"]
 
 setup(
     name="phykit",

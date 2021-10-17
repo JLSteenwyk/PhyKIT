@@ -73,7 +73,7 @@ help_header = f"""
                             
                 Version: {__version__}
                 Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
-                https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675
+                https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
 
 """
 
@@ -90,7 +90,7 @@ class Phykit(object):
                             
                 Version: {__version__}
                 Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
-                https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675
+                https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
 
     """
     
@@ -233,7 +233,7 @@ class Phykit(object):
     ## Aliases
     def run_alias(self, command, argv):
         # version
-        if command in ['v']:
+        if command in ['version', 'v']:
             return self.version()
         # Alignment aliases
         if command in ['aln_len', 'al']:
@@ -310,8 +310,8 @@ class Phykit(object):
         elif command in ['pal2nal', 'p2n']:
             return self.thread_dna(argv)
         else:
+            print(textwrap.dedent(help_header))
             print("Invalid command option. See help for a complete list of commands and aliases.")
-            parser.print_help()
             sys.exit(1)
 
     ## print version
