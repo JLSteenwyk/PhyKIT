@@ -1,6 +1,5 @@
 import pytest
 from argparse import Namespace
-from math import isclose
 from mock import patch, call
 
 from phykit.services.alignment.alignment_length import AlignmentLength

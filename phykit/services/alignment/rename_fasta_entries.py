@@ -10,7 +10,12 @@ class RenameFastaEntries(Alignment):
 
     def run(self):
         # create biopython object of sequences
-        records = SeqIO.parse(self.fasta, "fasta")
+        try:
+            records = SeqIO.parse(self.fasta, "fasta")
+        except FileNotFoundError:    
+            print(f"{self.fasta} corresponds to no such file or directory.")
+            print("Please double check pathing and filenames")
+            sys.exit()
 
         # save idmap to a dictionary
         idmap = self.idmap_to_dictionary(self.idmap)
@@ -38,18 +43,14 @@ class RenameFastaEntries(Alignment):
         idmap and write to output file
         """
         with open(output_file_path, 'w') as output_file_path:
-            try:
-                for record in records:
-                    if record.id in idmap:
-                        # replace ID
-                        record.id = idmap[record.id]
-                        # remove description
-                        record.description = ''
-                    SeqIO.write(record, output_file_path, "fasta")
-            except FileNotFoundError:
-                print(f"{self.fasta} corresponds to no such file or directory.")
-                print("Please double check pathing and filenames")
-                sys.exit()
+            for record in records:
+                if record.id in idmap:
+                    # replace ID
+                    record.id = idmap[record.id]
+                    # remove description
+                    record.description = ''
+                SeqIO.write(record, output_file_path, "fasta")
+
 
 
     def idmap_to_dictionary(self, idmap:str) -> dict:

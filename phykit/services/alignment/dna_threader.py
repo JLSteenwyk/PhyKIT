@@ -1,5 +1,4 @@
 import sys
-from typing import Tuple
 
 from Bio import SeqIO, SeqRecord
 
@@ -24,7 +23,6 @@ class DNAThreader(Alignment):
         nucl = self.read_file(self.nucleotide_file_path)
 
         pal2nal = self.thread(prot, nucl)
-
 
         for record in pal2nal:
             sequence = ''.join(pal2nal[record])
@@ -139,7 +137,9 @@ class DNAThreader(Alignment):
         """
 
         nt_window = (aa_idx - gap_count) * 3
-        pal2nal[gene_id].append(n_seq[nt_window : nt_window + 3]._data)
+        seq = n_seq[nt_window : nt_window + 3]._data
+        seq = seq.decode("utf-8")
+        pal2nal[gene_id].append(seq)
 
         return pal2nal
 
