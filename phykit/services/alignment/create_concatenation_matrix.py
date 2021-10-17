@@ -215,10 +215,10 @@ class CreateConcatenationMatrix(Alignment):
                 for s in concat[x]:
                     try:
                         # if a seq object
-                        concatenated.append(s._data)
+                        concatenated.append(s._data.decode("utf-8"))
                     except AttributeError:
                         # if a string
-                        concatenated.append(s)
+                        concatenated.append(s.decode("utf-8"))
                 concat[x] = concatenated
                 entry = f">{x}\n{''.join(concat[x])}\n"
                 final_fasta_file.write(str(entry))   
