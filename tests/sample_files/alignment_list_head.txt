@@ -1,0 +1,10 @@
+tests/sample_files/10009at7524_aa.aln
+tests/sample_files/10011at7524_aa.aln
+tests/sample_files/10012at7524_aa.aln
+tests/sample_files/10024at7524_aa.aln
+tests/sample_files/10027at7524_aa.aln
+tests/sample_files/10032at7524_aa.aln
+tests/sample_files/10033at7524_aa.aln
+tests/sample_files/10040at7524_aa.aln
+tests/sample_files/10051at7524_aa.aln
+tests/sample_files/10064at7524_aa.aln

@@ -196,6 +196,9 @@ class CreateConcatenationMatrix(Alignment):
         # handle missing taxa
         if num_missing == 0:
             missing_taxa = ["None"]
+        else:
+            missing_taxa.sort()
+        og_taxa.sort()
         entry = f"{str(fasta)}\t{str(num_present)}\t{str(num_missing)}\t{str(percent_occupancy)}\t{';'.join(missing_taxa)}\t{';'.join(og_taxa)}\n"
         occupancy_info.append(entry)
         
@@ -218,7 +221,7 @@ class CreateConcatenationMatrix(Alignment):
                         concatenated.append(s._data.decode("utf-8"))
                     except AttributeError:
                         # if a string
-                        concatenated.append(s.decode("utf-8"))
+                        concatenated.append(s)
                 concat[x] = concatenated
                 entry = f">{x}\n{''.join(concat[x])}\n"
                 final_fasta_file.write(str(entry))   
