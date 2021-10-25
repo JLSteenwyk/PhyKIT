@@ -418,6 +418,24 @@ class TestBrokenPipeError(object):
         cmd = "pk_rf -h"
         exit_status = os.system(cmd)
         assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_root_tree(self):
+        cmd = "pk_root_tree -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_root(self):
+        cmd = "pk_root -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_rt(self):
+        cmd = "pk_rt -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
     
     @pytest.mark.slow
     def test_pk_spurious_sequence(self):

@@ -848,6 +848,29 @@ Options: |br|
 
 |
 
+Root tree
+#########
+Function names: root_tree; root; rt |br|
+Command line interface: pk_root_tree; pk_root; pk_rt
+
+Roots phylogeny using user-specified taxa.
+
+A list of taxa to root the phylogeny on should be specified using the -r
+argument. The root_taxa file should be a single-column file with taxa names.
+The outputted file will have the same name as the inputted tree file but with
+the suffix ".rooted".
+
+.. code-block:: shell
+
+   phykit root_tree <tree> -r/--root <root_taxa> [-o/--output <output_file>] 
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file to root
+*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on
+*-o/\\-\\-output*: optional argument to specify the name of the output file
+
+|
+
 Spurious homolog identification
 ###############################
 Function names: spurious_sequence; spurious_seq; ss |br|

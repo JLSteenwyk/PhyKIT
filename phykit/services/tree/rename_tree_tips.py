@@ -1,8 +1,6 @@
 import logging
 import sys
 
-from Bio import Phylo
-
 from .base import Tree
 
 class RenameTreeTips(Tree):
