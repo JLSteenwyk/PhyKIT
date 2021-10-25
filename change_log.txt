@@ -1,5 +1,8 @@
 Major changes to PhyKIT are summarized here.
 
+1.5.0
+  - Added root_tree (alias: root; rt) function to root a phylogenetic tree
+
 1.4.0
   - PhyKIT is now Python version 3.9 and BioPython 1.79 compatible
 

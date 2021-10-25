@@ -46,6 +46,7 @@ from .services.tree import (
     PruneTree,
     RenameTreeTips,
     RobinsonFouldsDistance,
+    RootTree,
     Saturation,
     SpuriousSequence,
     TipLabels,
@@ -197,6 +198,8 @@ class Phykit(object):
                       the desired new tip names
                 robinson_foulds_distance (alias: rf_distance; rf_dist; rf)
                     - calculates Robinson-Foulds distance between two trees
+                root_tree (alias: root; rt)
+                    - roots tree on user-specified taxa or taxon
                 spurious_sequence (alias: spurious_seq; ss)
                     - identifies putatively spurious sequences by identifying
                       branch lengths that are atypically long
@@ -291,6 +294,8 @@ class Phykit(object):
             return self.rename_tree_tips(argv)
         elif command in ['robinson_foulds_distance', 'rf_dist', 'rf']:
             return self.rf_distance(argv)
+        elif command in ['root', 'rt']:
+            return self.root_tree(argv)
         elif command in ['spurious_seq', 'ss']:
             return self.spurious_sequence(argv)
         elif command in ['labels', 'tree_labels', 'tl']:
@@ -518,7 +523,7 @@ class Phykit(object):
                                             function name should be
                                             a fasta file 
             
-                -v, --verbose               optional argument to print
+                -v/--verbose                optional argument to print
                                             the GC content of each fasta
                                             entry
                 """
@@ -567,7 +572,7 @@ class Phykit(object):
                                             function name should be
                                             an alignment file  
 
-                -v, --verbose               optional argument to print
+                -v/--verbose                optional argument to print
                                             identity per pair       
                 """
             ),
@@ -827,7 +832,7 @@ class Phykit(object):
                                             function name should be
                                             a tree file 
             
-                -v, --verbose               optional argument to print
+                -v/--verbose                optional argument to print
                                             all bipartition support
                                             values
                 """
@@ -1052,9 +1057,9 @@ class Phykit(object):
 
                 Options
                 =====================================================
-                -t, --tree                  input file tree name
+                -t/--tree                   input file tree name
             
-                -r, --root                  single column file with
+                -r/--root                   single column file with
                                             tip names of root taxa
                 """
             ),
@@ -1133,7 +1138,7 @@ class Phykit(object):
                                             function name should be
                                             a tree file
 
-                -v, --verbose               optional argument to print
+                -v/--verbose                optional argument to print
                                             all internal branch lengths
                 """
             ),
@@ -1266,7 +1271,7 @@ class Phykit(object):
                                             function name should be
                                             a tree file
 
-                -v, --verbose               optional argument to print
+                -v/--verbose                optional argument to print
                                             all LB score values            
                 """
             ),
@@ -1308,7 +1313,7 @@ class Phykit(object):
                                             function name should be
                                             a tree file
 
-                -v, --verbose               optional argument to print
+                -v/--verbose                optional argument to print
                                             all patristic distances between
                                             taxa            
                 """
@@ -1359,11 +1364,11 @@ class Phykit(object):
 
                 Options
                 =====================================================
-                -t, --trees                 single column file with names
+                -t/--trees                 single column file with names
                                             of phylogenies to use for
                                             polytomy testing
 
-                -g, --groups                a tab-delimited file with the
+                -g/--groups                a tab-delimited file with the
                                             grouping designations to test.
                                             Lines starting with comments 
                                             are not considered. Names
@@ -1410,7 +1415,7 @@ class Phykit(object):
                                             function name should be
                                             a tree file
 
-                -r, --remove                optional argument to print
+                -r/--remove                 optional argument to print
                                             the phylogeny without branch
                                             lengths       
                 """
@@ -1571,6 +1576,56 @@ class Phykit(object):
         parser.add_argument("tree_one", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         RobinsonFouldsDistance(args).run()
+
+    @staticmethod
+    def root_tree(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Roots phylogeny using user-specified taxa.
+
+                A list of taxa to root the phylogeny on should be
+                specified using the -r argument. The root_taxa file
+                should be a single-column file with taxa names. The
+                outputted file will have the same name as the inputted
+                tree file but with the suffix ".rooted".
+
+                Aliases:
+                  root_tree, root, rt
+                Command line interfaces: 
+                  pk_root_tree, pk_root, pk_rt
+
+                Usage:
+                phykit root_tree <tree> -r/--root <root_taxa>
+                    [-o/--output <output_file>] 
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -r/--root                   single column file with
+                                            tip names of root taxa
+
+                -o/--output                 optional argument to write
+                                            the rooted tree file to.
+                                            Default output will have 
+                                            the same name as the input
+                                            file but with the suffix 
+                                            ".rooted"          
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-r", "--root", type=str, required=True, help=SUPPRESS)
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        RootTree(args).run()
 
     @staticmethod
     def spurious_sequence(argv):
@@ -2037,6 +2092,9 @@ def rename_tree_tips(argv=None):
 
 def rf_distance(argv=None):
     Phykit.rf_distance(sys.argv[1:])
+
+def root_tree(argv=None):
+    Phykit.root_tree(sys.argv[1:])
 
 def spurious_sequence(argv=None):
     Phykit.spurious_sequence(sys.argv[1:])

@@ -13,6 +13,7 @@ from .polytomy_test import PolytomyTest
 from .print_tree import PrintTree
 from .prune_tree import PruneTree
 from .rename_tree_tips import RenameTreeTips
+from .root_tree import RootTree
 from .rf_distance import RobinsonFouldsDistance
 from .saturation import Saturation
 from .spurious_sequence import SpuriousSequence

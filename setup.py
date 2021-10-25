@@ -102,6 +102,9 @@ setup(
             "pk_robinson_foulds_distance = phykit.phykit:rf_distance",
             "pk_rf_dist = phykit.phykit:rf_distance",
             "pk_rf = phykit.phykit:rf_distance",
+            "pk_root_tree = phykit.phykit:root_tree",
+            "pk_root = phykit.phykit:root_tree",
+            "pk_rt = phykit.phykit:root_tree",
             "pk_spurious_sequence = phykit.phykit:spurious_sequence",
             "pk_spurious_seq = phykit.phykit:spurious_sequence",
             "pk_ss = phykit.phykit:spurious_sequence",
@@ -133,7 +136,7 @@ setup(
 
 ## push new version to pypi
 # rm -rf dist
-# python setup.py sdist bdist_wheel --universal
+# python3 setup.py sdist bdist_wheel --universal
 # twine upload dist/* -r pypi
 # then push to anaconda
 # 
