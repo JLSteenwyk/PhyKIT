@@ -865,8 +865,8 @@ the suffix ".rooted".
    phykit root_tree <tree> -r/--root <root_taxa> [-o/--output <output_file>] 
 
 Options: |br|
-*<tree>*: first argument after function name should be a tree file to root
-*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on
+*<tree>*: first argument after function name should be a tree file to root|br|
+*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on|br|
 *-o/\\-\\-output*: optional argument to specify the name of the output file
 
 |
