@@ -8,6 +8,10 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.5.0**: Added root_tree (alias: root; rt) function to root a phylogenetic tree
+
+**1.4.0**: PhyKIT is now Python version 3.9 and BioPython 1.79 compatible
+
 **1.3.0**: Added function that estimates the evolutionary rate of a gene using tree-based
 properties. Function name is 'evolutionary_rate' or 'evo_rate' 
 
