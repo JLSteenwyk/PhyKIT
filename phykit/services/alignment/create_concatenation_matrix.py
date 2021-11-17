@@ -115,14 +115,19 @@ class CreateConcatenationMatrix(Alignment):
 
     def create_missing_seq_str(
         self,
-        records: list
+        records: list,
+        alignment_path: str
     ) -> Tuple[str, int]:
         """
         create a placeholder string for sequences with missing taxa
         """
         og_len = ''
         missing_seq = ''
-        og_len = len(records[0].seq)
+        try:
+            og_len = len(records[0].seq)
+        except IndexError:
+            print(f"There are no sequence records in {alignment_path}.\nExiting now...")
+            sys.exit()
         missing_seq = og_len * '?'
     
         return missing_seq, og_len
@@ -294,7 +299,8 @@ class CreateConcatenationMatrix(Alignment):
 
             # create string for missing seq
             missing_seq, og_len = self.create_missing_seq_str(
-                records
+                records,
+                alignment_path
             )
 
             # create missing taxa sequence
