@@ -10,12 +10,6 @@
     <a href="https://github.com/jlsteenwyk/phykit/issues">Request Feature</a>
   </p>
     <p align="center">
-        <a href="https://lbesson.mit-license.org/" alt="License">
-            <img src="https://img.shields.io/badge/License-MIT-blue.svg">
-        </a>
-        <a href="https://pypi.org/project/phykit/" alt="PyPI - Python Version">
-            <img src="https://img.shields.io/pypi/pyversions/phykit">
-        </a>
         <a href="https://github.com/JLSteenwyk/PhyKIT/actions" alt="Build">
             <img src="https://img.shields.io/github/workflow/status/jlsteenwyk/phykit/CI/master">
         </a>
@@ -25,12 +19,19 @@
         <a href="https://github.com/jlsteenwyk/phykit/graphs/contributors" alt="Contributors">
             <img src="https://img.shields.io/github/contributors/jlsteenwyk/phykit">
         </a>
-        <a href="https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675?redirectedFrom=fulltext">
-          <img src="https://zenodo.org/badge/DOI/10.1093/bioinformatics/btab096.svg">
-        </a>
         <a href="https://twitter.com/intent/follow?screen_name=jlsteenwyk" alt="Author Twitter">
             <img src="https://img.shields.io/twitter/follow/jlsteenwyk?style=social&logo=twitter"
                 alt="follow on Twitter">
+        </a>
+        <br />
+        <a href="https://lbesson.mit-license.org/" alt="License">
+            <img src="https://img.shields.io/badge/License-MIT-blue.svg">
+        </a>
+        <a href="https://pypi.org/project/phykit/" alt="PyPI - Python Version">
+            <img src="https://img.shields.io/pypi/pyversions/phykit">
+        </a>
+        <a href="https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675?redirectedFrom=fulltext">
+          <img src="https://zenodo.org/badge/DOI/10.1093/bioinformatics/btab096.svg">
         </a>
     </p>
 </p>
