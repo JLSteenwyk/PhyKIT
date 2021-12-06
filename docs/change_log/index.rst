@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.6.0**: Added tip_to_tip_distance (alias: t2t_dist; t2t) function to calculate phylogenetic distance
+between two leaves in a phylogeny
+
 **1.5.0**: Added root_tree (alias: root; rt) function to root a phylogenetic tree
 
 **1.4.0**: PhyKIT is now Python version 3.9 and BioPython 1.79 compatible
