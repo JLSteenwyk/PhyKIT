@@ -924,6 +924,26 @@ Options: |br|
 
 |
 
+Tip-to-tip distance
+###################
+Function names: tip_to_tip_distance; t2t_dist; t2t |br|
+Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t
+
+Calculate distance between two tips (or leaves) in a phylogeny.
+
+Distances are in substitutions per site.
+
+.. code-block:: shell
+
+   phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2>
+
+Options: |br|
+*<tree_file>*: first argument after function name should be a tree file |br|
+*<tip_1>*: second argument should be the name of the first tip of interest |br|
+*<tip_2>*: third argument should be the name of the second tip of interest
+
+|
+
 Total tree length
 #################
 Function names: total_tree_length; tree_len |br|
