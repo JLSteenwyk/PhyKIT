@@ -3,6 +3,7 @@
 import logging
 import sys
 import textwrap
+
 from .version import __version__
 
 from argparse import (
@@ -50,6 +51,7 @@ from .services.tree import (
     Saturation,
     SpuriousSequence,
     TipLabels,
+    TipToTipDistance,
     Treeness,
     TreenessOverRCV
 )
@@ -74,7 +76,8 @@ help_header = f"""
                             
                 Version: {__version__}
                 Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
-                https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
+                Documentation link: https://jlsteenwyk.com/PhyKIT
+                Publication link: https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
 
 """
 
@@ -91,7 +94,8 @@ class Phykit(object):
                             
                 Version: {__version__}
                 Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
-                https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
+                Documentation link: https://jlsteenwyk.com/PhyKIT
+                Publication link: https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
 
     """
     
@@ -205,6 +209,8 @@ class Phykit(object):
                       branch lengths that are atypically long
                 tip_labels (alias: tree_labels; labels; tl)
                     - print leaf names in a phylogeny
+                tip_to_tip_distance (alias: t2t_dist; t2t)
+                    - calculate tip-to-tip distance in a phylogeny
                 treeness (alias: tness)
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
@@ -300,6 +306,8 @@ class Phykit(object):
             return self.spurious_sequence(argv)
         elif command in ['labels', 'tree_labels', 'tl']:
             return self.tip_labels(argv)
+        elif command in ['t2t_dist', 't2t']:
+            return self.tip_to_tip_distance(argv)
         elif command == 'tree_len':
             return self.total_tree_length(argv)
         elif command == 'tness':
@@ -1719,6 +1727,49 @@ class Phykit(object):
         TipLabels(args).run()
 
     @staticmethod
+    def tip_to_tip_distance(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate distance between two tips (or leaves) in a phylogeny.
+
+                Distances are in substitutions per site.
+
+                Aliases:
+                  tip_to_tip_distance, t2t_dist, t2t
+                Command line interfaces: 
+                  pk_tip_to_tip_distance, pk_t2t_dist, pk_t2t
+
+                Usage:
+                phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2>
+
+                Options
+                =====================================================
+                <tree_file>                 first argument after 
+                                            function name should be
+                                            a tree file
+
+                <tip_1>                     second argument after 
+                                            function name should be
+                                            one of the tip names
+
+                <tip_2>                     third argument after 
+                                            function name should be
+                                            the second tip name      
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tip_1", type=str, help=SUPPRESS)
+        parser.add_argument("tip_2", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        TipToTipDistance(args).run()
+
+    @staticmethod
     def total_tree_length(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -2101,6 +2152,9 @@ def spurious_sequence(argv=None):
 
 def tip_labels(argv=None):
     Phykit.tip_labels(sys.argv[1:])
+
+def tip_to_tip_distance(argv=None):
+    Phykit.tip_to_tip_distance(sys.argv[1:])
 
 def total_tree_length(argv=None):
     Phykit.total_tree_length(sys.argv[1:])
