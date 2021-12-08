@@ -40,7 +40,7 @@ from .services.tree import (
     InternodeLabeler,
     LastCommonAncestorSubtree,
     LBScore,
-    TotalTreeLength,
+    NearestNeighborInterchange,
     PatristicDistances,
     PolytomyTest,
     PrintTree,
@@ -52,6 +52,7 @@ from .services.tree import (
     SpuriousSequence,
     TipLabels,
     TipToTipDistance,
+    TotalTreeLength,
     Treeness,
     TreenessOverRCV
 )
@@ -186,8 +187,8 @@ class Phykit(object):
                     - get last common ancestor of a set of taxa
                 long_branch_score (alias: lb_score; lbs)
                     - calculates lb (long branch) score for taxa in a phylogeny
-                total_tree_length (alias: tree_len)
-                    - calculates total tree length
+                nearest_neighbor_interchange (alias: nni)
+                    - make nearest neighbor interchange moves on a tree
                 patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
                 polytomy_test (alias: polyt_test; polyt; ptt)
@@ -211,6 +212,8 @@ class Phykit(object):
                     - print leaf names in a phylogeny
                 tip_to_tip_distance (alias: t2t_dist; t2t)
                     - calculate tip-to-tip distance in a phylogeny
+                total_tree_length (alias: tree_len)
+                    - calculates total tree length
                 treeness (alias: tness)
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
@@ -288,6 +291,8 @@ class Phykit(object):
             return self.last_common_ancestor_subtree(argv)
         elif command in ['long_branch_score', 'lbs']:
             return self.lb_score(argv)
+        elif command in ['nni']:
+            return self.nearest_neighbor_interchange(argv)
         elif command == 'pd':
             return self.patristic_distances(argv)
         elif command in ['polyt_test', 'ptt', 'polyt']:
@@ -1290,6 +1295,50 @@ class Phykit(object):
         LBScore(args).run()
 
     @staticmethod
+    def nearest_neighbor_interchange(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Generate all nearest neighbor interchange moves for a binary
+                rooted tree.
+
+                The output file will also include the original phylogeny.
+
+                Aliases:
+                  nearest_neighbor_interchange, nni
+                Command line interfaces:
+                  pk_nearest_neighbor_interchange, pk_nni
+
+                Usage:
+                phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>]
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -o/--output                 name of output file that will
+                                            contain all trees with the
+                                            nearest neighbor interchange
+                                            moves. 
+                                            Default output will have 
+                                            the same name as the input
+                                            file but with the suffix 
+                                            ".NNIs"      
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        NearestNeighborInterchange(args).run()
+
+    @staticmethod
     def patristic_distances(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -2125,6 +2174,9 @@ def last_common_ancestor_subtree(argv=None):
 
 def lb_score(argv=None):
     Phykit.lb_score(sys.argv[1:])
+
+def nearest_neighbor_interchange(argv=None):
+    Phykit.nearest_neighbor_interchange(sys.argv[1:])
 
 def patristic_distances(argv=None):
     Phykit.patristic_distances(sys.argv[1:])

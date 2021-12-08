@@ -668,7 +668,30 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to print all LB score values
+*-v/\\-\\-verbose*: optional argument to print all LB score values
+
+|
+
+Nearest neighbor interchange
+############################
+Function names: nearest_neighbor_interchange; nni |br|
+Command line interface: pk_nearest_neighbor_interchange; pk_nni
+
+Generate all nearest neighbor interchange moves for a binary
+rooted tree.
+
+By default, the output file will have the same name as the input
+file but with the suffix ".nnis"
+
+The output file will also include the original phylogeny.
+
+.. code-block:: shell
+
+   phykit nearest_neighbor_interchange <tree> [-o/--output]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-o/\\-\\-output*: optional argument to specify output file name
 
 |
 

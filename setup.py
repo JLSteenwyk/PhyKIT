@@ -84,6 +84,8 @@ setup(
             "pk_lb_score = phykit.phykit:lb_score",
             "pk_long_branch_score = phykit.phykit:lb_score",
             "pk_lbs = phykit.phykit:lb_score",
+            "pk_nearest_neighbor_interchange = phykit.phykit:nearest_neighbor_interchange",
+            "pk_nni = phykit.phykit:nearest_neighbor_interchange",
             "pk_patristic_distances = phykit.phykit:patristic_distances",
             "pk_pd = phykit.phykit:patristic_distances",
             "pk_polytomy_test = phykit.phykit:polytomy_test",

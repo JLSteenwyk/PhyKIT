@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.7.0**: Added nearest_neighbor_interchange (alias: nni) function to generate all NNI moves
+for a binary rooted phylogeny
+
 **1.6.0**: Added tip_to_tip_distance (alias: t2t_dist; t2t) function to calculate phylogenetic distance
 between two leaves in a phylogeny
 

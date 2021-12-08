@@ -7,7 +7,7 @@ from .internal_branch_stats import InternalBranchStats
 from .internode_labeler import InternodeLabeler
 from .last_common_ancestor_subtree import LastCommonAncestorSubtree
 from .lb_score import LBScore
-from .total_tree_length import TotalTreeLength
+from .nearest_neighbor_interchange import NearestNeighborInterchange
 from .patristic_distances import PatristicDistances
 from .polytomy_test import PolytomyTest
 from .print_tree import PrintTree
@@ -17,8 +17,9 @@ from .root_tree import RootTree
 from .rf_distance import RobinsonFouldsDistance
 from .saturation import Saturation
 from .spurious_sequence import SpuriousSequence
-from .tip_labels import TipLabels
-from .tip_to_tip_distance import TipToTipDistance
 from .treeness import Treeness
 from .treeness_over_rcv import TreenessOverRCV
+from .tip_labels import TipLabels
+from .tip_to_tip_distance import TipToTipDistance
+from .total_tree_length import TotalTreeLength
 from .collapse_branches import CollapseBranches
