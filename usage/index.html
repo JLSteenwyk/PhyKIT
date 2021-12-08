@@ -122,6 +122,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#internode-labeler">Internode labeler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#last-common-ancestor-subtree">Last common ancestor subtree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nearest-neighbor-interchange">Nearest neighbor interchange</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
@@ -774,7 +775,26 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/--output</em>: optional argument to print all LB score values</p>
+<em>-v/--verbose</em>: optional argument to print all LB score values</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="nearest-neighbor-interchange">
+<h3>Nearest neighbor interchange<a class="headerlink" href="#nearest-neighbor-interchange" title="Permalink to this headline">¶</a></h3>
+<p>Function names: nearest_neighbor_interchange; nni <br/>
+Command line interface: pk_nearest_neighbor_interchange; pk_nni</p>
+<p>Generate all nearest neighbor interchange moves for a binary
+rooted tree.</p>
+<p>By default, the output file will have the same name as the input
+file but with the suffix “.nnis”</p>
+<p>The output file will also include the original phylogeny.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit nearest_neighbor_interchange &lt;tree&gt; <span class="o">[</span>-o/--output<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-o/--output</em>: optional argument to specify output file name</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
