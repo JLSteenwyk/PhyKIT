@@ -312,6 +312,18 @@ class TestBrokenPipeError(object):
         assert exit_status == 0
     
     @pytest.mark.slow
+    def test_pk_nearest_neighbor_interchange(self):
+        cmd = "pk_nearest_neighbor_interchange -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+    
+    @pytest.mark.slow
+    def test_pk_nni(self):
+        cmd = "pk_nni -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
     def test_pk_patristic_distances(self):
         cmd = "pk_patristic_distances -h"
         exit_status = os.system(cmd)

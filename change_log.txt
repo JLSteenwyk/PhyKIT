@@ -1,5 +1,9 @@
 Major changes to PhyKIT are summarized here.
 
+1.7.0
+  - Added nearest_neighbor_interchange (alias: nni) function to generate all NNI moves
+  for a binary rooted phylogeny
+
 1.6.0
   - Added tip_to_tip_distance (alias: t2t_dist; t2t) function to calculate
   phylogenetic distance between two leaves in a phylogeny
@@ -41,7 +45,6 @@ Major changes to PhyKIT are summarized here.
   will first determine shared tips between the two trees and prune both trees
   to a common set of tips. Next, PhyKIT will calculate the Robinson Foulds 
   distance.
-
 
 0.1.3
   - Added function (column_score; cs) to calculate the quality of
