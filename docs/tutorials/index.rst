@@ -520,9 +520,3 @@ In summary, calculating sum-of-pairs score and column score can help assess the 
 .. |br| raw:: html
 
   <br/>
-
-img.align-center {
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
-}
