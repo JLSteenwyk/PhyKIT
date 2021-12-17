@@ -118,6 +118,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hidden-paralogy-check">Hidden paralogy check</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internode-labeler">Internode labeler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#last-common-ancestor-subtree">Last common ancestor subtree</a></li>
@@ -233,7 +234,7 @@ used to calculate summary statistics.</p>
 </pre></div>
 </div>
 <p>Command specific help messages can be viewed by adding a
--h/--help argument after the command. For example, to see the
+-h/–help argument after the command. For example, to see the
 to see the help message for the command ‘treeness’, execute:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit treeness -h
 <span class="c1"># or</span>
@@ -334,7 +335,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/--reference</em>: reference alignment to compare the query alignment
+<em>-r/–reference</em>: reference alignment to compare the query alignment
 to</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -348,17 +349,17 @@ Command line interface: pk_create_concatenation_matrix, pk_create_concat, pk_cc<
 used to help in the construction of multi-locus data
 matrices.</p>
 <p>PhyKIT will output three files:
-1) A fasta file with ‘.fa’ appended to the prefix specified with the -p/--prefix parameter.
+1) A fasta file with ‘.fa’ appended to the prefix specified with the -p/–prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit create_concat -a &lt;file&gt; -p &lt;string&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/--alignment</em>: alignment list file. File should contain a single column list of alignment
+<em>-a/–alignment</em>: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
-<em>-p/--prefix</em>: prefix of output files</p>
+<em>-p/–prefix</em>: prefix of output files</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -375,7 +376,7 @@ in samtools, but does not requiring an indexing function.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
-<em>-v/--verbose</em>: entry name to be extracted from the inputted fasta file
+<em>-v/–verbose</em>: entry name to be extracted from the inputted fasta file
 entry</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -387,7 +388,7 @@ entry</p>
 Command line interface: pk_gc_content; pk_gc</p>
 <p>Calculate GC content of a fasta file.</p>
 <p>GC content is negatively correlated with phylogenetic signal.</p>
-<p>If there are multiple entries, use the -v/--verbose option
+<p>If there are multiple entries, use the -v/–verbose option
 to determine the GC content of each fasta entry separately.
 Association between GC content and phylogenetic signal was
 determined by Shen et al., Genome Biology and Evolution (2016),
@@ -397,7 +398,7 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
-<em>-v/--verbose</em>: optional argument to print the GC content of each fasta
+<em>-v/–verbose</em>: optional argument to print the GC content of each fasta
 entry</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -422,7 +423,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-v/--verbose</em>: optional argument to print identity per pair</p>
+<em>-v/–verbose</em>: optional argument to print identity per pair</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -488,7 +489,7 @@ an alignment file.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-i/--idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
+<em>-i/–idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -510,7 +511,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/--reference</em>: reference alignment to compare the query alignment
+<em>-r/–reference</em>: reference alignment to compare the query alignment
 to</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -530,9 +531,9 @@ nucleotide alignment.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-p/--protein</em>: protein alignment file <br/>
-<em>-n/--nucleotide</em>: nucleotide alignment file <br/>
-<em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
+<em>-p/–protein</em>: protein alignment file <br/>
+<em>-n/–nucleotide</em>: nucleotide alignment file <br/>
+<em>-s/–stop</em>: boolean for whether or not stop codons should be kept.
 If used, stop codons will be removed.</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -573,13 +574,13 @@ Command line interface: pk_bipartition_support_stats; pk_bss</p>
 <p>Calculate summary statistics for bipartition support.</p>
 <p>High bipartition support values are thought to be desirable because
 they are indicative of greater certainty in tree topology.</p>
-<p>To obtain all bipartition support values, use the -v/--verbose option.</p>
+<p>To obtain all bipartition support values, use the -v/–verbose option.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit bipartition_support_stats &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/--verbose</em>: optional argument to print all bipartition support values</p>
+<em>-v/–verbose</em>: optional argument to print all bipartition support values</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -596,8 +597,8 @@ or other analyses.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-f/--factor</em>: factor to multiply branch lengths by <br/>
-<em>-o/--output</em>: optional argument to name the outputted tree file. Default
+<em>-f/–factor</em>: factor to multiply branch lengths by <br/>
+<em>-o/–output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix “.factor_(n).tre”</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -615,9 +616,9 @@ value.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-s/--support</em>: bipartitions with support less than this value will be
+<em>-s/–support</em>: bipartitions with support less than this value will be
 collapsed <br/>
-<em>-o/--output</em>: optional argument to name the outputted tree file. Default
+<em>-o/–output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix
 “.collapsed_(support).tre”</p>
 <div class="line-block">
@@ -652,9 +653,9 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 <p>Options: <br/>
 <em>&lt;tree_file_zero&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>&lt;tree_file_one&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
+<em>-r/–reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
 this is a putative species tree. <br/>
-<em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1</p>
+<em>-v/–verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -679,8 +680,8 @@ Lastly, an empty root file can be used if the user does not wish to prune outgro
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/--tree</em>: input file tree name <br/>
-<em>-r/--root</em>: single column file with tip names of root taxa</p>
+<em>-t/–tree</em>: input file tree name <br/>
+<em>-r/–root</em>: single column file with tip names of root taxa</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -698,7 +699,45 @@ of the Royal Society B (2014).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/--tree</em>: input file tree name</p>
+<em>-t/–tree</em>: input file tree name</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="hidden-paralogy-check">
+<h3>Hidden paralogy check<a class="headerlink" href="#hidden-paralogy-check" title="Permalink to this headline">¶</a></h3>
+<p>Function names: hidden_paralogy_check, clan_check <br/>
+Command line interface: pk_hidden_paralogy_check, pk_clan_check</p>
+<p>Scan tree for evidence of hidden paralogy.</p>
+<p>This analysis can be used to identify hidden paralogy.
+Specifically, this method will examine if a set of
+well known monophyletic taxa are, in fact, monophyletic.
+If they are not, the evolutionary history of the gene may
+be subject to hidden paralogy. This analysis is typically
+done with single-copy orthologous genes.</p>
+<p>Requires a clade file, which species which monophyletic
+lineages to check for. Multiple monophyletic
+lineages can be specified. Each lineage should
+be specified on a single line and each tip name
+(or taxon name) should be separated by a space.
+For example, if it is anticipated that tips
+“A”, “B”, and “C” are monophyletic and “D”,
+“E”, and “F” are expected to be monophyletic, the
+clade file should be formatted as follows:
+”
+A B C
+D E F
+“</p>
+<p>The concept behind this analysis follows
+Siu-Ting et al., Molecular Biology and Evolution (2019),
+doi: 10.1093/molbev/msz067.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit hidden_paralogy_check &lt;tree&gt; -c/--clade &lt;clade_file&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/–tree</em>: input file tree name
+<em>-c/–clade</em>: clade file detailing which monophyletic lineages should
+be scanned for</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -709,13 +748,13 @@ of the Royal Society B (2014).</p>
 Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
 <p>Internal branch lengths can be useful for phylogeny diagnostics.</p>
-<p>To obtain all internal branch lengths, use the -v/--verbose option.</p>
+<p>To obtain all internal branch lengths, use the -v/–verbose option.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit internal_branch_stats &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/--verbose</em>: optional argument to print all internal branch lengths</p>
+<em>-v/–verbose</em>: optional argument to print all internal branch lengths</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -732,7 +771,7 @@ or otherwise.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/--output</em>: optional argument to name the outputted tree file</p>
+<em>-o/–output</em>: optional argument to name the outputted tree file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -750,7 +789,7 @@ from a list of taxa.</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-<em>-o/--output</em>: optional argument to print all LB score values</p>
+<em>-o/–output</em>: optional argument to print all LB score values</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -775,7 +814,7 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/--verbose</em>: optional argument to print all LB score values</p>
+<em>-v/–verbose</em>: optional argument to print all LB score values</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -794,7 +833,7 @@ file but with the suffix “.nnis”</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/--output</em>: optional argument to specify output file name</p>
+<em>-o/–output</em>: optional argument to specify output file name</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -814,7 +853,7 @@ will be tab separated.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/--output</em>: optional argument to print all tip-to-tip distances</p>
+<em>-o/–output</em>: optional argument to print all tip-to-tip distances</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -843,9 +882,9 @@ frequencies.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/--trees &lt;trees&gt;</em>: single column file with the names of
+<em>-t/–trees &lt;trees&gt;</em>: single column file with the names of
 phylogenies to use for polytomy testing <br/>
-<em>-g/--groups</em>: a tab-delimited file with the grouping designations
+<em>-g/–groups</em>: a tab-delimited file with the grouping designations
 to test. Lines starting with commetns are not considered. Names of
 individual taxa should be separated by a semi-colon ‘;’</p>
 <p>For example, the groups file could look like the following:</p>
@@ -870,7 +909,7 @@ but branch lengths can be removed using the -r/–remove argument.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-r/--remove</em>: optional argument to print the phylogeny without branch
+<em>-r/–remove</em>: optional argument to print the phylogeny without branch
 lengths</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -891,7 +930,7 @@ tree.</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: single column file with the names of the tips to remove
 from the phylogeny <br/>
-<em>-o/--output</em>: name of output file for the pruned phylogeny.
+<em>-o/–output</em>: name of output file for the pruned phylogeny.
 Default output will have the same name as the input file but with the suffix
 “.pruned”</p>
 <div class="line-block">
@@ -912,9 +951,9 @@ phylogeny.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-i/--idmap</em>: identifier map of current tip names (col1) and desired
+<em>-i/–idmap</em>: identifier map of current tip names (col1) and desired
 tip names (col2) <br/>
-<em>-o/--output</em>: optional argument to write the renamed tree files to. Default
+<em>-o/–output</em>: optional argument to write the renamed tree files to. Default
 output will have the same name as the input file but with the suffix “.renamed”</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -963,8 +1002,8 @@ the suffix “.rooted”.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file to root|br|
-<em>-r/--root</em>: single column file with taxa names to root the phylogeny on|br|
-<em>-o/--output</em>: optional argument to specify the name of the output file</p>
+<em>-r/–root</em>: single column file with taxa names to root the phylogeny on|br|
+<em>-o/–output</em>: optional argument to specify the name of the output file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -989,12 +1028,12 @@ col4: median branch length in the phylogeny</p>
 <p>Using this method to identify potentially spurious sequences
 was, to my knowledge, first introduced by Shen et al., (2018)
 Cell doi: 10.1016/j.cell.2018.10.023.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit spurious_seq &lt;file&gt; -f/<span class="se">\\</span>-<span class="se">\\</span>-factor
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit spurious_seq &lt;file&gt; -f/<span class="se">\-\-</span>factor
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;file&gt;</em>: first argument after function name should be a tree file
-<em>-f/--factor</em>: factor to multiply median branch length by to calculate
+<em>-f/–factor</em>: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20)</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1088,9 +1127,9 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/--alignment</em>: an alignment file <br/>
-<em>-t/--tree</em>: a tree file <br/>
-<em>-v/--verbose</em>: print out patristic distances and uncorrected <br/>
+<em>-a/–alignment</em>: an alignment file <br/>
+<em>-t/–tree</em>: a tree file <br/>
+<em>-v/–verbose</em>: print out patristic distances and uncorrected <br/>
 distances used to determine saturation</p>
 </div>
 <div class="section" id="treeness-over-rcv">
@@ -1111,8 +1150,8 @@ Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/--alignment</em>: an alignment file <br/>
-<em>-t/--tree</em>: a tree file</p>
+<em>-a/–alignment</em>: an alignment file <br/>
+<em>-t/–tree</em>: a tree file</p>
 </div>
 </div>
 </div>
