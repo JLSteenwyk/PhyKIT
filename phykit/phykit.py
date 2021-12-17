@@ -36,6 +36,7 @@ from .services.tree import (
     CovaryingEvolutionaryRates,
     DVMC,
     EvolutionaryRate,
+    HiddenParalogyCheck,
     InternalBranchStats,
     InternodeLabeler,
     LastCommonAncestorSubtree,
@@ -179,6 +180,8 @@ class Phykit(object):
                     - reports the degree of violation of the molecular clock
                 evolutionary_rate (alias: evo_rate)
                     - reports a tree-based estimation of evolutionary rate for a gene
+                hidden_paralogy_check (alias: clan_check)
+                    - check for monophyly of specific clades of taxa
                 internal_branch_stats (alias: ibs)
                     - calculates summary statistics for internal branch lengths 
                 internode_labeler (alias: il)
@@ -283,6 +286,8 @@ class Phykit(object):
             return self.dvmc(argv)
         elif command == 'evo_rate':
             return self.evolutionary_rate(argv)
+        elif command == 'clan_check':
+            return self.hidden_paralogy_check(argv)
         elif command == 'ibs':
             return self.internal_branch_stats(argv)
         elif command == 'il':
@@ -1121,6 +1126,78 @@ class Phykit(object):
         parser.add_argument("tree", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         EvolutionaryRate(args).run()
+
+    @staticmethod
+    def hidden_paralogy_check(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+                Scan tree for evidence of hidden paralogy.
+
+                This analysis can be used to identify hidden paralogy. 
+                Specifically, this method will examine if a set of
+                well known monophyletic taxa are, in fact, monophyletic.
+                If they are not, the evolutionary history of the gene may
+                be subject to hidden paralogy. This analysis is typically
+                done with single-copy orthologous genes.
+
+                Requires a clade file, which species which monophyletic
+                lineages to check for. Multiple monophyletic
+                lineages can be specified. Each lineage should
+                be specified on a single line and each tip name 
+                (or taxon name) should be separated by a space.
+                For example, if it is anticipated that tips
+                "A", "B", and "C" are monophyletic and "D",
+                "E", and "F" are expected to be monophyletic, the
+                clade file should be formatted as follows:
+                "
+                A B C
+                D E F
+                "
+
+                The output will have six columns and as many rows
+                as clades were specified in the -c file. For example,
+                if there were three rows of clades to examine the 
+                monophyly of, there will be three rows in the output
+                where the first row in the output corresponds to the 
+                results of the first row in the clade file.
+                col 1: if the clade was or wasn't monophyletic
+                col 2: average bipartition support value in the clade of interest
+                col 3: maximum bipartition support value in the clade of interest
+                col 4: minimum bipartition support value in the clade of interest
+                col 5: standard deviation of bipartition support values in the clade of interest
+                col 6: tip names of the clade specified in the clade file
+
+                The concept behind this analysis follows
+                Siu-Ting et al., Molecular Biology and Evolution (2019).
+
+                Aliases:
+                  hidden_paralogy_check, clan_check
+                Command line interfaces:
+                  pk_hidden_paralogy_check, pk_clan_check
+
+                Usage:
+                phykit hidden_paralogy_check <tree> -c/--clade <clade_file>
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                <clade_file>                clade file that specifies
+                                            what monophyletic clades
+                                            to expect
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("-c", "--clade", type=str, required=False, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        HiddenParalogyCheck(args).run()
 
     @staticmethod
     def internal_branch_stats(argv):
@@ -2162,6 +2239,9 @@ def dvmc(argv=None):
 
 def evolutionary_rate(argv=None):
     Phykit.evolutionary_rate(sys.argv[1:])
+
+def hidden_paralogy_check(argv=None):
+    Phykit.hidden_paralogy_check(sys.argv[1:])
 
 def internal_branch_stats(argv=None):
     Phykit.internal_branch_stats(sys.argv[1:])

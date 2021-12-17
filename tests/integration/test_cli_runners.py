@@ -258,6 +258,18 @@ class TestBrokenPipeError(object):
         assert exit_status == 0
 
     @pytest.mark.slow
+    def test_pk_hidden_paralogy_check(self):
+        cmd = "pk_hidden_paralogy_check -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_clan_check(self):
+        cmd = "pk_clan_check -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
     def test_pk_internal_branch_stats(self):
         cmd = "pk_internal_branch_stats -h"
         exit_status = os.system(cmd)

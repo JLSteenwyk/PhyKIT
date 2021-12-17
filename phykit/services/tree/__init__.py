@@ -3,6 +3,7 @@ from .branch_length_multiplier import BranchLengthMultiplier
 from .covarying_evolutionary_rates import CovaryingEvolutionaryRates
 from .dvmc import DVMC
 from .evolutionary_rate import EvolutionaryRate
+from .hidden_paralogy_check import HiddenParalogyCheck
 from .internal_branch_stats import InternalBranchStats
 from .internode_labeler import InternodeLabeler
 from .last_common_ancestor_subtree import LastCommonAncestorSubtree

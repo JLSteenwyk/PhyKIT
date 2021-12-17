@@ -75,6 +75,8 @@ setup(
             "pk_degree_of_violation_of_a_molecular_clock = phykit.phykit:dvmc",
             "pk_evo_rate = phykit.phykit:evolutionary_rate",
             "pk_evolutionary_rate = phykit.phykit:evolutionary_rate",
+            "pk_hidden_paralogy_check = phykit.phykit:hidden_paralogy_check",
+            "pk_clan_check = phykit.phykit:hidden_paralogy_check",
             "pk_internal_branch_stats = phykit.phykit:internal_branch_stats",
             "pk_ibs = phykit.phykit:internal_branch_stats",
             "pk_internode_labeler = phykit.phykit:internode_labeler",

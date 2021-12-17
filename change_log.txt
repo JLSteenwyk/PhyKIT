@@ -1,5 +1,9 @@
 Major changes to PhyKIT are summarized here.
 
+1.8.0
+  - Added hidden_paralogy_check (alias: clan_check) function to examine phylogenetic
+  tree for issues of hidden paralogy
+
 1.7.0
   - Added nearest_neighbor_interchange (alias: nni) function to generate all NNI moves
   for a binary rooted phylogeny
