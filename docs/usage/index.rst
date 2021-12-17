@@ -30,7 +30,7 @@ Calling functions
    phykit <command> [optional command arguments]
 
 Command specific help messages can be viewed by adding a 
--h/\\-\\-help argument after the command. For example, to see the
+-h/\-\-help argument after the command. For example, to see the
 to see the help message for the command 'treeness', execute:
 
 .. code-block:: shell
@@ -150,7 +150,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment
+*-r/\-\-reference*: reference alignment to compare the query alignment
 to
 
 |
@@ -165,7 +165,7 @@ used to help in the construction of multi-locus data
 matrices.
 
 PhyKIT will output three files:
-1) A fasta file with '.fa' appended to the prefix specified with the -p/\\-\\-prefix parameter.
+1) A fasta file with '.fa' appended to the prefix specified with the -p/\-\-prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.
 
@@ -174,10 +174,10 @@ PhyKIT will output three files:
 	phykit create_concat -a <file> -p <string>
 
 Options: |br|
-*-a/\\-\\-alignment*: alignment list file. File should contain a single column list of alignment
+*-a/\-\-alignment*: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
-*-p/\\-\\-prefix*: prefix of output files
+*-p/\-\-prefix*: prefix of output files
 
 |
 
@@ -197,7 +197,7 @@ in samtools, but does not requiring an indexing function.
 
 Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
-*-v/\\-\\-verbose*: entry name to be extracted from the inputted fasta file
+*-v/\-\-verbose*: entry name to be extracted from the inputted fasta file
 entry
 
 |
@@ -211,7 +211,7 @@ Calculate GC content of a fasta file.
 
 GC content is negatively correlated with phylogenetic signal.
 
-If there are multiple entries, use the -v/\\-\\-verbose option
+If there are multiple entries, use the -v/\-\-verbose option
 to determine the GC content of each fasta entry separately.
 Association between GC content and phylogenetic signal was
 determined by Shen et al., Genome Biology and Evolution (2016), 
@@ -223,7 +223,7 @@ doi: 10.1093/gbe/evw179.
 
 Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
-*-v/\\-\\-verbose*: optional argument to print the GC content of each fasta
+*-v/\-\-verbose*: optional argument to print the GC content of each fasta
 entry
 
 |
@@ -253,7 +253,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print identity per pair
+*-v/\-\-verbose*: optional argument to print identity per pair
 
 |
 
@@ -331,7 +331,7 @@ an alignment file.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
+*-i/\-\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
 
 |
 
@@ -357,7 +357,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment
+*-r/\-\-reference*: reference alignment to compare the query alignment
 to
 
 |
@@ -380,9 +380,9 @@ nucleotide alignment.
    phykit thread_dna -p <file> -n <file> [-s]
 
 Options: |br|
-*-p/\\-\\-protein*: protein alignment file |br|
-*-n/\\-\\-nucleotide*: nucleotide alignment file |br|
-*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
+*-p/\-\-protein*: protein alignment file |br|
+*-n/\-\-nucleotide*: nucleotide alignment file |br|
+*-s/\-\-stop*: boolean for whether or not stop codons should be kept. 
 If used, stop codons will be removed.
 
 |
@@ -430,7 +430,7 @@ Calculate summary statistics for bipartition support.
 High bipartition support values are thought to be desirable because
 they are indicative of greater certainty in tree topology.
 
-To obtain all bipartition support values, use the -v/\\-\\-verbose option.
+To obtain all bipartition support values, use the -v/\-\-verbose option.
 
 .. code-block:: shell
 
@@ -438,7 +438,7 @@ To obtain all bipartition support values, use the -v/\\-\\-verbose option.
 
 Options: |br|
 *<alignment>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all bipartition support values
+*-v/\-\-verbose*: optional argument to print all bipartition support values
 
 |
 
@@ -458,8 +458,8 @@ or other analyses.
 
 Options: |br|
 *<alignment>*: first argument after function name should be a tree file |br|
-*-f/\\-\\-factor*: factor to multiply branch lengths by |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
+*-f/\-\-factor*: factor to multiply branch lengths by |br|
+*-o/\-\-output*: optional argument to name the outputted tree file. Default 
 output will have the same name as the input file but with the suffix ".factor_(n).tre"
 
 |
@@ -480,9 +480,9 @@ value.
 
 Options: |br|
 *<alignment>*: first argument after function name should be a tree file |br|
-*-s/\\-\\-support*: bipartitions with support less than this value will be 
+*-s/\-\-support*: bipartitions with support less than this value will be 
 collapsed |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
+*-o/\-\-output*: optional argument to name the outputted tree file. Default 
 output will have the same name as the input file but with the suffix 
 ".collapsed_(support).tre"
 
@@ -522,9 +522,9 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be an alignment file |br|
 *<tree_file_one>*: first argument after function name should be an alignment file |br| 
-*-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
+*-r/\-\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
 this is a putative species tree. |br|
-*-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1
+*-v/\-\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1
 
 |
 
@@ -554,8 +554,8 @@ Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.16
    phykit degree_of_violation_of_a_molecular_clock -t/--tree <tree>  -r/--root <root_taxa>
 
 Options: |br|
-*-t/\\-\\-tree*: input file tree name |br|
-*-r/\\-\\-root*: single column file with tip names of root taxa 
+*-t/\-\-tree*: input file tree name |br|
+*-r/\-\-root*: single column file with tip names of root taxa 
 
 |
 
@@ -577,7 +577,51 @@ of the Royal Society B (2014).
    phykit evolutionary_rate <tree>
 
 Options: |br|
-*-t/\\-\\-tree*: input file tree name
+*-t/\-\-tree*: input file tree name
+
+|
+
+Hidden paralogy check
+#####################
+Function names: hidden_paralogy_check, clan_check |br|
+Command line interface: pk_hidden_paralogy_check, pk_clan_check
+
+Scan tree for evidence of hidden paralogy.
+
+This analysis can be used to identify hidden paralogy. 
+Specifically, this method will examine if a set of
+well known monophyletic taxa are, in fact, monophyletic.
+If they are not, the evolutionary history of the gene may
+be subject to hidden paralogy. This analysis is typically
+done with single-copy orthologous genes.
+
+Requires a clade file, which species which monophyletic
+lineages to check for. Multiple monophyletic
+lineages can be specified. Each lineage should
+be specified on a single line and each tip name 
+(or taxon name) should be separated by a space.
+For example, if it is anticipated that tips
+"A", "B", and "C" are monophyletic and "D",
+"E", and "F" are expected to be monophyletic, the
+clade file should be formatted as follows:
+"
+A B C
+D E F
+"
+
+The concept behind this analysis follows
+Siu-Ting et al., Molecular Biology and Evolution (2019),
+doi: 10.1093/molbev/msz067.
+
+
+.. code-block:: shell
+
+   phykit hidden_paralogy_check <tree> -c/--clade <clade_file>
+
+Options: |br|
+*-t/\-\-tree*: input file tree name
+*-c/\-\-clade*: clade file detailing which monophyletic lineages should
+be scanned for
 
 |
 
@@ -590,7 +634,7 @@ Calculate summary statistics for internal branch lengths in a phylogeny.
 
 Internal branch lengths can be useful for phylogeny diagnostics.
 
-To obtain all internal branch lengths, use the -v/\\-\\-verbose option.   
+To obtain all internal branch lengths, use the -v/\-\-verbose option.   
 
 .. code-block:: shell
 
@@ -598,7 +642,7 @@ To obtain all internal branch lengths, use the -v/\\-\\-verbose option.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all internal branch lengths
+*-v/\-\-verbose*: optional argument to print all internal branch lengths
 
 |
 
@@ -617,7 +661,7 @@ or otherwise.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file
+*-o/\-\-output*: optional argument to name the outputted tree file
 
 |
 
@@ -637,7 +681,7 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-*-o/\\-\\-output*: optional argument to print all LB score values
+*-o/\-\-output*: optional argument to print all LB score values
 
 |
 
@@ -668,7 +712,7 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all LB score values
+*-v/\-\-verbose*: optional argument to print all LB score values
 
 |
 
@@ -691,7 +735,7 @@ The output file will also include the original phylogeny.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to specify output file name
+*-o/\-\-output*: optional argument to specify output file name
 
 |
 
@@ -715,7 +759,7 @@ will be tab separated.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to print all tip-to-tip distances
+*-o/\-\-output*: optional argument to print all tip-to-tip distances
 
 |
 
@@ -750,9 +794,9 @@ frequencies.
    phykit polytomy_test -t/--trees <trees> -g/--groups <groups>
 
 Options: |br|
-*-t/\\-\\-trees <trees>*: single column file with the names of 
+*-t/\-\-trees <trees>*: single column file with the names of 
 phylogenies to use for polytomy testing |br|
-*-g/\\-\\-groups*: a tab-delimited file with the grouping designations
+*-g/\-\-groups*: a tab-delimited file with the grouping designations
 to test. Lines starting with commetns are not considered. Names of
 individual taxa should be separated by a semi-colon ';'
 
@@ -782,7 +826,7 @@ but branch lengths can be removed using the -r/--remove argument.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-r/\\-\\-remove*: optional argument to print the phylogeny without branch
+*-r/\-\-remove*: optional argument to print the phylogeny without branch
 lengths
 
 |
@@ -806,7 +850,7 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: single column file with the names of the tips to remove
 from the phylogeny |br|
-*-o/\\-\\-output*: name of output file for the pruned phylogeny. 
+*-o/\-\-output*: name of output file for the pruned phylogeny. 
 Default output will have the same name as the input file but with the suffix 
 ".pruned" 
 
@@ -830,9 +874,9 @@ phylogeny.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-i/\\-\\-idmap*: identifier map of current tip names (col1) and desired
+*-i/\-\-idmap*: identifier map of current tip names (col1) and desired
 tip names (col2) |br|
-*-o/\\-\\-output*: optional argument to write the renamed tree files to. Default
+*-o/\-\-output*: optional argument to write the renamed tree files to. Default
 output will have the same name as the input file but with the suffix ".renamed"
 
 |
@@ -889,8 +933,8 @@ the suffix ".rooted".
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file to root|br|
-*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on|br|
-*-o/\\-\\-output*: optional argument to specify the name of the output file
+*-r/\-\-root*: single column file with taxa names to root the phylogeny on|br|
+*-o/\-\-output*: optional argument to specify the name of the output file
 
 |
 
@@ -922,11 +966,11 @@ Cell doi: 10.1016/j.cell.2018.10.023.
 
 .. code-block:: shell
 
-   phykit spurious_seq <file> -f/\\-\\-factor
+   phykit spurious_seq <file> -f/\-\-factor
 
 Options: |br|
 *<file>*: first argument after function name should be a tree file
-*-f/\\-\\-factor*: factor to multiply median branch length by to calculate
+*-f/\-\-factor*: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20)
 
 |
@@ -1038,9 +1082,9 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
    phykit saturation -a <alignment> -t <tree> [-v/--verbose]
 
 Options: |br|
-*-a/\\-\\-alignment*: an alignment file |br|
-*-t/\\-\\-tree*: a tree file |br|
-*-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
+*-a/\-\-alignment*: an alignment file |br|
+*-t/\-\-tree*: a tree file |br|
+*-v/\-\-verbose*: print out patristic distances and uncorrected |br|
 distances used to determine saturation 
 
 Treeness over RCV
@@ -1067,8 +1111,8 @@ Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
    phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
 
 Options: |br|
-*-a/\\-\\-alignment*: an alignment file |br|
-*-t/\\-\\-tree*: a tree file
+*-a/\-\-alignment*: an alignment file |br|
+*-t/\-\-tree*: a tree file
 
 .. |br| raw:: html
 
