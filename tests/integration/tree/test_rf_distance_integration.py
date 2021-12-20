@@ -11,7 +11,7 @@ here = Path(__file__)
 
 
 @pytest.mark.integration
-class TestTree(object):
+class TestRF(object):
     @patch("builtins.print")
     def test_rf_distance(self, mocked_print):
         expected_result = "8\t0.8"

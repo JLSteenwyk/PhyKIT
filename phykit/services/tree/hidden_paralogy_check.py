@@ -37,7 +37,7 @@ class HiddenParalogyCheck(Tree):
             # root tree with different tips
             tree.root_with_outgroup(diff_tips)
             # get common ancestor of clan of interest
-            tree = tree.common_ancestor(clan)
+            tree = tree.common_ancestor(shared_tree_tips)
             # get common ancestor tree tips
             common_ancestor_tips = self.get_tip_names_from_tree(tree)        
             diff_tips_between_clade_and_curr_tree = list(set(clade_of_interest) ^ set(common_ancestor_tips))
@@ -45,7 +45,7 @@ class HiddenParalogyCheck(Tree):
             stats = self.get_bootstrap_statistics(tree)
 
             res_arr = self.populate_res_arr(
-                clade,
+                shared_tree_tips,
                 diff_tips_between_clade_and_curr_tree,
                 stats,
                 res_arr
@@ -84,7 +84,7 @@ class HiddenParalogyCheck(Tree):
 
     def populate_res_arr(
         self,
-        clade,
+        shared_tree_tips,
         diff_tips_between_clade_and_curr_tree,
         stats,
         res_arr
@@ -100,7 +100,7 @@ class HiddenParalogyCheck(Tree):
         temp.append(stats["maximum"])
         temp.append(stats["minimum"])
         temp.append(stats["standard_deviation"])
-        temp.append(clade)
+        temp.append(diff_tips_between_clade_and_curr_tree)
         res_arr.append(temp)
 
         return res_arr
@@ -108,6 +108,10 @@ class HiddenParalogyCheck(Tree):
     def print_results(self, res_arr):
         for res in res_arr:
             try:
-                print(f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}")
+                if len(res[5]) != 0:
+                    res[5].sort()
+                    print(f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}")
+                else:
+                    print(f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}")
             except IndexError:
                 print(f"{res[0]}")

@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.9.0**: Added monophyly_check (alias: is_monophyletic) function to examine monophyly 
+among a specified set of taxa
+
 **1.8.0**: Added hidden_paralogy_check (alias: clan_check) function to examine phylogenetic
 tree for issues of hidden paralogy
 

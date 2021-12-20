@@ -11,7 +11,7 @@ here = Path(__file__)
 
 
 @pytest.mark.integration
-class TestTree(object):
+class TestPTT(object):
     @patch("builtins.print")
     def test_polytomy_test0(self, mocked_print):
         testargs = [
