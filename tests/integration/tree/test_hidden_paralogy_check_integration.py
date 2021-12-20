@@ -11,7 +11,7 @@ here = Path(__file__)
 
 
 @pytest.mark.integration
-class TestTree(object):
+class TestHiddenParalogyCheck(object):
     @patch("builtins.print")
     def test_hidden_paralogy_check(self, mocked_print):
         testargs = [
@@ -25,8 +25,8 @@ class TestTree(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("monophyletic\t100\t100\t100\t0.0\tAspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5"),
-            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fumigatus_Af293;Aspergillus_fischeri_IBT_3007"),
+            call("monophyletic\t100\t100\t100\t0.0"),
+            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
             call("insufficient_taxon_representation"),
         ]
 
@@ -43,8 +43,8 @@ class TestTree(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("monophyletic\t100\t100\t100\t0.0\tAspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5"),
-            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fumigatus_Af293;Aspergillus_fischeri_IBT_3007"),
+            call("monophyletic\t100\t100\t100\t0.0"),
+            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
             call("insufficient_taxon_representation"),
         ]
 
@@ -61,8 +61,8 @@ class TestTree(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("monophyletic\t100\t100\t100\t0.0\tAspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5"),
-            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fumigatus_Af293;Aspergillus_fischeri_IBT_3007"),
+            call("monophyletic\t100\t100\t100\t0.0"),
+            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
             call("insufficient_taxon_representation"),
         ]
 

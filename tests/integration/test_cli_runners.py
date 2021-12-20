@@ -324,6 +324,18 @@ class TestBrokenPipeError(object):
         assert exit_status == 0
     
     @pytest.mark.slow
+    def test_pk_monophyly_check(self):
+        cmd = "pk_monophyly_check -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_is_monophyletic(self):
+        cmd = "pk_is_monophyletic -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
     def test_pk_nearest_neighbor_interchange(self):
         cmd = "pk_nearest_neighbor_interchange -h"
         exit_status = os.system(cmd)

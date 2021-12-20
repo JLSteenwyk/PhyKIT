@@ -8,6 +8,7 @@ from .internal_branch_stats import InternalBranchStats
 from .internode_labeler import InternodeLabeler
 from .last_common_ancestor_subtree import LastCommonAncestorSubtree
 from .lb_score import LBScore
+from .monophyly_check import MonophylyCheck
 from .nearest_neighbor_interchange import NearestNeighborInterchange
 from .patristic_distances import PatristicDistances
 from .polytomy_test import PolytomyTest

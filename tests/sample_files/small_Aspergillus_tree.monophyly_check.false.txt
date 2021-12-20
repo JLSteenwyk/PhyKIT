@@ -1,0 +1,5 @@
+Aspergillus_fumigatus_Af293 
+Aspergillus_fumigatus_CEA10
+Aspergillus_fumigatus_HMR_AF_270
+Aspergillus_fumigatus_Z5
+Aspergillus_fischeri_NRRL4161

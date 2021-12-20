@@ -11,7 +11,7 @@ here = Path(__file__)
 
 
 @pytest.mark.integration
-class TestTree(object):
+class TestIBS(object):
     @patch("builtins.print")
     def test_internal_branch_stats0(self, mocked_print):
         testargs = [

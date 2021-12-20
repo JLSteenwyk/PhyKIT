@@ -11,7 +11,7 @@ here = Path(__file__)
 
 
 @pytest.mark.integration
-class TestTree(object):
+class TestTipToTipDistance(object):
     @patch("builtins.print")
     def test_tip_to_tip_distance_0(self, mocked_print):
         expected_result = 0.0532

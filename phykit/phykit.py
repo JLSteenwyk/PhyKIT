@@ -41,6 +41,7 @@ from .services.tree import (
     InternodeLabeler,
     LastCommonAncestorSubtree,
     LBScore,
+    MonophylyCheck,
     NearestNeighborInterchange,
     PatristicDistances,
     PolytomyTest,
@@ -190,6 +191,8 @@ class Phykit(object):
                     - get last common ancestor of a set of taxa
                 long_branch_score (alias: lb_score; lbs)
                     - calculates lb (long branch) score for taxa in a phylogeny
+                monophyly_check (alias: is_monophyletic)
+                    - determines if a set of tip names are monophyletic
                 nearest_neighbor_interchange (alias: nni)
                     - make nearest neighbor interchange moves on a tree
                 patristic_distances (alias: pd)
@@ -296,7 +299,9 @@ class Phykit(object):
             return self.last_common_ancestor_subtree(argv)
         elif command in ['long_branch_score', 'lbs']:
             return self.lb_score(argv)
-        elif command in ['nni']:
+        elif command == 'is_monophyletic':
+            return self.monophyly_check(argv)
+        elif command == 'nni':
             return self.nearest_neighbor_interchange(argv)
         elif command == 'pd':
             return self.patristic_distances(argv)
@@ -1157,6 +1162,8 @@ class Phykit(object):
                 A B C
                 D E F
                 "
+                Tip names not present in the tree will not be considered
+                when assessing hidden paralogy.
 
                 The output will have six columns and as many rows
                 as clades were specified in the -c file. For example,
@@ -1169,7 +1176,8 @@ class Phykit(object):
                 col 3: maximum bipartition support value in the clade of interest
                 col 4: minimum bipartition support value in the clade of interest
                 col 5: standard deviation of bipartition support values in the clade of interest
-                col 6: tip names of the clade specified in the clade file
+                col 6: tip names of taxa monophyletic with the lineage of interest
+                       excluding those that are listed in the taxa_of_interest file
 
                 The concept behind this analysis follows
                 Siu-Ting et al., Molecular Biology and Evolution (2019).
@@ -1370,6 +1378,59 @@ class Phykit(object):
         parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         LBScore(args).run()
+
+    @staticmethod
+    def monophyly_check(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+                Check for monophyly of a lineage.
+
+                This analysis can be used to determine if a set of 
+                taxa are monophyletic.
+
+                Requires a taxa file, which species which tip names
+                are expected to be monophyletic. File format is a
+                single column file with tip names. Tip names not
+                present in the tree will not be considered when
+                examining monophyly.
+
+                The output will have six columns.
+                col 1: if the clade was or wasn't monophyletic
+                col 2: average bipartition support value in the clade of interest
+                col 3: maximum bipartition support value in the clade of interest
+                col 4: minimum bipartition support value in the clade of interest
+                col 5: standard deviation of bipartition support values in the clade of interest
+                col 6: tip names of taxa monophyletic with the lineage of interest
+                       excluding those that are listed in the taxa_of_interest file
+
+                Aliases:
+                  monophyly_check, is_monophyletic
+                Command line interfaces:
+                  pk_monophyly_check, pk_is_monophyletic
+
+                Usage:
+                phykit monophyly_check <tree> <list_of_taxa>
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                <list_of_taxa>              single column file with
+                                            list of tip names to 
+                                            examine the monophyly of
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        MonophylyCheck(args).run()
 
     @staticmethod
     def nearest_neighbor_interchange(argv):
@@ -2254,6 +2315,9 @@ def last_common_ancestor_subtree(argv=None):
 
 def lb_score(argv=None):
     Phykit.lb_score(sys.argv[1:])
+
+def monophyly_check(argv=None):
+    Phykit.monophyly_check(sys.argv[1:])
 
 def nearest_neighbor_interchange(argv=None):
     Phykit.nearest_neighbor_interchange(sys.argv[1:])
