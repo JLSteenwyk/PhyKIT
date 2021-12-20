@@ -609,6 +609,19 @@ A B C
 D E F
 "
 
+The output will have six columns and as many rows
+as clades were specified in the -c file. For example,
+if there were three rows of clades to examine the 
+monophyly of, there will be three rows in the output
+where the first row in the output corresponds to the 
+results of the first row in the clade file.
+col 1: if the clade was or wasn't monophyletic
+col 2: average bipartition support value in the clade of interest
+col 3: maximum bipartition support value in the clade of interest
+col 4: minimum bipartition support value in the clade of interest
+col 5: standard deviation of bipartition support values in the clade of interest
+col 6: tip names of the clade specified in the clade file
+
 The concept behind this analysis follows
 Siu-Ting et al., Molecular Biology and Evolution (2019),
 doi: 10.1093/molbev/msz067.
@@ -736,6 +749,40 @@ The output file will also include the original phylogeny.
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-o/\-\-output*: optional argument to specify output file name
+
+|
+
+Monophyly check
+###############
+Function names: monophyly_check; is_monophyletic |br|
+Command line interface: pk_monophyly_check; pk_is_monophyletic
+
+This analysis can be used to determine if a set of 
+taxa are monophyletic.
+
+Requires a taxa file, which species which tip names
+are expected to be monophyletic. File format is a
+single column file with tip names. Tip names not
+present in the tree will not be considered when
+examining monophyly.
+
+The output will have six columns.
+col 1: if the clade was or wasn't monophyletic
+col 2: average bipartition support value in the clade of interest
+col 3: maximum bipartition support value in the clade of interest
+col 4: minimum bipartition support value in the clade of interest
+col 5: standard deviation of bipartition support values in the clade of interest
+col 6: tip names of taxa monophyletic with the lineage of interest
+      excluding those that are listed in the taxa_of_interest file
+
+.. code-block:: shell
+
+   phykit monophyly_check <tree> <list_of_taxa>
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*<list_of_taxa>*: single column file with list of tip names to 
+examine the monophyly of
 
 |
 
