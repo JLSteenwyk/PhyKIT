@@ -150,7 +150,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\-\-reference*: reference alignment to compare the query alignment
+*-r/\\-\\-reference*: reference alignment to compare the query alignment
 to
 
 |
