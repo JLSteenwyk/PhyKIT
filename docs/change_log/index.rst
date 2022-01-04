@@ -8,6 +8,10 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.10.0**: Added tip_to_tip_node_distance (alias: t2t_node_dist; t2t_nd) function to calculate
+the phylogenetic distance between two leaves in a phylogeny. Distance is measured in nodes between
+two leaves
+
 **1.9.0**: Added monophyly_check (alias: is_monophyletic) function to examine monophyly 
 among a specified set of taxa
 

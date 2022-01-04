@@ -54,6 +54,7 @@ from .services.tree import (
     SpuriousSequence,
     TipLabels,
     TipToTipDistance,
+    TipToTipNodeDistance,
     TotalTreeLength,
     Treeness,
     TreenessOverRCV
@@ -218,6 +219,8 @@ class Phykit(object):
                     - print leaf names in a phylogeny
                 tip_to_tip_distance (alias: t2t_dist; t2t)
                     - calculate tip-to-tip distance in a phylogeny
+                tip_to_tip_node_distance (alias: t2t_node_dist; t2t_nd)
+                    - calculate tip-to-tip node distance in a phylogeny
                 total_tree_length (alias: tree_len)
                     - calculates total tree length
                 treeness (alias: tness)
@@ -323,6 +326,8 @@ class Phykit(object):
             return self.tip_labels(argv)
         elif command in ['t2t_dist', 't2t']:
             return self.tip_to_tip_distance(argv)
+        elif command in ['t2t_node_dist', 't2t_nd']:
+            return self.tip_to_tip_node_distance(argv)
         elif command == 'tree_len':
             return self.total_tree_length(argv)
         elif command == 'tness':
@@ -1957,6 +1962,50 @@ class Phykit(object):
         TipToTipDistance(args).run()
 
     @staticmethod
+    def tip_to_tip_node_distance(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate distance between two tips (or leaves) in a phylogeny.
+
+                Distance is measured by the number of nodes between one tip
+                and another.
+
+                Aliases:
+                  tip_to_tip_node_distance, t2t_node_dist, t2t_nd
+                Command line interfaces: 
+                  pk_tip_to_tip_node_distance, pk_t2t_node_dist, pk_t2t_nd
+
+                Usage:
+                phykit tip_to_tip_node_distance <tree_file> <tip_1> <tip_2>
+
+                Options
+                =====================================================
+                <tree_file>                 first argument after 
+                                            function name should be
+                                            a tree file
+
+                <tip_1>                     second argument after 
+                                            function name should be
+                                            one of the tip names
+
+                <tip_2>                     third argument after 
+                                            function name should be
+                                            the second tip name      
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tip_1", type=str, help=SUPPRESS)
+        parser.add_argument("tip_2", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        TipToTipNodeDistance(args).run()
+
+    @staticmethod
     def total_tree_length(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -2351,6 +2400,9 @@ def tip_labels(argv=None):
 
 def tip_to_tip_distance(argv=None):
     Phykit.tip_to_tip_distance(sys.argv[1:])
+
+def tip_to_tip_node_distance(argv=None):
+    Phykit.tip_to_tip_node_distance(sys.argv[1:])
 
 def total_tree_length(argv=None):
     Phykit.total_tree_length(sys.argv[1:])
