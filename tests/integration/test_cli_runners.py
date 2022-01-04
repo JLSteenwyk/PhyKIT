@@ -520,6 +520,24 @@ class TestBrokenPipeError(object):
         cmd = "pk_t2t -h"
         exit_status = os.system(cmd)
         assert exit_status == 0
+    
+    @pytest.mark.slow
+    def test_pk_tip_to_tip_node_distance(self):
+        cmd = "pk_tip_to_tip_node_distance -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_t2t_node_dist(self):
+        cmd = "pk_t2t_node_dist -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_t2t_nd(self):
+        cmd = "pk_t2t_nd -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
 
     @pytest.mark.slow
     def test_pk_tree_labels(self):

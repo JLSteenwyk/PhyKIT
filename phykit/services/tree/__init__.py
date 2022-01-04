@@ -23,5 +23,6 @@ from .treeness import Treeness
 from .treeness_over_rcv import TreenessOverRCV
 from .tip_labels import TipLabels
 from .tip_to_tip_distance import TipToTipDistance
+from .tip_to_tip_node_distance import TipToTipNodeDistance
 from .total_tree_length import TotalTreeLength
 from .collapse_branches import CollapseBranches
