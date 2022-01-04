@@ -135,6 +135,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#spurious-homolog-identification">Spurious homolog identification</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tip-labels">Print tip labels</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-distance">Tip-to-tip distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-node-distance">Tip-to-tip node distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#total-tree-length">Total tree length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#treeness">Treeness</a></li>
 </ul>
@@ -1105,6 +1106,24 @@ Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
 <p>Distances are in substitutions per site.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit tip_to_tip_distance &lt;tree_file&gt; &lt;tip_1&gt; &lt;tip_2&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree_file&gt;</em>: first argument after function name should be a tree file <br/>
+<em>&lt;tip_1&gt;</em>: second argument should be the name of the first tip of interest <br/>
+<em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="tip-to-tip-node-distance">
+<h3>Tip-to-tip node distance<a class="headerlink" href="#tip-to-tip-node-distance" title="Permalink to this headline">¶</a></h3>
+<p>Function names: tip_to_tip_node_distance; t2t_node_dist; t2t_nd <br/>
+Command line interface: pk_tip_to_tip_node_distance; pk_t2t_node_dist; pk_t2t_nd</p>
+<p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
+<p>Distance is measured by the number of nodes between one tip
+and another.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit tip_to_tip_node_distance &lt;tree_file&gt; &lt;tip_1&gt; &lt;tip_2&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
