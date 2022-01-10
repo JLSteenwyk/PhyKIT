@@ -13,7 +13,7 @@ here = Path(__file__)
 class TestSumOfPairsScore(object):
     @patch("builtins.print")
     def test_sum_of_pairs_score_full_ref(self, mocked_print):
-        expected_result = 0.7714
+        expected_result = 0.9
         testargs = [
             "phykit",
             "sum_of_pairs_score",
@@ -27,7 +27,7 @@ class TestSumOfPairsScore(object):
 
     @patch("builtins.print")
     def test_sum_of_pairs_score_short_ref(self, mocked_print):
-        expected_result = 0.7714
+        expected_result = 0.9
         testargs = [
             "phykit",
             "sum_of_pairs_score",
@@ -41,7 +41,7 @@ class TestSumOfPairsScore(object):
 
     @patch("builtins.print")
     def test_sum_of_pairs_score_alias0(self, mocked_print):
-        expected_result = 0.7714
+        expected_result = 0.9
         testargs = [
             "phykit",
             "sops",
@@ -55,7 +55,7 @@ class TestSumOfPairsScore(object):
 
     @patch("builtins.print")
     def test_sum_of_pairs_score_alias1(self, mocked_print):
-        expected_result = 0.7714
+        expected_result = 0.9
         testargs = [
             "phykit",
             "sop",
