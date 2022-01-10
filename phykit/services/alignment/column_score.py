@@ -61,7 +61,7 @@ class ColumnScore(Alignment):
     ):
         # determine the number of matches
         matches = list((Counter(ref_columns) & Counter(query_columns)).elements())
-        return len(matches), len(ref_columns)
+        return len(matches), len(query_columns)
 
 
 
