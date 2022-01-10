@@ -13,7 +13,7 @@ here = Path(__file__)
 class TestColumnScore(object):
     @patch("builtins.print")
     def test_column_score_full_ref(self, mocked_print):
-        expected_result = 0.7143
+        expected_result = 0.8333
         testargs = [
             "phykit",
             "column_score",
@@ -27,7 +27,7 @@ class TestColumnScore(object):
 
     @patch("builtins.print")
     def test_column_score_short_ref(self, mocked_print):
-        expected_result = 0.7143
+        expected_result = 0.8333
         testargs = [
             "phykit",
             "column_score",
@@ -41,7 +41,7 @@ class TestColumnScore(object):
 
     @patch("builtins.print")
     def test_column_score_alias(self, mocked_print):
-        expected_result = 0.7143
+        expected_result = 0.8333
         testargs = [
             "phykit",
             "cs",
