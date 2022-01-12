@@ -1043,8 +1043,8 @@ Options: |br|
 
 |
 
-Print tip labels
-################
+Tip labels
+##########
 Function names: tip_labels; tree_labels; labels; tl |br|
 Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl
 
