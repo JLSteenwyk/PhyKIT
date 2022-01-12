@@ -133,6 +133,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#robinson-foulds-distance">Robinson-Foulds distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#root-tree">Root tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spurious-homolog-identification">Spurious homolog identification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#terminal-branch-statistics">Terminal branch statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tip-labels">Print tip labels</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-distance">Tip-to-tip distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-node-distance">Tip-to-tip node distance</a></li>
@@ -1081,6 +1082,23 @@ Cell doi: 10.1016/j.cell.2018.10.023.</p>
 <em>&lt;file&gt;</em>: first argument after function name should be a tree file
 <em>-f/--factor</em>: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20)</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="terminal-branch-statistics">
+<h3>Terminal branch statistics<a class="headerlink" href="#terminal-branch-statistics" title="Permalink to this headline">¶</a></h3>
+<p>Function names: terminal_branch_stats; tbs <br/>
+Command line interface: pk_terminal_branch_stats; pk_tbs</p>
+<p>Calculate summary statistics for terminal branch lengths in a phylogeny.</p>
+<p>Terminal branch lengths can be useful for phylogeny diagnostics.</p>
+<p>To obtain all terminal branch lengths, use the -v/--verbose option.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit terminal_branch_stats &lt;tree&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-v/--verbose</em>: optional argument to print all terminal branch lengths</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
