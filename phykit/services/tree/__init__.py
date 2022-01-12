@@ -21,6 +21,7 @@ from .saturation import Saturation
 from .spurious_sequence import SpuriousSequence
 from .treeness import Treeness
 from .treeness_over_rcv import TreenessOverRCV
+from .terminal_branch_stats import TerminalBranchStats
 from .tip_labels import TipLabels
 from .tip_to_tip_distance import TipToTipDistance
 from .tip_to_tip_node_distance import TipToTipNodeDistance
