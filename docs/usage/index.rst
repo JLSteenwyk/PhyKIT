@@ -1022,6 +1022,27 @@ the threshold of long branches. (Default: 20)
 
 |
 
+Terminal branch statistics
+##########################
+Function names: terminal_branch_stats; tbs |br|
+Command line interface: pk_terminal_branch_stats; pk_tbs
+
+Calculate summary statistics for terminal branch lengths in a phylogeny.
+
+Terminal branch lengths can be useful for phylogeny diagnostics.
+
+To obtain all terminal branch lengths, use the -v/\\-\\-verbose option.   
+
+.. code-block:: shell
+
+   phykit terminal_branch_stats <tree> [-v/--verbose]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-v/\\-\\-verbose*: optional argument to print all terminal branch lengths
+
+|
+
 Print tip labels
 ################
 Function names: tip_labels; tree_labels; labels; tl |br|

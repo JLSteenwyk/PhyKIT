@@ -8,6 +8,8 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.11.0**: Added terminal_branch_stats (alias: tbs) function to examine terminal branch lengths
+
 **1.10.1**: Modified column score and sum of pairs score to divide the correct number
 of columns or pairs by the number of columns or pairs in the query alignment rather
 than the reference alignment

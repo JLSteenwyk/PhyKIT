@@ -52,6 +52,7 @@ from .services.tree import (
     RootTree,
     Saturation,
     SpuriousSequence,
+    TerminalBranchStats,
     TipLabels,
     TipToTipDistance,
     TipToTipNodeDistance,
@@ -322,6 +323,8 @@ class Phykit(object):
             return self.root_tree(argv)
         elif command in ['spurious_seq', 'ss']:
             return self.spurious_sequence(argv)
+        elif command == 'tbs':
+            return self.terminal_branch_stats(argv)
         elif command in ['labels', 'tree_labels', 'tl']:
             return self.tip_labels(argv)
         elif command in ['t2t_dist', 't2t']:
@@ -1888,6 +1891,51 @@ class Phykit(object):
         SpuriousSequence(args).run()
 
     @staticmethod
+    def terminal_branch_stats(argv):
+        parser = ArgumentParser(add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate summary statistics for terminal branch lengths in a phylogeny.
+
+                Terminal branch lengths can be useful for phylogeny diagnostics.
+
+                To obtain all terminal branch lengths, use the -v/--verbose option. 
+
+                Aliases:
+                  terminal_branch_stats, tbs
+                Command line interfaces:
+                  pk_terminal_branch_stats, pk_tbs
+
+                Usage:
+                phykit terminal_branch_stats <tree> [-v/--verbose]
+
+                Options
+                =====================================================
+                <tree>                      first argument after 
+                                            function name should be
+                                            a tree file
+
+                -v/--verbose                optional argument to print
+                                            all internal branch lengths
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            required=False,
+            help=SUPPRESS
+        )
+        args = parser.parse_args(argv)
+        TerminalBranchStats(args).run()
+
+    @staticmethod
     def tip_labels(argv):
         parser = ArgumentParser(add_help=True,
             usage=SUPPRESS,
@@ -2394,6 +2442,9 @@ def root_tree(argv=None):
 
 def spurious_sequence(argv=None):
     Phykit.spurious_sequence(sys.argv[1:])
+
+def terminal_branch_stats(argv=None):
+    Phykit.terminal_branch_stats(sys.argv[1:])
 
 def tip_labels(argv=None):
     Phykit.tip_labels(sys.argv[1:])

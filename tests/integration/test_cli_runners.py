@@ -492,6 +492,18 @@ class TestBrokenPipeError(object):
         assert exit_status == 0
     
     @pytest.mark.slow
+    def test_pk_terminal_branch_stats(self):
+        cmd = "pk_terminal_branch_stats -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+    
+    @pytest.mark.slow
+    def test_pk_tbs(self):
+        cmd = "pk_tbs -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+    
+    @pytest.mark.slow
     def test_pk_tip_labels(self):
         cmd = "pk_tip_labels -h"
         exit_status = os.system(cmd)

@@ -1,13 +1,4 @@
-import getopt
-import logging
-import math
-import os.path
-import statistics as stat
 import sys
-
-from Bio import Phylo
-import numpy as np
-
 
 from .base import Tree
 

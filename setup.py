@@ -114,6 +114,8 @@ setup(
             "pk_spurious_sequence = phykit.phykit:spurious_sequence",
             "pk_spurious_seq = phykit.phykit:spurious_sequence",
             "pk_ss = phykit.phykit:spurious_sequence",
+            "pk_terminal_branch_stats = phykit.phykit:terminal_branch_stats",
+            "pk_tbs = phykit.phykit:terminal_branch_stats",
             "pk_tip_labels = phykit.phykit:tip_labels",
             "pk_labels = phykit.phykit:tip_labels",
             "pk_tree_labels = phykit.phykit:tip_labels",
