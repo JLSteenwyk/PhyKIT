@@ -286,7 +286,22 @@ Estimate the gene tree branch lengths using the following commands:
    iqtree2 -s Shen_etal_SciAdv_2020_NUF2.fa -te Shen_etal_SciAdv_2020_NUF2.constrained.tre -pre Shen_etal_SciAdv_2020_NUF2 -m LG+G4 -keep-ident
    iqtree2 -s Shen_etal_SciAdv_2020_SEC7.fa -te Shen_etal_SciAdv_2020_SEC7.constrained.tre -pre Shen_etal_SciAdv_2020_SEC7 -m LG+G4 -keep-ident
 
-Step 2: Evaluate gene-gene covariation
+Step 2: Root constrain trees
+****************************
+To ensure PhyKIT traverses each tree the same, root each tree using the outgroup taxa. PhyKIT has
+a function for rooting and takes as input a single column file with the names of the outgroup taxa.
+For sake of simplicity, I have provided the necessary input files.
+
+Root the trees with the inferred branch lengths using the following commands:
+
+.. code-block:: shell
+
+   # root trees
+   pk_root Shen_etal_SciAdv_2020_NUF2.treefile -r Shen_etal_SciAdv_2020_NUF2_taxa_for_rooting.txt -o Shen_etal_SciAdv_2020_NUF2.treefile.rooted
+   pk_root Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_SEC7_taxa_for_rooting.txt -o Shen_etal_SciAdv_2020_SEC7.treefile.rooted
+   pk_root Shen_etal_SciAdv_2020_NDC80.treefile -r Shen_etal_SciAdv_2020_NDC80_taxa_for_rooting.txt -o Shen_etal_SciAdv_2020_NDC80.treefile.rooted
+
+Step 3: Evaluate gene-gene covariation
 **************************************
 When determining gene-gene covariation, it is best to use a high significance threshold for correlation coefficients.
 I consider a threshold of 0.825 to be very conservative and that 0.8 is often sufficiently conservative. I like to be cautious
@@ -297,11 +312,11 @@ To evaluate gene-gene covariation, execute the following commands:
 .. code-block:: shell
 
    # Evaluate gene-gene covariation between NUF2 and SEC7
-   phykit cover Shen_etal_SciAdv_2020_NUF2.treefile Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+   phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_SEC7.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
    0.7496  0.0
 
    # Evaluate gene-gene covariation between NDC80 and SEC7
-   phykit cover Shen_etal_SciAdv_2020_NDC80.treefile Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+   phykit cover Shen_etal_SciAdv_2020_NDC80.treefile.rooted Shen_etal_SciAdv_2020_SEC7.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
    0.763   0.0
 
 Given our thresholds, neither *NUF2* nor *NDC80* significantly covary with *SEC7*. Next, evaluate gene-gene covariation between
@@ -310,7 +325,7 @@ Given our thresholds, neither *NUF2* nor *NDC80* significantly covary with *SEC7
 .. code-block:: shell
 
    # Evaluate gene-gene covariation between NUF2 and NDC80
-   phykit cover Shen_etal_SciAdv_2020_NUF2.treefile Shen_etal_SciAdv_2020_NDC80.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+   phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_NDC80.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre.rooted
    0.8448  0.0
 
 These two genes significantly covary with one another. This raises the hypothesis that these two genes have shared function. A literature-
