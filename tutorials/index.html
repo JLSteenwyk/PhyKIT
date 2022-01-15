@@ -103,7 +103,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#evaluating-gene-gene-covariation">2. Evaluating gene-gene covariation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-0-prepare-data">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-estimate-gene-tree-branch-lengths">Step 1: Estimate gene tree branch lengths</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#step-2-evaluate-gene-gene-covariation">Step 2: Evaluate gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-root-constrain-trees">Step 2: Root constrain trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-evaluate-gene-gene-covariation">Step 3: Evaluate gene-gene covariation</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#identifying-signatures-of-rapid-radiations">3. Identifying signatures of rapid radiations</a><ul>
@@ -430,25 +431,38 @@ iqtree2 -s Shen_etal_SciAdv_2020_SEC7.fa -te Shen_etal_SciAdv_2020_SEC7.constrai
 </pre></div>
 </div>
 </div>
-<div class="section" id="step-2-evaluate-gene-gene-covariation">
-<h3>Step 2: Evaluate gene-gene covariation<a class="headerlink" href="#step-2-evaluate-gene-gene-covariation" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="step-2-root-constrain-trees">
+<h3>Step 2: Root constrain trees<a class="headerlink" href="#step-2-root-constrain-trees" title="Permalink to this headline">¶</a></h3>
+<p>To ensure PhyKIT traverses each tree the same, root each tree using the outgroup taxa. PhyKIT has
+a function for rooting and takes as input a single column file with the names of the outgroup taxa.
+For sake of simplicity, I have provided the necessary input files.</p>
+<p>Root the trees with the inferred branch lengths using the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># root trees</span>
+pk_root Shen_etal_SciAdv_2020_NUF2.treefile -r Shen_etal_SciAdv_2020_NUF2_taxa_for_rooting.txt -o Shen_etal_SciAdv_2020_NUF2.treefile.rooted
+pk_root Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_SEC7_taxa_for_rooting.txt -o Shen_etal_SciAdv_2020_SEC7.treefile.rooted
+pk_root Shen_etal_SciAdv_2020_NDC80.treefile -r Shen_etal_SciAdv_2020_NDC80_taxa_for_rooting.txt -o Shen_etal_SciAdv_2020_NDC80.treefile.rooted
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-3-evaluate-gene-gene-covariation">
+<h3>Step 3: Evaluate gene-gene covariation<a class="headerlink" href="#step-3-evaluate-gene-gene-covariation" title="Permalink to this headline">¶</a></h3>
 <p>When determining gene-gene covariation, it is best to use a high significance threshold for correlation coefficients.
 I consider a threshold of 0.825 to be very conservative and that 0.8 is often sufficiently conservative. I like to be cautious
 so I recommend using a threshold of 0.825.</p>
 <p>To evaluate gene-gene covariation, execute the following commands:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate gene-gene covariation between NUF2 and SEC7</span>
-phykit cover Shen_etal_SciAdv_2020_NUF2.treefile Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_SEC7.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
 <span class="m">0</span>.7496  <span class="m">0</span>.0
 
 <span class="c1"># Evaluate gene-gene covariation between NDC80 and SEC7</span>
-phykit cover Shen_etal_SciAdv_2020_NDC80.treefile Shen_etal_SciAdv_2020_SEC7.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+phykit cover Shen_etal_SciAdv_2020_NDC80.treefile.rooted Shen_etal_SciAdv_2020_SEC7.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
 <span class="m">0</span>.763   <span class="m">0</span>.0
 </pre></div>
 </div>
 <p>Given our thresholds, neither <em>NUF2</em> nor <em>NDC80</em> significantly covary with <em>SEC7</em>. Next, evaluate gene-gene covariation between
 <em>NUF2</em> and <em>NDC80</em>.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate gene-gene covariation between NUF2 and NDC80</span>
-phykit cover Shen_etal_SciAdv_2020_NUF2.treefile Shen_etal_SciAdv_2020_NDC80.treefile -r Shen_etal_SciAdv_2020_species_tree.tre
+phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_NDC80.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre.rooted
 <span class="m">0</span>.8448  <span class="m">0</span>.0
 </pre></div>
 </div>
