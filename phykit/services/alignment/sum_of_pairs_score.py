@@ -71,7 +71,7 @@ class SumOfPairsScore(Alignment):
             # count the number of matches and total pairs
             matches = list((Counter(pairs_in_reference) & Counter(pairs_in_query)).elements())
             number_of_matches+=len(matches)
-            number_of_total_pairs+=len(pairs_in_query)
+            number_of_total_pairs+=len(pairs_in_reference)
 
         return number_of_matches, number_of_total_pairs
 
