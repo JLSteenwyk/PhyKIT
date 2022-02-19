@@ -14,15 +14,22 @@ class DNAThreader(Alignment):
         self.process_args(args)
 
     def process_args(self, args):
+
         self.include_stop_codon = args.stop
         self.protein_file_path = args.protein
         self.nucleotide_file_path = args.nucleotide
-        
+        self.clipkit_log_file = args.clipkit_log_file
+
     def run(self):
         prot = self.read_file(self.protein_file_path)
         nucl = self.read_file(self.nucleotide_file_path)
 
-        pal2nal = self.thread(prot, nucl)
+        if self.clipkit_log_file is not None:
+            clipkit_log = [line.split(' ')[1] for line in open(self.clipkit_log_file).readlines()]
+        else:
+            clipkit_log = self.clipkit_log_file
+
+        pal2nal = self.thread(prot, nucl, clipkit_log)
 
         for record in pal2nal:
             sequence = ''.join(pal2nal[record])
@@ -39,49 +46,98 @@ class DNAThreader(Alignment):
     def thread(
         self,
         protein: SeqRecord,
-        nucleotide: SeqRecord
+        nucleotide: SeqRecord,
+        clipkit_log
     ) -> dict:
         # protein alignment to nucleotide alignment
         pal2nal = {}
-
+        
         try:
-            for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
-                # get gene id and sequences
-                gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
+            # when ClipKIT log file is provided
+            if clipkit_log:
+                for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
+                    # get gene id and sequences
+                    gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
 
-                # initialize gap counter and gene in pal2nal dict
-                gap_count = 0
-                pal2nal[gene_id] = []
+                    # initialize gap counter and gene in pal2nal dict
+                    gap_count = 0
+                    pal2nal[gene_id] = []
 
-                # loop through the sequence
-                for aa_idx in range(0, len(p_seq), 1):
-                    # if AA is a gap insert a codon of gaps
-                    if p_seq[aa_idx] == "-":
-                        pal2nal = self.add_gap(pal2nal, gene_id)
-                        gap_count += 1
-                    else:
-                        if self.include_stop_codon:
-                            # if AA is not a gap, insert the corresponding codon
-                            if p_seq[aa_idx] != "-":
-                                pal2nal = self.add_codon(
-                                    aa_idx,
-                                    gap_count,
-                                    n_seq,
-                                    gene_id,
-                                    pal2nal
-                                )
-                        else:
-                            # if AA is a stop or ambiguous insert a codon of gaps
-                            if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
+                    # initialize index counters for aa and nucls
+                    aa_idx = 0
+                    nucl_idx = 0
+                    # loop through the sites that were trimmed and kept
+                    for idx in range(0, len(clipkit_log)):
+                        # if site was kept
+                        if clipkit_log[idx] == "keep":
+                            # if AA is a gap insert a codon of gaps
+                            if p_seq[aa_idx] == "-":
                                 pal2nal = self.add_gap(pal2nal, gene_id)
+                                gap_count += 1
                             else:
-                                pal2nal = self.add_codon(
-                                    aa_idx,
-                                    gap_count,
-                                    n_seq,
-                                    gene_id,
-                                    pal2nal
-                                )
+                                if self.include_stop_codon:
+                                    # if AA is not a gap, insert the corresponding codon
+                                    if p_seq[aa_idx] != "-":
+                                        pal2nal = self.add_codon(
+                                            idx,
+                                            gap_count,
+                                            n_seq,
+                                            gene_id,
+                                            pal2nal
+                                        )
+                                else:
+                                    # if AA is a stop or ambiguous insert a codon of gaps
+                                    if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
+                                        pal2nal = self.add_gap(pal2nal, gene_id)
+                                    else:
+                                        pal2nal = self.add_codon(
+                                            idx,
+                                            gap_count,
+                                            n_seq,
+                                            gene_id,
+                                            pal2nal
+                                    )
+                        # if site was trimmed
+                        else:
+                            nucl_idx += 1
+            else:
+                for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
+                    # get gene id and sequences
+                    gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
+
+                    # initialize gap counter and gene in pal2nal dict
+                    gap_count = 0
+                    pal2nal[gene_id] = []
+
+                    # loop through the sequence
+                    for aa_idx in range(0, len(p_seq), 1):
+                        # if AA is a gap insert a codon of gaps
+                        if p_seq[aa_idx] == "-":
+                            pal2nal = self.add_gap(pal2nal, gene_id)
+                            gap_count += 1
+                        else:
+                            if self.include_stop_codon:
+                                # if AA is not a gap, insert the corresponding codon
+                                if p_seq[aa_idx] != "-":
+                                    pal2nal = self.add_codon(
+                                        aa_idx,
+                                        gap_count,
+                                        n_seq,
+                                        gene_id,
+                                        pal2nal
+                                    )
+                            else:
+                                # if AA is a stop or ambiguous insert a codon of gaps
+                                if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
+                                    pal2nal = self.add_gap(pal2nal, gene_id)
+                                else:
+                                    pal2nal = self.add_codon(
+                                        aa_idx,
+                                        gap_count,
+                                        n_seq,
+                                        gene_id,
+                                        pal2nal
+                                    )
             return pal2nal
         except FileNotFoundError:
             try:
@@ -139,6 +195,8 @@ class DNAThreader(Alignment):
         nt_window = (aa_idx - gap_count) * 3
         seq = n_seq[nt_window : nt_window + 3]._data
         seq = seq.decode("utf-8")
+        if not len(seq):
+            seq = "---"
         pal2nal[gene_id].append(seq)
 
         return pal2nal
