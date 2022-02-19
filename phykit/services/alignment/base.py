@@ -17,7 +17,8 @@ class Alignment(BaseService):
         idmap=None,
         reference=None,
         verbose=None,
-        entry=None
+        entry=None,
+        clipkit_log_file=None,
     ):
         self.alignment_file_path = alignment_file_path
         self.output_file_path = output_file_path
@@ -30,6 +31,7 @@ class Alignment(BaseService):
         self.reference = reference
         self.verbose = verbose
         self.entry = entry
+        self.clipkit_log_file = clipkit_log_file
 
     def get_alignment_and_format(self):
         """

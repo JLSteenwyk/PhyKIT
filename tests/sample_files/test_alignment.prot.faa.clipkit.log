@@ -1,0 +1,3 @@
+1 keep Const 0.0
+2 trim nConst,nPI 0.0
+3 keep nConst,nPI 0.25
