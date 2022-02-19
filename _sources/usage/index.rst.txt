@@ -375,6 +375,14 @@ Codon alignments are then printed to stdout. Note, sequences
 are assumed to occur in the same order in the protein and 
 nucleotide alignment.
 
+To thread nucleotide sequences over a trimmed amino acid
+alignment, provide PhyKIT with a log file specifying which
+sites have been trimmed and which have been kept. The log
+file must be formatted the same as the log files outputted
+by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
+documentation.) Details about ClipKIT can be seen here:
+https://github.com/JLSteenwyk/ClipKIT. 
+
 .. code-block:: shell
 
    phykit thread_dna -p <file> -n <file> [-s]
@@ -382,6 +390,7 @@ nucleotide alignment.
 Options: |br|
 *-p/\\-\\-protein*: protein alignment file |br|
 *-n/\\-\\-nucleotide*: nucleotide alignment file |br|
+*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
 *-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
 If used, stop codons will be removed.
 
