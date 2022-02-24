@@ -26,6 +26,7 @@ class Tree(BaseService):
         tip_1=None,
         tip_2=None,
         clade=None,
+        keep=None,
     ):
         self.tree_file_path = tree_file_path
         self.tree1_file_path = tree1_file_path
@@ -45,6 +46,7 @@ class Tree(BaseService):
         self.tip_1 = tip_1
         self.tip_2 = tip_2
         self.clade = clade
+        self.keep = keep
 
     def read_tree_file(self):
         try:

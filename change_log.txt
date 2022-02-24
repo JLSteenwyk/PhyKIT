@@ -1,5 +1,9 @@
 Major changes to PhyKIT are summarized here.
 
+1.11.3
+  - Added an optional argument to the prune_tree function wherein instead of pruning tips specified
+  in the input file, those tips will be kept
+
 1.11.2
   - Added an optional argument to the thread_dna function. Now, PhyKIT can thread nucleotide
   sequences onto a trimmed amino acid alignment. To do so, point PhyKIT to the ClipKIT outputted log

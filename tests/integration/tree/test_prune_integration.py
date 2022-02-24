@@ -103,3 +103,45 @@ class TestPruneTree(object):
             out_tree_content = out_tree.read()
 
         assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
+    def test_prune_keep(self, mocked_print):
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_prune_keep.txt",
+            "-k"
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        with open(f"{here.parent.parent}/expected/tree_simple.pruned_keep.tre", "r") as expected_tree:
+            expected_tree_content = expected_tree.read()
+
+        with open(f"{here.parent.parent.parent}/sample_files/tree_simple.tre.pruned", "r") as out_tree:
+            out_tree_content = out_tree.read()
+
+        assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
+    def test_prune_keep_long(self, mocked_print):
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_prune_keep.txt",
+            "--keep"
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        with open(f"{here.parent.parent}/expected/tree_simple.pruned_keep.tre", "r") as expected_tree:
+            expected_tree_content = expected_tree.read()
+
+        with open(f"{here.parent.parent.parent}/sample_files/tree_simple.tre.pruned", "r") as out_tree:
+            out_tree_content = out_tree.read()
+
+        assert expected_tree_content == out_tree_content

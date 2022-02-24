@@ -1,0 +1,4 @@
+raccoon
+bear
+sea_lion
+seal
