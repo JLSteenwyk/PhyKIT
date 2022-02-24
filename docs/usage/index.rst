@@ -900,7 +900,8 @@ tree.
 
 .. code-block:: shell
 
-   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>]
+   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>
+   -k/--keep]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
@@ -909,7 +910,8 @@ from the phylogeny |br|
 *-o/\\-\\-output*: name of output file for the pruned phylogeny. 
 Default output will have the same name as the input file but with the suffix 
 ".pruned" 
-
+*-k/--keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
+keep them 
 |
 
 Rename tree tips

@@ -1650,7 +1650,8 @@ class Phykit(object):
                   pk_prune_tree, pk_prune
 
                 Usage:
-                phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>]
+                phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>
+                -k/--keep]
 
                 Options
                 =====================================================
@@ -1667,13 +1668,24 @@ class Phykit(object):
                                             Default output will have 
                                             the same name as the input
                                             file but with the suffix 
-                                            ".pruned"    
+                                            ".pruned"
+
+                -k/--keep                   optional argument. If used
+                                            instead of pruning taxa in
+                                            <list_of_taxa>, keep them 
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-k", "--keep",
+            type=str2bool, 
+            nargs='?',
+            default=False,
+            help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         PruneTree(args).run()
 
