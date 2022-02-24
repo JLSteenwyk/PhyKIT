@@ -978,7 +978,8 @@ Command line interface: pk_prune_tree; pk_prune</p>
 <p>Provide a single column file with the names of the tips
 in the input phylogeny you would like to prune from the
 tree.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit prune_tree &lt;tree&gt; &lt;list_of_taxa&gt; <span class="o">[</span>-o/--output &lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit prune_tree &lt;tree&gt; &lt;list_of_taxa&gt; <span class="o">[</span>-o/--output &lt;output_file&gt;
+-k/--keep<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -987,10 +988,10 @@ tree.</p>
 from the phylogeny <br/>
 <em>-o/--output</em>: name of output file for the pruned phylogeny.
 Default output will have the same name as the input file but with the suffix
-“.pruned”</p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
+“.pruned”
+<em>-k/–keep</em>: optional argument. If used instead of pruning taxa in &lt;list_of_taxa&gt;,
+keep them
+|</p>
 </div>
 <div class="section" id="rename-tree-tips">
 <h3>Rename tree tips<a class="headerlink" href="#rename-tree-tips" title="Permalink to this headline">¶</a></h3>
