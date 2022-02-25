@@ -555,6 +555,56 @@ class TestDNAThreader(object):
         ]
 
     @patch("builtins.print")
+    def test_dna_threader_trimmed_longer_alignment(self, mocked_print):
+        expected_result_0 = dedent(
+            """>1"""
+        )
+        expected_result_1 = dedent(
+            """AAATTTCCCAAA"""
+        )
+        expected_result_2 = dedent(
+            """>2"""  
+        )
+        expected_result_3 = dedent(
+            """AAAGGGTTTGGG"""
+        )
+        expected_result_4 = dedent(
+            """>3"""  
+        )
+        expected_result_5 = dedent(
+            """AAAGGGTTTGGG"""
+        )
+        expected_result_6 = dedent(
+            """>4"""  
+        )
+        expected_result_7 = dedent(
+            """AAAGGGTTTGGG"""
+        )
+        testargs = [
+            "phykit",
+            "p2n",
+            "-p",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_longer.prot.faa.clipkit",
+            "-n",
+            f"{here.parent.parent.parent}/sample_files/test_longer.nucl.fna",
+            "--clipkit_log_file",
+           f"{here.parent.parent.parent}/sample_files/test_alignment_longer.prot.faa.clipkit.log",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(expected_result_0),
+            call(expected_result_1),
+            call(expected_result_2),
+            call(expected_result_3),
+            call(expected_result_4),
+            call(expected_result_5),
+            call(expected_result_6),
+            call(expected_result_7),
+        ]
+
+    @patch("builtins.print")
     def test_dna_threader_aa_file_not_found(self, mocked_print):
         testargs = [
             "phykit",
