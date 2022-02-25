@@ -56,7 +56,7 @@ class DNAThreader(Alignment):
             # when ClipKIT log file is provided
             if clipkit_log:
                 for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
-                    # get gene id and sequences
+                    # get gene id and sequences                    
                     gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
 
                     # initialize gap counter and gene in pal2nal dict
@@ -68,9 +68,7 @@ class DNAThreader(Alignment):
                     nucl_idx = 0
                     # loop through the sites that were trimmed and kept
                     for idx in range(0, len(clipkit_log)):
-                        # if site was kept
                         if clipkit_log[idx] == "keep":
-                            # if AA is a gap insert a codon of gaps
                             if p_seq[aa_idx] == "-":
                                 pal2nal = self.add_gap(pal2nal, gene_id)
                                 gap_count += 1
@@ -78,9 +76,8 @@ class DNAThreader(Alignment):
                                 if self.include_stop_codon:
                                     # if AA is not a gap, insert the corresponding codon
                                     if p_seq[aa_idx] != "-":
-                                        pal2nal = self.add_codon(
-                                            idx,
-                                            gap_count,
+                                        pal2nal = self.add_codon_when_log_file_is_used(
+                                            nucl_idx,
                                             n_seq,
                                             gene_id,
                                             pal2nal
@@ -90,16 +87,15 @@ class DNAThreader(Alignment):
                                     if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
                                         pal2nal = self.add_gap(pal2nal, gene_id)
                                     else:
-                                        pal2nal = self.add_codon(
-                                            idx,
-                                            gap_count,
+                                        pal2nal = self.add_codon_when_log_file_is_used(
+                                            nucl_idx,
                                             n_seq,
                                             gene_id,
                                             pal2nal
-                                    )
-                        # if site was trimmed
-                        else:
-                            nucl_idx += 1
+                                        )
+                            aa_idx += 1
+                        nucl_idx += 3
+
             else:
                 for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
                     # get gene id and sequences
@@ -194,6 +190,25 @@ class DNAThreader(Alignment):
 
         nt_window = (aa_idx - gap_count) * 3
         seq = n_seq[nt_window : nt_window + 3]._data
+        seq = seq.decode("utf-8")
+        if not len(seq):
+            seq = "---"
+        pal2nal[gene_id].append(seq)
+
+        return pal2nal
+
+    def add_codon_when_log_file_is_used(
+        self,
+        nucl_idx: int,
+        n_seq: SeqRecord,
+        gene_id: str,
+        pal2nal: dict
+    ) -> dict:
+        """
+        add a gap to the growing sequence
+        """
+
+        seq = n_seq[nucl_idx : nucl_idx + 3]._data
         seq = seq.decode("utf-8")
         if not len(seq):
             seq = "---"

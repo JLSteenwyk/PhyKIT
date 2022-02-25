@@ -460,7 +460,7 @@ class TestDNAThreader(object):
             """>1"""
         )
         expected_result_1 = dedent(
-            """AAA---"""
+            """AAATTT"""
         )
         expected_result_2 = dedent(
             """>2"""  
@@ -472,7 +472,7 @@ class TestDNAThreader(object):
             """>3"""  
         )
         expected_result_5 = dedent(
-            """AAAGGG"""
+            """AAA---"""
         )
         expected_result_6 = dedent(
             """>4"""  
@@ -510,7 +510,7 @@ class TestDNAThreader(object):
             """>1"""
         )
         expected_result_1 = dedent(
-            """AAA---"""
+            """AAATTT"""
         )
         expected_result_2 = dedent(
             """>2"""  
@@ -522,7 +522,7 @@ class TestDNAThreader(object):
             """>3"""  
         )
         expected_result_5 = dedent(
-            """AAAGGG"""
+            """AAA---"""
         )
         expected_result_6 = dedent(
             """>4"""  
@@ -560,25 +560,25 @@ class TestDNAThreader(object):
             """>1"""
         )
         expected_result_1 = dedent(
-            """AAATTTCCCAAA"""
+            """AAATTTCCCAAA------CCCAAA"""
         )
         expected_result_2 = dedent(
             """>2"""  
         )
         expected_result_3 = dedent(
-            """AAAGGGTTTGGG"""
+            """AAAGGGTTTGGGAAAGGGAAAGGG"""
         )
         expected_result_4 = dedent(
             """>3"""  
         )
         expected_result_5 = dedent(
-            """AAAGGGTTTGGG"""
+            """AAAGGGTTTGGGAAAGGGAAAGGG"""
         )
         expected_result_6 = dedent(
             """>4"""  
         )
         expected_result_7 = dedent(
-            """AAAGGGTTTGGG"""
+            """AAAGGGTTTGGGAAAGGGAAAGGG"""
         )
         testargs = [
             "phykit",
@@ -589,6 +589,57 @@ class TestDNAThreader(object):
             f"{here.parent.parent.parent}/sample_files/test_longer.nucl.fna",
             "--clipkit_log_file",
            f"{here.parent.parent.parent}/sample_files/test_alignment_longer.prot.faa.clipkit.log",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(expected_result_0),
+            call(expected_result_1),
+            call(expected_result_2),
+            call(expected_result_3),
+            call(expected_result_4),
+            call(expected_result_5),
+            call(expected_result_6),
+            call(expected_result_7),
+        ]
+
+    @patch("builtins.print")
+    def test_dna_threader_trimmed_longer_alignment_stop_codon(self, mocked_print):
+        expected_result_0 = dedent(
+            """>1"""
+        )
+        expected_result_1 = dedent(
+            """AAATTTCCCAAA------CCC---"""
+        )
+        expected_result_2 = dedent(
+            """>2"""  
+        )
+        expected_result_3 = dedent(
+            """AAAGGGTTTGGGAAAGGGAAAGGG"""
+        )
+        expected_result_4 = dedent(
+            """>3"""  
+        )
+        expected_result_5 = dedent(
+            """AAAGGGTTTGGGAAAGGGAAAGGG"""
+        )
+        expected_result_6 = dedent(
+            """>4"""  
+        )
+        expected_result_7 = dedent(
+            """AAAGGGTTTGGGAAAGGGAAAGGG"""
+        )
+        testargs = [
+            "phykit",
+            "p2n",
+            "-p",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_longer.prot.faa.clipkit",
+            "-n",
+            f"{here.parent.parent.parent}/sample_files/test_longer.nucl.fna",
+            "--clipkit_log_file",
+           f"{here.parent.parent.parent}/sample_files/test_alignment_longer.prot.faa.clipkit.log",
+           "-s"
         ]
 
         with patch.object(sys, "argv", testargs):
