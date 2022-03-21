@@ -1,7 +1,5 @@
 import sys
 
-from Bio import Phylo
-
 from .base import Tree
 
 from ...helpers.stats_summary import calculate_summary_statistics_from_arr

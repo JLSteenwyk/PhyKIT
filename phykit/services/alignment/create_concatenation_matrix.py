@@ -228,7 +228,7 @@ class CreateConcatenationMatrix(Alignment):
                         # if a string
                         concatenated.append(s)
                 concat[x] = concatenated
-                entry = f">{x}\n{''.join(concat[x])}\n"
+                entry = f">{x}\n{''.join(str(concat[x]))}\n"
                 final_fasta_file.write(str(entry))   
 
     def write_occupancy_or_partition_file(
