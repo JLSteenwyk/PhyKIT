@@ -453,8 +453,8 @@ Options: |br|
 
 Branch length multiplier
 ########################
-Function names: bipartition_support_stats; bss |br|
-Command line interface: pk_bipartition_support_stats; pk_bss
+Function names: branch_length_multiplier; blm |br|
+Command line interface: pk_branch_length_multiplier; pk_blm
 
 Multiply branch lengths in a phylogeny by a given factor.
                 
