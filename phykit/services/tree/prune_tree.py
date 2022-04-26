@@ -1,7 +1,3 @@
-import logging
-
-from Bio import Phylo
-
 from .base import Tree
 
 from ...helpers.files import read_single_column_file_to_list
@@ -20,8 +16,6 @@ class PruneTree(Tree):
             for term in tree.get_terminals():
                 tips_in_tree.append(term.name)
             taxa = [x for x in tips_in_tree if x not in taxa]
-
-        print(taxa)
             
         tree = self.prune_tree_using_taxa_list(tree, taxa)
 
