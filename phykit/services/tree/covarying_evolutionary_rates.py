@@ -1,13 +1,8 @@
-import getopt
-import logging
-import os.path
+import copy
 import sys
 
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr
-
-from Bio import Phylo
-from Bio.Phylo.BaseTree import TreeMixin
 
 from .base import Tree
 
@@ -90,9 +85,13 @@ class CovaryingEvolutionaryRates(Tree):
         have an absolute value greater than 5
         """
         for idx in range(0, len(corr_branch_lengths)): 
-            if corr_branch_lengths[idx] > 5 or corr_branch_lengths[idx] < -5:
-                if idx not in outlier_indices: 
-                    outlier_indices.append(idx)
+            try:
+                if corr_branch_lengths[idx] > 5 or corr_branch_lengths[idx] < -5:
+                    if idx not in outlier_indices: 
+                        outlier_indices.append(idx)
+            except TypeError:
+                outlier_indices.append(idx)
+
         
         return outlier_indices
 
@@ -205,5 +204,30 @@ class CovaryingEvolutionaryRates(Tree):
         
         l = []
         for i, s in zip(t.get_terminals(), sp.get_terminals()):
-            l.append(i.branch_length/s.branch_length)
+            newtree = copy.deepcopy(sp)
+
+            # get tree tip names
+            tree_zero_tips = self.get_tip_names_from_tree(i)
+
+            for term in newtree.get_terminals():
+                if set(term.name)==set(i.name):
+                    l.append(i.branch_length/s.branch_length)
+        
+        for i, s in zip(t.get_nonterminals(), sp.get_nonterminals()):
+            newtree = copy.deepcopy(sp)
+
+            # get tree tip names
+            tree_zero_tips = self.get_tip_names_from_tree(i)
+            
+            newtree = newtree.common_ancestor(tree_zero_tips)
+            
+            for nonterm in newtree.get_nonterminals():
+                try:
+                    l.append(i.branch_length/nonterm.branch_length)
+                except: 
+                    l.append("NA")
+                break
+
+       	
+
         return(l)
