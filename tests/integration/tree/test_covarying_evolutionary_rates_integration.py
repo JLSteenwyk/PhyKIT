@@ -14,7 +14,7 @@ here = Path(__file__)
 class TestCovaryingEvolutionaryRates(object):
     @patch("builtins.print")
     def test_covarying_evolutionary_rates(self, mocked_print):
-        expected_result = "0.5436\t0.054828"
+        expected_result = "0.5755\t0.03959"
         testargs = [
             "phykit",
             "covarying_evolutionary_rates",
@@ -29,7 +29,7 @@ class TestCovaryingEvolutionaryRates(object):
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_alias(self, mocked_print):
-        expected_result = "0.5436\t0.054828"
+        expected_result = "0.5755\t0.03959"
         testargs = [
             "phykit",
             "cover",
@@ -56,19 +56,19 @@ class TestCovaryingEvolutionaryRates(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(f"{-0.333}\t{-1.3686}"),
-            call(f"{0.2747}\t{1.7774}"),
-            call(f"{0.2747}\t{0.0691}"),
-            call(f"{1.3905}\t{0.5971}"),
-            call(f"{0.2747}\t{-0.2188}"),
-            call(f"{0.2747}\t{0.0691}"),
-            call(f"{-0.3428}\t{-0.223}"),
-            call(f"{-3.1873}\t{-1.5688}"),
-            call(f"{0.2747}\t{0.0691}"),
-            call(f"{0.2747}\t{1.5686}"),
-            call(f"{0.2747}\t{-1.4737}"),
-            call(f"{0.2747}\t{0.0691}"),
-            call(f"{0.2747}\t{0.6333}")
+            call(f"{-0.333}\t{-0.2246}"),
+            call(f"{0.2747}\t{0.1191}"),
+            call(f"{0.2747}\t{0.1191}"),
+            call(f"{1.3905}\t{0.7501}"),
+            call(f"{0.2747}\t{0.1191}"),
+            call(f"{0.2747}\t{0.1191}"),
+            call(f"{-0.3428}\t{-0.2302}"),
+            call(f"{-3.1873}\t{-1.8388}"),
+            call(f"{0.2747}\t{0.1191}"),
+            call(f"{0.2747}\t{-1.3055}"),
+            call(f"{0.2747}\t{2.6302}"),
+            call(f"{0.2747}\t{0.1191}"),
+            call(f"{0.2747}\t{-0.4956}")
         ]
 
     @patch("builtins.print")
@@ -169,7 +169,7 @@ class TestCovaryingEvolutionaryRates(object):
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates(self, mocked_print):
-        expected_result = "0.5874\t0.044626"
+        expected_result = "0.5755\t0.03959"
         testargs = [
             "phykit",
             "covarying_evolutionary_rates",

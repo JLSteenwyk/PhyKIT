@@ -43,8 +43,7 @@ class CovaryingEvolutionaryRates(Tree):
 
         # obtain corrected branch lengths where branch lengths
         # are corrected by the species tree branch length
-        tree_zero_corr_branch_lengths = self.correct_branch_lengths(tree_zero, tree_ref)
-        tree_one_corr_branch_lengths = self.correct_branch_lengths(tree_one, tree_ref)
+        tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths = self.correct_branch_lengths(tree_zero, tree_one, tree_ref)
 
         # remove corrected BLs greater than 5
         outlier_indices = []
@@ -102,32 +101,7 @@ class CovaryingEvolutionaryRates(Tree):
         """
         corr_branch_lengths = [i for j, i in enumerate(corr_branch_lengths) if j not in outlier_indices]
         return corr_branch_lengths
-
-    # def shared_tips(
-    #     self, 
-    #     a,
-    #     b
-    #     ):
-    #     """
-    #     Determines what tips are shared between two trees
-    #     -------------------------------------------------
-    #     argv: a
-    #         list of tips from one tree
-    #     argv: b
-    #         list of tips from a second tree
-    #     """ 
-
-    #     a_set = set(a) 
-    #     b_set = set(b) 
-        
-    #     # check length  
-    #     if len(a_set.intersection(b_set)) > 0: 
-    #         return(list(a_set.intersection(b_set)))   
-    #     else: 
-    #         print("no common tips") 
-    #         sys.exit()
  
-    
     def prune_tips(
         self, tree, tips
         ):
@@ -195,39 +169,49 @@ class CovaryingEvolutionaryRates(Tree):
 
     def correct_branch_lengths(
         self, 
-        t,
+        t0,
+        t1,
         sp
         ):
         """
         obtain a list of corrected branch lengths
         """
         
-        l = []
-        for i, s in zip(t.get_terminals(), sp.get_terminals()):
-            newtree = copy.deepcopy(sp)
-
-            # get tree tip names
-            tree_zero_tips = self.get_tip_names_from_tree(i)
-
-            for term in newtree.get_terminals():
+        l0 = []
+        l1 = []
+        for i, s in zip(t0.get_terminals(), sp.get_terminals()):
+            for term in sp.get_terminals():
                 if set(term.name)==set(i.name):
-                    l.append(i.branch_length/s.branch_length)
+                    l0.append(i.branch_length/s.branch_length)
+
+            for term in t1.get_terminals():
+                if set(term.name)==set(i.name):
+                    l1.append(i.branch_length/s.branch_length)
         
-        for i, s in zip(t.get_nonterminals(), sp.get_nonterminals()):
+        for i, s in zip(t0.get_nonterminals(), sp.get_nonterminals()):
             newtree = copy.deepcopy(sp)
+            newtree1 = copy.deepcopy(t1)
 
             # get tree tip names
             tree_zero_tips = self.get_tip_names_from_tree(i)
             
             newtree = newtree.common_ancestor(tree_zero_tips)
-            
+            newtree1 = newtree1.common_ancestor(tree_zero_tips)
+
             for nonterm in newtree.get_nonterminals():
                 try:
-                    l.append(i.branch_length/nonterm.branch_length)
+                    l0.append(i.branch_length/nonterm.branch_length)
                 except: 
-                    l.append("NA")
+                    l0.append("NA")
+                break
+
+            for nonterm in newtree1.get_nonterminals():
+                try:
+                    l1.append(i.branch_length/nonterm.branch_length)
+                except: 
+                    l1.append("NA")
                 break
 
        	
 
-        return(l)
+        return(l0, l1)
