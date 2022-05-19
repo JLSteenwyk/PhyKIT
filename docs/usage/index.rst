@@ -79,6 +79,11 @@ Alignment-based functions
 
 Alignment length
 ################
+
+.. image:: ../_static/docs_img/aln_len.png 
+   :align: center
+   :width: 75%
+
 Function names: alignment_length; aln_len; al |br|
 Command line interface: pk_alignment_length; pk_aln_len; pk_al
 
@@ -101,6 +106,11 @@ Options: |br|
 
 Alignment length no gaps
 ########################
+
+.. image:: ../_static/docs_img/aln_len_no_gaps.png 
+   :align: center
+   :width: 75%
+
 Function names: alignment_length_no_gaps; aln_len_no_gaps; alng |br|
 Command line interface: pk_alignment_length_no_gaps; pk_aln_len_no_gaps; pk_alng
 
@@ -130,6 +140,11 @@ Options: |br|
 
 Column score
 ############
+
+.. image:: ../_static/docs_img/column_score.png 
+   :align: center
+   :width: 75%
+
 Function names: column_score; cs |br|
 Command line interface: pk_column_score; pk_cs
 
@@ -157,6 +172,11 @@ to
 
 Create concatenation matrix
 ###########################
+
+.. image:: ../_static/docs_img/create_concat_matrix.png 
+   :align: center
+   :width: 75%
+
 Function names: create_concatenation_matrix, create_concat, cc |br|
 Command line interface: pk_create_concatenation_matrix, pk_create_concat, pk_cc
 
@@ -183,6 +203,11 @@ working directory or provide absolute path. |br|
 
 Faidx
 #####
+
+.. image:: ../_static/docs_img/faidx.png 
+   :align: center
+   :width: 75%
+
 Function names: faidx; get_entry; ge |br|
 Command line interface: pk_faidx; pk_get_entry; pk_ge
 
@@ -204,6 +229,11 @@ entry
 
 Guanine-cytosine (GC) content
 #############################
+
+.. image:: ../_static/docs_img/gc_content.png 
+   :align: center
+   :width: 75%
+
 Function names: gc_content; gc |br|
 Command line interface: pk_gc_content; pk_gc
 
