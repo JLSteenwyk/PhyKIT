@@ -260,6 +260,11 @@ entry
 
 Pairwise identity
 #################
+
+.. image:: ../_static/docs_img/pairwise_identity.png 
+   :align: center
+   :width: 75%
+
 Function names: pairwise_identity; pairwise_id, pi |br|
 Command line interface: pk_pairwise_identity; pk_pairwise_id, pk_pi
 
