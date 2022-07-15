@@ -10,12 +10,12 @@ class InternalBranchStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        internal_branch_lengths, stats = self.calculate_internal_branch_stats(tree)
+        _, stats, lengths_and_names = self.calculate_internal_branch_stats(tree)
 
         if self.verbose:
             try:
-                for internal_branch_length in internal_branch_lengths:
-                    print(round(internal_branch_length, 4))
+                for len_and_name in lengths_and_names:
+                    print(round(len_and_name[0], 4), ';'.join(len_and_name[1]))
             except BrokenPipeError:
                 pass
         else:
@@ -29,11 +29,19 @@ class InternalBranchStats(Tree):
         loop through tree and get all internal branch lengths
         """
         internal_branch_lengths = []
+        lengths_and_names = []
         for internal_branch in tree.get_nonterminals():
             if internal_branch.branch_length != None:
+                temp = []
+                temp.append(internal_branch.branch_length)
                 internal_branch_lengths.append(internal_branch.branch_length)
+                temp_name = []
+                for term in internal_branch.get_terminals():
+                    temp_name.append(term.name)
+                temp.append(temp_name)
+                lengths_and_names.append(temp)
 
-        return internal_branch_lengths
+        return internal_branch_lengths, lengths_and_names 
 
     def check_tree_has_branch_lengths(self, internal_branch_lengths:list) -> None:
         """
@@ -46,7 +54,7 @@ class InternalBranchStats(Tree):
 
     def calculate_internal_branch_stats(self, tree):
         # save internal branch lengths to internal_branch_lengths
-        internal_branch_lengths = self.get_internal_branch_lengths(tree)
+        internal_branch_lengths, lengths_and_names = self.get_internal_branch_lengths(tree)
         
         # If the phylogeny had no branch lengths, inform user and quit
         self.check_tree_has_branch_lengths(internal_branch_lengths)
@@ -54,4 +62,4 @@ class InternalBranchStats(Tree):
         # calculate summary stats
         stats = calculate_summary_statistics_from_arr(internal_branch_lengths)
 
-        return internal_branch_lengths, stats
+        return internal_branch_lengths, stats, lengths_and_names

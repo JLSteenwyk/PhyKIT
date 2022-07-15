@@ -10,12 +10,12 @@ class TerminalBranchStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        terminal_branch_lengths, stats = self.calculate_terminal_branch_stats(tree)
+        _, stats, lengths_and_names = self.calculate_terminal_branch_stats(tree)
 
         if self.verbose:
             try:
-                for terminal_branch_length in terminal_branch_lengths:
-                    print(round(terminal_branch_length, 4))
+                for len_and_name in lengths_and_names:
+                    print(round(len_and_name[0], 4), len_and_name[1])
             except BrokenPipeError:
                 pass
         else:
@@ -29,11 +29,16 @@ class TerminalBranchStats(Tree):
         loop through tree and get all terminal branch lengths
         """
         terminal_branch_lengths = []
+        lengths_and_names = []
         for terminal_branch in tree.get_terminals():
             if terminal_branch.branch_length != None:
+                temp = []
+                temp.append(terminal_branch.branch_length)
                 terminal_branch_lengths.append(terminal_branch.branch_length)
+                temp.append(terminal_branch.name)
+                lengths_and_names.append(temp)
 
-        return terminal_branch_lengths
+        return terminal_branch_lengths, lengths_and_names 
 
     def check_tree_has_branch_lengths(self, terminal_branch_lengths:list) -> None:
         """
@@ -46,7 +51,7 @@ class TerminalBranchStats(Tree):
 
     def calculate_terminal_branch_stats(self, tree):
         # save terminal branch lengths to terminal_branch_lengths
-        terminal_branch_lengths = self.get_terminal_branch_lengths(tree)
+        terminal_branch_lengths, lengths_and_names = self.get_terminal_branch_lengths(tree)
         
         # If the phylogeny had no branch lengths, inform user and quit
         self.check_tree_has_branch_lengths(terminal_branch_lengths)
@@ -54,4 +59,4 @@ class TerminalBranchStats(Tree):
         # calculate summary stats
         stats = calculate_summary_statistics_from_arr(terminal_branch_lengths)
 
-        return terminal_branch_lengths, stats
+        return terminal_branch_lengths, stats, lengths_and_names

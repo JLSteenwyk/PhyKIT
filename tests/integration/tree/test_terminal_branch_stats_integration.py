@@ -66,14 +66,14 @@ class TestTBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call(19.1996),
-            call(6.8004),
-            call(11.997),
-            call(12.003),
-            call(100.8593),
-            call(47.1407),
-            call(18.8795),
-            call(25.4615),
+            call(19.1996,"raccoon"),
+            call(6.8004,"bear"),
+            call(11.997,"sea_lion"),
+            call(12.003,"seal"),
+            call(100.8593,"monkey"),
+            call(47.1407,"cat"),
+            call(18.8795,"weasel"),
+            call(25.4615,"dog"),
         ]
 
     @patch("builtins.print")
@@ -88,16 +88,16 @@ class TestTBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call(0.0003),
-            call(0.0005),
-            call(0.0003),
-            call(0.0008),
-            call(0.0017),
-            call(0.0005),
-            call(0.0029),
-            call(0.0006),
-            call(0.0075),
-            call(0.0004),
+            call(0.0003,"Aspergillus_fischeri_IBT_3003"),
+            call(0.0005,"Aspergillus_fischeri_IBT_3007"),
+            call(0.0003,"Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1"),
+            call(0.0008,"Aspergillus_fischeri_NRRL4585"),
+            call(0.0017,"Aspergillus_fumigatus_Af293"),
+            call(0.0005,"Aspergillus_fumigatus_CEA10"),
+            call(0.0029,"Aspergillus_fumigatus_HMR_AF_270"),
+            call(0.0006,"Aspergillus_fumigatus_Z5"),
+            call(0.0075,"Aspergillus_oerlinghausenensis_CBS139183"),
+            call(0.0004,"Aspergillus_fischeri_NRRL4161"),
         ]
 
     @patch("builtins.print")
