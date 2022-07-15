@@ -26,7 +26,7 @@ class TestLBScore(object):
 
     def test_calculate_internal_branch_stats(self, tree_simple, args):
         t = InternalBranchStats(args)
-        internal_branch_lengths, stats = t.calculate_internal_branch_stats(tree_simple)
+        _, stats, _ = t.calculate_internal_branch_stats(tree_simple)
         assert isinstance(stats["mean"], float)
         assert isinstance(stats["median"], float)
         assert isinstance(stats["twenty_fifth"], float)
