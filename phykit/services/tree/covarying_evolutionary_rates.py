@@ -1,6 +1,7 @@
 import copy
 import sys
 
+from Bio import Phylo
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr
 
@@ -179,39 +180,29 @@ class CovaryingEvolutionaryRates(Tree):
         
         l0 = []
         l1 = []
-        for i, s in zip(t0.get_terminals(), sp.get_terminals()):
-            for term in sp.get_terminals():
-                if set(term.name)==set(i.name):
-                    l0.append(i.branch_length/s.branch_length)
-
-            for term in t1.get_terminals():
-                if set(term.name)==set(i.name):
-                    l1.append(i.branch_length/s.branch_length)
-        
-        for i, s in zip(t0.get_nonterminals(), sp.get_nonterminals()):
-            newtree = copy.deepcopy(sp)
+        # terminal corrected branch lengths
+        for i in sp.get_terminals():
+            newtree = copy.deepcopy(t0)
             newtree1 = copy.deepcopy(t1)
+            newtree = newtree.common_ancestor(i.name)
+            newtree1 = newtree1.common_ancestor(i.name)
+            l0.append(round(newtree.branch_length / i.branch_length, 6))
+            l1.append(round(newtree1.branch_length / i.branch_length, 6))
 
-            # get tree tip names
-            tree_zero_tips = self.get_tip_names_from_tree(i)
-            
-            newtree = newtree.common_ancestor(tree_zero_tips)
-            newtree1 = newtree1.common_ancestor(tree_zero_tips)
-
-            for nonterm in newtree.get_nonterminals():
-                try:
-                    l0.append(i.branch_length/nonterm.branch_length)
-                except: 
-                    l0.append("NA")
-                break
-
-            for nonterm in newtree1.get_nonterminals():
-                try:
-                    l1.append(i.branch_length/nonterm.branch_length)
-                except: 
-                    l1.append("NA")
-                break
-
-       	
+        # nonterminal corrected branch lengths
+        for i in sp.get_nonterminals():
+            newtree = copy.deepcopy(t0)
+            newtree1 = copy.deepcopy(t1)
+            sp_tips = self.get_tip_names_from_tree(i)
+            newtree = newtree.common_ancestor(sp_tips)
+            newtree1 = newtree1.common_ancestor(sp_tips)
+            try:
+                l0.append(round(newtree.branch_length / i.branch_length, 6))
+            except TypeError:
+                continue
+            try:
+                l1.append(round(newtree1.branch_length / i.branch_length, 6))
+            except TypeError:
+                continue
 
         return(l0, l1)
