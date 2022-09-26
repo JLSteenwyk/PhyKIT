@@ -23,7 +23,7 @@ class PatristicDistances(Tree):
         if self.verbose:
             try:
                 for combo, patristic_distance in zip(combos, patristic_distances):
-                    print(f"{combo[0]}-{combo[1]}\t{round(patristic_distance, 4)}")
+                    print(f"{combo[0]}\t{combo[1]}\t{round(patristic_distance, 4)}")
             except BrokenPipeError:
                 pass
         else:
