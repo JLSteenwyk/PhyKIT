@@ -125,8 +125,7 @@ class CovaryingEvolutionaryRates(Tree):
         differences = self.compare_trees(differences, tree_one, tree_ref)
         
         if differences > 0:
-            print("Input trees differ in topology.")
-            print("Please ensure input phylogenies all have the same topology.")
+            print("Input trees differ in topology. Please ensure input phylogenies all have the same topology.")
             sys.exit()
 
     def compare_trees(
