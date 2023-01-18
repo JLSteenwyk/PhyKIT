@@ -1,4 +1,4 @@
-/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree0.tre
-/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_te
-/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree2.tre
-/Users/jlsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree3.tre
+/Users/jacoblsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree0.tre
+/Users/jacoblsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_te
+/Users/jacoblsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree2.tre
+/Users/jacoblsteenwyk/Desktop/GITHUB/PhyKIT/tests/sample_files/polyt_test_tree3.tre

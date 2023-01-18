@@ -56,19 +56,19 @@ class TestCovaryingEvolutionaryRates(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(f"{-0.333}\t{-1.3686}"),
-            call(f"{0.2747}\t{1.7774}"),
-            call(f"{0.2747}\t{0.0692}"),
-            call(f"{1.3905}\t{0.597}"),
-            call(f"{0.2747}\t{-0.2188}"),
-            call(f"{0.2747}\t{0.0692}"),
-            call(f"{-0.3428}\t{-0.223}"),
-            call(f"{-3.1873}\t{-1.5688}"),
-            call(f"{0.2747}\t{0.0692}"),
-            call(f"{0.2747}\t{1.5686}"),
-            call(f"{0.2747}\t{-1.4737}"),
-            call(f"{0.2747}\t{0.0692}"),
-            call(f"{0.2747}\t{0.6333}")
+            call(f"{-0.333}\t{-1.3686}\traccoon"),
+            call(f"{0.2747}\t{1.7774}\tbear"),
+            call(f"{0.2747}\t{0.0692}\tsea_lion"),
+            call(f"{1.3905}\t{0.597}\tseal"),
+            call(f"{0.2747}\t{-0.2188}\tmonkey"),
+            call(f"{0.2747}\t{0.0692}\tcat"),
+            call(f"{-0.3428}\t{-0.223}\tweasel"),
+            call(f"{-3.1873}\t{-1.5688}\tdog"),
+            call(f"{0.2747}\t{0.0692}\traccoon;bear"),
+            call(f"{0.2747}\t{1.5686}\tsea_lion;seal;monkey;cat;weasel"),
+            call(f"{0.2747}\t{-1.4737}\tsea_lion;seal"),
+            call(f"{0.2747}\t{0.0692}\tmonkey;cat;weasel"),
+            call(f"{0.2747}\t{0.6333}\tmonkey;cat")
         ]
 
     @patch("builtins.print")

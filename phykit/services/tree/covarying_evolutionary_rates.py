@@ -2,8 +2,7 @@ import copy
 import sys
 
 from Bio import Phylo
-from scipy.stats import zscore
-from scipy.stats.stats import pearsonr
+from scipy.stats import (pearsonr, zscore)
 
 from .base import Tree
 
@@ -44,7 +43,7 @@ class CovaryingEvolutionaryRates(Tree):
 
         # obtain corrected branch lengths where branch lengths
         # are corrected by the species tree branch length
-        tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths = self.correct_branch_lengths(tree_zero, tree_one, tree_ref)
+        tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths, tip_names = self.correct_branch_lengths(tree_zero, tree_one, tree_ref)
 
         # remove corrected BLs greater than 5
         outlier_indices = []
@@ -53,6 +52,7 @@ class CovaryingEvolutionaryRates(Tree):
 
         tree_zero_corr_branch_lengths = self.remove_outliers_based_on_indices(tree_zero_corr_branch_lengths, outlier_indices)
         tree_one_corr_branch_lengths = self.remove_outliers_based_on_indices(tree_one_corr_branch_lengths, outlier_indices)
+        tip_names = self.remove_outliers_based_on_indices(tip_names, outlier_indices)
 
         # standardize values for final correction
         tree_zero_corr_branch_lengths = zscore(tree_zero_corr_branch_lengths)
@@ -64,8 +64,8 @@ class CovaryingEvolutionaryRates(Tree):
         
         try:
             if self.verbose:
-                for val_zero, val_one in zip(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths):
-                    print(f"{round(val_zero, 4)}\t{round(val_one, 4)}")
+                for val_zero, val_one, tip_name in zip(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths, tip_names):
+                    print(f"{round(val_zero, 4)}\t{round(val_one, 4)}\t{';'.join(tip_name)}")
             else:
                 print(f"{round(corr[0], 4)}\t{round(corr[1], 6)}")
         except BrokenPipeError:
@@ -179,10 +179,13 @@ class CovaryingEvolutionaryRates(Tree):
         
         l0 = []
         l1 = []
+        tip_names = []
         # terminal corrected branch lengths
         for i in sp.get_terminals():
             newtree = copy.deepcopy(t0)
             newtree1 = copy.deepcopy(t1)
+            sp_tips = self.get_tip_names_from_tree(i)
+            tip_names.append(sp_tips)
             newtree = newtree.common_ancestor(i.name)
             newtree1 = newtree1.common_ancestor(i.name)
             l0.append(round(newtree.branch_length / i.branch_length, 6))
@@ -192,11 +195,12 @@ class CovaryingEvolutionaryRates(Tree):
         for i in sp.get_nonterminals():
             newtree = copy.deepcopy(t0)
             newtree1 = copy.deepcopy(t1)
-            sp_tips = self.get_tip_names_from_tree(i)
+            sp_tips = self.get_tip_names_from_tree(i)            
             newtree = newtree.common_ancestor(sp_tips)
             newtree1 = newtree1.common_ancestor(sp_tips)
             try:
                 l0.append(round(newtree.branch_length / i.branch_length, 6))
+                tip_names.append(sp_tips)
             except TypeError:
                 continue
             try:
@@ -204,4 +208,4 @@ class CovaryingEvolutionaryRates(Tree):
             except TypeError:
                 continue
 
-        return(l0, l1)
+        return(l0, l1, tip_names)
