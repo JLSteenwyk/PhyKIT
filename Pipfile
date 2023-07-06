@@ -7,7 +7,7 @@ verify_ssl = true
 
 [packages]
 biopython = "==1.76"
-scipy = "==1.4.1"
+scipy = "==1.10.0"
 
 [requires]
 python_version = "3.8"
