@@ -1,10 +1,10 @@
 import copy
 import sys
 
-from Bio import Phylo
 from scipy.stats import (pearsonr, zscore)
 
 from .base import Tree
+
 
 class CovaryingEvolutionaryRates(Tree):
     def __init__(self, args) -> None:
@@ -29,17 +29,14 @@ class CovaryingEvolutionaryRates(Tree):
 
         # find differences between tree tips and shared tips
         # to determine what tips to prune
-        tree_zero_tips_to_prune   = list(set(tree_zero_tips) - set(shared_tree_tips))
-        tree_one_tips_to_prune    = list(set(tree_one_tips) - set(shared_tree_tips))
-        tree_ref_tips_to_prune    = list(set(tree_ref_tips) - set(shared_tree_tips))
+        tree_zero_tips_to_prune = list(set(tree_zero_tips) - set(shared_tree_tips))
+        tree_one_tips_to_prune = list(set(tree_one_tips) - set(shared_tree_tips))
+        tree_ref_tips_to_prune = list(set(tree_ref_tips) - set(shared_tree_tips))
 
         # get a set of pruned trees
         tree_zero = self.prune_tips(tree_zero, tree_zero_tips_to_prune)
         tree_one = self.prune_tips(tree_one, tree_one_tips_to_prune)
         tree_ref = self.prune_tips(tree_ref, tree_ref_tips_to_prune)
-
-        # check that the input trees have the same topology
-        self.determine_if_trees_differ(tree_zero, tree_one, tree_ref)
 
         # obtain corrected branch lengths where branch lengths
         # are corrected by the species tree branch length
@@ -61,7 +58,7 @@ class CovaryingEvolutionaryRates(Tree):
         # Calculate correlation and append to results array
         # also keep a list of p values
         corr = (list(pearsonr(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths)))
-        
+
         try:
             if self.verbose:
                 for val_zero, val_one, tip_name in zip(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths, tip_names):
@@ -79,7 +76,9 @@ class CovaryingEvolutionaryRates(Tree):
             verbose=args.verbose
         )
 
-    def get_indices_of_outlier_branch_lengths(self, corr_branch_lengths, outlier_indices):
+    def get_indices_of_outlier_branch_lengths(
+        self, corr_branch_lengths, outlier_indices
+    ):
         """
         create index for branch lengths that 
         have an absolute value greater than 5
@@ -92,7 +91,6 @@ class CovaryingEvolutionaryRates(Tree):
             except TypeError:
                 outlier_indices.append(idx)
 
-        
         return outlier_indices
 
     def remove_outliers_based_on_indices(self, corr_branch_lengths, outlier_indices):
@@ -102,81 +100,29 @@ class CovaryingEvolutionaryRates(Tree):
         """
         corr_branch_lengths = [i for j, i in enumerate(corr_branch_lengths) if j not in outlier_indices]
         return corr_branch_lengths
- 
+
     def prune_tips(
         self, tree, tips
-        ):
+    ):
         """
         prune tips from trees
         """
 
         for tip in tips:
             tree.prune(tip)
-        
+
         return tree
 
-    def determine_if_trees_differ(self, tree_zero, tree_one, tree_ref):
-        """
-        determine if the trees differ from one another
-        """
-        differences = 0
-        differences = self.compare_trees(differences, tree_zero, tree_one)
-        differences = self.compare_trees(differences, tree_zero, tree_ref)
-        differences = self.compare_trees(differences, tree_one, tree_ref)
-        
-        if differences > 0:
-            print("Input trees differ in topology. Please ensure input phylogenies all have the same topology.")
-            sys.exit()
-
-    def compare_trees(
-        self,
-        plain_rf: int,
-        tree_zero: Tree,
-        tree_one: Tree
-    ) -> int:
-        # loop through tree_zero and find similar clade in tree_one
-        for clade_zero in tree_zero.get_nonterminals():
-            # initialize and populate a list of tip names in tree_zero
-            tip_names_zero = self.get_tip_names_from_tree(clade_zero)
-            # get common ancestor of tree_zero tip names in tree_one
-            clade_one = tree_one.common_ancestor(tip_names_zero)
-            # initialize and populate a list of tip names in tree_one
-            tip_names_one = self.get_tip_names_from_tree(clade_one)
-
-            # compare the list of tip names
-            plain_rf = self.determine_if_clade_differs(
-                plain_rf,
-                tip_names_zero,
-                tip_names_one
-            )
-
-        return plain_rf
-            
-    def determine_if_clade_differs(
-        self,
-        plain_rf: int,
-        tip_names_zero: list,
-        tip_names_one: list
-        ) -> int:
-        """
-        if clade differs, add 1 to plain_rf value
-        """
-
-        if set(tip_names_zero) != set(tip_names_one):
-            plain_rf +=1
-        
-        return plain_rf
-
     def correct_branch_lengths(
-        self, 
+        self,
         t0,
         t1,
         sp
-        ):
+    ):
         """
         obtain a list of corrected branch lengths
         """
-        
+
         l0 = []
         l1 = []
         tip_names = []
@@ -208,4 +154,4 @@ class CovaryingEvolutionaryRates(Tree):
             except TypeError:
                 continue
 
-        return(l0, l1, tip_names)
+        return (l0, l1, tip_names)
