@@ -16,6 +16,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
     'Topic :: Scientific/Engineering',
 ]
 
@@ -23,7 +24,6 @@ REQUIRES = [
     "biopython>=1.79",
     "numpy>=1.18.2",
     "scipy>=1.4.1",
-    #"ete3>=3.1.2",
     "cython"
 ]
 
