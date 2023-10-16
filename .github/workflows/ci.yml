@@ -20,11 +20,11 @@ jobs:
         # install test dependencies
         pip install -r tests/requirements.txt
     - name: Generate coverage report
-      if: ${{ matrix.python-version == "3.10" }}
+      if: ${{ matrix.python-version == '3.10' }}
       run: |
         make test.coverage
     - name: Upload unit test coverage to Codecov
-      if: ${{ matrix.python-version == "3.10" }}
+      if: ${{ matrix.python-version == '3.10' }}
       uses: codecov/codecov-action@v1.0.7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -34,7 +34,7 @@ jobs:
         name: codecov-unit
         fail_ci_if_error: false
     - name: Upload integration test coverage to Codecov
-      if: ${{ matrix.python-version == "3.10" }}
+      if: ${{ matrix.python-version == '3.10' }}
       uses: codecov/codecov-action@v1.0.7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
