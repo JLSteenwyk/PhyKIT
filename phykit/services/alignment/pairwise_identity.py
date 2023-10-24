@@ -1,11 +1,11 @@
 import itertools
-import statistics as stat
-
-from Bio.Align import MultipleSeqAlignment
-import numpy as np
 
 from .base import Alignment
-from ...helpers.stats_summary import calculate_summary_statistics_from_dict, print_summary_statistics
+from ...helpers.stats_summary import (
+    calculate_summary_statistics_from_dict,
+    print_summary_statistics,
+)
+
 
 class PairwiseIdentity(Alignment):
     def __init__(self, args) -> None:
@@ -14,15 +14,17 @@ class PairwiseIdentity(Alignment):
     def run(self):
         # get aln
         alignment, alignment_format = self.get_alignment_and_format()
-        
+
         # get entry indices
         entries = self.get_entry_indices(alignment)
 
         # determine pairwise combinations of entry indices
         combos = list(itertools.combinations(entries, 2))
 
-        pairwise_identities, stats = self.calculate_pairwise_identities(alignment, combos)
-        
+        pairwise_identities, stats = self.calculate_pairwise_identities(
+            alignment, combos
+        )
+
         if self.verbose:
             try:
                 for pair, identity in pairwise_identities.items():
@@ -40,7 +42,7 @@ class PairwiseIdentity(Alignment):
         entries_count = 0
         for record in alignment:
             entries.append(entries_count)
-            entries_count+=1
+            entries_count += 1
 
         return entries
 
@@ -57,7 +59,7 @@ class PairwiseIdentity(Alignment):
             for idx in range(0, aln_len):
                 if seq_one[idx] == seq_two[idx]:
                     identities += 1
-            ids = alignment[combo[0]].id + '-' + alignment[combo[1]].id
+            ids = alignment[combo[0]].id + "-" + alignment[combo[1]].id
             pairwise_identities[ids] = identities / aln_len
 
         stats = calculate_summary_statistics_from_dict(pairwise_identities)

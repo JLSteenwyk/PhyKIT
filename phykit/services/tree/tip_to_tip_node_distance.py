@@ -29,8 +29,4 @@ class TipToTipNodeDistance(Tree):
             sys.exit()
 
     def process_args(self, args):
-        return dict(
-            tree_file_path=args.tree_zero,
-            tip_1=args.tip_1,
-            tip_2=args.tip_2
-        )
+        return dict(tree_file_path=args.tree_zero, tip_1=args.tip_1, tip_2=args.tip_2)

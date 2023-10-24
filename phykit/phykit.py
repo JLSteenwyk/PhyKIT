@@ -26,7 +26,7 @@ from .services.alignment import (
     RelativeCompositionVariability,
     RenameFastaEntries,
     SumOfPairsScore,
-    VariableSites
+    VariableSites,
 )
 
 from .services.tree import (
@@ -58,7 +58,7 @@ from .services.tree import (
     TipToTipNodeDistance,
     TotalTreeLength,
     Treeness,
-    TreenessOverRCV
+    TreenessOverRCV,
 )
 
 from .helpers.boolean_argument_parsing import str2bool
@@ -86,6 +86,7 @@ help_header = f"""
 
 """
 
+
 class Phykit(object):
     help_header = f"""
                  _____  _           _  _______ _______ 
@@ -103,7 +104,7 @@ class Phykit(object):
                 Publication link: https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
 
     """
-    
+
     def __init__(self):
         parser = ArgumentParser(
             add_help=True,
@@ -255,113 +256,118 @@ class Phykit(object):
     ## Aliases
     def run_alias(self, command, argv):
         # version
-        if command in ['version', 'v']:
+        if command in ["version", "v"]:
             return self.version()
         # Alignment aliases
-        if command in ['aln_len', 'al']:
+        if command in ["aln_len", "al"]:
             return self.alignment_length(argv)
-        elif command in ['aln_len_no_gaps', 'alng']:
+        elif command in ["aln_len_no_gaps", "alng"]:
             return self.alignment_length_no_gaps(argv)
-        elif command in 'cs':
+        elif command in "cs":
             return self.column_score(argv)
-        elif command in ['get_entry', 'ge']:
+        elif command in ["get_entry", "ge"]:
             return self.faidx(argv)
-        elif command == 'gc':
+        elif command == "gc":
             return self.gc_content(argv)
-        elif command in ['pairwise_id', 'pi']:
+        elif command in ["pairwise_id", "pi"]:
             return self.pairwise_identity(argv)
-        elif command == 'pis':
+        elif command == "pis":
             return self.parsimony_informative_sites(argv)
-        elif command in ['rel_comp_var', 'relative_composition_variability']:
+        elif command in ["rel_comp_var", "relative_composition_variability"]:
             return self.rcv(argv)
-        elif command == 'rename_fasta':
+        elif command == "rename_fasta":
             return self.rename_fasta_entries(argv)
-        elif command in ['sum_of_pairs_score', 'sops', 'sop']:
+        elif command in ["sum_of_pairs_score", "sops", "sop"]:
             return self.sum_of_pairs_score(argv)
-        elif command == 'vs':
+        elif command == "vs":
             return self.variable_sites(argv)
         # Tree aliases
-        elif command == 'bss':
+        elif command == "bss":
             return self.bipartition_support_stats(argv)
-        elif command == 'blm':
+        elif command == "blm":
             return self.branch_length_multiplier(argv)
-        elif command in ['collapse', 'cb']:
+        elif command in ["collapse", "cb"]:
             return self.collapse_branches(argv)
-        elif command == 'cover':
+        elif command == "cover":
             return self.covarying_evolutionary_rates(argv)
-        elif command == 'degree_of_violation_of_a_molecular_clock':
+        elif command == "degree_of_violation_of_a_molecular_clock":
             return self.dvmc(argv)
-        elif command == 'evo_rate':
+        elif command == "evo_rate":
             return self.evolutionary_rate(argv)
-        elif command == 'clan_check':
+        elif command == "clan_check":
             return self.hidden_paralogy_check(argv)
-        elif command == 'ibs':
+        elif command == "ibs":
             return self.internal_branch_stats(argv)
-        elif command == 'il':
+        elif command == "il":
             return self.internode_labeler(argv)
-        elif command in ['lca_subtree']:
+        elif command in ["lca_subtree"]:
             return self.last_common_ancestor_subtree(argv)
-        elif command in ['long_branch_score', 'lbs']:
+        elif command in ["long_branch_score", "lbs"]:
             return self.lb_score(argv)
-        elif command == 'is_monophyletic':
+        elif command == "is_monophyletic":
             return self.monophyly_check(argv)
-        elif command == 'nni':
+        elif command == "nni":
             return self.nearest_neighbor_interchange(argv)
-        elif command == 'pd':
+        elif command == "pd":
             return self.patristic_distances(argv)
-        elif command in ['polyt_test', 'ptt', 'polyt']:
+        elif command in ["polyt_test", "ptt", "polyt"]:
             return self.polytomy_test(argv)
-        elif command in ['print', 'pt']:
+        elif command in ["print", "pt"]:
             return self.print_tree(argv)
-        elif command == 'prune':
+        elif command == "prune":
             return self.prune_tree(argv)
-        elif command in ['rename_tree', 'rename_tips']:
+        elif command in ["rename_tree", "rename_tips"]:
             return self.rename_tree_tips(argv)
-        elif command in ['robinson_foulds_distance', 'rf_dist', 'rf']:
+        elif command in ["robinson_foulds_distance", "rf_dist", "rf"]:
             return self.rf_distance(argv)
-        elif command in ['root', 'rt']:
+        elif command in ["root", "rt"]:
             return self.root_tree(argv)
-        elif command in ['spurious_seq', 'ss']:
+        elif command in ["spurious_seq", "ss"]:
             return self.spurious_sequence(argv)
-        elif command == 'tbs':
+        elif command == "tbs":
             return self.terminal_branch_stats(argv)
-        elif command in ['labels', 'tree_labels', 'tl']:
+        elif command in ["labels", "tree_labels", "tl"]:
             return self.tip_labels(argv)
-        elif command in ['t2t_dist', 't2t']:
+        elif command in ["t2t_dist", "t2t"]:
             return self.tip_to_tip_distance(argv)
-        elif command in ['t2t_node_dist', 't2t_nd']:
+        elif command in ["t2t_node_dist", "t2t_nd"]:
             return self.tip_to_tip_node_distance(argv)
-        elif command == 'tree_len':
+        elif command == "tree_len":
             return self.total_tree_length(argv)
-        elif command == 'tness':
+        elif command == "tness":
             return self.treeness(argv)
         # Alignment- and tree-based aliases
-        elif command == 'sat':
+        elif command == "sat":
             return self.saturation(argv)
-        elif command in ['toverr', 'tor']:
+        elif command in ["toverr", "tor"]:
             return self.treeness_over_rcv(argv)
         # Helper aliases
-        elif command in ['create_concat', 'cc']:
+        elif command in ["create_concat", "cc"]:
             return self.create_concatenation_matrix(argv)
-        elif command in ['pal2nal', 'p2n']:
+        elif command in ["pal2nal", "p2n"]:
             return self.thread_dna(argv)
         else:
             print(textwrap.dedent(help_header))
-            print("Invalid command option. See help for a complete list of commands and aliases.")
+            print(
+                "Invalid command option. See help for a complete list of commands and aliases."
+            )
             sys.exit(1)
 
     ## print version
     def version(self):
-        print(textwrap.dedent(
-            f"""\
+        print(
+            textwrap.dedent(
+                f"""\
             {self.help_header}
             """
-        ))
+            )
+        )
 
     ## Alignment functions
     @staticmethod
     def alignment_length(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -398,7 +404,8 @@ class Phykit(object):
 
     @staticmethod
     def alignment_length_no_gaps(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -442,7 +449,8 @@ class Phykit(object):
 
     @staticmethod
     def column_score(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -477,13 +485,14 @@ class Phykit(object):
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
-        parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
+        parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         ColumnScore(args).run()
 
     @staticmethod
     def faidx(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -516,13 +525,14 @@ class Phykit(object):
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
-        parser.add_argument("-e","--entry", type=str, help=SUPPRESS)
+        parser.add_argument("-e", "--entry", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         Faidx(args).run()
 
     @staticmethod
     def gc_content(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -561,13 +571,16 @@ class Phykit(object):
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         GCContent(args).run()
 
     @staticmethod
     def pairwise_identity(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -609,13 +622,16 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 
     @staticmethod
     def parsimony_informative_sites(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -661,7 +677,8 @@ class Phykit(object):
 
     @staticmethod
     def rcv(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -699,7 +716,8 @@ class Phykit(object):
 
     @staticmethod
     def rename_fasta_entries(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -742,14 +760,15 @@ class Phykit(object):
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
-        parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
+        parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RenameFastaEntries(args).run()
 
     @staticmethod
     def sum_of_pairs_score(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -784,13 +803,14 @@ class Phykit(object):
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
-        parser.add_argument("-r","--reference", type=str, help=SUPPRESS)
+        parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         SumOfPairsScore(args).run()
 
     @staticmethod
     def variable_sites(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -832,11 +852,11 @@ class Phykit(object):
         args = parser.parse_args(argv)
         VariableSites(args).run()
 
-
     ## Tree functions
     @staticmethod
     def bipartition_support_stats(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -871,18 +891,15 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument(
-            "-v",
-            "--verbose",
-            action="store_true",
-            required=False,
-            help=SUPPRESS
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         BipartitionSupportStats(args).run()
 
     @staticmethod
     def branch_length_multiplier(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -921,18 +938,15 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument(
-            "-f", "--factor",
-            type=float, required=True,
-            help=SUPPRESS
-        )
+        parser.add_argument("-f", "--factor", type=float, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         BranchLengthMultiplier(args).run()
 
     @staticmethod
     def collapse_branches(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -971,18 +985,15 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument(
-            "-s", "--support",
-            type=float, required=True,
-            help=SUPPRESS
-        )
+        parser.add_argument("-s", "--support", type=float, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CollapseBranches(args).run()
 
     @staticmethod
     def covarying_evolutionary_rates(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1048,13 +1059,16 @@ class Phykit(object):
         parser.add_argument(
             "-r", "--reference", type=str, required=True, help=SUPPRESS, metavar=""
         )
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         CovaryingEvolutionaryRates(args).run()
 
     @staticmethod
     def dvmc(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1106,7 +1120,8 @@ class Phykit(object):
 
     @staticmethod
     def evolutionary_rate(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1142,7 +1157,8 @@ class Phykit(object):
 
     @staticmethod
     def hidden_paralogy_check(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1217,7 +1233,8 @@ class Phykit(object):
 
     @staticmethod
     def internal_branch_stats(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1251,18 +1268,15 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument(
-            "-v",
-            "--verbose",
-            action="store_true",
-            required=False,
-            help=SUPPRESS
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         InternalBranchStats(args).run()
 
     @staticmethod
     def internode_labeler(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1299,7 +1313,8 @@ class Phykit(object):
 
     @staticmethod
     def last_common_ancestor_subtree(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1340,7 +1355,8 @@ class Phykit(object):
 
     @staticmethod
     def lb_score(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1383,13 +1399,16 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         LBScore(args).run()
 
     @staticmethod
     def monophyly_check(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1442,7 +1461,8 @@ class Phykit(object):
 
     @staticmethod
     def nearest_neighbor_interchange(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1486,7 +1506,8 @@ class Phykit(object):
 
     @staticmethod
     def patristic_distances(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1523,13 +1544,16 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
-        PatristicDistances(args).run() 
+        PatristicDistances(args).run()
 
     @staticmethod
     def polytomy_test(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1587,11 +1611,12 @@ class Phykit(object):
         parser.add_argument("-t", "--trees", type=str, help=SUPPRESS)
         parser.add_argument("-g", "--groups", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
-        PolytomyTest(args).run() 
+        PolytomyTest(args).run()
 
     @staticmethod
     def print_tree(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1625,13 +1650,16 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-r", "--remove", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-r", "--remove", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         PrintTree(args).run()
 
     @staticmethod
     def prune_tree(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1680,18 +1708,15 @@ class Phykit(object):
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         parser.add_argument(
-            "-k", "--keep",
-            type=str2bool, 
-            nargs='?',
-            default=False,
-            help=SUPPRESS
+            "-k", "--keep", type=str2bool, nargs="?", default=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         PruneTree(args).run()
 
     @staticmethod
     def rename_tree_tips(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1734,14 +1759,15 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("-i","--idmap", type=str, help=SUPPRESS)
+        parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RenameTreeTips(args).run()
 
     @staticmethod
     def rf_distance(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1794,7 +1820,8 @@ class Phykit(object):
 
     @staticmethod
     def root_tree(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1844,7 +1871,8 @@ class Phykit(object):
 
     @staticmethod
     def spurious_sequence(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1894,17 +1922,14 @@ class Phykit(object):
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument(
-            "-f", "--factor",
-            type=float, required=False,
-            help=SUPPRESS
-        )
+        parser.add_argument("-f", "--factor", type=float, required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         SpuriousSequence(args).run()
 
     @staticmethod
     def terminal_branch_stats(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1938,18 +1963,15 @@ class Phykit(object):
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument(
-            "-v",
-            "--verbose",
-            action="store_true",
-            required=False,
-            help=SUPPRESS
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         TerminalBranchStats(args).run()
 
     @staticmethod
     def tip_labels(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -1980,7 +2002,8 @@ class Phykit(object):
 
     @staticmethod
     def tip_to_tip_distance(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2023,7 +2046,8 @@ class Phykit(object):
 
     @staticmethod
     def tip_to_tip_node_distance(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2067,7 +2091,8 @@ class Phykit(object):
 
     @staticmethod
     def total_tree_length(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2098,7 +2123,8 @@ class Phykit(object):
 
     @staticmethod
     def treeness(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2142,7 +2168,8 @@ class Phykit(object):
     ## Alignment and tree functions
     @staticmethod
     def saturation(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2187,13 +2214,16 @@ class Phykit(object):
         parser.add_argument(
             "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
         )
-        parser.add_argument("-v", "--verbose", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
         args = parser.parse_args(argv)
         Saturation(args).run()
 
     @staticmethod
     def treeness_over_rcv(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2242,7 +2272,8 @@ class Phykit(object):
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2283,22 +2314,15 @@ class Phykit(object):
                 """
             ),
         )
-        parser.add_argument(
-            "-a", "--alignment_list",
-            type=str,
-            help=SUPPRESS
-        )
-        parser.add_argument(
-            "-p", "--prefix",
-            type=str,
-            help=SUPPRESS
-        )
+        parser.add_argument("-a", "--alignment_list", type=str, help=SUPPRESS)
+        parser.add_argument("-p", "--prefix", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         CreateConcatenationMatrix(args).run()
 
     @staticmethod
     def thread_dna(argv):
-        parser = ArgumentParser(add_help=True,
+        parser = ArgumentParser(
+            add_help=True,
             usage=SUPPRESS,
             formatter_class=RawDescriptionHelpFormatter,
             description=textwrap.dedent(
@@ -2345,162 +2369,193 @@ class Phykit(object):
                 """
             ),
         )
+        parser.add_argument("-p", "--protein", type=str, help=SUPPRESS)
+        parser.add_argument("-n", "--nucleotide", type=str, help=SUPPRESS)
         parser.add_argument(
-            "-p", "--protein",
-            type=str,
-            help=SUPPRESS
-        )
-        parser.add_argument(
-            "-n", "--nucleotide",
-            type=str,
-            help=SUPPRESS
-        )
-        parser.add_argument(
-            "-c", "--clipkit_log_file",
+            "-c",
+            "--clipkit_log_file",
             type=str,
             required=False,
             help=SUPPRESS,
         )
         parser.add_argument(
-            "-s", "--stop",
-            type=str2bool, 
-            nargs='?',
-            default=True,
-            help=SUPPRESS
+            "-s", "--stop", type=str2bool, nargs="?", default=True, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         DNAThreader(args).run()
 
+
 def main(argv=None):
     Phykit()
+
 
 # Alignment-based functions
 def alignment_length(argv=None):
     Phykit.alignment_length(sys.argv[1:])
 
+
 def alignment_length_no_gaps(argv=None):
     Phykit.alignment_length_no_gaps(sys.argv[1:])
+
 
 def column_score(argv=None):
     Phykit.column_score(sys.argv[1:])
 
+
 def faidx(argv=None):
     Phykit.faidx(sys.argv[1:])
+
 
 def gc_content(argv=None):
     Phykit.gc_content(sys.argv[1:])
 
+
 def pairwise_identity(argv=None):
     Phykit.pairwise_identity(sys.argv[1:])
+
 
 def parsimony_informative_sites(argv=None):
     Phykit.parsimony_informative_sites(sys.argv[1:])
 
+
 def rcv(argv=None):
     Phykit.rcv(sys.argv[1:])
+
 
 def rename_fasta_entries(argv=None):
     Phykit.rename_fasta_entries(sys.argv[1:])
 
+
 def sum_of_pairs_score(argv=None):
     Phykit.sum_of_pairs_score(sys.argv[1:])
 
+
 def variable_sites(argv=None):
     Phykit.variable_sites(sys.argv[1:])
+
 
 # Tree-based functions
 def bipartition_support_stats(argv=None):
     Phykit.bipartition_support_stats(sys.argv[1:])
 
+
 def branch_length_multiplier(argv=None):
     Phykit.branch_length_multiplier(sys.argv[1:])
+
 
 def collapse_branches(argv=None):
     Phykit.collapse_branches(sys.argv[1:])
 
+
 def covarying_evolutionary_rates(argv=None):
     Phykit.covarying_evolutionary_rates(sys.argv[1:])
+
 
 def dvmc(argv=None):
     Phykit.dvmc(sys.argv[1:])
 
+
 def evolutionary_rate(argv=None):
     Phykit.evolutionary_rate(sys.argv[1:])
+
 
 def hidden_paralogy_check(argv=None):
     Phykit.hidden_paralogy_check(sys.argv[1:])
 
+
 def internal_branch_stats(argv=None):
     Phykit.internal_branch_stats(sys.argv[1:])
+
 
 def internode_labeler(argv=None):
     Phykit.internode_labeler(sys.argv[1:])
 
+
 def last_common_ancestor_subtree(argv=None):
     Phykit.last_common_ancestor_subtree(sys.argv[1:])
+
 
 def lb_score(argv=None):
     Phykit.lb_score(sys.argv[1:])
 
+
 def monophyly_check(argv=None):
     Phykit.monophyly_check(sys.argv[1:])
+
 
 def nearest_neighbor_interchange(argv=None):
     Phykit.nearest_neighbor_interchange(sys.argv[1:])
 
+
 def patristic_distances(argv=None):
     Phykit.patristic_distances(sys.argv[1:])
+
 
 def polytomy_test(argv=None):
     Phykit.polytomy_test(sys.argv[1:])
 
+
 def print_tree(argv=None):
     Phykit.print_tree(sys.argv[1:])
+
 
 def prune_tree(argv=None):
     Phykit.prune_tree(sys.argv[1:])
 
+
 def rename_tree_tips(argv=None):
     Phykit.rename_tree_tips(sys.argv[1:])
+
 
 def rf_distance(argv=None):
     Phykit.rf_distance(sys.argv[1:])
 
+
 def root_tree(argv=None):
     Phykit.root_tree(sys.argv[1:])
+
 
 def spurious_sequence(argv=None):
     Phykit.spurious_sequence(sys.argv[1:])
 
+
 def terminal_branch_stats(argv=None):
     Phykit.terminal_branch_stats(sys.argv[1:])
+
 
 def tip_labels(argv=None):
     Phykit.tip_labels(sys.argv[1:])
 
+
 def tip_to_tip_distance(argv=None):
     Phykit.tip_to_tip_distance(sys.argv[1:])
+
 
 def tip_to_tip_node_distance(argv=None):
     Phykit.tip_to_tip_node_distance(sys.argv[1:])
 
+
 def total_tree_length(argv=None):
     Phykit.total_tree_length(sys.argv[1:])
 
+
 def treeness(argv=None):
     Phykit.treeness(sys.argv[1:])
+
 
 # Alignment- and tree-based functions
 def saturation(argv=None):
     Phykit.saturation(sys.argv[1:])
 
+
 def treeness_over_rcv(argv=None):
     Phykit.treeness_over_rcv(sys.argv[1:])
+
 
 # Helper functions
 def create_concatenation_matrix(argv=None):
     Phykit.create_concatenation_matrix(sys.argv[1:])
 
+
 def thread_dna(argv=None):
     Phykit.thread_dna(sys.argv[1:])
-

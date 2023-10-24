@@ -1,8 +1,7 @@
-import logging
-
 from Bio import Phylo
 
 from .base import Tree
+
 
 class PrintTree(Tree):
     def __init__(self, args) -> None:
@@ -10,7 +9,7 @@ class PrintTree(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        
+
         # remove branch lengths if specified by user
         # otherwise, print ascii tree
         if self.remove:
@@ -23,6 +22,6 @@ class PrintTree(Tree):
             Phylo.draw_ascii(tree)
         except BrokenPipeError:
             pass
-    
+
     def process_args(self, args):
         return dict(tree_file_path=args.tree, remove=args.remove)

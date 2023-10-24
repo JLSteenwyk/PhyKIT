@@ -14,7 +14,6 @@ class DNAThreader(Alignment):
         self.process_args(args)
 
     def process_args(self, args):
-
         self.include_stop_codon = args.stop
         self.protein_file_path = args.protein
         self.nucleotide_file_path = args.nucleotide
@@ -25,39 +24,36 @@ class DNAThreader(Alignment):
         nucl = self.read_file(self.nucleotide_file_path)
 
         if self.clipkit_log_file is not None:
-            clipkit_log = [line.split(' ')[1] for line in open(self.clipkit_log_file).readlines()]
+            clipkit_log = [
+                line.split(" ")[1] for line in open(self.clipkit_log_file).readlines()
+            ]
         else:
             clipkit_log = self.clipkit_log_file
 
         pal2nal = self.thread(prot, nucl, clipkit_log)
 
         for record in pal2nal:
-            sequence = ''.join(pal2nal[record])
+            sequence = "".join(pal2nal[record])
             print(f">{record}")
             print(f"{sequence}")
 
-    def read_file(
-        self,
-        file_path: str,
-        file_format: str = "fasta"
-    ) -> SeqRecord:
+    def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
 
-    def thread(
-        self,
-        protein: SeqRecord,
-        nucleotide: SeqRecord,
-        clipkit_log
-    ) -> dict:
+    def thread(self, protein: SeqRecord, nucleotide: SeqRecord, clipkit_log) -> dict:
         # protein alignment to nucleotide alignment
         pal2nal = {}
-        
+
         try:
             # when ClipKIT log file is provided
             if clipkit_log:
-                for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
-                    # get gene id and sequences                    
-                    gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
+                for protein_seq_record, nucleotide_seq_record in zip(
+                    protein, nucleotide
+                ):
+                    # get gene id and sequences
+                    gene_id, p_seq, n_seq = self.get_id_and_seqs(
+                        protein_seq_record, nucleotide_seq_record
+                    )
 
                     # initialize gap counter and gene in pal2nal dict
                     gap_count = 0
@@ -77,10 +73,7 @@ class DNAThreader(Alignment):
                                     # if AA is not a gap, insert the corresponding codon
                                     if p_seq[aa_idx] != "-":
                                         pal2nal = self.add_codon_when_log_file_is_used(
-                                            nucl_idx,
-                                            n_seq,
-                                            gene_id,
-                                            pal2nal
+                                            nucl_idx, n_seq, gene_id, pal2nal
                                         )
                                 else:
                                     # if AA is a stop or ambiguous insert a codon of gaps
@@ -88,18 +81,19 @@ class DNAThreader(Alignment):
                                         pal2nal = self.add_gap(pal2nal, gene_id)
                                     else:
                                         pal2nal = self.add_codon_when_log_file_is_used(
-                                            nucl_idx,
-                                            n_seq,
-                                            gene_id,
-                                            pal2nal
+                                            nucl_idx, n_seq, gene_id, pal2nal
                                         )
                             aa_idx += 1
                         nucl_idx += 3
 
             else:
-                for protein_seq_record, nucleotide_seq_record in zip(protein, nucleotide):
+                for protein_seq_record, nucleotide_seq_record in zip(
+                    protein, nucleotide
+                ):
                     # get gene id and sequences
-                    gene_id, p_seq, n_seq = self.get_id_and_seqs(protein_seq_record, nucleotide_seq_record)
+                    gene_id, p_seq, n_seq = self.get_id_and_seqs(
+                        protein_seq_record, nucleotide_seq_record
+                    )
 
                     # initialize gap counter and gene in pal2nal dict
                     gap_count = 0
@@ -116,11 +110,7 @@ class DNAThreader(Alignment):
                                 # if AA is not a gap, insert the corresponding codon
                                 if p_seq[aa_idx] != "-":
                                     pal2nal = self.add_codon(
-                                        aa_idx,
-                                        gap_count,
-                                        n_seq,
-                                        gene_id,
-                                        pal2nal
+                                        aa_idx, gap_count, n_seq, gene_id, pal2nal
                                     )
                             else:
                                 # if AA is a stop or ambiguous insert a codon of gaps
@@ -128,11 +118,7 @@ class DNAThreader(Alignment):
                                     pal2nal = self.add_gap(pal2nal, gene_id)
                                 else:
                                     pal2nal = self.add_codon(
-                                        aa_idx,
-                                        gap_count,
-                                        n_seq,
-                                        gene_id,
-                                        pal2nal
+                                        aa_idx, gap_count, n_seq, gene_id, pal2nal
                                     )
             return pal2nal
         except FileNotFoundError:
@@ -144,9 +130,7 @@ class DNAThreader(Alignment):
                 pass
 
     def get_id_and_seqs(
-        self,
-        protein_seq_record: SeqRecord,
-        nucleotide_seq_record: SeqRecord
+        self, protein_seq_record: SeqRecord, nucleotide_seq_record: SeqRecord
     ):
         """
         get gene id, protein sequence, and nucleotide sequence
@@ -163,11 +147,7 @@ class DNAThreader(Alignment):
 
         return gene_id, p_seq, n_seq
 
-    def add_gap(
-        self,
-        pal2nal: dict,
-        gene_id: str
-    ) -> dict:
+    def add_gap(self, pal2nal: dict, gene_id: str) -> dict:
         """
         add a gap to the growing sequence
         """
@@ -177,19 +157,14 @@ class DNAThreader(Alignment):
         return pal2nal
 
     def add_codon(
-        self,
-        aa_idx: int,
-        gap_count: int,
-        n_seq: SeqRecord,
-        gene_id: str,
-        pal2nal: dict
+        self, aa_idx: int, gap_count: int, n_seq: SeqRecord, gene_id: str, pal2nal: dict
     ) -> dict:
         """
         add a gap to the growing sequence
         """
 
         nt_window = (aa_idx - gap_count) * 3
-        seq = n_seq[nt_window : nt_window + 3]._data
+        seq = n_seq[nt_window:nt_window + 3]._data
         seq = seq.decode("utf-8")
         if not len(seq):
             seq = "---"
@@ -198,25 +173,16 @@ class DNAThreader(Alignment):
         return pal2nal
 
     def add_codon_when_log_file_is_used(
-        self,
-        nucl_idx: int,
-        n_seq: SeqRecord,
-        gene_id: str,
-        pal2nal: dict
+        self, nucl_idx: int, n_seq: SeqRecord, gene_id: str, pal2nal: dict
     ) -> dict:
         """
         add a gap to the growing sequence
         """
 
-        seq = n_seq[nucl_idx : nucl_idx + 3]._data
+        seq = n_seq[nucl_idx:nucl_idx + 3]._data
         seq = seq.decode("utf-8")
         if not len(seq):
             seq = "---"
         pal2nal[gene_id].append(seq)
 
         return pal2nal
-
-
-
-
-
