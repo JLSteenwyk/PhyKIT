@@ -1,5 +1,4 @@
 import statistics as stat
-import sys
 
 import numpy as np
 
