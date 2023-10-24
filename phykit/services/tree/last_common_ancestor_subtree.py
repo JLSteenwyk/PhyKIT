@@ -1,7 +1,5 @@
 import sys
 
-from Bio import Phylo
-
 from .base import Tree
 
 from ...helpers.files import read_single_column_file_to_list

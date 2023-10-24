@@ -32,12 +32,12 @@ def get_alignment_and_format(alignment_file_path: str):
             print("Please check file name and pathing")
             sys.exit()
 
+
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     try:
         with open(single_col_file_path) as f:
-            return [line.rstrip('\n').strip() for line in f]
+            return [line.rstrip("\n").strip() for line in f]
     except FileNotFoundError:
         print(f"{single_col_file_path} corresponds to no such file or directory.")
         print("Please check file name and pathing")
         sys.exit()
-

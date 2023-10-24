@@ -24,7 +24,7 @@ class MonophylyCheck(Tree):
         taxa_of_interest = list(set(taxa).intersection(tree_tips))
 
         # check for sufficient representation
-        if len(taxa_of_interest)<=1:
+        if len(taxa_of_interest) <= 1:
             res_arr.append(["insufficient_taxon_representation"])
             sys.exit()
 
@@ -37,15 +37,15 @@ class MonophylyCheck(Tree):
         # get common ancestor of clan of interest
         tree = tree.common_ancestor(shared_tree_tips)
         # get common ancestor tree tips
-        common_ancestor_tips = self.get_tip_names_from_tree(tree)        
-        diff_tips_between_clade_and_curr_tree = list(set(taxa_of_interest) ^ set(common_ancestor_tips))
+        common_ancestor_tips = self.get_tip_names_from_tree(tree)
+        diff_tips_between_clade_and_curr_tree = list(
+            set(taxa_of_interest) ^ set(common_ancestor_tips)
+        )
 
         stats = self.get_bootstrap_statistics(tree)
 
         res_arr = self.populate_res_arr(
-            diff_tips_between_clade_and_curr_tree,
-            stats,
-            res_arr
+            diff_tips_between_clade_and_curr_tree, stats, res_arr
         )
 
         self.print_results(res_arr)
@@ -55,26 +55,20 @@ class MonophylyCheck(Tree):
             tree_file_path=args.tree,
             list_of_taxa=args.list_of_taxa,
         )
-    
+
     def get_bootstrap_statistics(self, tree):
         # get bootstrap support values
         bs_vals = []
         # populate bs_vals with bootstrap values
         for terminal in tree.get_nonterminals():
-        # only include if a bootstrap value is present
+            # only include if a bootstrap value is present
             if terminal.confidence != None:
                 bs_vals.append(terminal.confidence)
         stats = calculate_summary_statistics_from_arr(bs_vals)
 
         return stats
 
-    def populate_res_arr(
-        self,
-        diff_tips_between_clade_and_curr_tree,
-        stats,
-        res_arr
-    ):
-
+    def populate_res_arr(self, diff_tips_between_clade_and_curr_tree, stats, res_arr):
         temp = []
 
         if len(diff_tips_between_clade_and_curr_tree) == 0:
@@ -95,8 +89,12 @@ class MonophylyCheck(Tree):
             try:
                 if len(res[5]) != 0:
                     res[5].sort()
-                    print(f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}")
+                    print(
+                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}"
+                    )
                 else:
-                    print(f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}")
+                    print(
+                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}"
+                    )
             except IndexError:
                 print(f"{res[0]}")

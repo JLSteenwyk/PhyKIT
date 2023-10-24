@@ -1,7 +1,7 @@
-import logging
 import sys
 
 from .base import Tree
+
 
 class RenameTreeTips(Tree):
     def __init__(self, args) -> None:
@@ -12,11 +12,11 @@ class RenameTreeTips(Tree):
 
         # save idmap to a dictionary
         idmap = self.read_id_map(self.idmap)
-        
+
         tree = self.replace_tip_names(tree, idmap)
-        
+
         self.write_tree_file(tree, self.output_file_path)
-    
+
     def process_args(self, args):
         tree_file_path = args.tree
 
@@ -26,16 +26,16 @@ class RenameTreeTips(Tree):
             output_file_path = f"{args.output}"
 
         return dict(
-            tree_file_path=tree_file_path, 
+            tree_file_path=tree_file_path,
             idmap=args.idmap,
-            output_file_path=output_file_path
-            )
+            output_file_path=output_file_path,
+        )
 
     def read_id_map(self, idmap: str) -> dict:
         """
         read two column file to dictionary
         """
-        idmap={}
+        idmap = {}
         try:
             with open(self.idmap) as identifiers:
                 for line in identifiers:
@@ -61,6 +61,5 @@ class RenameTreeTips(Tree):
         for term in tree.get_terminals():
             if term.name in idmap:
                 term.name = idmap[term.name]
-        
-        return tree
 
+        return tree

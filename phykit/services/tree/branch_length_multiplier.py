@@ -1,11 +1,5 @@
-import getopt
-import logging
-import os.path
-import sys
-
-from Bio import Phylo
-
 from .base import Tree
+
 
 class BranchLengthMultiplier(Tree):
     def __init__(self, args) -> None:
@@ -25,14 +19,14 @@ class BranchLengthMultiplier(Tree):
         return dict(
             tree_file_path=args.tree,
             factor=args.factor,
-            output_file_path=output_file_path
+            output_file_path=output_file_path,
         )
 
     def multiply_branch_lengths_by_factor(self, tree, factor):
         for internode in tree.get_nonterminals():
             if internode.branch_length != None:
-                internode.branch_length = internode.branch_length*factor
+                internode.branch_length = internode.branch_length * factor
         for term in tree.get_terminals():
             if term.branch_length != None:
-                term.branch_length = term.branch_length*factor
+                term.branch_length = term.branch_length * factor
         return tree

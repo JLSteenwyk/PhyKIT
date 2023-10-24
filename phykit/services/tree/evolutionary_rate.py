@@ -9,8 +9,7 @@ class EvolutionaryRate(Tree):
         tree = self.read_tree_file()
         total_tree_length = self.calculate_total_tree_length(tree)
         num_terminals = tree.count_terminals()
-        print(round(total_tree_length/num_terminals, 4))
-
+        print(round(total_tree_length / num_terminals, 4))
 
     def process_args(self, args):
         return dict(tree_file_path=args.tree)

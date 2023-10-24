@@ -1,6 +1,5 @@
-from Bio.Align import MultipleSeqAlignment
-
 from .base import Alignment
+
 
 class VariableSites(Alignment):
     def __init__(self, args) -> None:
@@ -12,13 +11,12 @@ class VariableSites(Alignment):
         if (var_sites, aln_len, var_sites_per):
             print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
 
-
     def process_args(self, args):
         return dict(alignment_file_path=args.alignment)
 
     def calculate_variable_sites(self, alignment):
         aln_len = alignment.get_alignment_length()
-        
+
         var_sites = 0
         # count number of variable sites
         for i in range(0, aln_len, int(1)):
@@ -30,6 +28,6 @@ class VariableSites(Alignment):
             if len(set(seq_at_position)) > 1:
                 var_sites += 1
         # calculate percent of variable sites
-        var_sites_per = (var_sites / aln_len)*100
-        
+        var_sites_per = (var_sites / aln_len) * 100
+
         return var_sites, aln_len, var_sites_per

@@ -1,6 +1,5 @@
-from Bio.Align import MultipleSeqAlignment
-
 from .base import Alignment
+
 
 class AlignmentLength(Alignment):
     def __init__(self, args) -> None:
