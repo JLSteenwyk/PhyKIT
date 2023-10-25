@@ -1,9 +1,9 @@
 import sys
-from typing import Tuple
 
 from Bio import Phylo
 
 from ..base import BaseService
+
 
 class Tree(BaseService):
     def __init__(
@@ -56,7 +56,6 @@ class Tree(BaseService):
             print("Please check filename and pathing")
             sys.exit()
 
-
     def read_tree1_file(self):
         try:
             return Phylo.read(self.tree1_file_path, self.tree_format)
@@ -64,7 +63,6 @@ class Tree(BaseService):
             print(f"{self.tree1_file_path} corresponds to no such file or directory.")
             print("Please check filename and pathing")
             sys.exit()
-
 
     def read_reference_tree_file(self):
         try:
@@ -74,27 +72,20 @@ class Tree(BaseService):
             print("Please check filename and pathing")
             sys.exit()
 
-
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
 
-    def get_tip_names_from_tree(
-        self, tree
-        ) -> list:
+    def get_tip_names_from_tree(self, tree) -> list:
         """
         get tip names from a tree
         """
         tips = []
         for tip in tree.get_terminals():
             tips.append(tip.name)
-        
+
         return tips
 
-    def shared_tips(
-        self, 
-        a,
-        b
-        ):
+    def shared_tips(self, a, b):
         """
         Determines what tips are shared between two trees
         -------------------------------------------------
@@ -102,29 +93,25 @@ class Tree(BaseService):
             list of tips from one tree
         argv: b
             list of tips from a second tree
-        """ 
+        """
 
-        a_set = set(a) 
-        b_set = set(b) 
-        
-        # check length  
-        if len(a_set.intersection(b_set)) > 0: 
-            return(list(a_set.intersection(b_set)))   
-        else: 
-            print("no common tips") 
+        a_set = set(a)
+        b_set = set(b)
+
+        # check length
+        if len(a_set.intersection(b_set)) > 0:
+            return list(a_set.intersection(b_set))
+        else:
+            print("no common tips")
             sys.exit()
 
-    def prune_tree_using_taxa_list(
-        self,
-        tree,
-        taxa_to_prune: list
-    ):
+    def prune_tree_using_taxa_list(self, tree, taxa_to_prune: list):
         """
         prune taxa from tree
         """
         for taxon in taxa_to_prune:
             tree.prune(taxon)
-        
+
         return tree
 
     def calculate_treeness(self, tree=None, print_value=False):

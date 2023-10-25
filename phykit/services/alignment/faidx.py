@@ -2,6 +2,7 @@ from Bio import SeqIO
 
 from .base import Alignment
 
+
 class Faidx(Alignment):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))

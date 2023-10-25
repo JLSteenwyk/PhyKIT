@@ -4,6 +4,7 @@ from Bio import SeqIO
 
 from .base import Alignment
 
+
 class RenameFastaEntries(Alignment):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
@@ -12,7 +13,7 @@ class RenameFastaEntries(Alignment):
         # create biopython object of sequences
         try:
             records = SeqIO.parse(self.fasta, "fasta")
-        except FileNotFoundError:    
+        except FileNotFoundError:
             print(f"{self.fasta} corresponds to no such file or directory.")
             print("Please double check pathing and filenames")
             sys.exit()
@@ -23,7 +24,6 @@ class RenameFastaEntries(Alignment):
         # replace and write out
         self.replace_ids_and_write(self.output_file_path, records, idmap)
 
-        
     def process_args(self, args):
         if args.output is None:
             output_file_path = f"{args.fasta}.renamed.fa"
@@ -31,9 +31,7 @@ class RenameFastaEntries(Alignment):
             output_file_path = f"{args.output}"
 
         return dict(
-            fasta=args.fasta, 
-            idmap=args.idmap,
-            output_file_path=output_file_path
+            fasta=args.fasta, idmap=args.idmap, output_file_path=output_file_path
         )
 
     def replace_ids_and_write(self, output_file_path, records, idmap):
@@ -42,22 +40,20 @@ class RenameFastaEntries(Alignment):
         replace that tip name with the value in the
         idmap and write to output file
         """
-        with open(output_file_path, 'w') as output_file_path:
+        with open(output_file_path, "w") as output_file_path:
             for record in records:
                 if record.id in idmap:
                     # replace ID
                     record.id = idmap[record.id]
                     # remove description
-                    record.description = ''
+                    record.description = ""
                 SeqIO.write(record, output_file_path, "fasta")
 
-
-
-    def idmap_to_dictionary(self, idmap:str) -> dict:
+    def idmap_to_dictionary(self, idmap: str) -> dict:
         """
         read idmap into a dictionary
         """
-        idmap={}
+        idmap = {}
         try:
             with open(self.idmap) as identifiers:
                 for line in identifiers:
@@ -68,4 +64,3 @@ class RenameFastaEntries(Alignment):
             print(f"{self.idmap} corresponds to no such file or directory.")
             print("Please double check pathing and filenames")
             sys.exit()
-

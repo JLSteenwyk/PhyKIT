@@ -2,7 +2,11 @@ import sys
 
 from .base import Tree
 
-from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
+from ...helpers.stats_summary import (
+    calculate_summary_statistics_from_arr,
+    print_summary_statistics,
+)
+
 
 class TerminalBranchStats(Tree):
     def __init__(self, args) -> None:
@@ -38,24 +42,27 @@ class TerminalBranchStats(Tree):
                 temp.append(terminal_branch.name)
                 lengths_and_names.append(temp)
 
-        return terminal_branch_lengths, lengths_and_names 
+        return terminal_branch_lengths, lengths_and_names
 
-    def check_tree_has_branch_lengths(self, terminal_branch_lengths:list) -> None:
+    def check_tree_has_branch_lengths(self, terminal_branch_lengths: list) -> None:
         """
         if tree has no branch lengths, exit
         """
         if len(terminal_branch_lengths) == 0:
-            print("Calculating terminal branch statistics requires a phylogeny with branch lengths.")
+            print(
+                "Calculating terminal branch statistics requires a phylogeny with branch lengths."
+            )
             sys.exit()
-
 
     def calculate_terminal_branch_stats(self, tree):
         # save terminal branch lengths to terminal_branch_lengths
-        terminal_branch_lengths, lengths_and_names = self.get_terminal_branch_lengths(tree)
-        
+        terminal_branch_lengths, lengths_and_names = self.get_terminal_branch_lengths(
+            tree
+        )
+
         # If the phylogeny had no branch lengths, inform user and quit
         self.check_tree_has_branch_lengths(terminal_branch_lengths)
-        
+
         # calculate summary stats
         stats = calculate_summary_statistics_from_arr(terminal_branch_lengths)
 

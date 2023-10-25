@@ -1,6 +1,5 @@
-from Bio.Align import MultipleSeqAlignment
-
 from .base import Alignment
+
 
 class AlignmentLengthNoGaps(Alignment):
     def __init__(self, args) -> None:
@@ -8,7 +7,11 @@ class AlignmentLengthNoGaps(Alignment):
 
     def run(self):
         alignment, alignment_format = self.get_alignment_and_format()
-        aln_len_no_gaps, aln_len, aln_len_no_gaps_per = self.calculate_alignment_length_no_gaps(alignment)
+        (
+            aln_len_no_gaps,
+            aln_len,
+            aln_len_no_gaps_per,
+        ) = self.calculate_alignment_length_no_gaps(alignment)
         print(f"{aln_len_no_gaps}\t{aln_len}\t{round(aln_len_no_gaps_per, 4)}")
 
     def process_args(self, args):
@@ -20,7 +23,7 @@ class AlignmentLengthNoGaps(Alignment):
 
         # calculate percent of variable sites
         aln_len_no_gaps_per = (aln_len_no_gaps / aln_len) * 100
-        
+
         return aln_len_no_gaps, aln_len, aln_len_no_gaps_per
 
     def get_sites_no_gaps_count(self, alignment, aln_len):
