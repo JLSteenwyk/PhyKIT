@@ -1,31 +1,27 @@
 import statistics as stat
-import sys
 
 import numpy as np
 
 
-def calculate_summary_statistics_from_arr(
-    arr    
-):
+def calculate_summary_statistics_from_arr(arr):
     """
     calcuate summary statistics for an input list
     """
     stats = dict(
-        mean               = stat.mean(arr),
-        median             = stat.median(arr),
-        twenty_fifth       = np.percentile(arr, 25),
-        seventy_fifth      = np.percentile(arr, 75),
-        minimum            = np.min(arr),
-        maximum            = np.max(arr),
-        standard_deviation = stat.stdev(arr),
-        variance           = stat.variance(arr)
+        mean=stat.mean(arr),
+        median=stat.median(arr),
+        twenty_fifth=np.percentile(arr, 25),
+        seventy_fifth=np.percentile(arr, 75),
+        minimum=np.min(arr),
+        maximum=np.max(arr),
+        standard_deviation=stat.stdev(arr),
+        variance=stat.variance(arr),
     )
 
     return stats
 
-def calculate_summary_statistics_from_dict(
-    dat: dict    
-):
+
+def calculate_summary_statistics_from_dict(dat: dict):
     """
     calcuate summary statistics for a dictionary
     """
@@ -37,16 +33,14 @@ def calculate_summary_statistics_from_dict(
         minimum=np.min([*dat.values()]),
         maximum=np.max([*dat.values()]),
         standard_deviation=stat.stdev([*dat.values()]),
-        variance=stat.variance([*dat.values()])
+        variance=stat.variance([*dat.values()]),
     )
 
     return stats
 
-def print_summary_statistics(
-    stats: list
-):
-    """
-    """
+
+def print_summary_statistics(stats: list):
+    """ """
     try:
         print(f"mean: {round(stats['mean'], 4)}")
         print(f"median: {round(stats['median'], 4)}")

@@ -4,37 +4,35 @@ from Bio import Phylo
 
 from .base import Tree
 
+
 class NearestNeighborInterchange(Tree):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
     def run(self):
         tree = self.read_tree_file()
-        
+
         # remove branch lengths if specified by user
         # otherwise, print ascii tree
         all_nnis = [tree]
         for t in self.get_neighbors(tree):
             all_nnis.append(t)
         Phylo.write(all_nnis, self.output_file_path, "newick")
-    
+
     def process_args(self, args):
-        tree_file_path=args.tree
+        tree_file_path = args.tree
         if args.output is None:
             output_file_path = f"{tree_file_path}.nnis"
         else:
             output_file_path = f"{args.output}"
 
-        return dict(
-            tree_file_path=tree_file_path,
-            output_file_path=output_file_path
-        )
+        return dict(tree_file_path=tree_file_path, output_file_path=output_file_path)
 
     def get_neighbors(self, tree):
-    ### This code is from BioPython (so is this comment)
-    # Get all neighbor trees of the given tree (PRIVATE).
-    # Currently only for binary rooted trees.
-    ### 
+        ### This code is from BioPython (so is this comment)
+        # Get all neighbor trees of the given tree (PRIVATE).
+        # Currently only for binary rooted trees.
+        ###
         # make child to parent dict
         parents = {}
         for clade in tree.find_clades():

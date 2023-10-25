@@ -10,7 +10,6 @@ class TotalTreeLength(Tree):
         total_tree_length = self.calculate_total_tree_length(tree)
         print(round(total_tree_length, 4))
 
-
     def process_args(self, args):
         return dict(tree_file_path=args.tree)
 

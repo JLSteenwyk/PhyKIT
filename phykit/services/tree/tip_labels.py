@@ -1,8 +1,5 @@
-import logging
-
-from Bio import Phylo
-
 from .base import Tree
+
 
 class TipLabels(Tree):
     def __init__(self, args) -> None:
@@ -15,6 +12,6 @@ class TipLabels(Tree):
                 print(leaf.name)
         except BrokenPipeError:
             pass
-    
+
     def process_args(self, args):
         return dict(tree_file_path=args.tree)

@@ -1,15 +1,9 @@
-import getopt
-import logging
-import math
-import os.path
-import statistics as stat
-import sys
-
-from Bio import Phylo
-import numpy as np
-
 from .base import Tree
-from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
+from ...helpers.stats_summary import (
+    calculate_summary_statistics_from_arr,
+    print_summary_statistics,
+)
+
 
 class BipartitionSupportStats(Tree):
     def __init__(self, args) -> None:
@@ -17,7 +11,7 @@ class BipartitionSupportStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        bs_vals = self.get_bipartition_support_vals(tree) 
+        bs_vals = self.get_bipartition_support_vals(tree)
 
         if self.verbose:
             try:
@@ -26,7 +20,7 @@ class BipartitionSupportStats(Tree):
             except BrokenPipeError:
                 pass
         else:
-            stats = calculate_summary_statistics_from_arr(bs_vals) 
+            stats = calculate_summary_statistics_from_arr(bs_vals)
             print_summary_statistics(stats)
 
     def process_args(self, args):

@@ -2,11 +2,10 @@ from enum import Enum
 import re
 import sys
 
-from Bio import SeqIO
-
 from .base import Alignment
 
 from ...helpers.files import get_alignment_and_format
+
 
 class FileFormat(Enum):
     fasta = "fasta"
@@ -17,6 +16,7 @@ class FileFormat(Enum):
     phylip_seq = "phylip-sequential"
     stockholm = "stockholm"
 
+
 class GCContent(Alignment):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
@@ -24,7 +24,7 @@ class GCContent(Alignment):
     def run(self):
         # create biopython object of sequences
         records, _ = get_alignment_and_format(self.fasta)
-        
+
         # initialize and populate dict for
         # holding the entry sequences
         entry_and_seq = {}
@@ -42,13 +42,15 @@ class GCContent(Alignment):
             all_seqs = []
             for entry, seq in entry_and_seq.items():
                 all_seqs.append(seq)
-            all_seqs = ''.join(all_seqs)
+            all_seqs = "".join(all_seqs)
             all_seqs, matches = self.find_matches_and_remove_gaps(all_seqs)
             try:
-                gc_content = round(len(matches)/len(all_seqs), 4)
+                gc_content = round(len(matches) / len(all_seqs), 4)
             except ZeroDivisionError:
                 try:
-                    print("Input file has an unacceptable format. Please check input file argument.")
+                    print(
+                        "Input file has an unacceptable format. Please check input file argument."
+                    )
                     sys.exit()
                 except BrokenPipeError:
                     pass
@@ -56,17 +58,13 @@ class GCContent(Alignment):
                 print(gc_content)
             except BrokenPipeError:
                 pass
-            
 
     def process_args(self, args):
-        return dict(
-            fasta=args.fasta, 
-            verbose=args.verbose
-        )
+        return dict(fasta=args.fasta, verbose=args.verbose)
 
     def find_matches_and_remove_gaps(self, seq: str):
-        regex_pattern = re.compile('[GgCc]')
-        seq = seq.replace('-', '')
-        seq = seq.replace('?', '')
+        regex_pattern = re.compile("[GgCc]")
+        seq = seq.replace("-", "")
+        seq = seq.replace("?", "")
         matches = regex_pattern.findall(seq)
         return seq, matches

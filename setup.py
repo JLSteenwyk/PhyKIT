@@ -18,9 +18,9 @@ CLASSIFIERS = [
 ]
 
 REQUIRES = [
-    "biopython>=1.79",
-    "numpy>=1.18.2",
-    "scipy>=1.4.1",
+    "biopython>=1.81",
+    "numpy>=1.24.0",
+    "scipy>=1.11.3",
     "cython"
 ]
 

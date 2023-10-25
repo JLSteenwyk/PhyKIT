@@ -2,7 +2,11 @@ import sys
 
 from .base import Tree
 
-from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
+from ...helpers.stats_summary import (
+    calculate_summary_statistics_from_arr,
+    print_summary_statistics,
+)
+
 
 class InternalBranchStats(Tree):
     def __init__(self, args) -> None:
@@ -15,7 +19,7 @@ class InternalBranchStats(Tree):
         if self.verbose:
             try:
                 for len_and_name in lengths_and_names:
-                    print(round(len_and_name[0], 4), ';'.join(len_and_name[1]))
+                    print(round(len_and_name[0], 4), ";".join(len_and_name[1]))
             except BrokenPipeError:
                 pass
         else:
@@ -41,24 +45,27 @@ class InternalBranchStats(Tree):
                 temp.append(temp_name)
                 lengths_and_names.append(temp)
 
-        return internal_branch_lengths, lengths_and_names 
+        return internal_branch_lengths, lengths_and_names
 
-    def check_tree_has_branch_lengths(self, internal_branch_lengths:list) -> None:
+    def check_tree_has_branch_lengths(self, internal_branch_lengths: list) -> None:
         """
         if tree has no branch lengths, exit
         """
         if len(internal_branch_lengths) == 0:
-            print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
+            print(
+                "Calculating internal branch statistics requires a phylogeny with branch lengths."
+            )
             sys.exit()
-
 
     def calculate_internal_branch_stats(self, tree):
         # save internal branch lengths to internal_branch_lengths
-        internal_branch_lengths, lengths_and_names = self.get_internal_branch_lengths(tree)
-        
+        internal_branch_lengths, lengths_and_names = self.get_internal_branch_lengths(
+            tree
+        )
+
         # If the phylogeny had no branch lengths, inform user and quit
         self.check_tree_has_branch_lengths(internal_branch_lengths)
-        
+
         # calculate summary stats
         stats = calculate_summary_statistics_from_arr(internal_branch_lengths)
 
