@@ -8,14 +8,13 @@ from phykit.services.tree.dvmc import DVMC
 
 @pytest.fixture
 def args():
-    kwargs = dict(tree="/some/path/to/file.tre", root="/home/path/to/file.txt",)
+    kwargs = dict(tree="/some/path/to/file.tre")
     return Namespace(**kwargs)
 
 
 class TestDVMC(object):
     def test_init_sets_tree_file_path(self, args):
         d = DVMC(args)
-        assert d.outgroup_taxa_file_path == args.root
         assert d.output_file_path is None
 
     def test_read_file_reads_tree_file_path(self, mocker, args):
@@ -24,13 +23,3 @@ class TestDVMC(object):
         d.read_tree_file()
         mock_read.assert_called_with(args.tree, "newick")
 
-    # def test_calculate_dvmc_zero_branch_len(self, tree_zero_branch_length, args):
-    #     d = DVMC(args)
-    #     res = d.calculate_dvmc(tree_zero_branch_length, args.root)
-    #     assert res == 0.0
-
-    # def test_calculate_dvmc(self, tree_simple, tree_simple_outgroup, args):
-    #     d = DVMC(args)
-    #     res = d.calculate_dvmc(tree_simple, tree_simple_outgroup)
-    #     assert isinstance(res, float)
-    #     assert isclose(res, 42.80162365633575, rel_tol=0.001)
