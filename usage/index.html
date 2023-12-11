@@ -117,30 +117,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#hidden-paralogy-check">Hidden paralogy check</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#internode-labeler">Internode labeler</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#last-common-ancestor-subtree">Last common ancestor subtree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#monophyly-check">Monophyly check</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#nearest-neighbor-interchange">Nearest neighbor interchange</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#prune-tree">Prune tree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#robinson-foulds-distance">Robinson-Foulds distance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#root-tree">Root tree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#spurious-homolog-identification">Spurious homolog identification</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#terminal-branch-statistics">Terminal branch statistics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#tip-labels">Tip labels</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-distance">Tip-to-tip distance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-node-distance">Tip-to-tip node distance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#total-tree-length">Total tree length</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#treeness">Treeness</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#options">Options</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#alignment-and-tree-based-functions">Alignment- and tree-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#saturation">Saturation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#treeness-over-rcv">Treeness over RCV</a></li>
@@ -682,30 +663,32 @@ this is a putative species tree. <br/>
 <h3>Degree of violation of the molecular clock<a class="headerlink" href="#degree-of-violation-of-the-molecular-clock" title="Permalink to this headline">¶</a></h3>
 <p>Function names: degree_of_violation_of_a_molecular_clock, dvmc <br/>
 Command line interface: pk_degree_of_violation_of_a_molecular_clock, pk_dvmc</p>
-<p>Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.</p>
+<p>Calculate degree of violation of a molecular clock (or DVMC) in a phylogeny.</p>
 <p>Lower DVMC values are thought to be desirable because they are indicative
 of a lower degree of violation in the molecular clock assumption.</p>
 <p>Typically, outgroup taxa are not included in molecular clock analysis. Thus,
-prior to calculating DVMC from a single gene tree, outgroup taxa are pruned
-from the phylogeny. PhyKIT will prune taxa using tip names from a single column
-file, which is specified using the -r/–root file. If the tip name does not
-exist in the input tree, rather than raising an error/warning message, the tip
-name is skipped. If the user wants to calculate DVMC for phylogenies with incomplete
-taxa representation, this will allow the user to use one &lt;root file&gt; for all trees.
-Lastly, an empty root file can be used if the user does not wish to prune outgroup taxa.</p>
+prior to calculating DVMC from a single gene tree, users may want to prune
+outgroup taxa from the phylogeny. To prune tips from a phylogeny, see the
+prune_tree function.</p>
 <p>Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit degree_of_violation_of_a_molecular_clock -t/--tree &lt;tree&gt;  -r/--root &lt;root_taxa&gt;
+</div>
+</div>
+</div>
+<div class="section" id="options">
+<h1>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h1>
+<dl class="simple">
+<dt>&lt;tree&gt;                      first argument after</dt><dd><p>function name should be
+a tree file</p>
+</dd>
+</dl>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit degree_of_violation_of_a_molecular_clock &lt;tree&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/--tree</em>: input file tree name <br/>
-<em>-r/--root</em>: single column file with tip names of root taxa</p>
+<em>&lt;tree&gt;</em>: input file tree name</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="evolutionary-rate">
-<h3>Evolutionary rate<a class="headerlink" href="#evolutionary-rate" title="Permalink to this headline">¶</a></h3>
 <p>Function names: evolutionary_rate, evo_rate <br/>
 Command line interface: pk_evolutionary_rate, pk_evo_rate</p>
 <p>Calculate a tree-based estimation of the evolutionary rate of a gene.</p>
@@ -717,13 +700,10 @@ of the Royal Society B (2014).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/--tree</em>: input file tree name</p>
+<em>&lt;tree&gt;</em>: input file tree name</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="hidden-paralogy-check">
-<h3>Hidden paralogy check<a class="headerlink" href="#hidden-paralogy-check" title="Permalink to this headline">¶</a></h3>
 <p>Function names: hidden_paralogy_check, clan_check <br/>
 Command line interface: pk_hidden_paralogy_check, pk_clan_check</p>
 <p>Scan tree for evidence of hidden paralogy.</p>
@@ -771,9 +751,6 @@ be scanned for</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="internal-branch-statistics">
-<h3>Internal branch statistics<a class="headerlink" href="#internal-branch-statistics" title="Permalink to this headline">¶</a></h3>
 <p>Function names: internal_branch_stats; ibs <br/>
 Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
@@ -788,9 +765,6 @@ Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="internode-labeler">
-<h3>Internode labeler<a class="headerlink" href="#internode-labeler" title="Permalink to this headline">¶</a></h3>
 <p>Function names: internode_labeler; il <br/>
 Command line interface: pk_internode_labeler; pk_il</p>
 <p>Appends numerical identifiers to bipartitions in place of support values.
@@ -805,9 +779,6 @@ or otherwise.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="last-common-ancestor-subtree">
-<h3>Last common ancestor subtree<a class="headerlink" href="#last-common-ancestor-subtree" title="Permalink to this headline">¶</a></h3>
 <p>Function names: last_common_ancestor_subtree; lca_subtree <br/>
 Command line interface: pk_last_common_ancestor_subtree; pk_lca_subtree</p>
 <p>Obtains subtree from a phylogeny by getting the last common ancestor
@@ -823,9 +794,6 @@ file with the list of taxa to get the last common ancestor subtree for
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="long-branch-score">
-<h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Permalink to this headline">¶</a></h3>
 <p>Function names: lb_score; lb_score; lbs <br/>
 Command line interface: pk_lb_score; pk_lb_score; pk_lbs</p>
 <p>Calculate long branch (LB) scores in a phylogeny.</p>
@@ -848,9 +816,6 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="monophyly-check">
-<h3>Monophyly check<a class="headerlink" href="#monophyly-check" title="Permalink to this headline">¶</a></h3>
 <p>Function names: monophyly_check; is_monophyletic <br/>
 Command line interface: pk_monophyly_check; pk_is_monophyletic</p>
 <p>This analysis can be used to determine if a set of
@@ -880,9 +845,6 @@ examine the monophyly of</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="nearest-neighbor-interchange">
-<h3>Nearest neighbor interchange<a class="headerlink" href="#nearest-neighbor-interchange" title="Permalink to this headline">¶</a></h3>
 <p>Function names: nearest_neighbor_interchange; nni <br/>
 Command line interface: pk_nearest_neighbor_interchange; pk_nni</p>
 <p>Generate all nearest neighbor interchange moves for a binary
@@ -899,9 +861,6 @@ file but with the suffix “.nnis”</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="patristic-distances">
-<h3>Patristic distances<a class="headerlink" href="#patristic-distances" title="Permalink to this headline">¶</a></h3>
 <p>Function names: patristic_distances; pd <br/>
 Command line interface: pk_patristic_distances; pk_pd</p>
 <p>Calculate summary statistics among patristic distances in a phylogeny.</p>
@@ -919,9 +878,6 @@ will be tab separated.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="polytomy-testing">
-<h3>Polytomy testing<a class="headerlink" href="#polytomy-testing" title="Permalink to this headline">¶</a></h3>
 <p>Function names: polytomy_test; polyt_test; polyt; ptt <br/>
 Command line interface: pk_polytomy_test; pk_polyt_test; pk_polyt; pk_ptt</p>
 <p>Conduct a polytomy test for three clades in a phylogeny.</p>
@@ -957,9 +913,6 @@ name_of_test    tip_name_A<span class="p">;</span>tip_name_B   tip_name_C  tip_n
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="print-tree">
-<h3>Print tree<a class="headerlink" href="#print-tree" title="Permalink to this headline">¶</a></h3>
 <p>Function names: print_tree; print; pt <br/>
 Command line interface: pk_print_tree; pk_print; pk_pt</p>
 <p>Print ascii tree of input phylogeny.</p>
@@ -976,9 +929,6 @@ lengths</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="prune-tree">
-<h3>Prune tree<a class="headerlink" href="#prune-tree" title="Permalink to this headline">¶</a></h3>
 <p>Function names: prune_tree; prune <br/>
 Command line interface: pk_prune_tree; pk_prune</p>
 <p>Prune tips from a phylogeny.</p>
@@ -999,9 +949,6 @@ Default output will have the same name as the input file but with the suffix
 <em>-k/–keep</em>: optional argument. If used instead of pruning taxa in &lt;list_of_taxa&gt;,
 keep them
 |</p>
-</div>
-<div class="section" id="rename-tree-tips">
-<h3>Rename tree tips<a class="headerlink" href="#rename-tree-tips" title="Permalink to this headline">¶</a></h3>
 <p>Function names: rename_tree; rename_tips <br/>
 Command line interface: pk_rename_tree; pk_rename_tips</p>
 <p>Renames tips in a phylogeny.</p>
@@ -1021,9 +968,6 @@ output will have the same name as the input file but with the suffix “.renamed
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="robinson-foulds-distance">
-<h3>Robinson-Foulds distance<a class="headerlink" href="#robinson-foulds-distance" title="Permalink to this headline">¶</a></h3>
 <p>Function names: robinson_foulds_distance; rf_distance; rf_dist; rf <br/>
 Command line interface: pk_robinson_foulds_distance; pk_rf_distance; pk_rf_dist; pk_rf</p>
 <p>Calculate Robinson-Foulds (RF) distance between two trees.</p>
@@ -1050,9 +994,6 @@ Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="root-tree">
-<h3>Root tree<a class="headerlink" href="#root-tree" title="Permalink to this headline">¶</a></h3>
 <p>Function names: root_tree; root; rt <br/>
 Command line interface: pk_root_tree; pk_root; pk_rt</p>
 <p>Roots phylogeny using user-specified taxa.</p>
@@ -1070,9 +1011,6 @@ the suffix “.rooted”.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="spurious-homolog-identification">
-<h3>Spurious homolog identification<a class="headerlink" href="#spurious-homolog-identification" title="Permalink to this headline">¶</a></h3>
 <p>Function names: spurious_sequence; spurious_seq; ss <br/>
 Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss</p>
 <p>Determines potentially spurious homologs using branch lengths.</p>
@@ -1101,9 +1039,6 @@ the threshold of long branches. (Default: 20)</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="terminal-branch-statistics">
-<h3>Terminal branch statistics<a class="headerlink" href="#terminal-branch-statistics" title="Permalink to this headline">¶</a></h3>
 <p>Function names: terminal_branch_stats; tbs <br/>
 Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 <p>Calculate summary statistics for terminal branch lengths in a phylogeny.</p>
@@ -1118,9 +1053,6 @@ Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="tip-labels">
-<h3>Tip labels<a class="headerlink" href="#tip-labels" title="Permalink to this headline">¶</a></h3>
 <p>Function names: tip_labels; tree_labels; labels; tl <br/>
 Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 <p>Prints the tip labels (or names) a phylogeny.</p>
@@ -1132,9 +1064,6 @@ Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="tip-to-tip-distance">
-<h3>Tip-to-tip distance<a class="headerlink" href="#tip-to-tip-distance" title="Permalink to this headline">¶</a></h3>
 <p>Function names: tip_to_tip_distance; t2t_dist; t2t <br/>
 Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
@@ -1149,9 +1078,6 @@ Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="tip-to-tip-node-distance">
-<h3>Tip-to-tip node distance<a class="headerlink" href="#tip-to-tip-node-distance" title="Permalink to this headline">¶</a></h3>
 <p>Function names: tip_to_tip_node_distance; t2t_node_dist; t2t_nd <br/>
 Command line interface: pk_tip_to_tip_node_distance; pk_t2t_node_dist; pk_t2t_nd</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
@@ -1167,9 +1093,6 @@ and another.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="total-tree-length">
-<h3>Total tree length<a class="headerlink" href="#total-tree-length" title="Permalink to this headline">¶</a></h3>
 <p>Function names: total_tree_length; tree_len <br/>
 Command line interface: pk_total_tree_length; pk_tree_len</p>
 <p>Calculate total tree length, which is a sum of all branches.</p>
@@ -1181,9 +1104,6 @@ Command line interface: pk_total_tree_length; pk_tree_len</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-</div>
-<div class="section" id="treeness">
-<h3>Treeness<a class="headerlink" href="#treeness" title="Permalink to this headline">¶</a></h3>
 <p>Function names: treeness; tness <br/>
 Command line interface: pk_treeness; pk_tness</p>
 <p>Calculate treeness statistic for a phylogeny.</p>
@@ -1203,8 +1123,6 @@ Phillips and Penny, Molecular Phylogenetics and Evolution
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
 <div class="line-block">
 <div class="line"><br /></div>
-</div>
-</div>
 </div>
 <div class="section" id="alignment-and-tree-based-functions">
 <h2>Alignment- and tree-based functions<a class="headerlink" href="#alignment-and-tree-based-functions" title="Permalink to this headline">¶</a></h2>
