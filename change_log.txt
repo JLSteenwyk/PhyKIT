@@ -1,5 +1,8 @@
 Major changes to PhyKIT are summarized here.
 
+1.12.2
+  - removed root.txt file from DVMC function. User's are now recommended to trim outgroup taxa beforehand
+
 1.11.3
   - Added an optional argument to the prune_tree function wherein instead of pruning tips specified
   in the input file, those tips will be kept

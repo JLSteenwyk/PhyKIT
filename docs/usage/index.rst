@@ -577,29 +577,30 @@ Degree of violation of the molecular clock
 Function names: degree_of_violation_of_a_molecular_clock, dvmc |br|
 Command line interface: pk_degree_of_violation_of_a_molecular_clock, pk_dvmc
 
-Calculate degree of violation of the molecular clock (or DVMC) in a phylogeny.
+Calculate degree of violation of a molecular clock (or DVMC) in a phylogeny.
 
 Lower DVMC values are thought to be desirable because they are indicative
 of a lower degree of violation in the molecular clock assumption.
 
 Typically, outgroup taxa are not included in molecular clock analysis. Thus,
-prior to calculating DVMC from a single gene tree, outgroup taxa are pruned
-from the phylogeny. PhyKIT will prune taxa using tip names from a single column
-file, which is specified using the -r/--root file. If the tip name does not
-exist in the input tree, rather than raising an error/warning message, the tip  
-name is skipped. If the user wants to calculate DVMC for phylogenies with incomplete
-taxa representation, this will allow the user to use one <root file> for all trees.
-Lastly, an empty root file can be used if the user does not wish to prune outgroup taxa. 
+prior to calculating DVMC from a single gene tree, users may want to prune
+outgroup taxa from the phylogeny. To prune tips from a phylogeny, see the 
+prune_tree function. 
 
-Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.  
+Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
+
+Options
+=====================================================
+<tree>                      first argument after 
+                            function name should be
+                            a tree file
 
 .. code-block:: shell
 
-   phykit degree_of_violation_of_a_molecular_clock -t/--tree <tree>  -r/--root <root_taxa>
+   phykit degree_of_violation_of_a_molecular_clock <tree>
 
 Options: |br|
-*-t/\\-\\-tree*: input file tree name |br|
-*-r/\\-\\-root*: single column file with tip names of root taxa 
+*<tree>*: input file tree name
 
 |
 
@@ -621,7 +622,7 @@ of the Royal Society B (2014).
    phykit evolutionary_rate <tree>
 
 Options: |br|
-*-t/\\-\\-tree*: input file tree name
+*<tree>*: input file tree name
 
 |
 

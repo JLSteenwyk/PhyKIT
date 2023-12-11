@@ -12,26 +12,12 @@ class DVMC(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        outgroup = read_single_column_file_to_list(self.outgroup_taxa_file_path)
-        dvmc = self.determine_dvmc(tree, outgroup)
+        dvmc = self.determine_dvmc(tree)
 
         print(round(dvmc, 4))
 
     def process_args(self, args):
-        return dict(tree_file_path=args.tree, outgroup_taxa_file_path=args.root)
-
-    def get_names_of_outgroup_taxa_that_are_present(
-        self, outgroup: list, tree: Tree
-    ) -> list:
-        # initialize list for outgroup taxa that are present in tree
-        out_pres = []
-        # loop through terminal branch
-        for term in tree.get_terminals():
-            # if outgroup taxa is present, append it to out_pres
-            if term.name in outgroup:
-                out_pres.append(term.name)
-
-        return out_pres
+        return dict(tree_file_path=args.tree)
 
     def get_term_to_root_dist_and_sum_of_distances(self, tree) -> Tuple[float, float]:
         """
@@ -68,16 +54,7 @@ class DVMC(Tree):
 
         return dvmc
 
-    def determine_dvmc(self, tree: Tree, outgroup: list):
-        # get names of outgroup taxa in tree
-        out_pres = self.get_names_of_outgroup_taxa_that_are_present(outgroup, tree)
-
-        # root tree on outgroup
-        tree.root_with_outgroup(out_pres)
-
-        # prune outgroup taxa from tree
-        tree = self.prune_tree_using_taxa_list(tree, out_pres)
-
+    def determine_dvmc(self, tree: Tree):
         # loop through terminal branches and store
         # distances from the root to the tip in a list.
         # Also, calc the sum of all tip to root distances
