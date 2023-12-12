@@ -642,10 +642,10 @@ be specified on a single line and each tip name
 For example, if it is anticipated that tips
 "A", "B", and "C" are monophyletic and "D",
 "E", and "F" are expected to be monophyletic, the
-clade file should be formatted as follows:
-"
-A B C
-D E F
+clade file should be formatted as follows: |br|
+" |br|
+A B C |br|
+D E F |br|
 "
 
 The output will have six columns and as many rows
