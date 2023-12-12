@@ -644,7 +644,7 @@ For example, if it is anticipated that tips
 "E", and "F" are expected to be monophyletic, the
 clade file should be formatted as follows:
 "
-A B C|br|
+A B C |br|
 D E F
 "
 
