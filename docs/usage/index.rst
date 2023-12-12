@@ -648,23 +648,17 @@ A B C |br|
 D E F |br|
 "
 
-The output will have six columns and as many rows
-as clades were specified in the -c file. For example,
-if there were three rows of clades to examine the 
-monophyly of, there will be three rows in the output
+The output will report if the specified taxa were monophyletic
+or not. The number of rows will reflect how many groups of taxa
+were checked for monophyly. For example,
+if there were three rows of clades in the -c file, there will be
+three rows in the output
 where the first row in the output corresponds to the 
 results of the first row in the clade file. |br|
-col 1: if the clade was or wasn't monophyletic |br|
-col 2: average bipartition support value in the clade of interest |br|
-col 3: maximum bipartition support value in the clade of interest |br|
-col 4: minimum bipartition support value in the clade of interest |br|
-col 5: standard deviation of bipartition support values in the clade of interest |br|
-col 6: tip names of the clade specified in the clade file
 
 The concept behind this analysis follows
 Siu-Ting et al., Molecular Biology and Evolution (2019),
 doi: 10.1093/molbev/msz067.
-
 
 .. code-block:: shell
 

@@ -1,9 +1,10 @@
 import copy
+import statistics as stat
 import sys
 
-from .base import Tree
+import numpy as np
 
-from ...helpers.stats_summary import calculate_summary_statistics_from_arr
+from .base import Tree
 
 
 class HiddenParalogyCheck(Tree):
@@ -44,10 +45,8 @@ class HiddenParalogyCheck(Tree):
                 set(clade_of_interest) ^ set(common_ancestor_tips)
             )
 
-            stats = self.get_bootstrap_statistics(tree)
-
             res_arr = self.populate_res_arr(
-                shared_tree_tips, diff_tips_between_clade_and_curr_tree, stats, res_arr
+                shared_tree_tips, diff_tips_between_clade_and_curr_tree, res_arr
             )
 
         self.print_results(res_arr)
@@ -69,20 +68,8 @@ class HiddenParalogyCheck(Tree):
 
         return clades
 
-    def get_bootstrap_statistics(self, tree):
-        # get bootstrap support values
-        bs_vals = []
-        # populate bs_vals with bootstrap values
-        for terminal in tree.get_nonterminals():
-            # only include if a bootstrap value is present
-            if terminal.confidence != None:
-                bs_vals.append(terminal.confidence)
-        stats = calculate_summary_statistics_from_arr(bs_vals)
-
-        return stats
-
     def populate_res_arr(
-        self, shared_tree_tips, diff_tips_between_clade_and_curr_tree, stats, res_arr
+        self, shared_tree_tips, diff_tips_between_clade_and_curr_tree, res_arr
     ):
         temp = []
 
@@ -90,10 +77,6 @@ class HiddenParalogyCheck(Tree):
             temp.append("monophyletic")
         else:
             temp.append("not_monophyletic")
-        temp.append(stats["mean"])
-        temp.append(stats["maximum"])
-        temp.append(stats["minimum"])
-        temp.append(stats["standard_deviation"])
         temp.append(diff_tips_between_clade_and_curr_tree)
         res_arr.append(temp)
 
@@ -101,15 +84,6 @@ class HiddenParalogyCheck(Tree):
 
     def print_results(self, res_arr):
         for res in res_arr:
-            try:
-                if len(res[5]) != 0:
-                    res[5].sort()
-                    print(
-                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}"
-                    )
-                else:
-                    print(
-                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}"
-                    )
-            except IndexError:
-                print(f"{res[0]}")
+            print(
+                f"{res[0]}"
+            )
