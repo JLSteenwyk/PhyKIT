@@ -25,8 +25,8 @@ class TestHiddenParalogyCheck(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("monophyletic\t100\t100\t100\t0.0"),
-            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
+            call("monophyletic"),
+            call("not_monophyletic"),
             call("insufficient_taxon_representation"),
         ]
 
@@ -43,8 +43,8 @@ class TestHiddenParalogyCheck(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("monophyletic\t100\t100\t100\t0.0"),
-            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
+            call("monophyletic"),
+            call("not_monophyletic"),
             call("insufficient_taxon_representation"),
         ]
 
@@ -61,8 +61,8 @@ class TestHiddenParalogyCheck(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("monophyletic\t100\t100\t100\t0.0"),
-            call("not_monophyletic\t95.7143\t100\t85\t7.3193\tAspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
+            call("monophyletic"),
+            call("not_monophyletic"),
             call("insufficient_taxon_representation"),
         ]
 
@@ -71,7 +71,7 @@ class TestHiddenParalogyCheck(object):
         testargs = [
             "phykit",
             "clan_check",
-            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.t",
+            "file doesn't exist",
             "-c",
             f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.hidden_paralogy_check.txt",
         ]
@@ -88,7 +88,7 @@ class TestHiddenParalogyCheck(object):
             "clan_check",
             f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
             "-c",
-            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.hidden_paralogy_check.t",
+            "file doesn't exist",
         ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()

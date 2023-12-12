@@ -1178,19 +1178,12 @@ class Phykit(object):
                 Tip names not present in the tree will not be considered
                 when assessing hidden paralogy.
 
-                The output will have six columns and as many rows
-                as clades were specified in the -c file. For example,
-                if there were three rows of clades to examine the 
-                monophyly of, there will be three rows in the output
-                where the first row in the output corresponds to the 
+                The output will report if the specified taxa were monophyletic
+                or not. The number of rows will reflect how many groups of taxa
+                were checked for monophyly. For example, if there were three
+                rows of clades in the -c file, there will be three rows in the
+                output where the first row in the output corresponds to the 
                 results of the first row in the clade file.
-                col 1: if the clade was or wasn't monophyletic
-                col 2: average bipartition support value in the clade of interest
-                col 3: maximum bipartition support value in the clade of interest
-                col 4: minimum bipartition support value in the clade of interest
-                col 5: standard deviation of bipartition support values in the clade of interest
-                col 6: tip names of taxa monophyletic with the lineage of interest
-                       excluding those that are listed in the taxa_of_interest file
 
                 The concept behind this analysis follows
                 Siu-Ting et al., Molecular Biology and Evolution (2019).

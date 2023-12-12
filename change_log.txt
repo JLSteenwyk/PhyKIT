@@ -1,5 +1,9 @@
 Major changes to PhyKIT are summarized here.
 
+1.12.3
+  - hidden paralogy check now simply looks for monophyly or lack thereof for a set of taxa. Hidden paralogy
+  check still reports insufficient taxon representation.
+
 1.12.2
   - removed root.txt file from DVMC function. User's are now recommended to trim outgroup taxa beforehand
 
