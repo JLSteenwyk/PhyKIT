@@ -589,12 +589,6 @@ prune_tree function.
 
 Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.
 
-Options
-=====================================================
-<tree>                      first argument after 
-                            function name should be
-                            a tree file
-
 .. code-block:: shell
 
    phykit degree_of_violation_of_a_molecular_clock <tree>
