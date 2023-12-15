@@ -8,7 +8,6 @@ from .version import __version__
 
 from argparse import (
     ArgumentParser,
-    RawTextHelpFormatter,
     SUPPRESS,
     RawDescriptionHelpFormatter,
 )
@@ -617,13 +616,18 @@ class Phykit(object):
                                             an alignment file  
 
                 -v/--verbose                optional argument to print
-                                            identity per pair       
+                                            identity per pair
+
+                -e/--exclude_gaps           if a site has a gap, ignore it
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()

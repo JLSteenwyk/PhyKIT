@@ -13,7 +13,7 @@ class PairwiseIdentity(Alignment):
 
     def run(self):
         # get aln
-        alignment, alignment_format = self.get_alignment_and_format()
+        alignment, _ = self.get_alignment_and_format()
 
         # get entry indices
         entries = self.get_entry_indices(alignment)
@@ -22,7 +22,7 @@ class PairwiseIdentity(Alignment):
         combos = list(itertools.combinations(entries, 2))
 
         pairwise_identities, stats = self.calculate_pairwise_identities(
-            alignment, combos
+            alignment, combos, self.exclude_gaps
         )
 
         if self.verbose:
@@ -35,18 +35,23 @@ class PairwiseIdentity(Alignment):
             print_summary_statistics(stats)
 
     def process_args(self, args):
-        return dict(alignment_file_path=args.alignment, verbose=args.verbose)
+        return dict(alignment_file_path=args.alignment, verbose=args.verbose, exclude_gaps=args.exclude_gaps)
 
     def get_entry_indices(self, alignment) -> list:
         entries = []
         entries_count = 0
-        for record in alignment:
+        for _ in alignment:
             entries.append(entries_count)
             entries_count += 1
 
         return entries
 
-    def calculate_pairwise_identities(self, alignment, combos):
+    def calculate_pairwise_identities(
+        self,
+        alignment,
+        combos: list,
+        exclude_gaps: bool
+    ):
         # get aln length
         aln_len = alignment.get_alignment_length()
 
@@ -58,7 +63,11 @@ class PairwiseIdentity(Alignment):
             seq_two = alignment[combo[1]].seq
             for idx in range(0, aln_len):
                 if seq_one[idx] == seq_two[idx]:
-                    identities += 1
+                    if exclude_gaps:
+                        if seq_one[idx] != "-" and seq_two[idx] != "-":
+                            identities += 1
+                    else:
+                        identities += 1
             ids = alignment[combo[0]].id + "-" + alignment[combo[1]].id
             pairwise_identities[ids] = identities / aln_len
 
