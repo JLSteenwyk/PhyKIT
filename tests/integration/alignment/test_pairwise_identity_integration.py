@@ -132,3 +132,68 @@ class TestPairwiseIdentity(object):
             call("3-5\t0.5"),
             call("4-5\t0.5"),
         ]
+
+    @patch("builtins.print")
+    def test_pairwise_identity_10009at7524_aa_exclude_gaps(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/10009at7524_aa.aln",
+            "-e",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("mean: 0.8136"),
+            call("median: 0.8423"),
+            call("25th percentile: 0.8096"),
+            call("75th percentile: 0.8692"),
+            call("minimum: 0.6192"),
+            call("maximum: 0.9269"),
+            call("standard deviation: 0.0831"),
+            call("variance: 0.0069")
+        ]
+
+    @patch("builtins.print")
+    def test_pairwise_identity_10009at7524_aa_exclude_gaps_long_arg(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/10009at7524_aa.aln",
+            "--exclude_gaps",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("mean: 0.8136"),
+            call("median: 0.8423"),
+            call("25th percentile: 0.8096"),
+            call("75th percentile: 0.8692"),
+            call("minimum: 0.6192"),
+            call("maximum: 0.9269"),
+            call("standard deviation: 0.0831"),
+            call("variance: 0.0069")
+        ]
+
+    @patch("builtins.print")
+    def test_pairwise_identity_10009at7524_aa(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/10009at7524_aa.aln",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("mean: 0.8789"),
+            call("median: 0.9154"),
+            call("25th percentile: 0.8462"),
+            call("75th percentile: 0.95"),
+            call("minimum: 0.6462"),
+            call("maximum: 1.0"),
+            call("standard deviation: 0.0968"),
+            call("variance: 0.0094")
+        ]

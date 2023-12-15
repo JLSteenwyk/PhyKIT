@@ -22,6 +22,7 @@ class Alignment(BaseService):
         verbose=None,
         entry=None,
         clipkit_log_file=None,
+        exclude_gaps=None,
     ):
         self.alignment_file_path = alignment_file_path
         self.output_file_path = output_file_path
@@ -35,6 +36,7 @@ class Alignment(BaseService):
         self.verbose = verbose
         self.entry = entry
         self.clipkit_log_file = clipkit_log_file
+        self.exclude_gaps = exclude_gaps
 
     def get_alignment_and_format(self):
         """
@@ -82,7 +84,9 @@ class Alignment(BaseService):
             temp = 0
             # calculates the absolute value of the ith sequence letter minus the average
             for seq_letter in set(concat_seq):
-                temp += abs(record.seq.count(seq_letter) - average_d[seq_letter])
+                temp += abs(
+                    record.seq.count(seq_letter) - average_d[seq_letter]
+                )
             indiv_rcv_values.append(temp / (num_records * aln_len))
 
         relative_composition_variability = sum(indiv_rcv_values)
