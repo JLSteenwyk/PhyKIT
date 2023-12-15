@@ -8,6 +8,12 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.12.4**: calculations of pairwise identity in alignment now supports excluding pairwise 
+combinations with gaps.
+
+**1.12.3**: hidden paralogy check now simply looks for monophyly or lack thereof for a set of taxa. Hidden paralogy
+check still reports insufficient taxon representation.
+
 **1.12.2**: removed root.txt file from DVMC function. User's are now recommended to trim outgroup taxa beforehand
 
 **1.11.3**: Added an optional argument to the prune_tree function wherein instead of pruning tips
