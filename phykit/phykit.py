@@ -2344,7 +2344,7 @@ class Phykit(object):
                 =====================================================
                 -p/--protein                protein alignment file
 
-                -n/--nucleotide             nucleotide alignment file
+                -n/--nucleotide             nucleotide sequence file
 
                 -c/--clipkit_log            clipkit outputted log file
 
