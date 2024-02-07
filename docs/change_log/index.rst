@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.12.6**: relative composition variability is now adapted for calculating compositional biases in
+individual taxa. The new function in rcvt (relative composition variability, taxon).
+
 **1.12.4**: calculations of pairwise identity in alignment now supports excluding pairwise 
 combinations with gaps.
 

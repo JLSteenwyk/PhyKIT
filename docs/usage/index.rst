@@ -336,11 +336,31 @@ the average variability in sequence composition among taxa.
 
 RCV is calculated following Phillips and Penny, Molecular Phylogenetics
 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
-Alias: 
 
 .. code-block:: shell
 
 	phykit relative_composition_variability <alignment>
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file
+
+|
+
+Relative composition variability, taxon
+#######################################
+Function names: relative_composition_variability_taxon; rel_comp_var_taxon; rcvt |br|
+Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_var_taxon; pk_rcvt
+
+Calculate RCVT (relative composition variability, taxon) for an alignment.
+
+RCVT is the relative composition variability metric for individual taxa.
+This facilitates identifying specific taxa that may have compositional
+biases. Lower RCVT values are more desirable because they indicate
+a lower composition bias for a given taxon in an alignment.
+
+.. code-block:: shell
+
+	phykit relative_composition_variability_taxon <alignment>
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file
@@ -410,14 +430,6 @@ Codon alignments are then printed to stdout. Note, sequences
 are assumed to occur in the same order in the protein and 
 nucleotide alignment.
 
-To thread nucleotide sequences over a trimmed amino acid
-alignment, provide PhyKIT with a log file specifying which
-sites have been trimmed and which have been kept. The log
-file must be formatted the same as the log files outputted
-by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
-documentation.) Details about ClipKIT can be seen here:
-https://github.com/JLSteenwyk/ClipKIT. 
-
 .. code-block:: shell
 
    phykit thread_dna -p <file> -n <file> [-s]
@@ -425,7 +437,6 @@ https://github.com/JLSteenwyk/ClipKIT.
 Options: |br|
 *-p/\\-\\-protein*: protein alignment file |br|
 *-n/\\-\\-nucleotide*: nucleotide sequence file |br|
-*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
 *-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
 If used, stop codons will be removed.
 
