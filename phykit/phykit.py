@@ -737,7 +737,8 @@ class Phykit(object):
 
                 RCVT is the relative composition variability metric for individual taxa.
                 This facilitates identifying specific taxa that may have compositional
-                biases.
+                biases. Lower RCVT values are more desirable because they indicate
+                a lower composition bias for a given taxon in an alignment.
 
                 Aliases: 
                   relative_composition_variability_taxon, rel_comp_var_taxon, rcvt
