@@ -105,6 +105,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability">Relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability-taxon">Relative composition variability, taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-fasta-entries">Rename FASTA entries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
@@ -473,9 +474,26 @@ Command line interface: pk_relative_composition_variability; pk_rel_comp_var; pk
 a lower composition bias in an alignment. Statistically, RCV describes
 the average variability in sequence composition among taxa.</p>
 <p>RCV is calculated following Phillips and Penny, Molecular Phylogenetics
-and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
-Alias:</p>
+and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit relative_composition_variability &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="relative-composition-variability-taxon">
+<h3>Relative composition variability, taxon<a class="headerlink" href="#relative-composition-variability-taxon" title="Permalink to this headline">¶</a></h3>
+<p>Function names: relative_composition_variability_taxon; rel_comp_var_taxon; rcvt <br/>
+Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_var_taxon; pk_rcvt</p>
+<p>Calculate RCVT (relative composition variability, taxon) for an alignment.</p>
+<p>RCVT is the relative composition variability metric for individual taxa.
+This facilitates identifying specific taxa that may have compositional
+biases. Lower RCVT values are more desirable because they indicate
+a lower composition bias for a given taxon in an alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit relative_composition_variability_taxon &lt;alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -537,20 +555,12 @@ codon-based alignment.</p>
 Codon alignments are then printed to stdout. Note, sequences
 are assumed to occur in the same order in the protein and
 nucleotide alignment.</p>
-<p>To thread nucleotide sequences over a trimmed amino acid
-alignment, provide PhyKIT with a log file specifying which
-sites have been trimmed and which have been kept. The log
-file must be formatted the same as the log files outputted
-by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
-documentation.) Details about ClipKIT can be seen here:
-<a class="reference external" href="https://github.com/JLSteenwyk/ClipKIT">https://github.com/JLSteenwyk/ClipKIT</a>.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit thread_dna -p &lt;file&gt; -n &lt;file&gt; <span class="o">[</span>-s<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-p/--protein</em>: protein alignment file <br/>
 <em>-n/--nucleotide</em>: nucleotide sequence file <br/>
-<em>-c/--clipkit_log</em>: clipkit outputted log file <br/>
 <em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
 If used, stop codons will be removed.</p>
 <div class="line-block">
