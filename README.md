@@ -107,10 +107,10 @@ deactivate
 
 To install via anaconda, execute the following command:
 ```shell
-conda install -c jlsteenwyk phykit
+conda install bioconda::phykit
 ```
 Visit here for more information:
-https://anaconda.org/JLSteenwyk/phykit
+https://anaconda.org/bioconda/phykit
 
 <br />
 
