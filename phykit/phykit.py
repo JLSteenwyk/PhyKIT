@@ -23,6 +23,7 @@ from .services.alignment import (
     PairwiseIdentity,
     ParsimonyInformative,
     RelativeCompositionVariability,
+    RelativeCompositionVariabilityTaxon,
     RenameFastaEntries,
     SumOfPairsScore,
     VariableSites,
@@ -159,6 +160,8 @@ class Phykit(object):
                       informative sites in an alignment
                 relative_composition_variability (alias: rel_comp_var, rcv)
                     - calculates relative composition variability in an alignment
+                relative_composition_variability_taxon (alias: rel_comp_var_taxon, rcvt)
+                    - calculates relative composition variability of each taxa in an alignment
                 rename_fasta_entries (alias: rename_fasta)
                     - rename entries in a fasta file
                 sum_of_pairs_score (alias: sops; sop)
@@ -274,6 +277,8 @@ class Phykit(object):
             return self.parsimony_informative_sites(argv)
         elif command in ["rel_comp_var", "relative_composition_variability"]:
             return self.rcv(argv)
+        elif command in ["relative_composition_variability_taxon", "rel_comp_var_taxon"]:
+            return self.rcvt(argv)
         elif command == "rename_fasta":
             return self.rename_fasta_entries(argv)
         elif command in ["sum_of_pairs_score", "sops", "sop"]:
@@ -717,6 +722,42 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         RelativeCompositionVariability(args).run()
+
+    @staticmethod
+    def rcvt(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate RCVT (relative composition variability, taxon) for an alignment.
+
+                RCVT is the relative composition variability metric for individual taxa.
+                This facilitates identifying specific taxa that may have compositional
+                biases.
+
+                Aliases: 
+                  relative_composition_variability_taxon, rel_comp_var_taxon, rcvt
+                Command line interfaces:
+                  pk_relative_composition_variability_taxon, pk_rel_comp_var_taxon, pk_rcvt
+
+                Usage:
+                phykit relative_composition_variability <alignment>
+
+                Options
+                =====================================================
+                <alignment>                 first argument after 
+                                            function name should be
+                                            an alignment file          
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        RelativeCompositionVariabilityTaxon(args).run()
 
     @staticmethod
     def rename_fasta_entries(argv):
@@ -2323,30 +2364,19 @@ class Phykit(object):
                 are assumed to occur in the same order in the protein and 
                 nucleotide alignment.
 
-                To thread nucleotide sequences over a trimmed amino acid
-                alignment, provide PhyKIT with a log file specifying which
-                sites have been trimmed and which have been kept. The log
-                file must be formatted the same as the log files outputted
-                by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
-                documentation.) Details about ClipKIT can be seen here:
-                https://github.com/JLSteenwyk/ClipKIT. 
-
                 Aliases:
                   thread_dna, pal2nal, p2n
                 Command line interfaces:
                   pk_thread_dna, pk_pal2nal, pk_p2n
 
                 Usage:
-                phykit thread_dna -p <file> -n <file> [-c/--clipkit_log_file
-                  <clipkit outputted log file> -s]
+                phykit thread_dna -p <file> -n <file> [-s]
 
                 Options
                 =====================================================
                 -p/--protein                protein alignment file
 
                 -n/--nucleotide             nucleotide sequence file
-
-                -c/--clipkit_log            clipkit outputted log file
 
                 -s/--stop                   boolean for whether or not
                                             stop codons should be kept. 
@@ -2357,13 +2387,6 @@ class Phykit(object):
         )
         parser.add_argument("-p", "--protein", type=str, help=SUPPRESS)
         parser.add_argument("-n", "--nucleotide", type=str, help=SUPPRESS)
-        parser.add_argument(
-            "-c",
-            "--clipkit_log_file",
-            type=str,
-            required=False,
-            help=SUPPRESS,
-        )
         parser.add_argument(
             "-s", "--stop", type=str2bool, nargs="?", default=True, help=SUPPRESS
         )
@@ -2406,6 +2429,10 @@ def parsimony_informative_sites(argv=None):
 
 def rcv(argv=None):
     Phykit.rcv(sys.argv[1:])
+
+
+def rcvt(argv=None):
+    Phykit.rcvt(sys.argv[1:])
 
 
 def rename_fasta_entries(argv=None):
