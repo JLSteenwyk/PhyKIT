@@ -424,7 +424,7 @@ https://github.com/JLSteenwyk/ClipKIT.
 
 Options: |br|
 *-p/\\-\\-protein*: protein alignment file |br|
-*-n/\\-\\-nucleotide*: nucleotide alignment file |br|
+*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
 *-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
 *-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
 If used, stop codons will be removed.

@@ -138,6 +138,24 @@ class TestBrokenPipeError(object):
         assert exit_status == 0
 
     @pytest.mark.slow
+    def test_pk_relative_composition_variability_taxon(self):
+        cmd = "pk_relative_composition_variability_taxon -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_rel_comp_var_taxon(self):
+        cmd = "pk_rel_comp_var_taxon -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_rcvt(self):
+        cmd = "pk_rcvt -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
     def test_pk_rename_fasta_entries(self):
         cmd = "pk_rename_fasta_entries -h"
         exit_status = os.system(cmd)
