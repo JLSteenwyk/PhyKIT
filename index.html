@@ -166,9 +166,9 @@ and analyzing phylogenomic data</em>. Bioinformatics. doi: <a class="reference e
 <p>To install using <em>pip</em>, we strongly recommend building a virtual environment to avoid
 software dependency issues. To do so, execute the following commands:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># create virtual environment</span>
-python -m venv .venv
+python -m venv venv
 <span class="c1"># activate virtual environment</span>
-<span class="nb">source</span> .venv/bin/activate
+<span class="nb">source</span> venv/bin/activate
 <span class="c1"># install phykit</span>
 pip install phykit
 </pre></div>
@@ -188,9 +188,9 @@ following commands:</p>
 git clone https://github.com/JLSteenwyk/PhyKIT.git
 <span class="nb">cd</span> PhyKIT/
 <span class="c1"># create virtual environment</span>
-python -m venv .venv
+python -m venv venv
 <span class="c1"># activate virtual environment</span>
-<span class="nb">source</span> .venv/bin/activate
+<span class="nb">source</span> venv/bin/activate
 <span class="c1"># install</span>
 make install
 </pre></div>
@@ -205,11 +205,11 @@ deactivate
 <div class="line"><br /></div>
 </div>
 <p>To install via anaconda, execute the following command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda install -c jlsteenwyk phykit
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda install bioconda::phykit
 </pre></div>
 </div>
 <p>Visit here for more information:
-<a class="reference external" href="https://anaconda.org/JLSteenwyk/phykit">https://anaconda.org/JLSteenwyk/phykit</a></p>
+<a class="reference external" href="https://anaconda.org/bioconda/phykit">https://anaconda.org/bioconda/phykit</a></p>
 <p><strong>2) Usage</strong></p>
 <p>Get the help message from PhyKIT:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit -h
