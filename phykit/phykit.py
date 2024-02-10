@@ -746,7 +746,7 @@ class Phykit(object):
                   pk_relative_composition_variability_taxon, pk_rel_comp_var_taxon, pk_rcvt
 
                 Usage:
-                phykit relative_composition_variability <alignment>
+                phykit relative_composition_variability_taxon <alignment>
 
                 Options
                 =====================================================
