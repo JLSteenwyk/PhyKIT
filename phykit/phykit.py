@@ -2365,6 +2365,14 @@ class Phykit(object):
                 are assumed to occur in the same order in the protein and 
                 nucleotide alignment.
 
+                To thread nucleotide sequences over a trimmed amino acid
+                alignment, provide PhyKIT with a log file specifying which
+                sites have been trimmed and which have been kept. The log
+                file must be formatted the same as the log files outputted
+                by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
+                documentation.) Details about ClipKIT can be seen here:
+                https://github.com/JLSteenwyk/ClipKIT. 
+
                 Aliases:
                   thread_dna, pal2nal, p2n
                 Command line interfaces:
@@ -2379,6 +2387,8 @@ class Phykit(object):
 
                 -n/--nucleotide             nucleotide sequence file
 
+                -c/--clipkit_log            clipkit outputted log file
+
                 -s/--stop                   boolean for whether or not
                                             stop codons should be kept. 
                                             If used, stop codons will 
@@ -2388,6 +2398,13 @@ class Phykit(object):
         )
         parser.add_argument("-p", "--protein", type=str, help=SUPPRESS)
         parser.add_argument("-n", "--nucleotide", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-c",
+            "--clipkit_log_file",
+            type=str,
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument(
             "-s", "--stop", type=str2bool, nargs="?", default=True, help=SUPPRESS
         )

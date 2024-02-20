@@ -14,15 +14,25 @@ class DNAThreader(Alignment):
         self.process_args(args)
 
     def process_args(self, args):
-        self.include_stop_codon = args.stop
+        self.remove_stop_codon = args.stop
         self.protein_file_path = args.protein
         self.nucleotide_file_path = args.nucleotide
+        self.clipkit_log_file = args.clipkit_log_file
+
+    @property
+    def clipkit_log_data(self):
+        data = None
+        if self.clipkit_log_file:
+            with open(self.clipkit_log_file) as f:
+                data = [
+                    line.rstrip('\n').split(" ") for line in f.readlines()
+                ]
+        return data
 
     def run(self):
         prot = self.read_file(self.protein_file_path)
-        nucl = self.read_file(self.nucleotide_file_path)
 
-        pal2nal = self.thread(prot, nucl)
+        pal2nal = self.thread(prot)
 
         for record in pal2nal:
             sequence = "".join(pal2nal[record])
@@ -32,44 +42,49 @@ class DNAThreader(Alignment):
     def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
 
-    def thread(self, protein: SeqRecord, nucleotide: SeqRecord) -> dict:
+    def thread(self, protein: SeqRecord) -> dict:
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
+        # ML
+
+        # M--L-
+        
+        # MMM------LLL---
+        # AAA------GGG
+
+        # AAA------GGG---
+
+        # -?*XxNn
+
+        nucl_records = SeqIO.to_dict(SeqIO.parse(self.nucleotide_file_path, "fasta"))
         try:
-            for protein_seq_record, nucleotide_seq_record in zip(
-                protein, nucleotide
-            ):
-                # get gene id and sequences
-                gene_id, p_seq, n_seq = self.get_id_and_seqs(
-                    protein_seq_record, nucleotide_seq_record
-                )
+            if self.clipkit_log_data:
+                # TODO: Integrating ClipKIT log handling
+                print(self.clipkit_log_data)
+            else:
+                for protein_seq_record in protein:
+                    gene_id = protein_seq_record.id
+                    p_seq = protein_seq_record.seq
+                    n_seq = nucl_records[gene_id].seq
 
-                # initialize gap counter and gene in pal2nal dict
-                gap_count = 0
-                pal2nal[gene_id] = []
+                    sequence = []
+                    transformed = "".join([c * 3 for c in p_seq])
 
-                # loop through the sequence
-                for aa_idx in range(0, len(p_seq), 1):
-                    # if AA is a gap insert a codon of gaps
-                    if p_seq[aa_idx] == "-":
-                        pal2nal = self.add_gap(pal2nal, gene_id)
-                        gap_count += 1
-                    else:
-                        if self.include_stop_codon:
-                            # if AA is not a gap, insert the corresponding codon
-                            if p_seq[aa_idx] != "-":
-                                pal2nal = self.add_codon(
-                                    aa_idx, gap_count, n_seq, gene_id, pal2nal
-                                )
+                    for idx, c in enumerate(transformed):
+                        if c not in "-?*XxNn":
+                            sequence.append(n_seq[idx])
                         else:
-                            # if AA is a stop or ambiguous insert a codon of gaps
-                            if p_seq[aa_idx] == "X" or p_seq[aa_idx] == "*":
-                                pal2nal = self.add_gap(pal2nal, gene_id)
-                            else:
-                                pal2nal = self.add_codon(
-                                    aa_idx, gap_count, n_seq, gene_id, pal2nal
-                                )
+                            sequence.append("-")
+
+                    if self.remove_stop_codon is True:
+                        if transformed[-1] == "*":
+                            sequence[-1] = n_seq[-1]
+                            sequence[-2] = n_seq[-2]
+                            sequence[-3] = n_seq[-3]
+
+                    pal2nal[gene_id] = "".join(sequence)
+
             return pal2nal
         except FileNotFoundError:
             try:
