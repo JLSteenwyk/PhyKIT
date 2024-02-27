@@ -11,38 +11,38 @@ here = Path(__file__)
 
 @pytest.mark.integration
 class TestDNAThreader(object):
-    # @patch("builtins.print")
-    # def test_dna_threader0(self, mocked_print):
-    #     expected_result_0 = dedent(
-    #         """>200_S38"""
-    #     )
-    #     expected_result_1 = dedent(
-    #         """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctacgcaacacttggttatctcacaacataccacgac---gcccccacaacaccaccacca---------gacgcagcaccagccctagcaaagatcaccaagaactca---tcaccgccagtcccagcagccatcgcaaataaa---gggggtgcagctgctgttgcgggcaatgca---ccc---caggcgcctcctcaacaa---------gcg---------------------------------------------ccagactcgcccagc---------agccgg---cgggagcttgcgcgcgatctcattatc---gaacagcagatcgagtaccttatctccgtgcttcccgggattggcgcctctgaggctgaacaagaaaccagaatccaggacctggagaccgagcttagagacgtcgagaaggagcgcgctgcgaaagtgcgggagttgaaaaagttgaggactcggttggaggatgttcttggcgctgtcgctgtgggtatccacggggatggttactctcaaaactga"""
-    #     )
-    #     expected_result_2 = dedent(
-    #         """>203_S40"""
-    #     )
-    #     expected_result_3 = dedent(
-    #         """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctacgcaacacttggttatctcacaacataccacgac---gcccccacaacaccaccacca---------gacgcagcaccagccctagcaaagatcaccaagaactca---tcaccaccagtcccagcagccatcgcaaataaa---gggggtgcagctgctgttgcgggcaatgca---ccc---caggcgcctcctcaacaa---------gcg---------------------------------------------ccagactcgcccagc---------agccgg---cgggagcttgcgcgcgatctcattatc---gaacagcagatcgagtaccttatctccgtgcttcccgggattggcgcctctgaggctgaacaagaaaccagaatccaggacctggagaccgagcttagagacgtcgagaaggagcgcgctgcgaaagtgcgggagttgaaaaagttgaggactcggttggaggatgttcttggcgctgtcgctgtgggtatccacggggatggttactctcaaaactga"""
-    #     )
+    @patch("builtins.print")
+    def test_dna_threader0(self, mocked_print):
+        expected_result_0 = dedent(
+            """>200_S38"""
+        )
+        expected_result_1 = dedent(
+            """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctacgcaacacttggttatctcacaacataccacgacaatgcccccacaacaccaccacca------cccgacgcagcaccagccctagcaaagatcaccaagaactcatcatcaccgccagtcccagcagccatcgcaaataaagtggggggtgcagctgctgttgcgggcaatgcatcaccc---caggcgcctcctcaacaa---------gcg---------------------------------------------ccagactcgcccagc---------agccgg---cgggagcttgcgcgcgatctcattatcaaagaacagcagatcgagtaccttatctccgtgcttcccgggattggcgcctctgaggctgaacaagaaaccagaatccaggacctggagaccgagcttagagacgtcgagaaggagcgcgctgcgaaagtgcgggagttgaaaaagttgaggactcggttggaggatgttcttggcgctgtcgctgtgggtatccacggggatggttactctcaaaactga"""
+        )
+        expected_result_2 = dedent(
+            """>203_S40"""
+        )
+        expected_result_3 = dedent(
+            """atggctgacatcctcacgcagctccagacttgcctggatcagcttgcaacacaattctacgcaacacttggttatctcacaacataccacgacaatgcccccacaacaccaccacca------cccgacgcagcaccagccctagcaaagatcaccaagaactcatcatcaccaccagtcccagcagccatcgcaaataaagtggggggtgcagctgctgttgcgggcaatgcatcaccc---caggcgcctcctcaacaa---------gcg---------------------------------------------ccagactcgcccagc---------agccgg---cgggagcttgcgcgcgatctcattatcaaagaacagcagatcgagtaccttatctccgtgcttcccgggattggcgcctctgaggctgaacaagaaaccagaatccaggacctggagaccgagcttagagacgtcgagaaggagcgcgctgcgaaagtgcgggagttgaaaaagttgaggactcggttggaggatgttcttggcgctgtcgctgtgggtatccacggggatggttactctcaaaactga"""
+        )
 
-    #     testargs = [
-    #         "phykit",
-    #         "thread_dna",
-    #         "-p",
-    #         f"{here.parent.parent.parent}/sample_files/EOG091N44MS.fa.mafft",
-    #         "-n",
-    #         f"{here.parent.parent.parent}/sample_files/EOG091N44MS.fa",
-    #     ]
+        testargs = [
+            "phykit",
+            "thread_dna",
+            "-p",
+            f"{here.parent.parent.parent}/sample_files/EOG091N44MS.fa.mafft",
+            "-n",
+            f"{here.parent.parent.parent}/sample_files/EOG091N44MS.fa",
+        ]
 
-    #     with patch.object(sys, "argv", testargs):
-    #         Phykit()
-    #     assert mocked_print.mock_calls == [
-    #         call(expected_result_0),
-    #         call(expected_result_1),
-    #         call(expected_result_2),
-    #         call(expected_result_3),
-    #     ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [
+            call(expected_result_0),
+            call(expected_result_1),
+            call(expected_result_2),
+            call(expected_result_3),
+        ]
 
     @patch("builtins.print")
     def test_dna_threader1(self, mocked_print):
