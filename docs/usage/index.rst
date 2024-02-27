@@ -323,6 +323,32 @@ Options: |br|
 
 |
 
+Protein-to-nucleotide alignment
+###############################
+Function names: thread_dna; pal2nal, p2n |br|
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
+
+Thread DNA sequence onto a protein alignment to create a
+codon-based alignment. 
+
+This function requires input alignments are in fasta format.
+Codon alignments are then printed to stdout. Note, sequences
+are assumed to occur in the same order in the protein and 
+nucleotide alignment.
+
+.. code-block:: shell
+
+   phykit thread_dna -p <file> -n <file> [-s]
+
+Options: |br|
+*-p/\\-\\-protein*: protein alignment file |br|
+*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
+*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
+*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
+If used, stop codons will be removed.
+
+|
+
 Relative composition variability
 ################################
 Function names: relative_composition_variability; rel_comp_var; rcv |br|
@@ -414,31 +440,6 @@ Options: |br|
 fasta alignment file to be scored for accuracy |br|
 *-r/\\-\\-reference*: reference alignment to compare the query alignment
 to
-
-|
-
-Protein-to-nucleotide alignment
-###############################
-Function names: thread_dna; pal2nal, p2n |br|
-Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
-
-Thread DNA sequence onto a protein alignment to create a
-codon-based alignment. 
-
-This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and 
-nucleotide alignment.
-
-.. code-block:: shell
-
-   phykit thread_dna -p <file> -n <file> [-s]
-
-Options: |br|
-*-p/\\-\\-protein*: protein alignment file |br|
-*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
-*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
-If used, stop codons will be removed.
 
 |
 
@@ -779,7 +780,9 @@ Function names: monophyly_check; is_monophyletic |br|
 Command line interface: pk_monophyly_check; pk_is_monophyletic
 
 This analysis can be used to determine if a set of 
-taxa are monophyletic.
+taxa are exclusively monophyletic. By exclusively monophyletic,
+if other taxa are in the same clade, the lineage will not be
+considered exclusively monophyletic.
 
 Requires a taxa file, which species which tip names
 are expected to be monophyletic. File format is a
@@ -793,8 +796,7 @@ col 2: average bipartition support value in the clade of interest
 col 3: maximum bipartition support value in the clade of interest
 col 4: minimum bipartition support value in the clade of interest
 col 5: standard deviation of bipartition support values in the clade of interest
-col 6: tip names of taxa monophyletic with the lineage of interest
-      excluding those that are listed in the taxa_of_interest file
+col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file
 
 .. code-block:: shell
 
