@@ -42,48 +42,76 @@ class DNAThreader(Alignment):
     def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
 
+    def create_mask(self, length):
+        keep_mask = [True] * length
+        if self.clipkit_log_data:
+            mask = []
+            for row in self.clipkit_log_data:
+                if row[1] == "keep":
+                    mask.append(True)
+                    mask.append(True)
+                    mask.append(True)
+                else:
+                    mask.append(False)
+                    mask.append(False)
+                    mask.append(False)
+            keep_mask = mask
+
+        return keep_mask
+
     def thread(self, protein: SeqRecord) -> dict:
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
-        # ML
+        # ML-
 
-        # M--L-
-        
-        # MMM------LLL---
-        # AAA------GGG
+        # keep, trim, keep
 
-        # AAA------GGG---
+        # AAATTTGGG
 
-        # -?*XxNn
+        # AAAGGG---
 
         nucl_records = SeqIO.to_dict(SeqIO.parse(self.nucleotide_file_path, "fasta"))
+
+        length = len(SeqIO.to_dict(SeqIO.parse(self.protein_file_path, "fasta")).get("1"))
+
+        keep_mask = self.create_mask(length * 3)
         try:
-            if self.clipkit_log_data:
-                # TODO: Integrating ClipKIT log handling
-                print(self.clipkit_log_data)
-            else:
-                for protein_seq_record in protein:
-                    gene_id = protein_seq_record.id
-                    p_seq = protein_seq_record.seq
-                    n_seq = nucl_records[gene_id].seq
+            for protein_seq_record in protein:
+                gene_id = protein_seq_record.id
+                p_seq = protein_seq_record.seq
+                n_seq = nucl_records[gene_id].seq
 
-                    sequence = []
-                    transformed = "".join([c * 3 for c in p_seq])
-
-                    for idx, c in enumerate(transformed):
-                        if c not in "-?*XxNn":
-                            sequence.append(n_seq[idx])
+                if self.clipkit_log_data:
+                    untrimmed = []
+                    offset = 0
+                    for idx, value in enumerate(keep_mask[::3]):
+                        if value is True:
+                            untrimmed.append(p_seq[idx - offset])
                         else:
-                            sequence.append("-")
+                            offset += 1
+                            untrimmed.append("#")
+                    p_seq = "".join(untrimmed)
 
-                    if self.remove_stop_codon is True:
-                        if transformed[-1] == "*":
-                            sequence[-1] = n_seq[-1]
-                            sequence[-2] = n_seq[-2]
-                            sequence[-3] = n_seq[-3]
+                sequence = []
+                transformed = "".join([c * 3 for c in p_seq])
 
-                    pal2nal[gene_id] = "".join(sequence)
+                for idx, c in enumerate(transformed):
+                    if not keep_mask[idx]:
+                        continue
+                    if c not in "-?*XxNn":
+                        n_seq_c = n_seq[idx]
+                        sequence.append(n_seq_c)
+                    else:
+                        sequence.append("-")
+
+                if self.remove_stop_codon is True:
+                    if transformed[-1] == "*":
+                        sequence[-1] = n_seq[-1]
+                        sequence[-2] = n_seq[-2]
+                        sequence[-3] = n_seq[-3]
+
+                pal2nal[gene_id] = "".join(sequence)
 
             return pal2nal
         except FileNotFoundError:
