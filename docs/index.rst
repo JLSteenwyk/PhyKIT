@@ -17,6 +17,18 @@ and analyzing phylogenomic data*. Bioinformatics. doi: |doiLink|_.
 
 Quick Start
 -----------
+
+These two lines represent the simpliest method to rapidly install and run PhyKIT.
+
+.. code-block:: shell
+
+	# install
+	pip install phykit
+	# run
+	phykit -h
+
+
+
 **1) Installation**
 
 To install using *pip*, we strongly recommend building a virtual environment to avoid 
