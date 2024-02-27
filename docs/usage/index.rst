@@ -779,7 +779,9 @@ Function names: monophyly_check; is_monophyletic |br|
 Command line interface: pk_monophyly_check; pk_is_monophyletic
 
 This analysis can be used to determine if a set of 
-taxa are monophyletic.
+taxa are exclusively monophyletic. By exclusively monophyletic,
+if other taxa are in the same clade, the lineage will not be
+considered exclusively monophyletic.
 
 Requires a taxa file, which species which tip names
 are expected to be monophyletic. File format is a
@@ -793,8 +795,7 @@ col 2: average bipartition support value in the clade of interest
 col 3: maximum bipartition support value in the clade of interest
 col 4: minimum bipartition support value in the clade of interest
 col 5: standard deviation of bipartition support values in the clade of interest
-col 6: tip names of taxa monophyletic with the lineage of interest
-      excluding those that are listed in the taxa_of_interest file
+col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file
 
 .. code-block:: shell
 
