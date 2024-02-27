@@ -159,6 +159,11 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h1>
 <hr class="docutils" />
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>1.14.0</strong>:
+Added an optional argument to the thread_dna function. Now, PhyKIT can thread nucleotide
+sequences onto a trimmed amino acid alignment. To do so, point PhyKIT to the ClipKIT outputted log
+file using the -c argument. The ClipKIT log file can be generated when trimming an alignment with
+ClipKIT by adding the -l argument (see here for more details: <a class="reference external" href="https://jlsteenwyk.com/ClipKIT/">https://jlsteenwyk.com/ClipKIT/</a>).</p>
 <p><strong>1.12.6</strong>: relative composition variability is now adapted for calculating compositional biases in
 individual taxa. The new function in rcvt (relative composition variability, taxon).</p>
 <p><strong>1.12.4</strong>: calculations of pairwise identity in alignment now supports excluding pairwise
@@ -168,10 +173,6 @@ check still reports insufficient taxon representation.</p>
 <p><strong>1.12.2</strong>: removed root.txt file from DVMC function. User’s are now recommended to trim outgroup taxa beforehand</p>
 <p><strong>1.11.3</strong>: Added an optional argument to the prune_tree function wherein instead of pruning tips
 specified in the input file, those tips will be kept.</p>
-<p><strong>1.11.2</strong>: Added an optional argument to the thread_dna function. Now, PhyKIT can thread nucleotide
-sequences onto a trimmed amino acid alignment. To do so, point PhyKIT to the ClipKIT outputted log
-file using the -c argument. The ClipKIT log file can be generated when trimming an alignment with
-ClipKIT by adding the -l argument (see here for more details: <a class="reference external" href="https://jlsteenwyk.com/ClipKIT/">https://jlsteenwyk.com/ClipKIT/</a>).</p>
 <p><strong>1.11.1</strong>: Modified sum of pairs score to divide the correct number
 of pairs by the number of pairs in the reference alignment rather
 than the query alignment alignment</p>
