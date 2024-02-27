@@ -2371,7 +2371,7 @@ class Phykit(object):
                 file must be formatted the same as the log files outputted
                 by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
                 documentation.) Details about ClipKIT can be seen here:
-                https://github.com/JLSteenwyk/ClipKIT. 
+                https://github.com/JLSteenwyk/ClipKIT.
 
                 Aliases:
                   thread_dna, pal2nal, p2n
@@ -2379,7 +2379,8 @@ class Phykit(object):
                   pk_thread_dna, pk_pal2nal, pk_p2n
 
                 Usage:
-                phykit thread_dna -p <file> -n <file> [-s]
+                phykit thread_dna -p <file> -n <file> [-c/--clipkit_log_file
+                  <clipkit outputted log file> -s]
 
                 Options
                 =====================================================

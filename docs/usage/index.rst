@@ -323,6 +323,32 @@ Options: |br|
 
 |
 
+Protein-to-nucleotide alignment
+###############################
+Function names: thread_dna; pal2nal, p2n |br|
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
+
+Thread DNA sequence onto a protein alignment to create a
+codon-based alignment. 
+
+This function requires input alignments are in fasta format.
+Codon alignments are then printed to stdout. Note, sequences
+are assumed to occur in the same order in the protein and 
+nucleotide alignment.
+
+.. code-block:: shell
+
+   phykit thread_dna -p <file> -n <file> [-s]
+
+Options: |br|
+*-p/\\-\\-protein*: protein alignment file |br|
+*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
+*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
+*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
+If used, stop codons will be removed.
+
+|
+
 Relative composition variability
 ################################
 Function names: relative_composition_variability; rel_comp_var; rcv |br|
@@ -414,31 +440,6 @@ Options: |br|
 fasta alignment file to be scored for accuracy |br|
 *-r/\\-\\-reference*: reference alignment to compare the query alignment
 to
-
-|
-
-Protein-to-nucleotide alignment
-###############################
-Function names: thread_dna; pal2nal, p2n |br|
-Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
-
-Thread DNA sequence onto a protein alignment to create a
-codon-based alignment. 
-
-This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and 
-nucleotide alignment.
-
-.. code-block:: shell
-
-   phykit thread_dna -p <file> -n <file> [-s]
-
-Options: |br|
-*-p/\\-\\-protein*: protein alignment file |br|
-*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
-*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
-If used, stop codons will be removed.
 
 |
 

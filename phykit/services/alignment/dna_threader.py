@@ -63,19 +63,12 @@ class DNAThreader(Alignment):
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
-        # ML-
-
-        # keep, trim, keep
-
-        # AAATTTGGG
-
-        # AAAGGG---
-
         nucl_records = SeqIO.to_dict(SeqIO.parse(self.nucleotide_file_path, "fasta"))
 
-        length = len(SeqIO.to_dict(SeqIO.parse(self.protein_file_path, "fasta")).get("1"))
-
+        prot_dict = SeqIO.to_dict(SeqIO.parse(self.protein_file_path, "fasta"))
+        length = len(prot_dict.get(next(iter(prot_dict))))
         keep_mask = self.create_mask(length * 3)
+
         try:
             for protein_seq_record in protein:
                 gene_id = protein_seq_record.id
@@ -99,9 +92,12 @@ class DNAThreader(Alignment):
                 for idx, c in enumerate(transformed):
                     if not keep_mask[idx]:
                         continue
-                    if c not in "-?*XxNn":
-                        n_seq_c = n_seq[idx]
-                        sequence.append(n_seq_c)
+                    if c not in "-?*Xx":
+                        try:
+                            n_seq_c = n_seq[idx]
+                            sequence.append(n_seq_c)
+                        except IndexError:
+                            break
                     else:
                         sequence.append("-")
 
@@ -164,4 +160,3 @@ class DNAThreader(Alignment):
         pal2nal[gene_id].append(seq)
 
         return pal2nal
-
