@@ -104,11 +104,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability">Relative composition variability</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability-taxon">Relative composition variability, taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-fasta-entries">Rename FASTA entries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
 </ul>
 </li>
@@ -465,6 +465,29 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 <div class="line"><br /></div>
 </div>
 </div>
+<div class="section" id="protein-to-nucleotide-alignment">
+<h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Permalink to this headline">¶</a></h3>
+<p>Function names: thread_dna; pal2nal, p2n <br/>
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
+<p>Thread DNA sequence onto a protein alignment to create a
+codon-based alignment.</p>
+<p>This function requires input alignments are in fasta format.
+Codon alignments are then printed to stdout. Note, sequences
+are assumed to occur in the same order in the protein and
+nucleotide alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit thread_dna -p &lt;file&gt; -n &lt;file&gt; <span class="o">[</span>-s<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-p/--protein</em>: protein alignment file <br/>
+<em>-n/--nucleotide</em>: nucleotide sequence file <br/>
+<em>-c/--clipkit_log</em>: clipkit outputted log file <br/>
+<em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
+If used, stop codons will be removed.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
 <div class="section" id="relative-composition-variability">
 <h3>Relative composition variability<a class="headerlink" href="#relative-composition-variability" title="Permalink to this headline">¶</a></h3>
 <p>Function names: relative_composition_variability; rel_comp_var; rcv <br/>
@@ -541,28 +564,6 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 fasta alignment file to be scored for accuracy <br/>
 <em>-r/--reference</em>: reference alignment to compare the query alignment
 to</p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-</div>
-<div class="section" id="protein-to-nucleotide-alignment">
-<h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Permalink to this headline">¶</a></h3>
-<p>Function names: thread_dna; pal2nal, p2n <br/>
-Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
-<p>Thread DNA sequence onto a protein alignment to create a
-codon-based alignment.</p>
-<p>This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and
-nucleotide alignment.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit thread_dna -p &lt;file&gt; -n &lt;file&gt; <span class="o">[</span>-s<span class="o">]</span>
-</pre></div>
-</div>
-<p>Options: <br/>
-<em>-p/--protein</em>: protein alignment file <br/>
-<em>-n/--nucleotide</em>: nucleotide sequence file <br/>
-<em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
-If used, stop codons will be removed.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
