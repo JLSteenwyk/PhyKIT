@@ -1,5 +1,6 @@
 from .alignment_length import AlignmentLength
 from .alignment_length_no_gaps import AlignmentLengthNoGaps
+from .alignment_recoding import AlignmentRecoding
 from .column_score import ColumnScore
 from .create_concatenation_matrix import CreateConcatenationMatrix
 from .dna_threader import DNAThreader
