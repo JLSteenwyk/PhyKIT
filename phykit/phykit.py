@@ -15,6 +15,7 @@ from argparse import (
 from .services.alignment import (
     AlignmentLength,
     AlignmentLengthNoGaps,
+    AlignmentRecoding,
     ColumnScore,
     CreateConcatenationMatrix,
     DNAThreader,
@@ -144,6 +145,8 @@ class Phykit(object):
                     - calculates alignment length
                 alignment_length_no_gaps (alias: aln_len_no_gaps; alng)
                     - calculates alignment length after removing sites with gaps
+                alignment_recoding (alias: aln_recoding, recode)
+                    - recode alignments using reduced character schemes
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
                 create_concatenation_matrix (alias: create_concat; cc)
@@ -265,6 +268,8 @@ class Phykit(object):
             return self.alignment_length(argv)
         elif command in ["aln_len_no_gaps", "alng"]:
             return self.alignment_length_no_gaps(argv)
+        elif command in ["aln_recoding", "recode"]:
+            return self.alignment_recoding(argv)
         elif command in "cs":
             return self.column_score(argv)
         elif command in ["get_entry", "ge"]:
@@ -450,6 +455,142 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
+
+    @staticmethod
+    def alignment_recoding(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Recode alignments using reduced character states.
+
+                Alignments can be recoded using established or
+                custom recoding schemes. Recoding schemes are
+                specified using the -c/--code argument. Custom
+                recoding schemes can be used and should be formatted
+                as a two column file wherein the first column is the
+                recoded character and the second column is the character
+                in the alignment.
+                
+                Aliases:
+                  alignment_recoding, aln_recoding, recode
+                Command line interfaces: 
+                  bk_alignment_recoding, bk_aln_recoding, bk_recode
+
+                Usage:
+                phykit alignment_recoding <fasta> -c/--code <code>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be
+                                            a fasta file
+
+                -c/--code                   recoding scheme to use
+
+                Codes for which recoding scheme to use
+                =====================================================
+                RY-nucleotide
+                    R = purines (i.e., A and G) 
+                    Y = pyrimidines (i.e., T and C)
+                
+                SandR-6
+                    0 = A, P, S, and T
+                    1 = D, E, N, and G
+                    2 = Q, K, and R
+                    3 = M, I, V, and L
+                    4 = W and C
+                    5 = F, Y, and H
+
+                KGB-6
+                    0 = A, G, P, and S
+                    1 = D, E, N, Q, H, K, R, and T
+                    2 = M, I, and L
+                    3 = W
+                    4 = F and Y
+                    5 = C and V
+
+                Dayhoff-6
+                    0 = A, G, P, S, and T
+                    1 = D, E, N, and Q
+                    2 = H, K, and R
+                    3 = I, L, M, and V
+                    4 = F, W, and Y
+                    5 = C
+
+                Dayhoff-9
+                    0 = D, E, H, N, and Q
+                    1 = I, L, M, and V
+                    2 = F and Y
+                    3 = A, S, and T
+                    4 = K and R
+                    5 = G
+                    6 = P
+                    7 = C
+                    8 = W
+
+                Dayhoff-12
+                    0 = D, E, and Q
+                    1 = M, L, I, and V
+                    2 = F and Y
+                    3 = K, H, and R
+                    4 = G
+                    5 = A
+                    6 = P
+                    7 = S
+                    8 = T
+                    9 = N
+                    A = W
+                    B = C
+                
+                Dayhoff-15
+                    0 = D, E, and Q
+                    1 = M and L
+                    2 = I and V
+                    3 = F and Y
+                    4 = G
+                    5 = A
+                    6 = P
+                    7 = S
+                    8 = T
+                    9 = N
+                    A = K
+                    B = H
+                    C = R
+                    D = W
+                    E = C
+                
+                Dayhoff-18
+                    0 = F and Y
+                    1 = M and L
+                    2 = I
+                    3 = V
+                    4 = G
+                    5 = A
+                    6 = P
+                    7 = S
+                    8 = T
+                    9 = D
+                    A = E
+                    B = Q
+                    C = N
+                    D = K
+                    E = H
+                    F = R
+                    G = W
+                    H = C
+                """  # noqa
+            ),
+        )
+
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("-c", "--code", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        AlignmentRecoding(args).run()
 
     @staticmethod
     def column_score(argv):
