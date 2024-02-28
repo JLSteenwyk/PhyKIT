@@ -861,8 +861,8 @@ file with the list of taxa to get the last common ancestor subtree for
 
 Long branch score
 #################
-Function names: lb_score; lb_score; lbs |br|
-Command line interface: pk_lb_score; pk_lb_score; pk_lbs
+Function names: long_branch_score; lb_score; lbs |br|
+Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs
 
 Calculate long branch (LB) scores in a phylogeny.
 
