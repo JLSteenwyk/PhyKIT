@@ -11,6 +11,7 @@ class Alignment(BaseService):
         self,
         *args,
         alignment_file_path=None,
+        code=None,
         fasta=None,
         output_file_path=None,
         protein_file_path=None,
@@ -24,6 +25,7 @@ class Alignment(BaseService):
         exclude_gaps=None,
     ):
         self.alignment_file_path = alignment_file_path
+        self.code = code,
         self.output_file_path = output_file_path
         self.protein_file_path = (protein_file_path,)
         self.nucleotide_file_path = nucleotide_file_path
