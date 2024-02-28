@@ -1,5 +1,9 @@
 Major changes to PhyKIT are summarized here.
 
+1.15.0
+  - Added function to recode alignments based on 8 different recoding schemes (7 for amino acids;
+  1 for nucleotides). See function recode
+
 1.14.0
   - Added an optional argument to the thread_dna function. Now, PhyKIT can thread nucleotide
   sequences onto a trimmed amino acid alignment. To do so, point PhyKIT to the ClipKIT outputted log
