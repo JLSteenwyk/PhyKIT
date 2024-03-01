@@ -1337,8 +1337,6 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
 *-t/\\-\\-tree*: a tree file |br|
-*-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
-distances used to determine saturation 
 
 Treeness over RCV
 #################
