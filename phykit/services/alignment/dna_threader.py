@@ -38,6 +38,7 @@ class DNAThreader(Alignment):
             sequence = "".join(pal2nal[record])
             print(f">{record}")
             print(f"{sequence}")
+            # print(len(sequence))
 
     def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
@@ -63,7 +64,9 @@ class DNAThreader(Alignment):
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
-        nucl_records = SeqIO.to_dict(SeqIO.parse(self.nucleotide_file_path, "fasta"))
+        nucl_records = SeqIO.to_dict(
+            SeqIO.parse(self.nucleotide_file_path, "fasta")
+        )
 
         prot_dict = SeqIO.to_dict(SeqIO.parse(self.protein_file_path, "fasta"))
         length = len(prot_dict.get(next(iter(prot_dict))))
@@ -89,17 +92,22 @@ class DNAThreader(Alignment):
                 sequence = []
                 transformed = "".join([c * 3 for c in p_seq])
 
+                nucl_idx = 0
                 for idx, c in enumerate(transformed):
                     if not keep_mask[idx]:
                         continue
-                    if c not in "-?*Xx":
+                    if c not in "-?*Xx" and c != "#":
                         try:
-                            n_seq_c = n_seq[idx]
+                            n_seq_c = n_seq[nucl_idx]
                             sequence.append(n_seq_c)
                         except IndexError:
                             break
+                    elif c == "#":
+                        nucl_idx = nucl_idx + 1
                     else:
                         sequence.append("-")
+                        nucl_idx = nucl_idx - 1
+                    nucl_idx = nucl_idx + 1
 
                 if self.remove_stop_codon is True:
                     if transformed[-1] == "*":
