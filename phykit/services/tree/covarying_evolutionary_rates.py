@@ -10,6 +10,13 @@ class CovaryingEvolutionaryRates(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
+        if self.outlier_threshold is None:
+            outlier_threshold = 5
+        elif self.outlier_threshold == "None":
+            outlier_threshold = "No threshold"
+        else:
+            outlier_threshold = float(self.outlier_threshold)
+
         tree_zero = self.read_tree_file()
         tree_one = self.read_tree1_file()
         tree_ref = self.read_reference_tree_file()
@@ -45,22 +52,27 @@ class CovaryingEvolutionaryRates(Tree):
             tip_names,
         ) = self.correct_branch_lengths(tree_zero, tree_one, tree_ref)
 
-        # remove corrected BLs greater than 5
-        outlier_indices = []
-        outlier_indices = self.get_indices_of_outlier_branch_lengths(
-            tree_zero_corr_branch_lengths, outlier_indices
-        )
-        outlier_indices = self.get_indices_of_outlier_branch_lengths(
-            tree_one_corr_branch_lengths, outlier_indices
-        )
+        if outlier_threshold != "No threshold":
+            # remove corrected BLs greater than 5
+            outlier_indices = []
+            outlier_indices = self.get_indices_of_outlier_branch_lengths(
+                tree_zero_corr_branch_lengths, outlier_indices, outlier_threshold
+            )
 
-        tree_zero_corr_branch_lengths = self.remove_outliers_based_on_indices(
-            tree_zero_corr_branch_lengths, outlier_indices
-        )
-        tree_one_corr_branch_lengths = self.remove_outliers_based_on_indices(
-            tree_one_corr_branch_lengths, outlier_indices
-        )
-        tip_names = self.remove_outliers_based_on_indices(tip_names, outlier_indices)
+            outlier_indices = self.get_indices_of_outlier_branch_lengths(
+                tree_one_corr_branch_lengths, outlier_indices, outlier_threshold
+            )
+
+            tree_zero_corr_branch_lengths = self.remove_outliers_based_on_indices(
+                tree_zero_corr_branch_lengths, outlier_indices
+            )
+            tree_one_corr_branch_lengths = self.remove_outliers_based_on_indices(
+                tree_one_corr_branch_lengths, outlier_indices
+            )
+
+            tip_names = self.remove_outliers_based_on_indices(
+                tip_names, outlier_indices
+            )
 
         # standardize values for final correction
         tree_zero_corr_branch_lengths = zscore(tree_zero_corr_branch_lengths)
@@ -89,6 +101,7 @@ class CovaryingEvolutionaryRates(Tree):
 
     def process_args(self, args):
         return dict(
+            outlier_threshold=args.outlier_threshold,
             tree_file_path=args.tree_zero,
             tree1_file_path=args.tree_one,
             reference=args.reference,
@@ -96,7 +109,10 @@ class CovaryingEvolutionaryRates(Tree):
         )
 
     def get_indices_of_outlier_branch_lengths(
-        self, corr_branch_lengths, outlier_indices
+        self,
+        corr_branch_lengths,
+        outlier_indices,
+        outlier_threshold: float
     ):
         """
         create index for branch lengths that
@@ -104,7 +120,7 @@ class CovaryingEvolutionaryRates(Tree):
         """
         for idx in range(0, len(corr_branch_lengths)):
             try:
-                if corr_branch_lengths[idx] > 5 or corr_branch_lengths[idx] < -5:
+                if corr_branch_lengths[idx] > outlier_threshold or corr_branch_lengths[idx] < -outlier_threshold:
                     if idx not in outlier_indices:
                         outlier_indices.append(idx)
             except TypeError:

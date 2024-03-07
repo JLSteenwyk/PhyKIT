@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.16.0**
+Users can now specify an outlier branch threshold when calculating gene coevolution
+
 **1.15.0**:
 Added function to recode alignments based on 8 different recoding schemes (7 for amino acids;
 1 for nucleotides). See function recode.

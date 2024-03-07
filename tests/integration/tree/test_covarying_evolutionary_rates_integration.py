@@ -181,3 +181,54 @@ class TestCovaryingEvolutionaryRates(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_outlier_threshold0(self, mocked_print):
+        expected_result = "0.0793\t0.796757"
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_outlier_branch.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "-ot",
+            "None"
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_outlier_threshold1(self, mocked_print):
+        expected_result = "0.0793\t0.796757"
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_outlier_branch.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "--outlier_threshold",
+            "None"
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_outlier_threshold_custom(self, mocked_print):
+        expected_result = "0.5404\t0.16678"
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_outlier_branch.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "--outlier_threshold",
+            "1"
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert mocked_print.mock_calls == [call(expected_result)]

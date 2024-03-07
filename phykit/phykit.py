@@ -1190,7 +1190,8 @@ class Phykit(object):
                 Determine if two genes have a signature of covariation with one another.
 
                 Genes that have covarying evolutionary histories tend to have 
-                similar functions and expression levels.
+                similar functions, expression levels, and/or be part of the same
+                multi-meric complexes.
 
                 Input two phylogenies and calculate the correlation among relative 
                 evolutionary rates between the two phylogenies. The two input trees 
@@ -1198,19 +1199,21 @@ class Phykit(object):
                 trees to have the same tips. To transform branch lengths into relative
                 rates, PhyKIT uses the putative species tree's branch lengths, which is
                 inputted by the user. As recommended by the original method developers,
-                outlier branche lengths are removed. Outlier branches have a relative 
-                evolutionary rate greater than five.
+                outlier branch lengths are removed. Outlier branches have a relative 
+                evolutionary rate greater than five. Users can specify a custom threshold
+                using the -ot/--outlier_threshold argument.
 
                 PhyKIT reports two tab delimited values:
                 col1: correlation coefficient
                 col2: p-value
 
-                Method is empirically evaluated by Clark et al., Genome Research
-                (2012), doi: 10.1101/gr.132647.111. Normalization method using a 
-                species tree follows Sato et al., Bioinformatics (2005), doi: 
-                10.1093/bioinformatics/bti564. 
+                Method is described in Steenwyk et al., Science Advances (2022),
+                doi: 10.1126/sciadv.abn0105. Method is empirically evaluated by
+                Clark et al., Genome Research (2012), doi: 10.1101/gr.132647.111.
+                Normalization method using a species tree follows Sato et al.,
+                Bioinformatics (2005), doi: 10.1093/bioinformatics/bti564.
 
-
+                
                 Aliases:
                   covarying_evolutionary_rates, cover
                 Command line interfaces:
@@ -1238,6 +1241,10 @@ class Phykit(object):
                 -v/--verbose                print out corrected branch
                                             lengths shared between
                                             tree 0 and tree 1
+
+                -ot/--outlier_threshold     threshold to define outlier
+                                            corrected branch lengths
+                                            (Default: 5)
                 """
             ),
         )
@@ -1248,6 +1255,9 @@ class Phykit(object):
         )
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "-ot", "--outlier_threshold", type=str, required=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         CovaryingEvolutionaryRates(args).run()
