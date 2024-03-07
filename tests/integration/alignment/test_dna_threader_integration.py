@@ -598,25 +598,25 @@ class TestDNAThreader(object):
         )
         expected_result_1 = dedent(
             """AAATTTCCCAAA------GGG---"""
-            # AAAGGGTTTGGGAAACCCAAAGGG---TTT---GGG---AAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
-            # 111222333444555666777888999
-            # AAA===TTT======CCCAAA===---===---GGGAAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
-            # MMM###LLL######GGGGGG###---###---GGGXXX
-
-            # 1 keep Const 0.0
-            # 2 trim nConst,nPI 0.0
-            # 3 keep nConst,nPI 0.25
-            # 4 trim Const 0.0
-            # 5 trim Const 0.0
-            # 6 keep Const 0.0
-            # 7 keep Const 0.0
-            # 8 trim Const 0.0
-            # 9 keep Const 0.0
-            # 10 trim Const 0.0
-            # 11 keep Const 0.0
-            # 12 keep Const 0.0
-            # 13 keep Const 0.0
         )
+        # AAAGGGTTTGGGAAACCCAAAGGG---TTT---GGG---AAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
+        # 111222333444555666777888999
+        # AAA===TTT======CCCAAA===---===---GGGAAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
+        # MMM###LLL######GGGGGG###---###---GGGXXX
+
+        # 1 keep Const 0.0
+        # 2 trim nConst,nPI 0.0
+        # 3 keep nConst,nPI 0.25
+        # 4 trim Const 0.0
+        # 5 trim Const 0.0
+        # 6 keep Const 0.0
+        # 7 keep Const 0.0
+        # 8 trim Const 0.0
+        # 9 keep Const 0.0
+        # 10 trim Const 0.0
+        # 11 keep Const 0.0
+        # 12 keep Const 0.0
+        # 13 keep Const 0.0
         expected_result_2 = dedent(
             """>2"""  
         )
