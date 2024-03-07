@@ -676,26 +676,28 @@ trees to have the same tips. To transform branch lengths into relative
 rates, PhyKIT uses the putative species tree's branch lengths, which is
 inputted by the user. As recommended by the original method developers,
 outlier branche lengths are removed. Outlier branches have a relative 
-evolutionary rate greater than five.
+evolutionary rate greater than five. Users can specify a custom threshold
+using the -ot/--outlier_threshold argument.
 
 PhyKIT reports two tab delimited values:
 col1: correlation coefficient
 col2: p-value
 
-Method is empirically evaluated by Clark et al., Genome Research
-(2012), doi: 10.1101/gr.132647.111. Normalization method using a 
-species tree follows Sato et al., Bioinformatics (2005), doi: 
-10.1093/bioinformatics/bti564.  
+Method is described in Steenwyk et al., Science Advances (2022),
+doi: 10.1126/sciadv.abn0105. Method is empirically evaluated by
+Clark et al., Genome Research (2012), doi: 10.1101/gr.132647.111.
+Normalization method using a species tree follows Sato et al.,
+Bioinformatics (2005), doi: 10.1093/bioinformatics/bti564.  
 
 .. code-block:: shell
 
-   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] 
+   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-ot/--outlier_threshold <number> -v/--verbose] 
 
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be an alignment file |br|
 *<tree_file_one>*: first argument after function name should be an alignment file |br| 
-*-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
-this is a putative species tree. |br|
+*-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, this is a putative species tree. |br|
+*-ot/\\-\\-outlier_threshold*: threshold to define outlier corrected branch lengths (Default: 5) |br|
 *-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1
 
 |

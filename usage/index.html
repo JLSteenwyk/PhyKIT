@@ -774,22 +774,24 @@ trees to have the same tips. To transform branch lengths into relative
 rates, PhyKIT uses the putative species tree’s branch lengths, which is
 inputted by the user. As recommended by the original method developers,
 outlier branche lengths are removed. Outlier branches have a relative
-evolutionary rate greater than five.</p>
+evolutionary rate greater than five. Users can specify a custom threshold
+using the -ot/–outlier_threshold argument.</p>
 <p>PhyKIT reports two tab delimited values:
 col1: correlation coefficient
 col2: p-value</p>
-<p>Method is empirically evaluated by Clark et al., Genome Research
-(2012), doi: 10.1101/gr.132647.111. Normalization method using a
-species tree follows Sato et al., Bioinformatics (2005), doi:
-10.1093/bioinformatics/bti564.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit covarying_evolutionary_rates &lt;tree_file_zero&gt; &lt;tree_file_one&gt; -r/--reference &lt;reference_tree_file&gt; <span class="o">[</span>-v/--verbose<span class="o">]</span>
+<p>Method is described in Steenwyk et al., Science Advances (2022),
+doi: 10.1126/sciadv.abn0105. Method is empirically evaluated by
+Clark et al., Genome Research (2012), doi: 10.1101/gr.132647.111.
+Normalization method using a species tree follows Sato et al.,
+Bioinformatics (2005), doi: 10.1093/bioinformatics/bti564.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit covarying_evolutionary_rates &lt;tree_file_zero&gt; &lt;tree_file_one&gt; -r/--reference &lt;reference_tree_file&gt; <span class="o">[</span>-ot/--outlier_threshold &lt;number&gt; -v/--verbose<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree_file_zero&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>&lt;tree_file_one&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
-this is a putative species tree. <br/>
+<em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically, this is a putative species tree. <br/>
+<em>-ot/--outlier_threshold</em>: threshold to define outlier corrected branch lengths (Default: 5) <br/>
 <em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1</p>
 <div class="line-block">
 <div class="line"><br /></div>
