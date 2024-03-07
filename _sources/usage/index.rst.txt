@@ -138,122 +138,6 @@ Options: |br|
 
 |
 
-Alignment recoding 
-##################
-Function names: alignment_recoding; aln_recoding; recode |br|
-Command line interface: pk_alignment_recoding; pk_aln_recoding; bk_recode
-
-Recode alignments using reduced character states.
-
-Alignments can be recoded using established or
-custom recoding schemes. Recoding schemes are
-specified using the -c/--code argument. Custom
-recoding schemes can be used and should be formatted
-as a two column file wherein the first column is the
-recoded character and the second column is the character
-in the alignment.
-
-.. code-block:: shell
-
-	phykit alignment_recoding <fasta> [-c/--code <code>]
-
-Codes for which recoding scheme to use: |br|
-**RY-nucleotide** |br|
-R = purines (i.e., A and G) |br|
-Y = pyrimidines (i.e., T and C) |br|
-
-**SandR-6** |br|
-0 = A, P, S, and T |br|
-1 = D, E, N, and G |br|
-2 = Q, K, and R |br|
-3 = M, I, V, and L |br|
-4 = W and C |br|
-5 = F, Y, and H |br|
-
-**KGB-6** |br|
-0 = A, G, P, and S |br|
-1 = D, E, N, Q, H, K, R, and T |br|
-2 = M, I, and L |br|
-3 = W |br|
-4 = F and Y |br|
-5 = C and V |br|
-
-**Dayhoff-6** |br|
-0 = A, G, P, S, and T |br|
-1 = D, E, N, and Q |br|
-2 = H, K, and R |br|
-3 = I, L, M, and V |br|
-4 = F, W, and Y |br|
-5 = C |br|
-
-**Dayhoff-9** |br|
-0 = D, E, H, N, and Q |br|
-1 = I, L, M, and V |br|
-2 = F and Y |br|
-3 = A, S, and T |br|
-4 = K and R |br|
-5 = G |br|
-6 = P |br|
-7 = C |br|
-8 = W |br|
-
-**Dayhoff-12** |br|
-0 = D, E, and Q |br|
-1 = M, L, I, and V |br|
-2 = F and Y |br|
-3 = K, H, and R |br|
-4 = G |br|
-5 = A |br|
-6 = P |br|
-7 = S |br|
-8 = T |br|
-9 = N |br|
-A = W |br|
-B = C |br|
-
-**Dayhoff-15** |br|
-0 = D, E, and Q |br|
-1 = M and L |br|
-2 = I and V |br|
-3 = F and Y |br|
-4 = G |br|
-5 = A |br|
-6 = P |br|
-7 = S |br|
-8 = T |br|
-9 = N |br|
-A = K |br|
-B = H |br|
-C = R |br|
-D = W |br|
-E = C |br|
-
-**Dayhoff-18** |br|
-0 = F and Y |br|
-1 = M and L |br|
-2 = I |br|
-3 = V |br|
-4 = G |br|
-5 = A |br|
-6 = P |br|
-7 = S |br|
-8 = T |br|
-9 = D |br|
-A = E |br|
-B = Q |br|
-C = N |br|
-D = K |br|
-E = H |br|
-F = R |br|
-G = W |br|
-H = C |br|
-
-Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*-c/\-\-code*: argument to specify the recoding scheme to use 
-
-|
-
 Column score
 ############
 
@@ -676,28 +560,26 @@ trees to have the same tips. To transform branch lengths into relative
 rates, PhyKIT uses the putative species tree's branch lengths, which is
 inputted by the user. As recommended by the original method developers,
 outlier branche lengths are removed. Outlier branches have a relative 
-evolutionary rate greater than five. Users can specify a custom threshold
-using the -ot/--outlier_threshold argument.
+evolutionary rate greater than five.
 
 PhyKIT reports two tab delimited values:
 col1: correlation coefficient
 col2: p-value
 
-Method is described in Steenwyk et al., Science Advances (2022),
-doi: 10.1126/sciadv.abn0105. Method is empirically evaluated by
-Clark et al., Genome Research (2012), doi: 10.1101/gr.132647.111.
-Normalization method using a species tree follows Sato et al.,
-Bioinformatics (2005), doi: 10.1093/bioinformatics/bti564.  
+Method is empirically evaluated by Clark et al., Genome Research
+(2012), doi: 10.1101/gr.132647.111. Normalization method using a 
+species tree follows Sato et al., Bioinformatics (2005), doi: 
+10.1093/bioinformatics/bti564.  
 
 .. code-block:: shell
 
-   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-ot/--outlier_threshold <number> -v/--verbose] 
+   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] 
 
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be an alignment file |br|
 *<tree_file_one>*: first argument after function name should be an alignment file |br| 
-*-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, this is a putative species tree. |br|
-*-ot/\\-\\-outlier_threshold*: threshold to define outlier corrected branch lengths (Default: 5) |br|
+*-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
+this is a putative species tree. |br|
 *-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1
 
 |
@@ -863,8 +745,8 @@ file with the list of taxa to get the last common ancestor subtree for
 
 Long branch score
 #################
-Function names: long_branch_score; lb_score; lbs |br|
-Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs
+Function names: lb_score; lb_score; lbs |br|
+Command line interface: pk_lb_score; pk_lb_score; pk_lbs
 
 Calculate long branch (LB) scores in a phylogeny.
 
@@ -1339,6 +1221,8 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
 *-t/\\-\\-tree*: a tree file |br|
+*-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
+distances used to determine saturation 
 
 Treeness over RCV
 #################
