@@ -421,7 +421,7 @@ the multiple sequence alignment.</p>
 <h3>Step 1: Estimate gene tree branch lengths<a class="headerlink" href="#step-1-estimate-gene-tree-branch-lengths" title="Permalink to this headline">¶</a></h3>
 <p>To infer the constrained tree, we will use <a class="reference external" href="http://www.iqtree.org/">IQ-TREE2</a>. The species tree (or guide tree) is specified
 with the <em>-g</em> argument. Lastly, the best-fitting substitution model was specified according to what was reported in
-<a class="reference external" href="https://jlsteenwyk.com/publication_pdfs/2020_Shen_etal_Science_Advances.pdf">Shen et al. 2020</a> supplementary data; however,
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1.abstract">Shen et al. 2020</a> supplementary data; however,
 if the best-fitting model is unknown, this will have to be determined prior to estimating gene tree branch lengths.</p>
 <p>Estimate the gene tree branch lengths using the following commands:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># infer constrain trees</span>
@@ -446,24 +446,24 @@ pk_root Shen_etal_SciAdv_2020_NDC80.treefile -r Shen_etal_SciAdv_2020_NDC80_taxa
 </div>
 <div class="section" id="step-3-evaluate-gene-gene-covariation">
 <h3>Step 3: Evaluate gene-gene covariation<a class="headerlink" href="#step-3-evaluate-gene-gene-covariation" title="Permalink to this headline">¶</a></h3>
-<p>When determining gene-gene covariation, it is best to use a high significance threshold for coevolutionary coefficients.
-Here, we will use a threshold of 0.5; however, I recommend users explore their own data and distribution of coevolutionary
-coefficients.</p>
+<p>When determining gene-gene covariation, it is best to use a high significance threshold for correlation coefficients.
+I consider a threshold of 0.825 to be very conservative and that 0.8 is often sufficiently conservative. I like to be cautious
+so I recommend using a threshold of 0.825.</p>
 <p>To evaluate gene-gene covariation, execute the following commands:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate gene-gene covariation between NUF2 and SEC7</span>
 phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_SEC7.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
-<span class="m">0</span>.1885  <span class="m">0</span>.0
+<span class="m">0</span>.7496  <span class="m">0</span>.0
 
 <span class="c1"># Evaluate gene-gene covariation between NDC80 and SEC7</span>
 phykit cover Shen_etal_SciAdv_2020_NDC80.treefile.rooted Shen_etal_SciAdv_2020_SEC7.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
-<span class="m">0</span>.2105   <span class="m">0</span>.0
+<span class="m">0</span>.763   <span class="m">0</span>.0
 </pre></div>
 </div>
 <p>Given our thresholds, neither <em>NUF2</em> nor <em>NDC80</em> significantly covary with <em>SEC7</em>. Next, evaluate gene-gene covariation between
 <em>NUF2</em> and <em>NDC80</em>.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluate gene-gene covariation between NUF2 and NDC80</span>
-phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_NDC80.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre
-<span class="m">0</span>.6693  <span class="m">0</span>.0
+phykit cover Shen_etal_SciAdv_2020_NUF2.treefile.rooted Shen_etal_SciAdv_2020_NDC80.treefile.rooted -r Shen_etal_SciAdv_2020_species_tree.tre.rooted
+<span class="m">0</span>.8448  <span class="m">0</span>.0
 </pre></div>
 </div>
 <p>These two genes significantly covary with one another. This raises the hypothesis that these two genes have shared function. A literature-
