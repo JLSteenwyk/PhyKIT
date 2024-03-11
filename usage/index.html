@@ -98,6 +98,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
@@ -320,6 +321,111 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="alignment-recoding">
+<h3>Alignment recoding<a class="headerlink" href="#alignment-recoding" title="Permalink to this headline">¶</a></h3>
+<p>Function names: alignment_recoding; aln_recoding; recode <br/>
+Command line interface: pk_alignment_recoding; pk_aln_recoding; bk_recode</p>
+<p>Recode alignments using reduced character states.</p>
+<p>Alignments can be recoded using established or
+custom recoding schemes. Recoding schemes are
+specified using the -c/–code argument. Custom
+recoding schemes can be used and should be formatted
+as a two column file wherein the first column is the
+recoded character and the second column is the character
+in the alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit alignment_recoding &lt;fasta&gt; <span class="o">[</span>-c/--code &lt;code&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Codes for which recoding scheme to use: <br/>
+<strong>RY-nucleotide</strong> <br/>
+R = purines (i.e., A and G) <br/>
+Y = pyrimidines (i.e., T and C) <br/></p>
+<p><strong>SandR-6</strong> <br/>
+0 = A, P, S, and T <br/>
+1 = D, E, N, and G <br/>
+2 = Q, K, and R <br/>
+3 = M, I, V, and L <br/>
+4 = W and C <br/>
+5 = F, Y, and H <br/></p>
+<p><strong>KGB-6</strong> <br/>
+0 = A, G, P, and S <br/>
+1 = D, E, N, Q, H, K, R, and T <br/>
+2 = M, I, and L <br/>
+3 = W <br/>
+4 = F and Y <br/>
+5 = C and V <br/></p>
+<p><strong>Dayhoff-6</strong> <br/>
+0 = A, G, P, S, and T <br/>
+1 = D, E, N, and Q <br/>
+2 = H, K, and R <br/>
+3 = I, L, M, and V <br/>
+4 = F, W, and Y <br/>
+5 = C <br/></p>
+<p><strong>Dayhoff-9</strong> <br/>
+0 = D, E, H, N, and Q <br/>
+1 = I, L, M, and V <br/>
+2 = F and Y <br/>
+3 = A, S, and T <br/>
+4 = K and R <br/>
+5 = G <br/>
+6 = P <br/>
+7 = C <br/>
+8 = W <br/></p>
+<p><strong>Dayhoff-12</strong> <br/>
+0 = D, E, and Q <br/>
+1 = M, L, I, and V <br/>
+2 = F and Y <br/>
+3 = K, H, and R <br/>
+4 = G <br/>
+5 = A <br/>
+6 = P <br/>
+7 = S <br/>
+8 = T <br/>
+9 = N <br/>
+A = W <br/>
+B = C <br/></p>
+<p><strong>Dayhoff-15</strong> <br/>
+0 = D, E, and Q <br/>
+1 = M and L <br/>
+2 = I and V <br/>
+3 = F and Y <br/>
+4 = G <br/>
+5 = A <br/>
+6 = P <br/>
+7 = S <br/>
+8 = T <br/>
+9 = N <br/>
+A = K <br/>
+B = H <br/>
+C = R <br/>
+D = W <br/>
+E = C <br/></p>
+<p><strong>Dayhoff-18</strong> <br/>
+0 = F and Y <br/>
+1 = M and L <br/>
+2 = I <br/>
+3 = V <br/>
+4 = G <br/>
+5 = A <br/>
+6 = P <br/>
+7 = S <br/>
+8 = T <br/>
+9 = D <br/>
+A = E <br/>
+B = Q <br/>
+C = N <br/>
+D = K <br/>
+E = H <br/>
+F = R <br/>
+G = W <br/>
+H = C <br/></p>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-c/–code</em>: argument to specify the recoding scheme to use</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -827,8 +933,8 @@ file with the list of taxa to get the last common ancestor subtree for
 </div>
 <div class="section" id="long-branch-score">
 <h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Permalink to this headline">¶</a></h3>
-<p>Function names: lb_score; lb_score; lbs <br/>
-Command line interface: pk_lb_score; pk_lb_score; pk_lbs</p>
+<p>Function names: long_branch_score; lb_score; lbs <br/>
+Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs</p>
 <p>Calculate long branch (LB) scores in a phylogeny.</p>
 <p>Lower LB scores are thought to be desirable because
 they are indicative of taxa or trees that likely do
