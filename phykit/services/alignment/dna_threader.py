@@ -38,6 +38,7 @@ class DNAThreader(Alignment):
             sequence = "".join(pal2nal[record])
             print(f">{record}")
             print(f"{sequence}")
+            # print(len(sequence))
 
     def read_file(self, file_path: str, file_format: str = "fasta") -> SeqRecord:
         return SeqIO.parse(file_path, file_format)
@@ -59,11 +60,33 @@ class DNAThreader(Alignment):
 
         return keep_mask
 
+    def normalize_p_seq(self, p_seq, mask):
+        if self.clipkit_log_data:
+            untrimmed = []
+            offset = 0
+            for idx, value in enumerate(mask[::3]):
+                if value is True:
+                    untrimmed.append(p_seq[idx - offset])
+                else:
+                    offset += 1
+                    untrimmed.append("#")
+            p_seq = "".join(untrimmed)
+        return "".join([c * 3 for c in p_seq])
+
+    def normalize_n_seq(self, n_seq, normalized_p_seq):
+        normalized_n_seq = list(n_seq)
+        for idx, c in enumerate(normalized_p_seq):
+            if c in "-?*Xx":
+                normalized_n_seq.insert(idx, "-")
+        return "".join(normalized_n_seq)
+
     def thread(self, protein: SeqRecord) -> dict:
         # protein alignment to nucleotide alignment
         pal2nal = {}
 
-        nucl_records = SeqIO.to_dict(SeqIO.parse(self.nucleotide_file_path, "fasta"))
+        nucl_records = SeqIO.to_dict(
+            SeqIO.parse(self.nucleotide_file_path, "fasta")
+        )
 
         prot_dict = SeqIO.to_dict(SeqIO.parse(self.protein_file_path, "fasta"))
         length = len(prot_dict.get(next(iter(prot_dict))))
@@ -75,26 +98,16 @@ class DNAThreader(Alignment):
                 p_seq = protein_seq_record.seq
                 n_seq = nucl_records[gene_id].seq
 
-                if self.clipkit_log_data:
-                    untrimmed = []
-                    offset = 0
-                    for idx, value in enumerate(keep_mask[::3]):
-                        if value is True:
-                            untrimmed.append(p_seq[idx - offset])
-                        else:
-                            offset += 1
-                            untrimmed.append("#")
-                    p_seq = "".join(untrimmed)
+                normalized_p_seq = self.normalize_p_seq(p_seq, keep_mask)
+                normalized_n_seq = self.normalize_n_seq(n_seq, normalized_p_seq)
 
                 sequence = []
-                transformed = "".join([c * 3 for c in p_seq])
-
-                for idx, c in enumerate(transformed):
+                for idx, c in enumerate(normalized_p_seq):
                     if not keep_mask[idx]:
                         continue
                     if c not in "-?*Xx":
                         try:
-                            n_seq_c = n_seq[idx]
+                            n_seq_c = normalized_n_seq[idx]
                             sequence.append(n_seq_c)
                         except IndexError:
                             break
@@ -102,10 +115,10 @@ class DNAThreader(Alignment):
                         sequence.append("-")
 
                 if self.remove_stop_codon is True:
-                    if transformed[-1] == "*":
-                        sequence[-1] = n_seq[-1]
-                        sequence[-2] = n_seq[-2]
-                        sequence[-3] = n_seq[-3]
+                    if normalized_p_seq[-1] == "*":
+                        sequence[-1] = normalized_n_seq[-1]
+                        sequence[-2] = normalized_n_seq[-2]
+                        sequence[-3] = normalized_n_seq[-3]
 
                 pal2nal[gene_id] = "".join(sequence)
 
