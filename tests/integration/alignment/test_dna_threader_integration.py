@@ -599,10 +599,20 @@ class TestDNAThreader(object):
         expected_result_1 = dedent(
             """AAATTTCCCAAA------GGG---"""
         )
+
+        ## With ClipKIT log
         # AAAGGGTTTGGGAAACCCAAAGGG---TTT---GGG---AAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
-        # 111222333444555666777888999
+        # 11122233344455566677788899910 11 12 13 14
         # AAA===TTT======CCCAAA===---===---GGGAAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
         # MMM###LLL######GGGGGG###---###---GGGXXX
+
+        #
+        # AAAGGGTTTGGGAAACCCAAAGGGTTTGGGAAACCCAAATTTGGGAAAGGGTTTGGGAAAGGG
+        #  
+        # MMM###LLL######GGGGGG###---###---GGGXXX 
+        # AAA===TTT======CCCAAA===---===---GGG---
+
+
 
         # 1 keep Const 0.0
         # 2 trim nConst,nPI 0.0
@@ -617,6 +627,7 @@ class TestDNAThreader(object):
         # 11 keep Const 0.0
         # 12 keep Const 0.0
         # 13 keep Const 0.0
+
         expected_result_2 = dedent(
             """>2"""  
         )
