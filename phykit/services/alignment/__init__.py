@@ -2,6 +2,7 @@ from .alignment_length import AlignmentLength
 from .alignment_length_no_gaps import AlignmentLengthNoGaps
 from .alignment_recoding import AlignmentRecoding
 from .column_score import ColumnScore
+from .compositional_bias_per_site import CompositionalBiasPerSite
 from .create_concatenation_matrix import CreateConcatenationMatrix
 from .dna_threader import DNAThreader
 from .evolutionary_rate_per_site import EvolutionaryRatePerSite

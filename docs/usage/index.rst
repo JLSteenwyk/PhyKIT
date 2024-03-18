@@ -286,6 +286,31 @@ to
 
 |
 
+Compositional bias per site
+###########################
+
+Function names: compositional_bias_per_site; comp_bias_per_site; cbps |br|
+Command line interface: pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
+
+Calculates compositional bias per site in an alignment.
+
+Site-wise chi-squared tests are conducted in an alignment to
+detect compositional biases. PhyKIT outputs four columns:
+col 1: index in alignment
+col 2: chi-squared statistic (higher values indicate greater bias)
+col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure)
+col 4: uncorrected p-value
+
+.. code-block:: shell
+
+	phykit comp_bias_per_site <alignment>
+
+Options: |br|
+*<alignment>*: first argument after function name should be a query
+fasta alignment to calculate the site-wise compositional bias of |br|
+
+|
+
 Create concatenation matrix
 ###########################
 

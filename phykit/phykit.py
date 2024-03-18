@@ -17,6 +17,7 @@ from .services.alignment import (
     AlignmentLengthNoGaps,
     AlignmentRecoding,
     ColumnScore,
+    CompositionalBiasPerSite,
     CreateConcatenationMatrix,
     DNAThreader,
     EvolutionaryRatePerSite,
@@ -150,6 +151,8 @@ class Phykit(object):
                     - recode alignments using reduced character schemes
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
+                compositional_bias_per_site (alias: comp_bias_per_site; cbps)
+                    - detects site-wise compositional biases in an alignment
                 create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments
                 evolutionary_rate_per_site (alias: evo_rate_per_site; erps)
@@ -273,8 +276,10 @@ class Phykit(object):
             return self.alignment_length_no_gaps(argv)
         elif command in ["aln_recoding", "recode"]:
             return self.alignment_recoding(argv)
-        elif command in "cs":
+        elif command == "cs":
             return self.column_score(argv)
+        elif command in ["comp_bias_per_site", "cbps"]:
+            return self.compositional_bias_per_site(argv)
         elif command in ["evo_rate_per_site", "erps"]:
             return self.evolutionary_rate_per_site(argv)
         elif command in ["get_entry", "ge"]:
@@ -640,6 +645,45 @@ class Phykit(object):
         ColumnScore(args).run()
 
     @staticmethod
+    def compositional_bias_per_site(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculates compositional bias per site in an alignment.
+
+                Site-wise chi-squared tests are conducted in an alignment to
+                detect compositional biases. PhyKIT outputs four columns:
+                col 1: index in alignment
+                col 2: chi-squared statistic (higher values indicate greater bias)
+                col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure)
+                col 4: uncorrected p-value
+
+                Aliases:
+                  compositional_bias_per_site; comp_bias_per_site; cbps
+                Command line interfaces:
+                  pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
+
+                Usage:
+                phykit compositional_bias_per_site <alignment>
+
+                Options
+                =====================================================
+                <alignment>                 first argument after the
+                                            function name should be a
+                                            fasta alignment file
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        CompositionalBiasPerSite(args).run()
+
+    @staticmethod
     def evolutionary_rate_per_site(argv):
         parser = ArgumentParser(
             add_help=True,
@@ -655,6 +699,10 @@ class Phykit(object):
                 frequency of different characters at a given site. Values
                 may range from 0 (slow evolving; no diversity at the given
                 site) to 1 (fast evolving; all characters appear only once).
+
+                PhyKIT prints out two columns of information.
+                col 1: site in alignment
+                col 2: estimated evolutionary rate
 
                 Aliases:
                   evolutionary_rate_per_site; evo_rate_per_site; erps
@@ -2612,6 +2660,10 @@ def alignment_length_no_gaps(argv=None):
 
 def column_score(argv=None):
     Phykit.column_score(sys.argv[1:])
+
+
+def compositional_bias_per_site(argv=None):
+    Phykit.compositional_bias_per_site(sys.argv[1:])
 
 
 def evolutionary_rate_per_site(argv=None):

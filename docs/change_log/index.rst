@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.19.0**:
+Added function to test for site-wise compositional biases in an alignment. See function compositional_bias_per_site.
+
 **1.18.0**:
 Added function to estimate site-wise evolutionary rate in an alignment. See function evolutionary_rate_per_site.
 
