@@ -101,6 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate-per-site">Evolutionary Rate per Site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
@@ -474,6 +475,24 @@ matrices.</p>
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
 <em>-p/--prefix</em>: prefix of output files</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="evolutionary-rate-per-site">
+<h3>Evolutionary Rate per Site<a class="headerlink" href="#evolutionary-rate-per-site" title="Permalink to this headline">¶</a></h3>
+<p>Function names: evolutionary_rate_per_site; evo_rate_per_site; erps <br/>
+Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps</p>
+<p>Estimate evolutionary rate per site.</p>
+<p>Evolutionary rate per site is one minus the sum of squared frequency of different
+characters at a given site. Values may range from 0 (slow evolving; no diversity
+at the given site) to 1 (fast evolving; all characters appear only once).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit evo_rate_per_site &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a query
+fasta alignment to calculate the site-wise evolutionary rate of <br/></p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

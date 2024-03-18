@@ -317,6 +317,28 @@ working directory or provide absolute path. |br|
 
 |
 
+Evolutionary Rate per Site
+##########################
+
+Function names: evolutionary_rate_per_site; evo_rate_per_site; erps |br|
+Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps
+
+Estimate evolutionary rate per site.
+
+Evolutionary rate per site is one minus the sum of squared frequency of different
+characters at a given site. Values may range from 0 (slow evolving; no diversity
+at the given site) to 1 (fast evolving; all characters appear only once).
+
+.. code-block:: shell
+
+	phykit evo_rate_per_site <alignment>
+
+Options: |br|
+*<alignment>*: first argument after function name should be a query
+fasta alignment to calculate the site-wise evolutionary rate of |br|
+
+|
+
 Faidx
 #####
 
