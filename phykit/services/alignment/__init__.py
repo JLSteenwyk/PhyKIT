@@ -4,6 +4,7 @@ from .alignment_recoding import AlignmentRecoding
 from .column_score import ColumnScore
 from .create_concatenation_matrix import CreateConcatenationMatrix
 from .dna_threader import DNAThreader
+from .evolutionary_rate_per_site import EvolutionaryRatePerSite
 from .faidx import Faidx
 from .gc_content import GCContent
 from .pairwise_identity import PairwiseIdentity

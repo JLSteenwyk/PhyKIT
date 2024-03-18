@@ -1,5 +1,8 @@
 Major changes to PhyKIT are summarized here.
 
+1.18.0
+  - Added function to estimate site-wise evolutionary rate in an alignment. See function evolutionary_rate_per_site.
+
 1.15.0
   - Added function to recode alignments based on 8 different recoding schemes (7 for amino acids;
   1 for nucleotides). See function recode

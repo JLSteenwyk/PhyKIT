@@ -19,6 +19,7 @@ from .services.alignment import (
     ColumnScore,
     CreateConcatenationMatrix,
     DNAThreader,
+    EvolutionaryRatePerSite,
     Faidx,
     GCContent,
     PairwiseIdentity,
@@ -151,8 +152,10 @@ class Phykit(object):
                     - calculate column score between a reference and query alignment
                 create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments
+                evolutionary_rate_per_site (alias: evo_rate_per_site; erps)
+                    - estimate evolutionary per site in an alignment
                 faidx (alias: get_entry; ge)
-                    - extract query fasta entry from multi-fasta file              
+                    - extract query fasta entry from multi-fasta file
                 gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
                 pairwise_identity (alias: pairwise_id, pi)
@@ -272,6 +275,8 @@ class Phykit(object):
             return self.alignment_recoding(argv)
         elif command in "cs":
             return self.column_score(argv)
+        elif command in ["evo_rate_per_site", "erps"]:
+            return self.evolutionary_rate_per_site(argv)
         elif command in ["get_entry", "ge"]:
             return self.faidx(argv)
         elif command == "gc":
@@ -633,6 +638,44 @@ class Phykit(object):
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         ColumnScore(args).run()
+
+    @staticmethod
+    def evolutionary_rate_per_site(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Estimate evolutionary rate per site.
+
+                Evolutionary rate per site is one minus the sum of squared
+                frequency of different characters at a given site. Values
+                may range from 0 (slow evolving; no diversity at the given
+                site) to 1 (fast evolving; all characters appear only once).
+
+                Aliases:
+                  evolutionary_rate_per_site; evo_rate_per_site; erps
+                Command line interfaces:
+                  pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps
+        
+
+                Usage:
+                phykit evo_rate_per_site <fasta>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after
+                                            function name should be a
+                                            query fasta file
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        EvolutionaryRatePerSite(args).run()
 
     @staticmethod
     def faidx(argv):
@@ -2569,6 +2612,10 @@ def alignment_length_no_gaps(argv=None):
 
 def column_score(argv=None):
     Phykit.column_score(sys.argv[1:])
+
+
+def evolutionary_rate_per_site(argv=None):
+    Phykit.evolutionary_rate_per_site(sys.argv[1:])
 
 
 def faidx(argv=None):
