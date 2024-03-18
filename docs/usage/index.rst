@@ -295,10 +295,10 @@ Command line interface: pk_compositional_bias_per_site; pk_compositional_bias_pe
 Calculates compositional bias per site in an alignment.
 
 Site-wise chi-squared tests are conducted in an alignment to
-detect compositional biases. PhyKIT outputs four columns:
-col 1: index in alignment
-col 2: chi-squared statistic (higher values indicate greater bias)
-col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure)
+detect compositional biases. PhyKIT outputs four columns: |br|
+col 1: index in alignment |br|
+col 2: chi-squared statistic (higher values indicate greater bias) |br|
+col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) |br|
 col 4: uncorrected p-value
 
 .. code-block:: shell
