@@ -100,6 +100,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compositional-bias-per-site">Compositional bias per site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate-per-site">Evolutionary Rate per Site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
@@ -451,6 +452,27 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 fasta alignment file to be scored for accuracy <br/>
 <em>-r/--reference</em>: reference alignment to compare the query alignment
 to</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="compositional-bias-per-site">
+<h3>Compositional bias per site<a class="headerlink" href="#compositional-bias-per-site" title="Permalink to this headline">¶</a></h3>
+<p>Function names: compositional_bias_per_site; comp_bias_per_site; cbps <br/>
+Command line interface: pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps</p>
+<p>Calculates compositional bias per site in an alignment.</p>
+<p>Site-wise chi-squared tests are conducted in an alignment to
+detect compositional biases. PhyKIT outputs four columns:
+col 1: index in alignment
+col 2: chi-squared statistic (higher values indicate greater bias)
+col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure)
+col 4: uncorrected p-value</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit comp_bias_per_site &lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a query
+fasta alignment to calculate the site-wise compositional bias of <br/></p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
