@@ -670,3 +670,39 @@ class TestBrokenPipeError(object):
         cmd = "pk_p2n -h"
         exit_status = os.system(cmd)
         assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_compositional_bias_per_site(self):
+        cmd = "pk_compositional_bias_per_site -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_comp_bias_per_site(self):
+        cmd = "pk_comp_bias_per_site -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_cbps(self):
+        cmd = "pk_cbps -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_evolutionary_rate_per_site(self):
+        cmd = "pk_evolutionary_rate_per_site -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_evo_rate_per_site(self):
+        cmd = "pk_evo_rate_per_site -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_erps(self):
+        cmd = "pk_erps -h"
+        exit_status = os.system(cmd)
+        assert exit_status == 0
