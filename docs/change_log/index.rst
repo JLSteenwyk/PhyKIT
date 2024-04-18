@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.19.2**:
+Verbose pairwise identity reporting separates pairwise identities by tabs and not a dash
+
 **1.19.0**:
 Added function to test for site-wise compositional biases in an alignment. See function compositional_bias_per_site.
 
