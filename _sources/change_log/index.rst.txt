@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.19.3**:
+Saturation function now uses uncorrected distances instead of pairwise identities
+
 **1.19.2**:
 Verbose pairwise identity reporting separates pairwise identities by tabs and not a dash
 
