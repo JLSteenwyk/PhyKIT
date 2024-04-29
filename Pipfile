@@ -10,4 +10,4 @@ biopython = "==1.76"
 scipy = "==1.4.1"
 
 [requires]
-python_version = "3.8"
+python_version = "3.9"

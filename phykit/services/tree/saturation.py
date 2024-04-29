@@ -84,7 +84,7 @@ class Saturation(Tree):
         self, alignment, uncorrected_distances: list, aln_len: int, combo: tuple
     ) -> list:
         """
-        calculate pairwise identities for a given combo
+        calculate uncorrected distances for a given combo
         """
         identities = 0
         seq_one = ""
