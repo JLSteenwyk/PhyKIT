@@ -40,17 +40,17 @@ class Saturation(Tree):
         # distances and pairwise identities
         (
             patristic_distances,
-            pairwise_identities,
+            uncorrected_distances,
         ) = self.loop_through_combos_and_calculate_pds_and_pis(combos, alignment, tree)
 
         # calculate linear regression
         _, _, r_value, _, _ = scipy.stats.linregress(
-            pairwise_identities, patristic_distances
+            uncorrected_distances, patristic_distances
         )
 
         # report res
         self.print_res(
-            self.verbose, combos, pairwise_identities, patristic_distances, r_value
+            self.verbose, combos, uncorrected_distances, patristic_distances, r_value
         )
 
     def process_args(self, args):
@@ -68,19 +68,20 @@ class Saturation(Tree):
         their patristic distance and pairwise identity
         """
         patristic_distances = []
-        pairwise_identities = []
+        uncorrected_distances = []
         aln_len = alignment.get_alignment_length()
         for combo in combos:
             # calculate pd
             patristic_distances.append(tree.distance(combo[0], combo[1]))
             # calculate pairwise identity
-            pairwise_identities = self.calculate_pairwise_identities(
-                alignment, pairwise_identities, aln_len, combo
+            uncorrected_distances = self.calculate_uncorrected_distances(
+                alignment, uncorrected_distances, aln_len, combo
             )
-        return patristic_distances, pairwise_identities
 
-    def calculate_pairwise_identities(
-        self, alignment, pairwise_identities: list, aln_len: int, combo: tuple
+        return patristic_distances, uncorrected_distances
+
+    def calculate_uncorrected_distances(
+        self, alignment, uncorrected_distances: list, aln_len: int, combo: tuple
     ) -> list:
         """
         calculate pairwise identities for a given combo
@@ -96,15 +97,15 @@ class Saturation(Tree):
         for idx in range(0, aln_len):
             if seq_one[idx] == seq_two[idx]:
                 identities += 1
-        pairwise_identities.append(identities / aln_len)
+        uncorrected_distances.append(1-(identities / aln_len))
 
-        return pairwise_identities
+        return uncorrected_distances
 
     def print_res(
         self,
         verbose: bool,
         combos: list,
-        pairwise_identities: list,
+        uncorrected_distances: list,
         patristic_distances: list,
         r_value: float,
     ) -> None:
@@ -113,11 +114,11 @@ class Saturation(Tree):
         """
         try:
             if verbose:
-                for combo, pairwise_identity, patristic_distance in zip(
-                    combos, pairwise_identities, patristic_distances
+                for combo, dist, patristic_distance in zip(
+                    combos, uncorrected_distances, patristic_distances
                 ):
                     print(
-                        f"{combo[0]}-{combo[1]}\t{round(pairwise_identity,4)}\t{round(patristic_distance, 4)}"
+                        f"{combo[0]}-{combo[1]}\t{round(dist,4)}\t{round(patristic_distance, 4)}"
                     )
             else:
                 print(round(r_value**2, 4))
