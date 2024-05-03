@@ -21,6 +21,7 @@ REQUIRES = [
     "biopython>=1.81",
     "numpy>=1.24.0",
     "scipy>=1.11.3",
+    "scikit-learn>=1.4.2",
     "cython"
 ]
 
