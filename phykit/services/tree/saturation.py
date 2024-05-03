@@ -2,7 +2,8 @@ from enum import Enum
 import itertools
 from typing import Tuple
 
-import scipy
+import numpy as np
+from sklearn.linear_model import LinearRegression
 
 from .base import Tree
 from ...helpers.files import get_alignment_and_format as get_alignment_and_format_helper
@@ -43,14 +44,19 @@ class Saturation(Tree):
             uncorrected_distances,
         ) = self.loop_through_combos_and_calculate_pds_and_pis(combos, alignment, tree)
 
-        # calculate linear regression
-        _, _, r_value, _, _ = scipy.stats.linregress(
-            uncorrected_distances, patristic_distances
-        )
 
+
+        # calculate slope and fit the y-intercept to zero
+        # Fitting the y-intercept to zero follows Jeffroy et al.
+        # See fig 2 https://www.cell.com/trends/genetics/fulltext/S0168-9525(06)00051-5
+        model = LinearRegression(fit_intercept=False)
+        model.fit(
+            np.array(patristic_distances).reshape(-1, 1),
+            np.array(uncorrected_distances)
+        )
         # report res
         self.print_res(
-            self.verbose, combos, uncorrected_distances, patristic_distances, r_value
+            self.verbose, combos, uncorrected_distances, patristic_distances, model.coef_[0]
         )
 
     def process_args(self, args):
@@ -107,7 +113,7 @@ class Saturation(Tree):
         combos: list,
         uncorrected_distances: list,
         patristic_distances: list,
-        r_value: float,
+        slope: float,
     ) -> None:
         """
         print results to stdout
@@ -121,6 +127,6 @@ class Saturation(Tree):
                         f"{combo[0]}-{combo[1]}\t{round(dist,4)}\t{round(patristic_distance, 4)}"
                     )
             else:
-                print(round(r_value**2, 4))
+                print(round(slope, 4))
         except BrokenPipeError:
             pass

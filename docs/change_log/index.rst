@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.19.4**:
+Saturation function forces y-intercept to be zero when calculating slope
+
 **1.19.3**:
 Saturation function now uses uncorrected distances instead of pairwise identities
 

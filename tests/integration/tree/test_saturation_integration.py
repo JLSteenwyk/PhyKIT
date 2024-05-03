@@ -14,7 +14,7 @@ here = Path(__file__)
 class TestSaturation(object):
     @patch("builtins.print")
     def test_saturation(self, mocked_print):
-        expected_result = 0.8451
+        expected_result = 0.4919
         testargs = [
             "phykit",
             "saturation",
@@ -29,7 +29,7 @@ class TestSaturation(object):
 
     @patch("builtins.print")
     def test_saturation_alias(self, mocked_print):
-        expected_result = 0.8451
+        expected_result = 0.4919
         testargs = [
             "phykit",
             "sat",
