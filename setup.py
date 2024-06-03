@@ -22,6 +22,7 @@ REQUIRES = [
     "biopython>=1.82",
     "numpy>=1.24.0",
     "scipy>=1.11.3",
+    "scikit-learn>=1.4.2",
     "cython"
 ]
 
@@ -44,9 +45,18 @@ setup(
             "pk_alignment_length_no_gaps = phykit.phykit:alignment_length_no_gaps",
             "pk_aln_len_no_gaps = phykit.phykit:alignment_length_no_gaps",
             "pk_alng = phykit.phykit:alignment_length_no_gaps",
+            "pk_alignment_recoding = phykit.phykit:alignment_recoding",
+            "pk_aln_recoding = phykit.phykit:alignment_recoding",
+            "pk_recode = phykit.phykit:alignment_recoding",
             "pk_column_score = phykit.phykit:column_score",
             "pk_cs = phykit.phykit:column_score",
+            "pk_compositional_bias_per_site = phykit.phykit:compositional_bias_per_site",
+            "pk_comp_bias_per_site = phykit.phykit:compositional_bias_per_site",
+            "pk_cbps = phykit.phykit:compositional_bias_per_site",
             "pk_faidx = phykit.phykit:faidx",
+            "pk_evolutionary_rate_per_site = phykit.phykit:evolutionary_rate_per_site",
+            "pk_evo_rate_per_site = phykit.phykit:evolutionary_rate_per_site",
+            "pk_erps = phykit.phykit:evolutionary_rate_per_site",
             "pk_get_entry = phykit.phykit:faidx",
             "pk_ge = phykit.phykit:faidx",
             "pk_gc_content = phykit.phykit:gc_content",

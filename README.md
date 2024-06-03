@@ -49,6 +49,17 @@ This documentation covers downloading and installing PhyKIT. Details about each 
 
 <br />
 
+**Quick Start**
+
+```shell
+# install
+pip install phykit
+# run
+phykit <function> <input file>
+```
+
+<br />
+
 **Installation** <br />
 
 **If you are having trouble installing PhyKIT, please contact the lead developer, Jacob L. Steenwyk, via [email](https://jlsteenwyk.com/contact.html) or [twitter](https://twitter.com/jlsteenwyk) to get help.**
@@ -96,10 +107,10 @@ deactivate
 
 To install via anaconda, execute the following command:
 ```shell
-conda install -c jlsteenwyk phykit
+conda install bioconda::phykit
 ```
 Visit here for more information:
-https://anaconda.org/JLSteenwyk/phykit
+https://anaconda.org/bioconda/phykit
 
 <br />
 

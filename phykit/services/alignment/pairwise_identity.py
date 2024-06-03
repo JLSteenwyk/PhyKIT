@@ -21,14 +21,15 @@ class PairwiseIdentity(Alignment):
         # determine pairwise combinations of entry indices
         combos = list(itertools.combinations(entries, 2))
 
-        pairwise_identities, stats = self.calculate_pairwise_identities(
+        pair_ids, pairwise_identities, stats = self.calculate_pairwise_identities(
             alignment, combos, self.exclude_gaps
         )
 
         if self.verbose:
             try:
-                for pair, identity in pairwise_identities.items():
-                    print(f"{pair}\t{identity}")
+                zipped = zip(pairwise_identities.items(), pair_ids)
+                for (_, identity), pair in zipped:
+                    print(f"{pair[0]}\t{pair[1]}\t{identity}")
             except BrokenPipeError:
                 pass
         else:
@@ -57,6 +58,7 @@ class PairwiseIdentity(Alignment):
 
         # determine pairwise identity of each combination
         pairwise_identities = {}
+        pair_ids = []
         for combo in combos:
             identities = 0
             seq_one = alignment[combo[0]].seq
@@ -69,8 +71,9 @@ class PairwiseIdentity(Alignment):
                     else:
                         identities += 1
             ids = alignment[combo[0]].id + "-" + alignment[combo[1]].id
+            pair_ids.append([alignment[combo[0]].id, alignment[combo[1]].id])
             pairwise_identities[ids] = identities / aln_len
 
         stats = calculate_summary_statistics_from_dict(pairwise_identities)
 
-        return pairwise_identities, stats
+        return pair_ids, pairwise_identities, stats

@@ -8,6 +8,34 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.19.4**:
+Saturation function forces y-intercept to be zero when calculating slope
+
+**1.19.3**:
+Saturation function now uses uncorrected distances instead of pairwise identities
+
+**1.19.2**:
+Verbose pairwise identity reporting separates pairwise identities by tabs and not a dash
+
+**1.19.0**:
+Added function to test for site-wise compositional biases in an alignment. See function compositional_bias_per_site.
+
+**1.18.0**:
+Added function to estimate site-wise evolutionary rate in an alignment. See function evolutionary_rate_per_site.
+
+**1.15.0**:
+Added function to recode alignments based on 8 different recoding schemes (7 for amino acids;
+1 for nucleotides). See function recode.
+
+**1.14.0**:
+Added an optional argument to the thread_dna function. Now, PhyKIT can thread nucleotide
+sequences onto a trimmed amino acid alignment. To do so, point PhyKIT to the ClipKIT outputted log
+file using the -c argument. The ClipKIT log file can be generated when trimming an alignment with 
+ClipKIT by adding the -l argument (see here for more details: https://jlsteenwyk.com/ClipKIT/).
+
+**1.12.6**: relative composition variability is now adapted for calculating compositional biases in
+individual taxa. The new function in rcvt (relative composition variability, taxon).
+
 **1.12.4**: calculations of pairwise identity in alignment now supports excluding pairwise 
 combinations with gaps.
 
@@ -18,12 +46,6 @@ check still reports insufficient taxon representation.
 
 **1.11.3**: Added an optional argument to the prune_tree function wherein instead of pruning tips
 specified in the input file, those tips will be kept.
-
-**1.11.2**: Added an optional argument to the thread_dna function. Now, PhyKIT can thread nucleotide
-sequences onto a trimmed amino acid alignment. To do so, point PhyKIT to the ClipKIT outputted log
-file using the -c argument. The ClipKIT log file can be generated when trimming an alignment with 
-ClipKIT by adding the -l argument (see here for more details: https://jlsteenwyk.com/ClipKIT/).
-
 
 **1.11.1**: Modified sum of pairs score to divide the correct number
 of pairs by the number of pairs in the reference alignment rather
