@@ -138,122 +138,6 @@ Options: |br|
 
 |
 
-Alignment recoding 
-##################
-Function names: alignment_recoding; aln_recoding; recode |br|
-Command line interface: pk_alignment_recoding; pk_aln_recoding; bk_recode
-
-Recode alignments using reduced character states.
-
-Alignments can be recoded using established or
-custom recoding schemes. Recoding schemes are
-specified using the -c/--code argument. Custom
-recoding schemes can be used and should be formatted
-as a two column file wherein the first column is the
-recoded character and the second column is the character
-in the alignment.
-
-.. code-block:: shell
-
-	phykit alignment_recoding <fasta> [-c/--code <code>]
-
-Codes for which recoding scheme to use: |br|
-**RY-nucleotide** |br|
-R = purines (i.e., A and G) |br|
-Y = pyrimidines (i.e., T and C) |br|
-
-**SandR-6** |br|
-0 = A, P, S, and T |br|
-1 = D, E, N, and G |br|
-2 = Q, K, and R |br|
-3 = M, I, V, and L |br|
-4 = W and C |br|
-5 = F, Y, and H |br|
-
-**KGB-6** |br|
-0 = A, G, P, and S |br|
-1 = D, E, N, Q, H, K, R, and T |br|
-2 = M, I, and L |br|
-3 = W |br|
-4 = F and Y |br|
-5 = C and V |br|
-
-**Dayhoff-6** |br|
-0 = A, G, P, S, and T |br|
-1 = D, E, N, and Q |br|
-2 = H, K, and R |br|
-3 = I, L, M, and V |br|
-4 = F, W, and Y |br|
-5 = C |br|
-
-**Dayhoff-9** |br|
-0 = D, E, H, N, and Q |br|
-1 = I, L, M, and V |br|
-2 = F and Y |br|
-3 = A, S, and T |br|
-4 = K and R |br|
-5 = G |br|
-6 = P |br|
-7 = C |br|
-8 = W |br|
-
-**Dayhoff-12** |br|
-0 = D, E, and Q |br|
-1 = M, L, I, and V |br|
-2 = F and Y |br|
-3 = K, H, and R |br|
-4 = G |br|
-5 = A |br|
-6 = P |br|
-7 = S |br|
-8 = T |br|
-9 = N |br|
-A = W |br|
-B = C |br|
-
-**Dayhoff-15** |br|
-0 = D, E, and Q |br|
-1 = M and L |br|
-2 = I and V |br|
-3 = F and Y |br|
-4 = G |br|
-5 = A |br|
-6 = P |br|
-7 = S |br|
-8 = T |br|
-9 = N |br|
-A = K |br|
-B = H |br|
-C = R |br|
-D = W |br|
-E = C |br|
-
-**Dayhoff-18** |br|
-0 = F and Y |br|
-1 = M and L |br|
-2 = I |br|
-3 = V |br|
-4 = G |br|
-5 = A |br|
-6 = P |br|
-7 = S |br|
-8 = T |br|
-9 = D |br|
-A = E |br|
-B = Q |br|
-C = N |br|
-D = K |br|
-E = H |br|
-F = R |br|
-G = W |br|
-H = C |br|
-
-Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*-c/\-\-code*: argument to specify the recoding scheme to use 
-
-|
-
 Column score
 ############
 
@@ -286,31 +170,6 @@ to
 
 |
 
-Compositional bias per site
-###########################
-
-Function names: compositional_bias_per_site; comp_bias_per_site; cbps |br|
-Command line interface: pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
-
-Calculates compositional bias per site in an alignment.
-
-Site-wise chi-squared tests are conducted in an alignment to
-detect compositional biases. PhyKIT outputs four columns: |br|
-col 1: index in alignment |br|
-col 2: chi-squared statistic (higher values indicate greater bias) |br|
-col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) |br|
-col 4: uncorrected p-value
-
-.. code-block:: shell
-
-	phykit comp_bias_per_site <alignment>
-
-Options: |br|
-*<alignment>*: first argument after function name should be a query
-fasta alignment to calculate the site-wise compositional bias of |br|
-
-|
-
 Create concatenation matrix
 ###########################
 
@@ -339,28 +198,6 @@ Options: |br|
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
 *-p/\\-\\-prefix*: prefix of output files
-
-|
-
-Evolutionary Rate per Site
-##########################
-
-Function names: evolutionary_rate_per_site; evo_rate_per_site; erps |br|
-Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps
-
-Estimate evolutionary rate per site.
-
-Evolutionary rate per site is one minus the sum of squared frequency of different
-characters at a given site. Values may range from 0 (slow evolving; no diversity
-at the given site) to 1 (fast evolving; all characters appear only once).
-
-.. code-block:: shell
-
-	phykit evo_rate_per_site <alignment>
-
-Options: |br|
-*<alignment>*: first argument after function name should be a query
-fasta alignment to calculate the site-wise evolutionary rate of |br|
 
 |
 
@@ -486,32 +323,6 @@ Options: |br|
 
 |
 
-Protein-to-nucleotide alignment
-###############################
-Function names: thread_dna; pal2nal, p2n |br|
-Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
-
-Thread DNA sequence onto a protein alignment to create a
-codon-based alignment. 
-
-This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and 
-nucleotide alignment.
-
-.. code-block:: shell
-
-   phykit thread_dna -p <file> -n <file> [-s]
-
-Options: |br|
-*-p/\\-\\-protein*: protein alignment file |br|
-*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
-*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
-*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
-If used, stop codons will be removed.
-
-|
-
 Relative composition variability
 ################################
 Function names: relative_composition_variability; rel_comp_var; rcv |br|
@@ -525,31 +336,11 @@ the average variability in sequence composition among taxa.
 
 RCV is calculated following Phillips and Penny, Molecular Phylogenetics
 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
+Alias: 
 
 .. code-block:: shell
 
 	phykit relative_composition_variability <alignment>
-
-Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
-
-|
-
-Relative composition variability, taxon
-#######################################
-Function names: relative_composition_variability_taxon; rel_comp_var_taxon; rcvt |br|
-Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_var_taxon; pk_rcvt
-
-Calculate RCVT (relative composition variability, taxon) for an alignment.
-
-RCVT is the relative composition variability metric for individual taxa.
-This facilitates identifying specific taxa that may have compositional
-biases. Lower RCVT values are more desirable because they indicate
-a lower composition bias for a given taxon in an alignment.
-
-.. code-block:: shell
-
-	phykit relative_composition_variability_taxon <alignment>
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file
@@ -603,6 +394,40 @@ Options: |br|
 fasta alignment file to be scored for accuracy |br|
 *-r/\\-\\-reference*: reference alignment to compare the query alignment
 to
+
+|
+
+Protein-to-nucleotide alignment
+###############################
+Function names: thread_dna; pal2nal, p2n |br|
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n
+
+Thread DNA sequence onto a protein alignment to create a
+codon-based alignment. 
+
+This function requires input alignments are in fasta format.
+Codon alignments are then printed to stdout. Note, sequences
+are assumed to occur in the same order in the protein and 
+nucleotide alignment.
+
+To thread nucleotide sequences over a trimmed amino acid
+alignment, provide PhyKIT with a log file specifying which
+sites have been trimmed and which have been kept. The log
+file must be formatted the same as the log files outputted
+by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
+documentation.) Details about ClipKIT can be seen here:
+https://github.com/JLSteenwyk/ClipKIT. 
+
+.. code-block:: shell
+
+   phykit thread_dna -p <file> -n <file> [-s]
+
+Options: |br|
+*-p/\\-\\-protein*: protein alignment file |br|
+*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
+*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
+*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
+If used, stop codons will be removed.
 
 |
 
@@ -908,8 +733,8 @@ file with the list of taxa to get the last common ancestor subtree for
 
 Long branch score
 #################
-Function names: long_branch_score; lb_score; lbs |br|
-Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs
+Function names: lb_score; lb_score; lbs |br|
+Command line interface: pk_lb_score; pk_lb_score; pk_lbs
 
 Calculate long branch (LB) scores in a phylogeny.
 
@@ -943,9 +768,7 @@ Function names: monophyly_check; is_monophyletic |br|
 Command line interface: pk_monophyly_check; pk_is_monophyletic
 
 This analysis can be used to determine if a set of 
-taxa are exclusively monophyletic. By exclusively monophyletic,
-if other taxa are in the same clade, the lineage will not be
-considered exclusively monophyletic.
+taxa are monophyletic.
 
 Requires a taxa file, which species which tip names
 are expected to be monophyletic. File format is a
@@ -959,7 +782,8 @@ col 2: average bipartition support value in the clade of interest
 col 3: maximum bipartition support value in the clade of interest
 col 4: minimum bipartition support value in the clade of interest
 col 5: standard deviation of bipartition support values in the clade of interest
-col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file
+col 6: tip names of taxa monophyletic with the lineage of interest
+      excluding those that are listed in the taxa_of_interest file
 
 .. code-block:: shell
 
