@@ -86,13 +86,20 @@ sequence alignments and phylogenies for broad applications</p>
 and analyzing phylogenomic data</em>. Bioinformatics. doi: <a class="reference external" href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675?redirectedFrom=fulltext">10.1093/bioinformatics/btab096</a>.</p>
 <section id="quick-start">
 <h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
+<p>These two lines represent the simpliest method to rapidly install and run PhyKIT.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># install</span>
+pip<span class="w"> </span>install<span class="w"> </span>phykit
+<span class="c1"># run</span>
+phykit<span class="w"> </span>-h
+</pre></div>
+</div>
 <p><strong>1) Installation</strong></p>
 <p>To install using <em>pip</em>, we strongly recommend building a virtual environment to avoid
 software dependency issues. To do so, execute the following commands:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># create virtual environment</span>
-python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 <span class="c1"># activate virtual environment</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
 <span class="c1"># install phykit</span>
 pip<span class="w"> </span>install<span class="w"> </span>phykit
 </pre></div>
@@ -112,9 +119,9 @@ following commands:</p>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/JLSteenwyk/PhyKIT.git
 <span class="nb">cd</span><span class="w"> </span>PhyKIT/
 <span class="c1"># create virtual environment</span>
-python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 <span class="c1"># activate virtual environment</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
 <span class="c1"># install</span>
 make<span class="w"> </span>install
 </pre></div>
@@ -129,11 +136,11 @@ deactivate
 <div class="line"><br /></div>
 </div>
 <p>To install via anaconda, execute the following command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>jlsteenwyk<span class="w"> </span>phykit
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>bioconda::phykit
 </pre></div>
 </div>
 <p>Visit here for more information:
-<a class="reference external" href="https://anaconda.org/JLSteenwyk/phykit">https://anaconda.org/JLSteenwyk/phykit</a></p>
+<a class="reference external" href="https://anaconda.org/bioconda/phykit">https://anaconda.org/bioconda/phykit</a></p>
 <p><strong>2) Usage</strong></p>
 <p>Get the help message from PhyKIT:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>-h
@@ -160,16 +167,20 @@ deactivate
 <li class="toctree-l2"><a class="reference internal" href="usage/index.html#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#column-score">Column score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#compositional-bias-per-site">Compositional bias per site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#create-concatenation-matrix">Create concatenation matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#evolutionary-rate-per-site">Evolutionary Rate per Site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#relative-composition-variability">Relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage/index.html#relative-composition-variability-taxon">Relative composition variability, taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#rename-fasta-entries">Rename FASTA entries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#sum-of-pairs-score">Sum-of-pairs score</a></li>
-<li class="toctree-l3"><a class="reference internal" href="usage/index.html#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="usage/index.html#variable-sites">Variable sites</a></li>
 </ul>
 </li>
@@ -241,13 +252,7 @@ deactivate
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="change_log/index.html">Change log</a></li>
-<li class="toctree-l1"><a class="reference internal" href="other_software/index.html">Other software</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="other_software/index.html#clipkit">ClipKIT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="other_software/index.html#orthofisher">orthofisher</a></li>
-<li class="toctree-l2"><a class="reference internal" href="other_software/index.html#treehouse">treehouse</a></li>
-<li class="toctree-l2"><a class="reference internal" href="other_software/index.html#ggpubfigs">ggpubfigs</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="other_software/index.html">Other software</a></li>
 <li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">FAQ</a></li>
 </ul>
 </div>

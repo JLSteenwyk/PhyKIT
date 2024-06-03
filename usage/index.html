@@ -59,16 +59,20 @@
 <li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compositional-bias-per-site">Compositional bias per site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate-per-site">Evolutionary Rate per Site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability">Relative composition variability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability-taxon">Relative composition variability, taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-fasta-entries">Rename FASTA entries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
 </ul>
 </li>
@@ -247,6 +251,111 @@ doi: 10.1093/gbe/evw179.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="alignment-recoding">
+<h3>Alignment recoding<a class="headerlink" href="#alignment-recoding" title="Link to this heading"></a></h3>
+<p>Function names: alignment_recoding; aln_recoding; recode <br/>
+Command line interface: pk_alignment_recoding; pk_aln_recoding; bk_recode</p>
+<p>Recode alignments using reduced character states.</p>
+<p>Alignments can be recoded using established or
+custom recoding schemes. Recoding schemes are
+specified using the -c/–code argument. Custom
+recoding schemes can be used and should be formatted
+as a two column file wherein the first column is the
+recoded character and the second column is the character
+in the alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_recoding<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-c/--code<span class="w"> </span>&lt;code&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Codes for which recoding scheme to use: <br/>
+<strong>RY-nucleotide</strong> <br/>
+R = purines (i.e., A and G) <br/>
+Y = pyrimidines (i.e., T and C) <br/></p>
+<p><strong>SandR-6</strong> <br/>
+0 = A, P, S, and T <br/>
+1 = D, E, N, and G <br/>
+2 = Q, K, and R <br/>
+3 = M, I, V, and L <br/>
+4 = W and C <br/>
+5 = F, Y, and H <br/></p>
+<p><strong>KGB-6</strong> <br/>
+0 = A, G, P, and S <br/>
+1 = D, E, N, Q, H, K, R, and T <br/>
+2 = M, I, and L <br/>
+3 = W <br/>
+4 = F and Y <br/>
+5 = C and V <br/></p>
+<p><strong>Dayhoff-6</strong> <br/>
+0 = A, G, P, S, and T <br/>
+1 = D, E, N, and Q <br/>
+2 = H, K, and R <br/>
+3 = I, L, M, and V <br/>
+4 = F, W, and Y <br/>
+5 = C <br/></p>
+<p><strong>Dayhoff-9</strong> <br/>
+0 = D, E, H, N, and Q <br/>
+1 = I, L, M, and V <br/>
+2 = F and Y <br/>
+3 = A, S, and T <br/>
+4 = K and R <br/>
+5 = G <br/>
+6 = P <br/>
+7 = C <br/>
+8 = W <br/></p>
+<p><strong>Dayhoff-12</strong> <br/>
+0 = D, E, and Q <br/>
+1 = M, L, I, and V <br/>
+2 = F and Y <br/>
+3 = K, H, and R <br/>
+4 = G <br/>
+5 = A <br/>
+6 = P <br/>
+7 = S <br/>
+8 = T <br/>
+9 = N <br/>
+A = W <br/>
+B = C <br/></p>
+<p><strong>Dayhoff-15</strong> <br/>
+0 = D, E, and Q <br/>
+1 = M and L <br/>
+2 = I and V <br/>
+3 = F and Y <br/>
+4 = G <br/>
+5 = A <br/>
+6 = P <br/>
+7 = S <br/>
+8 = T <br/>
+9 = N <br/>
+A = K <br/>
+B = H <br/>
+C = R <br/>
+D = W <br/>
+E = C <br/></p>
+<p><strong>Dayhoff-18</strong> <br/>
+0 = F and Y <br/>
+1 = M and L <br/>
+2 = I <br/>
+3 = V <br/>
+4 = G <br/>
+5 = A <br/>
+6 = P <br/>
+7 = S <br/>
+8 = T <br/>
+9 = D <br/>
+A = E <br/>
+B = Q <br/>
+C = N <br/>
+D = K <br/>
+E = H <br/>
+F = R <br/>
+G = W <br/>
+H = C <br/></p>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-c/--code</em>: argument to specify the recoding scheme to use</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="column-score">
 <h3>Column score<a class="headerlink" href="#column-score" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/column_score.png"><img alt="../_images/column_score.png" class="align-center" src="../_images/column_score.png" style="width: 75%;" /></a>
@@ -271,6 +380,27 @@ to</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="compositional-bias-per-site">
+<h3>Compositional bias per site<a class="headerlink" href="#compositional-bias-per-site" title="Link to this heading"></a></h3>
+<p>Function names: compositional_bias_per_site; comp_bias_per_site; cbps <br/>
+Command line interface: pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps</p>
+<p>Calculates compositional bias per site in an alignment.</p>
+<p>Site-wise chi-squared tests are conducted in an alignment to
+detect compositional biases. PhyKIT outputs four columns: <br/>
+col 1: index in alignment <br/>
+col 2: chi-squared statistic (higher values indicate greater bias) <br/>
+col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) <br/>
+col 4: uncorrected p-value</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a query
+fasta alignment to calculate the site-wise compositional bias of <br/></p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="create-concatenation-matrix">
 <h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/create_concat_matrix.png"><img alt="../_images/create_concat_matrix.png" class="align-center" src="../_images/create_concat_matrix.png" style="width: 75%;" /></a>
@@ -291,6 +421,24 @@ matrices.</p>
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
 <em>-p/\-\-prefix</em>: prefix of output files</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="evolutionary-rate-per-site">
+<h3>Evolutionary Rate per Site<a class="headerlink" href="#evolutionary-rate-per-site" title="Link to this heading"></a></h3>
+<p>Function names: evolutionary_rate_per_site; evo_rate_per_site; erps <br/>
+Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps</p>
+<p>Estimate evolutionary rate per site.</p>
+<p>Evolutionary rate per site is one minus the sum of squared frequency of different
+characters at a given site. Values may range from 0 (slow evolving; no diversity
+at the given site) to 1 (fast evolving; all characters appear only once).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be a query
+fasta alignment to calculate the site-wise evolutionary rate of <br/></p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -388,6 +536,29 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="protein-to-nucleotide-alignment">
+<h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Link to this heading"></a></h3>
+<p>Function names: thread_dna; pal2nal, p2n <br/>
+Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
+<p>Thread DNA sequence onto a protein alignment to create a
+codon-based alignment.</p>
+<p>This function requires input alignments are in fasta format.
+Codon alignments are then printed to stdout. Note, sequences
+are assumed to occur in the same order in the protein and
+nucleotide alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>thread_dna<span class="w"> </span>-p<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-n<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-s<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-p/\-\-protein</em>: protein alignment file <br/>
+<em>-n/\-\-nucleotide</em>: nucleotide sequence file <br/>
+<em>-c/\-\-clipkit_log</em>: clipkit outputted log file <br/>
+<em>-s/\-\-stop</em>: boolean for whether or not stop codons should be kept.
+If used, stop codons will be removed.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="relative-composition-variability">
 <h3>Relative composition variability<a class="headerlink" href="#relative-composition-variability" title="Link to this heading"></a></h3>
 <p>Function names: relative_composition_variability; rel_comp_var; rcv <br/>
@@ -397,9 +568,26 @@ Command line interface: pk_relative_composition_variability; pk_rel_comp_var; pk
 a lower composition bias in an alignment. Statistically, RCV describes
 the average variability in sequence composition among taxa.</p>
 <p>RCV is calculated following Phillips and Penny, Molecular Phylogenetics
-and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
-Alias:</p>
+and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability<span class="w"> </span>&lt;alignment&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="relative-composition-variability-taxon">
+<h3>Relative composition variability, taxon<a class="headerlink" href="#relative-composition-variability-taxon" title="Link to this heading"></a></h3>
+<p>Function names: relative_composition_variability_taxon; rel_comp_var_taxon; rcvt <br/>
+Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_var_taxon; pk_rcvt</p>
+<p>Calculate RCVT (relative composition variability, taxon) for an alignment.</p>
+<p>RCVT is the relative composition variability metric for individual taxa.
+This facilitates identifying specific taxa that may have compositional
+biases. Lower RCVT values are more desirable because they indicate
+a lower composition bias for a given taxon in an alignment.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -447,36 +635,6 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 fasta alignment file to be scored for accuracy <br/>
 <em>-r/\-\-reference</em>: reference alignment to compare the query alignment
 to</p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-</section>
-<section id="protein-to-nucleotide-alignment">
-<h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Link to this heading"></a></h3>
-<p>Function names: thread_dna; pal2nal, p2n <br/>
-Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
-<p>Thread DNA sequence onto a protein alignment to create a
-codon-based alignment.</p>
-<p>This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and
-nucleotide alignment.</p>
-<p>To thread nucleotide sequences over a trimmed amino acid
-alignment, provide PhyKIT with a log file specifying which
-sites have been trimmed and which have been kept. The log
-file must be formatted the same as the log files outputted
-by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
-documentation.) Details about ClipKIT can be seen here:
-<a class="reference external" href="https://github.com/JLSteenwyk/ClipKIT">https://github.com/JLSteenwyk/ClipKIT</a>.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>thread_dna<span class="w"> </span>-p<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-n<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-s<span class="o">]</span>
-</pre></div>
-</div>
-<p>Options: <br/>
-<em>-p/\-\-protein</em>: protein alignment file <br/>
-<em>-n/\-\-nucleotide</em>: nucleotide sequence file <br/>
-<em>-c/\-\-clipkit_log</em>: clipkit outputted log file <br/>
-<em>-s/\-\-stop</em>: boolean for whether or not stop codons should be kept.
-If used, stop codons will be removed.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -740,8 +898,8 @@ file with the list of taxa to get the last common ancestor subtree for
 </section>
 <section id="long-branch-score">
 <h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Link to this heading"></a></h3>
-<p>Function names: lb_score; lb_score; lbs <br/>
-Command line interface: pk_lb_score; pk_lb_score; pk_lbs</p>
+<p>Function names: long_branch_score; lb_score; lbs <br/>
+Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs</p>
 <p>Calculate long branch (LB) scores in a phylogeny.</p>
 <p>Lower LB scores are thought to be desirable because
 they are indicative of taxa or trees that likely do
@@ -768,7 +926,9 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 <p>Function names: monophyly_check; is_monophyletic <br/>
 Command line interface: pk_monophyly_check; pk_is_monophyletic</p>
 <p>This analysis can be used to determine if a set of
-taxa are monophyletic.</p>
+taxa are exclusively monophyletic. By exclusively monophyletic,
+if other taxa are in the same clade, the lineage will not be
+considered exclusively monophyletic.</p>
 <p>Requires a taxa file, which species which tip names
 are expected to be monophyletic. File format is a
 single column file with tip names. Tip names not
@@ -780,10 +940,7 @@ col 2: average bipartition support value in the clade of interest
 col 3: maximum bipartition support value in the clade of interest
 col 4: minimum bipartition support value in the clade of interest
 col 5: standard deviation of bipartition support values in the clade of interest
-col 6: tip names of taxa monophyletic with the lineage of interest</p>
-<blockquote>
-<div><p>excluding those that are listed in the taxa_of_interest file</p>
-</div></blockquote>
+col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>monophyly_check<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;
 </pre></div>
 </div>
