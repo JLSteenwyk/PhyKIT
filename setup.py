@@ -14,11 +14,12 @@ CLASSIFIERS = [
     'Programming Language :: Python',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Scientific/Engineering',
 ]
 
 REQUIRES = [
-    "biopython>=1.81",
+    "biopython>=1.82",
     "numpy>=1.24.0",
     "scipy>=1.11.3",
     "scikit-learn>=1.4.2",
