@@ -15,9 +15,12 @@ from argparse import (
 from .services.alignment import (
     AlignmentLength,
     AlignmentLengthNoGaps,
+    AlignmentRecoding,
     ColumnScore,
+    CompositionalBiasPerSite,
     CreateConcatenationMatrix,
     DNAThreader,
+    EvolutionaryRatePerSite,
     Faidx,
     GCContent,
     PairwiseIdentity,
@@ -144,12 +147,18 @@ class Phykit(object):
                     - calculates alignment length
                 alignment_length_no_gaps (alias: aln_len_no_gaps; alng)
                     - calculates alignment length after removing sites with gaps
+                alignment_recoding (alias: aln_recoding, recode)
+                    - recode alignments using reduced character schemes
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
+                compositional_bias_per_site (alias: comp_bias_per_site; cbps)
+                    - detects site-wise compositional biases in an alignment
                 create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments
+                evolutionary_rate_per_site (alias: evo_rate_per_site; erps)
+                    - estimate evolutionary per site in an alignment
                 faidx (alias: get_entry; ge)
-                    - extract query fasta entry from multi-fasta file              
+                    - extract query fasta entry from multi-fasta file
                 gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
                 pairwise_identity (alias: pairwise_id, pi)
@@ -265,8 +274,14 @@ class Phykit(object):
             return self.alignment_length(argv)
         elif command in ["aln_len_no_gaps", "alng"]:
             return self.alignment_length_no_gaps(argv)
-        elif command in "cs":
+        elif command in ["aln_recoding", "recode"]:
+            return self.alignment_recoding(argv)
+        elif command == "cs":
             return self.column_score(argv)
+        elif command in ["comp_bias_per_site", "cbps"]:
+            return self.compositional_bias_per_site(argv)
+        elif command in ["evo_rate_per_site", "erps"]:
+            return self.evolutionary_rate_per_site(argv)
         elif command in ["get_entry", "ge"]:
             return self.faidx(argv)
         elif command == "gc":
@@ -452,6 +467,142 @@ class Phykit(object):
         AlignmentLengthNoGaps(args).run()
 
     @staticmethod
+    def alignment_recoding(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Recode alignments using reduced character states.
+
+                Alignments can be recoded using established or
+                custom recoding schemes. Recoding schemes are
+                specified using the -c/--code argument. Custom
+                recoding schemes can be used and should be formatted
+                as a two column file wherein the first column is the
+                recoded character and the second column is the character
+                in the alignment.
+                
+                Aliases:
+                  alignment_recoding, aln_recoding, recode
+                Command line interfaces: 
+                  bk_alignment_recoding, bk_aln_recoding, bk_recode
+
+                Usage:
+                phykit alignment_recoding <fasta> -c/--code <code>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after 
+                                            function name should be
+                                            a fasta file
+
+                -c/--code                   recoding scheme to use
+
+                Codes for which recoding scheme to use
+                =====================================================
+                RY-nucleotide
+                    R = purines (i.e., A and G) 
+                    Y = pyrimidines (i.e., T and C)
+                
+                SandR-6
+                    0 = A, P, S, and T
+                    1 = D, E, N, and G
+                    2 = Q, K, and R
+                    3 = M, I, V, and L
+                    4 = W and C
+                    5 = F, Y, and H
+
+                KGB-6
+                    0 = A, G, P, and S
+                    1 = D, E, N, Q, H, K, R, and T
+                    2 = M, I, and L
+                    3 = W
+                    4 = F and Y
+                    5 = C and V
+
+                Dayhoff-6
+                    0 = A, G, P, S, and T
+                    1 = D, E, N, and Q
+                    2 = H, K, and R
+                    3 = I, L, M, and V
+                    4 = F, W, and Y
+                    5 = C
+
+                Dayhoff-9
+                    0 = D, E, H, N, and Q
+                    1 = I, L, M, and V
+                    2 = F and Y
+                    3 = A, S, and T
+                    4 = K and R
+                    5 = G
+                    6 = P
+                    7 = C
+                    8 = W
+
+                Dayhoff-12
+                    0 = D, E, and Q
+                    1 = M, L, I, and V
+                    2 = F and Y
+                    3 = K, H, and R
+                    4 = G
+                    5 = A
+                    6 = P
+                    7 = S
+                    8 = T
+                    9 = N
+                    A = W
+                    B = C
+                
+                Dayhoff-15
+                    0 = D, E, and Q
+                    1 = M and L
+                    2 = I and V
+                    3 = F and Y
+                    4 = G
+                    5 = A
+                    6 = P
+                    7 = S
+                    8 = T
+                    9 = N
+                    A = K
+                    B = H
+                    C = R
+                    D = W
+                    E = C
+                
+                Dayhoff-18
+                    0 = F and Y
+                    1 = M and L
+                    2 = I
+                    3 = V
+                    4 = G
+                    5 = A
+                    6 = P
+                    7 = S
+                    8 = T
+                    9 = D
+                    A = E
+                    B = Q
+                    C = N
+                    D = K
+                    E = H
+                    F = R
+                    G = W
+                    H = C
+                """  # noqa
+            ),
+        )
+
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("-c", "--code", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        AlignmentRecoding(args).run()
+
+    @staticmethod
     def column_score(argv):
         parser = ArgumentParser(
             add_help=True,
@@ -492,6 +643,87 @@ class Phykit(object):
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         ColumnScore(args).run()
+
+    @staticmethod
+    def compositional_bias_per_site(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculates compositional bias per site in an alignment.
+
+                Site-wise chi-squared tests are conducted in an alignment to
+                detect compositional biases. PhyKIT outputs four columns:
+                col 1: index in alignment
+                col 2: chi-squared statistic (higher values indicate greater bias)
+                col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure)
+                col 4: uncorrected p-value
+
+                Aliases:
+                  compositional_bias_per_site; comp_bias_per_site; cbps
+                Command line interfaces:
+                  pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
+
+                Usage:
+                phykit compositional_bias_per_site <alignment>
+
+                Options
+                =====================================================
+                <alignment>                 first argument after the
+                                            function name should be a
+                                            fasta alignment file
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        CompositionalBiasPerSite(args).run()
+
+    @staticmethod
+    def evolutionary_rate_per_site(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Estimate evolutionary rate per site.
+
+                Evolutionary rate per site is one minus the sum of squared
+                frequency of different characters at a given site. Values
+                may range from 0 (slow evolving; no diversity at the given
+                site) to 1 (fast evolving; all characters appear only once).
+
+                PhyKIT prints out two columns of information.
+                col 1: site in alignment
+                col 2: estimated evolutionary rate
+
+                Aliases:
+                  evolutionary_rate_per_site; evo_rate_per_site; erps
+                Command line interfaces:
+                  pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps
+        
+
+                Usage:
+                phykit evo_rate_per_site <fasta>
+
+                Options
+                =====================================================
+                <fasta>                     first argument after
+                                            function name should be a
+                                            query fasta file
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        EvolutionaryRatePerSite(args).run()
 
     @staticmethod
     def faidx(argv):
@@ -746,7 +978,7 @@ class Phykit(object):
                   pk_relative_composition_variability_taxon, pk_rel_comp_var_taxon, pk_rcvt
 
                 Usage:
-                phykit relative_composition_variability <alignment>
+                phykit relative_composition_variability_taxon <alignment>
 
                 Options
                 =====================================================
@@ -2365,19 +2597,30 @@ class Phykit(object):
                 are assumed to occur in the same order in the protein and 
                 nucleotide alignment.
 
+                To thread nucleotide sequences over a trimmed amino acid
+                alignment, provide PhyKIT with a log file specifying which
+                sites have been trimmed and which have been kept. The log
+                file must be formatted the same as the log files outputted
+                by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
+                documentation.) Details about ClipKIT can be seen here:
+                https://github.com/JLSteenwyk/ClipKIT.
+
                 Aliases:
                   thread_dna, pal2nal, p2n
                 Command line interfaces:
                   pk_thread_dna, pk_pal2nal, pk_p2n
 
                 Usage:
-                phykit thread_dna -p <file> -n <file> [-s]
+                phykit thread_dna -p <file> -n <file> [-c/--clipkit_log_file
+                  <clipkit outputted log file> -s]
 
                 Options
                 =====================================================
                 -p/--protein                protein alignment file
 
                 -n/--nucleotide             nucleotide sequence file
+
+                -c/--clipkit_log            clipkit outputted log file
 
                 -s/--stop                   boolean for whether or not
                                             stop codons should be kept. 
@@ -2388,6 +2631,13 @@ class Phykit(object):
         )
         parser.add_argument("-p", "--protein", type=str, help=SUPPRESS)
         parser.add_argument("-n", "--nucleotide", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-c",
+            "--clipkit_log_file",
+            type=str,
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument(
             "-s", "--stop", type=str2bool, nargs="?", default=True, help=SUPPRESS
         )
@@ -2410,6 +2660,14 @@ def alignment_length_no_gaps(argv=None):
 
 def column_score(argv=None):
     Phykit.column_score(sys.argv[1:])
+
+
+def compositional_bias_per_site(argv=None):
+    Phykit.compositional_bias_per_site(sys.argv[1:])
+
+
+def evolutionary_rate_per_site(argv=None):
+    Phykit.evolutionary_rate_per_site(sys.argv[1:])
 
 
 def faidx(argv=None):

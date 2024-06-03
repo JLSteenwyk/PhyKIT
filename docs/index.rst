@@ -17,6 +17,18 @@ and analyzing phylogenomic data*. Bioinformatics. doi: |doiLink|_.
 
 Quick Start
 -----------
+
+These two lines represent the simpliest method to rapidly install and run PhyKIT.
+
+.. code-block:: shell
+
+	# install
+	pip install phykit
+	# run
+	phykit -h
+
+
+
 **1) Installation**
 
 To install using *pip*, we strongly recommend building a virtual environment to avoid 
@@ -25,9 +37,9 @@ software dependency issues. To do so, execute the following commands:
 .. code-block:: shell
 
 	# create virtual environment
-	python -m venv .venv
+	python -m venv venv
 	# activate virtual environment
-	source .venv/bin/activate
+	source venv/bin/activate
 	# install phykit
 	pip install phykit
 
@@ -51,9 +63,9 @@ following commands:
 	git clone https://github.com/JLSteenwyk/PhyKIT.git
 	cd PhyKIT/
 	# create virtual environment
-	python -m venv .venv
+	python -m venv venv
 	# activate virtual environment
-	source .venv/bin/activate
+	source venv/bin/activate
 	# install
 	make install
 
@@ -72,10 +84,10 @@ To install via anaconda, execute the following command:
 
 .. code-block:: shell
 
-	conda install -c jlsteenwyk phykit
+	conda install bioconda::phykit
 
 Visit here for more information:
-https://anaconda.org/JLSteenwyk/phykit
+https://anaconda.org/bioconda/phykit
 
 **2) Usage**
 
