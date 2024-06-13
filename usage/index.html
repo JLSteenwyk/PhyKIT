@@ -383,7 +383,7 @@ to</p>
 <section id="compositional-bias-per-site">
 <h3>Compositional bias per site<a class="headerlink" href="#compositional-bias-per-site" title="Link to this heading"></a></h3>
 <p>Function names: compositional_bias_per_site; comp_bias_per_site; cbps <br/>
-Command line interface: pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps</p>
+Command line interface: pk_compositional_bias_per_site; pk_comp_bias_per_site; pk_cbps</p>
 <p>Calculates compositional bias per site in an alignment.</p>
 <p>Site-wise chi-squared tests are conducted in an alignment to
 detect compositional biases. PhyKIT outputs four columns: <br/>
@@ -1260,9 +1260,9 @@ Command line interface: pk_treeness; pk_tness</p>
 <p>Calculate treeness statistic for a phylogeny.</p>
 <p>Higher treeness values are thought to be desirable because they
 represent a higher signal-to-noise ratio.</p>
-<p>Treeness describes the proportion of the tree distance found on
-internal branches. Treeness can be used as a measure of the
-signal-to-noise ratio in a phylogeny.</p>
+<p>Treeness is the sum of internal branch lengths divided by the total
+tree length. Therefore, values range from 0 to 1. Treeness can be
+used as a measure of the signal-to-noise ratio in a phylogeny.</p>
 <p>Calculate treeness (also referred to as stemminess) following
 Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
 Phillips and Penny, Molecular Phylogenetics and Evolution
