@@ -1,5 +1,6 @@
 from enum import Enum
 import itertools
+import sys
 from typing import Tuple
 
 import numpy as np
@@ -101,8 +102,12 @@ class Saturation(Tree):
             elif record.name == combo[1]:
                 seq_two = record.seq
         for idx in range(0, aln_len):
-            if seq_one[idx] == seq_two[idx]:
-                identities += 1
+            try:
+                if seq_one[idx] == seq_two[idx]:
+                    identities += 1
+            except IndexError:
+                print("Error: the alignment FASTA headers and tree tip labels are different.\nDouble check that the sequence alignment and phylogenetic tree have the same labels.")
+                sys.exit()
         uncorrected_distances.append(1-(identities / aln_len))
 
         return uncorrected_distances
