@@ -1146,6 +1146,9 @@ class Phykit(object):
                 they are indicative of greater certainty in tree topology.
 
                 To obtain all bipartition support values, use the -v/--verbose option.
+                In addition to support values for each node, the names of all terminal
+                branches tips are also included. Each terminal branch name is separated
+                with a semi-colon (;).
 
                 Aliases:
                   bipartition_support_stats, bss
@@ -1553,7 +1556,7 @@ class Phykit(object):
                   pk_internode_labeler, pk_il
 
                 Usage:
-                phykit internode_labeler <file> [-o/--output <file>]
+                phykit internode_labeler <tree> [-o/--output <file>]
 
                 Options
                 =====================================================
@@ -2442,10 +2445,10 @@ class Phykit(object):
                 alignments that have undergone numerous substitutions such
                 that the distances between taxa are underestimated.
 
-                Data with no saturation will have a value of 1. Completely
-                saturated data will have a value of 0.  
+                Data with no saturation will have a value of 1. The closer
+                the value is to 1, the less saturated the data.
 
-                Saturation is calculated following Philippe et al., PLoS 
+                Saturation is calculated following Philippe et al., PLoS
                 Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
                 Aliases: 
