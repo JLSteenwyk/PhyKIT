@@ -165,8 +165,8 @@ used to calculate summary statistics.</p>
 </pre></div>
 </div>
 <p>Command specific help messages can be viewed by adding a
--h/\-\-help argument after the command. For example, to see the
-to see the help message for the command ‘treeness’, execute:</p>
+-h/\-\-help argument after the command. For example, to see the help message
+for the command ‘treeness’, execute:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>treeness<span class="w"> </span>-h
 <span class="c1"># or</span>
 phykit<span class="w"> </span>treeness<span class="w"> </span>--help
@@ -674,7 +674,10 @@ Command line interface: pk_bipartition_support_stats; pk_bss</p>
 <p>Calculate summary statistics for bipartition support.</p>
 <p>High bipartition support values are thought to be desirable because
 they are indicative of greater certainty in tree topology.</p>
-<p>To obtain all bipartition support values, use the -v/\-\-verbose option.</p>
+<p>To obtain all bipartition support values, use the -v/\-\-verbose option.
+In addition to support values for each node, the names of all terminal
+branches tips are also included. Each terminal branch name is separated
+with a semi-colon (;).</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
 </pre></div>
 </div>
@@ -868,7 +871,7 @@ Command line interface: pk_internode_labeler; pk_il</p>
 <p>Appends numerical identifiers to bipartitions in place of support values.
 This is helpful for pointing to specific internodes in supplementary files
 or otherwise.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internode_labeler<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internode_labeler<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1288,8 +1291,8 @@ Command line interface: pk_saturation; pk_sat</p>
 <p>Saturation is defined as sequences in multiple sequence
 alignments that have undergone numerous substitutions such
 that the distances between taxa are underestimated.</p>
-<p>Data with no saturation will have a value of 1. Completely
-saturated data will have a value of 0.</p>
+<p>Data with no saturation will have a value of 1. The closer
+the value is to 1, the less saturated the data.</p>
 <p>Saturation is calculated following Philippe et al., PLoS
 Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
