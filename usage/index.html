@@ -450,7 +450,11 @@ fasta alignment to calculate the site-wise evolutionary rate of <br/></p>
 Command line interface: pk_faidx; pk_get_entry; pk_ge</p>
 <p>Extracts sequence entry from fasta file.</p>
 <p>This function works similarly to the faidx function
-in samtools, but does not requiring an indexing function.</p>
+in samtools, but does not requiring an indexing step.</p>
+<p>To obtain multiple entries, input multiple entries separated
+by a comma (,). For example, if you want entries
+named “seq_0” and “seq_1”, the string “seq_0,seq_1”
+should be associated with the -e argument.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>faidx<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-e/--entry<span class="w"> </span>&lt;fasta<span class="w"> </span>entry&gt;
 </pre></div>
 </div>
