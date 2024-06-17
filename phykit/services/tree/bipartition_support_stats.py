@@ -11,12 +11,12 @@ class BipartitionSupportStats(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        bs_vals = self.get_bipartition_support_vals(tree)
+        bs_vals, term_names = self.get_bipartition_support_vals(tree)
 
         if self.verbose:
             try:
-                for bs_val in bs_vals:
-                    print(bs_val)
+                for bs_val, names in zip(bs_vals, term_names):
+                    print(bs_val, ";".join(names))
             except BrokenPipeError:
                 pass
         else:
@@ -29,10 +29,15 @@ class BipartitionSupportStats(Tree):
     def get_bipartition_support_vals(self, tree):
         # initialize list to hold bootstrap values
         bs_vals = []
+        term_names = []
 
         # populate bs_vals with bootstrap values
-        for terminal in tree.get_nonterminals():
+        for nonterminal in tree.get_nonterminals():
             # only include if a bootstrap value is present
-            if terminal.confidence != None:
-                bs_vals.append(terminal.confidence)
-        return bs_vals
+            if nonterminal.confidence != None:
+                bs_vals.append(nonterminal.confidence)
+                temp = []
+                for term in nonterminal.get_terminals():
+                    temp.append(term.name)
+                term_names.append(temp)
+        return bs_vals, term_names
