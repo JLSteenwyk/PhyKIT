@@ -377,7 +377,12 @@ Command line interface: pk_faidx; pk_get_entry; pk_ge
 Extracts sequence entry from fasta file.
 
 This function works similarly to the faidx function 
-in samtools, but does not requiring an indexing function.
+in samtools, but does not requiring an indexing step.
+
+To obtain multiple entries, input multiple entries separated
+by a comma (,). For example, if you want entries 
+named "seq_0" and "seq_1", the string "seq_0,seq_1"
+should be associated with the -e argument.
 
 .. code-block:: shell
 

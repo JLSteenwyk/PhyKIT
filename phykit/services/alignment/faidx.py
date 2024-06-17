@@ -9,7 +9,9 @@ class Faidx(Alignment):
 
     def run(self):
         record_dict = SeqIO.index(self.fasta, "fasta")
-        print(f">{record_dict[self.entry].name}\n{record_dict[self.entry].seq}")
+        entry = self.entry.split(',')
+        for e in entry:
+            print(f">{record_dict[e].name}\n{record_dict[e].seq}")
 
     def process_args(self, args):
         return dict(fasta=args.fasta, entry=args.entry)
