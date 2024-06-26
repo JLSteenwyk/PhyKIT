@@ -129,9 +129,9 @@ class Saturation(Tree):
                     combos, uncorrected_distances, patristic_distances
                 ):
                     print(
-                        f"{combo[0]}-{combo[1]}\t{round(dist,4)}\t{round(patristic_distance, 4)}"
+                        f"{combo[0]}\t{combo[1]}\t{round(dist,4)}\t{round(patristic_distance, 4)}"
                     )
             else:
-                print(round(slope, 4))
+                print(f"{round(slope, 4)}\t{abs(round(1-slope, 4))}")
         except BrokenPipeError:
             pass

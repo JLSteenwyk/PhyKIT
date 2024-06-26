@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.19.9**:
+Saturation function now also reports the absolute value of 1-saturation. Lower values are indicative of less saturation.
+
 **1.19.4**:
 Saturation function forces y-intercept to be zero when calculating slope
 
