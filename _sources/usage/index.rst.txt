@@ -1382,6 +1382,11 @@ that the distances between taxa are underestimated.
 Data with no saturation will have a value of 1. The closer
 the value is to 1, the less saturated the data.
 
+This function outputs two values (as of v1.19.9). The first
+value is the saturation value and the second column is the absolute
+value of saturation minus 1. Thus, lower values in the second column
+are indicative of values closer to one and, thus, less saturation.
+
 Saturation is calculated following Philippe et al., PLoS 
 Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
