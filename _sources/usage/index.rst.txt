@@ -500,9 +500,20 @@ Thread DNA sequence onto a protein alignment to create a
 codon-based alignment. 
 
 This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and 
-nucleotide alignment.
+Codon alignments are then printed to stdout. Note, paired
+sequences are assumed to have the same name between the 
+protein and nucleotide file. The order does not matter.
+
+To thread nucleotide sequences over a trimmed amino acid
+alignment, provide PhyKIT with a log file specifying which
+sites have been trimmed and which have been kept. The log
+file must be formatted the same as the log files outputted
+by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
+documentation.) Details about ClipKIT can be seen here:
+https://github.com/JLSteenwyk/ClipKIT.
+
+If using a ClipKIT log file, the untrimmed protein alignment
+should be provided in the -p/--protein argument.
 
 .. code-block:: shell
 

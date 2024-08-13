@@ -547,9 +547,18 @@ Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
 <p>Thread DNA sequence onto a protein alignment to create a
 codon-based alignment.</p>
 <p>This function requires input alignments are in fasta format.
-Codon alignments are then printed to stdout. Note, sequences
-are assumed to occur in the same order in the protein and
-nucleotide alignment.</p>
+Codon alignments are then printed to stdout. Note, paired
+sequences are assumed to have the same name between the
+protein and nucleotide file. The order does not matter.</p>
+<p>To thread nucleotide sequences over a trimmed amino acid
+alignment, provide PhyKIT with a log file specifying which
+sites have been trimmed and which have been kept. The log
+file must be formatted the same as the log files outputted
+by the alignment trimming toolkit ClipKIT (see -l in ClipKIT
+documentation.) Details about ClipKIT can be seen here:
+<a class="reference external" href="https://github.com/JLSteenwyk/ClipKIT">https://github.com/JLSteenwyk/ClipKIT</a>.</p>
+<p>If using a ClipKIT log file, the untrimmed protein alignment
+should be provided in the -p/–protein argument.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>thread_dna<span class="w"> </span>-p<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-n<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-s<span class="o">]</span>
 </pre></div>
 </div>
