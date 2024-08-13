@@ -61,16 +61,18 @@ class DNAThreader(Alignment):
         return keep_mask
 
     def normalize_p_seq(self, p_seq, mask):
-        if self.clipkit_log_data:
-            untrimmed = []
-            offset = 0
-            for idx, value in enumerate(mask[::3]):
-                if value is True:
-                    untrimmed.append(p_seq[idx - offset])
-                else:
-                    offset += 1
-                    untrimmed.append("#")
-            p_seq = "".join(untrimmed)
+        #TODO: write MP
+        #TODO: update tests
+        # if self.clipkit_log_data:
+        #     untrimmed = []
+        #     offset = 0
+        #     for idx, value in enumerate(mask[::3]):
+        #         if value is True:
+        #             untrimmed.append(p_seq[idx - offset])
+        #         else:
+        #             offset += 1
+        #             untrimmed.append("#")
+        #     p_seq = "".join(untrimmed)
         return "".join([c * 3 for c in p_seq])
 
     def normalize_n_seq(self, n_seq, normalized_p_seq):
