@@ -118,7 +118,7 @@ test.fast:
 	python -m pytest -m "not (integration or slow)"
 	rm -rf output/
 	mkdir output/
-	python -m pytest --basetemp=output -m "integration and not slow"
+	python -m pytest --basetemp=output -m "integration and not slow" -vv
 	rm test.fa test.occupancy test.partition
 
 # used by GitHub actions during CI workflow

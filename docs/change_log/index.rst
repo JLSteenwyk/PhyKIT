@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**1.20.0**:
+Fixed bug for thread_dna function when using a ClipKIT log file. Input protein alignment must be the untrimmed alignment.
+
 **1.19.9**:
 Saturation function now also reports the absolute value of 1-saturation. Lower values are indicative of less saturation.
 
