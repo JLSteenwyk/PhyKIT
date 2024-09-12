@@ -121,14 +121,14 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("1\t2\t0.8333333333333334"),
+            call("1\t2\t0.8333"),
             call("1\t3\t0.5"),
-            call("1\t4\t0.16666666666666666"),
-            call("1\t5\t0.16666666666666666"),
-            call("2\t3\t0.6666666666666666"),
-            call("2\t4\t0.3333333333333333"),
-            call("2\t5\t0.3333333333333333"),
-            call("3\t4\t0.6666666666666666"),
+            call("1\t4\t0.1667"),
+            call("1\t5\t0.1667"),
+            call("2\t3\t0.6667"),
+            call("2\t4\t0.3333"),
+            call("2\t5\t0.3333"),
+            call("3\t4\t0.6667"),
             call("3\t5\t0.5"),
             call("4\t5\t0.5"),
         ]
@@ -145,14 +145,14 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8136"),
-            call("median: 0.8423"),
-            call("25th percentile: 0.8096"),
-            call("75th percentile: 0.8692"),
-            call("minimum: 0.6192"),
-            call("maximum: 0.9269"),
-            call("standard deviation: 0.0831"),
-            call("variance: 0.0069")
+            call("mean: 0.9942"),
+            call("median: 1.0"),
+            call("25th percentile: 1.0"),
+            call("75th percentile: 1.0"),
+            call("minimum: 0.0"),
+            call("maximum: 1.0"),
+            call("standard deviation: 0.0765"),
+            call("variance: 0.0058")
         ]
 
     @patch("builtins.print")
@@ -167,14 +167,14 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8136"),
-            call("median: 0.8423"),
-            call("25th percentile: 0.8096"),
-            call("75th percentile: 0.8692"),
-            call("minimum: 0.6192"),
-            call("maximum: 0.9269"),
-            call("standard deviation: 0.0831"),
-            call("variance: 0.0069")
+            call("mean: 0.9942"),
+            call("median: 1.0"),
+            call("25th percentile: 1.0"),
+            call("75th percentile: 1.0"),
+            call("minimum: 0.0"),
+            call("maximum: 1.0"),
+            call("standard deviation: 0.0765"),
+            call("variance: 0.0058")
         ]
 
     @patch("builtins.print")
