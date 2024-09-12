@@ -1,10 +1,8 @@
 import sys
 from textwrap import dedent
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 from Bio import SeqIO
-from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from collections import defaultdict
 
 from .base import Alignment
 from ...helpers.files import read_single_column_file_to_list

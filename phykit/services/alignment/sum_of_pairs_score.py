@@ -1,7 +1,8 @@
-from collections import Counter
 import itertools
+from typing import Dict, List, Tuple
 
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 from .base import Alignment
 
@@ -11,66 +12,44 @@ class SumOfPairsScore(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        # create biopython object of sequences for query and
-        # reference alignments
         query_records = SeqIO.to_dict(SeqIO.parse(self.fasta, "fasta"))
         reference_records = SeqIO.to_dict(SeqIO.parse(self.reference, "fasta"))
 
-        # get all record pairs
-        record_id_pairs = self.get_record_ids(reference_records)
-
-        # calculate how many matches there are and how many total pairs there are
-        (
-            number_of_matches,
-            number_of_total_pairs,
-        ) = self.determine_number_of_matches_and_total_pairs(
-            record_id_pairs, reference_records, query_records
+        record_id_pairs = list(
+            itertools.combinations(reference_records.keys(), 2)
         )
 
-        # print res
+        number_of_matches, number_of_total_pairs = \
+            self.determine_number_of_matches_and_total_pairs(
+                record_id_pairs, reference_records, query_records
+            )
+
         print(round(number_of_matches / number_of_total_pairs, 4))
 
-    def process_args(self, args) -> dict:
+    def process_args(self, args) -> Dict[str, str]:
         return dict(fasta=args.fasta, reference=args.reference)
 
-    def get_record_ids(self, reference_records: dict) -> list:
-        # loop through record names and save each to
-        record_ids = []
-        for entry_name in reference_records:
-            record_ids.append(entry_name)
-        # create all pairwise combinations
-        record_id_pairs = list(itertools.combinations(record_ids, 2))
-        return record_id_pairs
-
     def determine_number_of_matches_and_total_pairs(
-        self, record_id_pairs: list, reference_records: dict, query_records: dict
-    ):
+        self,
+        record_id_pairs: List[Tuple[str, str]],
+        reference_records: Dict[str, SeqRecord],
+        query_records: Dict[str, SeqRecord],
+    ) -> Tuple[int, int]:
+        print(query_records)
         number_of_matches = 0
         number_of_total_pairs = 0
-        # loop through each pair
-        for record_pair in record_id_pairs:
-            first_in_pair = record_pair[0]
-            second_in_pair = record_pair[1]
 
-            pairs_in_reference = []
-            pairs_in_query = []
-            # for each pair, loop through the length of the alignment and get sequence at each site
-            for i in range(0, len(reference_records[first_in_pair].seq)):
-                pairs_in_reference.append(
-                    reference_records[first_in_pair].seq[i]
-                    + reference_records[second_in_pair].seq[i]
-                )
-            for i in range(0, len(query_records[first_in_pair].seq)):
-                pairs_in_query.append(
-                    query_records[first_in_pair].seq[i]
-                    + query_records[second_in_pair].seq[i]
-                )
+        for first_in_pair, second_in_pair in record_id_pairs:
+            ref_seq1 = reference_records[first_in_pair].seq
+            ref_seq2 = reference_records[second_in_pair].seq
+            query_seq1 = query_records[first_in_pair].seq
+            query_seq2 = query_records[second_in_pair].seq
 
-            # count the number of matches and total pairs
-            matches = list(
-                (Counter(pairs_in_reference) & Counter(pairs_in_query)).elements()
-            )
-            number_of_matches += len(matches)
-            number_of_total_pairs += len(pairs_in_reference)
+            for ref_res1, ref_res2, query_res1, query_res2 in zip(
+                ref_seq1, ref_seq2, query_seq1, query_seq2
+            ):
+                number_of_total_pairs += 1
+                if ref_res1 == query_res1 and ref_res2 == query_res2:
+                    number_of_matches += 1
 
         return number_of_matches, number_of_total_pairs
