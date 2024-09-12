@@ -24,7 +24,11 @@ class RenameFastaEntries(Alignment):
 
     def process_args(self, args) -> Dict[str, str]:
         output_file_path = f"{args.output or args.fasta}.renamed.fa"
-        return dict(fasta=args.fasta, idmap=args.idmap, output_file_path=output_file_path)
+        return dict(
+            fasta=args.fasta,
+            idmap=args.idmap,
+            output_file_path=output_file_path,
+        )
 
     def load_idmap(self, idmap_file: str) -> Dict[str, str]:
         try:
@@ -44,6 +48,6 @@ class RenameFastaEntries(Alignment):
         with open(output_file_path, "w") as output_file:
             for record in records:
                 if record.id in idmap:
-                    record.id = idmap[record.id]  # Replace ID
-                    record.description = ""       # Remove description
+                    record.id = idmap[record.id]
+                    record.description = ""
                 SeqIO.write(record, output_file, "fasta")
