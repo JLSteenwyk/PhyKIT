@@ -13,7 +13,7 @@ class Faidx(Alignment):
         record_dict = SeqIO.index(self.fasta, "fasta")
 
         # Split entries and iterate
-        for e in map(str.strip, self.entry.split(',')):
+        for e in map(str.strip, self.entry.split(",")):
             record = record_dict[e]
             print(f">{record.name}\n{record.seq}")
 
