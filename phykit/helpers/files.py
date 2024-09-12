@@ -1,5 +1,6 @@
 from enum import Enum
 import sys
+from typing import Tuple
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
@@ -16,11 +17,16 @@ class FileFormat(Enum):
     stockholm = "stockholm"
 
 
-def get_alignment_and_format(alignment_file_path: str):
-    # if file format is provided, read the file according to the user's file format
+def get_alignment_and_format(
+    alignment_file_path: str
+) -> Tuple[MultipleSeqAlignment, str, bool]:
+    # if file format is provided, read the file
+    # according to the user's file format
     for fileFormat in FileFormat:
         try:
-            alignment = AlignIO.read(open(alignment_file_path), fileFormat.value)
+            alignment = AlignIO.read(
+                open(alignment_file_path), fileFormat.value
+            )
             return alignment, fileFormat.value, is_protein_alignment(alignment)
         # the following exceptions refer to skipping over errors
         # associated with reading the wrong input file
