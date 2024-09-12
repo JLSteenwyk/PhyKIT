@@ -2,7 +2,6 @@ import pytest
 import sys
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
