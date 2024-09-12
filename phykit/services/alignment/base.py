@@ -1,5 +1,7 @@
 import sys
 
+from typing import List
+
 from ..base import BaseService
 from ...helpers.files import (
     get_alignment_and_format as get_alignment_and_format_helper
@@ -93,3 +95,9 @@ class Alignment(BaseService):
 
         # print the sum of all RCV values
         return relative_composition_variability
+
+    def get_gap_chars(is_protein: bool) -> List[str]:
+        if is_protein:
+            return ["-", "?", "*", "X", "x"]
+        else:
+            return ["-", "?", "*", "X", "x", "N", "n"]

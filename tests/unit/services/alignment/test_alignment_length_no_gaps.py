@@ -19,11 +19,12 @@ class TestAlignmentLengthNoGaps(object):
 
     def test_alignment_length_no_gaps(self, alignment_simple, args):
         aln = AlignmentLengthNoGaps(args)
+        is_protein = True
         (
             aln_len_no_gaps,
             aln_len,
             aln_len_no_gaps_per,
-        ) = aln.calculate_alignment_length_no_gaps(alignment_simple)
+        ) = aln.calculate_alignment_length_no_gaps(alignment_simple, is_protein)
         assert isinstance(aln_len_no_gaps, int)
         assert isinstance(aln_len, int)
         assert isinstance(aln_len_no_gaps_per, float)
@@ -45,15 +46,16 @@ class TestAlignmentLengthNoGaps(object):
         )
 
         aln = AlignmentLengthNoGaps(args) 
-        res = aln.calculate_alignment_length_no_gaps(mock_aln)
+        res = aln.calculate_alignment_length_no_gaps(mock_aln, True)
         assert res[0] == expected_aln_len_no_gaps
         assert res[1] == expected_length
         assert res[2] == expected_aln_len_no_gaps_per
 
     def test_get_sites_no_gaps_count(self, mocker, args, alignment_complex):
-        aln = AlignmentLengthNoGaps(args) 
+        aln = AlignmentLengthNoGaps(args)
+        is_protein = True
         expected_length = 955
         expected_aln_len_no_gaps = 901
-        res = aln.get_sites_no_gaps_count(alignment_complex, expected_length)
+        res = aln.get_sites_no_gaps_count(alignment_complex, expected_length, is_protein)
         assert res == expected_aln_len_no_gaps
     

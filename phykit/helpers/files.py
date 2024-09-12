@@ -2,6 +2,7 @@ from enum import Enum
 import sys
 
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 
 
 class FileFormat(Enum):
@@ -20,7 +21,7 @@ def get_alignment_and_format(alignment_file_path: str):
     for fileFormat in FileFormat:
         try:
             alignment = AlignIO.read(open(alignment_file_path), fileFormat.value)
-            return alignment, fileFormat.value
+            return alignment, fileFormat.value, is_protein_alignment(alignment)
         # the following exceptions refer to skipping over errors
         # associated with reading the wrong input file
         except ValueError:
@@ -31,6 +32,21 @@ def get_alignment_and_format(alignment_file_path: str):
             print(f"{alignment_file_path} corresponds to no such file.")
             print("Please check file name and pathing")
             sys.exit()
+
+
+def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
+    nucleotide_set = {
+        "A", "C", "G", "T", "U", "-", "N", "?", "*"
+    }
+
+    for record in alignment:
+        seq_set = set(record.seq.upper())
+        if seq_set - nucleotide_set:
+            # if there are chars that are not in the nucl set,
+            # it's likely a protein sequence
+            return True
+
+    return False
 
 
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
