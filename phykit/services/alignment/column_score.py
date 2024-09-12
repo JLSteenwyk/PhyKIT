@@ -1,6 +1,8 @@
 from collections import Counter
+from typing import Dict, List, Tuple
 
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
 
@@ -9,9 +11,7 @@ class ColumnScore(Alignment):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
-    def run(self):
-        # create biopython object of sequences for query and
-        # reference alignments
+    def run(self) -> None:
         query_records = AlignIO.read(self.fasta, "fasta")
         reference_records = AlignIO.read(self.reference, "fasta")
 
@@ -21,41 +21,40 @@ class ColumnScore(Alignment):
         )
 
         # count the number of matches and total pairs
-        (
-            number_of_matches,
-            number_of_total_columns,
-        ) = self.calculate_matches_between_ref_and_query_columns(
-            ref_columns, query_columns
-        )
+        number_of_matches, number_of_total_columns = \
+            self.calculate_matches_between_ref_and_query_columns(
+                ref_columns, query_columns
+            )
 
-        # print res
         print(round(number_of_matches / number_of_total_columns, 4))
 
-    def process_args(self, args) -> dict:
+    def process_args(self, args) -> Dict[str, str]:
         return dict(fasta=args.fasta, reference=args.reference)
 
-    def get_columns_from_alignments(self, reference_records, query_records):
-        # loop through reference alignment and get each column
-        ref_columns = []
-        for i in range(reference_records.get_alignment_length()):
-            ref_seq_at_position = ""
-            ref_seq_at_position += reference_records[:, i]
-            ref_seq_at_position = ref_seq_at_position.upper()
-            ref_columns.append(ref_seq_at_position)
-
-        # loop through query alignment and get each column
-        query_columns = []
-        for i in range(query_records.get_alignment_length()):
-            query_seq_at_position = ""
-            query_seq_at_position += query_records[:, i]
-            query_seq_at_position = query_seq_at_position.upper()
-            query_columns.append(query_seq_at_position)
+    def get_columns_from_alignments(
+        self,
+        reference_records: MultipleSeqAlignment,
+        query_records: MultipleSeqAlignment,
+    ) -> Tuple[List[str], List[str]]:
+        ref_columns = [
+            reference_records[:, i].upper()
+            for i in range(reference_records.get_alignment_length())
+        ]
+        query_columns = [
+            query_records[:, i].upper()
+            for i in range(query_records.get_alignment_length())
+        ]
 
         return ref_columns, query_columns
 
     def calculate_matches_between_ref_and_query_columns(
-        self, ref_columns: list, query_columns: list
-    ):
-        # determine the number of matches
-        matches = list((Counter(ref_columns) & Counter(query_columns)).elements())
+        self,
+        ref_columns: List[str],
+        query_columns: List[str],
+    ) -> Tuple[int, int]:
+        set1 = set(ref_columns)
+        set2 = set(query_columns)
+
+        matches = set1.intersection(set2)
+
         return len(matches), len(query_columns)
