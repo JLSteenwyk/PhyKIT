@@ -1,9 +1,12 @@
 from enum import Enum
 import re
 import sys
+from typing import Dict, Tuple
+from collections import Counter
+
+from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
-
 from ...helpers.files import get_alignment_and_format
 
 
@@ -22,49 +25,45 @@ class GCContent(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        # create biopython object of sequences
-        records, _ = get_alignment_and_format(self.fasta)
+        records, _, is_protein = get_alignment_and_format(self.fasta)
 
-        # initialize and populate dict for
-        # holding the entry sequences
-        entry_and_seq = {}
-        for record in records:
-            entry_and_seq[record.id] = str(record.seq)
+        if is_protein:
+            print("GC content can't be calculated for protein sequences")
+            sys.exit()
 
         if self.verbose:
-            for entry, seq in entry_and_seq.items():
-                seq, matches = self.find_matches_and_remove_gaps(seq)
-                try:
-                    print(f"{entry}\t{round(len(matches)/len(seq), 4)}")
-                except BrokenPipeError:
-                    pass
+            self.calculate_gc_per_sequence(records)
         else:
-            all_seqs = []
-            for entry, seq in entry_and_seq.items():
-                all_seqs.append(seq)
-            all_seqs = "".join(all_seqs)
-            all_seqs, matches = self.find_matches_and_remove_gaps(all_seqs)
+            self.calculate_gc_total(records)
+
+    def process_args(self, args) -> Dict[str, str]:
+        return dict(fasta=args.fasta, verbose=args.verbose)
+
+    def calculate_gc_per_sequence(self, records: MultipleSeqAlignment) -> None:
+        for record in records:
+            seq = str(record.seq)
+            seq, gc_count = self.remove_gaps_and_count_gc(seq)
             try:
-                gc_content = round(len(matches) / len(all_seqs), 4)
-            except ZeroDivisionError:
-                try:
-                    print(
-                        "Input file has an unacceptable format. Please check input file argument."
-                    )
-                    sys.exit()
-                except BrokenPipeError:
-                    pass
-            try:
-                print(gc_content)
+                print(f"{record.id}\t{round(gc_count / len(seq), 4) if seq else 0}")
             except BrokenPipeError:
                 pass
 
-    def process_args(self, args):
-        return dict(fasta=args.fasta, verbose=args.verbose)
+    def calculate_gc_total(self, records: MultipleSeqAlignment) -> None:
+        combined_seq = "".join(str(record.seq) for record in records)
+        combined_seq, gc_count = self.remove_gaps_and_count_gc(combined_seq)
+        try:
+            gc_content = round(gc_count / len(combined_seq), 4)
+            print(gc_content)
+        except (BrokenPipeError, ZeroDivisionError):
+            print(
+                "Input file has an unacceptable format. Please check input file argument."
+            )
+            sys.exit()
 
-    def find_matches_and_remove_gaps(self, seq: str):
-        regex_pattern = re.compile("[GgCc]")
-        seq = seq.replace("-", "")
-        seq = seq.replace("?", "")
-        matches = regex_pattern.findall(seq)
-        return seq, matches
+    def remove_gaps_and_count_gc(self, seq: str) -> Tuple[str, float]:
+        gap_chars = self.get_gap_chars()
+        pattern = "[" + "".join(re.escape(char) for char in gap_chars) + "]"
+        cleaned_seq = re.sub(pattern, "", seq)
+        gc_count = Counter(cleaned_seq.upper())["G"] + Counter(cleaned_seq.upper())["C"]
+
+        return cleaned_seq, gc_count
