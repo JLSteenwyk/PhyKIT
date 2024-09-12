@@ -83,6 +83,13 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <hr class="docutils" />
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>1.21.0</strong>:
+The partition file outputted from the create_concat function has been updated to the following format:
+- column 1: alignment name
+- column 2: # of taxa present
+- column 3: # of taxa missing
+- column 4: fraction of occupancy
+- column 5: names of missing taxa (; separated)</p>
 <p><strong>1.20.0</strong>:
 Fixed bug for thread_dna function when using a ClipKIT log file. Input protein alignment must be the untrimmed alignment.</p>
 <p><strong>1.19.9</strong>:
