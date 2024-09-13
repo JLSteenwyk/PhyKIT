@@ -20,10 +20,9 @@ class TestRelativeCompositionVariability(object):
     def test_relative_composition_variability(self, mocker, alignment_simple, args):
         mocker.patch(
             "phykit.services.alignment.rcv.RelativeCompositionVariability.get_alignment_and_format",
-            return_value=(alignment_simple, "fa"),
+            return_value=(alignment_simple, "fa", True),
         )
         rcv = RelativeCompositionVariability(args)
-        aln_len = 6
         relative_composition_variability = rcv.calculate_rcv()
         assert isinstance(relative_composition_variability, float)
         assert isclose(relative_composition_variability, 0.36, rel_tol=0.001)
