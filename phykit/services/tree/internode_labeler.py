@@ -1,3 +1,7 @@
+from typing import Dict
+
+from Bio.Phylo import Newick
+
 from .base import Tree
 
 
@@ -7,25 +11,20 @@ class InternodeLabeler(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        tree_with_labels = self.add_labels_to_tree(tree)
-        self.write_tree_file(tree_with_labels, self.output_file_path)
+        self.add_labels_to_tree(tree)  
+        self.write_tree_file(tree, self.output_file_path)
 
-    def process_args(self, args):
-        tree_file_path = args.tree
-
-        if args.output is None:
-            output_file_path = f"{tree_file_path}.internode_labels.tre"
-        else:
-            output_file_path = f"{args.output}"
+    def process_args(self, args) -> Dict[str, str]:
+        output_file_path = args.output or f"{args.tree}.internode_labels.tre"
 
         return dict(
-            tree_file_path=tree_file_path,
+            tree_file_path=args.tree,
             output_file_path=output_file_path,
         )
 
-    def add_labels_to_tree(self, tree):
-        label = 1
-        for node in tree.get_nonterminals():
+    def add_labels_to_tree(
+        self,
+        tree: Newick.Tree
+    ) -> None:
+        for label, node in enumerate(tree.get_nonterminals(), start=1):
             node.confidence = label
-            label += 1
-        return tree
