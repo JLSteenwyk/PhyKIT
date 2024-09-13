@@ -1,5 +1,7 @@
-from typing import Tuple
+from typing import Dict, List, Tuple
 import itertools
+
+from Bio.Phylo import Newick
 
 from .base import Tree
 
@@ -15,7 +17,9 @@ class PatristicDistances(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        patristic_distances, combos, stats = self.calculate_patristic_distances(tree)
+        patristic_distances, combos, stats = \
+            self.calculate_patristic_distances(tree)
+
         if self.verbose:
             try:
                 for combo, patristic_distance in zip(combos, patristic_distances):
@@ -25,28 +29,38 @@ class PatristicDistances(Tree):
         else:
             print_summary_statistics(stats)
 
-    def process_args(self, args):
+    def process_args(self, args) -> Dict[str, str]:
         return dict(tree_file_path=args.tree, verbose=args.verbose)
 
-    def calculate_distance_between_pairs(self, tips: list, tree) -> Tuple[list, list]:
-        # determine pairwise combinations of tips
+    def calculate_distance_between_pairs(
+        self,
+        tips: List[str],
+        tree
+    ) -> Tuple[
+        List[Tuple[str, str]],
+        List[float],
+    ]:
         combos = list(itertools.combinations(tips, 2))
 
-        # determine average distance between tips
-        patristic_distances = []
-        for combo in combos:
-            patristic_distances.append(tree.distance(combo[0], combo[1]))
+        patristic_distances = [
+            tree.distance(combo[0], combo[1]) for combo in combos
+        ]
 
         return combos, patristic_distances
 
-    def calculate_patristic_distances(self, tree):
-        # get tree tips
+    def calculate_patristic_distances(
+        self,
+        tree: Newick.Tree,
+    ) -> Tuple[
+        List[float],
+        List[Tuple[str, str]],
+        Dict[str, float],
+    ]:
         tips = self.get_tip_names_from_tree(tree)
 
-        # get distances between pairs of taxa
-        combos, patristic_distances = self.calculate_distance_between_pairs(tips, tree)
+        combos, patristic_distances = \
+            self.calculate_distance_between_pairs(tips, tree)
 
-        # calculate summary stats
         stats = calculate_summary_statistics_from_arr(patristic_distances)
 
         return patristic_distances, combos, stats
