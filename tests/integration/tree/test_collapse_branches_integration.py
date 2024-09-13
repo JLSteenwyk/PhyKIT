@@ -1,12 +1,12 @@
 import pytest
 import sys
-from mock import patch, call
+from mock import patch
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
 here = Path(__file__)
+
 
 @pytest.mark.integration
 class TestCollapseBranches(object):

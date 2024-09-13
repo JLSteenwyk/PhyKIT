@@ -1,3 +1,5 @@
+from typing import Dict
+
 from .base import Tree
 
 
@@ -8,15 +10,13 @@ class CollapseBranches(Tree):
     def run(self):
         tree = self.read_tree_file()
         tree.collapse_all(
-            lambda c: c.confidence is not None and c.confidence < self.support
+            lambda c: c.confidence and c.confidence < self.support
         )
         self.write_tree_file(tree, self.output_file_path)
 
-    def process_args(self, args):
-        if args.output is None:
-            output_file_path = f"{args.tree}.collapsed_{args.support}.tre"
-        else:
-            output_file_path = f"{args.output}"
+    def process_args(self, args) -> Dict[str, str]:
+        output_file_path = \
+            args.output or f"{args.tree}.collapsed_{args.support}.tre"
         return dict(
             tree_file_path=args.tree,
             support=args.support,
