@@ -3,7 +3,6 @@ from typing import (
     Dict,
     List,
     Tuple,
-    Union,
 )
 
 from Bio.Phylo import Newick
