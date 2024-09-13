@@ -1,9 +1,7 @@
 import pytest
 import sys
-from math import isclose
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -61,7 +59,7 @@ class TestBipartitionSupportStats(object):
             "bipartition_support_stats",
             f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tr"
         ]
-        
+
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
