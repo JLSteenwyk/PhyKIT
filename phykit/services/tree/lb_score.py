@@ -16,7 +16,7 @@ class LBScore(Tree):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
-    def run(self):
+    def run(self) -> None:
         tree = self.read_tree_file()
         tips, LBis = self.calculate_lb_score(tree)
         if self.verbose:
