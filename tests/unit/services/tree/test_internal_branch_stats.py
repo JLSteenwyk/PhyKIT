@@ -1,6 +1,5 @@
 import pytest
 from argparse import Namespace
-from Bio import Phylo
 from math import isclose
 
 from phykit.services.tree.internal_branch_stats import InternalBranchStats
@@ -12,7 +11,7 @@ def args():
     return Namespace(**kwargs)
 
 
-class TestLBScore(object):
+class TestInternalBranchStats(object):
     def test_init_sets_tree_file_path(self, args):
         t = InternalBranchStats(args)
         assert t.tree_file_path == args.tree
@@ -26,7 +25,7 @@ class TestLBScore(object):
 
     def test_calculate_internal_branch_stats(self, tree_simple, args):
         t = InternalBranchStats(args)
-        _, stats, _ = t.calculate_internal_branch_stats(tree_simple)
+        stats, _ = t.calculate_internal_branch_stats(tree_simple)
         assert isinstance(stats["mean"], float)
         assert isinstance(stats["median"], float)
         assert isinstance(stats["twenty_fifth"], float)
