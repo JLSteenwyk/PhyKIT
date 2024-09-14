@@ -1,9 +1,11 @@
 import sys
 import itertools
 from scipy.stats import chisquare
-from typing import Tuple
+from scipy.stats import _stats_py
+from typing import Dict, List, Tuple, Union
 
 from Bio import Phylo
+from Bio.Phylo import Newick
 
 from .base import Tree
 from ...helpers.files import read_single_column_file_to_list
@@ -15,7 +17,7 @@ class PolytomyTest(Tree):
 
     def run(self):
         # read in groups
-        groups_arr = self.read_in_groups(self.groups)
+        groups_arr = self.read_in_groups()
 
         # determine groups of groups
         groups_of_groups, outgroup_taxa = self.determine_groups_of_groups(groups_arr)
@@ -46,10 +48,16 @@ class PolytomyTest(Tree):
         )
         # self.print_triplet_based_res(triplet_res, triplet_group_counts)
 
-    def process_args(self, args):
+    def process_args(self, args) -> Dict[str, str]:
         return dict(trees=args.trees, groups=args.groups)
 
-    def read_in_groups(self, groups) -> list:
+    def read_in_groups(
+        self
+    ) -> List[
+        List[
+            Union[str, List[str]]
+        ]
+    ]:
         groups_arr = []
         try:
             for line in open(self.groups):
@@ -87,16 +95,22 @@ class PolytomyTest(Tree):
                 sys.exit()
             except BrokenPipeError:
                 pass
+
         return groups_arr
 
     def loop_through_trees_and_examine_sister_support_among_triplets(
-        self, trees_file_path: str, groups_of_groups: dict, outgroup_taxa: list
-    ) -> dict:
+        self,
+        trees_file_path: str,
+        groups_of_groups: Dict[str, List[List[str]]],
+        outgroup_taxa: List[str],
+    ) -> Dict[
+        str, Dict[str, Dict[str, int]]
+    ]:
         """
         go through all trees and all triplets of all trees. For each triplet,
         determine which two taxa are sister to one another
         """
-        summary = {}
+        summary = dict()
         # loop through trees
         try:
             # cnt = 0
@@ -122,7 +136,13 @@ class PolytomyTest(Tree):
 
         return summary
 
-    def determine_groups_of_groups(self, groups_arr: list) -> dict:
+    def determine_groups_of_groups(
+        self,
+        groups_arr: List[Union[str, List[str]]],
+    ) -> Tuple[
+        Dict[str, List[List[str]]],
+        List[str],
+    ]:
         groups_of_groups = {}
 
         for group in groups_arr:
@@ -137,12 +157,14 @@ class PolytomyTest(Tree):
 
     def examine_all_triplets_and_sister_pairing(
         self,
-        tips: list,
+        tips: List[str],
         tree_file: str,
-        summary: dict,
-        groups_of_groups: dict,
-        outgroup_taxa: list,
-    ) -> dict:
+        summary: Dict[
+            str, Dict[str, Dict[str, int]]
+        ],
+        groups_of_groups: Dict[str, List[List[str]]],
+        outgroup_taxa: List[str],
+    ) -> Dict[str, Dict[str, int]]:
         """
         evaluate all triplets for sister relationships. Polytomies
         in input trees are accounted for
@@ -183,7 +205,11 @@ class PolytomyTest(Tree):
 
         return summary
 
-    def count_number_of_groups_in_triplet(self, triplet: list, groups: tuple) -> int:
+    def count_number_of_groups_in_triplet(
+        self,
+        triplet: Tuple[str, str, str],
+        groups: List[List[str]]
+    ) -> int:
         """
         determine how many groups are represented in a triplet
         """
@@ -194,13 +220,16 @@ class PolytomyTest(Tree):
                 num_groups_represented += 1
         return num_groups_represented
 
-    def set_branch_lengths_in_tree_to_one(self, tree: Tree) -> None:
+    def set_branch_lengths_in_tree_to_one(
+        self,
+        tree: Newick.Tree
+    ) -> None:
         for term in tree.get_terminals():
             term.branch_length = 1
         for internode in tree.get_nonterminals():
             internode.branch_length = 1
 
-    def check_if_triplet_is_a_polytomy(self, tree: Tree) -> Tree:
+    def check_if_triplet_is_a_polytomy(self, tree: Newick.Tree) -> bool:
         """
         count the number of internal branches. If 1, then the triplet is a polytomy
         """
@@ -215,8 +244,11 @@ class PolytomyTest(Tree):
             return False
 
     def sister_relationship_counter(
-        self, tree_file: str, summary: dict, sisters: str
-    ) -> dict:
+        self,
+        tree_file: str,
+        summary: Dict[str, Dict[str, int]],
+        sisters: str,
+    ) -> Dict[str, Dict[str, int]]:
         """
         counter for how many times a particular sister relationship is observed
         """
@@ -232,8 +264,12 @@ class PolytomyTest(Tree):
         return summary
 
     def get_triplet_tree(
-        self, tips: list, triplet: tuple, tree_file: str, outgroup_taxa: list
-    ) -> Tree:
+        self,
+        tips: List[str],
+        triplet: Tuple[str, str, str],
+        tree_file: str,
+        outgroup_taxa: List[str],
+    ) -> Newick.Tree:
         """
         get a tree object of only the triplet of interest
         """
@@ -255,7 +291,11 @@ class PolytomyTest(Tree):
             tree = False
             return tree
 
-    def determine_sisters_from_triplet(self, groups: list, pair: tuple) -> str:
+    def determine_sisters_from_triplet(
+        self,
+        groups: List[List[str]],
+        pair: Tuple[str]
+    ) -> str:
         """
         determine sister taxa from a triplet
         """
@@ -271,8 +311,13 @@ class PolytomyTest(Tree):
         return sisters
 
     def determine_sisters_and_add_to_counter(
-        self, tip_names: list, tree: Tree, tree_file: str, groups: list, summary: dict
-    ) -> dict:
+        self,
+        tip_names: List[str],
+        tree: Newick.Tree,
+        tree_file: str,
+        groups: List[List[str]],
+        summary: Dict[str, Dict[str, int]],
+    ) -> Dict[str, Dict[str, int]]:
         """
         determine which pair of taxa are sister to one another
         and add 1 to the counter for the sister pair
@@ -293,8 +338,11 @@ class PolytomyTest(Tree):
         return summary
 
     def get_triplet_and_gene_support_freq_counts(
-        self, summary: dict
-    ) -> Tuple[dict, dict]:
+        self,
+        summary: Dict[str, Dict[str, int]]
+    ) -> Tuple[
+        Dict[str, int], Dict[str, int]
+    ]:
         """
         count how many triplets and genes support the various sister relationships
         """
@@ -324,7 +372,14 @@ class PolytomyTest(Tree):
 
         return triplet_group_counts, gene_support_freq
 
-    def chisquare_tests(self, triplet_group_counts: dict, gene_support_freq: dict):
+    def chisquare_tests(
+        self,
+        triplet_group_counts: dict,
+        gene_support_freq: dict
+    ) -> Tuple[
+        _stats_py.Power_divergenceResult,
+        _stats_py.Power_divergenceResult,
+    ]:
         triplet_res = chisquare(
             [
                 triplet_group_counts["g0g1_count"],
@@ -364,7 +419,10 @@ class PolytomyTest(Tree):
     #         pass
 
     def print_gene_support_freq_res(
-        self, gene_support_freq_res, gene_support_freq: dict, trees_file_path: list
+        self,
+        gene_support_freq_res,
+        gene_support_freq: Dict[str, int],
+        trees_file_path: List[str],
     ) -> None:
         """
         print results to stdout for user
