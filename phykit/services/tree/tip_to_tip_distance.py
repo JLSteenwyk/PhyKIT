@@ -2,6 +2,7 @@ import sys
 from typing import Dict
 
 from Bio.Phylo.BaseTree import TreeMixin
+from Bio.Phylo import Newick
 
 from .base import Tree
 
@@ -17,7 +18,12 @@ class TipToTipDistance(Tree):
 
         print(round(TreeMixin.distance(tree_zero, self.tip_1, self.tip_2), 4))
 
-    def check_leaves(self, tree_zero, tip_1, tip_2):
+    def check_leaves(
+        self,
+        tree_zero: Newick.Tree,
+        tip_1: str,
+        tip_2: str,
+    ) -> None:
         leaf1 = TreeMixin.find_any(tree_zero, tip_1)
         if not bool(leaf1):
             print(tip_1, "not on tree\nExiting...")
