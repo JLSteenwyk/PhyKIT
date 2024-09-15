@@ -1,9 +1,7 @@
-import pytest
-import sys
-from math import isclose
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
+import pytest
+import sys
 
 from phykit.phykit import Phykit
 
