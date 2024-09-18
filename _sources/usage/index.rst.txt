@@ -131,7 +131,7 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-	phykit aln_len_no_gaps <alignment>
+	phykit aln_len_no_gaps <alignment> [--cpu <cpu>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file 
@@ -155,7 +155,7 @@ in the alignment.
 
 .. code-block:: shell
 
-	phykit alignment_recoding <fasta> [-c/--code <code>]
+	phykit alignment_recoding <fasta> [-c/--code <code> --cpu <cpu>]
 
 Codes for which recoding scheme to use: |br|
 **RY-nucleotide** |br|
