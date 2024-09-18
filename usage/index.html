@@ -504,12 +504,13 @@ all pairwise identities will be reported.</p>
 <p>An example of pairwise identities being used as a proxy
 for evolutionary rate can be found here: Chen et al.
 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="w"> </span>-e/--exclude_gaps<span class="w"> </span>--cpu<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print identity per pair</p>
+<em>-e/\-\-exclude_gaps</em>: if a site has a gap, ignore it <br/>
+<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
