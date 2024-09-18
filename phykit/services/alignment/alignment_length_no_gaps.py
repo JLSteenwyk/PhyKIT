@@ -1,4 +1,5 @@
 from argparse import Namespace
+from multiprocessing import Pool, cpu_count
 from typing import Dict, Tuple
 
 from Bio.Align import MultipleSeqAlignment
@@ -23,7 +24,7 @@ class AlignmentLengthNoGaps(Alignment):
         self,
         args: Namespace,
     ) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment)
+        return dict(alignment_file_path=args.alignment, cpu=args.cpu)
 
     def calculate_alignment_length_no_gaps(
         self,
@@ -34,7 +35,7 @@ class AlignmentLengthNoGaps(Alignment):
         aln_len_no_gaps = self.get_sites_no_gaps_count(
             alignment,
             aln_len,
-            is_protein
+            is_protein,
         )
 
         aln_len_no_gaps_per = (aln_len_no_gaps / aln_len) * 100
@@ -47,16 +48,17 @@ class AlignmentLengthNoGaps(Alignment):
         aln_len: int,
         is_protein: bool,
     ) -> int:
-        """
-        Count sites in the alignment with no gaps
-        """
-        aln_len_no_gaps = 0
-
         gap_chars = self.get_gap_chars()
 
-        for i in range(aln_len):
-            column = set(alignment[:, i])
-            if column.isdisjoint(gap_chars):
-                aln_len_no_gaps += 1
+        cpu = self.set_cpu()
 
-        return aln_len_no_gaps
+        with Pool(cpu) as pool:
+            aln_len_no_gaps = pool.starmap(
+                self.is_column_no_gap,
+                [(alignment[:, i], gap_chars) for i in range(aln_len)]
+            )
+
+        return sum(aln_len_no_gaps)
+
+    def is_column_no_gap(self, column: str, gap_chars: set) -> int:
+        return 1 if set(column).isdisjoint(gap_chars) else 0

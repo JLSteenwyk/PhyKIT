@@ -1,4 +1,5 @@
 from collections import Counter
+import multiprocessing
 import sys
 
 from typing import List
@@ -15,6 +16,7 @@ class Alignment(BaseService):
         *args,
         alignment_file_path=None,
         code=None,
+        cpu=None,
         fasta=None,
         output_file_path=None,
         protein_file_path=None,
@@ -29,6 +31,7 @@ class Alignment(BaseService):
     ):
         self.alignment_file_path = alignment_file_path
         self.code = code,
+        self.cpu = cpu,
         self.output_file_path = output_file_path
         self.protein_file_path = (protein_file_path,)
         self.nucleotide_file_path = nucleotide_file_path
@@ -87,3 +90,13 @@ class Alignment(BaseService):
             return ["-", "?", "*", "X", "x"]
         else:
             return ["-", "?", "*", "X", "x", "N", "n"]
+
+    def set_cpu(self) -> int:
+        cpu_available = multiprocessing.cpu_count()
+
+        cpu = int(self.cpu[0]) if self.cpu[0] else multiprocessing.cpu_count()
+
+        if cpu > cpu_available:
+            return cpu_available
+        else:
+            return cpu

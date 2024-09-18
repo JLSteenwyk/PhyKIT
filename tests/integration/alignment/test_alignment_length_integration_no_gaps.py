@@ -17,7 +17,7 @@ class TestAlignmentLengthNoGaps(object):
         testargs = [
             "phykit",
             "alignment_length_no_gaps",
-            f"whoa",
+            "whoa",
         ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:

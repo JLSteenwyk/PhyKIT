@@ -7,7 +7,7 @@ from phykit.services.alignment.alignment_length_no_gaps import AlignmentLengthNo
 
 @pytest.fixture
 def args():
-    kwargs = dict(alignment="/some/path/to/file.fa")
+    kwargs = dict(alignment="/some/path/to/file.fa", cpu=None)
     return Namespace(**kwargs)
 
 
@@ -58,4 +58,3 @@ class TestAlignmentLengthNoGaps(object):
         expected_aln_len_no_gaps = 901
         res = aln.get_sites_no_gaps_count(alignment_complex, expected_length, is_protein)
         assert res == expected_aln_len_no_gaps
-    

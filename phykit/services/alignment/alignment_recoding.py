@@ -1,6 +1,7 @@
 from os import path
+from multiprocessing import Pool
 import sys
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from Bio.Align import MultipleSeqAlignment
 
@@ -14,12 +15,12 @@ class AlignmentRecoding(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self) -> None:
-        alignment, _, is_protein = self.get_alignment_and_format()
+        alignment, _, _ = self.get_alignment_and_format()
 
         recoding_table = self.read_recoding_table(self.code[0])
 
         recoded_alignment = self.recode_alignment(
-            alignment, recoding_table, is_protein
+            alignment, recoding_table,
         )
 
         for k, v in recoded_alignment.items():
@@ -29,21 +30,37 @@ class AlignmentRecoding(Alignment):
         self,
         alignment: MultipleSeqAlignment,
         recoding_table: Dict[str, str],
-        is_protein: bool,
     ) -> Dict[str, List[str]]:
 
         gap_chars = self.get_gap_chars()
-        recoded_alignment = dict()
+        cpu = self.set_cpu()
 
-        for record in alignment:
-            recoded_sequence = [
-                recoding_table.get(base.upper(), base)
-                if base not in gap_chars else base
-                for base in record.seq
-            ]
-            recoded_alignment[record.id] = recoded_sequence
+        with Pool(cpu) as pool:
+            recoded_sequences = pool.starmap(
+                self.recode_sequence,
+                [
+                    (
+                        record.id, record.seq, recoding_table, gap_chars
+                    ) for record in alignment
+                ]
+            )
 
-        return recoded_alignment
+        return dict(recoded_sequences)
+
+    def recode_sequence(
+        self,
+        record_id: str,
+        sequence: str,
+        recoding_table: Dict[str, str],
+        gap_chars: set
+    ) -> Tuple[str, List[str]]:
+        recoded_sequence = [
+            recoding_table.get(base.upper(), base)
+            if base not in gap_chars else base
+            for base in sequence
+        ]
+
+        return record_id, recoded_sequence
 
     def read_recoding_table(
         self,
@@ -85,5 +102,6 @@ class AlignmentRecoding(Alignment):
     def process_args(self, args):
         return dict(
             alignment_file_path=args.alignment,
-            code=args.code
+            code=args.code,
+            cpu=args.cpu,
         )

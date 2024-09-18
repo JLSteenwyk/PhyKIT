@@ -73,15 +73,15 @@ ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 help_header = f"""
-                 _____  _           _  _______ _______ 
+                 _____  _           _  _______ _______
                 |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
+                | |__) | |__  _   _| ' /  | |    | |
+                |  ___/| '_ \| | | |  <   | |    | |
+                | |    | | | | |_| | . \ _| |_   | |
+                |_|    |_| |_|\__, |_|\_\_____|  |_|
+                               __/ |
+                              |___/
+
                 Version: {__version__}
                 Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
                 Documentation link: https://jlsteenwyk.com/PhyKIT
@@ -442,27 +442,31 @@ class Phykit(object):
                 col3: percentage of sites without gaps
 
                 Association between alignment length when excluding sites
-                with gaps and phylogenetic signal was determined by Shen 
-                et al., Genome Biology and Evolution (2016), 
+                with gaps and phylogenetic signal was determined by Shen
+                et al., Genome Biology and Evolution (2016),
                 doi: 10.1093/gbe/evw179.
 
                 Aliases:
                   alignment_length_no_gaps, aln_len_no_gaps, alng
-                Command line interfaces: 
+                Command line interfaces:
                   pk_alignment_length_no_gaps, pk_aln_len_no_gaps, pk_alng
 
                 Usage:
-                phykit alignment_length_no_gaps <alignment>
+                phykit alignment_length_no_gaps <alignment> --cpu <cpu>
 
                 Options
                 =====================================================
-                <alignment>                 first argument after 
+                <alignment>                 first argument after
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
 
@@ -492,7 +496,7 @@ class Phykit(object):
                   bk_alignment_recoding, bk_aln_recoding, bk_recode
 
                 Usage:
-                phykit alignment_recoding <fasta> -c/--code <code>
+                phykit alignment_recoding <fasta> -c/--code <code> --cpu <cpu>
 
                 Options
                 =====================================================
@@ -501,6 +505,9 @@ class Phykit(object):
                                             a fasta file
 
                 -c/--code                   recoding scheme to use
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
 
                 Codes for which recoding scheme to use
                 =====================================================
@@ -599,6 +606,7 @@ class Phykit(object):
 
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("-c", "--code", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentRecoding(args).run()
 

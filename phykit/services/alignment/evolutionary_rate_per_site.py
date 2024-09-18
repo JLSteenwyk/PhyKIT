@@ -11,7 +11,7 @@ class EvolutionaryRatePerSite(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment, _, is_protein = self.get_alignment_and_format()
+        alignment, _, _ = self.get_alignment_and_format()
         pic_values = self.calculate_evolutionary_rate_per_site(alignment)
 
         for idx, value in enumerate(pic_values):
