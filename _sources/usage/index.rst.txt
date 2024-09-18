@@ -489,7 +489,8 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 	phykit parsimony_informative_sites <alignment>
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
@@ -549,7 +550,8 @@ and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 	phykit relative_composition_variability <alignment>
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
