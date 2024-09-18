@@ -250,7 +250,8 @@ H = C |br|
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-c/\-\-code*: argument to specify the recoding scheme to use 
+*-c/\-\-code*: argument to specify the recoding scheme to use |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
@@ -452,7 +453,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 .. code-block:: shell
 
-	phykit pairwise_identity <alignment> [-v/--verbose -e/--exclude_gaps --cpu]
+	phykit pairwise_identity <alignment> [-v/--verbose -e/--exclude_gaps --cpu <cpu>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|

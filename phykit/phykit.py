@@ -858,7 +858,7 @@ class Phykit(object):
 
                 Usage:
                 phykit pairwise_identity <alignment> [-v/--verbose
-                    -e/--exclude_gaps --cpu]
+                    -e/--exclude_gaps --cpu <cpu>]
 
                 Options
                 =====================================================
