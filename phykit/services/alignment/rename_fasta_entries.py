@@ -1,8 +1,10 @@
+from multiprocessing import Pool
 import sys
-from typing import Dict
+from typing import Dict, List
 
 from Bio import SeqIO
 from Bio.SeqIO.FastaIO import FastaIterator
+from Bio.SeqRecord import SeqRecord
 
 from .base import Alignment
 
@@ -41,13 +43,24 @@ class RenameFastaEntries(Alignment):
     def replace_ids_and_write(
         self,
         output_file_path: str,
-        records: FastaIterator,
+        records: List[FastaIterator],
         idmap: Dict[str, str]
     ) -> None:
-        print(records)
+        cpu = self.set_cpu()
+        with Pool(cpu) as pool:
+            updated_records = pool.starmap(
+                self.replace_record_id,
+                [
+                    (record, idmap)
+                    for record in records
+                ]
+            )
+
         with open(output_file_path, "w") as output_file:
-            for record in records:
-                if record.id in idmap:
-                    record.id = idmap[record.id]
-                    record.description = ""
-                SeqIO.write(record, output_file, "fasta")
+            SeqIO.write(updated_records, output_file, "fasta")
+
+    def replace_record_id(self, record, idmap: Dict[str, str]) -> SeqRecord:
+        if record.id in idmap:
+            record.id = idmap[record.id]
+            record.description = ""
+        return record

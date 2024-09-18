@@ -1,6 +1,7 @@
 import sys
 from textwrap import dedent
 from typing import Dict, List, Tuple
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 

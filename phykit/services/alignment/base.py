@@ -1,8 +1,10 @@
 from collections import Counter
-import multiprocessing
+from multiprocessing import cpu_count
+from multiprocessing import Pool
 import sys
+from typing import Dict, List
 
-from typing import List
+from Bio.Seq import Seq
 
 from ..base import BaseService
 from ...helpers.files import (
@@ -45,9 +47,6 @@ class Alignment(BaseService):
         self.exclude_gaps = exclude_gaps
 
     def get_alignment_and_format(self):
-        """
-        automatic file type determination
-        """
         try:
             return get_alignment_and_format_helper(self.alignment_file_path)
         except FileNotFoundError:
@@ -58,32 +57,44 @@ class Alignment(BaseService):
     def calculate_rcv(self) -> float:
         alignment, _, _ = self.get_alignment_and_format()
         aln_len = alignment.get_alignment_length()
-
-        concat_seq = []
         num_records = len(alignment)
 
         concat_seq = "".join(str(record.seq) for record in alignment)
-
         total_counts = Counter(concat_seq)
 
         average_d = {
             seq: total_counts[seq] / num_records for seq in total_counts
         }
 
-        indiv_rcv_values = []
+        cpu = self.set_cpu()
 
-        for record in alignment:
-            record_counts = Counter(record.seq)
-            temp_rcv = sum(
-                abs(
-                    record_counts[seq_letter] - average_d[seq_letter]
-                ) for seq_letter in total_counts
+        with Pool(cpu) as pool:
+            indiv_rcv_values = pool.starmap(
+                self.calculate_indiv_rcv,
+                [
+                    (record.seq, average_d, total_counts, aln_len, num_records)
+                    for record in alignment
+                ]
             )
-            indiv_rcv_values.append(temp_rcv / (num_records * aln_len))
 
         relative_composition_variability = sum(indiv_rcv_values)
 
         return relative_composition_variability
+
+    def calculate_indiv_rcv(
+        self,
+        seq: Seq,
+        average_d: Dict[str, float],
+        total_counts: Counter,
+        aln_len: int,
+        num_records: int,
+    ) -> float:
+        record_counts = Counter(seq)
+        temp_rcv = sum(
+            abs(record_counts[seq_letter] - average_d[seq_letter])
+            for seq_letter in total_counts
+        )
+        return temp_rcv / (num_records * aln_len)
 
     def get_gap_chars(is_protein: bool) -> List[str]:
         if is_protein:
@@ -92,9 +103,9 @@ class Alignment(BaseService):
             return ["-", "?", "*", "X", "x", "N", "n"]
 
     def set_cpu(self) -> int:
-        cpu_available = multiprocessing.cpu_count()
+        cpu_available = cpu_count()
 
-        cpu = int(self.cpu[0]) if self.cpu[0] else multiprocessing.cpu_count()
+        cpu = int(self.cpu[0]) if self.cpu[0] else cpu_count()
 
         if cpu > cpu_available:
             return cpu_available

@@ -1,7 +1,9 @@
 import sys
 from typing import Dict, List
+
 from Bio import SeqIO
 from Bio.Seq import Seq
+
 from .base import Alignment
 
 

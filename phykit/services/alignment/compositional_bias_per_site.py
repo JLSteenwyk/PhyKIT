@@ -45,7 +45,6 @@ class CompositionalBiasPerSite(Alignment):
         List[Power_divergenceResult],
         List[Union[float, str]],
     ]:
-        # get aln length
         aln_len = alignment.get_alignment_length()
 
         stat_res = []
@@ -53,20 +52,17 @@ class CompositionalBiasPerSite(Alignment):
         nan_idx = []
 
         for idx in range(aln_len):
-            # Count occurrences of each character at site idx
-            num_occurrences = self.get_number_of_occurrences_per_character(alignment, idx)
+            num_occurrences = \
+                self.get_number_of_occurrences_per_character(alignment, idx)
 
-            # Perform chi-square test on the counts
             chisquare_res = chisquare(num_occurrences)
             stat_res.append(chisquare_res)
 
-            # Collect p-values and track NaN values
             if str(chisquare_res.pvalue) != "nan":
                 p_vals.append(chisquare_res.pvalue)
             else:
                 nan_idx.append(idx)
 
-        # Correct p-values using false discovery control
         p_vals_corrected = list(false_discovery_control(p_vals))
 
         # Reinsert "nan" values at the appropriate positions

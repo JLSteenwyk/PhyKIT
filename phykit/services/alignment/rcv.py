@@ -11,4 +11,4 @@ class RelativeCompositionVariability(Alignment):
         print(round(relative_composition_variability, 4))
 
     def process_args(self, args):
-        return dict(alignment_file_path=args.alignment)
+        return dict(alignment_file_path=args.alignment, cpu=args.cpu)

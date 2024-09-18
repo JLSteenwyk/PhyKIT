@@ -466,7 +466,7 @@ class Phykit(object):
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--cpu", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
 
@@ -606,7 +606,7 @@ class Phykit(object):
 
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("-c", "--code", type=str, help=SUPPRESS)
-        parser.add_argument("--cpu", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentRecoding(args).run()
 
@@ -883,7 +883,7 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--cpu", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 
@@ -920,17 +920,21 @@ class Phykit(object):
                   pk_parsimony_informative_sites, pk_pis
 
                 Usage:
-                phykit parsimony_informative_sites <alignment>
+                phykit parsimony_informative_sites <alignment> [--cpu <cpu>]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         ParsimonyInformative(args).run()
 
@@ -953,23 +957,27 @@ class Phykit(object):
                 RCV is calculated following Phillips and Penny, Molecular Phylogenetics
                 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
-                Aliases: 
+                Aliases:
                   relative_composition_variability, rel_comp_var, rcv
                 Command line interfaces:
                   pk_relative_composition_variability, pk_rel_comp_var, pk_rcv
 
                 Usage:
-                phykit relative_composition_variability <alignment>
+                phykit relative_composition_variability <alignment> [--cpu <cpu>]
 
                 Options
                 =====================================================
-                <alignment>                 first argument after 
+                <alignment>                 first argument after
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         RelativeCompositionVariability(args).run()
 
@@ -996,17 +1004,21 @@ class Phykit(object):
                   pk_relative_composition_variability_taxon, pk_rel_comp_var_taxon, pk_rcvt
 
                 Usage:
-                phykit relative_composition_variability_taxon <alignment>
+                phykit relative_composition_variability_taxon <alignment> [--cpu <cpu>]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file          
+                                            an alignment file 
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         RelativeCompositionVariabilityTaxon(args).run()
 
@@ -1034,7 +1046,7 @@ class Phykit(object):
 
                 Usage:
                 phykit rename_fasta_entries <fasta> -i/--idmap <idmap>
-                    [-o/--output <output_file>]
+                    [-o/--output <output_file> --cpu <cpu>]
 
                 Options
                 =====================================================
@@ -1052,12 +1064,16 @@ class Phykit(object):
                                             name as the input file with
                                             the suffix ".renamed.fa" added
                                             to it.
+                
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         RenameFastaEntries(args).run()
 

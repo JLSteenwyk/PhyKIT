@@ -54,7 +54,6 @@ class EvolutionaryRatePerSite(Alignment):
 
         gap_chars = self.get_gap_chars()
 
-        # calculate PIC for each site in the alignment
         for idx in range(aln_len):
             num_occurrences = self.get_number_of_occurrences_per_character(
                 alignment, idx, gap_chars
