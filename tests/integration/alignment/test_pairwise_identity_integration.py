@@ -1,8 +1,7 @@
-import pytest
-import sys
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
+import pytest
+import sys
 
 from phykit.phykit import Phykit
 
@@ -167,14 +166,14 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.9942"),
-            call("median: 1.0"),
-            call("25th percentile: 1.0"),
-            call("75th percentile: 1.0"),
-            call("minimum: 0.0"),
+            call("mean: 0.9412"),
+            call("median: 0.9391"),
+            call("25th percentile: 0.9188"),
+            call("75th percentile: 0.9701"),
+            call("minimum: 0.8474"),
             call("maximum: 1.0"),
-            call("standard deviation: 0.0765"),
-            call("variance: 0.0058")
+            call("standard deviation: 0.0347"),
+            call("variance: 0.0012")
         ]
 
     @patch("builtins.print")

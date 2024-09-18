@@ -1,7 +1,9 @@
 import itertools
+from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
 from Bio.Align import MultipleSeqAlignment
+from Bio.SeqRecord import SeqRecord
 
 from .base import Alignment
 from ...helpers.stats_summary import (
@@ -15,7 +17,7 @@ class PairwiseIdentity(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment, _, is_protein = self.get_alignment_and_format()
+        alignment, _, _ = self.get_alignment_and_format()
 
         pair_ids, pairwise_identities, stats = \
             self.calculate_pairwise_identities(
@@ -38,42 +40,64 @@ class PairwiseIdentity(Alignment):
             alignment_file_path=args.alignment,
             verbose=args.verbose,
             exclude_gaps=args.exclude_gaps,
+            cpu=args.cpu,
         )
 
     def calculate_pairwise_identities(
         self,
         alignment: MultipleSeqAlignment,
         exclude_gaps: bool,
-    ) -> Tuple[List[List[str]], Dict[str, float], Dict[str, float]]:
+    ) -> Tuple[
+        List[List[str]],
+        Dict[str, float],
+        Dict[str, float],
+    ]:
+
+        cpu = self.set_cpu()
+
         gap_chars = self.get_gap_chars()
+        pairs = list(itertools.combinations(range(len(alignment)), 2))
 
-        pairwise_identities = {}
-        pair_ids = []
+        with Pool(cpu) as pool:
+            results = pool.starmap(
+                self.calculate_identity_for_pair,
+                [
+                    (alignment[idx1], alignment[idx2], gap_chars, exclude_gaps)
+                    for idx1, idx2 in pairs
+                ]
+            )
 
-        for idx1, idx2 in itertools.combinations(range(len(alignment)), 2):
-            seq_one = alignment[idx1].seq
-            seq_two = alignment[idx2].seq
-            identities = 0
-            total_compared = 0
-
-            for res_one, res_two in zip(seq_one, seq_two):
-                if exclude_gaps and (
-                    res_one not in gap_chars or res_two not in gap_chars
-                ):
-                    continue
-                total_compared += 1
-                if res_one == res_two:
-                    identities += 1
-
-            if total_compared > 0:
-                identity_score = identities / total_compared
-            else:
-                identity_score = 0
-
-            pair_id = [alignment[idx1].id, alignment[idx2].id]
-            pair_ids.append(pair_id)
-            pairwise_identities["-".join(pair_id)] = identity_score
+        pair_ids = [
+            [alignment[idx1].id, alignment[idx2].id]
+            for idx1, idx2 in pairs
+        ]
+        pairwise_identities = {
+            f"{alignment[idx1].id}-{alignment[idx2].id}": score
+            for ((idx1, idx2), score) in zip(pairs, results)
+        }
 
         stats = calculate_summary_statistics_from_dict(pairwise_identities)
 
         return pair_ids, pairwise_identities, stats
+
+    def calculate_identity_for_pair(
+        self,
+        seq_one_record: SeqRecord,
+        seq_two_record: SeqRecord,
+        gap_chars: List[str],
+        exclude_gaps: bool,
+    ) -> float:
+
+        seq_one = seq_one_record.seq
+        seq_two = seq_two_record.seq
+        identities = 0
+        total_compared = 0
+
+        for res_one, res_two in zip(seq_one, seq_two):
+            if exclude_gaps and (res_one in gap_chars or res_two in gap_chars):
+                continue
+            total_compared += 1
+            if res_one == res_two:
+                identities += 1
+
+        return identities / total_compared if total_compared > 0 else 0

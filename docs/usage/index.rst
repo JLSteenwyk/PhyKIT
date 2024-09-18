@@ -452,11 +452,12 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 .. code-block:: shell
 
-	phykit pairwise_identity <alignment> [-v/--verbose]
+	phykit pairwise_identity <alignment> [-v/--verbose -e/--exclude_gaps --cpu]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print identity per pair
+*-e/\\-\\-exclude_gaps*: if a site has a gap, ignore it |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 

@@ -857,18 +857,22 @@ class Phykit(object):
                   pk_pairwise_identity, pk_pairwise_id, pk_pi
 
                 Usage:
-                phykit pairwise_identity <alignment> [-v/--verbose]
+                phykit pairwise_identity <alignment> [-v/--verbose
+                    -e/--exclude_gaps --cpu]
 
                 Options
                 =====================================================
-                <alignment>                 first argument after 
+                <alignment>                 first argument after
                                             function name should be
-                                            an alignment file  
+                                            an alignment file
 
                 -v/--verbose                optional argument to print
                                             identity per pair
 
                 -e/--exclude_gaps           if a site has a gap, ignore it
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
@@ -879,6 +883,7 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--cpu", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 

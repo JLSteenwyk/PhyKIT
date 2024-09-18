@@ -35,7 +35,6 @@ class AlignmentLengthNoGaps(Alignment):
         aln_len_no_gaps = self.get_sites_no_gaps_count(
             alignment,
             aln_len,
-            is_protein,
         )
 
         aln_len_no_gaps_per = (aln_len_no_gaps / aln_len) * 100
@@ -46,7 +45,6 @@ class AlignmentLengthNoGaps(Alignment):
         self,
         alignment: MultipleSeqAlignment,
         aln_len: int,
-        is_protein: bool,
     ) -> int:
         gap_chars = self.get_gap_chars()
 

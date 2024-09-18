@@ -11,7 +11,7 @@ class ParsimonyInformative(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment, _, is_protein = self.get_alignment_and_format()
+        alignment, _, _ = self.get_alignment_and_format()
         pi_sites, aln_len, pi_sites_per = self.calculate_parsimony_informative_sites(
             alignment
         )
@@ -36,10 +36,6 @@ class ParsimonyInformative(Alignment):
         self,
         num_occurrences: Counter,
     ) -> bool:
-        """
-        Check if a site is parsimony informative.
-        That is, the site has two characters that appear at least twice.
-        """
         informative_char_count = sum(1 for count in num_occurrences.values() if count >= 2)
         return informative_char_count >= 2
 
