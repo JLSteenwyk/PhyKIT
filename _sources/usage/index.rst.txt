@@ -569,10 +569,11 @@ a lower composition bias for a given taxon in an alignment.
 
 .. code-block:: shell
 
-	phykit relative_composition_variability_taxon <alignment>
+	phykit relative_composition_variability_taxon <alignment> [--cpu <cpu>]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
@@ -591,11 +592,12 @@ an alignment file.
 
 .. code-block:: shell
 
-	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file>]
+	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file> --cpu <cpu>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
+*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2) |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 

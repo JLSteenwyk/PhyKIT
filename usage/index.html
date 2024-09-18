@@ -604,11 +604,12 @@ Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_v
 This facilitates identifying specific taxa that may have compositional
 biases. Lower RCVT values are more desirable because they indicate
 a lower composition bias for a given taxon in an alignment.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -623,12 +624,13 @@ file wherein the first column is the current fasta entry name and
 the second column is the new fasta entry name in the resulting
 output alignment. Note, the input fasta file does not need to be
 an alignment file.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_fasta_entries<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_fasta_entries<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="w"> </span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
+<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2) <br/>
+<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
