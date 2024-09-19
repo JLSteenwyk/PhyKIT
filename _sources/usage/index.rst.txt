@@ -277,13 +277,13 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 
 .. code-block:: shell
 
-	phykit column_score <alignment> --reference <reference_alignment>
+	phykit column_score <alignment> --reference <reference_alignment> [--cpu <cpu>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment
-to
+*-r/\\-\\-reference*: reference alignment to compare the query alignment to |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
