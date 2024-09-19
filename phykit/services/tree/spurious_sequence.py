@@ -1,5 +1,7 @@
 import statistics as stat
-from typing import Tuple
+from typing import Dict, List, Tuple
+
+from Bio.Phylo import Newick
 
 from .base import Tree
 
@@ -8,12 +10,12 @@ class SpuriousSequence(Tree):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
-    def run(self):
+    def run(self) -> None:
         tree = self.read_tree_file()
-        factor = self.factor
-        name_and_branch_len, threshold, median = self.identify_spurious_sequence(
-            tree, factor
-        )
+        name_and_branch_len, threshold, median = \
+            self.identify_spurious_sequence(
+                tree, self.factor
+            )
 
         counter = 0
         for name, length in name_and_branch_len.items():
@@ -26,34 +28,42 @@ class SpuriousSequence(Tree):
                     pass
                 counter += 1
 
-        # if no terminal branch is longer than the one specified
-        # inform the user and print "None"
         if counter == 0:
             print("None")
 
-    def process_args(self, args):
-        return dict(tree_file_path=args.tree, factor=args.factor)
-
-    def identify_spurious_sequence(self, tree, factor):
-        branch_lengths, name_and_branch_len = self.get_branch_lengths_and_their_names(
-            tree
+    def process_args(self, args) -> Dict[str, str]:
+        return dict(
+            tree_file_path=args.tree,
+            factor=args.factor or 20
         )
 
-        median = stat.median(branch_lengths)
+    def identify_spurious_sequence(
+        self,
+        tree: Newick.Tree,
+        factor: float,
+    ) -> Tuple[
+        Dict[str, float],
+        float,
+        float
+    ]:
+        branch_lengths, name_and_branch_len = \
+            self.get_branch_lengths_and_their_names(tree)
 
-        if factor is None:
-            factor = 20
+        median = stat.median(branch_lengths)
 
         threshold = median * factor
 
         return name_and_branch_len, threshold, median
 
-    def get_branch_lengths_and_their_names(self, tree) -> Tuple[list, list]:
-        # initialize a list to hold branch lengths and a
-        # dictionary with terminal names and the branch
-        # lengths that lead up to them.
-        branch_lengths = []
-        name_and_branch_len = {}
+    def get_branch_lengths_and_their_names(
+        self,
+        tree: Newick.Tree,
+    ) -> Tuple[
+        List[float],
+        Dict[str, float],
+    ]:
+        branch_lengths = list()
+        name_and_branch_len = dict()
 
         # collect terminal branch lengths
         for terminal in tree.get_terminals():

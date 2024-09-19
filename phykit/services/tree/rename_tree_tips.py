@@ -1,4 +1,7 @@
 import sys
+from typing import Dict
+
+from Bio.Phylo import Newick
 
 from .base import Tree
 
@@ -10,20 +13,17 @@ class RenameTreeTips(Tree):
     def run(self):
         tree = self.read_tree_file()
 
-        # save idmap to a dictionary
-        idmap = self.read_id_map(self.idmap)
+        idmap = self.read_id_map()
 
         tree = self.replace_tip_names(tree, idmap)
 
         self.write_tree_file(tree, self.output_file_path)
 
-    def process_args(self, args):
+    def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree
 
-        if args.output is None:
-            output_file_path = f"{tree_file_path}.renamed"
-        else:
-            output_file_path = f"{args.output}"
+        output_file_path = \
+            f"{args.output}" if args.output else f"{tree_file_path}.renamed"
 
         return dict(
             tree_file_path=tree_file_path,
@@ -31,11 +31,8 @@ class RenameTreeTips(Tree):
             output_file_path=output_file_path,
         )
 
-    def read_id_map(self, idmap: str) -> dict:
-        """
-        read two column file to dictionary
-        """
-        idmap = {}
+    def read_id_map(self) -> Dict[str, str]:
+        idmap = dict()
         try:
             with open(self.idmap) as identifiers:
                 for line in identifiers:
@@ -51,15 +48,14 @@ class RenameTreeTips(Tree):
 
         return idmap
 
-    def replace_tip_names(self, tree: Tree, idmap: dict) -> Tree:
-        """
-        if a tip name is in the idmap, replace it
-        """
-        # for tips with a name as a key in the idmap,
-        # replace that tip name with the value in the
-        # idmap
+    def replace_tip_names(
+        self,
+        tree: Tree,
+        idmap: Dict[str, str]
+    ) -> Newick.Tree:
         for term in tree.get_terminals():
-            if term.name in idmap:
-                term.name = idmap[term.name]
+            name = term.name
+            if name in idmap:
+                term.name = idmap[name]
 
         return tree

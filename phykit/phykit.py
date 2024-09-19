@@ -2563,6 +2563,11 @@ class Phykit(object):
                 2) A partition file ready for input into RAxML or IQ-tree.
                 3) An occupancy file that summarizes the taxon occupancy
                    per sequence.
+                        - column 1: alignment name
+                        - column 2: # of taxa present
+                        - column 3: # of taxa missing
+                        - column 4: fraction of occupancy
+                        - column 5: names of missing taxa (; separated)
 
                 Aliases:
                   create_concatenation_matrix, create_concat, cc

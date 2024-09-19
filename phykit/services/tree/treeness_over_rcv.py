@@ -1,10 +1,11 @@
 from enum import Enum
+from typing import Dict
 
 from .base import Tree
 from ..alignment.base import Alignment
-from ...helpers.files import get_alignment_and_format
 
 
+# TODO: Here next
 class FileFormat(Enum):
     fasta = "fasta"
     clustal = "clustal"
@@ -21,26 +22,19 @@ class TreenessOverRCV(Tree):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        # calculate treeness
         treeness = self.calculate_treeness()
 
-        # calculate rcv
         aln = Alignment(alignment_file_path=self.alignment_file_path)
         relative_composition_variability = aln.calculate_rcv()
 
-        # calculate treeness/rcv
-        treeness_over_rcv = self.calculate_treeness_over_rcv(
-            treeness, relative_composition_variability
-        )
+        treeness_over_rcv = treeness / relative_composition_variability
 
-        # print results
         print(
             f"{round(treeness_over_rcv, 4)}\t{round(treeness, 4)}\t{round(relative_composition_variability, 4)}"
         )
 
-    def process_args(self, args):
-        return dict(tree_file_path=args.tree, alignment_file_path=args.alignment)
-
-    def calculate_treeness_over_rcv(self, treeness, relative_composition_variability):
-        treeness_over_rcv = treeness / relative_composition_variability
-        return treeness_over_rcv
+    def process_args(self, args) -> Dict[str, str]:
+        return dict(
+            tree_file_path=args.tree,
+            alignment_file_path=args.alignment,
+        )

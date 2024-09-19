@@ -2,7 +2,6 @@ import pytest
 import sys
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -89,7 +88,7 @@ class TestRenameFastaEntries(object):
 
         assert pytest_wrapped_e.type == SystemExit
         mocked_print.assert_has_calls([
-            call("Please double check pathing and filenames"),
+            call("FASTA file path corresponds to no such file. Please check the path."),
         ])
 
     @patch("builtins.print")
@@ -108,6 +107,5 @@ class TestRenameFastaEntries(object):
 
         assert pytest_wrapped_e.type == SystemExit
         mocked_print.assert_has_calls([
-            call("Please double check pathing and filenames"),
+            call("Idmap path corresponds to no such file. Please check the path."),
         ])
-        
