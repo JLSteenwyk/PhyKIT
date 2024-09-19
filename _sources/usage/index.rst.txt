@@ -131,7 +131,7 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-	phykit aln_len_no_gaps <alignment> [--cpu <cpu>]
+	phykit aln_len_no_gaps <alignment>
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file 
@@ -155,7 +155,7 @@ in the alignment.
 
 .. code-block:: shell
 
-	phykit alignment_recoding <fasta> [-c/--code <code> --cpu <cpu>]
+	phykit alignment_recoding <fasta> [-c/--code <code>]
 
 Codes for which recoding scheme to use: |br|
 **RY-nucleotide** |br|
@@ -250,8 +250,7 @@ H = C |br|
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-c/\-\-code*: argument to specify the recoding scheme to use |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*-c/\-\-code*: argument to specify the recoding scheme to use 
 
 |
 
@@ -277,13 +276,13 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 
 .. code-block:: shell
 
-	phykit column_score <alignment> --reference <reference_alignment> [--cpu <cpu>]
+	phykit column_score <alignment> --reference <reference_alignment>
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment to |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*-r/\\-\\-reference*: reference alignment to compare the query alignment
+to
 
 |
 
@@ -453,12 +452,11 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 .. code-block:: shell
 
-	phykit pairwise_identity <alignment> [-v/--verbose -e/--exclude_gaps --cpu <cpu>]
+	phykit pairwise_identity <alignment> [-v/--verbose]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-e/\\-\\-exclude_gaps*: if a site has a gap, ignore it |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*-v/\\-\\-verbose*: optional argument to print identity per pair
 
 |
 
@@ -489,8 +487,7 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 	phykit parsimony_informative_sites <alignment>
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*<alignment>*: first argument after function name should be an alignment file
 
 |
 
@@ -550,8 +547,7 @@ and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 	phykit relative_composition_variability <alignment>
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*<alignment>*: first argument after function name should be an alignment file
 
 |
 
@@ -569,11 +565,10 @@ a lower composition bias for a given taxon in an alignment.
 
 .. code-block:: shell
 
-	phykit relative_composition_variability_taxon <alignment> [--cpu <cpu>]
+	phykit relative_composition_variability_taxon <alignment>
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*<alignment>*: first argument after function name should be an alignment file
 
 |
 
@@ -592,12 +587,11 @@ an alignment file.
 
 .. code-block:: shell
 
-	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file> --cpu <cpu>]
+	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2) |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
 
 |
 
@@ -618,13 +612,13 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 
 .. code-block:: shell
 
-	phykit sum_of_pairs_score <alignment> --reference <reference_alignment> [--cpu <cpu>]
+	phykit sum_of_pairs_score <alignment> --reference <reference_alignment>
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment to |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*-r/\\-\\-reference*: reference alignment to compare the query alignment
+to
 
 |
 
@@ -649,11 +643,10 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-   phykit variable_sites <alignment> [--cpu <cpu>]
+   phykit variable_sites <alignment>
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*<alignment>*: first argument after function name should be an alignment file
 
 |
 
@@ -679,12 +672,11 @@ with a semi-colon (;).
 
 .. code-block:: shell
 
-   phykit bipartition_support_stats <tree> [-v/--verbose --cpu <cpu>]
+   phykit bipartition_support_stats <tree> [-v/--verbose]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all bipartition support values |br|
-*\\-\\-cpu*: CPUs to use to accelerate calculation
+*-v/\\-\\-verbose*: optional argument to print all bipartition support values
 
 |
 

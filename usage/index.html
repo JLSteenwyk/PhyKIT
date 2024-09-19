@@ -242,7 +242,7 @@ col3: percentage of sites without gaps</p>
 with gaps and phylogenetic signal was determined by Shen
 et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len_no_gaps<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len_no_gaps<span class="w"> </span>&lt;alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -263,7 +263,7 @@ recoding schemes can be used and should be formatted
 as a two column file wherein the first column is the
 recoded character and the second column is the character
 in the alignment.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_recoding<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-c/--code<span class="w"> </span>&lt;code&gt;<span class="w"> </span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_recoding<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-c/--code<span class="w"> </span>&lt;code&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Codes for which recoding scheme to use: <br/>
@@ -351,8 +351,7 @@ G = W <br/>
 H = C <br/></p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-c/--code</em>: argument to specify the recoding scheme to use <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>-c/--code</em>: argument to specify the recoding scheme to use</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -369,14 +368,14 @@ aligned columns over all columns in an alignment. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
 <p>Column score is calculated following Thompson et al., Nucleic
 Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>column_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>column_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/\-\-reference</em>: reference alignment to compare the query alignment to <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>-r/\-\-reference</em>: reference alignment to compare the query alignment
+to</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -505,13 +504,12 @@ all pairwise identities will be reported.</p>
 <p>An example of pairwise identities being used as a proxy
 for evolutionary rate can be found here: Chen et al.
 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="w"> </span>-e/--exclude_gaps<span class="w"> </span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-e/\-\-exclude_gaps</em>: if a site has a gap, ignore it <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>-v/\-\-verbose</em>: optional argument to print identity per pair</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -537,8 +535,7 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -589,8 +586,7 @@ and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -604,12 +600,11 @@ Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_v
 This facilitates identifying specific taxa that may have compositional
 biases. Lower RCVT values are more desirable because they indicate
 a lower composition bias for a given taxon in an alignment.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -624,13 +619,12 @@ file wherein the first column is the current fasta entry name and
 the second column is the new fasta entry name in the resulting
 output alignment. Note, the input fasta file does not need to be
 an alignment file.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_fasta_entries<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="w"> </span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_fasta_entries<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2) <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -646,14 +640,14 @@ aligned residue pairs over all pairs of sequences. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
 <p>Column score is calculated following Thompson et al., Nucleic
 Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/\-\-reference</em>: reference alignment to compare the query alignment to <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>-r/\-\-reference</em>: reference alignment to compare the query alignment
+to</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -673,12 +667,11 @@ col3: percentage of variable sites</p>
 phylogenetic signal was determined by Shen et al.,
 Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>variable_sites<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>variable_sites<span class="w"> </span>&lt;alignment&gt;
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -698,13 +691,12 @@ they are indicative of greater certainty in tree topology.</p>
 In addition to support values for each node, the names of all terminal
 branches tips are also included. Each terminal branch name is separated
 with a semi-colon (;).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="w"> </span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all bipartition support values <br/>
-<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
+<em>-v/\-\-verbose</em>: optional argument to print all bipartition support values</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
