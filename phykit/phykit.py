@@ -1202,7 +1202,7 @@ class Phykit(object):
                   pk_bipartition_support_stats, pk_bss
 
                 Usage:
-                phykit bipartition_support_stats <tree> [-v/--verbose]
+                phykit bipartition_support_stats <tree> [-v/--verbose --cpu <cpu>]
 
                 Options
                 =====================================================
@@ -1213,6 +1213,9 @@ class Phykit(object):
                 -v/--verbose                optional argument to print
                                             all bipartition support
                                             values
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
@@ -1220,6 +1223,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         BipartitionSupportStats(args).run()
 

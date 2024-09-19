@@ -2,16 +2,15 @@ import pytest
 import sys
 
 from argparse import Namespace
-from Bio import Phylo
-from math import isclose
 from mock import patch, call
 
 from phykit.phykit import Phykit
 from phykit.services.tree.bipartition_support_stats import BipartitionSupportStats
 
+
 @pytest.fixture
 def args():
-    kwargs = dict(tree="/some/path/to/file.tre", verbose=None)
+    kwargs = dict(tree="/some/path/to/file.tre", verbose=None, cpu=1)
     return Namespace(**kwargs)
 
 

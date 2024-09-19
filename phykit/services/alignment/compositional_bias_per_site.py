@@ -13,7 +13,7 @@ class CompositionalBiasPerSite(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self) -> None:
-        alignment, _, is_protein = self.get_alignment_and_format()
+        alignment, _, _ = self.get_alignment_and_format()
 
         stat_res, p_vals_corrected = \
             self.calculate_compositional_bias_per_site(alignment)

@@ -1,3 +1,4 @@
+from multiprocessing import cpu_count
 import sys
 
 from Bio import Phylo
@@ -10,6 +11,7 @@ class Tree(BaseService):
         self,
         *args,
         tree_file_path=None,
+        cpu=None,
         idmap=None,
         alignment_file_path=None,
         tree1_file_path=None,
@@ -29,6 +31,7 @@ class Tree(BaseService):
         keep=None,
     ):
         self.tree_file_path = tree_file_path
+        self.cpu = cpu
         self.tree1_file_path = tree1_file_path
         self.alignment_file_path = alignment_file_path
         self.output_file_path = output_file_path
@@ -141,3 +144,13 @@ class Tree(BaseService):
                 return None
             except BrokenPipeError:
                 pass
+
+    def set_cpu(self) -> int:
+        cpu_available = cpu_count()
+
+        cpu = int(self.cpu[0]) if self.cpu else cpu_count()
+
+        if cpu > cpu_available:
+            return cpu_available
+        else:
+            return cpu

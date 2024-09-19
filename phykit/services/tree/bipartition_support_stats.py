@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple
+from multiprocessing import Pool
+from typing import Dict, List, Tuple, Union
 
 from Bio.Phylo import Newick
 
@@ -28,19 +29,40 @@ class BipartitionSupportStats(Tree):
             print_summary_statistics(stats)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(tree_file_path=args.tree, verbose=args.verbose)
+        return dict(
+            tree_file_path=args.tree,
+            verbose=args.verbose,
+            cpu=args.cpu
+        )
 
     def get_bipartition_support_vals(
         self,
         tree: Newick.Tree,
     ) -> Tuple[List[float], List[List[str]]]:
-        bs_vals = [
-            nonterminal.confidence for nonterminal in tree.get_nonterminals()
-            if nonterminal.confidence is not None
-        ]
-        term_names = [
-            [term.name for term in nonterminal.get_terminals()]
-            for nonterminal in tree.get_nonterminals()
-            if nonterminal.confidence is not None
-        ]
+        nonterminals = tree.get_nonterminals()
+
+        cpu = self.set_cpu()
+
+        with Pool(cpu) as pool:
+            results = pool.map(
+                self.extract_support_and_terminals, nonterminals
+            )
+
+        bs_vals = [result[0] for result in results if result[0] is not None]
+        term_names = [result[1] for result in results if result[0] is not None]
+
         return bs_vals, term_names
+
+    def extract_support_and_terminals(
+        self,
+        nonterminal
+    ) -> Tuple[
+        Union[
+                float, List[str], None
+        ]
+    ]:
+        print(nonterminal, type(nonterminal))
+        if nonterminal.confidence is None:
+            return None, None
+        term_names = [term.name for term in nonterminal.get_terminals()]
+        return nonterminal.confidence, term_names
