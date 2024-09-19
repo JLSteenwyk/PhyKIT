@@ -1,3 +1,4 @@
+from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
 from Bio import AlignIO
@@ -14,12 +15,10 @@ class ColumnScore(Alignment):
         query_records = AlignIO.read(self.fasta, "fasta")
         reference_records = AlignIO.read(self.reference, "fasta")
 
-        # create lists with strings of every columns
         ref_columns, query_columns = self.get_columns_from_alignments(
             reference_records, query_records
         )
 
-        # count the number of matches and total pairs
         number_of_matches, number_of_total_columns = \
             self.calculate_matches_between_ref_and_query_columns(
                 ref_columns, query_columns
@@ -35,16 +34,27 @@ class ColumnScore(Alignment):
         reference_records: MultipleSeqAlignment,
         query_records: MultipleSeqAlignment,
     ) -> Tuple[List[str], List[str]]:
-        ref_columns = [
-            reference_records[:, i].upper()
-            for i in range(reference_records.get_alignment_length())
-        ]
-        query_columns = [
-            query_records[:, i].upper()
-            for i in range(query_records.get_alignment_length())
-        ]
+        ref_aln_len = reference_records.get_alignment_length()
+        query_aln_len = query_records.get_alignment_length()
+
+        cpu = self.set_cpu()
+
+        with Pool(cpu) as pool:
+            ref_columns = pool.starmap(
+                self.get_column, [
+                    (reference_records, i) for i in range(ref_aln_len)
+                ]
+            )
+            query_columns = pool.starmap(
+                self.get_column, [
+                    (query_records, i) for i in range(query_aln_len)
+                ]
+            )
 
         return ref_columns, query_columns
+
+    def get_column(self, alignment: MultipleSeqAlignment, index: int) -> str:
+        return alignment[:, index].upper()
 
     def calculate_matches_between_ref_and_query_columns(
         self,

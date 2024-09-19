@@ -633,7 +633,7 @@ class Phykit(object):
                   pk_column_score, pk_cs
 
                 Usage:
-                phykit column_score <fasta> -r/--reference <ref.aln>
+                phykit column_score <fasta> -r/--reference <ref.aln> [--cpu <cpu>]
 
                 Options
                 =====================================================
@@ -644,11 +644,15 @@ class Phykit(object):
 
                 -r/--reference              reference fasta alignment to 
                                             compare query alignment to
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         ColumnScore(args).run()
 
