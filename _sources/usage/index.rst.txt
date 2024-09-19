@@ -679,11 +679,12 @@ with a semi-colon (;).
 
 .. code-block:: shell
 
-   phykit bipartition_support_stats <tree> [-v/--verbose]
+   phykit bipartition_support_stats <tree> [-v/--verbose --cpu <cpu>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all bipartition support values
+*-v/\\-\\-verbose*: optional argument to print all bipartition support values |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
