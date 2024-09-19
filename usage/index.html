@@ -646,14 +646,14 @@ aligned residue pairs over all pairs of sequences. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
 <p>Column score is calculated following Thompson et al., Nucleic
 Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/\-\-reference</em>: reference alignment to compare the query alignment
-to</p>
+<em>-r/\-\-reference</em>: reference alignment to compare the query alignment to <br/>
+<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -673,11 +673,12 @@ col3: percentage of variable sites</p>
 phylogenetic signal was determined by Shen et al.,
 Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>variable_sites<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>variable_sites<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--cpu<span class="w"> </span>&lt;cpu&gt;<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>\-\-cpu</em>: CPUs to use to accelerate calculation</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
