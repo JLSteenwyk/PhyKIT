@@ -35,7 +35,6 @@ class SumOfPairsScore(Alignment):
         reference_records: Dict[str, SeqRecord],
         query_records: Dict[str, SeqRecord],
     ) -> Tuple[int, int]:
-        print(query_records)
         number_of_matches = 0
         number_of_total_pairs = 0
 
