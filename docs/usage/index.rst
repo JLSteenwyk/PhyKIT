@@ -618,13 +618,13 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 
 .. code-block:: shell
 
-	phykit sum_of_pairs_score <alignment> --reference <reference_alignment>
+	phykit sum_of_pairs_score <alignment> --reference <reference_alignment> [--cpu <cpu>]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment
-to
+*-r/\\-\\-reference*: reference alignment to compare the query alignment to |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 
@@ -649,10 +649,11 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-   phykit variable_sites <alignment>
+   phykit variable_sites <alignment> [--cpu <cpu>]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*\\-\\-cpu*: CPUs to use to accelerate calculation
 
 |
 

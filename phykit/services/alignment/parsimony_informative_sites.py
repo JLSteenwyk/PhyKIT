@@ -19,7 +19,7 @@ class ParsimonyInformative(Alignment):
         print(f"{pi_sites}\t{aln_len}\t{round(pi_sites_per, 4)}")
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment)
+        return dict(alignment_file_path=args.alignment, cpu=args.cpu)
 
     def get_number_of_occurrences_per_character(
         self,

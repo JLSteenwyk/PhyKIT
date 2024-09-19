@@ -1100,7 +1100,7 @@ class Phykit(object):
                   pk_sum_of_pairs_score, pk_sops, pk_sop
 
                 Usage:
-                phykit sum_of_pairs_score <fasta> -r/--reference <ref.aln>
+                phykit sum_of_pairs_score <fasta> -r/--reference <ref.aln> [--cpu <cpu>]
 
                 Options
                 =====================================================
@@ -1111,11 +1111,15 @@ class Phykit(object):
 
                 -r/--reference              reference fasta alignment to 
                                             compare query alignment to
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         SumOfPairsScore(args).run()
 
@@ -1150,17 +1154,21 @@ class Phykit(object):
                   pk_variable_sites, pk_vs
 
                 Usage:
-                phykit variable_sites <alignment>
+                phykit variable_sites <alignment> [--cpu <cpu>]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
                                             an alignment file          
+
+                --cpu                       CPUs to use to
+                                            accelerate calculation
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--cpu", type=int, help=SUPPRESS)
         args = parser.parse_args(argv)
         VariableSites(args).run()
 

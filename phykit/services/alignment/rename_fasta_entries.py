@@ -30,6 +30,7 @@ class RenameFastaEntries(Alignment):
             fasta=args.fasta,
             idmap=args.idmap,
             output_file_path=output_file_path,
+            cpu=args.cpu
         )
 
     def load_idmap(self, idmap_file: str) -> Dict[str, str]:

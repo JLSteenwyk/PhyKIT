@@ -7,7 +7,7 @@ from phykit.services.alignment.variable_sites import VariableSites
 
 @pytest.fixture
 def args():
-    kwargs = dict(alignment="/some/path/to/file.fa")
+    kwargs = dict(alignment="/some/path/to/file.fa", cpu=1)
     return Namespace(**kwargs)
 
 
@@ -15,6 +15,7 @@ class TestVariableSites(object):
     def test_init_sets_alignment_file_path(self, args):
         vs = VariableSites(args)
         assert vs.alignment_file_path == args.alignment
+        assert vs.cpu == (1,)
         assert vs.output_file_path is None
 
     def test_variable_sites(self, alignment_simple, args):
