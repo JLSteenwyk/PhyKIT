@@ -1,6 +1,8 @@
 import copy
+from typing import Dict, List
 
 from Bio import Phylo
+from Bio.Phylo import Newick
 
 from .base import Tree
 
@@ -9,26 +11,28 @@ class NearestNeighborInterchange(Tree):
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
 
-    def run(self):
+    def run(self) -> None:
         tree = self.read_tree_file()
 
-        # remove branch lengths if specified by user
-        # otherwise, print ascii tree
         all_nnis = [tree]
         for t in self.get_neighbors(tree):
             all_nnis.append(t)
         Phylo.write(all_nnis, self.output_file_path, "newick")
 
-    def process_args(self, args):
+    def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree
-        if args.output is None:
-            output_file_path = f"{tree_file_path}.nnis"
-        else:
-            output_file_path = f"{args.output}"
+        output_file_path = \
+            f"{args.output}" if args.output else f"{tree_file_path}.nnis"
 
-        return dict(tree_file_path=tree_file_path, output_file_path=output_file_path)
+        return dict(
+            tree_file_path=tree_file_path,
+            output_file_path=output_file_path
+        )
 
-    def get_neighbors(self, tree):
+    def get_neighbors(
+        self,
+        tree: Newick.Tree
+    ) -> List[Newick.Tree]:
         ### This code is from BioPython (so is this comment)
         # Get all neighbor trees of the given tree (PRIVATE).
         # Currently only for binary rooted trees.
@@ -127,4 +131,5 @@ class NearestNeighborInterchange(Tree):
                     del clade.clades[0]
                     parent.clades.insert(0, sister)
                     clade.clades.insert(0, left)
+
         return neighbors

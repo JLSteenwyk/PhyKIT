@@ -2,7 +2,6 @@ import pytest
 import sys
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -10,7 +9,7 @@ here = Path(__file__)
 
 
 @pytest.mark.integration
-class TestGCContent(object):
+class TestFaidx(object):
     @patch("builtins.print")
     def test_faidx(self, mocked_print):
         expected_result = ">1\nA-GTAT"

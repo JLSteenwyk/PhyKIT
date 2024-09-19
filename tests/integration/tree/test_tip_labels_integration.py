@@ -1,9 +1,7 @@
-import pytest
-import sys
-from math import isclose
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
+import pytest
+import sys
 
 from phykit.phykit import Phykit
 
@@ -23,14 +21,7 @@ class TestTipLabels(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call("raccoon"),
-            call("bear"),
-            call("sea_lion"),
-            call("seal"),
-            call("monkey"),
-            call("cat"),
-            call("weasel"),
-            call("dog"),
+            call('raccoon\nbear\nsea_lion\nseal\nmonkey\ncat\nweasel\ndog')
         ]
 
     @patch("builtins.print")
@@ -44,14 +35,7 @@ class TestTipLabels(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call("raccoon"),
-            call("bear"),
-            call("sea_lion"),
-            call("seal"),
-            call("monkey"),
-            call("cat"),
-            call("weasel"),
-            call("dog"),
+            call('raccoon\nbear\nsea_lion\nseal\nmonkey\ncat\nweasel\ndog')
         ]
 
     @patch("builtins.print")
@@ -65,14 +49,7 @@ class TestTipLabels(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call("raccoon"),
-            call("bear"),
-            call("sea_lion"),
-            call("seal"),
-            call("monkey"),
-            call("cat"),
-            call("weasel"),
-            call("dog"),
+            call('raccoon\nbear\nsea_lion\nseal\nmonkey\ncat\nweasel\ndog')
         ]
 
     @patch("builtins.print")
@@ -86,14 +63,7 @@ class TestTipLabels(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call("raccoon"),
-            call("bear"),
-            call("sea_lion"),
-            call("seal"),
-            call("monkey"),
-            call("cat"),
-            call("weasel"),
-            call("dog"),
+            call('raccoon\nbear\nsea_lion\nseal\nmonkey\ncat\nweasel\ndog')
         ]
 
     @patch("builtins.print")

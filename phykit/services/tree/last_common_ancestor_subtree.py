@@ -1,4 +1,5 @@
 import sys
+from typing import Dict
 
 from .base import Tree
 
@@ -20,13 +21,9 @@ class LastCommonAncestorSubtree(Tree):
 
         self.write_tree_file(tree, self.output_file_path)
 
-    def process_args(self, args):
+    def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree
-
-        if args.output is None:
-            output_file_path = f"{tree_file_path}.subtree.tre"
-        else:
-            output_file_path = f"{args.output}"
+        output_file_path = args.output or f"{tree_file_path}.subtree.tre"
 
         return dict(
             tree_file_path=tree_file_path,

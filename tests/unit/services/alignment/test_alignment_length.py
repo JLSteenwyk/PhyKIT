@@ -24,12 +24,14 @@ class TestAlignmentLength(object):
             get_alignment_length=mocker.MagicMock(return_value=expected_length)
         )
         mocked_print = mocker.patch("builtins.print")
-        mocked_get_alignment_and_format = mocker.patch("phykit.services.alignment.alignment_length.AlignmentLength.get_alignment_and_format", return_value=(aln, ''))
+        mocked_get_alignment_and_format = mocker.patch(
+            "phykit.services.alignment.alignment_length.AlignmentLength.get_alignment_and_format",
+            return_value=(aln, '', '')
+        )
         aln_len = AlignmentLength(args)
-        res = aln_len.run()
+        _ = aln_len.run()
 
         assert mocked_get_alignment_and_format.called
         assert mocked_print.mock_calls == [
             call(expected_length)
         ]
-        
