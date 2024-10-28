@@ -57,13 +57,18 @@ class PairwiseIdentity(Alignment):
             total_compared = 0
 
             for res_one, res_two in zip(seq_one, seq_two):
-                if exclude_gaps and (
-                    res_one not in gap_chars or res_two not in gap_chars
-                ):
-                    continue
+                res_one = res_one.upper()
+                res_two = res_two.upper()
+
                 total_compared += 1
-                if res_one == res_two:
-                    identities += 1
+
+                if exclude_gaps:
+                    if (res_one not in gap_chars or res_two not in gap_chars):
+                        if res_one == res_two:
+                            identities += 1
+                else:
+                    if res_one == res_two:
+                        identities += 1
 
             if total_compared > 0:
                 identity_score = identities / total_compared

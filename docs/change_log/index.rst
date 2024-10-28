@@ -8,6 +8,9 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.0.1**:
+- added arguments to exclude sites with gaps in the pairwise identities and saturation functions.
+
 **2.0.0**:
 Codebase overhaul to make PhyKIT more mem efficient and faster. For example, using list comprehension when appropriate.
 

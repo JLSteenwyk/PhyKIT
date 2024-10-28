@@ -2475,6 +2475,8 @@ class Phykit(object):
                 
                 -t/--tree                   a tree file
 
+                -e/--exclude_gaps           if a site has a gap, ignore it
+
                 -v/--verbose                print out patristic distances
                                             and uncorrected distances used
                                             to determine saturation
@@ -2489,6 +2491,9 @@ class Phykit(object):
         )
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
         args = parser.parse_args(argv)
         Saturation(args).run()
