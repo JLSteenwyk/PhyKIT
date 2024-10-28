@@ -1,4 +1,5 @@
 import sys
+from typing import List
 
 from Bio import Phylo
 
@@ -27,6 +28,7 @@ class Tree(BaseService):
         tip_2=None,
         clade=None,
         keep=None,
+        exclude_gaps=None,
     ):
         self.tree_file_path = tree_file_path
         self.tree1_file_path = tree1_file_path
@@ -47,6 +49,7 @@ class Tree(BaseService):
         self.tip_2 = tip_2
         self.clade = clade
         self.keep = keep
+        self.exclude_gaps = exclude_gaps
 
     def read_tree_file(self):
         try:
@@ -141,3 +144,9 @@ class Tree(BaseService):
                 return None
             except BrokenPipeError:
                 pass
+
+    def get_gap_chars(is_protein: bool) -> List[str]:
+        if is_protein:
+            return ["-", "?", "*", "X", "x"]
+        else:
+            return ["-", "?", "*", "X", "x", "N", "n"]

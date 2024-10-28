@@ -456,7 +456,8 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print identity per pair
+*-v/\\-\\-verbose*: optional argument to print identity per pair|br|
+*-e/--exclude_gaps*: if a site has a gap, ignore it
 
 |
 
@@ -1408,6 +1409,7 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
 *-t/\\-\\-tree*: a tree file |br|
+*-e/--exclude_gaps*: if a site has a gap, ignore it |br|
 *-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
 distances used to determine saturation 
 
