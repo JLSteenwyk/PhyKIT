@@ -49,12 +49,21 @@ class DNAThreader(Alignment):
         # triplicate each amino acid
         return ''.join(c * 3 for c in p_seq)
 
-    def normalize_n_seq(self, n_seq: Seq, normalized_p_seq: str) -> str:
-        # insert gaps at corresponding positions in the nucleotide sequence based on the protein sequence
-        normalized_n_seq = list(n_seq)
-        for idx, c in enumerate(normalized_p_seq):
-            if c in "-?*Xx":
-                normalized_n_seq.insert(idx, "-")
+    def normalize_n_seq(self, n_seq: Seq, p_seq: Seq) -> str:
+        codons = [str(n_seq[i:i+3]) for i in range(0, len(n_seq), 3)]
+        normalized_n_seq = []
+
+        codon_idx = 0
+        for aa in p_seq:
+            if aa in "-?*Xx":
+                normalized_n_seq.append("---")
+            else:
+                if codon_idx < len(codons):
+                    normalized_n_seq.append(codons[codon_idx])
+                    codon_idx += 1
+                else:
+                    normalized_n_seq.append("---")  # fallback in case of misalignment
+
         return ''.join(normalized_n_seq)
 
     def thread(self, prot_records) -> Dict[str, str]:

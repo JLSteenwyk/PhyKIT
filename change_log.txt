@@ -1,5 +1,8 @@
 Major changes to PhyKIT are summarized here.
 
+2.0.2
+  - fixed bug in dna threading associated with how gaps were introduced in codons
+  
 2.0.1
   - added arguments to exclude sites with gaps in the pairwise identities and saturation function.
 
