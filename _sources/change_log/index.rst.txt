@@ -8,8 +8,11 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.0.2**:
+Fixed bug in dna threading associated with how gaps were introduced in codons.
+
 **2.0.1**:
-- added arguments to exclude sites with gaps in the pairwise identities and saturation functions.
+Added arguments to exclude sites with gaps in the pairwise identities and saturation functions.
 
 **2.0.0**:
 Codebase overhaul to make PhyKIT more mem efficient and faster. For example, using list comprehension when appropriate.
