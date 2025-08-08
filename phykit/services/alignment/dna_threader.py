@@ -50,20 +50,35 @@ class DNAThreader(Alignment):
         return ''.join(c * 3 for c in p_seq)
 
     def normalize_n_seq(self, n_seq: Seq, p_seq: Seq) -> str:
+        # Remove gaps and special characters from protein sequence to get actual amino acids
+        ungapped_p_seq = ''.join(aa for aa in str(p_seq) if aa not in "-?*Xx")
+        
+        # Verify the nucleotide sequence matches the ungapped protein
+        expected_nt_length = len(ungapped_p_seq) * 3
+        if len(n_seq) < expected_nt_length:
+            # If nucleotide sequence is shorter, we'll handle it gracefully
+            # by padding with gaps when we run out of codons
+            pass
+        
+        # Create codons from nucleotide sequence
         codons = [str(n_seq[i:i+3]) for i in range(0, len(n_seq), 3)]
+        
+        # Map back to gapped alignment - this creates the tripled version
         normalized_n_seq = []
-
         codon_idx = 0
+        
         for aa in p_seq:
             if aa in "-?*Xx":
+                # For gaps/special chars, add three gap characters
                 normalized_n_seq.append("---")
             else:
+                # For actual amino acids, add the corresponding codon
                 if codon_idx < len(codons):
                     normalized_n_seq.append(codons[codon_idx])
                     codon_idx += 1
                 else:
                     normalized_n_seq.append("---")  # fallback in case of misalignment
-
+        
         return ''.join(normalized_n_seq)
 
     def thread(self, prot_records) -> Dict[str, str]:
@@ -84,7 +99,7 @@ class DNAThreader(Alignment):
                 n_seq = nucl_records[gene_id].seq
 
                 normalized_p_seq = self.normalize_p_seq(p_seq)
-                normalized_n_seq = self.normalize_n_seq(n_seq, normalized_p_seq)
+                normalized_n_seq = self.normalize_n_seq(n_seq, p_seq)
 
                 sequence = [
                     normalized_n_seq[idx] if c not in "-?*Xx" and keep_mask[idx] else "-"
