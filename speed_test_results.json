@@ -1,0 +1,22 @@
+{
+  "patristic_distances": {
+    "test": "patristic_distances",
+    "data": []
+  },
+  "pairwise_identity": {
+    "test": "pairwise_identity",
+    "data": []
+  },
+  "saturation": {
+    "test": "saturation",
+    "data": []
+  },
+  "rf_distance": {
+    "test": "rf_distance",
+    "data": []
+  },
+  "create_concatenation": {
+    "test": "create_concatenation",
+    "data": []
+  }
+}
