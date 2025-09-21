@@ -21,6 +21,9 @@ class TestParallelProcessor(unittest.TestCase):
 
     def test_get_optimal_workers(self):
         """Test optimal worker calculation"""
+        import multiprocessing as mp
+        max_cpu = mp.cpu_count()
+
         # Small dataset
         workers = ParallelProcessor.get_optimal_workers(5, min_chunk_size=10)
         self.assertEqual(workers, 1)  # Too small for parallelization
@@ -28,16 +31,16 @@ class TestParallelProcessor(unittest.TestCase):
         # Medium dataset
         workers = ParallelProcessor.get_optimal_workers(100, min_chunk_size=10)
         self.assertGreaterEqual(workers, 1)
-        self.assertLessEqual(workers, 8)  # Capped at 8
+        self.assertLessEqual(workers, min(8, max_cpu))  # Capped at 8 or CPU count
 
         # Large dataset
         workers = ParallelProcessor.get_optimal_workers(1000, min_chunk_size=10)
         self.assertGreaterEqual(workers, 1)
-        self.assertLessEqual(workers, 8)
+        self.assertLessEqual(workers, min(8, max_cpu))
 
-        # Very large dataset (should still be capped at 8)
+        # Very large dataset (should be capped at 8 or CPU count, whichever is smaller)
         workers = ParallelProcessor.get_optimal_workers(10000, min_chunk_size=10)
-        self.assertEqual(workers, 8)
+        self.assertEqual(workers, min(8, max_cpu))
 
     def test_chunk_data(self):
         """Test data chunking"""

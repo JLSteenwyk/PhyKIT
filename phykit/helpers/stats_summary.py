@@ -22,6 +22,7 @@ def calculate_summary_statistics_from_arr(arr):
         print("There are no values to calculate summary statistics for.\n")
         print("Double check that the input alignment/phylogeny contains")
         print("the properties you want to calculate summary statistics for.")
+        stats = None
 
     return stats
 
@@ -45,6 +46,7 @@ def calculate_summary_statistics_from_dict(dat: dict):
         print("There are no values to calculate summary statistics for.\n")
         print("Double check that the input alignment/phylogeny contains")
         print("the properties you want to calculate summary statistics for.")
+        stats = None
 
     return stats
 

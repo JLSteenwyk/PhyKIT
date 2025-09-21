@@ -279,7 +279,7 @@ class TestSaturation(unittest.TestCase):
         except BrokenPipeError:
             self.fail("BrokenPipeError was not caught")
 
-    @patch('sklearn.linear_model.LinearRegression')
+    @patch('phykit.services.tree.saturation.LinearRegression')
     @patch('phykit.services.tree.saturation.get_alignment_and_format_helper')
     def test_run_complete_workflow(self, mock_get_alignment, mock_lr_class):
         """Test complete run workflow"""
@@ -294,6 +294,11 @@ class TestSaturation(unittest.TestCase):
         mock_tree.distance.return_value = 0.15
         self.saturation.read_tree_file = Mock(return_value=mock_tree)
         self.saturation.get_tip_names_from_tree = Mock(return_value=['seq1', 'seq2'])
+
+        # Mock the distance calculation method to return patristic and uncorrected distances
+        self.saturation.loop_through_combos_and_calculate_pds_and_pis = Mock(
+            return_value=([0.15], [0.25])  # patristic_distances, uncorrected_distances
+        )
 
         # Mock linear regression
         mock_model = Mock()
