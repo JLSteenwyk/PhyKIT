@@ -83,6 +83,30 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <hr class="docutils" />
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.0</strong>:
+Major performance improvements and bug fixes:</p>
+<ul class="simple">
+<li><p><strong>Performance Optimizations:</strong></p>
+<ul>
+<li><p>Added multiprocessing support for computationally intensive functions (up to 8x faster):
+patristic distances, pairwise identity, polytomy test, LB score, bipartition support stats,
+sum of pairs score, saturation analysis, hidden paralogy check, and covarying evolutionary rates</p></li>
+<li><p>Implemented tree caching with LRU cache to avoid re-parsing files</p></li>
+<li><p>Added NumPy vectorization for alignment operations (5-10x faster)</p></li>
+<li><p>Optimized file I/O with streaming for large concatenation operations</p></li>
+<li><p>Added pickle-based fast tree copying for NNI operations</p></li>
+</ul>
+</li>
+<li><p><strong>Bug Fixes:</strong></p>
+<ul>
+<li><p>Fixed tree caching side effects that caused tree modifications to persist</p></li>
+<li><p>Fixed spurious sequence detection to correctly use only terminal branches</p></li>
+<li><p>Fixed DNA threader array broadcasting issues</p></li>
+<li><p>Standardized error exit codes to 2</p></li>
+<li><p>Fixed test infrastructure issues</p></li>
+</ul>
+</li>
+</ul>
 <p><strong>2.0.2</strong>:
 Fixed bug in dna threading associated with how gaps were introduced in codons.</p>
 <p><strong>2.0.1</strong>:
