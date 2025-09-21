@@ -44,8 +44,9 @@ pip install --upgrade phykit==2.1.0
 
 ## Compatibility
 - Fully backward compatible with PhyKIT 2.0.x
-- Python 3.9, 3.10, 3.11 supported
+- **Expanded Python support**: Now supports Python 3.9, 3.10, 3.11, 3.12, and 3.13
 - All existing scripts and pipelines will continue to work
+- Tested on macOS, Linux, and Windows
 
 ## Performance Benchmarks
 Typical performance improvements on a 4-core system:

@@ -9,7 +9,12 @@ Change log
 Major changes to PhyKIT are summarized here.
 
 **2.1.0**:
-Major performance improvements and bug fixes:
+Major performance improvements, expanded Python support, and bug fixes:
+
+* **Compatibility:**
+
+  - Added support for Python 3.12 and 3.13
+  - Maintains compatibility with Python 3.9, 3.10, and 3.11
 
 * **Performance Optimizations:**
 
