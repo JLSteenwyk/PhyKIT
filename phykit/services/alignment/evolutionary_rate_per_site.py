@@ -1,5 +1,6 @@
 from collections import Counter
 from typing import List, Dict
+import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
 
@@ -50,15 +51,35 @@ class EvolutionaryRatePerSite(Alignment):
         alignment: MultipleSeqAlignment,
     ) -> List[float]:
         aln_len = alignment.get_alignment_length()
+        gap_chars = set(self.get_gap_chars())
+
+        # Convert alignment to numpy array for vectorized operations
+        alignment_array = np.array([
+            [c.upper() for c in str(record.seq)]
+            for record in alignment
+        ], dtype='U1')
+
         pic_values = []
 
-        gap_chars = self.get_gap_chars()
+        # Process each column
+        for col_idx in range(aln_len):
+            column = alignment_array[:, col_idx]
 
-        # calculate PIC for each site in the alignment
-        for idx in range(aln_len):
-            num_occurrences = self.get_number_of_occurrences_per_character(
-                alignment, idx, gap_chars
-            )
-            pic_values.append(self.calculate_pic(num_occurrences))
+            # Filter out gaps
+            non_gap_mask = ~np.isin(column, list(gap_chars))
+            filtered_column = column[non_gap_mask]
+
+            if len(filtered_column) > 0:
+                # Count occurrences using numpy
+                unique_chars, counts = np.unique(filtered_column, return_counts=True)
+                total_frequencies = len(filtered_column)
+
+                # Calculate PIC (Probability of Identical Characters)
+                sum_of_frequencies = np.sum((counts / total_frequencies) ** 2)
+                pic = 1 - sum_of_frequencies
+            else:
+                pic = 0
+
+            pic_values.append(pic)
 
         return pic_values

@@ -59,8 +59,9 @@ class TestLastCommonAncestorSubtree(object):
             f"{here.parent.parent.parent}/sample_files/tree_simple_lca_subtree_list.txt",
         ]
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -74,10 +75,12 @@ class TestLastCommonAncestorSubtree(object):
             f"{here.parent.parent.parent}/sample_files/tree_simple_lca_subtree_list.tx",
         ]
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 2
         # mocked_print.assert_has_calls([
         #     call("Please check file name and pathing"),
         # ])

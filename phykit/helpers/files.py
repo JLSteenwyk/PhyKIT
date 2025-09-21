@@ -1,6 +1,9 @@
 from enum import Enum
 import sys
-from typing import Tuple
+from typing import Tuple, Optional
+from functools import lru_cache
+import hashlib
+import os
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
@@ -17,27 +20,84 @@ class FileFormat(Enum):
     stockholm = "stockholm"
 
 
+def _get_file_hash(file_path: str) -> str:
+    """Calculate a hash for file content to use as cache key."""
+    # Use file path, size, and modification time for cache key
+    # This is faster than hashing file contents
+    stat = os.stat(file_path)
+    cache_key = f"{file_path}_{stat.st_size}_{stat.st_mtime}"
+    return hashlib.md5(cache_key.encode()).hexdigest()
+
+def _detect_format_by_content(file_path: str) -> Optional[str]:
+    """Attempt to detect file format by examining file content."""
+    with open(file_path, 'r') as f:
+        first_line = f.readline().strip()
+
+        # Quick format detection based on first line
+        if first_line.startswith('>'):
+            return 'fasta'
+        elif first_line.startswith('CLUSTAL'):
+            return 'clustal'
+        elif first_line.startswith('#'):
+            # Could be Stockholm
+            if 'STOCKHOLM' in first_line:
+                return 'stockholm'
+        elif first_line.isdigit() or (len(first_line.split()) == 2 and
+                                      first_line.split()[0].isdigit()):
+            return 'phylip'
+
+    return None
+
+@lru_cache(maxsize=32)
+def _cached_alignment_read(file_hash: str, file_path: str, file_format: str) -> Tuple[MultipleSeqAlignment, bool]:
+    """Cached reading of alignment files."""
+    with open(file_path) as f:
+        alignment = AlignIO.read(f, file_format)
+    return alignment, is_protein_alignment(alignment)
+
 def get_alignment_and_format(
     alignment_file_path: str
 ) -> Tuple[MultipleSeqAlignment, str, bool]:
-    # if file format is provided, read the file
-    # according to the user's file format
-    for fileFormat in FileFormat:
+    # Check if file exists first
+    if not os.path.exists(alignment_file_path):
+        print(f"{alignment_file_path} corresponds to no such file.")
+        print("Please check file name and pathing")
+        sys.exit(2)
+
+    # Try to detect format by content first
+    detected_format = _detect_format_by_content(alignment_file_path)
+
+    # Get file hash for caching
+    file_hash = _get_file_hash(alignment_file_path)
+
+    # If format was detected, try it first
+    if detected_format:
         try:
-            alignment = AlignIO.read(
-                open(alignment_file_path), fileFormat.value
+            alignment, is_protein = _cached_alignment_read(
+                file_hash, alignment_file_path, detected_format
             )
-            return alignment, fileFormat.value, is_protein_alignment(alignment)
-        # the following exceptions refer to skipping over errors
-        # associated with reading the wrong input file
-        except ValueError:
+            return alignment, detected_format, is_protein
+        except (ValueError, AssertionError):
+            pass
+
+    # Fall back to trying all formats
+    for fileFormat in FileFormat:
+        # Skip the already tried format
+        if detected_format and fileFormat.value == detected_format:
             continue
-        except AssertionError:
+
+        try:
+            alignment, is_protein = _cached_alignment_read(
+                file_hash, alignment_file_path, fileFormat.value
+            )
+            return alignment, fileFormat.value, is_protein
+        except (ValueError, AssertionError):
             continue
-        except FileNotFoundError:
-            print(f"{alignment_file_path} corresponds to no such file.")
-            print("Please check file name and pathing")
-            sys.exit()
+
+    # If we get here, no format worked
+    print(f"Could not determine format for {alignment_file_path}")
+    print("Please ensure the file is in a supported format")
+    sys.exit(2)
 
 
 def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
@@ -62,4 +122,4 @@ def read_single_column_file_to_list(single_col_file_path: str) -> list:
     except FileNotFoundError:
         print(f"{single_col_file_path} corresponds to no such file or directory.")
         print("Please check file name and pathing")
-        sys.exit()
+        sys.exit(2)

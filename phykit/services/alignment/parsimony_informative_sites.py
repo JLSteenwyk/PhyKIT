@@ -1,5 +1,6 @@
 from collections import Counter
 from typing import Dict, Tuple
+import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
 
@@ -48,12 +49,32 @@ class ParsimonyInformative(Alignment):
         alignment: MultipleSeqAlignment,
     ) -> Tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
+        gap_chars = self.get_gap_chars()
+
+        # Convert alignment to numpy array for vectorized operations
+        alignment_array = np.array([
+            [c.upper() for c in str(record.seq)]
+            for record in alignment
+        ], dtype='U1')
+
         pi_sites = 0
 
-        for idx in range(aln_len):
-            num_occurrences = self.get_number_of_occurrences_per_character(alignment, idx)
-            if self.is_parsimony_informative(num_occurrences):
-                pi_sites += 1
+        # Process each column more efficiently
+        for col_idx in range(aln_len):
+            column = alignment_array[:, col_idx]
+
+            # Filter out gaps
+            non_gap_mask = ~np.isin(column, list(gap_chars))
+            filtered_column = column[non_gap_mask]
+
+            if len(filtered_column) > 0:
+                # Count occurrences of each character
+                unique_chars, counts = np.unique(filtered_column, return_counts=True)
+
+                # Check if parsimony informative (at least 2 chars appearing >= 2 times)
+                chars_appearing_twice = np.sum(counts >= 2)
+                if chars_appearing_twice >= 2:
+                    pi_sites += 1
 
         pi_sites_per = (pi_sites / aln_len) * 100
 

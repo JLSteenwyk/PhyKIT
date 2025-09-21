@@ -2,6 +2,8 @@ from enum import Enum
 import itertools
 import sys
 from typing import Dict, List, Tuple
+import multiprocessing as mp
+from functools import partial
 
 from Bio import Align
 from Bio.Phylo import Newick
@@ -67,6 +69,38 @@ class Saturation(Tree):
             verbose=args.verbose,
         )
 
+    def _process_combo_batch(self, tree, seq_arrays, gap_mask, exclude_gaps, combo_batch):
+        """Process a batch of combinations in parallel."""
+        results = []
+        for combo in combo_batch:
+            # Calculate patristic distance
+            pd = tree.distance(combo[0], combo[1])
+
+            # Calculate uncorrected distance using numpy operations
+            seq1_arr = seq_arrays[combo[0]]
+            seq2_arr = seq_arrays[combo[1]]
+
+            if exclude_gaps:
+                # Use pre-computed gap masks
+                gap_mask1 = gap_mask[combo[0]]
+                gap_mask2 = gap_mask[combo[1]]
+                valid_positions = ~(gap_mask1 | gap_mask2)
+
+                if np.any(valid_positions):
+                    matches = seq1_arr[valid_positions] == seq2_arr[valid_positions]
+                    identities = np.sum(matches)
+                    adjusted_len = np.sum(valid_positions)
+                    ud = 1 - (identities / adjusted_len)
+                else:
+                    ud = float('nan')
+            else:
+                matches = seq1_arr == seq2_arr
+                identities = np.sum(matches)
+                ud = 1 - (identities / len(seq1_arr))
+
+            results.append((pd, ud))
+        return results
+
     def loop_through_combos_and_calculate_pds_and_pis(
         self,
         combos: List[Tuple[str, str]],
@@ -81,38 +115,72 @@ class Saturation(Tree):
         loop through all taxon combinations and determine
         their patristic distance and pairwise identity
         """
-        patristic_distances = []
-        uncorrected_distances = []
         gap_chars = self.get_gap_chars()
-        aln_len = alignment.get_alignment_length()
-        seq_dict = {record.name: record.seq for record in alignment}
-        for combo in combos:
-            # calculate pds
-            patristic_distances.append(tree.distance(combo[0], combo[1]))
 
-            # calcualte uncorrected distances
-            seq_one = seq_dict[combo[0]]
-            seq_two = seq_dict[combo[1]]
+        # Convert sequences to numpy arrays for vectorized operations
+        seq_arrays = {}
+        gap_mask = {}
+        for record in alignment:
+            seq_arr = np.array([c.upper() for c in str(record.seq)], dtype='U1')
+            seq_arrays[record.name] = seq_arr
             if exclude_gaps:
-                valid_positions = [
-                    idx for idx in range(aln_len)
-                    if seq_one[idx] not in gap_chars and seq_two[idx] not in gap_chars
-                ]
-                adjusted_len = len(valid_positions)
-                identities = sum(
-                    1 for idx in valid_positions if seq_one[idx].upper() == seq_two[idx].upper()
-                )
-            else:
-                adjusted_len = aln_len
-                identities = sum(
-                    1 for idx in range(aln_len) if seq_one[idx].upper() == seq_two[idx].upper()
-                )
+                gap_mask[record.name] = np.isin(seq_arr, list(gap_chars))
 
-            if adjusted_len > 0:
-                uncorrected_distances.append(1 - (identities / adjusted_len))
-            else:
-                uncorrected_distances.append(float('nan'))
-                uncorrected_distances.append(1 - (identities / aln_len))
+        # For small datasets, process sequentially
+        if len(combos) < 50:
+            patristic_distances = []
+            uncorrected_distances = []
+            for combo in combos:
+                pd = tree.distance(combo[0], combo[1])
+                patristic_distances.append(pd)
+
+                seq1_arr = seq_arrays[combo[0]]
+                seq2_arr = seq_arrays[combo[1]]
+
+                if exclude_gaps:
+                    gap_mask1 = gap_mask[combo[0]]
+                    gap_mask2 = gap_mask[combo[1]]
+                    valid_positions = ~(gap_mask1 | gap_mask2)
+
+                    if np.any(valid_positions):
+                        matches = seq1_arr[valid_positions] == seq2_arr[valid_positions]
+                        identities = np.sum(matches)
+                        adjusted_len = np.sum(valid_positions)
+                        ud = 1 - (identities / adjusted_len)
+                    else:
+                        ud = float('nan')
+                else:
+                    matches = seq1_arr == seq2_arr
+                    identities = np.sum(matches)
+                    ud = 1 - (identities / len(seq1_arr))
+
+                uncorrected_distances.append(ud)
+        else:
+            # Use multiprocessing for larger datasets
+            num_workers = min(mp.cpu_count(), 8)
+            chunk_size = max(1, len(combos) // (num_workers * 4))
+            combo_chunks = [combos[i:i + chunk_size] for i in range(0, len(combos), chunk_size)]
+
+            # Create partial function
+            process_func = partial(
+                self._process_combo_batch,
+                tree,
+                seq_arrays,
+                gap_mask,
+                exclude_gaps
+            )
+
+            # Process in parallel
+            with mp.Pool(processes=num_workers) as pool:
+                chunk_results = pool.map(process_func, combo_chunks)
+
+            # Flatten results
+            patristic_distances = []
+            uncorrected_distances = []
+            for chunk_result in chunk_results:
+                for pd, ud in chunk_result:
+                    patristic_distances.append(pd)
+                    uncorrected_distances.append(ud)
 
         return patristic_distances, uncorrected_distances
 

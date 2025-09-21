@@ -78,8 +78,9 @@ class TestMonophylyCheck(object):
             f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.t",
             f"{here.parent.parent.parent}/sample_files/wrong_file",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -92,8 +93,9 @@ class TestMonophylyCheck(object):
             f"{here.parent.parent.parent}/sample_files/wrong_file",
             f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.monophyly_check.true.absent_tip_name.txt",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2

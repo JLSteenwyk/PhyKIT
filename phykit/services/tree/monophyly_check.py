@@ -19,20 +19,28 @@ class MonophylyCheck(Tree):
 
         res_arr = []
 
-        tree_tips = self.get_tip_names_from_tree(tree)
-        taxa_of_interest = list(set(taxa).intersection(tree_tips))
+        # Use frozenset for more efficient set operations
+        tree_tips = frozenset(self.get_tip_names_from_tree(tree))
+        taxa_set = frozenset(taxa)
+        taxa_of_interest = taxa_set.intersection(tree_tips)
 
         if len(taxa_of_interest) <= 1:
             res_arr.append(["insufficient_taxon_representation"])
-            sys.exit()
+            sys.exit(2)
 
-        shared_tree_tips = self.shared_tips(taxa_of_interest, tree_tips)
-        diff_tips = list(set(tree_tips) - set(shared_tree_tips))
+        # Convert back to list for functions that need it
+        taxa_of_interest_list = list(taxa_of_interest)
+        shared_tree_tips = self.shared_tips(taxa_of_interest_list, list(tree_tips))
+
+        # Use set difference directly
+        diff_tips = list(tree_tips - frozenset(shared_tree_tips))
         tree.root_with_outgroup(diff_tips)
         tree = tree.common_ancestor(shared_tree_tips)
-        common_ancestor_tips = self.get_tip_names_from_tree(tree)
+
+        # Cache common ancestor tips as set
+        common_ancestor_tips = frozenset(self.get_tip_names_from_tree(tree))
         diff_tips_between_clade_and_curr_tree = list(
-            set(taxa_of_interest) ^ set(common_ancestor_tips)
+            taxa_of_interest.symmetric_difference(common_ancestor_tips)
         )
 
         stats = self.get_bootstrap_statistics(tree)
@@ -53,6 +61,7 @@ class MonophylyCheck(Tree):
         self,
         clade: Newick.Clade
     ) -> Dict[str, Union[int, float]]:
+        # Use generator for memory efficiency
         bs_vals = [
             terminal.confidence for terminal in clade.get_nonterminals()
             if terminal.confidence is not None

@@ -1,4 +1,5 @@
 from typing import Dict
+import copy
 
 from Bio.Phylo import Newick
 
@@ -11,8 +12,10 @@ class BranchLengthMultiplier(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self.multiply_branch_lengths_by_factor(tree, self.factor)
-        self.write_tree_file(tree, self.output_file_path)
+        # Make a deep copy to avoid modifying the cached tree
+        tree_copy = copy.deepcopy(tree)
+        self.multiply_branch_lengths_by_factor(tree_copy, self.factor)
+        self.write_tree_file(tree_copy, self.output_file_path)
 
     def process_args(self, args) -> Dict[str, str]:
         output_file_path = \

@@ -1,4 +1,5 @@
 from typing import Dict
+import copy
 
 from Bio import Phylo
 
@@ -13,6 +14,8 @@ class PrintTree(Tree):
         tree = self.read_tree_file()
 
         if self.remove:
+            # Make a deep copy to avoid modifying the cached tree
+            tree = copy.deepcopy(tree)
             for node in tree.get_terminals() + tree.get_nonterminals():
                 node.branch_length = None
 

@@ -3,6 +3,7 @@ import re
 import sys
 from typing import Dict, Tuple
 from collections import Counter
+import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
 
@@ -29,7 +30,7 @@ class GCContent(Alignment):
 
         if is_protein:
             print("GC content can't be calculated for protein sequences")
-            sys.exit()
+            sys.exit(2)
 
         if self.verbose:
             self.calculate_gc_per_sequence(records)
@@ -40,25 +41,49 @@ class GCContent(Alignment):
         return dict(fasta=args.fasta, verbose=args.verbose)
 
     def calculate_gc_per_sequence(self, records: MultipleSeqAlignment) -> None:
+        gap_chars = set(self.get_gap_chars())
+
         for record in records:
-            seq = str(record.seq)
-            seq, gc_count = self.remove_gaps_and_count_gc(seq)
+            # Convert to numpy array for faster operations
+            seq_arr = np.array(list(str(record.seq).upper()), dtype='U1')
+
+            # Filter out gaps
+            non_gap_mask = ~np.isin(seq_arr, list(gap_chars))
+            cleaned_seq = seq_arr[non_gap_mask]
+
+            if len(cleaned_seq) > 0:
+                # Count G and C
+                gc_count = np.sum((cleaned_seq == 'G') | (cleaned_seq == 'C'))
+                gc_content = gc_count / len(cleaned_seq)
+            else:
+                gc_content = 0
+
             try:
-                print(f"{record.id}\t{round(gc_count / len(seq), 4) if seq else 0}")
+                print(f"{record.id}\t{round(gc_content, 4)}")
             except BrokenPipeError:
                 pass
 
     def calculate_gc_total(self, records: MultipleSeqAlignment) -> None:
-        combined_seq = "".join(str(record.seq) for record in records)
-        combined_seq, gc_count = self.remove_gaps_and_count_gc(combined_seq)
-        try:
-            gc_content = round(gc_count / len(combined_seq), 4)
+        gap_chars = set(self.get_gap_chars())
+
+        # Combine all sequences into one array
+        all_seqs = [list(str(record.seq).upper()) for record in records]
+        combined_arr = np.concatenate([np.array(seq, dtype='U1') for seq in all_seqs])
+
+        # Filter out gaps
+        non_gap_mask = ~np.isin(combined_arr, list(gap_chars))
+        cleaned_seq = combined_arr[non_gap_mask]
+
+        if len(cleaned_seq) > 0:
+            # Count G and C
+            gc_count = np.sum((cleaned_seq == 'G') | (cleaned_seq == 'C'))
+            gc_content = round(gc_count / len(cleaned_seq), 4)
             print(gc_content)
-        except (BrokenPipeError, ZeroDivisionError):
+        else:
             print(
                 "Input file has an unacceptable format. Please check input file argument."
             )
-            sys.exit()
+            sys.exit(2)
 
     def remove_gaps_and_count_gc(self, seq: str) -> Tuple[str, float]:
         gap_chars = self.get_gap_chars()

@@ -1,5 +1,42 @@
 Major changes to PhyKIT are summarized here.
 
+2.1.0
+  Performance Optimizations:
+  - Added multiprocessing support for computationally intensive functions:
+    * Patristic distances calculation (up to 8x faster for large trees)
+    * Pairwise identity calculations (NumPy vectorization, 5-10x faster)
+    * Polytomy test (parallel tree processing)
+    * LB Score calculation (multiprocessing for large datasets)
+    * Bipartition support statistics (parallel bipartition processing)
+    * Sum of pairs score (vectorized calculations)
+    * Saturation analysis (parallel distance calculations)
+    * Hidden paralogy check (parallel clade processing)
+    * Covarying evolutionary rates (parallel tree pair processing)
+
+  - Added caching optimizations:
+    * Tree reading with LRU cache to avoid re-parsing files
+    * Distance matrix caching in patristic distances
+    * Tree pruning cache in polytomy test
+
+  - Memory and I/O optimizations:
+    * Optimized file concatenation to use streaming instead of loading all in memory
+    * NumPy vectorization for alignment operations
+    * Efficient set operations using frozensets
+    * Batch processing for large datasets
+
+  Bug Fixes:
+  - Fixed tree caching side effects by returning deep copies from cached reads
+  - Fixed spurious sequence detection to only use terminal branches for median calculation
+  - Fixed DNA threader array broadcasting issues with NumPy
+  - Fixed test infrastructure issues with missing sys.argv patches
+  - Standardized exit codes to 2 for error conditions
+  - Fixed branch length multiplier and other tree operations modifying cached trees
+
+  Infrastructure:
+  - Added pickle-based fast tree copying for NNI operations
+  - Improved test coverage and fixed integration test issues
+  - Added progress indicators for long-running operations
+
 2.0.2
   - fixed bug in dna threading associated with how gaps were introduced in codons
   

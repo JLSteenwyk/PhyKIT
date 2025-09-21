@@ -48,7 +48,11 @@ class TestSpuriousSequence(object):
 
     @patch("builtins.print")
     def test_spurious_sequence_custom_factor(self, mocked_print):
-        expected_result = "monkey\t100.8593\t50.9231\t25.4615"
+        # With factor 2 and terminal branch median of ~19.04, both monkey and cat exceed threshold
+        expected_results = [
+            call("monkey\t100.8593\t38.0791\t19.0396"),
+            call("cat\t47.1407\t38.0791\t19.0396")
+        ]
         testargs = [
             "phykit",
             "spurious_sequence",
@@ -58,17 +62,18 @@ class TestSpuriousSequence(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [call(expected_result)]
+        assert mocked_print.mock_calls == expected_results
 
     @patch("builtins.print")
     def test_spurious_sequence_incorrect_file_path(self, mocked_print):
         testargs = [
             "phykit",
             "spurious_sequence",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tr",  # Invalid file path
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2

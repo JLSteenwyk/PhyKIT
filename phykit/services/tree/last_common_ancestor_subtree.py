@@ -1,4 +1,5 @@
 import sys
+import copy
 from typing import Dict
 
 from .base import Tree
@@ -12,14 +13,16 @@ class LastCommonAncestorSubtree(Tree):
 
     def run(self):
         tree = self.read_tree_file()
+        # Make a deep copy to avoid issues with cached tree modifications
+        tree_copy = copy.deepcopy(tree)
         try:
             taxa = read_single_column_file_to_list(self.list_of_taxa)
         except FileNotFoundError:
             print("Taxa list file is not found. Please check pathing.")
-            sys.exit()
-        tree = tree.common_ancestor(taxa)
+            sys.exit(2)
+        subtree = tree_copy.common_ancestor(taxa)
 
-        self.write_tree_file(tree, self.output_file_path)
+        self.write_tree_file(subtree, self.output_file_path)
 
     def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree

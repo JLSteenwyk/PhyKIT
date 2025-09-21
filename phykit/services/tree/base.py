@@ -1,5 +1,9 @@
 import sys
+import copy
 from typing import List
+from functools import lru_cache
+import os
+import hashlib
 
 from Bio import Phylo
 
@@ -51,29 +55,54 @@ class Tree(BaseService):
         self.keep = keep
         self.exclude_gaps = exclude_gaps
 
+    @staticmethod
+    @lru_cache(maxsize=32)
+    def _cached_tree_read(file_path: str, tree_format: str, file_hash: str):
+        """Cached tree reading with file hash for cache invalidation."""
+        return Phylo.read(file_path, tree_format)
+
+    @staticmethod
+    def _get_file_hash(file_path: str) -> str:
+        """Get a hash based on file path, size, and modification time."""
+        try:
+            stat = os.stat(file_path)
+            cache_key = f"{file_path}_{stat.st_size}_{stat.st_mtime}"
+            return hashlib.md5(cache_key.encode()).hexdigest()
+        except:
+            return ""
+
     def read_tree_file(self):
         try:
-            return Phylo.read(self.tree_file_path, self.tree_format)
+            file_hash = self._get_file_hash(self.tree_file_path)
+            tree = self._cached_tree_read(self.tree_file_path, self.tree_format, file_hash)
+            # Return a deep copy to prevent modifications to the cached tree
+            return copy.deepcopy(tree)
         except FileNotFoundError:
             print(f"{self.tree_file_path} corresponds to no such file or directory.")
             print("Please check filename and pathing")
-            sys.exit()
+            sys.exit(2)
 
     def read_tree1_file(self):
         try:
-            return Phylo.read(self.tree1_file_path, self.tree_format)
+            file_hash = self._get_file_hash(self.tree1_file_path)
+            tree = self._cached_tree_read(self.tree1_file_path, self.tree_format, file_hash)
+            # Return a deep copy to prevent modifications to the cached tree
+            return copy.deepcopy(tree)
         except FileNotFoundError:
             print(f"{self.tree1_file_path} corresponds to no such file or directory.")
             print("Please check filename and pathing")
-            sys.exit()
+            sys.exit(2)
 
     def read_reference_tree_file(self):
         try:
-            return Phylo.read(self.reference, self.tree_format)
+            file_hash = self._get_file_hash(self.reference)
+            tree = self._cached_tree_read(self.reference, self.tree_format, file_hash)
+            # Return a deep copy to prevent modifications to the cached tree
+            return copy.deepcopy(tree)
         except FileNotFoundError:
             print(f"{self.reference} corresponds to no such file or directory.")
             print("Please check filename and pathing")
-            sys.exit()
+            sys.exit(2)
 
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
@@ -82,11 +111,8 @@ class Tree(BaseService):
         """
         get tip names from a tree
         """
-        tips = []
-        for tip in tree.get_terminals():
-            tips.append(tip.name)
-
-        return tips
+        # Use list comprehension for better performance
+        return [tip.name for tip in tree.get_terminals()]
 
     def shared_tips(self, a, b):
         """
@@ -106,7 +132,7 @@ class Tree(BaseService):
             return list(a_set.intersection(b_set))
         else:
             print("no common tips")
-            sys.exit()
+            sys.exit(2)
 
     def prune_tree_using_taxa_list(self, tree, taxa_to_prune: list):
         """

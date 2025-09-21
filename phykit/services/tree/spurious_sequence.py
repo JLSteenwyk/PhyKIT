@@ -62,16 +62,14 @@ class SpuriousSequence(Tree):
         List[float],
         Dict[str, float],
     ]:
-        branch_lengths = list()
-        name_and_branch_len = dict()
+        branch_lengths = []
+        name_and_branch_len = {}
 
-        # collect terminal branch lengths
+        # collect terminal branch lengths only for spurious sequence detection
+        # (internal branches are not considered for spurious sequence detection)
         for terminal in tree.get_terminals():
-            branch_lengths.append(terminal.branch_length)
-            name_and_branch_len[terminal.name] = terminal.branch_length
-
-        # collect internal branch lengths
-        for internal in tree.get_nonterminals():
-            branch_lengths.append(terminal.branch_length)
+            if terminal.branch_length is not None:
+                branch_lengths.append(terminal.branch_length)
+                name_and_branch_len[terminal.name] = terminal.branch_length
 
         return branch_lengths, name_and_branch_len

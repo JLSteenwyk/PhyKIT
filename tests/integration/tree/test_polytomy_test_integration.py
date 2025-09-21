@@ -150,8 +150,9 @@ class TestPTT(object):
             "-g",
             f"{here.parent.parent.parent}/sample_files/polyt_test_groups.txt",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -166,8 +167,9 @@ class TestPTT(object):
             "-g",
             f"{here.parent.parent.parent}/sample_files/polyt_test_incorrect_groups.txt",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2

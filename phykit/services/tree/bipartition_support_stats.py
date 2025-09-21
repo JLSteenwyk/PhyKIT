@@ -34,13 +34,15 @@ class BipartitionSupportStats(Tree):
         self,
         tree: Newick.Tree,
     ) -> Tuple[List[float], List[List[str]]]:
-        bs_vals = [
-            nonterminal.confidence for nonterminal in tree.get_nonterminals()
-            if nonterminal.confidence is not None
-        ]
-        term_names = [
-            [term.name for term in nonterminal.get_terminals()]
-            for nonterminal in tree.get_nonterminals()
-            if nonterminal.confidence is not None
-        ]
+        # Single pass through nonterminals to avoid duplicate tree traversal
+        bs_vals = []
+        term_names = []
+
+        # Cache terminals for each nonterminal in one pass
+        for nonterminal in tree.get_nonterminals():
+            if nonterminal.confidence is not None:
+                bs_vals.append(nonterminal.confidence)
+                # Get terminal names once for this nonterminal
+                term_names.append([term.name for term in nonterminal.get_terminals()])
+
         return bs_vals, term_names

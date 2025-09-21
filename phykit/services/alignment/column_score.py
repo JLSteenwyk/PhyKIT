@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple
+import numpy as np
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
@@ -35,14 +36,20 @@ class ColumnScore(Alignment):
         reference_records: MultipleSeqAlignment,
         query_records: MultipleSeqAlignment,
     ) -> Tuple[List[str], List[str]]:
-        ref_columns = [
-            reference_records[:, i].upper()
-            for i in range(reference_records.get_alignment_length())
-        ]
-        query_columns = [
-            query_records[:, i].upper()
-            for i in range(query_records.get_alignment_length())
-        ]
+        # Convert alignments to numpy arrays for faster column extraction
+        ref_array = np.array([
+            [c.upper() for c in str(record.seq)]
+            for record in reference_records
+        ], dtype='U1')
+
+        query_array = np.array([
+            [c.upper() for c in str(record.seq)]
+            for record in query_records
+        ], dtype='U1')
+
+        # Extract columns as strings
+        ref_columns = [''.join(ref_array[:, i]) for i in range(ref_array.shape[1])]
+        query_columns = [''.join(query_array[:, i]) for i in range(query_array.shape[1])]
 
         return ref_columns, query_columns
 

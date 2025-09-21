@@ -16,7 +16,7 @@ class RenameFastaEntries(Alignment):
             records = SeqIO.parse(self.fasta, "fasta")
         except FileNotFoundError:
             print("FASTA file path corresponds to no such file. Please check the path.")
-            sys.exit()
+            sys.exit(2)
 
         idmap = self.load_idmap(self.idmap)
 
@@ -36,7 +36,7 @@ class RenameFastaEntries(Alignment):
                 return dict(line.split() for line in f)
         except FileNotFoundError:
             print("Idmap path corresponds to no such file. Please check the path.")
-            sys.exit()
+            sys.exit(2)
 
     def replace_ids_and_write(
         self,

@@ -1,8 +1,13 @@
 import sys
+import os
 from textwrap import dedent
 from typing import Dict, List, Tuple
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import partial
+import multiprocessing as mp
+from collections import defaultdict
 
 from .base import Alignment
 from ...helpers.files import read_single_column_file_to_list
@@ -26,13 +31,28 @@ class CreateConcatenationMatrix(Alignment):
             return read_single_column_file_to_list(alignment_list_path)
         except FileNotFoundError:
             print("Alignment list file (-a) is not found. Please check pathing.")
-            sys.exit()
+            sys.exit(2)
+
+    @staticmethod
+    def _get_taxa_from_alignment(alignment_path: str) -> set:
+        """Extract taxa names from a single alignment file."""
+        return {seq_record.id for seq_record in SeqIO.parse(alignment_path, "fasta")}
 
     def get_taxa_names(self, alignment_paths: List[str]) -> List[str]:
+        """Get all unique taxa names from alignment files in parallel."""
         taxa = set()
-        for alignment_path in alignment_paths:
-            for seq_record in SeqIO.parse(alignment_path, "fasta"):
-                taxa.add(seq_record.id)
+
+        # Process files in parallel if there are many
+        if len(alignment_paths) > 10:
+            with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), len(alignment_paths))) as executor:
+                futures = [executor.submit(self._get_taxa_from_alignment, path) for path in alignment_paths]
+                for future in as_completed(futures):
+                    taxa.update(future.result())
+        else:
+            # Process sequentially for small datasets
+            for alignment_path in alignment_paths:
+                taxa.update(self._get_taxa_from_alignment(alignment_path))
+
         return sorted(taxa)
 
     def print_start_message(
@@ -71,7 +91,7 @@ class CreateConcatenationMatrix(Alignment):
         """Create a placeholder string for sequences with missing taxa."""
         if not records:
             print(f"No sequence records found. Exiting...")
-            sys.exit()
+            sys.exit(2)
 
         og_len = len(records[0].seq)
         missing_seq = '?' * og_len
@@ -123,17 +143,52 @@ class CreateConcatenationMatrix(Alignment):
         return occupancy_info
 
     def fasta_file_write(self, fasta_output: str, concatenated_seqs: Dict[str, List[str]]) -> None:
-        with open(fasta_output, "w") as final_fasta_file:
+        """Write concatenated sequences to FASTA file with buffered I/O."""
+        # Use larger buffer for better I/O performance
+        with open(fasta_output, "w", buffering=8192) as final_fasta_file:
             for taxon, sequences in concatenated_seqs.items():
-                final_fasta_file.write(f">{taxon}\n{''.join(sequences)}\n")
+                # Join sequences once instead of in the write statement
+                concatenated = ''.join(sequences)
+                final_fasta_file.write(f">{taxon}\n{concatenated}\n")
 
     def write_occupancy_or_partition_file(self, info: List[str], output_file_name: str) -> None:
         with open(output_file_name, "w") as f:
             f.writelines(info)
 
+    @staticmethod
+    def _process_alignment_file(alignment_path: str, taxa: List[str]) -> Tuple[str, Dict[str, str], set, int]:
+        """Process a single alignment file and return its data."""
+        records = list(SeqIO.parse(alignment_path, "fasta"))
+        present_taxa = {record.id for record in records}
+
+        if not records:
+            return alignment_path, {}, present_taxa, 0
+
+        og_len = len(records[0].seq)
+        missing_seq = '?' * og_len
+
+        # Create sequence dict for this alignment
+        seq_dict = {}
+        for taxon in taxa:
+            if taxon in present_taxa:
+                # Find the sequence for this taxon
+                for record in records:
+                    if record.id == taxon:
+                        seq_dict[taxon] = str(record.seq)
+                        break
+            else:
+                seq_dict[taxon] = missing_seq
+
+        return alignment_path, seq_dict, present_taxa, og_len
+
     def create_concatenation_matrix(self, alignment_list_path: str, prefix: str) -> None:
         alignment_paths = self.read_alignment_paths(alignment_list_path)
         taxa = self.get_taxa_names(alignment_paths)
+
+        # Create output directory if needed
+        output_dir = os.path.dirname(prefix)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
 
         # Assign output file names
         file_partition = f"{prefix}.partition"
@@ -145,21 +200,51 @@ class CreateConcatenationMatrix(Alignment):
         # Initialize placeholders for partition info
         first_len, second_len = 1, 0
         partition_info, occupancy_info = [], []
-        concatenated_seqs = {taxon: [] for taxon in taxa}
+        concatenated_seqs = defaultdict(list)
 
-        # Process each alignment file
-        for alignment_path in alignment_paths:
-            present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
-            missing_seq, og_len = self.create_missing_seq_str(records)
+        # Process alignment files in parallel if there are many
+        if len(alignment_paths) > 2:
+            with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
+                process_func = partial(self._process_alignment_file, taxa=taxa)
+                # Keep results indexed by path to maintain order
+                futures = {executor.submit(process_func, path): path for path in alignment_paths}
+                results = {}
 
-            # Process taxa sequences and add to the concatenated sequences
-            self.process_taxa_sequences(records, taxa, concatenated_seqs, missing_seq)
+                for future in as_completed(futures):
+                    path = futures[future]
+                    results[path] = future.result()
 
-            # Add to partition and occupancy info
-            partition_info, first_len, second_len = self.add_to_partition_info(
-                partition_info, og_len, "AUTO", alignment_path, first_len, second_len
-            )
-            occupancy_info = self.add_to_occupancy_info(occupancy_info, present_taxa, taxa, alignment_path)
+                # Process results in original order
+                for alignment_path in alignment_paths:
+                    _, seq_dict, present_taxa, og_len = results[alignment_path]
+
+                    # Add sequences to concatenated dict
+                    for taxon in taxa:
+                        concatenated_seqs[taxon].append(seq_dict[taxon])
+
+                    # Add to partition and occupancy info
+                    partition_info, first_len, second_len = self.add_to_partition_info(
+                        partition_info, og_len, "AUTO", alignment_path, first_len, second_len
+                    )
+                    occupancy_info = self.add_to_occupancy_info(occupancy_info, present_taxa, taxa, alignment_path)
+        else:
+            # Process sequentially for small datasets
+            for alignment_path in alignment_paths:
+                present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
+                missing_seq, og_len = self.create_missing_seq_str(records)
+
+                # Process taxa sequences and add to the concatenated sequences
+                self.process_taxa_sequences(records, taxa, concatenated_seqs, missing_seq)
+
+                # Add to partition and occupancy info
+                partition_info, first_len, second_len = self.add_to_partition_info(
+                    partition_info, og_len, "AUTO", alignment_path, first_len, second_len
+                )
+                occupancy_info = self.add_to_occupancy_info(occupancy_info, present_taxa, taxa, alignment_path)
+
+        # Convert defaultdict to regular dict for writing
+        if isinstance(concatenated_seqs, defaultdict):
+            concatenated_seqs = dict(concatenated_seqs)
 
         # Write output files
         self.fasta_file_write(fasta_output, concatenated_seqs)

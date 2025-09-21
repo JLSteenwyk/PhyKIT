@@ -261,8 +261,11 @@ class Phykit(object):
                 getattr(self, args.command)(sys.argv[2:])
             else:
                 self.run_alias(args.command, sys.argv[2:])
+        except SystemExit:
+            # Re-raise SystemExit as-is to preserve exit code
+            raise
         except NameError:
-            sys.exit()
+            sys.exit(2)
 
     ## Aliases
     def run_alias(self, command, argv):
