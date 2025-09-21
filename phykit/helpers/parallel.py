@@ -4,7 +4,7 @@ Parallel processing utilities for batch operations
 
 import multiprocessing as mp
 from functools import partial
-from typing import List, Any, Callable, Optional
+from typing import List, Any, Callable, Optional, Tuple
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import sys
