@@ -1,4 +1,5 @@
 from typing import Dict
+import copy
 
 from Bio.Phylo import Newick
 
@@ -11,8 +12,10 @@ class InternodeLabeler(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        self.add_labels_to_tree(tree)  
-        self.write_tree_file(tree, self.output_file_path)
+        # Make a deep copy to avoid modifying the cached tree
+        tree_copy = copy.deepcopy(tree)
+        self.add_labels_to_tree(tree_copy)
+        self.write_tree_file(tree_copy, self.output_file_path)
 
     def process_args(self, args) -> Dict[str, str]:
         output_file_path = args.output or f"{args.tree}.internode_labels.tre"

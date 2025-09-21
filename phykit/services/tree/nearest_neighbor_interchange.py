@@ -1,5 +1,6 @@
 import copy
-from typing import Dict, List
+from typing import Dict, List, Generator
+import pickle
 
 from Bio import Phylo
 from Bio.Phylo import Newick
@@ -14,9 +15,9 @@ class NearestNeighborInterchange(Tree):
     def run(self) -> None:
         tree = self.read_tree_file()
 
+        # Use standard neighbor generation with optimized copying
         all_nnis = [tree]
-        for t in self.get_neighbors(tree):
-            all_nnis.append(t)
+        all_nnis.extend(self.get_neighbors(tree))
         Phylo.write(all_nnis, self.output_file_path, "newick")
 
     def process_args(self, args) -> Dict[str, str]:
@@ -28,6 +29,10 @@ class NearestNeighborInterchange(Tree):
             tree_file_path=tree_file_path,
             output_file_path=output_file_path
         )
+
+    def _fast_tree_copy(self, tree: Newick.Tree) -> Newick.Tree:
+        """Fast tree copying using pickle instead of deep copy."""
+        return pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
     def get_neighbors(
         self,
@@ -66,14 +71,14 @@ class NearestNeighborInterchange(Tree):
                     del right.clades[1]
                     left.clades.append(right_right)
                     right.clades.append(left_right)
-                    temp_tree = copy.deepcopy(tree)
+                    temp_tree = self._fast_tree_copy(tree)
                     neighbors.append(temp_tree)
                     # neighbor 2 (left_left + right_left)
                     del left.clades[1]
                     del right.clades[0]
                     left.clades.append(right_left)
                     right.clades.append(right_right)
-                    temp_tree = copy.deepcopy(tree)
+                    temp_tree = self._fast_tree_copy(tree)
                     neighbors.append(temp_tree)
                     # change back (left_left + left_right)
                     del left.clades[1]
@@ -96,14 +101,14 @@ class NearestNeighborInterchange(Tree):
                     del clade.clades[1]
                     parent.clades.append(right)
                     clade.clades.append(sister)
-                    temp_tree = copy.deepcopy(tree)
+                    temp_tree = self._fast_tree_copy(tree)
                     neighbors.append(temp_tree)
                     # neighbor 2 (parent + left)
                     del parent.clades[1]
                     del clade.clades[0]
                     parent.clades.append(left)
                     clade.clades.append(right)
-                    temp_tree = copy.deepcopy(tree)
+                    temp_tree = self._fast_tree_copy(tree)
                     neighbors.append(temp_tree)
                     # change back (parent + sister)
                     del parent.clades[1]
@@ -117,14 +122,14 @@ class NearestNeighborInterchange(Tree):
                     del clade.clades[1]
                     parent.clades.insert(0, right)
                     clade.clades.append(sister)
-                    temp_tree = copy.deepcopy(tree)
+                    temp_tree = self._fast_tree_copy(tree)
                     neighbors.append(temp_tree)
                     # neighbor 2 (parent + left)
                     del parent.clades[0]
                     del clade.clades[0]
                     parent.clades.insert(0, left)
                     clade.clades.append(right)
-                    temp_tree = copy.deepcopy(tree)
+                    temp_tree = self._fast_tree_copy(tree)
                     neighbors.append(temp_tree)
                     # change back (parent + sister)
                     del parent.clades[0]

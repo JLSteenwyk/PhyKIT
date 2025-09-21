@@ -1,5 +1,6 @@
 from collections import Counter
 import sys
+import numpy as np
 
 from typing import List
 
@@ -50,37 +51,50 @@ class Alignment(BaseService):
         except FileNotFoundError:
             print("Input corresponds to no such file or directory.")
             print("Please double check pathing and filenames")
-            sys.exit()
+            sys.exit(2)
 
     def calculate_rcv(self) -> float:
         alignment, _, _ = self.get_alignment_and_format()
         aln_len = alignment.get_alignment_length()
-
-        concat_seq = []
         num_records = len(alignment)
 
-        concat_seq = "".join(str(record.seq) for record in alignment)
+        # Convert alignment to numpy array for faster operations
+        alignment_array = np.array([
+            list(str(record.seq)) for record in alignment
+        ], dtype='U1')
 
-        total_counts = Counter(concat_seq)
+        # Get all unique characters in the alignment
+        unique_chars = np.unique(alignment_array)
 
-        average_d = {
-            seq: total_counts[seq] / num_records for seq in total_counts
-        }
+        # Vectorized approach: create a count matrix for all sequences and characters at once
+        # Shape: (num_records, num_unique_chars)
+        count_matrix = np.zeros((num_records, len(unique_chars)), dtype=np.int32)
 
-        indiv_rcv_values = []
+        # Build character index mapping for fast lookup
+        char_to_idx = {char: idx for idx, char in enumerate(unique_chars)}
 
-        for record in alignment:
-            record_counts = Counter(record.seq)
-            temp_rcv = sum(
-                abs(
-                    record_counts[seq_letter] - average_d[seq_letter]
-                ) for seq_letter in total_counts
-            )
-            indiv_rcv_values.append(temp_rcv / (num_records * aln_len))
+        # Count characters for each sequence using vectorized operations
+        for seq_idx in range(num_records):
+            seq = alignment_array[seq_idx]
+            for char_idx, char in enumerate(unique_chars):
+                count_matrix[seq_idx, char_idx] = np.sum(seq == char)
 
-        relative_composition_variability = sum(indiv_rcv_values)
+        # Calculate total counts and averages using matrix operations
+        total_counts = np.sum(count_matrix, axis=0)
+        average_counts = total_counts / num_records
 
-        return relative_composition_variability
+        # Calculate RCV values using vectorized operations
+        # Compute absolute differences from average for all sequences at once
+        abs_diffs = np.abs(count_matrix - average_counts)
+
+        # Sum across characters for each sequence
+        seq_rcv_sums = np.sum(abs_diffs, axis=1)
+
+        # Normalize and sum
+        indiv_rcv_values = seq_rcv_sums / (num_records * aln_len)
+        relative_composition_variability = np.sum(indiv_rcv_values)
+
+        return float(relative_composition_variability)
 
     def get_gap_chars(is_protein: bool) -> List[str]:
         if is_protein:

@@ -1,5 +1,6 @@
 from argparse import Namespace
 from typing import Dict, Tuple
+import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
 
@@ -50,13 +51,19 @@ class AlignmentLengthNoGaps(Alignment):
         """
         Count sites in the alignment with no gaps
         """
+        gap_chars = set(self.get_gap_chars())
+
+        # Convert alignment to numpy array
+        alignment_array = np.array([
+            list(str(record.seq)) for record in alignment
+        ], dtype='U1')
+
+        # Count columns with no gaps
         aln_len_no_gaps = 0
-
-        gap_chars = self.get_gap_chars()
-
-        for i in range(aln_len):
-            column = set(alignment[:, i])
-            if column.isdisjoint(gap_chars):
+        for col_idx in range(aln_len):
+            column = alignment_array[:, col_idx]
+            # Check if column has any gap characters
+            if not np.any(np.isin(column, list(gap_chars))):
                 aln_len_no_gaps += 1
 
         return aln_len_no_gaps

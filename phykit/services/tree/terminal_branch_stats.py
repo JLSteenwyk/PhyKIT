@@ -67,7 +67,7 @@ class TerminalBranchStats(Tree):
             print(
                 "Calculating terminal branch statistics requires a phylogeny with branch lengths."
             )
-            sys.exit()
+            sys.exit(2)
 
     def calculate_terminal_branch_stats(
         self,

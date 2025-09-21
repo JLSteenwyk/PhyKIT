@@ -3,9 +3,14 @@ import itertools
 from scipy.stats import chisquare
 from scipy.stats import _stats_py
 from typing import Dict, List, Tuple, Union
+import multiprocessing as mp
+from functools import partial, lru_cache
+import hashlib
+import pickle
 
 from Bio import Phylo
 from Bio.Phylo import Newick
+import numpy as np
 
 from .base import Tree
 from ...helpers.files import read_single_column_file_to_list
@@ -84,7 +89,7 @@ class PolytomyTest(Tree):
                             print(
                                 "col5: the tip names of the outgroup taxa (; separated)"
                             )
-                            sys.exit()
+                            sys.exit(2)
                         except BrokenPipeError:
                             pass
 
@@ -92,11 +97,30 @@ class PolytomyTest(Tree):
             try:
                 print(f"{self.groups} corresponds to no such file.")
                 print("Please check filename and pathing again.")
-                sys.exit()
+                sys.exit(2)
             except BrokenPipeError:
                 pass
 
         return groups_arr
+
+    def _process_tree_batch(
+        self,
+        tree_files_batch: List[str],
+        groups_of_groups: Dict[str, List[List[str]]],
+        outgroup_taxa: List[str],
+    ) -> Dict[str, Dict[str, Dict[str, int]]]:
+        """Process a batch of trees in parallel."""
+        batch_summary = {}
+        for tree_file in tree_files_batch:
+            try:
+                tree = Phylo.read(tree_file, "newick")
+                tips = self.get_tip_names_from_tree(tree)
+                batch_summary = self.examine_all_triplets_and_sister_pairing(
+                    tips, tree_file, batch_summary, groups_of_groups, outgroup_taxa
+                )
+            except:
+                continue
+        return batch_summary
 
     def loop_through_trees_and_examine_sister_support_among_triplets(
         self,
@@ -111,28 +135,44 @@ class PolytomyTest(Tree):
         determine which two taxa are sister to one another
         """
         summary = dict()
-        # loop through trees
-        try:
-            # cnt = 0
-            for tree_file in trees_file_path:
-                # cnt+=1
-                # print(f"processing tree {cnt} of {len(trees_file_path)}")
-                tree = Phylo.read(tree_file, "newick")
-                # get tip names
-                tips = self.get_tip_names_from_tree(tree)
 
-                # examine all triplets and their support for
-                # any sister pairing
-                summary = self.examine_all_triplets_and_sister_pairing(
-                    tips, tree_file, summary, groups_of_groups, outgroup_taxa
-                )
-        except FileNotFoundError:
-            try:
-                print(f"{tree_file} corresponds to no such file.")
-                print("Please check file name and pathing")
-                sys.exit()
-            except BrokenPipeError:
-                pass
+        # For small datasets, process sequentially
+        if len(trees_file_path) < 10:
+            for tree_file in trees_file_path:
+                try:
+                    tree = Phylo.read(tree_file, "newick")
+                    tips = self.get_tip_names_from_tree(tree)
+                    summary = self.examine_all_triplets_and_sister_pairing(
+                        tips, tree_file, summary, groups_of_groups, outgroup_taxa
+                    )
+                except FileNotFoundError:
+                    print(f"{tree_file} corresponds to no such file.")
+                    print("Please check file name and pathing")
+                    sys.exit(2)
+        else:
+            # Use multiprocessing for larger datasets
+            num_workers = min(mp.cpu_count(), 8)
+            batch_size = max(1, len(trees_file_path) // num_workers)
+            tree_batches = [trees_file_path[i:i + batch_size]
+                           for i in range(0, len(trees_file_path), batch_size)]
+
+            # Process batches in parallel
+            process_func = partial(self._process_tree_batch,
+                                  groups_of_groups=groups_of_groups,
+                                  outgroup_taxa=outgroup_taxa)
+
+            with mp.Pool(processes=num_workers) as pool:
+                batch_results = pool.map(process_func, tree_batches)
+
+            # Merge results
+            for batch_summary in batch_results:
+                for tree_file, tree_data in batch_summary.items():
+                    if tree_file not in summary:
+                        summary[tree_file] = {}
+                    for sisters, count in tree_data.items():
+                        if sisters not in summary[tree_file]:
+                            summary[tree_file][sisters] = 0
+                        summary[tree_file][sisters] += count
 
         return summary
 
@@ -145,15 +185,64 @@ class PolytomyTest(Tree):
     ]:
         groups_of_groups = {}
 
+        # Pre-compute group sets for faster lookups
+        self._group_sets_cache = {}
+
         for group in groups_arr:
             temp = []
+            group_sets = []
             for i in range(1, 4):
-                temp.append([taxon_name for taxon_name in group[i]])
+                taxa_list = [taxon_name for taxon_name in group[i]]
+                temp.append(taxa_list)
+                group_sets.append(frozenset(taxa_list))
             groups_of_groups[group[0]] = temp
+            self._group_sets_cache[group[0]] = group_sets
 
         outgroup_taxa = [taxon_name for taxon_name in group[4]]
 
         return groups_of_groups, outgroup_taxa
+
+    @lru_cache(maxsize=1024)
+    def _get_triplet_tree_cached(self, tips_tuple: tuple, triplet: tuple,
+                                 tree_file: str, outgroup_tuple: tuple):
+        """Cached version of get_triplet_tree."""
+        tips = list(tips_tuple)
+        outgroup_taxa = list(outgroup_tuple)
+        return self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
+
+    def _process_triplet_batch(
+        self,
+        triplet_batch: List[Tuple],
+        tips: List[str],
+        tree_file: str,
+        groups_of_groups: Dict[str, List[List[str]]],
+        outgroup_taxa: List[str],
+    ) -> Dict[str, Dict[str, int]]:
+        """Process a batch of triplets."""
+        batch_summary = {}
+
+        for triplet in triplet_batch:
+            # Use cached version for tree pruning
+            tree = self._get_triplet_tree_cached(
+                tuple(tips), triplet, tree_file, tuple(outgroup_taxa)
+            )
+
+            if tree and hasattr(tree, 'get_terminals'):
+                terminal_count = len(list(tree.get_terminals()))
+                if terminal_count == 3:
+                    for _, groups in groups_of_groups.items():
+                        num_groups_represented = self.count_number_of_groups_in_triplet(
+                            triplet, groups
+                        )
+
+                        if num_groups_represented == 3:
+                            tip_names = self.get_tip_names_from_tree(tree)
+                            self.set_branch_lengths_in_tree_to_one(tree)
+                            batch_summary = self.determine_sisters_and_add_to_counter(
+                                tip_names, tree, tree_file, groups, batch_summary
+                            )
+
+        return batch_summary
 
     def examine_all_triplets_and_sister_pairing(
         self,
@@ -172,38 +261,59 @@ class PolytomyTest(Tree):
         # get all combinations of three tips
         identifier = list(groups_of_groups.keys())[0]
         triplet_tips = list(itertools.product(*groups_of_groups[identifier]))
-        for triplet in triplet_tips:
-            # obtain tree of the triplet
-            tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
-            cnt = 0
-            try:
-                for leaf in tree.get_terminals():
-                    cnt += 1
-            except AttributeError:
-                continue
-            if tree and cnt == 3:
-                for _, groups in groups_of_groups.items():
-                    # see if there any intersctions between
-                    # the triplet and the the group
-                    num_groups_represented = self.count_number_of_groups_in_triplet(
-                        triplet, groups
-                    )
 
-                    # if one taxa is represented from each group,
-                    # use the triplet
-                    tip_names = []
-                    if num_groups_represented == 3:
-                        # get names in triplet and set tree branch lengths to 1
-                        tip_names = self.get_tip_names_from_tree(tree)
-                        self.set_branch_lengths_in_tree_to_one(tree)
-                        # determine sisters and add to sister pair counter
-                        summary = self.determine_sisters_and_add_to_counter(
-                            tip_names, tree, tree_file, groups, summary
-                        )
-            else:
-                continue
+        # For small datasets, process sequentially
+        if len(triplet_tips) < 50:
+            for triplet in triplet_tips:
+                tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
+                if tree and hasattr(tree, 'get_terminals'):
+                    terminal_count = len(list(tree.get_terminals()))
+                    if terminal_count == 3:
+                        for _, groups in groups_of_groups.items():
+                            num_groups_represented = self.count_number_of_groups_in_triplet(
+                                triplet, groups
+                            )
+                            if num_groups_represented == 3:
+                                tip_names = self.get_tip_names_from_tree(tree)
+                                self.set_branch_lengths_in_tree_to_one(tree)
+                                summary = self.determine_sisters_and_add_to_counter(
+                                    tip_names, tree, tree_file, groups, summary
+                                )
+        else:
+            # Process triplets in batches for larger datasets
+            batch_size = max(10, len(triplet_tips) // (mp.cpu_count() * 2))
+            triplet_batches = [triplet_tips[i:i + batch_size]
+                              for i in range(0, len(triplet_tips), batch_size)]
+
+            process_func = partial(
+                self._process_triplet_batch,
+                tips=tips,
+                tree_file=tree_file,
+                groups_of_groups=groups_of_groups,
+                outgroup_taxa=outgroup_taxa
+            )
+
+            # Process batches and merge results
+            for batch in triplet_batches:
+                batch_summary = process_func(batch)
+                for tree_file_key, tree_data in batch_summary.items():
+                    if tree_file_key not in summary:
+                        summary[tree_file_key] = {}
+                    for sisters, count in tree_data.items():
+                        if sisters not in summary[tree_file_key]:
+                            summary[tree_file_key][sisters] = 0
+                        summary[tree_file_key][sisters] += count
 
         return summary
+
+    @lru_cache(maxsize=4096)
+    def _count_groups_cached(self, triplet_tuple: tuple, groups_tuple: tuple) -> int:
+        """Cached version of group counting."""
+        triplet_set = set(triplet_tuple)
+        num_groups_represented = sum(
+            1 for group in groups_tuple if triplet_set.intersection(group)
+        )
+        return num_groups_represented
 
     def count_number_of_groups_in_triplet(
         self,
@@ -213,35 +323,25 @@ class PolytomyTest(Tree):
         """
         determine how many groups are represented in a triplet
         """
-        num_groups_represented = 0
-        for group in groups:
-            temp = [value for value in list(triplet) if value in group]
-            if len(temp) >= 1:
-                num_groups_represented += 1
-        return num_groups_represented
+        # Convert groups to tuple of frozensets for caching
+        groups_tuple = tuple(frozenset(group) for group in groups)
+        return self._count_groups_cached(triplet, groups_tuple)
 
     def set_branch_lengths_in_tree_to_one(
         self,
         tree: Newick.Tree
     ) -> None:
-        for term in tree.get_terminals():
-            term.branch_length = 1
-        for internode in tree.get_nonterminals():
-            internode.branch_length = 1
+        # Single pass through all clades
+        for clade in tree.find_clades():
+            clade.branch_length = 1
 
     def check_if_triplet_is_a_polytomy(self, tree: Newick.Tree) -> bool:
         """
         count the number of internal branches. If 1, then the triplet is a polytomy
         """
-        num_int = 0
-        # check if the triplet is a polytomy
-        for internal_branch in tree.get_nonterminals():
-            num_int += 1
-
-        if num_int == 1:
-            return True
-        else:
-            return False
+        # Direct check without intermediate list creation
+        nonterminal_count = sum(1 for _ in tree.get_nonterminals())
+        return nonterminal_count == 1
 
     def sister_relationship_counter(
         self,
@@ -291,6 +391,17 @@ class PolytomyTest(Tree):
             tree = False
             return tree
 
+    @lru_cache(maxsize=4096)
+    def _determine_sisters_cached(self, groups_tuple: tuple, pair: tuple) -> str:
+        """Cached version of sister determination."""
+        # Find which group each pair member belongs to
+        idx0 = next(i for i, group in enumerate(groups_tuple) if pair[0] in group)
+        idx1 = next(i for i, group in enumerate(groups_tuple) if pair[1] in group)
+
+        # Sort and format the result
+        sisters = sorted([idx0, idx1])
+        return f"{sisters[0]}-{sisters[1]}"
+
     def determine_sisters_from_triplet(
         self,
         groups: List[List[str]],
@@ -299,16 +410,9 @@ class PolytomyTest(Tree):
         """
         determine sister taxa from a triplet
         """
-        sisters = sorted(
-            [
-                [i for i, lst in enumerate(groups) if pair[0] in lst][0],
-                [i for i, lst in enumerate(groups) if pair[1] in lst][0],
-            ]
-        )
-        sisters = [str(i) for i in sisters]
-        sisters = str("-".join(sisters))
-
-        return sisters
+        # Convert to tuple of frozensets for caching
+        groups_tuple = tuple(frozenset(group) for group in groups)
+        return self._determine_sisters_cached(groups_tuple, pair)
 
     def determine_sisters_and_add_to_counter(
         self,

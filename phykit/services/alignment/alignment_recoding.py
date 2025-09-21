@@ -57,7 +57,7 @@ class AlignmentRecoding(Alignment):
 
         if recoding is None:
             print("Please specify a recoding table")
-            sys.exit()
+            sys.exit(2)
 
         recoding_paths = {
             "RY-nucleotide": "../../recoding_tables/RY-nucleotide.txt",
@@ -78,7 +78,7 @@ class AlignmentRecoding(Alignment):
                     recoding_table[parts[1].upper()] = parts[0].upper()
         except FileNotFoundError:
             print(f"Recoding table file '{pathing}' not found.")
-            sys.exit()
+            sys.exit(2)
 
         return recoding_table
 

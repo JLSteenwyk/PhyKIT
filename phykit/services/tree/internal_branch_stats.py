@@ -70,7 +70,7 @@ class InternalBranchStats(Tree):
 
         if not internal_branch_lengths:
             print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
-            sys.exit()
+            sys.exit(2)
 
         stats = calculate_summary_statistics_from_arr(internal_branch_lengths)
 

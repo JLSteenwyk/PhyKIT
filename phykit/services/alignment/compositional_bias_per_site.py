@@ -1,5 +1,6 @@
 from typing import Dict, List, Tuple, Union
 from collections import Counter
+import numpy as np
 
 from scipy.stats import chisquare, false_discovery_control
 from scipy.stats._stats_py import Power_divergenceResult
@@ -46,25 +47,51 @@ class CompositionalBiasPerSite(Alignment):
         List[Union[float, str]],
     ]:
         aln_len = alignment.get_alignment_length()
+        gap_chars = set(self.get_gap_chars())
+
+        # Convert alignment to numpy array for faster operations
+        alignment_array = np.array([
+            [c.upper() for c in str(record.seq)]
+            for record in alignment
+        ], dtype='U1')
 
         stat_res = []
         p_vals = []
         nan_idx = []
 
-        for idx in range(aln_len):
-            num_occurrences = \
-                self.get_number_of_occurrences_per_character(alignment, idx)
+        # Process each column
+        for col_idx in range(aln_len):
+            column = alignment_array[:, col_idx]
 
-            chisquare_res = chisquare(num_occurrences)
-            stat_res.append(chisquare_res)
+            # Filter out gaps
+            non_gap_mask = ~np.isin(column, list(gap_chars))
+            filtered_column = column[non_gap_mask]
 
-            if str(chisquare_res.pvalue) != "nan":
-                p_vals.append(chisquare_res.pvalue)
+            if len(filtered_column) > 0:
+                # Count occurrences using numpy
+                unique_chars, counts = np.unique(filtered_column, return_counts=True)
+
+                # Perform chi-square test
+                chisquare_res = chisquare(counts)
+                stat_res.append(chisquare_res)
+
+                if not np.isnan(chisquare_res.pvalue):
+                    p_vals.append(chisquare_res.pvalue)
+                else:
+                    nan_idx.append(col_idx)
             else:
-                nan_idx.append(idx)
+                # Handle empty column
+                dummy_res = chisquare([1])  # Create dummy result
+                stat_res.append(dummy_res)
+                nan_idx.append(col_idx)
 
-        p_vals_corrected = list(false_discovery_control(p_vals))
+        # Apply FDR correction
+        if p_vals:
+            p_vals_corrected = list(false_discovery_control(p_vals))
+        else:
+            p_vals_corrected = []
 
+        # Insert NaNs at appropriate positions
         for idx in reversed(nan_idx):
             p_vals_corrected.insert(idx, "nan")
 

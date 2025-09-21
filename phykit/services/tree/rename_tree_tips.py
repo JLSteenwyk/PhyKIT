@@ -1,4 +1,5 @@
 import sys
+import copy
 from typing import Dict
 
 from Bio.Phylo import Newick
@@ -12,12 +13,14 @@ class RenameTreeTips(Tree):
 
     def run(self):
         tree = self.read_tree_file()
+        # Make a deep copy to avoid modifying the cached tree
+        tree_copy = copy.deepcopy(tree)
 
         idmap = self.read_id_map()
 
-        tree = self.replace_tip_names(tree, idmap)
+        tree_copy = self.replace_tip_names(tree_copy, idmap)
 
-        self.write_tree_file(tree, self.output_file_path)
+        self.write_tree_file(tree_copy, self.output_file_path)
 
     def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree
@@ -42,7 +45,7 @@ class RenameTreeTips(Tree):
             try:
                 print(f"{self.idmap} corresponds to no such file.")
                 print("Please check file name and pathing")
-                sys.exit()
+                sys.exit(2)
             except BrokenPipeError:
                 pass
 

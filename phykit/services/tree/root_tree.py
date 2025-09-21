@@ -1,3 +1,4 @@
+import copy
 from Bio import Phylo
 
 from .base import Tree
@@ -11,13 +12,15 @@ class RootTree(Tree):
 
     def run(self):
         tree = self.read_tree_file()
+        # Make a deep copy to avoid modifying the cached tree
+        tree_copy = copy.deepcopy(tree)
 
         outgroup = \
             read_single_column_file_to_list(self.outgroup_taxa_file_path)
 
-        Phylo.BaseTree.Tree.root_with_outgroup(tree, outgroup)
+        Phylo.BaseTree.Tree.root_with_outgroup(tree_copy, outgroup)
 
-        self.write_tree_file(tree, self.output_file_path)
+        self.write_tree_file(tree_copy, self.output_file_path)
 
     def process_args(self, args):
         tree_file_path = args.tree

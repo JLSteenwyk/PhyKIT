@@ -134,8 +134,9 @@ class TestRCVT(object):
             "rcvt",
             f"{here.parent.parent.parent}/sample_files/does_not_exist",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2

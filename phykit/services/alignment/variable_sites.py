@@ -1,4 +1,5 @@
 from typing import Dict, Tuple
+import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
 
@@ -24,20 +25,29 @@ class VariableSites(Alignment):
         alignment: MultipleSeqAlignment
     ) -> Tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
-
         gap_chars = self.get_gap_chars()
+
+        # Convert alignment to numpy array for vectorized operations
+        alignment_array = np.array([
+            [c.upper() for c in str(record.seq)]
+            for record in alignment
+        ], dtype='U1')
 
         var_sites = 0
 
-        for i in range(aln_len):
-            seq_at_position = [
-                residue.upper()
-                for residue in alignment[:, i]
-                if residue not in gap_chars
-            ]
+        # Process each column
+        for col in range(aln_len):
+            column = alignment_array[:, col]
 
-            if len(set(seq_at_position)) > 1:
-                var_sites += 1
+            # Filter out gap characters
+            non_gap_mask = ~np.isin(column, list(gap_chars))
+            filtered_column = column[non_gap_mask]
+
+            # Check if variable (more than one unique character)
+            if len(filtered_column) > 0:
+                unique_chars = np.unique(filtered_column)
+                if len(unique_chars) > 1:
+                    var_sites += 1
 
         var_sites_per = (var_sites / aln_len) * 100
 

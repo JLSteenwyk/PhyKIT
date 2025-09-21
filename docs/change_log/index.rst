@@ -8,6 +8,27 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.0**:
+Major performance improvements and bug fixes:
+
+* **Performance Optimizations:**
+
+  - Added multiprocessing support for computationally intensive functions (up to 8x faster):
+    patristic distances, pairwise identity, polytomy test, LB score, bipartition support stats,
+    sum of pairs score, saturation analysis, hidden paralogy check, and covarying evolutionary rates
+  - Implemented tree caching with LRU cache to avoid re-parsing files
+  - Added NumPy vectorization for alignment operations (5-10x faster)
+  - Optimized file I/O with streaming for large concatenation operations
+  - Added pickle-based fast tree copying for NNI operations
+
+* **Bug Fixes:**
+
+  - Fixed tree caching side effects that caused tree modifications to persist
+  - Fixed spurious sequence detection to correctly use only terminal branches
+  - Fixed DNA threader array broadcasting issues
+  - Standardized error exit codes to 2
+  - Fixed test infrastructure issues
+
 **2.0.2**:
 Fixed bug in dna threading associated with how gaps were introduced in codons.
 

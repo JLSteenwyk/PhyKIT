@@ -73,8 +73,9 @@ class TestHiddenParalogyCheck(object):
             "-c",
             f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.hidden_paralogy_check.txt",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -88,8 +89,9 @@ class TestHiddenParalogyCheck(object):
             "-c",
             "file doesn't exist",
         ]
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2

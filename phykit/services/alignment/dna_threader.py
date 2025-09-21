@@ -1,5 +1,6 @@
 import sys
 from typing import Dict, List
+import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
 from .base import Alignment
@@ -50,12 +51,14 @@ class DNAThreader(Alignment):
         return ''.join(c * 3 for c in p_seq)
 
     def normalize_n_seq(self, n_seq: Seq, p_seq: Seq) -> str:
+        # Pre-split codons for faster access
         codons = [str(n_seq[i:i+3]) for i in range(0, len(n_seq), 3)]
         normalized_n_seq = []
+        gap_chars = {'-', '?', '*', 'X', 'x'}
 
         codon_idx = 0
         for aa in p_seq:
-            if aa in "-?*Xx":
+            if aa in gap_chars:
                 normalized_n_seq.append("---")
             else:
                 if codon_idx < len(codons):
@@ -68,37 +71,75 @@ class DNAThreader(Alignment):
 
     def thread(self, prot_records) -> Dict[str, str]:
         pal2nal = dict()
-        nucl_records = SeqIO.to_dict(SeqIO.parse(self.nucleotide_file_path, "fasta"))
         prot_dict = SeqIO.to_dict(prot_records)
 
         if not prot_dict:
             print("Protein file is empty or incorrectly formatted.")
-            sys.exit()
+            sys.exit(2)
+
+        # Pre-load nucleotide sequences only for proteins we have
+        nucl_records = {}
+        for record in SeqIO.parse(self.nucleotide_file_path, "fasta"):
+            if record.id in prot_dict:
+                nucl_records[record.id] = record
 
         length = len(next(iter(prot_dict.values())).seq)
         keep_mask = self.create_mask(length * 3)
 
+        # Convert keep_mask to numpy array for faster operations
+        keep_mask_arr = np.array(keep_mask)
+        gap_chars = {'-', '?', '*', 'X', 'x'}
+
         for gene_id, protein_seq_record in prot_dict.items():
             try:
+                if gene_id not in nucl_records:
+                    print(f"Nucleotide sequence for {gene_id} not found.")
+                    sys.exit(2)
+
                 p_seq = protein_seq_record.seq
                 n_seq = nucl_records[gene_id].seq
 
+                # Get normalized sequences
                 normalized_p_seq = self.normalize_p_seq(p_seq)
                 normalized_n_seq = self.normalize_n_seq(n_seq, normalized_p_seq)
 
-                sequence = [
-                    normalized_n_seq[idx] if c not in "-?*Xx" and keep_mask[idx] else "-"
-                    for idx, c in enumerate(normalized_p_seq)
-                    if keep_mask[idx]
-                ]
+                # Convert to numpy arrays for faster operations
+                p_arr = np.array(list(normalized_p_seq), dtype='U1')
+                n_arr = np.array(list(normalized_n_seq), dtype='U1')
 
-                if self.remove_stop_codon and normalized_p_seq[-1] == "*":
-                    sequence[-3:] = normalized_n_seq[-3:]
+                # Create mask for non-gap positions in protein
+                non_gap_mask_protein = ~np.isin(p_arr, list(gap_chars))
 
-                pal2nal[gene_id] = ''.join(sequence)
+                # Expand protein mask to nucleotide positions (each AA = 3 nucleotides)
+                non_gap_mask = np.repeat(non_gap_mask_protein, 3)
+
+                # Ensure masks have same shape
+                min_len = min(len(non_gap_mask), len(keep_mask_arr), len(n_arr))
+                non_gap_mask = non_gap_mask[:min_len]
+                keep_mask_arr_trimmed = keep_mask_arr[:min_len]
+                n_arr = n_arr[:min_len]
+
+                # Combine masks
+                final_mask = keep_mask_arr_trimmed & non_gap_mask
+
+                # Apply masks and build result
+                result = np.where(final_mask, n_arr, '-')
+
+                # Handle stop codon if needed
+                if self.remove_stop_codon and p_seq[-1] == "*":
+                    # Find the last 3 positions that were kept
+                    kept_indices = np.where(keep_mask_arr_trimmed)[0]
+                    if len(kept_indices) >= 3:
+                        last_3_indices = kept_indices[-3:]
+                        for idx in last_3_indices:
+                            if idx < len(result) and idx < len(n_arr):
+                                result[idx] = n_arr[idx]
+
+                # Only keep positions marked in keep_mask
+                pal2nal[gene_id] = ''.join(result[keep_mask_arr_trimmed[:len(result)]])
 
             except KeyError:
                 print(f"Nucleotide sequence for {gene_id} not found.")
-                sys.exit()
+                sys.exit(2)
 
         return pal2nal

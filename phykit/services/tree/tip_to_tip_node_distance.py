@@ -27,11 +27,11 @@ class TipToTipNodeDistance(Tree):
         leaf1 = TreeMixin.find_any(tree_zero, tip_1)
         if not bool(leaf1):
             print(tip_1, "not on tree\nExiting...")
-            sys.exit()
+            sys.exit(2)
         leaf2 = TreeMixin.find_any(tree_zero, tip_2)
         if not bool(leaf2):
             print(tip_2, "not on tree\nExiting...")
-            sys.exit()
+            sys.exit(2)
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(
