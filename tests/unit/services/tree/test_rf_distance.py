@@ -1,7 +1,7 @@
+import copy
 import pytest
 from argparse import Namespace
-from Bio import Phylo
-from math import isclose
+from concurrent.futures import Future
 
 from phykit.services.tree.rf_distance import RobinsonFouldsDistance
 
@@ -42,3 +42,104 @@ class TestRobinsonFouldsDistance(object):
         assert isinstance(normalized_rf, float)
         assert plain_rf == 8
         assert normalized_rf == 0.8
+
+    def test_calculate_robinson_foulds_distance_identical_trees(self, tree_simple, args):
+        rf = RobinsonFouldsDistance(args)
+        tree_clone = copy.deepcopy(tree_simple)
+
+        plain_rf, normalized_rf = rf.calculate_robinson_foulds_distance(tree_simple, tree_clone)
+
+        assert plain_rf == 0
+        assert normalized_rf == 0
+
+    def test_calculate_multiple_rf_distances_sequential_path(self, mocker, args):
+        rf = RobinsonFouldsDistance(args)
+
+        tree_pairs = [("tree_zero", "tree_one") for _ in range(3)]
+        expected = [(idx, idx / 10.0) for idx in range(len(tree_pairs))]
+        mock_calc = mocker.patch.object(
+            rf,
+            "calculate_robinson_foulds_distance",
+            side_effect=expected,
+        )
+
+        results = rf.calculate_multiple_rf_distances(tree_pairs)
+
+        assert mock_calc.call_count == len(tree_pairs)
+        assert results == expected
+
+    def test_calculate_multiple_rf_distances_parallel_path(self, mocker, args):
+        rf = RobinsonFouldsDistance(args)
+
+        class _DummyTree:
+            def __init__(self, bipartitions, tip_count):
+                self.bipartitions = bipartitions
+                self._tip_count = tip_count
+
+            def count_terminals(self):
+                return self._tip_count
+
+        created_executors = []
+
+        class DummyExecutor:
+            def __init__(self, max_workers):
+                self.max_workers = max_workers
+                created_executors.append(self)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def submit(self, fn, *args, **kwargs):
+                future = Future()
+                future.set_result(fn(*args, **kwargs))
+                return future
+
+        mocker.patch("phykit.services.tree.rf_distance.ProcessPoolExecutor", DummyExecutor)
+        mocker.patch("phykit.services.tree.rf_distance.pickle.dumps", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.rf_distance.pickle.loads", side_effect=lambda obj: obj)
+        mocker.patch.object(
+            RobinsonFouldsDistance,
+            "get_all_bipartitions",
+            new=lambda self, tree: tree.bipartitions,
+            create=True,
+        )
+
+        tree_pairs = [
+            (
+                _DummyTree({frozenset({1, 2}), frozenset({3, 4})}, 6),
+                _DummyTree({frozenset({1, 2}), frozenset({4, 5})}, 6),
+            ),
+            (
+                _DummyTree({frozenset({1, 2}), frozenset({2, 3})}, 6),
+                _DummyTree({frozenset({1, 2}), frozenset({2, 3})}, 6),
+            ),
+            (
+                _DummyTree({frozenset({1, 3})}, 5),
+                _DummyTree({frozenset({2, 4})}, 5),
+            ),
+            (
+                _DummyTree({frozenset({1, 4}), frozenset({2, 5})}, 7),
+                _DummyTree({frozenset({1, 4})}, 7),
+            ),
+            (
+                _DummyTree(set(), 8),
+                _DummyTree({frozenset({1, 2})}, 8),
+            ),
+        ]
+
+        results = rf.calculate_multiple_rf_distances(tree_pairs)
+
+        assert created_executors
+
+        expected = []
+        for zero_tree, one_tree in tree_pairs:
+            plain_rf = len(zero_tree.bipartitions ^ one_tree.bipartitions)
+            normalized_rf = plain_rf / (2 * (zero_tree.count_terminals() - 3))
+            expected.append((plain_rf, normalized_rf))
+
+        for observed, anticipated in zip(results, expected):
+            assert observed[0] == anticipated[0]
+            assert observed[1] == pytest.approx(anticipated[1])

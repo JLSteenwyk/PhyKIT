@@ -1,9 +1,19 @@
 import pytest
 from argparse import Namespace
-from Bio import Phylo
+from concurrent.futures import Future
+from itertools import combinations
 from math import isclose
 
 from phykit.services.tree.lb_score import LBScore
+
+
+class _IndexedDummyTree:
+    def _index(self, tip: str) -> int:
+        digits = "".join(ch for ch in tip if ch.isdigit())
+        return int(digits) if digits else 0
+
+    def distance(self, tip1: str, tip2: str) -> int:
+        return abs(self._index(tip1) - self._index(tip2))
 
 
 @pytest.fixture
@@ -61,3 +71,143 @@ class TestLBScore(object):
         assert tips == expected_tips
         for idx, value in enumerate(LBis):
             assert isclose(value, expected_LBis[idx], rel_tol=0.001)
+
+    def test_calculate_average_distance_between_tips_single_tip(self, args):
+        t = LBScore(args)
+        tips = ["tip0"]
+        tree = _IndexedDummyTree()
+
+        assert t.calculate_average_distance_between_tips(tips, tree) == 0
+
+    def test_calculate_average_distance_between_tips_small_dataset(self, args):
+        t = LBScore(args)
+        tips = ["tip0", "tip2", "tip5"]
+        tree = _IndexedDummyTree()
+        pairs = list(combinations(tips, 2))
+        expected = sum(tree.distance(t1, t2) for t1, t2 in pairs) / len(pairs)
+
+        result = t.calculate_average_distance_between_tips(tips, tree)
+
+        assert result == pytest.approx(expected)
+
+    def test_calculate_average_distance_between_tips_parallel_path(
+        self, mocker, args
+    ):
+        t = LBScore(args)
+
+        created_executors = []
+
+        class DummyExecutor:
+            def __init__(self, max_workers):
+                self.max_workers = max_workers
+                created_executors.append(self)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def submit(self, fn, *args, **kwargs):
+                future = Future()
+                future.set_result(fn(*args, **kwargs))
+                return future
+
+        mocker.patch("phykit.services.tree.lb_score.mp.cpu_count", return_value=4)
+        mocker.patch("phykit.services.tree.lb_score.pickle.dumps", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.lb_score.pickle.loads", side_effect=lambda obj: obj)
+        mocker.patch(
+            "phykit.services.tree.lb_score.ProcessPoolExecutor",
+            DummyExecutor,
+        )
+
+        tree = _IndexedDummyTree()
+        tips = [f"tip{i}" for i in range(15)]
+        pairs = list(combinations(tips, 2))
+        expected = sum(tree.distance(t1, t2) for t1, t2 in pairs) / len(pairs)
+
+        result = t.calculate_average_distance_between_tips(tips, tree)
+
+        assert created_executors
+        assert result == pytest.approx(expected)
+
+    def test_calculate_average_distance_of_taxon_to_other_taxa_small_dataset(
+        self, args
+    ):
+        t = LBScore(args)
+
+        tips = ["tip0", "tip12"]
+        tree = _IndexedDummyTree()
+        expected = []
+
+        for tip in tips:
+            other_tips = list(set(tips) - set(tip))
+            distances = [tree.distance(tip, other) for other in other_tips]
+            avg = sum(distances) / len(distances) if distances else 0
+            expected.append(avg)
+
+        result = t.calculate_average_distance_of_taxon_to_other_taxa(tips, tree)
+
+        assert result == pytest.approx(expected)
+
+    def test_calculate_average_distance_of_taxon_to_other_taxa_parallel_path(
+        self, mocker, args
+    ):
+        t = LBScore(args)
+
+        created_executors = []
+
+        class DummyExecutor:
+            def __init__(self, max_workers):
+                self.max_workers = max_workers
+                created_executors.append(self)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def submit(self, fn, *args, **kwargs):
+                future = Future()
+                future.set_result(fn(*args, **kwargs))
+                return future
+
+        mocker.patch("phykit.services.tree.lb_score.mp.cpu_count", return_value=4)
+        mocker.patch("phykit.services.tree.lb_score.pickle.dumps", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.lb_score.pickle.loads", side_effect=lambda obj: obj)
+        mocker.patch(
+            "phykit.services.tree.lb_score.ProcessPoolExecutor",
+            DummyExecutor,
+        )
+
+        tips = [f"tip{i}" for i in range(60)]
+        tree = _IndexedDummyTree()
+        expected = []
+
+        for tip in tips:
+            other_tips = list(set(tips) - set(tip))
+            distances = [tree.distance(tip, other) for other in other_tips]
+            avg = sum(distances) / len(distances) if distances else 0
+            expected.append(avg)
+
+        result = t.calculate_average_distance_of_taxon_to_other_taxa(tips, tree)
+
+        assert created_executors
+        assert result == pytest.approx(expected)
+
+    def test_calculate_lb_score_per_taxa_zero_avg_dist_exits(self, args):
+        t = LBScore(args)
+
+        with pytest.raises(SystemExit):
+            t.calculate_lb_score_per_taxa([1.0], 0)
+
+    def test_calculate_lb_score_per_taxa_returns_expected_values(self, args):
+        t = LBScore(args)
+
+        avg_pdis = [10.0, 20.0]
+        avg_dist = 10.0
+
+        result = t.calculate_lb_score_per_taxa(avg_pdis, avg_dist)
+
+        assert result == pytest.approx([0.0, 100.0])
