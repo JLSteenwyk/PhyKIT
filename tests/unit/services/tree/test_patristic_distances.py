@@ -1,6 +1,6 @@
 import pytest
 from argparse import Namespace
-from Bio import Phylo
+from itertools import combinations
 from math import isclose
 
 from phykit.services.tree.patristic_distances import PatristicDistances
@@ -10,6 +10,15 @@ from phykit.services.tree.patristic_distances import PatristicDistances
 def args():
     kwargs = dict(tree="/some/path/to/file.tre", verbose=None)
     return Namespace(**kwargs)
+
+
+class _IndexedDummyTree:
+    def _index(self, tip: str) -> int:
+        digits = "".join(ch for ch in tip if ch.isdigit())
+        return int(digits) if digits else 0
+
+    def distance(self, tip1: str, tip2: str) -> int:
+        return abs(self._index(tip1) - self._index(tip2))
 
 
 class TestPatristicDistances(object):
@@ -51,3 +60,61 @@ class TestPatristicDistances(object):
         assert isclose(stats["variance"], 2067.5020202029905, rel_tol=0.001)
         assert isclose(stats["minimum"], 24.0, rel_tol=0.001)
         assert isclose(stats["maximum"], 152.88127, rel_tol=0.001)
+
+    def test_calculate_distance_between_pairs_small_dataset(self, args):
+        t = PatristicDistances(args)
+        tips = ["tip0", "tip2", "tip5"]
+        tree = _IndexedDummyTree()
+
+        combos, patristic_distances = t.calculate_distance_between_pairs(tips, tree)
+
+        expected_combos = list(combinations(tips, 2))
+        assert combos == expected_combos
+
+        expected_distances = [tree.distance(*combo) for combo in expected_combos]
+        assert patristic_distances == expected_distances
+
+    def test_calculate_distance_between_pairs_parallel_path(self, mocker, args):
+        t = PatristicDistances(args)
+        tips = [f"tip{i}" for i in range(15)]  # generates >100 combinations
+        tree = _IndexedDummyTree()
+
+        created_pools = []
+        recorded_chunks = []
+
+        class DummyPool:
+            def __init__(self, processes):
+                self.processes = processes
+                created_pools.append(self)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, func, chunks):
+                recorded_chunks.extend(chunks)
+                return [func(chunk) for chunk in chunks]
+
+            def imap(self, func, chunks):
+                for chunk in chunks:
+                    recorded_chunks.append(chunk)
+                    yield func(chunk)
+
+        mocker.patch("phykit.services.tree.patristic_distances.mp.Pool", DummyPool)
+        mocker.patch("phykit.services.tree.patristic_distances.mp.cpu_count", return_value=4)
+        mocker.patch("phykit.services.tree.patristic_distances.pickle.dumps", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.patristic_distances.pickle.loads", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.patristic_distances.sys.stderr.isatty", return_value=False)
+
+        combos, patristic_distances = t.calculate_distance_between_pairs(tips, tree)
+
+        assert created_pools
+        assert all(len(chunk) > 0 for chunk in recorded_chunks)
+
+        expected_combos = list(combinations(tips, 2))
+        expected_distances = [tree.distance(*combo) for combo in expected_combos]
+
+        assert combos == expected_combos
+        assert patristic_distances == expected_distances
