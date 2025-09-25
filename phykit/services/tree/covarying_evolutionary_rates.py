@@ -1,6 +1,6 @@
 import copy
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from functools import lru_cache
 import pickle
 
@@ -248,25 +248,49 @@ class CovaryingEvolutionaryRates(Tree):
             # Process in batches
             batch_size = max(10, (len(terminals_data) + len(nonterminals_data)) // 4)
 
-            with ProcessPoolExecutor(max_workers=min(4, len(terminals_data) + len(nonterminals_data) // 10)) as executor:
-                futures = []
+            try:
+                with ProcessPoolExecutor(max_workers=min(4, len(terminals_data) + len(nonterminals_data) // 10)) as executor:
+                    futures = []
 
-                # Submit terminal batches
-                for i in range(0, len(terminals_data), batch_size):
-                    batch = terminals_data[i:i+batch_size]
-                    futures.append(executor.submit(self._process_terminal_batch, tree0_pickle, tree1_pickle, batch))
+                    # Submit terminal batches
+                    for i in range(0, len(terminals_data), batch_size):
+                        batch = terminals_data[i:i+batch_size]
+                        futures.append(executor.submit(self._process_terminal_batch, tree0_pickle, tree1_pickle, batch))
 
-                # Submit nonterminal batches
-                for i in range(0, len(nonterminals_data), batch_size):
-                    batch = nonterminals_data[i:i+batch_size]
-                    futures.append(executor.submit(self._process_nonterminal_batch, tree0_pickle, tree1_pickle, batch))
+                    # Submit nonterminal batches
+                    for i in range(0, len(nonterminals_data), batch_size):
+                        batch = nonterminals_data[i:i+batch_size]
+                        futures.append(executor.submit(self._process_nonterminal_batch, tree0_pickle, tree1_pickle, batch))
 
-                # Collect results
-                for future in as_completed(futures):
-                    batch_results = future.result()
-                    for bl0, bl1, sp_tips in batch_results:
-                        l0.append(bl0)
-                        l1.append(bl1)
-                        tip_names.append(sp_tips)
+                    for future in as_completed(futures):
+                        batch_results = future.result()
+                        for bl0, bl1, sp_tips in batch_results:
+                            l0.append(bl0)
+                            l1.append(bl1)
+                            tip_names.append(sp_tips)
+            except (OSError, ValueError, RuntimeError):
+                for i in terminals:
+                    sp_tips = self.get_tip_names_from_tree(i)
+                    tip_names.append(sp_tips)
+                    try:
+                        newtree = t0.common_ancestor(i.name)
+                        newtree1 = t1.common_ancestor(i.name)
+                        if newtree.branch_length and i.branch_length:
+                            l0.append(round(newtree.branch_length / i.branch_length, 6))
+                            l1.append(round(newtree1.branch_length / i.branch_length, 6))
+                    except Exception:
+                        continue
+
+                for i in nonterminals:
+                    sp_tips = self.get_tip_names_from_tree(i)
+                    try:
+                        newtree = t0.common_ancestor(sp_tips)
+                        newtree1 = t1.common_ancestor(sp_tips)
+                        if newtree.branch_length and newtree1.branch_length and i.branch_length:
+                            l0.append(round(newtree.branch_length / i.branch_length, 6))
+                            l1.append(round(newtree1.branch_length / i.branch_length, 6))
+                            tip_names.append(sp_tips)
+                    except Exception:
+                        continue
 
         return (l0, l1, tip_names)
