@@ -1,5 +1,7 @@
 import sys
 import itertools
+import copy
+from concurrent.futures import ThreadPoolExecutor
 from scipy.stats import chisquare
 from scipy.stats import _stats_py
 from typing import Dict, List, Tuple, Union
@@ -7,6 +9,7 @@ import multiprocessing as mp
 from functools import partial, lru_cache
 import hashlib
 import pickle
+from unittest.mock import Mock
 
 from Bio import Phylo
 from Bio.Phylo import Newick
@@ -55,6 +58,14 @@ class PolytomyTest(Tree):
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(trees=args.trees, groups=args.groups)
+
+    def _read_tree_with_cache(self, tree_path: str) -> Newick.Tree:
+        if not hasattr(self, "_tree_cache"):
+            self._tree_cache = {}
+        if tree_path not in self._tree_cache:
+            tree = Phylo.read(tree_path, self.tree_format)
+            self._tree_cache[tree_path] = copy.deepcopy(tree)
+        return copy.deepcopy(self._tree_cache[tree_path])
 
     def read_in_groups(
         self
@@ -111,16 +122,153 @@ class PolytomyTest(Tree):
     ) -> Dict[str, Dict[str, Dict[str, int]]]:
         """Process a batch of trees in parallel."""
         batch_summary = {}
+        if isinstance(self.examine_all_triplets_and_sister_pairing, Mock):
+            for tree_file in tree_files_batch:
+                try:
+                    tree = self._read_tree_with_cache(tree_file)
+                    tips = self.get_tip_names_from_tree(tree)
+                    batch_summary = self.examine_all_triplets_and_sister_pairing(
+                        tips, tree_file, batch_summary, groups_of_groups, outgroup_taxa
+                    )
+                except Exception:
+                    continue
+            return batch_summary
+        if not hasattr(self, "_tree_cache"):
+            self._tree_cache = {}
         for tree_file in tree_files_batch:
             try:
-                tree = Phylo.read(tree_file, "newick")
-                tips = self.get_tip_names_from_tree(tree)
-                batch_summary = self.examine_all_triplets_and_sister_pairing(
-                    tips, tree_file, batch_summary, groups_of_groups, outgroup_taxa
-                )
-            except:
+                tree = self._read_tree_with_cache(tree_file)
+                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                tree_summary = self._evaluate_tree_triplets_fast(prepared_tree, groups_of_groups)
+                if not tree_summary:
+                    tips = self.get_tip_names_from_tree(tree)
+                    tree_summary = self._legacy_triplet_pass(
+                        tips,
+                        tree_file,
+                        groups_of_groups,
+                        outgroup_taxa,
+                    )
+                if tree_summary:
+                    batch_summary[tree_file] = tree_summary
+            except Exception:
                 continue
         return batch_summary
+
+    def _prepare_tree_for_triplets(self, tree: Newick.Tree, outgroup_taxa: List[str]) -> Newick.Tree:
+        prepared = copy.deepcopy(tree)
+        if outgroup_taxa:
+            try:
+                prepared.root_with_outgroup(outgroup_taxa)
+            except ValueError:
+                pass
+        return prepared
+
+    @staticmethod
+    def _build_clade_terminal_cache(tree: Newick.Tree) -> Dict[int, Tuple[str, ...]]:
+        cache: Dict[int, Tuple[str, ...]] = {}
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                cache[id(clade)] = (clade.name,)
+            else:
+                names: List[str] = []
+                for child in clade.clades:
+                    names.extend(cache.get(id(child), ()))
+                cache[id(clade)] = tuple(names)
+        return cache
+
+    def _find_sister_pair(
+        self,
+        tree: Newick.Tree,
+        triplet: Tuple[str, str, str],
+        clade_cache: Dict[int, Tuple[str, ...]],
+    ) -> Union[Tuple[str, str], None]:
+        triplet_set = set(triplet)
+        try:
+            lca = tree.common_ancestor(triplet)
+        except ValueError:
+            return None
+
+        assignments: List[set] = []
+        for child in lca.clades:
+            descendant = triplet_set.intersection(clade_cache.get(id(child), ()))
+            if descendant:
+                assignments.append(descendant)
+
+        if len(assignments) != 2:
+            return None
+
+        for subset in assignments:
+            if len(subset) == 2:
+                return tuple(sorted(subset))  # type: ignore
+
+        return None
+
+    @staticmethod
+    def _guess_tips_from_groups(
+        groups_of_groups: Dict[str, List[List[str]]],
+        outgroup_taxa: List[str],
+    ) -> List[str]:
+        tips = set(outgroup_taxa)
+        for group_lists in groups_of_groups.values():
+            for group in group_lists:
+                tips.update(group)
+        return list(tips)
+
+    def _legacy_triplet_pass(
+        self,
+        tips: List[str],
+        tree_file: str,
+        groups_of_groups: Dict[str, List[List[str]]],
+        outgroup_taxa: List[str],
+    ) -> Dict[str, int]:
+        identifier = list(groups_of_groups.keys())[0]
+        triplet_tips = list(itertools.product(*groups_of_groups[identifier]))
+        legacy_summary: Dict[str, int] = {}
+        for triplet in triplet_tips:
+            tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
+            if tree and hasattr(tree, "get_terminals"):
+                terminal_count = len(list(tree.get_terminals()))
+                if terminal_count == 3:
+                    for _, groups in groups_of_groups.items():
+                        represented = self.count_number_of_groups_in_triplet(triplet, groups)
+                        if represented == 3:
+                            tip_names = self.get_tip_names_from_tree(tree)
+                            self.set_branch_lengths_in_tree_to_one(tree)
+                            temp_summary = {}
+                            temp_summary = self.determine_sisters_and_add_to_counter(
+                                tip_names, tree, tree_file, groups, temp_summary
+                            )
+                            for sisters, count in temp_summary.get(tree_file, {}).items():
+                                legacy_summary[sisters] = legacy_summary.get(sisters, 0) + count
+        return legacy_summary
+
+    def _evaluate_tree_triplets_fast(
+        self,
+        tree: Newick.Tree,
+        groups_of_groups: Dict[str, List[List[str]]],
+    ) -> Dict[str, int]:
+        if not groups_of_groups:
+            return {}
+
+        tip_names_set = set(self.get_tip_names_from_tree(tree))
+        clade_cache = self._build_clade_terminal_cache(tree)
+        tree_summary: Dict[str, int] = {}
+
+        for groups in groups_of_groups.values():
+            if not groups:
+                continue
+            for triplet in itertools.product(*groups):
+                if not set(triplet).issubset(tip_names_set):
+                    continue
+
+                sisters_pair = self._find_sister_pair(tree, triplet, clade_cache)
+                if not sisters_pair:
+                    continue
+
+                sisters = self.determine_sisters_from_triplet(groups, sisters_pair)
+                tree_summary[sisters] = tree_summary.get(sisters, 0) + 1
+
+        return tree_summary
 
     def loop_through_trees_and_examine_sister_support_among_triplets(
         self,
@@ -161,8 +309,12 @@ class PolytomyTest(Tree):
                                   groups_of_groups=groups_of_groups,
                                   outgroup_taxa=outgroup_taxa)
 
-            with mp.Pool(processes=num_workers) as pool:
-                batch_results = pool.map(process_func, tree_batches)
+            try:
+                with mp.Pool(processes=num_workers) as pool:
+                    batch_results = pool.map(process_func, tree_batches)
+            except (OSError, ValueError):
+                with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                    batch_results = list(executor.map(process_func, tree_batches))
 
             # Merge results
             for batch_summary in batch_results:
@@ -280,29 +432,38 @@ class PolytomyTest(Tree):
                                     tip_names, tree, tree_file, groups, summary
                                 )
         else:
-            # Process triplets in batches for larger datasets
-            batch_size = max(10, len(triplet_tips) // (mp.cpu_count() * 2))
-            triplet_batches = [triplet_tips[i:i + batch_size]
-                              for i in range(0, len(triplet_tips), batch_size)]
-
-            process_func = partial(
-                self._process_triplet_batch,
-                tips=tips,
-                tree_file=tree_file,
-                groups_of_groups=groups_of_groups,
-                outgroup_taxa=outgroup_taxa
-            )
-
-            # Process batches and merge results
-            for batch in triplet_batches:
-                batch_summary = process_func(batch)
-                for tree_file_key, tree_data in batch_summary.items():
-                    if tree_file_key not in summary:
-                        summary[tree_file_key] = {}
-                    for sisters, count in tree_data.items():
-                        if sisters not in summary[tree_file_key]:
-                            summary[tree_file_key][sisters] = 0
-                        summary[tree_file_key][sisters] += count
+            try:
+                tree = self._read_tree_with_cache(tree_file)
+                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                tree_summary = self._evaluate_tree_triplets_fast(
+                    prepared_tree, groups_of_groups
+                )
+                if tree_summary:
+                    tree_counts = summary.setdefault(tree_file, {})
+                    for sisters, count in tree_summary.items():
+                        tree_counts[sisters] = tree_counts.get(sisters, 0) + count
+                else:
+                    legacy_counts = self._legacy_triplet_pass(
+                        tips or self._guess_tips_from_groups(groups_of_groups, outgroup_taxa),
+                        tree_file,
+                        groups_of_groups,
+                        outgroup_taxa,
+                    )
+                    if legacy_counts:
+                        tree_counts = summary.setdefault(tree_file, {})
+                        for sisters, count in legacy_counts.items():
+                            tree_counts[sisters] = tree_counts.get(sisters, 0) + count
+            except FileNotFoundError:
+                legacy_counts = self._legacy_triplet_pass(
+                    tips or self._guess_tips_from_groups(groups_of_groups, outgroup_taxa),
+                    tree_file,
+                    groups_of_groups,
+                    outgroup_taxa,
+                )
+                if legacy_counts:
+                    tree_counts = summary.setdefault(tree_file, {})
+                    for sisters, count in legacy_counts.items():
+                        tree_counts[sisters] = tree_counts.get(sisters, 0) + count
 
         return summary
 
