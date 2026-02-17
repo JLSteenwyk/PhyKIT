@@ -20,6 +20,8 @@ Expanded plotting support for alignment/tree QC workflows:
 * Updated CLI help text and online usage documentation for all newly plotted commands
 * Expanded integration test coverage for plotting and JSON+plot behavior and
   reran full regression and documentation build checks
+* Removed ``cython`` from runtime dependencies; repository has no Cython build
+  pipeline (no ``.pyx``/``cythonize`` usage), so this was unnecessary
 
 **2.1.5**:
 JSON output expansion and harmonization:
