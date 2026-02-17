@@ -1,6 +1,4 @@
-from collections import Counter
 import sys
-import numpy as np
 
 from typing import List
 
@@ -29,9 +27,9 @@ class Alignment(BaseService):
         exclude_gaps=None,
     ):
         self.alignment_file_path = alignment_file_path
-        self.code = code,
+        self.code = code
         self.output_file_path = output_file_path
-        self.protein_file_path = (protein_file_path,)
+        self.protein_file_path = protein_file_path
         self.nucleotide_file_path = nucleotide_file_path
         self.alignment_list_path = alignment_list_path
         self.prefix = prefix
@@ -54,30 +52,41 @@ class Alignment(BaseService):
             sys.exit(2)
 
     def calculate_rcv(self) -> float:
-        alignment, _, _ = self.get_alignment_and_format()
-        aln_len = alignment.get_alignment_length()
+        import numpy as np
+
+        alignment, _, is_protein = self.get_alignment_and_format()
         num_records = len(alignment)
+
+        if num_records == 0:
+            return 0.0
 
         # Convert alignment to numpy array for faster operations
         alignment_array = np.array([
-            list(str(record.seq)) for record in alignment
+            list(str(record.seq).upper()) for record in alignment
         ], dtype='U1')
 
-        # Get all unique characters in the alignment
-        unique_chars = np.unique(alignment_array)
+        if is_protein:
+            invalid_chars = np.array(["-", "?", "*", "X"], dtype='U1')
+        else:
+            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype='U1')
+        valid_mask = ~np.isin(alignment_array, invalid_chars)
+        valid_lengths = np.sum(valid_mask, axis=1).astype(np.float64)
 
-        # Vectorized approach: create a count matrix for all sequences and characters at once
+        # Get all unique valid characters in the alignment
+        valid_chars = alignment_array[valid_mask]
+        if valid_chars.size == 0:
+            return 0.0
+
+        unique_chars = np.unique(valid_chars)
+
         # Shape: (num_records, num_unique_chars)
         count_matrix = np.zeros((num_records, len(unique_chars)), dtype=np.int32)
 
-        # Build character index mapping for fast lookup
-        char_to_idx = {char: idx for idx, char in enumerate(unique_chars)}
-
         # Count characters for each sequence using vectorized operations
-        for seq_idx in range(num_records):
-            seq = alignment_array[seq_idx]
+        for seq_idx, seq in enumerate(alignment_array):
+            seq_valid = valid_mask[seq_idx]
             for char_idx, char in enumerate(unique_chars):
-                count_matrix[seq_idx, char_idx] = np.sum(seq == char)
+                count_matrix[seq_idx, char_idx] = np.sum((seq == char) & seq_valid)
 
         # Calculate total counts and averages using matrix operations
         total_counts = np.sum(count_matrix, axis=0)
@@ -90,11 +99,17 @@ class Alignment(BaseService):
         # Sum across characters for each sequence
         seq_rcv_sums = np.sum(abs_diffs, axis=1)
 
-        # Normalize and sum
-        indiv_rcv_values = seq_rcv_sums / (num_records * aln_len)
-        relative_composition_variability = np.sum(indiv_rcv_values)
+        # Normalize each sequence by its valid (non-gap/non-ambiguous) length.
+        # Sequences with no valid symbols contribute 0.
+        denom = num_records * valid_lengths
+        indiv_rcv_values = np.divide(
+            seq_rcv_sums,
+            denom,
+            out=np.zeros_like(seq_rcv_sums, dtype=np.float64),
+            where=denom > 0,
+        )
 
-        return float(relative_composition_variability)
+        return float(np.sum(indiv_rcv_values))
 
     def get_gap_chars(is_protein: bool) -> List[str]:
         if is_protein:

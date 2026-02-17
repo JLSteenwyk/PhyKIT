@@ -33,6 +33,11 @@ Major performance improvements, expanded Python support, and bug fixes:
   - Fixed DNA threader array broadcasting issues
   - Standardized error exit codes to 2
   - Fixed test infrastructure issues
+  - Updated saturation slope fitting to use NumPy no-intercept least-squares
+    (fit constrained through the origin), replacing sklearn in this code path
+  - Updated ``rcv`` and ``rcvt`` to be case-insensitive and to exclude
+    gaps/ambiguous symbols from composition counts and normalization; RCV now
+    normalizes each taxon by valid (non-excluded) sequence length
 
 **2.0.2**:
 Fixed bug in dna threading associated with how gaps were introduced in codons.

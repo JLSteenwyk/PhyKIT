@@ -1,17 +1,34 @@
-from .alignment_length import AlignmentLength
-from .alignment_length_no_gaps import AlignmentLengthNoGaps
-from .alignment_recoding import AlignmentRecoding
-from .column_score import ColumnScore
-from .compositional_bias_per_site import CompositionalBiasPerSite
-from .create_concatenation_matrix import CreateConcatenationMatrix
-from .dna_threader import DNAThreader
-from .evolutionary_rate_per_site import EvolutionaryRatePerSite
-from .faidx import Faidx
-from .gc_content import GCContent
-from .pairwise_identity import PairwiseIdentity
-from .parsimony_informative_sites import ParsimonyInformative
-from .rcv import RelativeCompositionVariability
-from .rcvt import RelativeCompositionVariabilityTaxon
-from .rename_fasta_entries import RenameFastaEntries
-from .sum_of_pairs_score import SumOfPairsScore
-from .variable_sites import VariableSites
+import importlib
+
+
+_EXPORTS = {
+    "AlignmentLength": "alignment_length",
+    "AlignmentLengthNoGaps": "alignment_length_no_gaps",
+    "AlignmentRecoding": "alignment_recoding",
+    "ColumnScore": "column_score",
+    "CompositionalBiasPerSite": "compositional_bias_per_site",
+    "CreateConcatenationMatrix": "create_concatenation_matrix",
+    "DNAThreader": "dna_threader",
+    "EvolutionaryRatePerSite": "evolutionary_rate_per_site",
+    "Faidx": "faidx",
+    "GCContent": "gc_content",
+    "PairwiseIdentity": "pairwise_identity",
+    "ParsimonyInformative": "parsimony_informative_sites",
+    "RelativeCompositionVariability": "rcv",
+    "RelativeCompositionVariabilityTaxon": "rcvt",
+    "RenameFastaEntries": "rename_fasta_entries",
+    "SumOfPairsScore": "sum_of_pairs_score",
+    "VariableSites": "variable_sites",
+}
+
+__all__ = list(_EXPORTS.keys())
+
+
+def __getattr__(name):
+    module_name = _EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(f".{module_name}", __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value

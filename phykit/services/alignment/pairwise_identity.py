@@ -4,6 +4,7 @@ import numpy as np
 import multiprocessing as mp
 from functools import partial
 import sys
+import os
 
 from Bio.Align import MultipleSeqAlignment
 try:
@@ -21,8 +22,18 @@ from ...helpers.stats_summary import (
 
 
 class PairwiseIdentity(Alignment):
+    MP_MIN_PAIRS = 2000
+    MAX_MP_WORKERS = 8
+
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
+
+    def _should_use_multiprocessing(self, n_pairs: int) -> bool:
+        if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
+            return False
+        if os.environ.get("PHYKIT_FORCE_MP", "0") == "1":
+            return True
+        return n_pairs >= self.MP_MIN_PAIRS
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -112,8 +123,8 @@ class PairwiseIdentity(Alignment):
         pairwise_identities = {}
         pair_ids = []
 
-        # For small datasets or when not using multiprocessing
-        if len(all_pairs) < 50:
+        # For small/medium workloads, multiprocessing overhead dominates.
+        if not self._should_use_multiprocessing(len(all_pairs)):
             # Process all pairs without multiprocessing
             results = self._process_pair_batch(alignment_data, all_pairs, exclude_gaps, gap_chars)
             for result in results:
@@ -122,7 +133,7 @@ class PairwiseIdentity(Alignment):
                 pairwise_identities["-".join(pair_id)] = result['identity']
         else:
             # Use multiprocessing for larger datasets
-            num_workers = min(mp.cpu_count(), 8)
+            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
             chunk_size = max(1, len(all_pairs) // (num_workers * 4))
             pair_chunks = [all_pairs[i:i + chunk_size] for i in range(0, len(all_pairs), chunk_size)]
 

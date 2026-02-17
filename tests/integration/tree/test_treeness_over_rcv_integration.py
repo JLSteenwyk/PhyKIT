@@ -12,7 +12,7 @@ here = Path(__file__)
 class TestTreenessOverRCV(object):
     @patch("builtins.print")
     def test_treeness_over_rcv0(self, mocked_print):
-        expected_result = "0.35\t0.126\t0.36"
+        expected_result = "0.4315\t0.126\t0.292"
         testargs = [
             "phykit",
             "treeness_over_rcv",
@@ -27,7 +27,7 @@ class TestTreenessOverRCV(object):
 
     @patch("builtins.print")
     def test_treeness_over_rcv1(self, mocked_print):
-        expected_result = "2.1374\t0.7695\t0.36"
+        expected_result = "2.6351\t0.7695\t0.292"
         testargs = [
             "phykit",
             "treeness_over_rcv",
@@ -42,7 +42,7 @@ class TestTreenessOverRCV(object):
 
     @patch("builtins.print")
     def test_treeness_over_rcv_alias0(self, mocked_print):
-        expected_result = "2.1374\t0.7695\t0.36"
+        expected_result = "2.6351\t0.7695\t0.292"
         testargs = [
             "phykit",
             "toverr",
@@ -57,7 +57,7 @@ class TestTreenessOverRCV(object):
 
     @patch("builtins.print")
     def test_treeness_over_rcv_alias1(self, mocked_print):
-        expected_result = "2.1374\t0.7695\t0.36"
+        expected_result = "2.6351\t0.7695\t0.292"
         testargs = [
             "phykit",
             "tor",

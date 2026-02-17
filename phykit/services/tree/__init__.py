@@ -1,29 +1,46 @@
-from .bipartition_support_stats import BipartitionSupportStats
-from .branch_length_multiplier import BranchLengthMultiplier
-from .covarying_evolutionary_rates import CovaryingEvolutionaryRates
-from .dvmc import DVMC
-from .evolutionary_rate import EvolutionaryRate
-from .hidden_paralogy_check import HiddenParalogyCheck
-from .internal_branch_stats import InternalBranchStats
-from .internode_labeler import InternodeLabeler
-from .last_common_ancestor_subtree import LastCommonAncestorSubtree
-from .lb_score import LBScore
-from .monophyly_check import MonophylyCheck
-from .nearest_neighbor_interchange import NearestNeighborInterchange
-from .patristic_distances import PatristicDistances
-from .polytomy_test import PolytomyTest
-from .print_tree import PrintTree
-from .prune_tree import PruneTree
-from .rename_tree_tips import RenameTreeTips
-from .root_tree import RootTree
-from .rf_distance import RobinsonFouldsDistance
-from .saturation import Saturation
-from .spurious_sequence import SpuriousSequence
-from .treeness import Treeness
-from .treeness_over_rcv import TreenessOverRCV
-from .terminal_branch_stats import TerminalBranchStats
-from .tip_labels import TipLabels
-from .tip_to_tip_distance import TipToTipDistance
-from .tip_to_tip_node_distance import TipToTipNodeDistance
-from .total_tree_length import TotalTreeLength
-from .collapse_branches import CollapseBranches
+import importlib
+
+
+_EXPORTS = {
+    "BipartitionSupportStats": "bipartition_support_stats",
+    "BranchLengthMultiplier": "branch_length_multiplier",
+    "CollapseBranches": "collapse_branches",
+    "CovaryingEvolutionaryRates": "covarying_evolutionary_rates",
+    "DVMC": "dvmc",
+    "EvolutionaryRate": "evolutionary_rate",
+    "HiddenParalogyCheck": "hidden_paralogy_check",
+    "InternalBranchStats": "internal_branch_stats",
+    "InternodeLabeler": "internode_labeler",
+    "LastCommonAncestorSubtree": "last_common_ancestor_subtree",
+    "LBScore": "lb_score",
+    "MonophylyCheck": "monophyly_check",
+    "NearestNeighborInterchange": "nearest_neighbor_interchange",
+    "PatristicDistances": "patristic_distances",
+    "PolytomyTest": "polytomy_test",
+    "PrintTree": "print_tree",
+    "PruneTree": "prune_tree",
+    "RenameTreeTips": "rename_tree_tips",
+    "RobinsonFouldsDistance": "rf_distance",
+    "RootTree": "root_tree",
+    "Saturation": "saturation",
+    "SpuriousSequence": "spurious_sequence",
+    "TerminalBranchStats": "terminal_branch_stats",
+    "TipLabels": "tip_labels",
+    "TipToTipDistance": "tip_to_tip_distance",
+    "TipToTipNodeDistance": "tip_to_tip_node_distance",
+    "TotalTreeLength": "total_tree_length",
+    "Treeness": "treeness",
+    "TreenessOverRCV": "treeness_over_rcv",
+}
+
+__all__ = list(_EXPORTS.keys())
+
+
+def __getattr__(name):
+    module_name = _EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(f".{module_name}", __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value

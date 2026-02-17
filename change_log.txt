@@ -35,6 +35,12 @@ Major changes to PhyKIT are summarized here.
   - Fixed test infrastructure issues with missing sys.argv patches
   - Standardized exit codes to 2 for error conditions
   - Fixed branch length multiplier and other tree operations modifying cached trees
+  - Updated saturation slope fitting to use NumPy no-intercept least-squares
+    (equivalent to forcing the fit through the origin), removing the sklearn
+    dependency in this path
+  - Updated RCV and RCVT calculations to be case-insensitive and to exclude
+    gaps/ambiguous symbols from composition counts and normalization; RCV now
+    normalizes per taxon using valid (non-excluded) sequence length
 
   Infrastructure:
   - Added pickle-based fast tree copying for NNI operations

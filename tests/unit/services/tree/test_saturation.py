@@ -179,6 +179,7 @@ class TestSaturation(unittest.TestCase):
     @patch('multiprocessing.Pool')
     def test_loop_through_combos_parallel(self, mock_pool_class):
         """Test parallel processing of combinations (large dataset)"""
+        self.saturation.MP_MIN_COMBOS = 50
         # Create mock tree
         mock_tree = Mock()
         mock_tree.distance.return_value = 0.15
@@ -279,9 +280,8 @@ class TestSaturation(unittest.TestCase):
         except BrokenPipeError:
             self.fail("BrokenPipeError was not caught")
 
-    @patch('phykit.services.tree.saturation.LinearRegression')
     @patch('phykit.services.tree.saturation.get_alignment_and_format_helper')
-    def test_run_complete_workflow(self, mock_get_alignment, mock_lr_class):
+    def test_run_complete_workflow(self, mock_get_alignment):
         """Test complete run workflow"""
         # Mock alignment
         seq1 = SeqRecord(Seq("ATCG"), id="seq1", name="seq1")
@@ -300,11 +300,6 @@ class TestSaturation(unittest.TestCase):
             return_value=([0.15], [0.25])  # patristic_distances, uncorrected_distances
         )
 
-        # Mock linear regression
-        mock_model = Mock()
-        mock_model.coef_ = [0.85]
-        mock_lr_class.return_value = mock_model
-
         # Mock print_res
         self.saturation.print_res = Mock()
 
@@ -315,14 +310,18 @@ class TestSaturation(unittest.TestCase):
         mock_get_alignment.assert_called_once_with(self.saturation.alignment_file_path)
         self.saturation.read_tree_file.assert_called_once()
         self.saturation.get_tip_names_from_tree.assert_called_once_with(mock_tree)
-        mock_model.fit.assert_called_once()
         self.saturation.print_res.assert_called_once()
+        args = self.saturation.print_res.call_args.args
+        self.assertEqual(args[0], self.saturation.verbose)
+        self.assertEqual(args[1], [('seq1', 'seq2')])
+        self.assertEqual(args[2], [0.25])
+        self.assertEqual(args[3], [0.15])
+        self.assertAlmostEqual(args[4], 0.25 / 0.15, places=6)
 
         # Check print_res arguments
         call_args = self.saturation.print_res.call_args[0]
         self.assertFalse(call_args[0])  # verbose
         self.assertEqual(len(call_args[1]), 1)  # combos
-        self.assertEqual(call_args[4], 0.85)  # slope
 
     def test_loop_through_combos_with_gaps_sequential(self):
         """Test sequential processing with gap exclusion"""
@@ -362,6 +361,7 @@ class TestSaturation(unittest.TestCase):
     @patch('multiprocessing.Pool')
     def test_loop_through_combos_parallel_cpu_limit(self, mock_pool_class, mock_cpu_count):
         """Test that parallel processing respects CPU count limit"""
+        self.saturation.MP_MIN_COMBOS = 50
         mock_cpu_count.return_value = 16  # Many CPUs
 
         # Create mock tree

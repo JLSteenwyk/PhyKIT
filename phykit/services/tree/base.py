@@ -68,7 +68,7 @@ class Tree(BaseService):
             stat = os.stat(file_path)
             cache_key = f"{file_path}_{stat.st_size}_{stat.st_mtime}"
             return hashlib.md5(cache_key.encode()).hexdigest()
-        except:
+        except OSError:
             return ""
 
     def read_tree_file(self):

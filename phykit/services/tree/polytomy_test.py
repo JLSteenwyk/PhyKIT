@@ -2,14 +2,11 @@ import sys
 import itertools
 import copy
 from concurrent.futures import ThreadPoolExecutor
-from scipy.stats import chisquare
-from scipy.stats import _stats_py
 from typing import Dict, List, Tuple, Union
 import multiprocessing as mp
 from functools import partial, lru_cache
-import hashlib
-import pickle
 from unittest.mock import Mock
+import os
 
 from Bio import Phylo
 from Bio.Phylo import Newick
@@ -19,9 +16,24 @@ from .base import Tree
 from ...helpers.files import read_single_column_file_to_list
 
 
+def chisquare(*args, **kwargs):
+    from scipy.stats import chisquare as _chisquare
+    return _chisquare(*args, **kwargs)
+
+
 class PolytomyTest(Tree):
+    MP_MIN_TREES = 50
+    MAX_MP_WORKERS = 8
+
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
+
+    def _should_use_multiprocessing(self, n_trees: int) -> bool:
+        if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
+            return False
+        if os.environ.get("PHYKIT_FORCE_MP", "0") == "1":
+            return True
+        return n_trees >= self.MP_MIN_TREES
 
     def run(self):
         # read in groups
@@ -284,8 +296,8 @@ class PolytomyTest(Tree):
         """
         summary = dict()
 
-        # For small datasets, process sequentially
-        if len(trees_file_path) < 10:
+        # For small/medium workloads, multiprocessing overhead dominates.
+        if not self._should_use_multiprocessing(len(trees_file_path)):
             for tree_file in trees_file_path:
                 try:
                     tree = Phylo.read(tree_file, "newick")
@@ -299,7 +311,7 @@ class PolytomyTest(Tree):
                     sys.exit(2)
         else:
             # Use multiprocessing for larger datasets
-            num_workers = min(mp.cpu_count(), 8)
+            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
             batch_size = max(1, len(trees_file_path) // num_workers)
             tree_batches = [trees_file_path[i:i + batch_size]
                            for i in range(0, len(trees_file_path), batch_size)]
@@ -642,8 +654,8 @@ class PolytomyTest(Tree):
         triplet_group_counts: dict,
         gene_support_freq: dict
     ) -> Tuple[
-        _stats_py.Power_divergenceResult,
-        _stats_py.Power_divergenceResult,
+        object,
+        object,
     ]:
         triplet_res = chisquare(
             [

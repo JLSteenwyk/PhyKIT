@@ -4,11 +4,11 @@ import sys
 from typing import Dict, List, Tuple
 import multiprocessing as mp
 from functools import partial
+import os
 
 from Bio import Align
 from Bio.Phylo import Newick
 import numpy as np
-from sklearn.linear_model import LinearRegression
 
 from .base import Tree
 from ...helpers.files import (
@@ -28,8 +28,18 @@ class FileFormat(Enum):
 
 
 class Saturation(Tree):
+    MP_MIN_COMBOS = 2000
+    MAX_MP_WORKERS = 8
+
     def __init__(self, args) -> None:
         super().__init__(**self.process_args(args))
+
+    def _should_use_multiprocessing(self, n_combos: int) -> bool:
+        if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
+            return False
+        if os.environ.get("PHYKIT_FORCE_MP", "0") == "1":
+            return True
+        return n_combos >= self.MP_MIN_COMBOS
 
     def run(self) -> None:
         alignment, _, is_protein = get_alignment_and_format_helper(
@@ -48,17 +58,20 @@ class Saturation(Tree):
             combos, alignment, tree, self.exclude_gaps
         )
 
-        # calculate slope and fit the y-intercept to zero
-        # Fitting the y-intercept to zero follows Jeffroy et al.
-        # See fig 2 https://www.cell.com/trends/genetics/fulltext/S0168-9525(06)00051-5
-        model = LinearRegression(fit_intercept=False)
-        model.fit(
-            np.array(patristic_distances).reshape(-1, 1),
-            np.array(uncorrected_distances)
-        )
+        # calculate slope while fitting the y-intercept to zero.
+        # This follows Jeffroy et al. (fig 2):
+        # https://www.cell.com/trends/genetics/fulltext/S0168-9525(06)00051-5
+        x = np.asarray(patristic_distances, dtype=float)
+        y = np.asarray(uncorrected_distances, dtype=float)
+        finite_mask = np.isfinite(x) & np.isfinite(y)
+        x = x[finite_mask]
+        y = y[finite_mask]
+
+        denom = float(np.dot(x, x))
+        slope = float(np.dot(x, y) / denom) if denom != 0.0 else 0.0
 
         self.print_res(
-            self.verbose, combos, uncorrected_distances, patristic_distances, model.coef_[0]
+            self.verbose, combos, uncorrected_distances, patristic_distances, slope
         )
 
     def process_args(self, args) -> Dict[str, str]:
@@ -126,8 +139,8 @@ class Saturation(Tree):
             if exclude_gaps:
                 gap_mask[record.name] = np.isin(seq_arr, list(gap_chars))
 
-        # For small datasets, process sequentially
-        if len(combos) < 50:
+        # For small/medium workloads, multiprocessing overhead dominates.
+        if not self._should_use_multiprocessing(len(combos)):
             patristic_distances = []
             uncorrected_distances = []
             for combo in combos:
@@ -157,7 +170,7 @@ class Saturation(Tree):
                 uncorrected_distances.append(ud)
         else:
             # Use multiprocessing for larger datasets
-            num_workers = min(mp.cpu_count(), 8)
+            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
             chunk_size = max(1, len(combos) // (num_workers * 4))
             combo_chunks = [combos[i:i + chunk_size] for i in range(0, len(combos), chunk_size)]
 

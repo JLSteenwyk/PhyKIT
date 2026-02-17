@@ -25,4 +25,4 @@ class TestRelativeCompositionVariability(object):
         rcv = RelativeCompositionVariability(args)
         relative_composition_variability = rcv.calculate_rcv()
         assert isinstance(relative_composition_variability, float)
-        assert isclose(relative_composition_variability, 0.36, rel_tol=0.001)
+        assert isclose(relative_composition_variability, 0.292, rel_tol=0.001)

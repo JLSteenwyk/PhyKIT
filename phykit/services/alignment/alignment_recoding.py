@@ -16,7 +16,7 @@ class AlignmentRecoding(Alignment):
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
 
-        recoding_table = self.read_recoding_table(self.code[0])
+        recoding_table = self.read_recoding_table(self.code)
 
         recoded_alignment = self.recode_alignment(
             alignment, recoding_table, is_protein

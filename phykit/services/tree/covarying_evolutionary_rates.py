@@ -164,7 +164,9 @@ class CovaryingEvolutionaryRates(Tree):
 
                 if bl0 is not None and bl1 is not None:
                     results.append((bl0, bl1, sp_tips))
-            except:
+            except Exception as err:
+                if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                    raise
                 continue
         return results
 
@@ -184,7 +186,9 @@ class CovaryingEvolutionaryRates(Tree):
                     bl0 = round(newtree.branch_length / nonterminal_bl, 6)
                     bl1 = round(newtree1.branch_length / nonterminal_bl, 6)
                     results.append((bl0, bl1, sp_tips))
-            except:
+            except Exception as err:
+                if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                    raise
                 continue
         return results
 
@@ -212,7 +216,9 @@ class CovaryingEvolutionaryRates(Tree):
                     if newtree.branch_length and i.branch_length:
                         l0.append(round(newtree.branch_length / i.branch_length, 6))
                         l1.append(round(newtree1.branch_length / i.branch_length, 6))
-                except:
+                except Exception as err:
+                    if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                        raise
                     continue
 
             for i in nonterminals:
@@ -224,7 +230,9 @@ class CovaryingEvolutionaryRates(Tree):
                         l0.append(round(newtree.branch_length / i.branch_length, 6))
                         l1.append(round(newtree1.branch_length / i.branch_length, 6))
                         tip_names.append(sp_tips)
-                except:
+                except Exception as err:
+                    if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                        raise
                     continue
         else:
             # Parallel processing for large datasets
@@ -278,7 +286,9 @@ class CovaryingEvolutionaryRates(Tree):
                         if newtree.branch_length and i.branch_length:
                             l0.append(round(newtree.branch_length / i.branch_length, 6))
                             l1.append(round(newtree1.branch_length / i.branch_length, 6))
-                    except Exception:
+                    except Exception as err:
+                        if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                            raise
                         continue
 
                 for i in nonterminals:
@@ -290,7 +300,9 @@ class CovaryingEvolutionaryRates(Tree):
                             l0.append(round(newtree.branch_length / i.branch_length, 6))
                             l1.append(round(newtree1.branch_length / i.branch_length, 6))
                             tip_names.append(sp_tips)
-                    except Exception:
+                    except Exception as err:
+                        if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                            raise
                         continue
 
         return (l0, l1, tip_names)
