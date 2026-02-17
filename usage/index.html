@@ -69,7 +69,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mask-alignment">Mask alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-alignment-qc">Plot alignment QC</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#occupancy-per-taxon">Occupancy per taxon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-outlier-taxa">Alignment outlier taxa</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
@@ -263,7 +265,7 @@ Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy</p>
 <p>Site-wise entropy is calculated using Shannon entropy. By default,
 PhyKIT reports the mean entropy across all sites in the alignment.
 With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Example output (default):</p>
@@ -279,6 +281,8 @@ With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>-v/\-\-verbose</em>: optional argument to print entropy for each site <br/>
+<em>--plot</em>: save a per-site alignment entropy plot <br/>
+<em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">alignment_entropy_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -426,12 +430,14 @@ col 1: index in alignment <br/>
 col 2: chi-squared statistic (higher values indicate greater bias) <br/>
 col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) <br/>
 col 4: uncorrected p-value</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment to calculate the site-wise compositional bias of <br/>
+<em>--plot</em>: save a Manhattan-style plot of site-wise compositional bias <br/>
+<em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">compositional_bias_per_site_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -472,7 +478,7 @@ matrices.</p>
 1) A fasta file with '.fa' appended to the prefix specified with the -p/\-\-prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--plot-occupancy<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -480,6 +486,12 @@ matrices.</p>
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
 <em>-p/\-\-prefix</em>: prefix of output files <br/>
+<em>--plot-occupancy</em>: optional argument to output an occupancy map figure where
+x-axis shows concatenated positions with gene boundaries and y-axis shows taxa
+sorted by total occupancy. Colors denote represented characters, gap/ambiguous
+characters in present genes, and fully absent gene blocks. <br/>
+<em>--plot-output</em>: optional custom output path for occupancy map figure
+(default: <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;.occupancy.png</span></code>). <br/>
 <em>--json</em>: optional argument to print summary metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -493,12 +505,14 @@ Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_
 <p>Evolutionary rate per site is one minus the sum of squared frequency of different
 characters at a given site. Values may range from 0 (slow evolving; no diversity
 at the given site) to 1 (fast evolving; all characters appear only once).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment to calculate the site-wise evolutionary rate of <br/>
+<em>--plot</em>: save a per-site evolutionary-rate plot <br/>
+<em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">evolutionary_rate_per_site_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -571,6 +585,39 @@ maximum gap fraction, minimum occupancy, and maximum site entropy.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="plot-alignment-qc">
+<h3>Plot alignment QC<a class="headerlink" href="#plot-alignment-qc" title="Link to this heading"></a></h3>
+<p>Function names: plot_alignment_qc; plot_qc; paqc <br/>
+Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc</p>
+<p>Generate a multi-panel alignment quality-control plot.</p>
+<p>The figure includes:
+1) occupancy per taxon <br/>
+2) gap rate per taxon <br/>
+3) composition distance vs long-branch proxy scatter <br/>
+4) count of flagged outliers by feature</p>
+<p>Outlier evaluation uses the same features as <code class="docutils literal notranslate"><span class="pre">alignment_outlier_taxa</span></code>:
+<code class="docutils literal notranslate"><span class="pre">gap_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">occupancy</span></code>, <code class="docutils literal notranslate"><span class="pre">composition_distance</span></code>, <code class="docutils literal notranslate"><span class="pre">long_branch_proxy</span></code>,
+<code class="docutils literal notranslate"><span class="pre">rcvt</span></code>, and <code class="docutils literal notranslate"><span class="pre">entropy_burden</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>plot_alignment_qc<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--gap-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--composition-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--distance-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--rcvt-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--occupancy-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--entropy-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-o/\-\-output</em>: output image path (default: <code class="docutils literal notranslate"><span class="pre">alignment_qc.png</span></code>) <br/>
+<em>--width</em>: figure width in inches (default: <code class="docutils literal notranslate"><span class="pre">14.0</span></code>) <br/>
+<em>--height</em>: figure height in inches (default: <code class="docutils literal notranslate"><span class="pre">10.0</span></code>) <br/>
+<em>--dpi</em>: output image DPI (default: <code class="docutils literal notranslate"><span class="pre">300</span></code>) <br/>
+<em>--gap-z</em>: z-threshold for gap-rate outliers (default: <code class="docutils literal notranslate"><span class="pre">3.0</span></code>) <br/>
+<em>--composition-z</em>: z-threshold for composition-distance outliers (default: <code class="docutils literal notranslate"><span class="pre">3.0</span></code>) <br/>
+<em>--distance-z</em>: z-threshold for long-branch-proxy outliers (default: <code class="docutils literal notranslate"><span class="pre">3.0</span></code>) <br/>
+<em>--rcvt-z</em>: z-threshold for RCVT outliers (default: <code class="docutils literal notranslate"><span class="pre">3.0</span></code>) <br/>
+<em>--occupancy-z</em>: z-threshold for low-occupancy outliers (default: <code class="docutils literal notranslate"><span class="pre">3.0</span></code>) <br/>
+<em>--entropy-z</em>: z-threshold for entropy-burden outliers (default: <code class="docutils literal notranslate"><span class="pre">3.0</span></code>) <br/>
+<em>--json</em>: optional argument to print plot metadata and outlier summary as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="occupancy-per-taxon">
 <h3>Occupancy per taxon<a class="headerlink" href="#occupancy-per-taxon" title="Link to this heading"></a></h3>
 <p>Function names: occupancy_per_taxon; occupancy_taxon; occ_tax <br/>
@@ -593,6 +640,43 @@ for each taxon.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="alignment-outlier-taxa">
+<h3>Alignment outlier taxa<a class="headerlink" href="#alignment-outlier-taxa" title="Link to this heading"></a></h3>
+<p>Function names: alignment_outlier_taxa; outlier_taxa; aot <br/>
+Command line interface: pk_alignment_outlier_taxa; pk_outlier_taxa; pk_aot</p>
+<p>Identify potential outlier taxa in an alignment and explicitly report why each taxon was flagged.</p>
+<p>The following features are evaluated per taxon:
+1) <code class="docutils literal notranslate"><span class="pre">gap_rate</span></code>: fraction of gap/ambiguous symbols <br/>
+2) <code class="docutils literal notranslate"><span class="pre">occupancy</span></code>: fraction of valid symbols <br/>
+3) <code class="docutils literal notranslate"><span class="pre">composition_distance</span></code>: Euclidean distance from the median composition profile <br/>
+4) <code class="docutils literal notranslate"><span class="pre">long_branch_proxy</span></code>: mean pairwise sequence distance to other taxa <br/>
+5) <code class="docutils literal notranslate"><span class="pre">rcvt</span></code>: relative composition variability per taxon <br/>
+6) <code class="docutils literal notranslate"><span class="pre">entropy_burden</span></code>: average site entropy over this taxon's valid positions</p>
+<p>If a taxon exceeds one or more feature-specific thresholds, PhyKIT reports the exact
+feature(s), observed value(s), threshold(s), and explanation(s) for the flag.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_outlier_taxa<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--gap-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--composition-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--distance-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--rcvt-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--occupancy-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--entropy-z<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>features_evaluated<span class="w">      </span>gap_rate,occupancy,composition_distance,long_branch_proxy,rcvt,entropy_burden
+thresholds<span class="w">      </span>gap_rate&gt;0.0<span class="p">;</span>occupancy&lt;<span class="m">0</span>.4<span class="p">;</span>composition_distance&gt;0.1<span class="p">;</span>long_branch_proxy&gt;0.4181<span class="p">;</span>rcvt&gt;0.0095<span class="p">;</span>entropy_burden&gt;0.35
+taxon_d<span class="w"> </span><span class="nv">composition_distance</span><span class="o">=</span><span class="m">1</span>.3454&gt;0.1<span class="p">;</span><span class="nv">long_branch_proxy</span><span class="o">=</span><span class="m">1</span>.0&gt;0.4181<span class="w">    </span>Unusual<span class="w"> </span>sequence<span class="w"> </span>composition<span class="w"> </span>profile<span class="w"> </span>relative<span class="w"> </span>to<span class="w"> </span>other<span class="w"> </span>taxa.<span class="w"> </span><span class="p">|</span><span class="w"> </span>High<span class="w"> </span>mean<span class="w"> </span>pairwise<span class="w"> </span>sequence<span class="w"> </span>distance<span class="w"> </span>to<span class="w"> </span>other<span class="w"> </span>taxa.
+taxon_e<span class="w"> </span><span class="nv">gap_rate</span><span class="o">=</span><span class="m">0</span>.6&gt;0.0<span class="p">;</span><span class="nv">occupancy</span><span class="o">=</span><span class="m">0</span>.4&lt;<span class="m">0</span>.4<span class="w">      </span>High<span class="w"> </span>fraction<span class="w"> </span>of<span class="w"> </span>gap/ambiguous<span class="w"> </span>symbols<span class="w"> </span>compared<span class="w"> </span>to<span class="w"> </span>other<span class="w"> </span>taxa.<span class="w"> </span><span class="p">|</span><span class="w"> </span>Low<span class="w"> </span>fraction<span class="w"> </span>of<span class="w"> </span>valid<span class="w"> </span>symbols<span class="w"> </span>compared<span class="w"> </span>to<span class="w"> </span>other<span class="w"> </span>taxa.
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--gap-z</em>: z-threshold used for high-gap outlier detection (default: 3.0) <br/>
+<em>--composition-z</em>: z-threshold used for composition-distance outlier detection (default: 3.0) <br/>
+<em>--distance-z</em>: z-threshold used for long-branch-proxy outlier detection (default: 3.0) <br/>
+<em>--rcvt-z</em>: z-threshold used for RCVT outlier detection (default: 3.0) <br/>
+<em>--occupancy-z</em>: z-threshold used for low-occupancy outlier detection (default: 3.0) <br/>
+<em>--entropy-z</em>: z-threshold used for entropy-burden outlier detection (default: 3.0) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="pairwise-identity">
 <h3>Pairwise identity<a class="headerlink" href="#pairwise-identity" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/pairwise_identity.png"><img alt="../_images/pairwise_identity.png" class="align-center" src="../_images/pairwise_identity.png" style="width: 75%;" /></a>
@@ -608,13 +692,15 @@ all pairwise identities will be reported.</p>
 <p>An example of pairwise identities being used as a proxy
 for evolutionary rate can be found here: Chen et al.
 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--exclude_gaps<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>-v/\-\-verbose</em>: optional argument to print identity per pair|br|
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
+<em>--plot</em>: save a clustered pairwise-identity heatmap <br/>
+<em>--plot-output</em>: output path for heatmap (default: pairwise_identity_heatmap.png) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -714,11 +800,13 @@ biases. Lower RCVT values are more desirable because they indicate
 a lower composition bias for a given taxon in an alignment.</p>
 <p>RCVT calculations are case-insensitive and exclude gap/ambiguous symbols
 from composition counts and normalization.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--plot</em>: optional argument to generate an RCVT per-taxon barplot <br/>
+<em>--plot-output</em>: output path for the RCVT plot (default: <code class="docutils literal notranslate"><span class="pre">rcvt_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -896,7 +984,7 @@ col2: p-value</p>
 (2012), doi: 10.1101/gr.132647.111. Normalization method using a
 species tree follows Sato et al., Bioinformatics (2005), doi:
 10.1093/bioinformatics/bti564.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -905,6 +993,8 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 <em>-r/\-\-reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
 this is a putative species tree. <br/>
 <em>-v/\-\-verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br/>
+<em>--plot</em>: save a covarying-rates scatter plot <br/>
+<em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">covarying_rates_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1379,12 +1469,16 @@ Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
 <p>Distances are in substitutions per site.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>&lt;tip_1&gt;<span class="w"> </span>&lt;tip_2&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>--all-pairs<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree_file&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;tip_1&gt;</em>: second argument should be the name of the first tip of interest <br/>
 <em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest <br/>
+<em>--all-pairs</em>: optional argument to report all pairwise tip distances <br/>
+<em>--plot</em>: optional argument to save a clustered distance heatmap (requires <code class="docutils literal notranslate"><span class="pre">--all-pairs</span></code>) <br/>
+<em>--plot-output</em>: output path for heatmap (default: <code class="docutils literal notranslate"><span class="pre">tip_to_tip_distance_heatmap.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1467,7 +1561,7 @@ value of saturation minus 1. Thus, lower values in the second column
 are indicative of values closer to one and, thus, less saturation.</p>
 <p>Saturation is calculated following Philippe et al., PLoS
 Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--exclude_gaps<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1476,6 +1570,8 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
 <em>-v/\-\-verbose</em>: print out patristic distances and uncorrected <br/>
 distances used to determine saturation <br/>
+<em>--plot</em>: save a saturation scatter plot with fitted slope through origin <br/>
+<em>--plot-output</em>: output path for saturation plot (default: <code class="docutils literal notranslate"><span class="pre">saturation_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 </section>
 <section id="treeness-over-rcv">

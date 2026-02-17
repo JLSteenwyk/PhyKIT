@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.6**:
+Expanded plotting support for alignment/tree QC workflows:
+
+* Added optional plotting to:
+  ``pairwise_identity``, ``saturation``, ``covarying_evolutionary_rates``,
+  ``compositional_bias_per_site``, ``evolutionary_rate_per_site``, and
+  ``alignment_entropy``
+* Added ``tip_to_tip_distance --all-pairs`` mode with optional clustered
+  heatmap output (``--plot``)
+* Standardized plotting arguments and JSON metadata:
+  ``--plot``, ``--plot-output``, and ``plot_output`` in JSON payloads
+* Updated CLI help text and online usage documentation for all newly plotted commands
+* Expanded integration test coverage for plotting and JSON+plot behavior and
+  reran full regression and documentation build checks
+
 **2.1.5**:
 JSON output expansion and harmonization:
 

@@ -149,7 +149,7 @@ With the `-v/--verbose` option, PhyKIT reports entropy for each site.
 
 .. code-block:: shell
 
-	phykit alignment_entropy <alignment> [-v/--verbose] [--json]
+	phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
 
 Example output (default):
 
@@ -168,6 +168,8 @@ Example output (`-v`):
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *-v/\\-\\-verbose*: optional argument to print entropy for each site |br|
+*--plot*: save a per-site alignment entropy plot |br|
+*--plot-output*: output path for plot (default: ``alignment_entropy_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -339,11 +341,13 @@ col 4: uncorrected p-value
 
 .. code-block:: shell
 
-	phykit comp_bias_per_site <alignment> [--json]
+	phykit comp_bias_per_site <alignment> [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment to calculate the site-wise compositional bias of |br|
+*--plot*: save a Manhattan-style plot of site-wise compositional bias |br|
+*--plot-output*: output path for plot (default: ``compositional_bias_per_site_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -397,13 +401,19 @@ PhyKIT will output three files:
 
 .. code-block:: shell
 
-	phykit create_concat -a <file> -p <string> [--json]
+	phykit create_concat -a <file> -p <string> [--plot-occupancy] [--plot-output <path>] [--json]
 
 Options: |br|
 *-a/\\-\\-alignment*: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
 *-p/\\-\\-prefix*: prefix of output files |br|
+*--plot-occupancy*: optional argument to output an occupancy map figure where
+x-axis shows concatenated positions with gene boundaries and y-axis shows taxa
+sorted by total occupancy. Colors denote represented characters, gap/ambiguous
+characters in present genes, and fully absent gene blocks. |br|
+*--plot-output*: optional custom output path for occupancy map figure
+(default: ``<prefix>.occupancy.png``). |br|
 *--json*: optional argument to print summary metadata as JSON
 
 |
@@ -422,11 +432,13 @@ at the given site) to 1 (fast evolving; all characters appear only once).
 
 .. code-block:: shell
 
-	phykit evo_rate_per_site <alignment> [--json]
+	phykit evo_rate_per_site <alignment> [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment to calculate the site-wise evolutionary rate of |br|
+*--plot*: save a per-site evolutionary-rate plot |br|
+*--plot-output*: output path for plot (default: ``evolutionary_rate_per_site_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -517,6 +529,43 @@ Options: |br|
 
 |
 
+Plot alignment QC
+#################
+Function names: plot_alignment_qc; plot_qc; paqc |br|
+Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc
+
+Generate a multi-panel alignment quality-control plot.
+
+The figure includes:
+1) occupancy per taxon |br|
+2) gap rate per taxon |br|
+3) composition distance vs long-branch proxy scatter |br|
+4) count of flagged outliers by feature
+
+Outlier evaluation uses the same features as ``alignment_outlier_taxa``:
+``gap_rate``, ``occupancy``, ``composition_distance``, ``long_branch_proxy``,
+``rcvt``, and ``entropy_burden``.
+
+.. code-block:: shell
+
+	phykit plot_alignment_qc <alignment> [-o/--output <path>] [--width <float>] [--height <float>] [--dpi <int>] [--gap-z <float>] [--composition-z <float>] [--distance-z <float>] [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>] [--json]
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file |br|
+*-o/\\-\\-output*: output image path (default: ``alignment_qc.png``) |br|
+*--width*: figure width in inches (default: ``14.0``) |br|
+*--height*: figure height in inches (default: ``10.0``) |br|
+*--dpi*: output image DPI (default: ``300``) |br|
+*--gap-z*: z-threshold for gap-rate outliers (default: ``3.0``) |br|
+*--composition-z*: z-threshold for composition-distance outliers (default: ``3.0``) |br|
+*--distance-z*: z-threshold for long-branch-proxy outliers (default: ``3.0``) |br|
+*--rcvt-z*: z-threshold for RCVT outliers (default: ``3.0``) |br|
+*--occupancy-z*: z-threshold for low-occupancy outliers (default: ``3.0``) |br|
+*--entropy-z*: z-threshold for entropy-burden outliers (default: ``3.0``) |br|
+*--json*: optional argument to print plot metadata and outlier summary as JSON
+
+|
+
 Occupancy per taxon
 ###################
 Function names: occupancy_per_taxon; occupancy_taxon; occ_tax |br|
@@ -540,6 +589,49 @@ Example output:
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Alignment outlier taxa
+######################
+Function names: alignment_outlier_taxa; outlier_taxa; aot |br|
+Command line interface: pk_alignment_outlier_taxa; pk_outlier_taxa; pk_aot
+
+Identify potential outlier taxa in an alignment and explicitly report why each taxon was flagged.
+
+The following features are evaluated per taxon:
+1) ``gap_rate``: fraction of gap/ambiguous symbols |br|
+2) ``occupancy``: fraction of valid symbols |br|
+3) ``composition_distance``: Euclidean distance from the median composition profile |br|
+4) ``long_branch_proxy``: mean pairwise sequence distance to other taxa |br|
+5) ``rcvt``: relative composition variability per taxon |br|
+6) ``entropy_burden``: average site entropy over this taxon's valid positions
+
+If a taxon exceeds one or more feature-specific thresholds, PhyKIT reports the exact
+feature(s), observed value(s), threshold(s), and explanation(s) for the flag.
+
+.. code-block:: shell
+
+	phykit alignment_outlier_taxa <alignment> [--gap-z <float>] [--composition-z <float>] [--distance-z <float>] [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>] [--json]
+
+Example output:
+
+.. code-block:: shell
+
+	features_evaluated	gap_rate,occupancy,composition_distance,long_branch_proxy,rcvt,entropy_burden
+	thresholds	gap_rate>0.0;occupancy<0.4;composition_distance>0.1;long_branch_proxy>0.4181;rcvt>0.0095;entropy_burden>0.35
+	taxon_d	composition_distance=1.3454>0.1;long_branch_proxy=1.0>0.4181	Unusual sequence composition profile relative to other taxa. | High mean pairwise sequence distance to other taxa.
+	taxon_e	gap_rate=0.6>0.0;occupancy=0.4<0.4	High fraction of gap/ambiguous symbols compared to other taxa. | Low fraction of valid symbols compared to other taxa.
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--gap-z*: z-threshold used for high-gap outlier detection (default: 3.0) |br|
+*--composition-z*: z-threshold used for composition-distance outlier detection (default: 3.0) |br|
+*--distance-z*: z-threshold used for long-branch-proxy outlier detection (default: 3.0) |br|
+*--rcvt-z*: z-threshold used for RCVT outlier detection (default: 3.0) |br|
+*--occupancy-z*: z-threshold used for low-occupancy outlier detection (default: 3.0) |br|
+*--entropy-z*: z-threshold used for entropy-burden outlier detection (default: 3.0) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -570,12 +662,14 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 .. code-block:: shell
 
-	phykit pairwise_identity <alignment> [-v/--verbose] [--json]
+	phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *-v/\\-\\-verbose*: optional argument to print identity per pair|br|
 *-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
+*--plot*: save a clustered pairwise-identity heatmap |br|
+*--plot-output*: output path for heatmap (default: pairwise_identity_heatmap.png) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -695,10 +789,12 @@ from composition counts and normalization.
 
 .. code-block:: shell
 
-	phykit relative_composition_variability_taxon <alignment> [--json]
+	phykit relative_composition_variability_taxon <alignment> [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
+*--plot*: optional argument to generate an RCVT per-taxon barplot |br|
+*--plot-output*: output path for the RCVT plot (default: ``rcvt_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -907,7 +1003,7 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 
 .. code-block:: shell
 
-   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] [--json]
+   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be an alignment file |br|
@@ -915,6 +1011,8 @@ Options: |br|
 *-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
 this is a putative species tree. |br|
 *-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1 |br|
+*--plot*: save a covarying-rates scatter plot |br|
+*--plot-output*: output path for plot (default: ``covarying_rates_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1472,11 +1570,15 @@ Distances are in substitutions per site.
 .. code-block:: shell
 
    phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2> [--json]
+   phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
 *<tree_file>*: first argument after function name should be a tree file |br|
 *<tip_1>*: second argument should be the name of the first tip of interest |br|
 *<tip_2>*: third argument should be the name of the second tip of interest |br|
+*--all-pairs*: optional argument to report all pairwise tip distances |br|
+*--plot*: optional argument to save a clustered distance heatmap (requires ``--all-pairs``) |br|
+*--plot-output*: output path for heatmap (default: ``tip_to_tip_distance_heatmap.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1576,7 +1678,7 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
 .. code-block:: shell
 
-   phykit saturation -a <alignment> -t <tree> [-v/--verbose] [--json]
+   phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
@@ -1584,6 +1686,8 @@ Options: |br|
 *-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
 *-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
 distances used to determine saturation |br|
+*--plot*: save a saturation scatter plot with fitted slope through origin |br|
+*--plot-output*: output path for saturation plot (default: ``saturation_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 Treeness over RCV
