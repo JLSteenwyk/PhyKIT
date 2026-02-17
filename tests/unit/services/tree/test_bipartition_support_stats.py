@@ -78,7 +78,18 @@ class TestBipartitionSupportStats(object):
 
         t.run()
 
-        payload = json.loads(mocked_print.call_args.args[0])
+        json_payload = next(
+            (
+                call_args.args[0]
+                for call_args in mocked_print.mock_calls
+                if call_args.args
+                and isinstance(call_args.args[0], str)
+                and call_args.args[0].strip().startswith("{")
+            ),
+            None,
+        )
+        assert json_payload is not None
+        payload = json.loads(json_payload)
         assert payload["verbose"] is False
         assert payload["summary"]["mean"] == 92.5
 
