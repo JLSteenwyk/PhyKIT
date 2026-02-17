@@ -14,6 +14,7 @@ from .base import Tree
 from ...helpers.files import (
     get_alignment_and_format as get_alignment_and_format_helper
 )
+from ...helpers.json_output import print_json
 
 
 class FileFormat(Enum):
@@ -32,7 +33,14 @@ class Saturation(Tree):
     MAX_MP_WORKERS = 8
 
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            alignment_file_path=parsed["alignment_file_path"],
+            exclude_gaps=parsed["exclude_gaps"],
+            verbose=parsed["verbose"],
+        )
+        self.json_output = parsed["json_output"]
 
     def _should_use_multiprocessing(self, n_combos: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -80,6 +88,7 @@ class Saturation(Tree):
             alignment_file_path=args.alignment,
             exclude_gaps=args.exclude_gaps,
             verbose=args.verbose,
+            json_output=getattr(args, "json", False),
         )
 
     def _process_combo_batch(self, tree, seq_arrays, gap_mask, exclude_gaps, combo_batch):
@@ -209,6 +218,30 @@ class Saturation(Tree):
         print results to stdout
         """
         try:
+            if self.json_output:
+                payload = dict(verbose=verbose, exclude_gaps=self.exclude_gaps)
+                if verbose:
+                    rows = [
+                        dict(
+                            taxon_a=cbo[0],
+                            taxon_b=cbo[1],
+                            uncorrected_distance=round(dist, 4),
+                            patristic_distance=round(pd, 4),
+                        )
+                        for cbo, dist, pd in zip(
+                            combos, uncorrected_distances, patristic_distances
+                        )
+                    ]
+                    payload["rows"] = rows
+                    payload["pairs"] = rows
+                else:
+                    payload["summary"] = dict(
+                        slope=round(slope, 4),
+                        one_minus_slope_abs=abs(round(1 - slope, 4)),
+                    )
+                print_json(payload)
+                return
+
             if verbose:
                 for cbo, dist, pd in zip(
                     combos, uncorrected_distances, patristic_distances

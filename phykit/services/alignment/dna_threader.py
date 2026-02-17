@@ -4,6 +4,7 @@ import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class DNAThreader(Alignment):
@@ -19,6 +20,7 @@ class DNAThreader(Alignment):
         self.protein_file_path = args.protein
         self.nucleotide_file_path = args.nucleotide
         self.clipkit_log_file = args.clipkit_log_file
+        self.json_output = getattr(args, "json", False)
 
     @property
     def clipkit_log_data(self) -> List[List[str]]:
@@ -30,6 +32,21 @@ class DNAThreader(Alignment):
     def run(self) -> None:
         prot_records = SeqIO.parse(self.protein_file_path, "fasta")
         pal2nal = self.thread(prot_records)
+
+        if self.json_output:
+            rows = [
+                dict(taxon=gene_id, sequence=sequence)
+                for gene_id, sequence in pal2nal.items()
+            ]
+            print_json(
+                dict(
+                    remove_stop_codon=self.remove_stop_codon,
+                    clipkit_log_file=self.clipkit_log_file,
+                    rows=rows,
+                    taxa=rows,
+                )
+            )
+            return
 
         for gene_id, sequence in pal2nal.items():
             print(f">{gene_id}")

@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from math import isclose
 from mock import patch, call
 from pathlib import Path
@@ -145,3 +146,21 @@ class TestPruneTree(object):
             out_tree_content = out_tree.read()
 
         assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
+    def test_prune_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_prune.txt",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["keep_input_taxa"] is False
+        assert payload["pruned_count"] == 2
+        assert payload["remaining_tips"] == 6

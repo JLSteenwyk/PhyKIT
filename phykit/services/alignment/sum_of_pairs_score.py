@@ -8,11 +8,14 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class SumOfPairsScore(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(fasta=parsed["fasta"], reference=parsed["reference"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         query_records = SeqIO.to_dict(SeqIO.parse(self.fasta, "fasta"))
@@ -27,10 +30,20 @@ class SumOfPairsScore(Alignment):
                 record_id_pairs, reference_records, query_records
             )
 
-        print(round(number_of_matches / number_of_total_pairs, 4))
+        score = round(number_of_matches / number_of_total_pairs, 4)
+
+        if self.json_output:
+            print_json(dict(sum_of_pairs_score=score))
+            return
+
+        print(score)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(fasta=args.fasta, reference=args.reference)
+        return dict(
+            fasta=args.fasta,
+            reference=args.reference,
+            json_output=getattr(args, "json", False),
+        )
 
     @staticmethod
     def _process_pair_batch(

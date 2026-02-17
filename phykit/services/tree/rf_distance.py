@@ -6,11 +6,17 @@ import pickle
 from Bio.Phylo import Newick
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class RobinsonFouldsDistance(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            tree1_file_path=parsed["tree1_file_path"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree_zero = self.read_tree_file()
@@ -39,12 +45,22 @@ class RobinsonFouldsDistance(Tree):
             tree_zero, tree_one
         )
 
+        if self.json_output:
+            print_json(
+                dict(
+                    plain_rf=plain_rf,
+                    normalized_rf=round(normalized_rf, 4),
+                )
+            )
+            return
+
         print(f"{plain_rf}\t{round(normalized_rf, 4)}")
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(
             tree_file_path=args.tree_zero,
             tree1_file_path=args.tree_one,
+            json_output=getattr(args, "json", False),
         )
 
     def calculate_robinson_foulds_distance(self, tree_zero, tree_one):

@@ -2,6 +2,7 @@ from mock import patch, call
 from pathlib import Path
 import pytest
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -131,3 +132,35 @@ class TestTBS(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_terminal_branch_stats_json_summary(self, mocked_print):
+        testargs = [
+            "phykit",
+            "terminal_branch_stats",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is False
+        assert round(payload["summary"]["mean"], 4) == 30.2926
+
+    @patch("builtins.print")
+    def test_terminal_branch_stats_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "terminal_branch_stats",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["rows"][0] == payload["tips"][0]
+        assert payload["tips"][0] == {"length": 19.1996, "taxon": "raccoon"}

@@ -6,11 +6,17 @@ from Bio import Phylo
 from Bio.Phylo import Newick
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class NearestNeighborInterchange(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            output_file_path=parsed["output_file_path"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -19,6 +25,15 @@ class NearestNeighborInterchange(Tree):
         all_nnis = [tree]
         all_nnis.extend(self.get_neighbors(tree))
         Phylo.write(all_nnis, self.output_file_path, "newick")
+        if self.json_output:
+            print_json(
+                dict(
+                    input_tree=self.tree_file_path,
+                    total_trees=len(all_nnis),
+                    nni_neighbors=max(0, len(all_nnis) - 1),
+                    output_file=self.output_file_path,
+                )
+            )
 
     def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree
@@ -27,7 +42,8 @@ class NearestNeighborInterchange(Tree):
 
         return dict(
             tree_file_path=tree_file_path,
-            output_file_path=output_file_path
+            output_file_path=output_file_path,
+            json_output=getattr(args, "json", False),
         )
 
     def _fast_tree_copy(self, tree: Newick.Tree) -> Newick.Tree:

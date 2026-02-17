@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -109,3 +110,19 @@ class TestRenameFastaEntries(object):
         mocked_print.assert_has_calls([
             call("Idmap path corresponds to no such file. Please check the path."),
         ])
+
+    @patch("builtins.print")
+    def test_rename_fasta_entries_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "rename_fasta_entries",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "-i",
+            f"{here.parent.parent.parent}/sample_files/simple_fasta_idmap.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["renamed_records"] == 5
+        assert payload["total_records"] == 5

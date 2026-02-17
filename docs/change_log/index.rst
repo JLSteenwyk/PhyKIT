@@ -6,6 +6,17 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.5**:
+JSON output expansion and harmonization:
+
+* Added ``--json`` support to the remaining CLI commands, including
+  ``create_concatenation_matrix`` and ``nearest_neighbor_interchange``
+* Standardized JSON metadata key naming for improved consistency across commands
+* Added canonical ``rows`` payloads for list-style JSON outputs while preserving
+  legacy keys for backward compatibility
+* Expanded integration test coverage for JSON payloads and performed full
+  regression verification
+
 **2.1.4**:
 New alignment utilities, masking support, and composition/RCV correctness updates:
 

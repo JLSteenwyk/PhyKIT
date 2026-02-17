@@ -443,17 +443,21 @@ class Phykit(object):
                   pk_alignment_length, pk_aln_len, pk_al
 
                 Usage:
-                phykit alignment_length <alignment>
+                phykit alignment_length <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file           
+                                            an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentLength(args).run()
 
@@ -488,17 +492,21 @@ class Phykit(object):
                   pk_alignment_length_no_gaps, pk_aln_len_no_gaps, pk_alng
 
                 Usage:
-                phykit alignment_length_no_gaps <alignment>
+                phykit alignment_length_no_gaps <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
 
@@ -525,7 +533,7 @@ class Phykit(object):
                   pk_alignment_entropy, pk_aln_entropy, pk_entropy
 
                 Usage:
-                phykit alignment_entropy <alignment> [-v/--verbose]
+                phykit alignment_entropy <alignment> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -535,6 +543,9 @@ class Phykit(object):
 
                 -v/--verbose                optional argument to print
                                             entropy for each site
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -542,6 +553,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentEntropy(args).run()
 
@@ -571,7 +583,7 @@ class Phykit(object):
                   bk_alignment_recoding, bk_aln_recoding, bk_recode
 
                 Usage:
-                phykit alignment_recoding <fasta> -c/--code <code>
+                phykit alignment_recoding <fasta> -c/--code <code> [--json]
 
                 Options
                 =====================================================
@@ -580,6 +592,9 @@ class Phykit(object):
                                             a fasta file
 
                 -c/--code                   recoding scheme to use
+
+                --json                      optional argument to output
+                                            results as JSON
 
                 Codes for which recoding scheme to use
                 =====================================================
@@ -678,6 +693,7 @@ class Phykit(object):
 
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("-c", "--code", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentRecoding(args).run()
 
@@ -704,7 +720,7 @@ class Phykit(object):
                   pk_column_score, pk_cs
 
                 Usage:
-                phykit column_score <fasta> -r/--reference <ref.aln>
+                phykit column_score <fasta> -r/--reference <ref.aln> [--json]
 
                 Options
                 =====================================================
@@ -715,11 +731,15 @@ class Phykit(object):
 
                 -r/--reference              reference fasta alignment to 
                                             compare query alignment to
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         ColumnScore(args).run()
 
@@ -748,17 +768,21 @@ class Phykit(object):
                   pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
 
                 Usage:
-                phykit compositional_bias_per_site <alignment>
+                phykit compositional_bias_per_site <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after the
                                             function name should be a
                                             fasta alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CompositionalBiasPerSite(args).run()
 
@@ -784,17 +808,21 @@ class Phykit(object):
                   pk_composition_per_taxon, pk_comp_taxon, pk_comp_tax
 
                 Usage:
-                phykit composition_per_taxon <alignment>
+                phykit composition_per_taxon <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after
                                             function name should be
                                             an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CompositionPerTaxon(args).run()
 
@@ -826,17 +854,21 @@ class Phykit(object):
         
 
                 Usage:
-                phykit evo_rate_per_site <fasta>
+                phykit evo_rate_per_site <fasta> [--json]
 
                 Options
                 =====================================================
                 <fasta>                     first argument after
                                             function name should be a
                                             query fasta file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         EvolutionaryRatePerSite(args).run()
 
@@ -867,7 +899,7 @@ class Phykit(object):
                   
 
                 Usage:
-                phykit faidx <fasta> -e/--entry <fasta entry>
+                phykit faidx <fasta> -e/--entry <fasta entry> [--json]
 
                 Options
                 =====================================================
@@ -877,11 +909,15 @@ class Phykit(object):
 
                 -e/--entry                  entry name to be extracted
                                             from the inputted fasta file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-e", "--entry", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         Faidx(args).run()
 
@@ -912,7 +948,7 @@ class Phykit(object):
                   pk_gc_content, pk_gc
 
                 Usage:
-                phykit gc_content <fasta> [-v/--verbose]
+                phykit gc_content <fasta> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -923,6 +959,9 @@ class Phykit(object):
                 -v/--verbose                optional argument to print
                                             the GC content of each fasta
                                             entry
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -930,6 +969,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         GCContent(args).run()
 
@@ -956,7 +996,7 @@ class Phykit(object):
 
                 Usage:
                 phykit mask_alignment <alignment> [-g/--max_gap <float>]
-                  [-o/--min_occupancy <float>] [-e/--max_entropy <float>]
+                  [-o/--min_occupancy <float>] [-e/--max_entropy <float>] [--json]
 
                 Options
                 =====================================================
@@ -973,6 +1013,9 @@ class Phykit(object):
 
                 -e/--max_entropy            maximum allowed site entropy
                                             (default: no filter)
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -984,6 +1027,7 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--max_entropy", type=float, required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         MaskAlignment(args).run()
 
@@ -1008,17 +1052,21 @@ class Phykit(object):
                   pk_occupancy_per_taxon, pk_occupancy_taxon, pk_occ_tax
 
                 Usage:
-                phykit occupancy_per_taxon <alignment>
+                phykit occupancy_per_taxon <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after
                                             function name should be
                                             an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         OccupancyPerTaxon(args).run()
 
@@ -1053,7 +1101,7 @@ class Phykit(object):
                   pk_pairwise_identity, pk_pairwise_id, pk_pi
 
                 Usage:
-                phykit pairwise_identity <alignment> [-v/--verbose]
+                phykit pairwise_identity <alignment> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -1065,6 +1113,9 @@ class Phykit(object):
                                             identity per pair
 
                 -e/--exclude_gaps           if a site has a gap, ignore it
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -1075,6 +1126,7 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 
@@ -1111,17 +1163,21 @@ class Phykit(object):
                   pk_parsimony_informative_sites, pk_pis
 
                 Usage:
-                phykit parsimony_informative_sites <alignment>
+                phykit parsimony_informative_sites <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         ParsimonyInformative(args).run()
 
@@ -1150,17 +1206,21 @@ class Phykit(object):
                   pk_relative_composition_variability, pk_rel_comp_var, pk_rcv
 
                 Usage:
-                phykit relative_composition_variability <alignment>
+                phykit relative_composition_variability <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RelativeCompositionVariability(args).run()
 
@@ -1187,17 +1247,21 @@ class Phykit(object):
                   pk_relative_composition_variability_taxon, pk_rel_comp_var_taxon, pk_rcvt
 
                 Usage:
-                phykit relative_composition_variability_taxon <alignment>
+                phykit relative_composition_variability_taxon <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
                                             an alignment file          
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RelativeCompositionVariabilityTaxon(args).run()
 
@@ -1225,7 +1289,7 @@ class Phykit(object):
 
                 Usage:
                 phykit rename_fasta_entries <fasta> -i/--idmap <idmap>
-                    [-o/--output <output_file>]
+                    [-o/--output <output_file>] [--json]
 
                 Options
                 =====================================================
@@ -1243,12 +1307,16 @@ class Phykit(object):
                                             name as the input file with
                                             the suffix ".renamed.fa" added
                                             to it.
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RenameFastaEntries(args).run()
 
@@ -1275,7 +1343,7 @@ class Phykit(object):
                   pk_sum_of_pairs_score, pk_sops, pk_sop
 
                 Usage:
-                phykit sum_of_pairs_score <fasta> -r/--reference <ref.aln>
+                phykit sum_of_pairs_score <fasta> -r/--reference <ref.aln> [--json]
 
                 Options
                 =====================================================
@@ -1286,11 +1354,15 @@ class Phykit(object):
 
                 -r/--reference              reference fasta alignment to 
                                             compare query alignment to
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         SumOfPairsScore(args).run()
 
@@ -1325,17 +1397,21 @@ class Phykit(object):
                   pk_variable_sites, pk_vs
 
                 Usage:
-                phykit variable_sites <alignment>
+                phykit variable_sites <alignment> [--json]
 
                 Options
                 =====================================================
                 <alignment>                 first argument after 
                                             function name should be
-                                            an alignment file          
+                                            an alignment file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         VariableSites(args).run()
 
@@ -1365,7 +1441,10 @@ class Phykit(object):
                   pk_bipartition_support_stats, pk_bss
 
                 Usage:
-                phykit bipartition_support_stats <tree> [-v/--verbose]
+                phykit bipartition_support_stats <tree>
+                  [-v/--verbose]
+                  [--thresholds <comma-separated-floats>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -1376,6 +1455,15 @@ class Phykit(object):
                 -v/--verbose                optional argument to print
                                             all bipartition support
                                             values
+
+                --thresholds                optional comma-separated
+                                            support cutoffs; reports
+                                            count and fraction of
+                                            bipartitions below each
+                                            cutoff
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -1383,6 +1471,8 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--thresholds", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         BipartitionSupportStats(args).run()
 
@@ -1407,7 +1497,7 @@ class Phykit(object):
                   pk_branch_length_multiplier, pk_blm
 
                 Usage:
-                phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>]
+                phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>] [--json]
 
                 Options
                 =====================================================
@@ -1424,12 +1514,16 @@ class Phykit(object):
                                             the same name as the input
                                             file but with the suffix 
                                             ".factor_(n).tre"
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-f", "--factor", type=float, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         BranchLengthMultiplier(args).run()
 
@@ -1453,7 +1547,7 @@ class Phykit(object):
                   pk_collapse_branches, pk_collapse, pk_cb
 
                 Usage:
-                phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>]
+                phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>] [--json]
 
                 Options
                 =====================================================
@@ -1471,12 +1565,16 @@ class Phykit(object):
                                             file but with the suffix 
                                             ".collapsed_(support).tre"
 
+                --json                      optional argument to output
+                                            results as JSON
+
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-s", "--support", type=float, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CollapseBranches(args).run()
 
@@ -1521,7 +1619,7 @@ class Phykit(object):
 
                 Usage:
                 phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
-                    -r/--reference <reference_tree_file> [-v/--verbose]
+                    -r/--reference <reference_tree_file> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -1541,6 +1639,9 @@ class Phykit(object):
                 -v/--verbose                print out corrected branch
                                             lengths shared between
                                             tree 0 and tree 1
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -1552,6 +1653,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CovaryingEvolutionaryRates(args).run()
 
@@ -1583,17 +1685,21 @@ class Phykit(object):
                   pk_degree_of_violation_of_a_molecular_clock, pk_dvmc
 
                 Usage:
-                phykit degree_of_violation_of_a_molecular_clock <tree>
+                phykit degree_of_violation_of_a_molecular_clock <tree> [--json]
 
                 Options
                 =====================================================
                 <tree>                      first argument after 
                                             function name should be
-                                            a tree file 
+                                            a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         DVMC(args).run()
 
@@ -1620,17 +1726,21 @@ class Phykit(object):
                   pk_evolutionary_rate, pk_evo_rate
 
                 Usage:
-                phykit evolutionary_rate <tree>
+                phykit evolutionary_rate <tree> [--json]
 
                 Options
                 =====================================================
                 <tree>                      first argument after 
                                             function name should be
-                                            a tree file 
+                                            a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         EvolutionaryRate(args).run()
 
@@ -1684,7 +1794,7 @@ class Phykit(object):
                   pk_hidden_paralogy_check, pk_clan_check
 
                 Usage:
-                phykit hidden_paralogy_check <tree> -c/--clade <clade_file>
+                phykit hidden_paralogy_check <tree> -c/--clade <clade_file> [--json]
 
                 Options
                 =====================================================
@@ -1695,11 +1805,15 @@ class Phykit(object):
                 <clade_file>                clade file that specifies
                                             what monophyletic clades
                                             to expect
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-c", "--clade", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         HiddenParalogyCheck(args).run()
 
@@ -1725,7 +1839,7 @@ class Phykit(object):
                   pk_internal_branch_stats, pk_ibs
 
                 Usage:
-                phykit internal_branch_stats <tree> [-v/--verbose]
+                phykit internal_branch_stats <tree> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -1735,6 +1849,9 @@ class Phykit(object):
 
                 -v/--verbose                optional argument to print
                                             all internal branch lengths
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -1742,6 +1859,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         InternalBranchStats(args).run()
 
@@ -1765,7 +1883,7 @@ class Phykit(object):
                   pk_internode_labeler, pk_il
 
                 Usage:
-                phykit internode_labeler <tree> [-o/--output <file>]
+                phykit internode_labeler <tree> [-o/--output <file>] [--json]
 
                 Options
                 =====================================================
@@ -1775,11 +1893,15 @@ class Phykit(object):
 
                 -o/--output                 optional argument to name 
                                             the outputted tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         InternodeLabeler(args).run()
 
@@ -1803,7 +1925,7 @@ class Phykit(object):
 
                 Usage:
                 phykit last_common_ancestor_subtree <file> <list_of_taxa> 
-                [-o/--output <file>]
+                [-o/--output <file>] [--json]
 
                 Options
                 =====================================================
@@ -1816,12 +1938,16 @@ class Phykit(object):
 
                 -o/--output                 optional argument to name 
                                             the outputted tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         LastCommonAncestorSubtree(args).run()
 
@@ -1857,7 +1983,7 @@ class Phykit(object):
                   pk_long_branch_score, pk_lb_score, pk_lbs
 
                 Usage:
-                phykit long_branch_score <tree> [-v/--verbose]
+                phykit long_branch_score <tree> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -1866,7 +1992,10 @@ class Phykit(object):
                                             a tree file
 
                 -v/--verbose                optional argument to print
-                                            all LB score values            
+                                            all LB score values
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -1874,6 +2003,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         LBScore(args).run()
 
@@ -1912,7 +2042,7 @@ class Phykit(object):
                   pk_monophyly_check, pk_is_monophyletic
 
                 Usage:
-                phykit monophyly_check <tree> <list_of_taxa>
+                phykit monophyly_check <tree> <list_of_taxa> [--json]
 
                 Options
                 =====================================================
@@ -1923,11 +2053,15 @@ class Phykit(object):
                 <list_of_taxa>              single column file with
                                             list of tip names to 
                                             examine the monophyly of
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         MonophylyCheck(args).run()
 
@@ -1952,7 +2086,7 @@ class Phykit(object):
                   pk_nearest_neighbor_interchange, pk_nni
 
                 Usage:
-                phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>]
+                phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>] [--json]
 
                 Options
                 =====================================================
@@ -1967,12 +2101,16 @@ class Phykit(object):
                                             Default output will have 
                                             the same name as the input
                                             file but with the suffix 
-                                            ".NNIs"      
+                                            ".NNIs"
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         NearestNeighborInterchange(args).run()
 
@@ -2001,7 +2139,7 @@ class Phykit(object):
                   pk_patristic_distances, pk_pd
 
                 Usage:
-                phykit patristic_distances <tree> [-v/--verbose]
+                phykit patristic_distances <tree> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -2011,7 +2149,10 @@ class Phykit(object):
 
                 -v/--verbose                optional argument to print
                                             all patristic distances between
-                                            taxa            
+                                            taxa
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2019,6 +2160,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         PatristicDistances(args).run()
 
@@ -2059,7 +2201,7 @@ class Phykit(object):
                   pk_polytomy_test, pk_polyt_test, pk_polyt, pk_ptt
 
                 Usage:
-                phykit polytomy_test -t/--trees <trees> -g/--groups <groups>
+                phykit polytomy_test -t/--trees <trees> -g/--groups <groups> [--json]
 
                 Options
                 =====================================================
@@ -2073,6 +2215,9 @@ class Phykit(object):
                                             are not considered. Names
                                             of individual taxa should be
                                             separated by a semi-colon  ';'
+
+                --json                      optional argument to output
+                                            results as JSON
                                             
                 For example, the groups file could look like the following:
                 #labels group0  group1  group2
@@ -2082,6 +2227,7 @@ class Phykit(object):
         )
         parser.add_argument("-t", "--trees", type=str, help=SUPPRESS)
         parser.add_argument("-g", "--groups", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         PolytomyTest(args).run()
 
@@ -2107,7 +2253,7 @@ class Phykit(object):
                   pk_print_tree, pk_print, pk_pt
 
                 Usage:
-                phykit print_tree <tree> [-r/--remove]
+                phykit print_tree <tree> [-r/--remove] [--json]
 
                 Options
                 =====================================================
@@ -2117,7 +2263,10 @@ class Phykit(object):
 
                 -r/--remove                 optional argument to print
                                             the phylogeny without branch
-                                            lengths       
+                                            lengths
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2125,6 +2274,7 @@ class Phykit(object):
         parser.add_argument(
             "-r", "--remove", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         PrintTree(args).run()
 
@@ -2151,7 +2301,7 @@ class Phykit(object):
 
                 Usage:
                 phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>
-                -k/--keep]
+                -k/--keep] [--json]
 
                 Options
                 =====================================================
@@ -2172,7 +2322,10 @@ class Phykit(object):
 
                 -k/--keep                   optional argument. If used
                                             instead of pruning taxa in
-                                            <list_of_taxa>, keep them 
+                                            <list_of_taxa>, keep them
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2182,6 +2335,7 @@ class Phykit(object):
         parser.add_argument(
             "-k", "--keep", type=str2bool, nargs="?", default=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         PruneTree(args).run()
 
@@ -2209,7 +2363,7 @@ class Phykit(object):
 
                 Usage:
                 phykit rename_tree_tips <tree> -i/--idmap <idmap.txt>
-                    [-o/--output <output_file>] 
+                    [-o/--output <output_file>] [--json]
 
                 Options
                 =====================================================
@@ -2226,13 +2380,17 @@ class Phykit(object):
                                             Default output will have 
                                             the same name as the input
                                             file but with the suffix 
-                                            ".renamed"          
+                                            ".renamed"
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RenameTreeTips(args).run()
 
@@ -2271,7 +2429,7 @@ class Phykit(object):
                   pk_robinson_foulds_distance, pk_rf_distance, pk_rf_dist, pk_rf
 
                 Usage:
-                phykit robinson_foulds_distance <tree_file_zero> <tree_file_one>
+                phykit robinson_foulds_distance <tree_file_zero> <tree_file_one> [--json]
 
                 Options
                 =====================================================
@@ -2281,12 +2439,16 @@ class Phykit(object):
 
                 <tree_file_one>             second argument after 
                                             function name should be
-                                            a tree file           
+                                            a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
         parser.add_argument("tree_one", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RobinsonFouldsDistance(args).run()
 
@@ -2315,7 +2477,7 @@ class Phykit(object):
 
                 Usage:
                 phykit root_tree <tree> -r/--root <root_taxa>
-                    [-o/--output <output_file>] 
+                    [-o/--output <output_file>] [--json]
 
                 Options
                 =====================================================
@@ -2331,13 +2493,17 @@ class Phykit(object):
                                             Default output will have 
                                             the same name as the input
                                             file but with the suffix 
-                                            ".rooted"          
+                                            ".rooted"
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--root", type=str, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RootTree(args).run()
 
@@ -2378,7 +2544,7 @@ class Phykit(object):
                   pk_spurious_sequence, pk_spurious_seq, pk_ss
 
                 Usage:
-                phykit spurious_sequence <file> [-f 20]
+                phykit spurious_sequence <file> [-f 20] [--json]
 
                 Options
                 =====================================================
@@ -2390,11 +2556,15 @@ class Phykit(object):
                                             branch length by to calculate
                                             the threshold of long branches.
                                             (Default: 20)
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-f", "--factor", type=float, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         SpuriousSequence(args).run()
 
@@ -2420,7 +2590,7 @@ class Phykit(object):
                   pk_terminal_branch_stats, pk_tbs
 
                 Usage:
-                phykit terminal_branch_stats <tree> [-v/--verbose]
+                phykit terminal_branch_stats <tree> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -2430,6 +2600,9 @@ class Phykit(object):
 
                 -v/--verbose                optional argument to print
                                             all internal branch lengths
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2437,6 +2610,7 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TerminalBranchStats(args).run()
 
@@ -2458,17 +2632,21 @@ class Phykit(object):
                   pk_tip_labels, pk_tree_labels; pk_labels; pk_tl
 
                 Usage:
-                phykit tip_labels <tree>
+                phykit tip_labels <tree> [--json]
 
                 Options
                 =====================================================
                 <tree>                      first argument after 
                                             function name should be
                                             a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TipLabels(args).run()
 
@@ -2492,7 +2670,7 @@ class Phykit(object):
                   pk_tip_to_tip_distance, pk_t2t_dist, pk_t2t
 
                 Usage:
-                phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2>
+                phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2> [--json]
 
                 Options
                 =====================================================
@@ -2506,13 +2684,17 @@ class Phykit(object):
 
                 <tip_2>                     third argument after 
                                             function name should be
-                                            the second tip name      
+                                            the second tip name
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
         parser.add_argument("tip_1", type=str, help=SUPPRESS)
         parser.add_argument("tip_2", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TipToTipDistance(args).run()
 
@@ -2537,7 +2719,7 @@ class Phykit(object):
                   pk_tip_to_tip_node_distance, pk_t2t_node_dist, pk_t2t_nd
 
                 Usage:
-                phykit tip_to_tip_node_distance <tree_file> <tip_1> <tip_2>
+                phykit tip_to_tip_node_distance <tree_file> <tip_1> <tip_2> [--json]
 
                 Options
                 =====================================================
@@ -2551,13 +2733,17 @@ class Phykit(object):
 
                 <tip_2>                     third argument after 
                                             function name should be
-                                            the second tip name      
+                                            the second tip name
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
         parser.add_argument("tip_1", type=str, help=SUPPRESS)
         parser.add_argument("tip_2", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TipToTipNodeDistance(args).run()
 
@@ -2579,17 +2765,21 @@ class Phykit(object):
                   pk_total_tree_length, pk_tree_len
 
                 Usage:
-                phykit total_tree_length <tree>
+                phykit total_tree_length <tree> [--json]
 
                 Options
                 =====================================================
                 <tree>                      first argument after 
                                             function name should be
                                             a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TotalTreeLength(args).run()
 
@@ -2623,17 +2813,21 @@ class Phykit(object):
                   pk_treeness, pk_tness
 
                 Usage:
-                phykit treeness <tree>
+                phykit treeness <tree> [--json]
 
                 Options
                 =====================================================
                 <tree>                      first argument after 
                                             function name should be
                                             a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         Treeness(args).run()
 
@@ -2671,7 +2865,7 @@ class Phykit(object):
                   pk_saturation, pk_sat
 
                 Usage:
-                phykit saturation -a <alignment> -t <tree> [-v/--verbose]
+                phykit saturation -a <alignment> -t <tree> [-v/--verbose] [--json]
 
                 Options
                 =====================================================
@@ -2684,6 +2878,9 @@ class Phykit(object):
                 -v/--verbose                print out patristic distances
                                             and uncorrected distances used
                                             to determine saturation
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2699,6 +2896,7 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         Saturation(args).run()
 
@@ -2732,13 +2930,16 @@ class Phykit(object):
                   pk_treeness_over_rcv, pk_toverr, pk_tor
 
                 Usage:
-                phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
+                phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree> [--json]
 
                 Options
                 =====================================================
                 -a/--alignment              an alignment file
                 
                 -t/--tree                   a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2748,6 +2949,7 @@ class Phykit(object):
         parser.add_argument(
             "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TreenessOverRCV(args).run()
 
@@ -2784,7 +2986,7 @@ class Phykit(object):
                   pk_create_concatenation_matrix, pk_create_concat, pk_cc
 
                 Usage:
-                phykit create_concatenation_matrix -a <file> -p <string>
+                phykit create_concatenation_matrix -a <file> -p <string> [--json]
 
                 Options
                 =====================================================
@@ -2798,11 +3000,15 @@ class Phykit(object):
                                             absolute path.
 
                 -p/--prefix                 prefix of output files
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
         parser.add_argument("-a", "--alignment_list", type=str, help=SUPPRESS)
         parser.add_argument("-p", "--prefix", type=str, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CreateConcatenationMatrix(args).run()
 
@@ -2842,7 +3048,7 @@ class Phykit(object):
 
                 Usage:
                 phykit thread_dna -p <file> -n <file> [-c/--clipkit_log_file
-                  <clipkit outputted log file> -s]
+                  <clipkit outputted log file> -s] [--json]
 
                 Options
                 =====================================================
@@ -2856,6 +3062,9 @@ class Phykit(object):
                                             stop codons should be kept. 
                                             If used, stop codons will 
                                             be removed.
+
+                --json                      optional argument to output
+                                            results as JSON
                 """
             ),
         )
@@ -2871,6 +3080,7 @@ class Phykit(object):
         parser.add_argument(
             "-s", "--stop", type=str2bool, nargs="?", default=True, help=SUPPRESS
         )
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         DNAThreader(args).run()
 

@@ -3,15 +3,37 @@ from typing import Dict, List
 import numpy as np
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class AlignmentEntropy(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"], verbose=parsed["verbose"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
         entropies = self.calculate_site_entropies(alignment, is_protein)
+
+        if self.json_output:
+            if self.verbose:
+                rows = [
+                    dict(site=idx, entropy=round(entropy, 4))
+                    for idx, entropy in enumerate(entropies, start=1)
+                ]
+                payload = dict(
+                    verbose=True,
+                    rows=rows,
+                    sites=rows,
+                )
+            else:
+                payload = dict(
+                    verbose=False,
+                    mean_entropy=round(float(np.mean(entropies)), 4) if entropies else 0.0,
+                )
+            print_json(payload)
+            return
 
         if self.verbose:
             for idx, entropy in enumerate(entropies, start=1):
@@ -24,7 +46,11 @@ class AlignmentEntropy(Alignment):
             print(0.0)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment, verbose=args.verbose)
+        return dict(
+            alignment_file_path=args.alignment,
+            verbose=args.verbose,
+            json_output=getattr(args, "json", False),
+        )
 
     def calculate_site_entropies(self, alignment, is_protein: bool) -> List[float]:
         if is_protein:

@@ -2,6 +2,7 @@ from mock import patch, call
 from pathlib import Path
 import pytest
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -59,3 +60,16 @@ class TestTreeness(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_treeness_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "treeness",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"treeness": 0.7695}

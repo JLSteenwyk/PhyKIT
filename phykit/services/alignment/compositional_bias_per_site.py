@@ -7,17 +7,38 @@ from scipy.stats._stats_py import Power_divergenceResult
 from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class CompositionalBiasPerSite(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
 
         stat_res, p_vals_corrected = \
             self.calculate_compositional_bias_per_site(alignment)
+
+        if self.json_output:
+            rows = []
+            for idx, (stat_info, pval_cor) in enumerate(
+                zip(stat_res, p_vals_corrected), start=1
+            ):
+                corrected = None if isinstance(pval_cor, str) else round(float(pval_cor), 4)
+                raw_p = float(stat_info.pvalue)
+                rows.append(
+                    dict(
+                        site=idx,
+                        chi_square=round(float(stat_info.statistic), 4),
+                        p_value_corrected=corrected,
+                        p_value=None if np.isnan(raw_p) else round(raw_p, 4),
+                    )
+                )
+            print_json(dict(rows=rows, sites=rows))
+            return
 
         for idx, (stat_info, pval_cor) in enumerate(
             zip(stat_res, p_vals_corrected), start=1
@@ -26,7 +47,10 @@ class CompositionalBiasPerSite(Alignment):
             print(f"{idx}\t{round(stat_info.statistic, 4)}\t{pval_cor_str}\t{round(stat_info.pvalue, 4)}")
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment)
+        return dict(
+            alignment_file_path=args.alignment,
+            json_output=getattr(args, "json", False),
+        )
 
     def get_number_of_occurrences_per_character(
         self,

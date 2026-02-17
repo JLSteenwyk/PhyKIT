@@ -4,11 +4,14 @@ from typing import Dict, List, Tuple
 from Bio.Phylo import Newick
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class SpuriousSequence(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(tree_file_path=parsed["tree_file_path"], factor=parsed["factor"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -17,16 +20,30 @@ class SpuriousSequence(Tree):
                 tree, self.factor
             )
 
+        spurious_rows = []
         counter = 0
         for name, length in name_and_branch_len.items():
             if length >= threshold:
-                try:
-                    print(
-                        f"{name}\t{round(length, 4)}\t{round(threshold, 4)}\t{round(median, 4)}"
+                spurious_rows.append(
+                    dict(
+                        taxon=name,
+                        branch_length=round(length, 4),
+                        threshold=round(threshold, 4),
+                        median=round(median, 4),
                     )
-                except BrokenPipeError:
-                    pass
+                )
+                if not self.json_output:
+                    try:
+                        print(
+                            f"{name}\t{round(length, 4)}\t{round(threshold, 4)}\t{round(median, 4)}"
+                        )
+                    except BrokenPipeError:
+                        pass
                 counter += 1
+
+        if self.json_output:
+            print_json(dict(rows=spurious_rows, spurious_sequences=spurious_rows))
+            return
 
         if counter == 0:
             print("None")
@@ -34,7 +51,8 @@ class SpuriousSequence(Tree):
     def process_args(self, args) -> Dict[str, str]:
         return dict(
             tree_file_path=args.tree,
-            factor=args.factor or 20
+            factor=args.factor or 20,
+            json_output=getattr(args, "json", False),
         )
 
     def identify_spurious_sequence(

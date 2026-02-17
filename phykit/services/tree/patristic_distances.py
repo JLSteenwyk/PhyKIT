@@ -19,16 +19,40 @@ from ...helpers.stats_summary import (
     calculate_summary_statistics_from_arr,
     print_summary_statistics,
 )
+from ...helpers.json_output import print_json
 
 
 class PatristicDistances(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(tree_file_path=parsed["tree_file_path"], verbose=parsed["verbose"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree = self.read_tree_file()
         patristic_distances, combos, stats = \
             self.calculate_patristic_distances(tree)
+
+        if self.json_output:
+            if self.verbose:
+                rows = [
+                    dict(
+                        taxon_a=combo[0],
+                        taxon_b=combo[1],
+                        patristic_distance=round(patristic_distance, 4),
+                    )
+                    for combo, patristic_distance in zip(combos, patristic_distances)
+                ]
+                print_json(
+                    dict(
+                        verbose=True,
+                        rows=rows,
+                        pairs=rows,
+                    )
+                )
+            else:
+                print_json(dict(verbose=False, summary=stats))
+            return
 
         if self.verbose:
             try:
@@ -40,7 +64,11 @@ class PatristicDistances(Tree):
             print_summary_statistics(stats)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(tree_file_path=args.tree, verbose=args.verbose)
+        return dict(
+            tree_file_path=args.tree,
+            verbose=args.verbose,
+            json_output=getattr(args, "json", False),
+        )
 
     def _calculate_distance_batch(self, tree_pickle, combo_batch):
         """Helper function to calculate distances for a batch of combinations."""

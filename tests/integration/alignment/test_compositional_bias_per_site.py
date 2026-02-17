@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -121,3 +122,28 @@ class TestCompositionalBiasPerSite(object):
             call(expected_result_4),
             call(expected_result_5),
         ]
+
+    @patch("builtins.print")
+    def test_compositional_bias_per_site_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "compositional_bias_per_site",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["rows"][0] == payload["sites"][0]
+        assert payload["sites"][0] == {
+            "chi_square": 0.0,
+            "p_value": None,
+            "p_value_corrected": None,
+            "site": 1,
+        }
+        assert payload["sites"][2] == {
+            "chi_square": 0.2,
+            "p_value": 0.6547,
+            "p_value_corrected": 1.0,
+            "site": 3,
+        }

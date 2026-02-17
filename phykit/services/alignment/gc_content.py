@@ -9,6 +9,7 @@ from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
 from ...helpers.files import get_alignment_and_format
+from ...helpers.json_output import print_json
 
 
 class FileFormat(Enum):
@@ -23,7 +24,9 @@ class FileFormat(Enum):
 
 class GCContent(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(fasta=parsed["fasta"], verbose=parsed["verbose"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         records, _, is_protein = get_alignment_and_format(self.fasta)
@@ -32,38 +35,67 @@ class GCContent(Alignment):
             print("GC content can't be calculated for protein sequences")
             sys.exit(2)
 
+        if self.json_output:
+            if self.verbose:
+                rows = self.calculate_gc_per_sequence_data(records)
+                row_payload = [
+                    dict(taxon=taxon, gc_content=round(gc_content, 4))
+                    for taxon, gc_content in rows
+                ]
+                print_json(
+                    dict(
+                        verbose=True,
+                        rows=row_payload,
+                        sequences=row_payload,
+                    )
+                )
+            else:
+                print_json(
+                    dict(
+                        verbose=False,
+                        gc_content=self.calculate_gc_total_value(records),
+                    )
+                )
+            return
+
         if self.verbose:
             self.calculate_gc_per_sequence(records)
         else:
             self.calculate_gc_total(records)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(fasta=args.fasta, verbose=args.verbose)
+        return dict(
+            fasta=args.fasta,
+            verbose=args.verbose,
+            json_output=getattr(args, "json", False),
+        )
 
-    def calculate_gc_per_sequence(self, records: MultipleSeqAlignment) -> None:
+    def calculate_gc_per_sequence_data(
+        self, records: MultipleSeqAlignment
+    ) -> list[tuple[str, float]]:
         gap_chars = set(self.get_gap_chars())
-
+        output = []
         for record in records:
-            # Convert to numpy array for faster operations
             seq_arr = np.array(list(str(record.seq).upper()), dtype='U1')
-
-            # Filter out gaps
             non_gap_mask = ~np.isin(seq_arr, list(gap_chars))
             cleaned_seq = seq_arr[non_gap_mask]
 
             if len(cleaned_seq) > 0:
-                # Count G and C
                 gc_count = np.sum((cleaned_seq == 'G') | (cleaned_seq == 'C'))
                 gc_content = gc_count / len(cleaned_seq)
             else:
                 gc_content = 0
+            output.append((record.id, float(gc_content)))
+        return output
 
+    def calculate_gc_per_sequence(self, records: MultipleSeqAlignment) -> None:
+        for record_id, gc_content in self.calculate_gc_per_sequence_data(records):
             try:
-                print(f"{record.id}\t{round(gc_content, 4)}")
+                print(f"{record_id}\t{round(gc_content, 4)}")
             except BrokenPipeError:
                 pass
 
-    def calculate_gc_total(self, records: MultipleSeqAlignment) -> None:
+    def calculate_gc_total_value(self, records: MultipleSeqAlignment) -> float:
         gap_chars = set(self.get_gap_chars())
 
         # Combine all sequences into one array
@@ -75,15 +107,16 @@ class GCContent(Alignment):
         cleaned_seq = combined_arr[non_gap_mask]
 
         if len(cleaned_seq) > 0:
-            # Count G and C
             gc_count = np.sum((cleaned_seq == 'G') | (cleaned_seq == 'C'))
-            gc_content = round(gc_count / len(cleaned_seq), 4)
-            print(gc_content)
-        else:
-            print(
-                "Input file has an unacceptable format. Please check input file argument."
-            )
-            sys.exit(2)
+            return round(gc_count / len(cleaned_seq), 4)
+
+        print(
+            "Input file has an unacceptable format. Please check input file argument."
+        )
+        sys.exit(2)
+
+    def calculate_gc_total(self, records: MultipleSeqAlignment) -> None:
+        print(self.calculate_gc_total_value(records))
 
     def remove_gaps_and_count_gc(self, seq: str) -> Tuple[str, float]:
         gap_chars = self.get_gap_chars()

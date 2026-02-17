@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch
 from pathlib import Path
 
@@ -142,3 +143,19 @@ class TestCollapseBranches(object):
             out_tree_content = out_tree.read()
 
         assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
+    def test_collapse_branches_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "collapse_branches",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "-s",
+            "90",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["support_threshold"] == 90.0
+        assert payload["output_file"].endswith(".collapsed_90.0.tre")

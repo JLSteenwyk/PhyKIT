@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -86,4 +87,41 @@ class TestBipartitionSupportStats(object):
             call("maximum: 100"),
             call("standard deviation: 7.3193"),
             call("variance: 53.5714")
+        ]
+
+    @patch("builtins.print")
+    def test_bipartition_support_stats_thresholds(self, mocked_print):
+        testargs = [
+            "phykit",
+            "bipartition_support_stats",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "--thresholds",
+            "90,100",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls[-2:] == [
+            call("below 90.0: 2 (28.5714%)"),
+            call("below 100.0: 2 (28.5714%)"),
+        ]
+
+    @patch("builtins.print")
+    def test_bipartition_support_stats_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "bipartition_support_stats",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "--thresholds",
+            "90",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is False
+        assert round(payload["summary"]["mean"], 4) == 95.7143
+        assert payload["thresholds"] == [
+            {"count_below": 2, "fraction_below": 2 / 7, "threshold": 90.0}
         ]

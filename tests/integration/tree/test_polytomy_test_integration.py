@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from math import isclose
 from mock import patch, call
 from pathlib import Path
@@ -269,3 +270,26 @@ class TestPTT(object):
             # call("0-2: 2"),
             # call("1-2: 0")
         ]
+
+    @patch("builtins.print")
+    def test_polytomy_test_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "polytomy_test",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/polyt_test_trees.txt",
+            "-g",
+            f"{here.parent.parent.parent}/sample_files/polyt_test_groups.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["gene_support_frequency"]["chi_squared"] == 2.0
+        assert payload["gene_support_frequency"]["p_value"] == 0.367879
+        assert payload["gene_support_frequency"]["total_genes"] == 4
+        assert payload["gene_support_frequency"]["support_counts"] == {
+            "0-1": 2,
+            "0-2": 2,
+            "1-2": 0,
+        }

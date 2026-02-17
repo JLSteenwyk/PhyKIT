@@ -10,16 +10,36 @@ from Bio.Phylo import Newick
 from .base import Tree
 
 from ...helpers.stats_summary import calculate_summary_statistics_from_arr, print_summary_statistics
+from ...helpers.json_output import print_json
 
 
 class InternalBranchStats(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(tree_file_path=parsed["tree_file_path"], verbose=parsed["verbose"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree = self.read_tree_file()
         stats, lengths_and_names \
             = self.calculate_internal_branch_stats(tree)
+
+        if self.json_output:
+            if self.verbose:
+                rows = [
+                    dict(length=round(length, 4), terminals=names)
+                    for length, names in lengths_and_names
+                ]
+                print_json(
+                    dict(
+                        verbose=True,
+                        rows=rows,
+                        branches=rows,
+                    )
+                )
+            else:
+                print_json(dict(verbose=False, summary=stats))
+            return
 
         if self.verbose:
             try:
@@ -31,7 +51,11 @@ class InternalBranchStats(Tree):
             print_summary_statistics(stats)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(tree_file_path=args.tree, verbose=args.verbose)
+        return dict(
+            tree_file_path=args.tree,
+            verbose=args.verbose,
+            json_output=getattr(args, "json", False),
+        )
 
     def get_internal_branch_lengths(
         self,

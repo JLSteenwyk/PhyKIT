@@ -20,15 +20,36 @@ from ...helpers.stats_summary import (
     calculate_summary_statistics_from_arr,
     print_summary_statistics,
 )
+from ...helpers.json_output import print_json
 
 
 class LBScore(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(tree_file_path=parsed["tree_file_path"], verbose=parsed["verbose"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
         tips, LBis = self.calculate_lb_score(tree)
+        if self.json_output:
+            if self.verbose:
+                rows = [
+                    dict(taxon=tip, lb_score=round(LBi, 4))
+                    for tip, LBi in zip(tips, LBis)
+                ]
+                print_json(
+                    dict(
+                        verbose=True,
+                        rows=rows,
+                        taxa=rows,
+                    )
+                )
+            else:
+                stats = calculate_summary_statistics_from_arr(LBis)
+                print_json(dict(verbose=False, summary=stats))
+            return
+
         if self.verbose:
             try:
                 for tip, LBi in zip(tips, LBis):
@@ -40,7 +61,11 @@ class LBScore(Tree):
             print_summary_statistics(stats)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(tree_file_path=args.tree, verbose=args.verbose)
+        return dict(
+            tree_file_path=args.tree,
+            verbose=args.verbose,
+            json_output=getattr(args, "json", False),
+        )
 
     @staticmethod
     def _calculate_distances_batch(tree_pickle, tip_pairs):

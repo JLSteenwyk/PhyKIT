@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 
 from argparse import Namespace
 from Bio import Phylo
@@ -11,7 +12,7 @@ from phykit.services.tree.bipartition_support_stats import BipartitionSupportSta
 
 @pytest.fixture
 def args():
-    kwargs = dict(tree="/some/path/to/file.tre", verbose=None)
+    kwargs = dict(tree="/some/path/to/file.tre", verbose=None, thresholds=None, json=False)
     return Namespace(**kwargs)
 
 
@@ -49,6 +50,39 @@ class TestBipartitionSupportStats(object):
         mocked_print.assert_has_calls([
             call("Please check filename and pathing"),
         ])
+
+    def test_parse_thresholds(self, args):
+        args.thresholds = "70, 85.5,90"
+        t = BipartitionSupportStats(args)
+        assert t.thresholds == [70.0, 85.5, 90.0]
+
+    def test_threshold_stats(self, args):
+        args.thresholds = "90,100"
+        t = BipartitionSupportStats(args)
+        stats = t.calculate_threshold_stats([85.0, 85.0, 100.0, 100.0], t.thresholds)
+        assert stats == [
+            {"threshold": 90.0, "count_below": 2, "fraction_below": 0.5},
+            {"threshold": 100.0, "count_below": 2, "fraction_below": 0.5},
+        ]
+
+    @patch("builtins.print")
+    def test_json_output_mode(self, mocked_print, mocker, args):
+        args.json = True
+        args.verbose = False
+        t = BipartitionSupportStats(args)
+        mock_tree = mocker.Mock()
+        mocker.patch.object(t, "read_tree_file", return_value=mock_tree)
+        mocker.patch.object(
+            t,
+            "get_bipartition_support_vals",
+            return_value=([85.0, 100.0], [["a", "b"], ["c", "d"]]),
+        )
+
+        t.run()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is False
+        assert payload["summary"]["mean"] == 92.5
 
 
     # def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):

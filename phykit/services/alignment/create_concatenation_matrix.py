@@ -11,11 +11,17 @@ from collections import defaultdict
 
 from .base import Alignment
 from ...helpers.files import read_single_column_file_to_list
+from ...helpers.json_output import print_json
 
 
 class CreateConcatenationMatrix(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            alignment_list_path=parsed["alignment_list_path"],
+            prefix=parsed["prefix"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         self.create_concatenation_matrix(
@@ -24,7 +30,11 @@ class CreateConcatenationMatrix(Alignment):
         )
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(alignment_list_path=args.alignment_list, prefix=args.prefix)
+        return dict(
+            alignment_list_path=args.alignment_list,
+            prefix=args.prefix,
+            json_output=getattr(args, "json", False),
+        )
 
     def read_alignment_paths(self, alignment_list_path: str) -> List[str]:
         try:
@@ -199,7 +209,8 @@ class CreateConcatenationMatrix(Alignment):
         fasta_output = f"{prefix}.fa"
         file_occupancy = f"{prefix}.occupancy"
 
-        self.print_start_message(taxa, alignment_paths, file_partition, fasta_output, file_occupancy)
+        if not self.json_output:
+            self.print_start_message(taxa, alignment_paths, file_partition, fasta_output, file_occupancy)
 
         # Initialize placeholders for partition info
         first_len, second_len = 1, 0
@@ -265,4 +276,19 @@ class CreateConcatenationMatrix(Alignment):
         self.write_occupancy_or_partition_file(occupancy_info, file_occupancy)
         self.write_occupancy_or_partition_file(partition_info, file_partition)
 
-        print("Complete!\n")
+        if self.json_output:
+            print_json(
+                dict(
+                    input_alignment_list=alignment_list_path,
+                    total_taxa=len(taxa),
+                    total_alignments=len(alignment_paths),
+                    concatenated_length=second_len,
+                    output_files=dict(
+                        fasta=fasta_output,
+                        partition=file_partition,
+                        occupancy=file_occupancy,
+                    ),
+                )
+            )
+        else:
+            print("Complete!\n")

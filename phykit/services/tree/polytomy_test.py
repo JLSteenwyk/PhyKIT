@@ -14,6 +14,7 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.files import read_single_column_file_to_list
+from ...helpers.json_output import print_json
 
 
 def chisquare(*args, **kwargs):
@@ -26,7 +27,9 @@ class PolytomyTest(Tree):
     MAX_MP_WORKERS = 8
 
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(trees=parsed["trees"], groups=parsed["groups"])
+        self.json_output = parsed["json_output"]
 
     def _should_use_multiprocessing(self, n_trees: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -69,7 +72,11 @@ class PolytomyTest(Tree):
         # self.print_triplet_based_res(triplet_res, triplet_group_counts)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(trees=args.trees, groups=args.groups)
+        return dict(
+            trees=args.trees,
+            groups=args.groups,
+            json_output=getattr(args, "json", False),
+        )
 
     def _read_tree_with_cache(self, tree_path: str) -> Newick.Tree:
         if not hasattr(self, "_tree_cache"):
@@ -704,6 +711,27 @@ class PolytomyTest(Tree):
         """
         print results to stdout for user
         """
+        if self.json_output:
+            print_json(
+                dict(
+                    gene_support_frequency=dict(
+                        chi_squared=round(float(gene_support_freq_res.statistic), 4),
+                        p_value=round(float(gene_support_freq_res.pvalue), 6),
+                        total_genes=(
+                            gene_support_freq["0-1"]
+                            + gene_support_freq["0-2"]
+                            + gene_support_freq["1-2"]
+                        ),
+                        support_counts={
+                            "0-1": gene_support_freq["0-1"],
+                            "0-2": gene_support_freq["0-2"],
+                            "1-2": gene_support_freq["1-2"],
+                        },
+                    )
+                )
+            )
+            return
+
         try:
             print(f"Gene Support Frequency Results")
             print(f"==============================")

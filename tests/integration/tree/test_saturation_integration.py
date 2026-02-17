@@ -2,6 +2,7 @@ from mock import patch, call
 from pathlib import Path
 import pytest
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -155,3 +156,48 @@ class TestSaturation(object):
             call("Sdai\tCgla\t0.4325\t0.7045"),
             call("Scas\tCgla\t0.4482\t0.7706"),
         ]
+
+    @patch("builtins.print")
+    def test_saturation_json_summary(self, mocked_print):
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is False
+        assert payload["exclude_gaps"] is False
+        assert payload["summary"] == {"slope": 0.4919, "one_minus_slope_abs": 0.5081}
+
+    @patch("builtins.print")
+    def test_saturation_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["exclude_gaps"] is False
+        assert payload["rows"][0] == payload["pairs"][0]
+        assert payload["pairs"][0] == {
+            "taxon_a": "Kpol",
+            "taxon_b": "Kpha",
+            "uncorrected_distance": 0.3864,
+            "patristic_distance": 0.6176,
+        }

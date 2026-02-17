@@ -3,16 +3,34 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class CompositionPerTaxon(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
         symbols, rows = self.calculate_composition_per_taxon(alignment, is_protein)
         if not symbols:
+            return
+
+        if self.json_output:
+            payload_rows = []
+            for taxon, comps in rows:
+                payload_rows.append(
+                    dict(
+                        taxon=taxon,
+                        composition={
+                            symbol: round(float(comps[idx]), 4)
+                            for idx, symbol in enumerate(symbols)
+                        },
+                    )
+                )
+            print_json(dict(symbols=symbols, rows=payload_rows, taxa=payload_rows))
             return
 
         for taxon, comps in rows:
@@ -23,7 +41,10 @@ class CompositionPerTaxon(Alignment):
             print(f"{taxon}\t{comp_str}")
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment)
+        return dict(
+            alignment_file_path=args.alignment,
+            json_output=getattr(args, "json", False),
+        )
 
     def calculate_composition_per_taxon(
         self, alignment, is_protein: bool

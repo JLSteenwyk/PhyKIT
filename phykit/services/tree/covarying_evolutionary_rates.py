@@ -7,11 +7,19 @@ import pickle
 from scipy.stats import pearsonr, zscore
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class CovaryingEvolutionaryRates(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            tree1_file_path=parsed["tree1_file_path"],
+            reference=parsed["reference"],
+            verbose=parsed["verbose"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree_zero = self.read_tree_file()
@@ -77,6 +85,37 @@ class CovaryingEvolutionaryRates(Tree):
         )
 
         try:
+            if self.json_output:
+                if self.verbose:
+                    rows = [
+                        dict(
+                            tree_zero_rate=round(float(val_zero), 4),
+                            tree_one_rate=round(float(val_one), 4),
+                            branch=";".join(tip_name),
+                        )
+                        for val_zero, val_one, tip_name in zip(
+                            tree_zero_corr_branch_lengths,
+                            tree_one_corr_branch_lengths,
+                            tip_names,
+                        )
+                    ]
+                    print_json(
+                        dict(
+                            verbose=True,
+                            rows=rows,
+                            branches=rows,
+                        )
+                    )
+                else:
+                    print_json(
+                        dict(
+                            verbose=False,
+                            correlation=round(float(corr[0]), 4),
+                            p_value=round(float(corr[1]), 6),
+                        )
+                    )
+                return
+
             if self.verbose:
                 for val_zero, val_one, tip_name in zip(
                     tree_zero_corr_branch_lengths,
@@ -97,6 +136,7 @@ class CovaryingEvolutionaryRates(Tree):
             tree1_file_path=args.tree_one,
             reference=args.reference,
             verbose=args.verbose,
+            json_output=getattr(args, "json", False),
         )
 
     def get_indices_of_outlier_branch_lengths(

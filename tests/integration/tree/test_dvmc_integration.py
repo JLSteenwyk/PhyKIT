@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -47,3 +48,15 @@ class TestDVMC(object):
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
 
+    @patch("builtins.print")
+    def test_dvmc_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "dvmc",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"dvmc": 40.0185}

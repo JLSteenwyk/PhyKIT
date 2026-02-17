@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -197,3 +198,37 @@ class TestPairwiseIdentity(object):
             call("standard deviation: 0.0968"),
             call("variance: 0.0094")
         ]
+
+    @patch("builtins.print")
+    def test_pairwise_identity_json_summary(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is False
+        assert payload["exclude_gaps"] is False
+        assert round(payload["summary"]["mean"], 4) == 0.4833
+
+    @patch("builtins.print")
+    def test_pairwise_identity_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["exclude_gaps"] is False
+        assert payload["rows"][0] == payload["pairs"][0]
+        assert payload["pairs"][0] == {"taxon_a": "1", "taxon_b": "2", "identity": 0.8333}

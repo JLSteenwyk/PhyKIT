@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -95,3 +96,25 @@ class TestHiddenParalogyCheck(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_hidden_paralogy_check_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "hidden_paralogy_check",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "-c",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.hidden_paralogy_check.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["rows"][0] == payload["clades"][0]
+        assert payload["clades"][0] == {
+            "clade_index": 1,
+            "status": "monophyletic",
+            "unexpected_taxa": [],
+        }
+        assert payload["clades"][1]["status"] == "not_monophyletic"
+        assert payload["clades"][2]["status"] == "insufficient_taxon_representation"

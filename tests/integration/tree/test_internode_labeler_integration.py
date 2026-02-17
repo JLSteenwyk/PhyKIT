@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch
 from pathlib import Path
 
@@ -84,3 +85,17 @@ class TestInternodeLabeler(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_internode_labeler_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "internode_labeler",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["labeled_internodes"] == 6
+        assert payload["output_file"].endswith(".internode_labels.tre")
