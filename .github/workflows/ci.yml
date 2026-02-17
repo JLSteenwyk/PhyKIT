@@ -5,7 +5,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
     - uses: actions/checkout@master
     - name: Set up Python ${{ matrix.python-version }}
@@ -22,11 +22,11 @@ jobs:
         # install test dependencies
         pip install -r tests/requirements.txt
     - name: Generate coverage report
-      if: ${{ matrix.python-version == '3.10' }}
+      if: ${{ matrix.python-version == '3.11' }}
       run: |
         make test.coverage
     - name: Upload unit test coverage to Codecov
-      if: ${{ matrix.python-version == '3.10' }}
+      if: ${{ matrix.python-version == '3.11' }}
       uses: codecov/codecov-action@v1.0.7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -36,7 +36,7 @@ jobs:
         name: codecov-unit
         fail_ci_if_error: false
     - name: Upload integration test coverage to Codecov
-      if: ${{ matrix.python-version == '3.10' }}
+      if: ${{ matrix.python-version == '3.11' }}
       uses: codecov/codecov-action@v1.0.7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -56,7 +56,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: 3.9
+          python-version: 3.11
       - name: Install pipenv
         uses: dschep/install-pipenv-action@v1
       - name: Build docs

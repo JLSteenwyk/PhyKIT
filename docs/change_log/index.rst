@@ -22,6 +22,8 @@ Expanded plotting support for alignment/tree QC workflows:
   reran full regression and documentation build checks
 * Removed ``cython`` from runtime dependencies; repository has no Cython build
   pipeline (no ``.pyx``/``cythonize`` usage), so this was unnecessary
+* Sunset Python 3.9 and 3.10 support; CI, packaging classifiers, and
+  ``python_requires`` now target Python 3.11+
 
 **2.1.5**:
 JSON output expansion and harmonization:
