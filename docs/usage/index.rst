@@ -134,6 +134,41 @@ Options: |br|
 
 |
 
+Alignment entropy
+#################
+Function names: alignment_entropy; aln_entropy; entropy |br|
+Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy
+
+Calculate alignment entropy.
+
+Site-wise entropy is calculated using Shannon entropy. By default,
+PhyKIT reports the mean entropy across all sites in the alignment.
+With the `-v/--verbose` option, PhyKIT reports entropy for each site.
+
+.. code-block:: shell
+
+	phykit alignment_entropy <alignment> [-v/--verbose]
+
+Example output (default):
+
+.. code-block:: shell
+
+	0.657
+
+Example output (`-v`):
+
+.. code-block:: shell
+
+	1	0.0
+	2	1.0
+	3	0.971
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file |br|
+*-v/\\-\\-verbose*: optional argument to print entropy for each site
+
+|
+
 Alignment recoding 
 ##################
 Function names: alignment_recoding; aln_recoding; recode |br|
@@ -307,6 +342,33 @@ fasta alignment to calculate the site-wise compositional bias of |br|
 
 |
 
+Composition per taxon
+#####################
+Function names: composition_per_taxon; comp_taxon; comp_tax |br|
+Command line interface: pk_composition_per_taxon; pk_comp_taxon; pk_comp_tax
+
+Calculate sequence composition per taxon in an alignment.
+
+Composition is reported as semicolon-separated `symbol:frequency` pairs
+for each taxon. Frequencies are calculated from valid (non-gap/non-ambiguous)
+characters. Symbol order is alphabetical.
+
+.. code-block:: shell
+
+	phykit composition_per_taxon <alignment>
+
+Example output:
+
+.. code-block:: shell
+
+	1	A:0.4;C:0.0;G:0.2;T:0.4
+	2	A:0.5;C:0.0;G:0.25;T:0.25
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file
+
+|
+
 Create concatenation matrix
 ###########################
 
@@ -419,6 +481,32 @@ Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
 *-v/\\-\\-verbose*: optional argument to print the GC content of each fasta
 entry
+
+|
+
+Occupancy per taxon
+###################
+Function names: occupancy_per_taxon; occupancy_taxon; occ_tax |br|
+Command line interface: pk_occupancy_per_taxon; pk_occupancy_taxon; pk_occ_tax
+
+Calculate occupancy per taxon in an alignment.
+
+Occupancy is the fraction of valid (non-gap/non-ambiguous) characters
+for each taxon.
+
+.. code-block:: shell
+
+	phykit occupancy_per_taxon <alignment>
+
+Example output:
+
+.. code-block:: shell
+
+	1	0.8333
+	2	0.6667
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file
 
 |
 
