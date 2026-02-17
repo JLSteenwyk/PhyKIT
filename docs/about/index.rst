@@ -11,8 +11,6 @@ part of `Jacob L. Steenwyk <https://jlsteenwyk.github.io/>`_'s graduate thesis w
 The Developers
 --------------
 
-^^^^^
-
 PhyKIT is developed and maintained by `Jacob L. Steenwyk <https://jlsteenwyk.github.io/>`_
 and `Thomas J. Buida III <https://tjbiii.com/>`_.
 
@@ -28,7 +26,7 @@ Gilliam fellow in the `Antonis Rokas Laboratory <https://as.vanderbilt.edu/rokas
 the parameters that influence genome stability, the genomics of microbial domestication, and 
 the evolution of pathogenicity. Beyond research, Steenwyk aims to make education more accessible 
 through diverse avenues of community engagement. Find out more information at his 
-`personal website <http://jlsteenwyk.github.io/>`_.
+`Steenwyk website <http://jlsteenwyk.github.io/>`_.
 
 .. |JLSteenwyk| image:: ../_static/img/Steenwyk.jpg 
    :width: 35%
@@ -51,7 +49,7 @@ through diverse avenues of community engagement. Find out more information at hi
 
 |GitHubBuida| |TwitterBuida|
 
-`Thomas J. Buida III <http://tjbiii.com/>`_ is a senior software and data engineer at
+Thomas J. Buida III is a senior software and data engineer at
 `Initial State <https://www.initialstate.com/>`_. His main interests are in the
 design and execution of elegant solutions to complex data problems. His expertise lies
 in backend software development. Flagship side projects include `twitch-top-eight 
@@ -59,7 +57,7 @@ in backend software development. Flagship side projects include `twitch-top-eigh
 extension to view top viewers/streamers, and `Hue Kolorize 
 <https://github.com/TJBIII/hue-kolorize>`_, a Hue light extension that matches the dominant
 color extracted from a flexible source to the Hue light color. Find out more information at his
-`personal website <http://tjbiii.com/>`_.
+`Buida website <https://tjbiii.com/>`_.
 
 
 .. |TJBuida| image:: ../_static/img/Buida.jpeg  
@@ -77,10 +75,8 @@ color extracted from a flexible source to the Hue light color. Find out more inf
 More Team Members
 -----------------
 
-^^^^^
-
 PhyKIT has been made possible by other key personnel including `Antonis Rokas
-<https://as.vanderbilt.edu/rokaslab/>`_, `Abigail L. Labella <abigailleavittlabella.com>`_,
+<https://as.vanderbilt.edu/rokaslab/>`_, Abigail L. Labella,
 Yuanning Li, and `Xing-Xing Shen <https://xingxingshen.github.io/>`_.
 
 |
@@ -115,11 +111,11 @@ tree of life, and the evolution of human pregnancy. Find out more information at
 
 |GoogleScholarLabella| |GitHubLabella| |TwitterLabella| 
 
-`Abigail L. LaBella <https://www.abigailleavittlabella.com/>`_  am a postdoctoral scholar at Vanderbilt University in the 
+`Abigail L. LaBella <https://www.abigailleavittlabella.com/>`_ is a postdoctoral scholar at Vanderbilt University in the 
 lab of Dr. Antonis Rokas. Her research uses evolution to understand the relationship between phenotype, genotype, and environment. 
 This includes the evolution of human birth timing and disorders of pregnancy, and the evolution of silent
 codon positions in yeasts. During her research career she has worked with fungi, humans, beetles, fishes,
-limpets, clams, and lizards! For more information visit her `personal website <https://www.abigailleavittlabella.com/>`_.
+limpets, clams, and lizards! For more information visit her `LaBella website <https://www.abigailleavittlabella.com/>`_.
 
 .. |ALLabella| image:: ../_static/img/Labella.jpg
    :width: 35%
@@ -167,4 +163,3 @@ and 3) exploring insect species and ecological diversity. Find out more informat
 
 
 Information about other team members coming soon!
-

@@ -3,8 +3,6 @@
 Tutorials
 =========
 
-^^^^^
-
 PhyKIT can be used for a multitude of different types of analyses. Documentation here 
 provides a step-by-step outline for how to conduct different types of analyses.
 
@@ -12,8 +10,6 @@ provides a step-by-step outline for how to conduct different types of analyses.
 
 1. Summarizing information content
 ##################################
-
-^^^^^
 
 PhyKIT implements numerous functions that can be used to examine the information content and help researchers 
 summarize information content and identify potential biases in multiple sequence alignments and phylogenies.
@@ -174,7 +170,7 @@ Estimate saturation with the following command:
 .. code-block:: shell
 
    phykit sat -a Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa -t Steenwyk_etal_mBio_2019_EOG091N44MS.tre
-   0.6835
+   0.3017  0.6983
 
 |
 
@@ -193,7 +189,7 @@ Calculate treeness/RCV using the following command:
 .. code-block:: shell
 
    phykit toverr -a Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa -t Steenwyk_etal_mBio_2019_EOG091N44MS.tre 
-   3.9773  0.5136  0.1291
+   5.0727  0.5136  0.1013
 
 col1: treeness/RCV |br|
 col2: treeness |br|
@@ -213,7 +209,7 @@ use the following commands:
 
    # calculate RCV
    phykit rcv Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa 
-   0.1291
+   0.1013
 
 |
 
@@ -237,8 +233,6 @@ col3: percentage of variable sites
 
 2. Evaluating gene-gene covariation
 ###################################
-
-^^^^^
 
 Identifying genes that significantly covary (or coevolve) with one another is known to accurately and sensitively 
 identify genes with shared functions, are coexpressed, and/or are part of the same multimeric complexes 
@@ -274,7 +268,7 @@ Step 1: Estimate gene tree branch lengths
 *****************************************
 To infer the constrained tree, we will use `IQ-TREE2 <http://www.iqtree.org/>`_. The species tree (or guide tree) is specified
 with the *-g* argument. Lastly, the best-fitting substitution model was specified according to what was reported in 
-`Shen et al. 2020 <https://jlsteenwyk.com/publication_pdfs/2020_Shen_etal_Science_Advances.pdf>`_ supplementary data; however,
+`Shen et al. 2020 supplementary data <https://jlsteenwyk.com/publication_pdfs/2020_Shen_etal_Science_Advances.pdf>`_; however,
 if the best-fitting model is unknown, this will have to be determined prior to estimating gene tree branch lengths.
 
 Estimate the gene tree branch lengths using the following commands:
@@ -337,8 +331,6 @@ driven by shared function, coexpression, and/or are part of the same multimeric 
 
 3. Identifying signatures of rapid radiations
 #############################################
-
-^^^^^
 
 Signatures of rapid radiations or diversification events can be identified by pinpointing polytomies in a putative species tree
 (`Sayyari and Mirarab 2018 <https://www.mdpi.com/2073-4425/9/3/132>`_;
@@ -447,8 +439,6 @@ Taken together, this tutorial reveals how to identify signatures of rapid radiat
 
 4. Evaluating the accuracy of a multiple sequence alignment
 ###########################################################
-
-^^^^^
 
 Evaluating the accuracy of multiple sequence alignments is an appropriate way to benchmark multiple sequence alignment strategies.
 Two popular methods to assess multiple sequence alignment accuracy are sum-of-pairs score and column score, which were introduced by

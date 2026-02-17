@@ -4,8 +4,6 @@
 Change log
 ==========
 
-^^^^^
-
 Major changes to PhyKIT are summarized here.
 
 **2.1.0**:
