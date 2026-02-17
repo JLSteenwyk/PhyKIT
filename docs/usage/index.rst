@@ -20,8 +20,6 @@ used to calculate summary statistics.
 General usage
 -------------
 
-^^^^^
-
 Calling functions
 #################
 
@@ -74,8 +72,6 @@ All possible function names are specified at the top of each function section.
 
 Alignment-based functions
 -------------------------
-
-^^^^^
 
 Alignment length
 ################
@@ -141,7 +137,7 @@ Options: |br|
 Alignment recoding 
 ##################
 Function names: alignment_recoding; aln_recoding; recode |br|
-Command line interface: pk_alignment_recoding; pk_aln_recoding; bk_recode
+Command line interface: pk_alignment_recoding; pk_aln_recoding; pk_recode
 
 Recode alignments using reduced character states.
 
@@ -457,7 +453,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *-v/\\-\\-verbose*: optional argument to print identity per pair|br|
-*-e/--exclude_gaps*: if a site has a gap, ignore it
+*-e/\-\-exclude_gaps*: if a site has a gap, ignore it
 
 |
 
@@ -466,7 +462,7 @@ Parsimony informative sites
 Function names: parsimony_informative_sites; pis |br|
 Command line interface: pk_parsimony_informative_sites; pk_pis
 
-Calculate the number and percentage of parismony
+Calculate the number and percentage of parsimony
 informative sites in an alignment.
 
 The number of parsimony informative sites in an alignment
@@ -543,6 +539,10 @@ the average variability in sequence composition among taxa.
 RCV is calculated following Phillips and Penny, Molecular Phylogenetics
 and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
+RCV calculations are case-insensitive. Gap and ambiguous characters are
+excluded from composition counts and correction terms, and each taxon is
+normalized by its valid (non-excluded) sequence length.
+
 .. code-block:: shell
 
 	phykit relative_composition_variability <alignment>
@@ -563,6 +563,9 @@ RCVT is the relative composition variability metric for individual taxa.
 This facilitates identifying specific taxa that may have compositional
 biases. Lower RCVT values are more desirable because they indicate
 a lower composition bias for a given taxon in an alignment.
+
+RCVT calculations are case-insensitive and exclude gap/ambiguous symbols
+from composition counts and normalization.
 
 .. code-block:: shell
 
@@ -591,7 +594,7 @@ an alignment file.
 	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file>]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
+*<fasta>*: first argument after function name should be a FASTA file |br|
 *-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
 
 |
@@ -654,8 +657,6 @@ Options: |br|
 Tree-based functions
 --------------------
 
-^^^^^
-
 Bipartition support statistics
 ##############################
 Function names: bipartition_support_stats; bss |br|
@@ -676,7 +677,7 @@ with a semi-colon (;).
    phykit bipartition_support_stats <tree> [-v/--verbose]
 
 Options: |br|
-*<alignment>*: first argument after function name should be a tree file |br|
+*<tree>*: first argument after function name should be a tree file |br|
 *-v/\\-\\-verbose*: optional argument to print all bipartition support values
 
 |
@@ -693,10 +694,10 @@ or other analyses.
 
 .. code-block:: shell
 
-   phykit branch_length_multiplier <tree> -f n [-o--output <output_file>]
+   phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>]
 
 Options: |br|
-*<alignment>*: first argument after function name should be a tree file |br|
+*<tree>*: first argument after function name should be a tree file |br|
 *-f/\\-\\-factor*: factor to multiply branch lengths by |br|
 *-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
 output will have the same name as the input file but with the suffix ".factor_(n).tre"
@@ -718,7 +719,7 @@ value.
    phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>]
 
 Options: |br|
-*<alignment>*: first argument after function name should be a tree file |br|
+*<tree>*: first argument after function name should be a tree file |br|
 *-s/\\-\\-support*: bipartitions with support less than this value will be 
 collapsed |br|
 *-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
@@ -922,7 +923,7 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-*-o/\\-\\-output*: optional argument to print all LB score values
+*-o/\\-\\-output*: optional argument to name the outputted tree file
 
 |
 
@@ -1007,7 +1008,7 @@ The output file will also include the original phylogeny.
 
 .. code-block:: shell
 
-   phykit nearest_neighbor_interchange <tree> [-o/--output]
+   phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
@@ -1035,7 +1036,7 @@ will be tab separated.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to print all tip-to-tip distances
+*-v/\\-\\-verbose*: optional argument to print all tip-to-tip distances
 
 |
 
@@ -1120,8 +1121,7 @@ tree.
 
 .. code-block:: shell
 
-   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>
-   -k/--keep]
+   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>] [-k/--keep]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
@@ -1130,14 +1130,14 @@ from the phylogeny |br|
 *-o/\\-\\-output*: name of output file for the pruned phylogeny. 
 Default output will have the same name as the input file but with the suffix 
 ".pruned" 
-*-k/--keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
+*-k/\-\-keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
 keep them 
 |
 
 Rename tree tips
 ################
-Function names: rename_tree; rename_tips |br|
-Command line interface: pk_rename_tree; pk_rename_tips
+Function names: rename_tree_tips; rename_tree; rename_tips |br|
+Command line interface: pk_rename_tree_tips; pk_rename_tree; pk_rename_tips
 
 Renames tips in a phylogeny.
 
@@ -1378,8 +1378,6 @@ Options: |br|
 Alignment- and tree-based functions
 -----------------------------------
 
-^^^^^
-
 Saturation
 ##########
 Function names: saturation; sat |br|
@@ -1409,7 +1407,7 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
 *-t/\\-\\-tree*: a tree file |br|
-*-e/--exclude_gaps*: if a site has a gap, ignore it |br|
+*-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
 *-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
 distances used to determine saturation 
 
@@ -1421,7 +1419,7 @@ Command line interface: pk_treeness_over_rcv; pk_toverr; pk_tor
 Calculate treeness/RCV for a given alignment and tree.
 
 Higher treeness/RCV values are thought to be desirable because
-they harbor a high signal-to-noise ratio are least susceptible
+they harbor a high signal-to-noise ratio and are least susceptible
 to composition bias.
 
 PhyKIT reports three tab delimited values:

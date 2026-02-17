@@ -11,7 +11,10 @@ import sys
 
 from collections import OrderedDict
 
-import sphinx_rtd_theme
+try:
+    import sphinx_rtd_theme
+except ModuleNotFoundError:
+    sphinx_rtd_theme = None
 
 # -- Path setup --------------------------------------------------------------
 
@@ -43,7 +46,7 @@ author = "Jacob L. Steenwyk <jlsteenwyk@gmail.com>"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx_rtd_theme']
+extensions = ['sphinx_rtd_theme'] if sphinx_rtd_theme is not None else []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -62,7 +65,8 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
+smartquotes = False
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -80,7 +84,7 @@ html_favicon = "_static/img/flavicon.png"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_rtd_theme" if sphinx_rtd_theme is not None else "alabaster"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -90,7 +94,7 @@ html_theme_options = {
     "body_max_width": "900px",
     'logo_only': True,
     'analytics_id': 'UA-104875636-1'
-}
+} if sphinx_rtd_theme is not None else {}
 html_logo = '_static/img/logo.png'
 html_show_sourcelink = False
 
