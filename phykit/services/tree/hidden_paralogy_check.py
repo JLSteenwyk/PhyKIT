@@ -7,11 +7,14 @@ from functools import partial
 from Bio import Phylo
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class HiddenParalogyCheck(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(tree_file_path=parsed["tree_file_path"], clade=parsed["clade"])
+        self.json_output = parsed["json_output"]
 
     @staticmethod
     def _process_clade_batch(clade_batch, tree_file_path, master_tree_tips):
@@ -113,6 +116,7 @@ class HiddenParalogyCheck(Tree):
         return dict(
             tree_file_path=args.tree,
             clade=args.clade,
+            json_output=getattr(args, "json", False),
         )
 
     def read_clades_file(self, clades: str) -> List[List[str]]:
@@ -124,5 +128,22 @@ class HiddenParalogyCheck(Tree):
             sys.exit(2)
 
     def print_results(self, res_arr: List[List[Union[List, str]]]) -> None:
+        if self.json_output:
+            rows = []
+            for idx, res in enumerate(res_arr, start=1):
+                status = res[0]
+                unexpected = []
+                if len(res) > 1 and isinstance(res[1], list):
+                    unexpected = sorted(res[1])
+                rows.append(
+                    dict(
+                        clade_index=idx,
+                        status=status,
+                        unexpected_taxa=unexpected,
+                    )
+                )
+            print_json(dict(rows=rows, clades=rows))
+            return
+
         for res in res_arr:
             print(res[0])

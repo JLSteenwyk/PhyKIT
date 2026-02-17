@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch
 from pathlib import Path
 
@@ -107,3 +108,18 @@ class TestLastCommonAncestorSubtree(object):
             out_tree_content = out_tree.read()
 
         assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
+    def test_lca_subtree_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "last_common_ancestor_subtree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_lca_subtree_list.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["taxa_count"] == 2
+        assert payload["subtree_tips"] == 5

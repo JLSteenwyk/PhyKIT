@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from math import isclose
 from mock import patch, call
 from pathlib import Path
@@ -181,3 +182,46 @@ class TestCovaryingEvolutionaryRates(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {
+            "correlation": 0.5436,
+            "p_value": 0.054828,
+            "verbose": False,
+        }
+
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "cover",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["rows"][0] == payload["branches"][0]
+        assert payload["branches"][0] == {
+            "branch": "raccoon",
+            "tree_one_rate": -1.3686,
+            "tree_zero_rate": -0.333,
+        }

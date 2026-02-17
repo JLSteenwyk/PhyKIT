@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -83,3 +84,20 @@ class TestFaidx(object):
             call(expected_result0),
             call(expected_result1)
         ]
+
+    @patch("builtins.print")
+    def test_faidx_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "faidx",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "-e",
+            "1,2",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["rows"][0] == payload["entries"][0]
+        assert payload["entries"][0] == {"entry": "1", "name": "1", "sequence": "A-GTAT"}
+        assert payload["entries"][1] == {"entry": "2", "name": "2", "sequence": "A-G-AT"}

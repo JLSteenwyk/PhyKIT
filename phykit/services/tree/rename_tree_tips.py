@@ -5,11 +5,18 @@ from typing import Dict
 from Bio.Phylo import Newick
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class RenameTreeTips(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            idmap=parsed["idmap"],
+            output_file_path=parsed["output_file_path"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree = self.read_tree_file()
@@ -18,9 +25,19 @@ class RenameTreeTips(Tree):
 
         idmap = self.read_id_map()
 
-        tree_copy = self.replace_tip_names(tree_copy, idmap)
+        tree_copy, renamed_count = self.replace_tip_names(tree_copy, idmap)
 
         self.write_tree_file(tree_copy, self.output_file_path)
+
+        if self.json_output:
+            print_json(
+                dict(
+                    input_tree=self.tree_file_path,
+                    idmap=self.idmap,
+                    output_file=self.output_file_path,
+                    renamed_tips=renamed_count,
+                )
+            )
 
     def process_args(self, args) -> Dict[str, str]:
         tree_file_path = args.tree
@@ -32,6 +49,7 @@ class RenameTreeTips(Tree):
             tree_file_path=tree_file_path,
             idmap=args.idmap,
             output_file_path=output_file_path,
+            json_output=getattr(args, "json", False),
         )
 
     def read_id_map(self) -> Dict[str, str]:
@@ -55,10 +73,12 @@ class RenameTreeTips(Tree):
         self,
         tree: Tree,
         idmap: Dict[str, str]
-    ) -> Newick.Tree:
+    ) -> tuple[Newick.Tree, int]:
+        renamed_count = 0
         for term in tree.get_terminals():
             name = term.name
             if name in idmap:
                 term.name = idmap[name]
+                renamed_count += 1
 
-        return tree
+        return tree, renamed_count

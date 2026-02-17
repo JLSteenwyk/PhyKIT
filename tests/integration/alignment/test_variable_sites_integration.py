@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -71,3 +72,20 @@ class TestVariableSites(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_variable_sites_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "variable_sites",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {
+            "variable_sites": 4,
+            "alignment_length": 6,
+            "percent_variable_sites": 66.6667,
+        }

@@ -4,11 +4,18 @@ from Bio import Phylo
 from .base import Tree
 
 from ...helpers.files import read_single_column_file_to_list
+from ...helpers.json_output import print_json
 
 
 class RootTree(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            outgroup_taxa_file_path=parsed["outgroup_taxa_file_path"],
+            output_file_path=parsed["output_file_path"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree = self.read_tree_file()
@@ -22,6 +29,16 @@ class RootTree(Tree):
 
         self.write_tree_file(tree_copy, self.output_file_path)
 
+        if self.json_output:
+            print_json(
+                dict(
+                    input_tree=self.tree_file_path,
+                    outgroup_taxa_file=self.outgroup_taxa_file_path,
+                    outgroup_taxa=outgroup,
+                    output_file=self.output_file_path,
+                )
+            )
+
     def process_args(self, args):
         tree_file_path = args.tree
 
@@ -32,4 +49,5 @@ class RootTree(Tree):
             tree_file_path=tree_file_path,
             outgroup_taxa_file_path=args.root,
             output_file_path=output_file_path,
+            json_output=getattr(args, "json", False),
         )

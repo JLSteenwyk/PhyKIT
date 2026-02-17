@@ -5,11 +5,14 @@ from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class ColumnScore(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(fasta=parsed["fasta"], reference=parsed["reference"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         query_records = AlignIO.read(self.fasta, "fasta")
@@ -26,10 +29,20 @@ class ColumnScore(Alignment):
                 ref_columns, query_columns
             )
 
-        print(round(number_of_matches / number_of_total_columns, 4))
+        score = round(number_of_matches / number_of_total_columns, 4)
+
+        if self.json_output:
+            print_json(dict(column_score=score))
+            return
+
+        print(score)
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(fasta=args.fasta, reference=args.reference)
+        return dict(
+            fasta=args.fasta,
+            reference=args.reference,
+            json_output=getattr(args, "json", False),
+        )
 
     def get_columns_from_alignments(
         self,

@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -122,3 +123,32 @@ class TestGCContent(object):
         assert mocked_print.mock_calls == [
             call("Input file has an unacceptable format. Please check input file argument."),
         ]
+
+    @patch("builtins.print")
+    def test_gc_content_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"gc_content": 0.2273, "verbose": False}
+
+    @patch("builtins.print")
+    def test_gc_content_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_2.fa",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["rows"][0] == payload["sequences"][0]
+        assert payload["sequences"][0] == {"taxon": "1", "gc_content": 0.5}

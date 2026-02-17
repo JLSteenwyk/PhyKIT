@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from math import isclose
 from mock import patch, call
 from pathlib import Path
@@ -168,3 +169,36 @@ class TestLBScore(object):
         assert mocked_print.mock_calls == [
             call("Invalid tree. Tree should contain branch lengths"),
         ]
+
+    @patch("builtins.print")
+    def test_lb_score_json_summary(self, mocked_print):
+        testargs = [
+            "phykit",
+            "lb_score",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is False
+        assert round(payload["summary"]["mean"], 4) == -12.5
+
+    @patch("builtins.print")
+    def test_lb_score_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "lb_score",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["rows"][0] == payload["taxa"][0]
+        assert payload["taxa"][0] == {
+            "lb_score": -21.8103,
+            "taxon": "Aspergillus_fischeri_IBT_3003",
+        }

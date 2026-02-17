@@ -1,11 +1,14 @@
 import numpy as np
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class RelativeCompositionVariabilityTaxon(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -29,6 +32,10 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         # Get all unique valid symbols
         valid_chars = alignment_array[valid_mask]
         if valid_chars.size == 0:
+            if self.json_output:
+                rows = [dict(taxon=record.id, rcvt=0.0) for record in alignment]
+                print_json(dict(rows=rows, taxa=rows))
+                return
             for record in alignment:
                 print(f"{record.id}\t0.0")
             return
@@ -56,10 +63,26 @@ class RelativeCompositionVariabilityTaxon(Alignment):
             where=denom > 0,
         )
 
+        if self.json_output:
+            rows = [
+                dict(taxon=record.id, rcvt=round(float(rcv_values[i]), 4))
+                for i, record in enumerate(alignment)
+            ]
+            print_json(
+                dict(
+                    rows=rows,
+                    taxa=rows,
+                )
+            )
+            return
+
         # Print results - convert to float64 for consistent rounding
         for i, record in enumerate(alignment):
             rcv_val = float(rcv_values[i])
             print(f"{record.id}\t{round(rcv_val, 4)}")
 
     def process_args(self, args):
-        return dict(alignment_file_path=args.alignment)
+        return dict(
+            alignment_file_path=args.alignment,
+            json_output=getattr(args, "json", False),
+        )

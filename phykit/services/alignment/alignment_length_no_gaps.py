@@ -5,11 +5,14 @@ import numpy as np
 from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class AlignmentLengthNoGaps(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -18,13 +21,25 @@ class AlignmentLengthNoGaps(Alignment):
             aln_len,
             aln_len_no_gaps_per,
         ) = self.calculate_alignment_length_no_gaps(alignment, is_protein)
+        if self.json_output:
+            print_json(
+                dict(
+                    alignment_length_no_gaps=aln_len_no_gaps,
+                    alignment_length=aln_len,
+                    percent_no_gaps=round(aln_len_no_gaps_per, 4),
+                )
+            )
+            return
         print(f"{aln_len_no_gaps}\t{aln_len}\t{round(aln_len_no_gaps_per, 4)}")
 
     def process_args(
         self,
         args: Namespace,
     ) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment)
+        return dict(
+            alignment_file_path=args.alignment,
+            json_output=getattr(args, "json", False),
+        )
 
     def calculate_alignment_length_no_gaps(
         self,

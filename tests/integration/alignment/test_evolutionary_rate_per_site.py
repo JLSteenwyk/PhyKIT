@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -121,3 +122,18 @@ class TestEvolutionaryRatePerSite(object):
             call(expected_result_4),
             call(expected_result_5),
         ]
+
+    @patch("builtins.print")
+    def test_evolutionary_rate_per_site_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "evolutionary_rate_per_site",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["rows"][0] == payload["sites"][0]
+        assert payload["sites"][0] == {"evolutionary_rate": 0.0, "site": 1}
+        assert payload["sites"][2] == {"evolutionary_rate": 0.48, "site": 3}

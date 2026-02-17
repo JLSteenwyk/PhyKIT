@@ -93,10 +93,11 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-	phykit aln_len <alignment>
+		phykit aln_len <alignment> [--json]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file 
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -127,10 +128,11 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-	phykit aln_len_no_gaps <alignment>
+		phykit aln_len_no_gaps <alignment> [--json]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file 
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -147,7 +149,7 @@ With the `-v/--verbose` option, PhyKIT reports entropy for each site.
 
 .. code-block:: shell
 
-	phykit alignment_entropy <alignment> [-v/--verbose]
+	phykit alignment_entropy <alignment> [-v/--verbose] [--json]
 
 Example output (default):
 
@@ -165,7 +167,8 @@ Example output (`-v`):
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print entropy for each site
+*-v/\\-\\-verbose*: optional argument to print entropy for each site |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -186,7 +189,7 @@ in the alignment.
 
 .. code-block:: shell
 
-	phykit alignment_recoding <fasta> [-c/--code <code>]
+	phykit alignment_recoding <fasta> [-c/--code <code>] [--json]
 
 Codes for which recoding scheme to use: |br|
 **RY-nucleotide** |br|
@@ -281,7 +284,8 @@ H = C |br|
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-c/\-\-code*: argument to specify the recoding scheme to use 
+*-c/\-\-code*: argument to specify the recoding scheme to use |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -307,13 +311,14 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 
 .. code-block:: shell
 
-	phykit column_score <alignment> --reference <reference_alignment>
+	phykit column_score <alignment> --reference <reference_alignment> [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
 *-r/\\-\\-reference*: reference alignment to compare the query alignment
-to
+to |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -334,11 +339,12 @@ col 4: uncorrected p-value
 
 .. code-block:: shell
 
-	phykit comp_bias_per_site <alignment>
+	phykit comp_bias_per_site <alignment> [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment to calculate the site-wise compositional bias of |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -355,7 +361,7 @@ characters. Symbol order is alphabetical.
 
 .. code-block:: shell
 
-	phykit composition_per_taxon <alignment>
+	phykit composition_per_taxon <alignment> [--json]
 
 Example output:
 
@@ -365,7 +371,8 @@ Example output:
 	2	A:0.5;C:0.0;G:0.25;T:0.25
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -390,13 +397,14 @@ PhyKIT will output three files:
 
 .. code-block:: shell
 
-	phykit create_concat -a <file> -p <string>
+	phykit create_concat -a <file> -p <string> [--json]
 
 Options: |br|
 *-a/\\-\\-alignment*: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
-*-p/\\-\\-prefix*: prefix of output files
+*-p/\\-\\-prefix*: prefix of output files |br|
+*--json*: optional argument to print summary metadata as JSON
 
 |
 
@@ -414,11 +422,12 @@ at the given site) to 1 (fast evolving; all characters appear only once).
 
 .. code-block:: shell
 
-	phykit evo_rate_per_site <alignment>
+	phykit evo_rate_per_site <alignment> [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment to calculate the site-wise evolutionary rate of |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -444,12 +453,12 @@ should be associated with the -e argument.
 
 .. code-block:: shell
 
-	phykit faidx <fasta> -e/--entry <fasta entry>
+	phykit faidx <fasta> -e/--entry <fasta entry> [--json]
 
 Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
-*-v/\\-\\-verbose*: entry name to be extracted from the inputted fasta file
-entry
+*-e/\\-\\-entry*: entry name to be extracted from the inputted fasta file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -475,12 +484,36 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-	phykit gc_content <fasta> [-v/--verbose]
+		phykit gc_content <fasta> [-v/--verbose] [--json]
 
 Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
 *-v/\\-\\-verbose*: optional argument to print the GC content of each fasta
-entry
+entry |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Mask alignment
+##############
+Function names: mask_alignment; mask_aln; mask |br|
+Command line interface: pk_mask_alignment; pk_mask_aln; pk_mask
+
+Mask alignment sites based on threshold criteria.
+
+Sites are retained when they pass all active thresholds:
+maximum gap fraction, minimum occupancy, and maximum site entropy.
+
+.. code-block:: shell
+
+	phykit mask_alignment <alignment> [-g/--max_gap <float>] [-o/--min_occupancy <float>] [-e/--max_entropy <float>] [--json]
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file |br|
+*-g/\\-\\-max_gap*: maximum allowed fraction of missing/invalid characters at a site (default: 1.0) |br|
+*-o/\\-\\-min_occupancy*: minimum required occupancy at a site (default: 0.0) |br|
+*-e/\\-\\-max_entropy*: maximum allowed site entropy (default: no filter) |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -496,7 +529,7 @@ for each taxon.
 
 .. code-block:: shell
 
-	phykit occupancy_per_taxon <alignment>
+	phykit occupancy_per_taxon <alignment> [--json]
 
 Example output:
 
@@ -506,7 +539,8 @@ Example output:
 	2	0.6667
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -536,12 +570,13 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 .. code-block:: shell
 
-	phykit pairwise_identity <alignment> [-v/--verbose]
+	phykit pairwise_identity <alignment> [-v/--verbose] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *-v/\\-\\-verbose*: optional argument to print identity per pair|br|
-*-e/\-\-exclude_gaps*: if a site has a gap, ignore it
+*-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -569,10 +604,11 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 
 .. code-block:: shell
 
-	phykit parsimony_informative_sites <alignment>
+		phykit parsimony_informative_sites <alignment> [--json]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -602,14 +638,15 @@ should be provided in the -p/--protein argument.
 
 .. code-block:: shell
 
-   phykit thread_dna -p <file> -n <file> [-s]
+   phykit thread_dna -p <file> -n <file> [-s] [--json]
 
 Options: |br|
 *-p/\\-\\-protein*: protein alignment file |br|
 *-n/\\-\\-nucleotide*: nucleotide sequence file |br|
 *-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
 *-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
-If used, stop codons will be removed.
+If used, stop codons will be removed. |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -633,10 +670,11 @@ normalized by its valid (non-excluded) sequence length.
 
 .. code-block:: shell
 
-	phykit relative_composition_variability <alignment>
+		phykit relative_composition_variability <alignment> [--json]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -657,10 +695,11 @@ from composition counts and normalization.
 
 .. code-block:: shell
 
-	phykit relative_composition_variability_taxon <alignment>
+	phykit relative_composition_variability_taxon <alignment> [--json]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -679,11 +718,12 @@ an alignment file.
 
 .. code-block:: shell
 
-	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file>]
+	phykit rename_fasta_entries <fasta> -i/--idmap <idmap> [-o/--output <output_file>] [--json]
 
 Options: |br|
 *<fasta>*: first argument after function name should be a FASTA file |br|
-*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2)
+*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2) |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -704,13 +744,14 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 
 .. code-block:: shell
 
-	phykit sum_of_pairs_score <alignment> --reference <reference_alignment>
+	phykit sum_of_pairs_score <alignment> --reference <reference_alignment> [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
 *-r/\\-\\-reference*: reference alignment to compare the query alignment
-to
+to |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -735,10 +776,11 @@ doi: 10.1093/gbe/evw179.
 
 .. code-block:: shell
 
-   phykit variable_sites <alignment>
+   phykit variable_sites <alignment> [--json]
 
 Options: |br|
-*<alignment>*: first argument after function name should be an alignment file
+*<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -763,10 +805,28 @@ with a semi-colon (;).
 .. code-block:: shell
 
    phykit bipartition_support_stats <tree> [-v/--verbose]
+       [--thresholds <comma-separated-floats>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all bipartition support values
+*-v/\\-\\-verbose*: optional argument to print all bipartition support values |br|
+*--thresholds*: optional comma-separated support cutoffs; prints count and
+fraction of bipartitions below each cutoff |br|
+*--json*: optional argument to print results as JSON
+
+Example JSON output (summary mode):
+
+.. code-block:: shell
+
+   phykit bipartition_support_stats test.tre --thresholds 70,90 --json
+   {"summary": {"maximum": 100, "mean": 95.71428571428571, "median": 100, "minimum": 85, "seventy_fifth": 100.0, "standard_deviation": 7.319250547113999, "twenty_fifth": 92.5, "variance": 53.57142857142857}, "thresholds": [{"count_below": 0, "fraction_below": 0.0, "threshold": 70.0}, {"count_below": 2, "fraction_below": 0.2857142857142857, "threshold": 90.0}], "verbose": false}
+
+Example JSON output (verbose mode):
+
+.. code-block:: shell
+
+   phykit bipartition_support_stats test.tre -v --json
+   {"bipartitions": [{"support": 85, "terminals": ["taxon_a", "taxon_b"]}, {"support": 100, "terminals": ["taxon_c", "taxon_d"]}], "thresholds": [], "verbose": true}
 
 |
 
@@ -782,13 +842,14 @@ or other analyses.
 
 .. code-block:: shell
 
-   phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>]
+   phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-f/\\-\\-factor*: factor to multiply branch lengths by |br|
 *-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
-output will have the same name as the input file but with the suffix ".factor_(n).tre"
+output will have the same name as the input file but with the suffix ".factor_(n).tre" |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -804,7 +865,7 @@ value.
 
 .. code-block:: shell
 
-   phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>]
+   phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
@@ -812,7 +873,8 @@ Options: |br|
 collapsed |br|
 *-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
 output will have the same name as the input file but with the suffix 
-".collapsed_(support).tre"
+".collapsed_(support).tre" |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -845,14 +907,15 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 
 .. code-block:: shell
 
-   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] 
+   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] [--json]
 
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be an alignment file |br|
 *<tree_file_one>*: first argument after function name should be an alignment file |br| 
 *-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
 this is a putative species tree. |br|
-*-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1
+*-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1 |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -875,10 +938,11 @@ Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.16
 
 .. code-block:: shell
 
-   phykit degree_of_violation_of_a_molecular_clock <tree>
+   phykit degree_of_violation_of_a_molecular_clock <tree> [--json]
 
 Options: |br|
-*<tree>*: input file tree name
+*<tree>*: input file tree name |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -897,10 +961,11 @@ of the Royal Society B (2014).
 
 .. code-block:: shell
 
-   phykit evolutionary_rate <tree>
+   phykit evolutionary_rate <tree> [--json]
 
 Options: |br|
-*<tree>*: input file tree name
+*<tree>*: input file tree name |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -946,12 +1011,13 @@ doi: 10.1093/molbev/msz067.
 
 .. code-block:: shell
 
-   phykit hidden_paralogy_check <tree> -c/--clade <clade_file>
+   phykit hidden_paralogy_check <tree> -c/--clade <clade_file> [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: input file tree name
+*-t/\\-\\-tree*: input file tree name |br|
 *-c/\\-\\-clade*: clade file detailing which monophyletic lineages should
-be scanned for
+be scanned for |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -968,11 +1034,12 @@ To obtain all internal branch lengths, use the -v/\\-\\-verbose option.
 
 .. code-block:: shell
 
-   phykit internal_branch_stats <tree> [-v/--verbose]
+   phykit internal_branch_stats <tree> [-v/--verbose] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all internal branch lengths
+*-v/\\-\\-verbose*: optional argument to print all internal branch lengths |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -987,11 +1054,12 @@ or otherwise.
 
 .. code-block:: shell
 
-   phykit internode_labeler <tree> [-o/--output <file>]
+   phykit internode_labeler <tree> [-o/--output <file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file
+*-o/\\-\\-output*: optional argument to name the outputted tree file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1005,13 +1073,14 @@ from a list of taxa.
 
 .. code-block:: shell
 
-   phykit last_common_ancestor_subtree <file> <list_of_taxa> [-o/--output <file>]
+   phykit last_common_ancestor_subtree <file> <list_of_taxa> [-o/--output <file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-*-o/\\-\\-output*: optional argument to name the outputted tree file
+*-o/\\-\\-output*: optional argument to name the outputted tree file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1038,11 +1107,12 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
 .. code-block:: shell
 
-   phykit long_branch_score <tree> [-v/--verbose]
+   phykit long_branch_score <tree> [-v/--verbose] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all LB score values
+*-v/\\-\\-verbose*: optional argument to print all LB score values |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1072,12 +1142,13 @@ col 6: tip names of taxa monophyletic with the lineage of interest excluding tho
 
 .. code-block:: shell
 
-   phykit monophyly_check <tree> <list_of_taxa>
+   phykit monophyly_check <tree> <list_of_taxa> [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: single column file with list of tip names to 
-examine the monophyly of
+examine the monophyly of |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1096,11 +1167,12 @@ The output file will also include the original phylogeny.
 
 .. code-block:: shell
 
-   phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>]
+   phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to specify output file name
+*-o/\\-\\-output*: optional argument to specify output file name |br|
+*--json*: optional argument to print summary metadata as JSON
 
 |
 
@@ -1120,11 +1192,12 @@ will be tab separated.
 
 .. code-block:: shell
 
-   phykit patristic_distances <tree> [-v/--verbose]
+   phykit patristic_distances <tree> [-v/--verbose] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all tip-to-tip distances
+*-v/\\-\\-verbose*: optional argument to print all tip-to-tip distances |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1156,14 +1229,15 @@ frequencies.
 
 .. code-block:: shell
 
-   phykit polytomy_test -t/--trees <trees> -g/--groups <groups>
+   phykit polytomy_test -t/--trees <trees> -g/--groups <groups> [--json]
 
 Options: |br|
 *-t/\\-\\-trees <trees>*: single column file with the names of 
 phylogenies to use for polytomy testing |br|
 *-g/\\-\\-groups*: a tab-delimited file with the grouping designations
 to test. Lines starting with commetns are not considered. Names of
-individual taxa should be separated by a semi-colon ';'
+individual taxa should be separated by a semi-colon ';' |br|
+*--json*: optional argument to print results as JSON
 
 For example, the groups file could look like the following:
 
@@ -1187,12 +1261,13 @@ but branch lengths can be removed using the -r/--remove argument.
 
 .. code-block:: shell
 
-   phykit print_tree <tree> [-r/--remove]
+   phykit print_tree <tree> [-r/--remove] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-r/\\-\\-remove*: optional argument to print the phylogeny without branch
-lengths
+lengths |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1209,7 +1284,7 @@ tree.
 
 .. code-block:: shell
 
-   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>] [-k/--keep]
+   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>] [-k/--keep] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
@@ -1217,9 +1292,10 @@ Options: |br|
 from the phylogeny |br|
 *-o/\\-\\-output*: name of output file for the pruned phylogeny. 
 Default output will have the same name as the input file but with the suffix 
-".pruned" 
+".pruned" |br|
 *-k/\-\-keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
-keep them 
+keep them |br|
+*--json*: optional argument to print results as JSON
 |
 
 Rename tree tips
@@ -1236,14 +1312,15 @@ phylogeny.
 
 .. code-block:: shell
 
-   phykit rename_tree_tips <tree> -i/--idmap <idmap.txt> [-o/--output <output_file>] 
+   phykit rename_tree_tips <tree> -i/--idmap <idmap.txt> [-o/--output <output_file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-i/\\-\\-idmap*: identifier map of current tip names (col1) and desired
 tip names (col2) |br|
 *-o/\\-\\-output*: optional argument to write the renamed tree files to. Default
-output will have the same name as the input file but with the suffix ".renamed"
+output will have the same name as the input file but with the suffix ".renamed" |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1273,11 +1350,12 @@ Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
 
 .. code-block:: shell
 
-   phykit robinson_foulds_distance <tree_file_zero> <tree_file_one>
+   phykit robinson_foulds_distance <tree_file_zero> <tree_file_one> [--json]
 
 Options: |br|
-*<tree_file_zero>*: first argument after function name should be a tree file
-*<tree_file_one>*: second argument after function name should be a tree file 
+*<tree_file_zero>*: first argument after function name should be a tree file |br|
+*<tree_file_one>*: second argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1295,12 +1373,13 @@ the suffix ".rooted".
 
 .. code-block:: shell
 
-   phykit root_tree <tree> -r/--root <root_taxa> [-o/--output <output_file>] 
+   phykit root_tree <tree> -r/--root <root_taxa> [-o/--output <output_file>] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file to root|br|
 *-r/\\-\\-root*: single column file with taxa names to root the phylogeny on|br|
-*-o/\\-\\-output*: optional argument to specify the name of the output file
+*-o/\\-\\-output*: optional argument to specify the name of the output file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1332,12 +1411,13 @@ Cell doi: 10.1016/j.cell.2018.10.023.
 
 .. code-block:: shell
 
-   phykit spurious_seq <file> -f/\\-\\-factor
+   phykit spurious_seq <file> -f/\\-\\-factor [--json]
 
 Options: |br|
-*<file>*: first argument after function name should be a tree file
+*<file>*: first argument after function name should be a tree file |br|
 *-f/\\-\\-factor*: factor to multiply median branch length by to calculate
-the threshold of long branches. (Default: 20)
+the threshold of long branches. (Default: 20) |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1354,11 +1434,12 @@ To obtain all terminal branch lengths, use the -v/\\-\\-verbose option.
 
 .. code-block:: shell
 
-   phykit terminal_branch_stats <tree> [-v/--verbose]
+   phykit terminal_branch_stats <tree> [-v/--verbose] [--json]
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all terminal branch lengths
+*-v/\\-\\-verbose*: optional argument to print all terminal branch lengths |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1371,10 +1452,11 @@ Prints the tip labels (or names) a phylogeny.
 
 .. code-block:: shell
 
-   phykit tip_labels <tree>
+   phykit tip_labels <tree> [--json]
 
 Options: |br|
-*<tree>*: first argument after function name should be a tree file
+*<tree>*: first argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1389,12 +1471,13 @@ Distances are in substitutions per site.
 
 .. code-block:: shell
 
-   phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2>
+   phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2> [--json]
 
 Options: |br|
 *<tree_file>*: first argument after function name should be a tree file |br|
 *<tip_1>*: second argument should be the name of the first tip of interest |br|
-*<tip_2>*: third argument should be the name of the second tip of interest
+*<tip_2>*: third argument should be the name of the second tip of interest |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1410,12 +1493,13 @@ and another.
 
 .. code-block:: shell
 
-   phykit tip_to_tip_node_distance <tree_file> <tip_1> <tip_2>
+   phykit tip_to_tip_node_distance <tree_file> <tip_1> <tip_2> [--json]
 
 Options: |br|
 *<tree_file>*: first argument after function name should be a tree file |br|
 *<tip_1>*: second argument should be the name of the first tip of interest |br|
-*<tip_2>*: third argument should be the name of the second tip of interest
+*<tip_2>*: third argument should be the name of the second tip of interest |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1428,10 +1512,11 @@ Calculate total tree length, which is a sum of all branches.
 
 .. code-block:: shell
 
-   phykit total_tree_length <tree>
+   phykit total_tree_length <tree> [--json]
 
 Options: |br|
-*<tree>*: first argument after function name should be a tree file
+*<tree>*: first argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1456,10 +1541,11 @@ Phillips and Penny, Molecular Phylogenetics and Evolution
 
 .. code-block:: shell
 
-   phykit treeness <tree>
+   phykit treeness <tree> [--json]
 
 Options: |br|
-*<tree>*: first argument after function name should be a tree file
+*<tree>*: first argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1490,14 +1576,15 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
 .. code-block:: shell
 
-   phykit saturation -a <alignment> -t <tree> [-v/--verbose]
+   phykit saturation -a <alignment> -t <tree> [-v/--verbose] [--json]
 
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
 *-t/\\-\\-tree*: a tree file |br|
 *-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
 *-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
-distances used to determine saturation 
+distances used to determine saturation |br|
+*--json*: optional argument to print results as JSON
 
 Treeness over RCV
 #################
@@ -1520,11 +1607,12 @@ Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
 
 .. code-block:: shell
 
-   phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree>
+   phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree> [--json]
 
 Options: |br|
 *-a/\\-\\-alignment*: an alignment file |br|
-*-t/\\-\\-tree*: a tree file
+*-t/\\-\\-tree*: a tree file |br|
+*--json*: optional argument to print results as JSON
 
 .. |br| raw:: html
 

@@ -4,21 +4,37 @@ import numpy as np
 from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class VariableSites(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
         var_sites, aln_len, var_sites_per = \
             self.calculate_variable_sites(alignment)
 
+        if self.json_output:
+            print_json(
+                dict(
+                    variable_sites=var_sites,
+                    alignment_length=aln_len,
+                    percent_variable_sites=round(var_sites_per, 4),
+                )
+            )
+            return
+
         print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
 
     def process_args(self, args) -> Dict[str, str]:
-        return dict(alignment_file_path=args.alignment)
+        return dict(
+            alignment_file_path=args.alignment,
+            json_output=getattr(args, "json", False),
+        )
 
     def calculate_variable_sites(
         self,

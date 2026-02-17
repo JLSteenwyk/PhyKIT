@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -51,3 +52,18 @@ class TestColumnScore(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [call(expected_result)]
+
+    @patch("builtins.print")
+    def test_column_score_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "column_score",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--reference",
+            f"{here.parent.parent.parent}/sample_files/simple_reference.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"column_score": 0.8333}

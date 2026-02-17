@@ -5,13 +5,16 @@ from typing import Dict, List
 from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 here = path.dirname(__file__)
 
 
 class AlignmentRecoding(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"], code=parsed["code"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -21,6 +24,18 @@ class AlignmentRecoding(Alignment):
         recoded_alignment = self.recode_alignment(
             alignment, recoding_table, is_protein
         )
+
+        if self.json_output:
+            print_json(
+                dict(
+                    code=self.code,
+                    taxa=[
+                        dict(taxon=taxon, sequence="".join(seq))
+                        for taxon, seq in recoded_alignment.items()
+                    ],
+                )
+            )
+            return
 
         for k, v in recoded_alignment.items():
             print(f">{k}\n{''.join(v)}")
@@ -85,5 +100,6 @@ class AlignmentRecoding(Alignment):
     def process_args(self, args):
         return dict(
             alignment_file_path=args.alignment,
-            code=args.code
+            code=args.code,
+            json_output=getattr(args, "json", False),
         )

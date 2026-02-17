@@ -1,5 +1,6 @@
 import pytest
 import textwrap
+import json
 
 from mock import patch, call
 from pathlib import Path
@@ -343,3 +344,19 @@ class TestAlignmentRecoding(object):
             call(expected_result_3),
             call(expected_result_4),
         ]
+
+    @patch("builtins.print")
+    def test_alignment_recoding_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "alignment_recoding",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "-c",
+            "RY-nucleotide",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["code"] == "RY-nucleotide"
+        assert payload["taxa"][0] == {"taxon": "1", "sequence": "R-RYRY"}

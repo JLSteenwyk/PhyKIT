@@ -5,21 +5,40 @@ import numpy as np
 from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class EvolutionaryRatePerSite(Alignment):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(alignment_file_path=parsed["alignment_file_path"])
+        self.json_output = parsed["json_output"]
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
         pic_values = self.calculate_evolutionary_rate_per_site(alignment)
 
+        if self.json_output:
+            rows = [
+                dict(site=idx + 1, evolutionary_rate=round(value, 4))
+                for idx, value in enumerate(pic_values)
+            ]
+            print_json(
+                dict(
+                    rows=rows,
+                    sites=rows,
+                )
+            )
+            return
+
         for idx, value in enumerate(pic_values):
             print(f"{idx + 1}\t{round(value, 4)}")
 
     def process_args(self, args):
-        return dict(alignment_file_path=args.alignment)
+        return dict(
+            alignment_file_path=args.alignment,
+            json_output=getattr(args, "json", False),
+        )
 
     def remove_gap_characters(self, seq: str, gap_chars: List[str]) -> str:
         return ''.join([char for char in seq if char not in gap_chars]).upper()

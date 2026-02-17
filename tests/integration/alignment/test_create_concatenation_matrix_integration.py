@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -233,3 +234,26 @@ class TestCreateConcatenationMatrix(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_create_concatenation_matrix_json(self, mocked_print):
+        prefix = "output/create_concat_matrix_json"
+        testargs = [
+            "phykit",
+            "create_concatenation_matrix",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/alignment_list_for_create_concat_matrix.txt",
+            "-p",
+            prefix,
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["input_alignment_list"].endswith("alignment_list_for_create_concat_matrix.txt")
+        assert payload["total_taxa"] == 12
+        assert payload["total_alignments"] == 3
+        assert payload["output_files"]["fasta"] == f"{prefix}.fa"
+        assert payload["output_files"]["partition"] == f"{prefix}.partition"
+        assert payload["output_files"]["occupancy"] == f"{prefix}.occupancy"

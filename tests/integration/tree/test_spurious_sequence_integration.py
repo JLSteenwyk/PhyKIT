@@ -2,6 +2,7 @@ from mock import patch, call
 from pathlib import Path
 import pytest
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -77,3 +78,37 @@ class TestSpuriousSequence(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_spurious_sequence_json_none(self, mocked_print):
+        testargs = [
+            "phykit",
+            "spurious_sequence",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"rows": [], "spurious_sequences": []}
+
+    @patch("builtins.print")
+    def test_spurious_sequence_json_custom_factor(self, mocked_print):
+        testargs = [
+            "phykit",
+            "spurious_sequence",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-f",
+            "2",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["rows"][0] == payload["spurious_sequences"][0]
+        assert payload["spurious_sequences"][0] == {
+            "taxon": "monkey",
+            "branch_length": 100.8593,
+            "threshold": 38.0791,
+            "median": 19.0396,
+        }

@@ -5,18 +5,35 @@ from Bio.Phylo.BaseTree import TreeMixin
 from Bio.Phylo import Newick
 
 from .base import Tree
+from ...helpers.json_output import print_json
 
 
 class TipToTipDistance(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            tree_file_path=parsed["tree_file_path"],
+            tip_1=parsed["tip_1"],
+            tip_2=parsed["tip_2"],
+        )
+        self.json_output = parsed["json_output"]
 
     def run(self):
         tree_zero = self.read_tree_file()
 
         self.check_leaves(tree_zero, self.tip_1, self.tip_2)
 
-        print(round(TreeMixin.distance(tree_zero, self.tip_1, self.tip_2), 4))
+        distance = round(TreeMixin.distance(tree_zero, self.tip_1, self.tip_2), 4)
+        if self.json_output:
+            print_json(
+                dict(
+                    taxon_a=self.tip_1,
+                    taxon_b=self.tip_2,
+                    tip_to_tip_distance=distance,
+                )
+            )
+            return
+        print(distance)
 
     def check_leaves(
         self,
@@ -38,4 +55,5 @@ class TipToTipDistance(Tree):
             tree_file_path=args.tree_zero,
             tip_1=args.tip_1,
             tip_2=args.tip_2,
+            json_output=getattr(args, "json", False),
         )

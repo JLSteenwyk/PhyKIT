@@ -2,6 +2,7 @@ from pathlib import Path
 import pytest
 from mock import patch
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -230,3 +231,34 @@ class TestPrintTree(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_print_tree_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "print_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["remove_branch_lengths"] is False
+        assert "raccoon" in payload["tree_newick"]
+        assert ":" in payload["tree_newick"]
+
+    @patch("builtins.print")
+    def test_print_tree_json_remove_branch_lengths(self, mocked_print):
+        testargs = [
+            "phykit",
+            "print_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "--remove",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["remove_branch_lengths"] is True
+        assert "raccoon" in payload["tree_newick"]
+        assert ":0.00000" in payload["tree_newick"]

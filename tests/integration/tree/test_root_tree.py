@@ -2,6 +2,7 @@ from mock import patch, call
 from pathlib import Path
 import pytest
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -130,3 +131,21 @@ class TestRootTree(object):
             out_tree_content = out_tree.read()
 
         assert expected_tree_content == out_tree_content
+
+    @patch("builtins.print")
+    def test_root_tree_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "root_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.outgroup.txt",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["outgroup_taxa"] == ["sea_lion", "seal"]
+        assert payload["output_file"].endswith(".rooted")

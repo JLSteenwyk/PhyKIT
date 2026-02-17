@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -47,3 +48,34 @@ class TestAlignmentEntropy(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_alignment_entropy_json_summary(self, mocked_print):
+        testargs = [
+            "phykit",
+            "alignment_entropy",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"mean_entropy": 0.657, "verbose": False}
+
+    @patch("builtins.print")
+    def test_alignment_entropy_json_verbose(self, mocked_print):
+        testargs = [
+            "phykit",
+            "alignment_entropy",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "-v",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["verbose"] is True
+        assert payload["rows"][0] == payload["sites"][0]
+        assert payload["sites"][0] == {"site": 1, "entropy": 0.0}

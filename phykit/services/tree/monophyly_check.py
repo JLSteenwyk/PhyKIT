@@ -7,11 +7,14 @@ from .base import Tree
 
 from ...helpers.stats_summary import calculate_summary_statistics_from_arr
 from ...helpers.files import read_single_column_file_to_list
+from ...helpers.json_output import print_json
 
 
 class MonophylyCheck(Tree):
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(tree_file_path=parsed["tree_file_path"], list_of_taxa=parsed["list_of_taxa"])
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -55,6 +58,7 @@ class MonophylyCheck(Tree):
         return dict(
             tree_file_path=args.tree,
             list_of_taxa=args.list_of_taxa,
+            json_output=getattr(args, "json", False),
         )
 
     def get_bootstrap_statistics(
@@ -91,6 +95,20 @@ class MonophylyCheck(Tree):
         return res_arr
 
     def print_results(self, res_arr: List[List[Union[str, int, float]]]) -> None:
+        if self.json_output:
+            rows = []
+            for res in res_arr:
+                row = dict(status=res[0])
+                if len(res) > 1:
+                    row["mean_support"] = round(res[1], 4)
+                    row["max_support"] = round(res[2], 4)
+                    row["min_support"] = round(res[3], 4)
+                    row["stdev_support"] = round(res[4], 4)
+                    row["offending_taxa"] = sorted(res[5]) if len(res) > 5 and res[5] else []
+                rows.append(row)
+            print_json(dict(rows=rows, results=rows))
+            return
+
         for res in res_arr:
             try:
                 if res[5]:

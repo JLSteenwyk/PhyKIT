@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from math import isclose
 from mock import patch, call
 from pathlib import Path
@@ -97,3 +98,22 @@ class TestTipToTipNodeDistance(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_tip_to_tip_node_distance_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "tip_to_tip_node_distance",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted.tree",
+            "Aspergillus_fumigatus_HMR_AF_270",
+            "Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {
+            "taxon_a": "Aspergillus_fumigatus_HMR_AF_270",
+            "taxon_b": "Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1",
+            "tip_to_tip_node_distance": 7,
+        }

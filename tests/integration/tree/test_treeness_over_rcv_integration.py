@@ -2,6 +2,7 @@ from mock import patch, call
 from pathlib import Path
 import pytest
 import sys
+import json
 
 from phykit.phykit import Phykit
 
@@ -103,3 +104,20 @@ class TestTreenessOverRCV(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_treeness_over_rcv_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "treeness_over_rcv",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload == {"rcv": 0.292, "treeness": 0.126, "treeness_over_rcv": 0.4315}

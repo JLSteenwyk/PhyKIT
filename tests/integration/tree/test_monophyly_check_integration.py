@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 
@@ -99,3 +100,20 @@ class TestMonophylyCheck(object):
 
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 2
+
+    @patch("builtins.print")
+    def test_monophyly_check_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "monophyly_check",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.tre",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tree.monophyly_check.false.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["rows"][0] == payload["results"][0]
+        assert payload["results"][0]["status"] == "not_monophyletic"
+        assert round(payload["results"][0]["mean_support"], 4) == 95.7143

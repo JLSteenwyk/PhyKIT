@@ -4,6 +4,7 @@ from typing import Dict
 import numpy as np
 
 from .base import Alignment
+from ...helpers.json_output import print_json
 
 
 class MaskAlignment(Alignment):
@@ -13,12 +14,30 @@ class MaskAlignment(Alignment):
         self.max_gap = parsed["max_gap"]
         self.min_occupancy = parsed["min_occupancy"]
         self.max_entropy = parsed["max_entropy"]
+        self.json_output = parsed["json_output"]
 
     def run(self) -> None:
         self._validate_thresholds()
         alignment, _, is_protein = self.get_alignment_and_format()
         keep_mask = self.calculate_keep_mask(alignment, is_protein)
         masked = self.apply_mask(alignment, keep_mask)
+
+        if self.json_output:
+            rows = [dict(taxon=taxon, sequence=seq) for taxon, seq in masked.items()]
+            print_json(
+                dict(
+                    thresholds=dict(
+                        max_gap=self.max_gap,
+                        min_occupancy=self.min_occupancy,
+                        max_entropy=self.max_entropy,
+                    ),
+                    kept_sites=int(np.sum(keep_mask)),
+                    total_sites=int(len(keep_mask)),
+                    rows=rows,
+                    taxa=rows,
+                )
+            )
+            return
 
         for taxon, seq in masked.items():
             print(f">{taxon}\n{seq}")
@@ -29,6 +48,7 @@ class MaskAlignment(Alignment):
             max_gap=args.max_gap,
             min_occupancy=args.min_occupancy,
             max_entropy=args.max_entropy,
+            json_output=getattr(args, "json", False),
         )
 
     def _validate_thresholds(self) -> None:

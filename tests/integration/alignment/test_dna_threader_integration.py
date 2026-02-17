@@ -1,5 +1,6 @@
 import pytest
 import sys
+import json
 from mock import patch, call
 from pathlib import Path
 from textwrap import dedent
@@ -145,3 +146,23 @@ class TestDNAThreader(object):
             call(expected_result_3),
         ]
 
+    @patch("builtins.print")
+    def test_dna_threader_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "thread_dna",
+            "-p",
+            f"{here.parent.parent.parent}/sample_files/OG0002774.aln.afa.txt",
+            "-c",
+            f"{here.parent.parent.parent}/sample_files/OG0002774.aln.afa.clipkit.log.txt",
+            "-n",
+            f"{here.parent.parent.parent}/sample_files/OG0002774.mrna.fa.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["clipkit_log_file"].endswith("OG0002774.aln.afa.clipkit.log.txt")
+        assert payload["remove_stop_codon"] is True
+        assert payload["rows"][0] == payload["taxa"][0]
+        assert payload["taxa"][0]["taxon"] == "sample8_000590-T1"

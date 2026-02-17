@@ -19,6 +19,7 @@ from ...helpers.stats_summary import (
     calculate_summary_statistics_from_dict,
     print_summary_statistics,
 )
+from ...helpers.json_output import print_json
 
 
 class PairwiseIdentity(Alignment):
@@ -26,7 +27,13 @@ class PairwiseIdentity(Alignment):
     MAX_MP_WORKERS = 8
 
     def __init__(self, args) -> None:
-        super().__init__(**self.process_args(args))
+        parsed = self.process_args(args)
+        super().__init__(
+            alignment_file_path=parsed["alignment_file_path"],
+            verbose=parsed["verbose"],
+            exclude_gaps=parsed["exclude_gaps"],
+        )
+        self.json_output = parsed["json_output"]
 
     def _should_use_multiprocessing(self, n_pairs: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -42,6 +49,10 @@ class PairwiseIdentity(Alignment):
             self.calculate_pairwise_identities(
                 alignment, self.exclude_gaps
             )
+
+        if self.json_output:
+            self._print_json_output(pair_ids, pairwise_identities, stats)
+            return
 
         if self.verbose:
             try:
@@ -59,7 +70,30 @@ class PairwiseIdentity(Alignment):
             alignment_file_path=args.alignment,
             verbose=args.verbose,
             exclude_gaps=args.exclude_gaps,
+            json_output=getattr(args, "json", False),
         )
+
+    def _print_json_output(
+        self,
+        pair_ids: List[List[str]],
+        pairwise_identities: Dict[str, float],
+        stats: Dict[str, float],
+    ) -> None:
+        payload = dict(verbose=self.verbose, exclude_gaps=self.exclude_gaps)
+        if self.verbose:
+            rows = [
+                dict(
+                    taxon_a=pair[0],
+                    taxon_b=pair[1],
+                    identity=round(identity, 4),
+                )
+                for pair, identity in zip(pair_ids, pairwise_identities.values())
+            ]
+            payload["rows"] = rows
+            payload["pairs"] = rows
+        else:
+            payload["summary"] = stats
+        print_json(payload)
 
     def _calculate_identity_vectorized(self, seq_arr1, seq_arr2, gap_mask=None, exclude_gaps=False):
         """Vectorized calculation of sequence identity."""
