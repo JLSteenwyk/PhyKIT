@@ -110,6 +110,11 @@ sum of pairs score, saturation analysis, hidden paralogy check, and covarying ev
 <li><p>Fixed DNA threader array broadcasting issues</p></li>
 <li><p>Standardized error exit codes to 2</p></li>
 <li><p>Fixed test infrastructure issues</p></li>
+<li><p>Updated saturation slope fitting to use NumPy no-intercept least-squares
+(fit constrained through the origin), replacing sklearn in this code path</p></li>
+<li><p>Updated <code class="docutils literal notranslate"><span class="pre">rcv</span></code> and <code class="docutils literal notranslate"><span class="pre">rcvt</span></code> to be case-insensitive and to exclude
+gaps/ambiguous symbols from composition counts and normalization; RCV now
+normalizes each taxon by valid (non-excluded) sequence length</p></li>
 </ul>
 </li>
 </ul>
