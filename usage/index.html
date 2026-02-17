@@ -59,13 +59,16 @@
 <li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-entropy">Alignment entropy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#compositional-bias-per-site">Compositional bias per site</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#composition-per-taxon">Composition per taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-concatenation-matrix">Create concatenation matrix</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate-per-site">Evolutionary Rate per Site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#occupancy-per-taxon">Occupancy per taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
@@ -249,6 +252,34 @@ doi: 10.1093/gbe/evw179.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="alignment-entropy">
+<h3>Alignment entropy<a class="headerlink" href="#alignment-entropy" title="Link to this heading"></a></h3>
+<p>Function names: alignment_entropy; aln_entropy; entropy <br/>
+Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy</p>
+<p>Calculate alignment entropy.</p>
+<p>Site-wise entropy is calculated using Shannon entropy. By default,
+PhyKIT reports the mean entropy across all sites in the alignment.
+With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+</pre></div>
+</div>
+<p>Example output (default):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">0</span>.657
+</pre></div>
+</div>
+<p>Example output (<cite>-v</cite>):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">1</span><span class="w">       </span><span class="m">0</span>.0
+<span class="m">2</span><span class="w">       </span><span class="m">1</span>.0
+<span class="m">3</span><span class="w">       </span><span class="m">0</span>.971
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-v/\-\-verbose</em>: optional argument to print entropy for each site</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="alignment-recoding">
 <h3>Alignment recoding<a class="headerlink" href="#alignment-recoding" title="Link to this heading"></a></h3>
 <p>Function names: alignment_recoding; aln_recoding; recode <br/>
@@ -399,6 +430,28 @@ fasta alignment to calculate the site-wise compositional bias of <br/></p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="composition-per-taxon">
+<h3>Composition per taxon<a class="headerlink" href="#composition-per-taxon" title="Link to this heading"></a></h3>
+<p>Function names: composition_per_taxon; comp_taxon; comp_tax <br/>
+Command line interface: pk_composition_per_taxon; pk_comp_taxon; pk_comp_tax</p>
+<p>Calculate sequence composition per taxon in an alignment.</p>
+<p>Composition is reported as semicolon-separated <cite>symbol:frequency</cite> pairs
+for each taxon. Frequencies are calculated from valid (non-gap/non-ambiguous)
+characters. Symbol order is alphabetical.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>composition_per_taxon<span class="w"> </span>&lt;alignment&gt;
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">1</span><span class="w">       </span>A:0.4<span class="p">;</span>C:0.0<span class="p">;</span>G:0.2<span class="p">;</span>T:0.4
+<span class="m">2</span><span class="w">       </span>A:0.5<span class="p">;</span>C:0.0<span class="p">;</span>G:0.25<span class="p">;</span>T:0.25
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="create-concatenation-matrix">
 <h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/create_concat_matrix.png"><img alt="../_images/create_concat_matrix.png" class="align-center" src="../_images/create_concat_matrix.png" style="width: 75%;" /></a>
@@ -483,6 +536,27 @@ doi: 10.1093/gbe/evw179.</p>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
 <em>-v/\-\-verbose</em>: optional argument to print the GC content of each fasta
 entry</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="occupancy-per-taxon">
+<h3>Occupancy per taxon<a class="headerlink" href="#occupancy-per-taxon" title="Link to this heading"></a></h3>
+<p>Function names: occupancy_per_taxon; occupancy_taxon; occ_tax <br/>
+Command line interface: pk_occupancy_per_taxon; pk_occupancy_taxon; pk_occ_tax</p>
+<p>Calculate occupancy per taxon in an alignment.</p>
+<p>Occupancy is the fraction of valid (non-gap/non-ambiguous) characters
+for each taxon.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>occupancy_per_taxon<span class="w"> </span>&lt;alignment&gt;
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">1</span><span class="w">       </span><span class="m">0</span>.8333
+<span class="m">2</span><span class="w">       </span><span class="m">0</span>.6667
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
