@@ -14,7 +14,7 @@ class TestRCVT(object):
     @patch("builtins.print")
     def test_rcvt0(self, mocked_print):
         expected_result_0 = dedent(
-            """1\t0.0667"""
+            """1\t0.056"""
         )
         expected_result_1 = dedent(
             """2\t0.04"""
@@ -23,10 +23,10 @@ class TestRCVT(object):
             """3\t0.04"""  
         )
         expected_result_3 = dedent(
-            """4\t0.08"""
+            """4\t0.056"""
         )
         expected_result_4 = dedent(
-            """5\t0.1333"""  
+            """5\t0.1"""  
         )
         testargs = [
             "phykit",
@@ -46,16 +46,16 @@ class TestRCVT(object):
     @patch("builtins.print")
     def test_rcvt1(self, mocked_print):
         expected_result_0 = dedent(
-            """1\t0.0833"""
+            """1\t0.0781"""
         )
         expected_result_1 = dedent(
-            """2\t0.0694"""
+            """2\t0.0556"""
         )
         expected_result_2 = dedent(
-            """3\t0.0417"""  
+            """3\t0.0278"""  
         )
         expected_result_3 = dedent(
-            """4\t0.1111"""
+            """4\t0.1094"""
         )
         testargs = [
             "phykit",

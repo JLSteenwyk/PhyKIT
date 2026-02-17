@@ -8,35 +8,53 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         super().__init__(**self.process_args(args))
 
     def run(self):
-        alignment, _, _ = self.get_alignment_and_format()
-        aln_len = alignment.get_alignment_length()
+        alignment, _, is_protein = self.get_alignment_and_format()
         num_records = len(alignment)
+
+        if num_records == 0:
+            return
 
         # Convert alignment to numpy array for faster operations
         alignment_array = np.array([
-            list(str(record.seq)) for record in alignment
+            list(str(record.seq).upper()) for record in alignment
         ], dtype='U1')
 
-        # Get all unique characters and create mapping
-        unique_chars = np.unique(alignment_array)
-        char_to_idx = {char: i for i, char in enumerate(unique_chars)}
+        if is_protein:
+            invalid_chars = np.array(["-", "?", "*", "X"], dtype='U1')
+        else:
+            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype='U1')
+        valid_mask = ~np.isin(alignment_array, invalid_chars)
+        valid_lengths = np.sum(valid_mask, axis=1).astype(np.float64)
 
-        # Create integer representation for faster counting
-        alignment_int = np.zeros_like(alignment_array, dtype=np.int8)
-        for char, idx in char_to_idx.items():
-            alignment_int[alignment_array == char] = idx
+        # Get all unique valid symbols
+        valid_chars = alignment_array[valid_mask]
+        if valid_chars.size == 0:
+            for record in alignment:
+                print(f"{record.id}\t0.0")
+            return
 
-        # Vectorized counting for all sequences and characters
+        unique_chars = np.unique(valid_chars)
+
+        # Count valid symbols for each sequence and character
         count_matrix = np.zeros((num_records, len(unique_chars)), dtype=np.float32)
-        for i in range(len(unique_chars)):
-            count_matrix[:, i] = np.sum(alignment_int == i, axis=1)
+        for seq_idx, seq in enumerate(alignment_array):
+            seq_valid = valid_mask[seq_idx]
+            for char_idx, char in enumerate(unique_chars):
+                count_matrix[seq_idx, char_idx] = np.sum((seq == char) & seq_valid)
 
         # Calculate average counts per sequence (total counts / num_records)
         average_counts = np.sum(count_matrix, axis=0) / num_records
 
         # Vectorized RCV calculation for all sequences at once
         deviations = np.abs(count_matrix - average_counts)
-        rcv_values = np.sum(deviations, axis=1) / (num_records * aln_len)
+        seq_sums = np.sum(deviations, axis=1)
+        denom = num_records * valid_lengths
+        rcv_values = np.divide(
+            seq_sums,
+            denom,
+            out=np.zeros_like(seq_sums, dtype=np.float64),
+            where=denom > 0,
+        )
 
         # Print results - convert to float64 for consistent rounding
         for i, record in enumerate(alignment):

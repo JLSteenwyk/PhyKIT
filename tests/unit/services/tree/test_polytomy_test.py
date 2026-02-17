@@ -399,6 +399,7 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
     @patch('phykit.services.tree.polytomy_test.read_single_column_file_to_list')
     def test_loop_through_trees_parallel(self, mock_read_file, mock_pool_class):
         """Test parallel processing of trees (large dataset)"""
+        self.polytomy.MP_MIN_TREES = 10
         # Create many tree files to trigger parallel processing
         trees = [f"tree{i}.tre" for i in range(20)]
         mock_read_file.return_value = trees

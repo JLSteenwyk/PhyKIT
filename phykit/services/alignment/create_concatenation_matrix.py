@@ -44,10 +44,14 @@ class CreateConcatenationMatrix(Alignment):
 
         # Process files in parallel if there are many
         if len(alignment_paths) > 10:
-            with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), len(alignment_paths))) as executor:
-                futures = [executor.submit(self._get_taxa_from_alignment, path) for path in alignment_paths]
-                for future in as_completed(futures):
-                    taxa.update(future.result())
+            try:
+                with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), len(alignment_paths))) as executor:
+                    futures = [executor.submit(self._get_taxa_from_alignment, path) for path in alignment_paths]
+                    for future in as_completed(futures):
+                        taxa.update(future.result())
+            except (PermissionError, OSError, RuntimeError, NotImplementedError):
+                for alignment_path in alignment_paths:
+                    taxa.update(self._get_taxa_from_alignment(alignment_path))
         else:
             # Process sequentially for small datasets
             for alignment_path in alignment_paths:
@@ -204,25 +208,35 @@ class CreateConcatenationMatrix(Alignment):
 
         # Process alignment files in parallel if there are many
         if len(alignment_paths) > 2:
-            with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
-                process_func = partial(self._process_alignment_file, taxa=taxa)
-                # Keep results indexed by path to maintain order
-                futures = {executor.submit(process_func, path): path for path in alignment_paths}
-                results = {}
+            try:
+                with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
+                    process_func = partial(self._process_alignment_file, taxa=taxa)
+                    # Keep results indexed by path to maintain order
+                    futures = {executor.submit(process_func, path): path for path in alignment_paths}
+                    results = {}
 
-                for future in as_completed(futures):
-                    path = futures[future]
-                    results[path] = future.result()
+                    for future in as_completed(futures):
+                        path = futures[future]
+                        results[path] = future.result()
 
-                # Process results in original order
+                    # Process results in original order
+                    for alignment_path in alignment_paths:
+                        _, seq_dict, present_taxa, og_len = results[alignment_path]
+
+                        # Add sequences to concatenated dict
+                        for taxon in taxa:
+                            concatenated_seqs[taxon].append(seq_dict[taxon])
+
+                        # Add to partition and occupancy info
+                        partition_info, first_len, second_len = self.add_to_partition_info(
+                            partition_info, og_len, "AUTO", alignment_path, first_len, second_len
+                        )
+                        occupancy_info = self.add_to_occupancy_info(occupancy_info, present_taxa, taxa, alignment_path)
+            except (PermissionError, OSError, RuntimeError, NotImplementedError):
                 for alignment_path in alignment_paths:
-                    _, seq_dict, present_taxa, og_len = results[alignment_path]
-
-                    # Add sequences to concatenated dict
+                    _, seq_dict, present_taxa, og_len = self._process_alignment_file(alignment_path, taxa)
                     for taxon in taxa:
                         concatenated_seqs[taxon].append(seq_dict[taxon])
-
-                    # Add to partition and occupancy info
                     partition_info, first_len, second_len = self.add_to_partition_info(
                         partition_info, og_len, "AUTO", alignment_path, first_len, second_len
                     )

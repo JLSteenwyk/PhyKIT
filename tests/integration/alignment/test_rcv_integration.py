@@ -12,7 +12,7 @@ here = Path(__file__)
 class TestRCV(object):
     @patch("builtins.print")
     def test_rcv0(self, mocked_print):
-        expected_result = 0.36
+        expected_result = 0.292
         testargs = [
             "phykit",
             "rcv",
@@ -24,7 +24,7 @@ class TestRCV(object):
 
     @patch("builtins.print")
     def test_rcv1(self, mocked_print):
-        expected_result = 0.3056
+        expected_result = 0.2708
         testargs = [
             "phykit",
             "rcv",

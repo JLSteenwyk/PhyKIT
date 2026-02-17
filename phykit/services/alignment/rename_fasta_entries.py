@@ -44,7 +44,6 @@ class RenameFastaEntries(Alignment):
         records: FastaIterator,
         idmap: Dict[str, str]
     ) -> None:
-        print(records)
         with open(output_file_path, "w") as output_file:
             for record in records:
                 if record.id in idmap:
