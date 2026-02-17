@@ -3,9 +3,6 @@
    :align: center
    :target: https://jlsteenwyk.com/PhyKIT
 
-^^^^^
-
-
 PhyKIT, a toolkit for the UNIX shell environment with numerous functions that process multiple
 sequence alignments and phylogenies for broad applications
 
@@ -18,7 +15,7 @@ and analyzing phylogenomic data*. Bioinformatics. doi: |doiLink|_.
 Quick Start
 -----------
 
-These two lines represent the simpliest method to rapidly install and run PhyKIT.
+These two lines represent the simplest method to rapidly install and run PhyKIT.
 
 .. code-block:: shell
 
@@ -99,9 +96,6 @@ Get the help message from PhyKIT:
 
 |
 
-^^^^
-
-
 .. toctree::
 	:maxdepth: 4
 
@@ -111,5 +105,3 @@ Get the help message from PhyKIT:
 	change_log/index
 	other_software/index
 	frequently_asked_questions/index
-
-^^^^

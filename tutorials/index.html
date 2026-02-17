@@ -69,7 +69,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#identifying-signatures-of-rapid-radiations">3. Identifying signatures of rapid radiations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id16">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id15">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-conduct-polytomy-test">Step 1: Conduct polytomy test</a></li>
 </ul>
 </li>
@@ -110,7 +110,6 @@
              
   <section id="tutorials">
 <span id="id1"></span><h1>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading"></a></h1>
-<hr class="docutils" />
 <p>PhyKIT can be used for a multitude of different types of analyses. Documentation here
 provides a step-by-step outline for how to conduct different types of analyses.</p>
 <div class="line-block">
@@ -118,7 +117,6 @@ provides a step-by-step outline for how to conduct different types of analyses.<
 </div>
 <section id="summarizing-information-content">
 <h2>1. Summarizing information content<a class="headerlink" href="#summarizing-information-content" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>PhyKIT implements numerous functions that can be used to examine the information content and help researchers
 summarize information content and identify potential biases in multiple sequence alignments and phylogenies.</p>
 <p>Among other uses, one use of summarizing information content is to facilitate subsampling larger phylogenomic
@@ -254,7 +252,7 @@ of 0 are completely saturated by multiple substitutions
 (<a class="reference external" href="https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1000602">Philippe et al. 2011</a>).
 Estimate saturation with the following command:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sat<span class="w"> </span>-a<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa<span class="w"> </span>-t<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
-<span class="m">0</span>.6835
+<span class="m">0</span>.3017<span class="w">  </span><span class="m">0</span>.6983
 </pre></div>
 </div>
 <div class="line-block">
@@ -272,7 +270,7 @@ values are indicative of genes less susceptible to composition and other biases.
 <a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
 Calculate treeness/RCV using the following command:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>toverr<span class="w"> </span>-a<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa<span class="w"> </span>-t<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
-<span class="m">3</span>.9773<span class="w">  </span><span class="m">0</span>.5136<span class="w">  </span><span class="m">0</span>.1291
+<span class="m">5</span>.0727<span class="w">  </span><span class="m">0</span>.5136<span class="w">  </span><span class="m">0</span>.1013
 </pre></div>
 </div>
 <p>col1: treeness/RCV <br/>
@@ -289,7 +287,7 @@ phykit<span class="w"> </span>tness<span class="w"> </span>Steenwyk_etal_mBio_20
 
 <span class="c1"># calculate RCV</span>
 phykit<span class="w"> </span>rcv<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
-<span class="m">0</span>.1291
+<span class="m">0</span>.1013
 </pre></div>
 </div>
 <div class="line-block">
@@ -315,7 +313,6 @@ col3: percentage of variable sites</p>
 </section>
 <section id="evaluating-gene-gene-covariation">
 <h2>2. Evaluating gene-gene covariation<a class="headerlink" href="#evaluating-gene-gene-covariation" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>Identifying genes that significantly covary (or coevolve) with one another is known to accurately and sensitively
 identify genes with shared functions, are coexpressed, and/or are part of the same multimeric complexes
 (<a class="reference external" href="https://academic.oup.com/bioinformatics/article/21/17/3482/212654">Sato et al. 2005</a>;
@@ -345,7 +342,7 @@ the multiple sequence alignment.</p>
 <h3>Step 1: Estimate gene tree branch lengths<a class="headerlink" href="#step-1-estimate-gene-tree-branch-lengths" title="Link to this heading"></a></h3>
 <p>To infer the constrained tree, we will use <a class="reference external" href="http://www.iqtree.org/">IQ-TREE2</a>. The species tree (or guide tree) is specified
 with the <em>-g</em> argument. Lastly, the best-fitting substitution model was specified according to what was reported in
-<a class="reference external" href="https://jlsteenwyk.com/publication_pdfs/2020_Shen_etal_Science_Advances.pdf">Shen et al. 2020</a> supplementary data; however,
+<a class="reference external" href="https://jlsteenwyk.com/publication_pdfs/2020_Shen_etal_Science_Advances.pdf">Shen et al. 2020 supplementary data</a>; however,
 if the best-fitting model is unknown, this will have to be determined prior to estimating gene tree branch lengths.</p>
 <p>Estimate the gene tree branch lengths using the following commands:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># infer constrain trees</span>
@@ -401,7 +398,6 @@ driven by shared function, coexpression, and/or are part of the same multimeric 
 </section>
 <section id="identifying-signatures-of-rapid-radiations">
 <h2>3. Identifying signatures of rapid radiations<a class="headerlink" href="#identifying-signatures-of-rapid-radiations" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>Signatures of rapid radiations or diversification events can be identified by pinpointing polytomies in a putative species tree
 (<a class="reference external" href="https://www.mdpi.com/2073-4425/9/3/132">Sayyari and Mirarab 2018</a>;
 <a class="reference external" href="https://www.nature.com/articles/s41586-019-1693-2">One Thousand Plant Transcriptomes Initiative 2019</a>;
@@ -419,8 +415,8 @@ The various topologies examined by PhyKIT are determined by the groups file. For
 <a class="reference download internal" download="" href="../_downloads/825af78eae72758221fb88615fc165e6/polytomy_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">polytomy_tutorial.tar.gz</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
-<section id="id16">
-<h3>Step 0: Prepare data<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
+<section id="id15">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id15" title="Link to this heading"></a></h3>
 <p>For this tutorial, the data has already been formatted for the user. There are two input files for the polytomy testing function:</p>
 <ol class="arabic simple">
 <li><p>a file that specifies the location of gene trees</p></li>
@@ -433,7 +429,7 @@ during polytomy testing. Examination of the second file reveals that groups are 
 <p><em>column 1:</em> an identifier for the test, which is not used by PhyKIT. Instead, this column is intended to be for the user to write any
 keywords or notes that can help remind them of what they were testing.</p>
 <p><em>column 2-4:</em> the tip names in the groups. Each column represents a single group to conduct polytomy testing for. If a group has multiple
-taxa, separate each tip name using a semi-colon ‘;’. For example, in <em>groups_file0.txt</em> there is one group with <em>Aspergillus_persii;Aspergillus_sclerotiorum</em>
+taxa, separate each tip name using a semi-colon ';'. For example, in <em>groups_file0.txt</em> there is one group with <em>Aspergillus_persii;Aspergillus_sclerotiorum</em>
 wherein this group has two taxa, <em>Aspergillus_persii</em> and <em>Aspergillus_sclerotiorum</em>.</p>
 <p><em>column 5:</em> the outgroup taxa. This column specifies the name of outgroup taxa, which are used to root the gene trees prior to
 determining what topology they support.</p>
@@ -493,7 +489,6 @@ reveal 248 genes were used during the polytomy test and that there is nearly equ
 </section>
 <section id="evaluating-the-accuracy-of-a-multiple-sequence-alignment">
 <h2>4. Evaluating the accuracy of a multiple sequence alignment<a class="headerlink" href="#evaluating-the-accuracy-of-a-multiple-sequence-alignment" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>Evaluating the accuracy of multiple sequence alignments is an appropriate way to benchmark multiple sequence alignment strategies.
 Two popular methods to assess multiple sequence alignment accuracy are sum-of-pairs score and column score, which were introduced by
 Thompson et al., Nucleic Acids Research (1999), doi: 10.1093/nar/27.13.2682. Sum-of-pairs is calculated by summing the correctly
