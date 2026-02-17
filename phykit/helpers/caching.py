@@ -57,7 +57,7 @@ class ResultCache:
             try:
                 with open(cache_file, 'rb') as f:
                     return pickle.load(f)
-            except:
+            except Exception:
                 # Cache corrupted, remove it
                 os.remove(cache_file)
 
@@ -70,7 +70,7 @@ class ResultCache:
         try:
             with open(cache_file, 'wb') as f:
                 pickle.dump(value, f)
-        except:
+        except Exception:
             # Caching failed, continue without caching
             pass
 

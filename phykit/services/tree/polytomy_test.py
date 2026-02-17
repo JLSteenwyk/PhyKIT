@@ -10,7 +10,6 @@ import os
 
 from Bio import Phylo
 from Bio.Phylo import Newick
-import numpy as np
 
 from .base import Tree
 from ...helpers.files import read_single_column_file_to_list
@@ -533,10 +532,10 @@ class PolytomyTest(Tree):
         counter for how many times a particular sister relationship is observed
         """
         # if tree is not in summary, create a key for it
-        if tree_file not in summary.keys():
+        if tree_file not in summary:
             summary[str(tree_file)] = {}
         # if the sister relationship is not in the tree file dict, create a key for it
-        if sisters not in summary[str(tree_file)].keys():
+        if sisters not in summary[str(tree_file)]:
             summary[str(tree_file)][sisters] = 1
         else:
             summary[str(tree_file)][sisters] += 1
@@ -640,11 +639,11 @@ class PolytomyTest(Tree):
         for tree in summary:
             # create empty key value pairs in case sister
             # pairing was never observed
-            if "0-1" not in summary[tree].keys():
+            if "0-1" not in summary[tree]:
                 summary[tree]["0-1"] = 0
-            if "0-2" not in summary[tree].keys():
+            if "0-2" not in summary[tree]:
                 summary[tree]["0-2"] = 0
-            if "1-2" not in summary[tree].keys():
+            if "1-2" not in summary[tree]:
                 summary[tree]["1-2"] = 0
             # create a running value of triplets that support each sister pair
             triplet_group_counts["g0g1_count"] += summary[tree]["0-1"]
@@ -733,8 +732,8 @@ class PolytomyTest(Tree):
             return
 
         try:
-            print(f"Gene Support Frequency Results")
-            print(f"==============================")
+            print("Gene Support Frequency Results")
+            print("==============================")
             print(f"chi-squared: {round(gene_support_freq_res.statistic, 4)}")
             print(f"p-value: {round(gene_support_freq_res.pvalue, 6)}")
             print(

@@ -17,7 +17,7 @@ class ParsimonyInformative(Alignment):
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
         pi_sites, aln_len, pi_sites_per = self.calculate_parsimony_informative_sites(
-            alignment
+            alignment, is_protein
         )
 
         if self.json_output:
@@ -41,9 +41,10 @@ class ParsimonyInformative(Alignment):
     def get_number_of_occurrences_per_character(
         self,
         alignment: MultipleSeqAlignment,
-        idx: int
+        idx: int,
+        is_protein: bool = False,
     ) -> Counter:
-        gap_chars = self.get_gap_chars()
+        gap_chars = self.get_gap_chars(is_protein)
         seq_at_position = alignment[:, idx].upper()
         filtered_seq = filter(lambda c: c not in gap_chars, seq_at_position)
 
@@ -63,9 +64,10 @@ class ParsimonyInformative(Alignment):
     def calculate_parsimony_informative_sites(
         self,
         alignment: MultipleSeqAlignment,
+        is_protein: bool = False,
     ) -> Tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
-        gap_chars = self.get_gap_chars()
+        gap_chars = self.get_gap_chars(is_protein)
 
         # Convert alignment to numpy array for vectorized operations
         alignment_array = np.array([

@@ -16,8 +16,8 @@
         <a href="https://codecov.io/gh/jlsteenwyk/phykit" alt="Coverage">
           <img src="https://codecov.io/gh/jlsteenwyk/phykit/branch/master/graph/badge.svg?token=0J49I6441V">
         </a>
-        <a href="https://github.com/jlsteenwyk/phykit/graphs/contributors" alt="Contributors">
-            <img src="https://img.shields.io/github/contributors/jlsteenwyk/phykit">
+        <a href="https://github.com/JLSteenwyk/PhyKIT/graphs/contributors" alt="Contributors">
+            <img src="https://img.shields.io/github/contributors/JLSteenwyk/PhyKIT">
         </a>
         <a href="https://bsky.app/profile/jlsteenwyk.bsky.social" target="_blank" rel="noopener noreferrer">
           <img src="https://img.shields.io/badge/Bluesky-0285FF?logo=bluesky&logoColor=fff">

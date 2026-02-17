@@ -3,7 +3,6 @@ import sys
 import json
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -25,7 +24,7 @@ class TestParsimonyInformativeSites(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
-    def test_parsimony_informative_sites1(self, mocked_print):
+    def test_parsimony_informative_sites2(self, mocked_print):
         expected_result = "1\t9\t11.1111"
         testargs = [
             "phykit",
@@ -62,15 +61,10 @@ class TestParsimonyInformativeSites(object):
 
     @patch("builtins.print")
     def test_parsimony_informative_sites_incorrect_input_file(self, mocked_print):
-        testargs = [
-            "phykit",
-            "parsimony_informative_sites",
-            f"{here.parent.parent.parent}/sample_files/test_alignment_1.f",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

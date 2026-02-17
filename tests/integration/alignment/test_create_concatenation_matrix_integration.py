@@ -183,56 +183,29 @@ class TestCreateConcatenationMatrix(object):
 
     @patch("builtins.print")
     def test_create_concatenation_matrix_wrong_input_file(self, mocked_print):
-        prefix = "./tests/sample_files/test_alignment_concat_123"
-        testargs = [
-            "phykit",
-            "create_concatenation_matrix",
-            "-a",
-            f"{here.parent.parent.parent}/sample_files/test_alignment_123.tx",
-            "-p",
-            prefix,
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_create_concatenation_matrix_alias0(self, mocked_print):
-        prefix = "./tests/sample_files/test_alignment_concat_123"
-        testargs = [
-            "phykit",
-            "create_concat",
-            "-a",
-            f"{here.parent.parent.parent}/sample_files/test_alignment_123.tx",
-            "-p",
-            prefix,
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_create_concatenation_matrix_alias1(self, mocked_print):
-        prefix = "./tests/sample_files/test_alignment_concat_123"
-        testargs = [
-            "phykit",
-            "cc",
-            "-a",
-            f"{here.parent.parent.parent}/sample_files/test_alignment_123.tx",
-            "-p",
-            prefix,
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -257,3 +230,49 @@ class TestCreateConcatenationMatrix(object):
         assert payload["output_files"]["fasta"] == f"{prefix}.fa"
         assert payload["output_files"]["partition"] == f"{prefix}.partition"
         assert payload["output_files"]["occupancy"] == f"{prefix}.occupancy"
+
+    @patch("phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix._plot_concatenation_occupancy")
+    @patch("builtins.print")
+    def test_create_concatenation_matrix_plot_occupancy(self, mocked_print, mocked_plot):
+        prefix = "output/create_concat_matrix_plot"
+        testargs = [
+            "phykit",
+            "create_concatenation_matrix",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/alignment_list_for_create_concat_matrix.txt",
+            "-p",
+            prefix,
+            "--plot-occupancy",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        assert any(
+            call.args[0] == f"Occupancy plot output: {prefix}.occupancy.png"
+            for call in mocked_print.mock_calls
+        )
+
+    @patch("phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix._plot_concatenation_occupancy")
+    @patch("builtins.print")
+    def test_create_concatenation_matrix_plot_occupancy_json(self, mocked_print, mocked_plot):
+        prefix = "output/create_concat_matrix_plot_json"
+        custom_plot = "output/custom_occupancy_map.png"
+        testargs = [
+            "phykit",
+            "create_concatenation_matrix",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/alignment_list_for_create_concat_matrix.txt",
+            "-p",
+            prefix,
+            "--plot-occupancy",
+            "--plot-output",
+            custom_plot,
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["output_files"]["occupancy_plot"] == custom_plot

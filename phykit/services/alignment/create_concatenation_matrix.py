@@ -8,6 +8,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 import multiprocessing as mp
 from collections import defaultdict
+import numpy as np
 
 from .base import Alignment
 from ...helpers.files import read_single_column_file_to_list
@@ -22,6 +23,8 @@ class CreateConcatenationMatrix(Alignment):
             prefix=parsed["prefix"],
         )
         self.json_output = parsed["json_output"]
+        self.plot_occupancy = parsed["plot_occupancy"]
+        self.plot_output = parsed["plot_output"]
 
     def run(self) -> None:
         self.create_concatenation_matrix(
@@ -34,7 +37,94 @@ class CreateConcatenationMatrix(Alignment):
             alignment_list_path=args.alignment_list,
             prefix=args.prefix,
             json_output=getattr(args, "json", False),
+            plot_occupancy=getattr(args, "plot_occupancy", False),
+            plot_output=getattr(args, "plot_output", None),
         )
+
+    def _plot_concatenation_occupancy(
+        self,
+        taxa: List[str],
+        alignment_paths: List[str],
+        concatenated_seqs: Dict[str, List[str]],
+        present_taxa_by_gene: List[set],
+        gene_lengths: List[int],
+        output_file: str,
+    ) -> None:
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            from matplotlib.colors import ListedColormap
+            from matplotlib.patches import Patch
+        except ImportError:
+            print("matplotlib is required for --plot-occupancy. Install matplotlib and retry.")
+            sys.exit(2)
+
+        # 0: absent gene block, 1: present but gap/ambiguous character, 2: represented character
+        total_len = int(sum(gene_lengths))
+        state_matrix = np.zeros((len(taxa), total_len), dtype=np.uint8)
+        invalid_chars = set(["-", "?", "*", "X", "x", "N", "n"])
+
+        gene_boundaries = []
+        cursor = 0
+        for gene_idx, gene_len in enumerate(gene_lengths):
+            start = cursor
+            end = cursor + gene_len
+            gene_boundaries.append(end)
+            present_taxa = present_taxa_by_gene[gene_idx]
+
+            for taxon_idx, taxon in enumerate(taxa):
+                if taxon not in present_taxa:
+                    state_matrix[taxon_idx, start:end] = 0
+                    continue
+                seq = concatenated_seqs[taxon][gene_idx]
+                for pos_idx, char in enumerate(seq):
+                    if char in invalid_chars:
+                        state_matrix[taxon_idx, start + pos_idx] = 1
+                    else:
+                        state_matrix[taxon_idx, start + pos_idx] = 2
+            cursor = end
+
+        # Sort taxa by total represented occupancy (state == 2), descending
+        represented_counts = np.sum(state_matrix == 2, axis=1)
+        order = np.argsort(-represented_counts)
+        state_matrix = state_matrix[order, :]
+        taxa_sorted = [taxa[idx] for idx in order]
+
+        fig_height = max(5.0, min(18.0, 3.0 + len(taxa_sorted) * 0.18))
+        fig, ax = plt.subplots(figsize=(14, fig_height))
+        cmap = ListedColormap(["#525252", "#d9d9d9", "#2b8cbe"])
+        ax.imshow(state_matrix, aspect="auto", interpolation="nearest", cmap=cmap, vmin=0, vmax=2)
+
+        for boundary in gene_boundaries[:-1]:
+            ax.axvline(boundary - 0.5, color="black", linewidth=0.6, alpha=0.8)
+
+        # Label genes at centers when feasible
+        if len(alignment_paths) <= 40:
+            starts = [0] + gene_boundaries[:-1]
+            centers = [((s + e) / 2) - 0.5 for s, e in zip(starts, gene_boundaries)]
+            labels = [os.path.basename(path) for path in alignment_paths]
+            ax.set_xticks(centers)
+            ax.set_xticklabels(labels, rotation=90, fontsize=7)
+        else:
+            ax.set_xticks([])
+            ax.set_xlabel("Concatenated alignment positions (gene boundaries shown)")
+
+        ax.set_yticks(np.arange(len(taxa_sorted)))
+        ax.set_yticklabels(taxa_sorted, fontsize=7)
+        ax.set_ylabel("Taxa (sorted by represented occupancy)")
+        ax.set_title("Concatenation Occupancy Map")
+
+        legend_handles = [
+            Patch(facecolor="#2b8cbe", label="Represented character"),
+            Patch(facecolor="#d9d9d9", label="Gap/Ambiguous in present gene"),
+            Patch(facecolor="#525252", label="Gene absent (placeholder block)"),
+        ]
+        ax.legend(handles=legend_handles, loc="upper right", fontsize=8, frameon=True)
+
+        fig.tight_layout()
+        fig.savefig(output_file, dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
     def read_alignment_paths(self, alignment_list_path: str) -> List[str]:
         try:
@@ -104,7 +194,7 @@ class CreateConcatenationMatrix(Alignment):
     def create_missing_seq_str(self, records: List[SeqRecord]) -> Tuple[str, int]:
         """Create a placeholder string for sequences with missing taxa."""
         if not records:
-            print(f"No sequence records found. Exiting...")
+            print("No sequence records found. Exiting...")
             sys.exit(2)
 
         og_len = len(records[0].seq)
@@ -216,6 +306,8 @@ class CreateConcatenationMatrix(Alignment):
         first_len, second_len = 1, 0
         partition_info, occupancy_info = [], []
         concatenated_seqs = defaultdict(list)
+        present_taxa_by_gene = []
+        gene_lengths = []
 
         # Process alignment files in parallel if there are many
         if len(alignment_paths) > 2:
@@ -233,6 +325,8 @@ class CreateConcatenationMatrix(Alignment):
                     # Process results in original order
                     for alignment_path in alignment_paths:
                         _, seq_dict, present_taxa, og_len = results[alignment_path]
+                        present_taxa_by_gene.append(present_taxa)
+                        gene_lengths.append(og_len)
 
                         # Add sequences to concatenated dict
                         for taxon in taxa:
@@ -246,6 +340,8 @@ class CreateConcatenationMatrix(Alignment):
             except (PermissionError, OSError, RuntimeError, NotImplementedError):
                 for alignment_path in alignment_paths:
                     _, seq_dict, present_taxa, og_len = self._process_alignment_file(alignment_path, taxa)
+                    present_taxa_by_gene.append(present_taxa)
+                    gene_lengths.append(og_len)
                     for taxon in taxa:
                         concatenated_seqs[taxon].append(seq_dict[taxon])
                     partition_info, first_len, second_len = self.add_to_partition_info(
@@ -257,6 +353,8 @@ class CreateConcatenationMatrix(Alignment):
             for alignment_path in alignment_paths:
                 present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
                 missing_seq, og_len = self.create_missing_seq_str(records)
+                present_taxa_by_gene.append(present_taxa)
+                gene_lengths.append(og_len)
 
                 # Process taxa sequences and add to the concatenated sequences
                 self.process_taxa_sequences(records, taxa, concatenated_seqs, missing_seq)
@@ -276,19 +374,33 @@ class CreateConcatenationMatrix(Alignment):
         self.write_occupancy_or_partition_file(occupancy_info, file_occupancy)
         self.write_occupancy_or_partition_file(partition_info, file_partition)
 
-        if self.json_output:
-            print_json(
-                dict(
-                    input_alignment_list=alignment_list_path,
-                    total_taxa=len(taxa),
-                    total_alignments=len(alignment_paths),
-                    concatenated_length=second_len,
-                    output_files=dict(
-                        fasta=fasta_output,
-                        partition=file_partition,
-                        occupancy=file_occupancy,
-                    ),
-                )
+        plot_output = self.plot_output or f"{prefix}.occupancy.png"
+        if self.plot_occupancy:
+            self._plot_concatenation_occupancy(
+                taxa=taxa,
+                alignment_paths=alignment_paths,
+                concatenated_seqs=concatenated_seqs,
+                present_taxa_by_gene=present_taxa_by_gene,
+                gene_lengths=gene_lengths,
+                output_file=plot_output,
             )
+
+        if self.json_output:
+            payload = dict(
+                input_alignment_list=alignment_list_path,
+                total_taxa=len(taxa),
+                total_alignments=len(alignment_paths),
+                concatenated_length=second_len,
+                output_files=dict(
+                    fasta=fasta_output,
+                    partition=file_partition,
+                    occupancy=file_occupancy,
+                ),
+            )
+            if self.plot_occupancy:
+                payload["output_files"]["occupancy_plot"] = plot_output
+            print_json(payload)
         else:
+            if self.plot_occupancy:
+                print(f"Occupancy plot output: {plot_output}")
             print("Complete!\n")

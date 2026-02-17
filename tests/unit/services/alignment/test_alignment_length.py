@@ -1,9 +1,8 @@
 import pytest
 from argparse import Namespace
-from mock import patch, call
+from mock import call
 
 from phykit.services.alignment.alignment_length import AlignmentLength
-from phykit.services.alignment.base import Alignment
 
 
 @pytest.fixture

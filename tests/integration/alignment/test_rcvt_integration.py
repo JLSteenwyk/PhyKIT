@@ -139,7 +139,7 @@ class TestRCVT(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -156,3 +156,42 @@ class TestRCVT(object):
         payload = json.loads(mocked_print.call_args.args[0])
         assert payload["rows"][0] == payload["taxa"][0]
         assert payload["taxa"][0] == {"taxon": "1", "rcvt": 0.056}
+
+    @patch("phykit.services.alignment.rcvt.RelativeCompositionVariabilityTaxon._plot_rcvt")
+    @patch("builtins.print")
+    def test_rcvt_plot(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "rcvt",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--plot",
+            "--plot-output",
+            "rcvt_test_plot.png",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        assert any(
+            call.args[0] == "Saved RCVT plot: rcvt_test_plot.png"
+            for call in mocked_print.mock_calls
+        )
+
+    @patch("phykit.services.alignment.rcvt.RelativeCompositionVariabilityTaxon._plot_rcvt")
+    @patch("builtins.print")
+    def test_rcvt_plot_json(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "rcvt",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--plot",
+            "--plot-output",
+            "rcvt_test_plot_json.png",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["plot_output"] == "rcvt_test_plot_json.png"

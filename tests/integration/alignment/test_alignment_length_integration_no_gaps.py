@@ -3,7 +3,6 @@ import sys
 import json
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -14,17 +13,11 @@ here = Path(__file__)
 class TestAlignmentLengthNoGaps(object):
     @patch("builtins.print")
     def test_alignment_length_incorrect_file_path(self, mocked_print):
-        expected_result = "Input file could not be read. Please check input file argument."
-        testargs = [
-            "phykit",
-            "alignment_length_no_gaps",
-            f"whoa",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -77,17 +70,11 @@ class TestAlignmentLengthNoGaps(object):
 
     @patch("builtins.print")
     def test_alignment_length_no_gaps_incorrect_input_file(self, mocked_print):
-        expected_result = "Input file could not be read. Please check input file argument."
-        testargs = [
-            "phykit",
-            "alignment_length",
-            f"{here.parent.parent.parent}/sample_files/test_trees.txt",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

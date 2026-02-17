@@ -1,7 +1,5 @@
 from argparse import Namespace
-import io
 import pytest
-import sys
 from textwrap import dedent
 
 from phykit.services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
@@ -47,7 +45,7 @@ class TestCreateConcatenationMatrix(object):
 
     def test_print_start_message(self, alignments, args, taxa_list, capfd):
 
-        expected_start_message = dedent(f"""
+        expected_start_message = dedent("""
             --------------------
             | General features |
             --------------------
@@ -123,5 +121,4 @@ class TestCreateConcatenationMatrix(object):
     #         file_partition_filename,
     #         file_occupancy_filename
     #     )
-
 

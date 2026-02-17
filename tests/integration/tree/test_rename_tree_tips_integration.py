@@ -76,18 +76,11 @@ class TestRenameTreeTips(object):
 
     @patch("builtins.print")
     def test_rename_tree_tips_incorrect_tree_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "rename_tips",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tr",
-            "-i",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_idmap.txt",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -104,7 +97,7 @@ class TestRenameTreeTips(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         mocked_print.assert_has_calls([
             call("Please check file name and pathing"),
         ])

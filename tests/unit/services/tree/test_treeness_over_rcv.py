@@ -1,6 +1,5 @@
 import pytest
 from argparse import Namespace
-from math import isclose
 
 from phykit.services.tree.treeness_over_rcv import TreenessOverRCV
 

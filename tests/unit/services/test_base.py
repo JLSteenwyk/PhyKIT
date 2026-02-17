@@ -1,5 +1,4 @@
 import pytest
-from argparse import Namespace
 
 from phykit.services.base import BaseService
 

@@ -3,11 +3,8 @@ Unit tests for parallel processing utilities
 """
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Tuple
-import multiprocessing as mp
+from unittest.mock import patch, MagicMock
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from phykit.helpers.parallel import (
     ParallelProcessor,
@@ -96,7 +93,7 @@ class TestParallelProcessor(unittest.TestCase):
         # Force parallel processing by using large dataset
         data = data * 10  # 50 elements
 
-        result = ParallelProcessor.parallel_map(double, data, num_workers=2)
+        ParallelProcessor.parallel_map(double, data, num_workers=2)
 
         # Should use ProcessPoolExecutor
         mock_executor_class.assert_called_once_with(max_workers=2)
@@ -115,7 +112,7 @@ class TestParallelProcessor(unittest.TestCase):
 
         data = list(range(1, 4)) * 10  # Make it large enough for parallel
 
-        result = ParallelProcessor.parallel_map(
+        ParallelProcessor.parallel_map(
             double, data, num_workers=2, use_threads=True
         )
 
@@ -141,7 +138,7 @@ class TestParallelProcessor(unittest.TestCase):
         data = list(range(1, 4)) * 10  # 30 items
 
         # Should work without progress bar
-        result = ParallelProcessor.parallel_map(
+        ParallelProcessor.parallel_map(
             double, data, show_progress=True, num_workers=2
         )
 
@@ -167,7 +164,7 @@ class TestParallelProcessor(unittest.TestCase):
 
         # Mock tqdm import to fail
         with patch.dict('sys.modules', {'tqdm': None}):
-            result = ParallelProcessor.parallel_map(
+            ParallelProcessor.parallel_map(
                 double, data, show_progress=True, num_workers=2
             )
 

@@ -78,7 +78,7 @@ class TestHiddenParalogyCheck(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
     
     @patch("builtins.print")
@@ -94,7 +94,7 @@ class TestHiddenParalogyCheck(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

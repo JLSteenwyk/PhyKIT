@@ -5,6 +5,8 @@ import multiprocessing as mp
 from functools import partial
 import sys
 import os
+from scipy.cluster.hierarchy import linkage, leaves_list
+from scipy.spatial.distance import squareform
 
 from Bio.Align import MultipleSeqAlignment
 try:
@@ -34,6 +36,8 @@ class PairwiseIdentity(Alignment):
             exclude_gaps=parsed["exclude_gaps"],
         )
         self.json_output = parsed["json_output"]
+        self.plot = parsed["plot"]
+        self.plot_output = parsed["plot_output"]
 
     def _should_use_multiprocessing(self, n_pairs: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -44,11 +48,15 @@ class PairwiseIdentity(Alignment):
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
+        taxa = [record.id for record in alignment]
 
         pair_ids, pairwise_identities, stats = \
             self.calculate_pairwise_identities(
-                alignment, self.exclude_gaps
+                alignment, self.exclude_gaps, is_protein
             )
+
+        if self.plot:
+            self._plot_pairwise_identity_heatmap(taxa, pair_ids, pairwise_identities)
 
         if self.json_output:
             self._print_json_output(pair_ids, pairwise_identities, stats)
@@ -65,12 +73,17 @@ class PairwiseIdentity(Alignment):
         else:
             print_summary_statistics(stats)
 
+        if self.plot:
+            print(f"Saved pairwise identity heatmap: {self.plot_output}")
+
     def process_args(self, args) -> Dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
             verbose=args.verbose,
             exclude_gaps=args.exclude_gaps,
             json_output=getattr(args, "json", False),
+            plot=getattr(args, "plot", False),
+            plot_output=getattr(args, "plot_output", "pairwise_identity_heatmap.png"),
         )
 
     def _print_json_output(
@@ -93,7 +106,63 @@ class PairwiseIdentity(Alignment):
             payload["pairs"] = rows
         else:
             payload["summary"] = stats
+        if self.plot:
+            payload["plot_output"] = self.plot_output
         print_json(payload)
+
+    def _plot_pairwise_identity_heatmap(
+        self,
+        taxa: List[str],
+        pair_ids: List[List[str]],
+        pairwise_identities: Dict[str, float],
+    ) -> None:
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print("matplotlib is required for --plot in pairwise_identity. Install matplotlib and retry.")
+            raise SystemExit(2)
+
+        n_taxa = len(taxa)
+        if n_taxa == 0:
+            return
+
+        taxon_to_index = {taxon: idx for idx, taxon in enumerate(taxa)}
+        matrix = np.ones((n_taxa, n_taxa), dtype=np.float32)
+
+        for pair, identity in zip(pair_ids, pairwise_identities.values()):
+            i = taxon_to_index[pair[0]]
+            j = taxon_to_index[pair[1]]
+            matrix[i, j] = identity
+            matrix[j, i] = identity
+
+        if n_taxa >= 3:
+            distance_matrix = np.clip(1.0 - matrix, 0.0, 1.0)
+            np.fill_diagonal(distance_matrix, 0.0)
+            condensed = squareform(distance_matrix, checks=False)
+            order = leaves_list(linkage(condensed, method="average"))
+        else:
+            order = np.arange(n_taxa)
+
+        ordered_matrix = matrix[np.ix_(order, order)]
+        ordered_taxa = [taxa[idx] for idx in order]
+
+        fig_size = max(6, min(20, n_taxa * 0.35))
+        fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+        image = ax.imshow(ordered_matrix, cmap="viridis", vmin=0, vmax=1, interpolation="nearest")
+        ax.set_title("Pairwise Identity Heatmap")
+        ax.set_xticks(np.arange(n_taxa))
+        ax.set_yticks(np.arange(n_taxa))
+        ax.set_xticklabels(ordered_taxa, rotation=90, fontsize=7)
+        ax.set_yticklabels(ordered_taxa, fontsize=7)
+        ax.set_xlabel("Taxa (clustered)")
+        ax.set_ylabel("Taxa (clustered)")
+        colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+        colorbar.set_label("Identity")
+        fig.tight_layout()
+        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
     def _calculate_identity_vectorized(self, seq_arr1, seq_arr2, gap_mask=None, exclude_gaps=False):
         """Vectorized calculation of sequence identity."""
@@ -139,8 +208,9 @@ class PairwiseIdentity(Alignment):
         self,
         alignment: MultipleSeqAlignment,
         exclude_gaps: bool,
+        is_protein: bool = False,
     ) -> Tuple[List[List[str]], Dict[str, float], Dict[str, float]]:
-        gap_chars = self.get_gap_chars()
+        gap_chars = self.get_gap_chars(is_protein)
 
         # Convert sequences to numpy arrays for faster comparison
         alignment_data = []

@@ -3,13 +3,11 @@ Unit tests for streaming utilities
 """
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock, mock_open
 import tempfile
 import os
-from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-import mmap
 
 from phykit.helpers.streaming import (
     StreamingFastaReader,
@@ -140,7 +138,7 @@ class TestStreamingFastaReader(unittest.TestCase):
 
             # Empty file will raise ValueError with mmap
             with self.assertRaises(ValueError):
-                count = reader.get_sequence_count()
+                reader.get_sequence_count()
         finally:
             os.unlink(empty_file.name)
 

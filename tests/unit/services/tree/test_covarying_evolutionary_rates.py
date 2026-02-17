@@ -3,14 +3,9 @@ Unit tests for CovaryingEvolutionaryRates class
 """
 
 import unittest
-from unittest.mock import Mock, MagicMock, patch, call
-import numpy as np
-import pickle
+from unittest.mock import Mock, MagicMock, patch
 from concurrent.futures import Future
-from scipy.stats import pearsonr, zscore
 from argparse import Namespace
-from Bio import Phylo
-from io import StringIO
 
 from phykit.services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
 

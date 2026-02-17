@@ -1,11 +1,7 @@
 import os
 import pytest
-import subprocess
-import sys
-from mock import patch, call
 from pathlib import Path
 
-from phykit.phykit import Phykit
 
 here = Path(__file__)
 

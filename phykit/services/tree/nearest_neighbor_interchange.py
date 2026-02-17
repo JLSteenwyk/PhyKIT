@@ -1,5 +1,4 @@
-import copy
-from typing import Dict, List, Generator
+from typing import Dict, List
 import pickle
 
 from Bio import Phylo

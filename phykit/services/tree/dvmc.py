@@ -1,4 +1,3 @@
-import math
 from typing import Dict
 import numpy as np
 
@@ -32,7 +31,6 @@ class DVMC(Tree):
         distances = np.array([tree.distance(term) for term in tree.get_terminals()])
 
         # Calculate statistics using numpy
-        sum_dist = np.sum(distances)
         sumi2N = np.sum(distances ** 2)
         avg_dist = np.mean(distances)
 

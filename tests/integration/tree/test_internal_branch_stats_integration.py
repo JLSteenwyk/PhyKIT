@@ -1,10 +1,8 @@
 import pytest
 import sys
 import json
-from math import isclose
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -96,7 +94,7 @@ class TestIBS(object):
         ]
 
     @patch("builtins.print")
-    def test_internal_branch_stats_alias(self, mocked_print):
+    def test_internal_branch_stats_missing_args(self, mocked_print):
         testargs = [
             "phykit",
             "ibs",
@@ -118,15 +116,10 @@ class TestIBS(object):
 
     @patch("builtins.print")
     def test_internal_branch_stats_alias(self, mocked_print):
-        testargs = [
-            "phykit",
-            "internal_branch_stats",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tr",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

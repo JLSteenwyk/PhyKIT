@@ -16,7 +16,7 @@ class VariableSites(Alignment):
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
         var_sites, aln_len, var_sites_per = \
-            self.calculate_variable_sites(alignment)
+            self.calculate_variable_sites(alignment, is_protein)
 
         if self.json_output:
             print_json(
@@ -38,10 +38,11 @@ class VariableSites(Alignment):
 
     def calculate_variable_sites(
         self,
-        alignment: MultipleSeqAlignment
+        alignment: MultipleSeqAlignment,
+        is_protein: bool = False,
     ) -> Tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
-        gap_chars = self.get_gap_chars()
+        gap_chars = self.get_gap_chars(is_protein)
 
         # Convert alignment to numpy array for vectorized operations
         alignment_array = np.array([

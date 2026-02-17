@@ -1,6 +1,4 @@
-from enum import Enum
 import itertools
-import sys
 from typing import Dict, List, Tuple
 import multiprocessing as mp
 from functools import partial
@@ -17,17 +15,6 @@ from ...helpers.files import (
 from ...helpers.json_output import print_json
 
 
-class FileFormat(Enum):
-    fasta = "fasta"
-    clustal = "clustal"
-    maf = "maf"
-    mauve = "mauve"
-    phylip = "phylip"
-    phylip_seq = "phylip-sequential"
-    phylip_rel = "phylip-relaxed"
-    stockholm = "stockholm"
-
-
 class Saturation(Tree):
     MP_MIN_COMBOS = 2000
     MAX_MP_WORKERS = 8
@@ -41,6 +28,8 @@ class Saturation(Tree):
             verbose=parsed["verbose"],
         )
         self.json_output = parsed["json_output"]
+        self.plot = parsed["plot"]
+        self.plot_output = parsed["plot_output"]
 
     def _should_use_multiprocessing(self, n_combos: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -63,7 +52,7 @@ class Saturation(Tree):
             patristic_distances,
             uncorrected_distances,
         ) = self.loop_through_combos_and_calculate_pds_and_pis(
-            combos, alignment, tree, self.exclude_gaps
+            combos, alignment, tree, self.exclude_gaps, is_protein
         )
 
         # calculate slope while fitting the y-intercept to zero.
@@ -78,6 +67,9 @@ class Saturation(Tree):
         denom = float(np.dot(x, x))
         slope = float(np.dot(x, y) / denom) if denom != 0.0 else 0.0
 
+        if self.plot:
+            self._plot_saturation_scatter(x, y, slope)
+
         self.print_res(
             self.verbose, combos, uncorrected_distances, patristic_distances, slope
         )
@@ -89,7 +81,53 @@ class Saturation(Tree):
             exclude_gaps=args.exclude_gaps,
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
+            plot=getattr(args, "plot", False),
+            plot_output=getattr(args, "plot_output", "saturation_plot.png"),
         )
+
+    def _plot_saturation_scatter(
+        self,
+        patristic_distances: np.ndarray,
+        uncorrected_distances: np.ndarray,
+        slope: float,
+    ) -> None:
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print("matplotlib is required for --plot in saturation. Install matplotlib and retry.")
+            raise SystemExit(2)
+
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.scatter(
+            patristic_distances,
+            uncorrected_distances,
+            s=14,
+            alpha=0.6,
+            color="#2b8cbe",
+            edgecolors="none",
+        )
+
+        if patristic_distances.size > 0:
+            x_line = np.linspace(0.0, float(np.max(patristic_distances)), 200)
+            y_line = slope * x_line
+            ax.plot(
+                x_line,
+                y_line,
+                color="#000000",
+                linestyle="--",
+                linewidth=2.0,
+                label=f"Fit through origin (slope={slope:.4f})",
+            )
+            ax.legend(loc="best", frameon=False)
+
+        ax.set_title("Saturation: Patristic vs Uncorrected Distance")
+        ax.set_xlabel("Patristic distance")
+        ax.set_ylabel("Uncorrected distance")
+        fig.tight_layout()
+        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
     def _process_combo_batch(self, tree, seq_arrays, gap_mask, exclude_gaps, combo_batch):
         """Process a batch of combinations in parallel."""
@@ -129,6 +167,7 @@ class Saturation(Tree):
         alignment: Align.MultipleSeqAlignment,
         tree: Newick.Tree,
         exclude_gaps: bool,
+        is_protein: bool = False,
     ) -> Tuple[
         List[float],
         List[float]
@@ -137,7 +176,7 @@ class Saturation(Tree):
         loop through all taxon combinations and determine
         their patristic distance and pairwise identity
         """
-        gap_chars = self.get_gap_chars()
+        gap_chars = self.get_gap_chars(is_protein)
 
         # Convert sequences to numpy arrays for vectorized operations
         seq_arrays = {}
@@ -239,6 +278,8 @@ class Saturation(Tree):
                         slope=round(slope, 4),
                         one_minus_slope_abs=abs(round(1 - slope, 4)),
                     )
+                if self.plot:
+                    payload["plot_output"] = self.plot_output
                 print_json(payload)
                 return
 
@@ -251,5 +292,7 @@ class Saturation(Tree):
                     )
             else:
                 print(f"{round(slope, 4)}\t{abs(round(1-slope, 4))}")
+            if self.plot:
+                print(f"Saved saturation plot: {self.plot_output}")
         except BrokenPipeError:
             pass

@@ -1,10 +1,8 @@
 import pytest
 import sys
 import json
-from math import isclose
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -91,7 +89,7 @@ class TestPTT(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         mocked_print.assert_has_calls([
             call("Please check filename and pathing again."),
         ])
@@ -112,7 +110,7 @@ class TestPTT(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         mocked_print.assert_has_calls([
             call("Please format the groups file (-g) as a four column tab-delimited file with column 1 being the name of the test"),
             call("col2: the tip names of one group (; separated)"),
@@ -136,7 +134,7 @@ class TestPTT(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         mocked_print.assert_has_calls([
             call("Please check file name and pathing"),
         ])
@@ -155,7 +153,7 @@ class TestPTT(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -172,7 +170,7 @@ class TestPTT(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

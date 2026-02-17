@@ -3,7 +3,6 @@ import sys
 import json
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -98,16 +97,11 @@ class TestPairwiseIdentity(object):
 
     @patch("builtins.print")
     def test_pairwise_identity_incorrect_input_file(self, mocked_print):
-        testargs = [
-            "phykit",
-            "pairwise_identity",
-            f"{here.parent.parent.parent}/sample_files/test_trees.txt",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -232,3 +226,42 @@ class TestPairwiseIdentity(object):
         assert payload["exclude_gaps"] is False
         assert payload["rows"][0] == payload["pairs"][0]
         assert payload["pairs"][0] == {"taxon_a": "1", "taxon_b": "2", "identity": 0.8333}
+
+    @patch("phykit.services.alignment.pairwise_identity.PairwiseIdentity._plot_pairwise_identity_heatmap")
+    @patch("builtins.print")
+    def test_pairwise_identity_plot(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--plot",
+            "--plot-output",
+            "pairwise_identity_heatmap_test.png",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        assert any(
+            call.args[0] == "Saved pairwise identity heatmap: pairwise_identity_heatmap_test.png"
+            for call in mocked_print.mock_calls
+        )
+
+    @patch("phykit.services.alignment.pairwise_identity.PairwiseIdentity._plot_pairwise_identity_heatmap")
+    @patch("builtins.print")
+    def test_pairwise_identity_plot_json(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "pairwise_identity",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--plot",
+            "--plot-output",
+            "pairwise_identity_heatmap_test_json.png",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["plot_output"] == "pairwise_identity_heatmap_test_json.png"

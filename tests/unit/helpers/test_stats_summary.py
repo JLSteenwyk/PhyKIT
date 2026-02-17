@@ -3,9 +3,8 @@ Unit tests for stats summary utilities
 """
 
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 import statistics as stat
-import numpy as np
 from io import StringIO
 
 from phykit.helpers.stats_summary import (

@@ -47,7 +47,7 @@ class AlignmentRecoding(Alignment):
         is_protein: bool,
     ) -> Dict[str, List[str]]:
 
-        gap_chars = self.get_gap_chars()
+        gap_chars = self.get_gap_chars(is_protein)
         recoded_alignment = dict()
 
         for record in alignment:
