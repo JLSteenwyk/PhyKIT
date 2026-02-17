@@ -68,6 +68,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate-per-site">Evolutionary Rate per Site</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#faidx">Faidx</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#guanine-cytosine-gc-content">Guanine-cytosine (GC) content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mask-alignment">Mask alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#occupancy-per-taxon">Occupancy per taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
@@ -218,11 +219,12 @@ Command line interface: pk_alignment_length; pk_aln_len; pk_al</p>
 <p>Association between alignment length and phylogenetic signal
 was determined by Shen et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -243,11 +245,12 @@ col3: percentage of sites without gaps</p>
 with gaps and phylogenetic signal was determined by Shen
 et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len_no_gaps<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len_no_gaps<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -260,7 +263,7 @@ Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy</p>
 <p>Site-wise entropy is calculated using Shannon entropy. By default,
 PhyKIT reports the mean entropy across all sites in the alignment.
 With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Example output (default):</p>
@@ -275,7 +278,8 @@ With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print entropy for each site</p>
+<em>-v/\-\-verbose</em>: optional argument to print entropy for each site <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -292,7 +296,7 @@ recoding schemes can be used and should be formatted
 as a two column file wherein the first column is the
 recoded character and the second column is the character
 in the alignment.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_recoding<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-c/--code<span class="w"> </span>&lt;code&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_recoding<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-c/--code<span class="w"> </span>&lt;code&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Codes for which recoding scheme to use: <br/>
@@ -380,7 +384,8 @@ G = W <br/>
 H = C <br/></p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-c/--code</em>: argument to specify the recoding scheme to use</p>
+<em>-c/--code</em>: argument to specify the recoding scheme to use <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -397,14 +402,15 @@ aligned columns over all columns in an alignment. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
 <p>Column score is calculated following Thompson et al., Nucleic
 Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>column_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>column_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
 <em>-r/\-\-reference</em>: reference alignment to compare the query alignment
-to</p>
+to <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -420,12 +426,13 @@ col 1: index in alignment <br/>
 col 2: chi-squared statistic (higher values indicate greater bias) <br/>
 col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) <br/>
 col 4: uncorrected p-value</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
-fasta alignment to calculate the site-wise compositional bias of <br/></p>
+fasta alignment to calculate the site-wise compositional bias of <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -438,7 +445,7 @@ Command line interface: pk_composition_per_taxon; pk_comp_taxon; pk_comp_tax</p>
 <p>Composition is reported as semicolon-separated <cite>symbol:frequency</cite> pairs
 for each taxon. Frequencies are calculated from valid (non-gap/non-ambiguous)
 characters. Symbol order is alphabetical.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>composition_per_taxon<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>composition_per_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Example output:</p>
@@ -447,7 +454,8 @@ characters. Symbol order is alphabetical.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -464,14 +472,15 @@ matrices.</p>
 1) A fasta file with '.fa' appended to the prefix specified with the -p/\-\-prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-a/\-\-alignment</em>: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
-<em>-p/\-\-prefix</em>: prefix of output files</p>
+<em>-p/\-\-prefix</em>: prefix of output files <br/>
+<em>--json</em>: optional argument to print summary metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -484,12 +493,13 @@ Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_
 <p>Evolutionary rate per site is one minus the sum of squared frequency of different
 characters at a given site. Values may range from 0 (slow evolving; no diversity
 at the given site) to 1 (fast evolving; all characters appear only once).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
-fasta alignment to calculate the site-wise evolutionary rate of <br/></p>
+fasta alignment to calculate the site-wise evolutionary rate of <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -506,13 +516,13 @@ in samtools, but does not requiring an indexing step.</p>
 by a comma (,). For example, if you want entries
 named &quot;seq_0&quot; and &quot;seq_1&quot;, the string &quot;seq_0,seq_1&quot;
 should be associated with the -e argument.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>faidx<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-e/--entry<span class="w"> </span>&lt;fasta<span class="w"> </span>entry&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>faidx<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-e/--entry<span class="w"> </span>&lt;fasta<span class="w"> </span>entry&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
-<em>-v/\-\-verbose</em>: entry name to be extracted from the inputted fasta file
-entry</p>
+<em>-e/\-\-entry</em>: entry name to be extracted from the inputted fasta file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -529,13 +539,34 @@ to determine the GC content of each fasta entry separately.
 Association between GC content and phylogenetic signal was
 determined by Shen et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>gc_content<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>gc_content<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
 <em>-v/\-\-verbose</em>: optional argument to print the GC content of each fasta
-entry</p>
+entry <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="mask-alignment">
+<h3>Mask alignment<a class="headerlink" href="#mask-alignment" title="Link to this heading"></a></h3>
+<p>Function names: mask_alignment; mask_aln; mask <br/>
+Command line interface: pk_mask_alignment; pk_mask_aln; pk_mask</p>
+<p>Mask alignment sites based on threshold criteria.</p>
+<p>Sites are retained when they pass all active thresholds:
+maximum gap fraction, minimum occupancy, and maximum site entropy.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>mask_alignment<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-g/--max_gap<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-o/--min_occupancy<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--max_entropy<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>-g/\-\-max_gap</em>: maximum allowed fraction of missing/invalid characters at a site (default: 1.0) <br/>
+<em>-o/\-\-min_occupancy</em>: minimum required occupancy at a site (default: 0.0) <br/>
+<em>-e/\-\-max_entropy</em>: maximum allowed site entropy (default: no filter) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -547,7 +578,7 @@ Command line interface: pk_occupancy_per_taxon; pk_occupancy_taxon; pk_occ_tax</
 <p>Calculate occupancy per taxon in an alignment.</p>
 <p>Occupancy is the fraction of valid (non-gap/non-ambiguous) characters
 for each taxon.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>occupancy_per_taxon<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>occupancy_per_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Example output:</p>
@@ -556,7 +587,8 @@ for each taxon.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -576,13 +608,14 @@ all pairwise identities will be reported.</p>
 <p>An example of pairwise identities being used as a proxy
 for evolutionary rate can be found here: Chen et al.
 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>-v/\-\-verbose</em>: optional argument to print identity per pair|br|
-<em>-e/--exclude_gaps</em>: if a site has a gap, ignore it</p>
+<em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -604,11 +637,12 @@ sites and phylogenetic signal was determined by Shen
 et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 (2020), doi: 10.1371/journal.pbio.3001007.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>parsimony_informative_sites<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>parsimony_informative_sites<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -632,7 +666,7 @@ documentation.) Details about ClipKIT can be seen here:
 <a class="reference external" href="https://github.com/JLSteenwyk/ClipKIT">https://github.com/JLSteenwyk/ClipKIT</a>.</p>
 <p>If using a ClipKIT log file, the untrimmed protein alignment
 should be provided in the -p/--protein argument.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>thread_dna<span class="w"> </span>-p<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-n<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-s<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>thread_dna<span class="w"> </span>-p<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-n<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-s<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -640,7 +674,8 @@ should be provided in the -p/--protein argument.</p>
 <em>-n/\-\-nucleotide</em>: nucleotide sequence file <br/>
 <em>-c/\-\-clipkit_log</em>: clipkit outputted log file <br/>
 <em>-s/\-\-stop</em>: boolean for whether or not stop codons should be kept.
-If used, stop codons will be removed.</p>
+If used, stop codons will be removed. <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -658,11 +693,12 @@ and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
 <p>RCV calculations are case-insensitive. Gap and ambiguous characters are
 excluded from composition counts and correction terms, and each taxon is
 normalized by its valid (non-excluded) sequence length.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -678,11 +714,12 @@ biases. Lower RCVT values are more desirable because they indicate
 a lower composition bias for a given taxon in an alignment.</p>
 <p>RCVT calculations are case-insensitive and exclude gap/ambiguous symbols
 from composition counts and normalization.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -697,12 +734,13 @@ file wherein the first column is the current fasta entry name and
 the second column is the new fasta entry name in the resulting
 output alignment. Note, the input fasta file does not need to be
 an alignment file.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_fasta_entries<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_fasta_entries<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a FASTA file <br/>
-<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2)</p>
+<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -718,14 +756,15 @@ aligned residue pairs over all pairs of sequences. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
 <p>Column score is calculated following Thompson et al., Nucleic
 Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
 <em>-r/\-\-reference</em>: reference alignment to compare the query alignment
-to</p>
+to <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -745,11 +784,12 @@ col3: percentage of variable sites</p>
 phylogenetic signal was determined by Shen et al.,
 Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>variable_sites<span class="w"> </span>&lt;alignment&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>variable_sites<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file</p>
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -769,11 +809,25 @@ In addition to support values for each node, the names of all terminal
 branches tips are also included. Each terminal branch name is separated
 with a semi-colon (;).</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--thresholds<span class="w"> </span>&lt;comma-separated-floats&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all bipartition support values</p>
+<em>-v/\-\-verbose</em>: optional argument to print all bipartition support values <br/>
+<em>--thresholds</em>: optional comma-separated support cutoffs; prints count and
+fraction of bipartitions below each cutoff <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Example JSON output (summary mode):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>test.tre<span class="w"> </span>--thresholds<span class="w"> </span><span class="m">70</span>,90<span class="w"> </span>--json
+<span class="o">{</span><span class="s2">&quot;summary&quot;</span>:<span class="w"> </span><span class="o">{</span><span class="s2">&quot;maximum&quot;</span>:<span class="w"> </span><span class="m">100</span>,<span class="w"> </span><span class="s2">&quot;mean&quot;</span>:<span class="w"> </span><span class="m">95</span>.71428571428571,<span class="w"> </span><span class="s2">&quot;median&quot;</span>:<span class="w"> </span><span class="m">100</span>,<span class="w"> </span><span class="s2">&quot;minimum&quot;</span>:<span class="w"> </span><span class="m">85</span>,<span class="w"> </span><span class="s2">&quot;seventy_fifth&quot;</span>:<span class="w"> </span><span class="m">100</span>.0,<span class="w"> </span><span class="s2">&quot;standard_deviation&quot;</span>:<span class="w"> </span><span class="m">7</span>.319250547113999,<span class="w"> </span><span class="s2">&quot;twenty_fifth&quot;</span>:<span class="w"> </span><span class="m">92</span>.5,<span class="w"> </span><span class="s2">&quot;variance&quot;</span>:<span class="w"> </span><span class="m">53</span>.57142857142857<span class="o">}</span>,<span class="w"> </span><span class="s2">&quot;thresholds&quot;</span>:<span class="w"> </span><span class="o">[{</span><span class="s2">&quot;count_below&quot;</span>:<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="s2">&quot;fraction_below&quot;</span>:<span class="w"> </span><span class="m">0</span>.0,<span class="w"> </span><span class="s2">&quot;threshold&quot;</span>:<span class="w"> </span><span class="m">70</span>.0<span class="o">}</span>,<span class="w"> </span><span class="o">{</span><span class="s2">&quot;count_below&quot;</span>:<span class="w"> </span><span class="m">2</span>,<span class="w"> </span><span class="s2">&quot;fraction_below&quot;</span>:<span class="w"> </span><span class="m">0</span>.2857142857142857,<span class="w"> </span><span class="s2">&quot;threshold&quot;</span>:<span class="w"> </span><span class="m">90</span>.0<span class="o">}]</span>,<span class="w"> </span><span class="s2">&quot;verbose&quot;</span>:<span class="w"> </span>false<span class="o">}</span>
+</pre></div>
+</div>
+<p>Example JSON output (verbose mode):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>test.tre<span class="w"> </span>-v<span class="w"> </span>--json
+<span class="o">{</span><span class="s2">&quot;bipartitions&quot;</span>:<span class="w"> </span><span class="o">[{</span><span class="s2">&quot;support&quot;</span>:<span class="w"> </span><span class="m">85</span>,<span class="w"> </span><span class="s2">&quot;terminals&quot;</span>:<span class="w"> </span><span class="o">[</span><span class="s2">&quot;taxon_a&quot;</span>,<span class="w"> </span><span class="s2">&quot;taxon_b&quot;</span><span class="o">]}</span>,<span class="w"> </span><span class="o">{</span><span class="s2">&quot;support&quot;</span>:<span class="w"> </span><span class="m">100</span>,<span class="w"> </span><span class="s2">&quot;terminals&quot;</span>:<span class="w"> </span><span class="o">[</span><span class="s2">&quot;taxon_c&quot;</span>,<span class="w"> </span><span class="s2">&quot;taxon_d&quot;</span><span class="o">]}]</span>,<span class="w"> </span><span class="s2">&quot;thresholds&quot;</span>:<span class="w"> </span><span class="o">[]</span>,<span class="w"> </span><span class="s2">&quot;verbose&quot;</span>:<span class="w"> </span>true<span class="o">}</span>
+</pre></div>
+</div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -785,14 +839,15 @@ Command line interface: pk_branch_length_multiplier; pk_blm</p>
 <p>Multiply branch lengths in a phylogeny by a given factor.</p>
 <p>This can help modify reference trees when conducting simulations
 or other analyses.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>branch_length_multiplier<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-f<span class="w"> </span>n<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>branch_length_multiplier<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-f<span class="w"> </span>n<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-f/\-\-factor</em>: factor to multiply branch lengths by <br/>
 <em>-o/\-\-output</em>: optional argument to name the outputted tree file. Default
-output will have the same name as the input file but with the suffix &quot;.factor_(n).tre&quot;</p>
+output will have the same name as the input file but with the suffix &quot;.factor_(n).tre&quot; <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -804,7 +859,7 @@ Command line interface: pk_collapse_branches, pk_collapse, pk_cb</p>
 <p>Collapse branches on a phylogeny according to bipartition support.</p>
 <p>Bipartitions will be collapsed if they are less than the user specified
 value.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>collapse_branches<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-s/--support<span class="w"> </span>n<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>collapse_branches<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-s/--support<span class="w"> </span>n<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -813,7 +868,8 @@ value.</p>
 collapsed <br/>
 <em>-o/\-\-output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix
-&quot;.collapsed_(support).tre&quot;</p>
+&quot;.collapsed_(support).tre&quot; <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -840,7 +896,7 @@ col2: p-value</p>
 (2012), doi: 10.1101/gr.132647.111. Normalization method using a
 species tree follows Sato et al., Bioinformatics (2005), doi:
 10.1093/bioinformatics/bti564.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -848,7 +904,8 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 <em>&lt;tree_file_one&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>-r/\-\-reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
 this is a putative species tree. <br/>
-<em>-v/\-\-verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1</p>
+<em>-v/\-\-verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -865,11 +922,12 @@ prior to calculating DVMC from a single gene tree, users may want to prune
 outgroup taxa from the phylogeny. To prune tips from a phylogeny, see the
 prune_tree function.</p>
 <p>Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.1616744114.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>degree_of_violation_of_a_molecular_clock<span class="w"> </span>&lt;tree&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>degree_of_violation_of_a_molecular_clock<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree&gt;</em>: input file tree name</p>
+<em>&lt;tree&gt;</em>: input file tree name <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -883,11 +941,12 @@ Command line interface: pk_evolutionary_rate, pk_evo_rate</p>
 of terminals.</p>
 <p>Calculate evolutionary rate following Telford et al., Proceedings
 of the Royal Society B (2014).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evolutionary_rate<span class="w"> </span>&lt;tree&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evolutionary_rate<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree&gt;</em>: input file tree name</p>
+<em>&lt;tree&gt;</em>: input file tree name <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -926,13 +985,14 @@ results of the first row in the clade file. <br/></p>
 <p>The concept behind this analysis follows
 Siu-Ting et al., Molecular Biology and Evolution (2019),
 doi: 10.1093/molbev/msz067.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>hidden_paralogy_check<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-c/--clade<span class="w"> </span>&lt;clade_file&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>hidden_paralogy_check<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-c/--clade<span class="w"> </span>&lt;clade_file&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: input file tree name
+<em>-t/\-\-tree</em>: input file tree name <br/>
 <em>-c/\-\-clade</em>: clade file detailing which monophyletic lineages should
-be scanned for</p>
+be scanned for <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -944,12 +1004,13 @@ Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
 <p>Internal branch lengths can be useful for phylogeny diagnostics.</p>
 <p>To obtain all internal branch lengths, use the -v/\-\-verbose option.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internal_branch_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internal_branch_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all internal branch lengths</p>
+<em>-v/\-\-verbose</em>: optional argument to print all internal branch lengths <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -961,12 +1022,13 @@ Command line interface: pk_internode_labeler; pk_il</p>
 <p>Appends numerical identifiers to bipartitions in place of support values.
 This is helpful for pointing to specific internodes in supplementary files
 or otherwise.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internode_labeler<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internode_labeler<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/\-\-output</em>: optional argument to name the outputted tree file</p>
+<em>-o/\-\-output</em>: optional argument to name the outputted tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -977,14 +1039,15 @@ or otherwise.</p>
 Command line interface: pk_last_common_ancestor_subtree; pk_lca_subtree</p>
 <p>Obtains subtree from a phylogeny by getting the last common ancestor
 from a list of taxa.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>last_common_ancestor_subtree<span class="w"> </span>&lt;file&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>last_common_ancestor_subtree<span class="w"> </span>&lt;file&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-<em>-o/\-\-output</em>: optional argument to name the outputted tree file</p>
+<em>-o/\-\-output</em>: optional argument to name the outputted tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1004,12 +1067,13 @@ pairwise patristic distance.</p>
 for each taxa, use the -v/--verbose option.</p>
 <p>LB scores are calculated following Struck, Evolutionary
 Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>long_branch_score<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>long_branch_score<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all LB score values</p>
+<em>-v/\-\-verbose</em>: optional argument to print all LB score values <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1034,13 +1098,14 @@ col 3: maximum bipartition support value in the clade of interest
 col 4: minimum bipartition support value in the clade of interest
 col 5: standard deviation of bipartition support values in the clade of interest
 col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>monophyly_check<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>monophyly_check<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: single column file with list of tip names to
-examine the monophyly of</p>
+examine the monophyly of <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1054,12 +1119,13 @@ rooted tree.</p>
 <p>By default, the output file will have the same name as the input
 file but with the suffix &quot;.nnis&quot;</p>
 <p>The output file will also include the original phylogeny.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>nearest_neighbor_interchange<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>nearest_neighbor_interchange<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/\-\-output</em>: optional argument to specify output file name</p>
+<em>-o/\-\-output</em>: optional argument to specify output file name <br/>
+<em>--json</em>: optional argument to print summary metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1074,12 +1140,13 @@ Command line interface: pk_patristic_distances; pk_pd</p>
 With the -v option, the first column will have two taxon names
 separated by a '-' followed by the patristic distance. Features
 will be tab separated.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>patristic_distances<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>patristic_distances<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all tip-to-tip distances</p>
+<em>-v/\-\-verbose</em>: optional argument to print all tip-to-tip distances <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1104,7 +1171,7 @@ is evidence to reject the null hypothesis wherein the null
 hypothesis is that the three possible topologies among the three
 groups are equally supported. This test is done using gene support
 frequencies.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>polytomy_test<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span>-g/--groups<span class="w"> </span>&lt;groups&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>polytomy_test<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span>-g/--groups<span class="w"> </span>&lt;groups&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1112,7 +1179,8 @@ frequencies.</p>
 phylogenies to use for polytomy testing <br/>
 <em>-g/\-\-groups</em>: a tab-delimited file with the grouping designations
 to test. Lines starting with commetns are not considered. Names of
-individual taxa should be separated by a semi-colon ';'</p>
+individual taxa should be separated by a semi-colon ';' <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <p>For example, the groups file could look like the following:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1">#label group0  group1  group2</span>
 name_of_test<span class="w">    </span>tip_name_A<span class="p">;</span>tip_name_B<span class="w">   </span>tip_name_C<span class="w">  </span>tip_name_D<span class="p">;</span>tip_name_E
@@ -1130,13 +1198,14 @@ Command line interface: pk_print_tree; pk_print; pk_pt</p>
 <p>Phylogeny can be printed with or without branch lengths.
 By default, the phylogeny will be printed with branch lengths
 but branch lengths can be removed using the -r/--remove argument.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>print_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-r/--remove<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>print_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-r/--remove<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-r/\-\-remove</em>: optional argument to print the phylogeny without branch
-lengths</p>
+lengths <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1149,7 +1218,7 @@ Command line interface: pk_prune_tree; pk_prune</p>
 <p>Provide a single column file with the names of the tips
 in the input phylogeny you would like to prune from the
 tree.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>prune_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-k/--keep<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>prune_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-k/--keep<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1158,9 +1227,10 @@ tree.</p>
 from the phylogeny <br/>
 <em>-o/\-\-output</em>: name of output file for the pruned phylogeny.
 Default output will have the same name as the input file but with the suffix
-&quot;.pruned&quot;
+&quot;.pruned&quot; <br/>
 <em>-k/--keep</em>: optional argument. If used instead of pruning taxa in &lt;list_of_taxa&gt;,
-keep them
+keep them <br/>
+<em>--json</em>: optional argument to print results as JSON
 |</p>
 </section>
 <section id="rename-tree-tips">
@@ -1172,7 +1242,7 @@ Command line interface: pk_rename_tree_tips; pk_rename_tree; pk_rename_tips</p>
 file wherein the first column is the current tip name and the
 second column is the desired tip name in the resulting
 phylogeny.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_tree_tips<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap.txt&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rename_tree_tips<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-i/--idmap<span class="w"> </span>&lt;idmap.txt&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1180,7 +1250,8 @@ phylogeny.</p>
 <em>-i/\-\-idmap</em>: identifier map of current tip names (col1) and desired
 tip names (col2) <br/>
 <em>-o/\-\-output</em>: optional argument to write the renamed tree files to. Default
-output will have the same name as the input file but with the suffix &quot;.renamed&quot;</p>
+output will have the same name as the input file but with the suffix &quot;.renamed&quot; <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1204,12 +1275,13 @@ col 1; the plain RF distance and
 col 2: the normalized RF distance.</p>
 <p>RF distances are calculated following Robinson &amp; Foulds, Mathematical
 Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>robinson_foulds_distance<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>robinson_foulds_distance<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file
-<em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file</p>
+<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file <br/>
+<em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1223,13 +1295,14 @@ Command line interface: pk_root_tree; pk_root; pk_rt</p>
 argument. The root_taxa file should be a single-column file with taxa names.
 The outputted file will have the same name as the inputted tree file but with
 the suffix &quot;.rooted&quot;.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>root_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-r/--root<span class="w"> </span>&lt;root_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>root_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-r/--root<span class="w"> </span>&lt;root_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file to root|br|
 <em>-r/\-\-root</em>: single column file with taxa names to root the phylogeny on|br|
-<em>-o/\-\-output</em>: optional argument to specify the name of the output file</p>
+<em>-o/\-\-output</em>: optional argument to specify the name of the output file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1254,13 +1327,14 @@ col4: median branch length in the phylogeny</p>
 <p>Using this method to identify potentially spurious sequences
 was, to my knowledge, first introduced by Shen et al., (2018)
 Cell doi: 10.1016/j.cell.2018.10.023.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_seq<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-f/<span class="se">\\</span>-<span class="se">\\</span>-factor
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_seq<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-f/<span class="se">\\</span>-<span class="se">\\</span>-factor<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;file&gt;</em>: first argument after function name should be a tree file
+<em>&lt;file&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-f/\-\-factor</em>: factor to multiply median branch length by to calculate
-the threshold of long branches. (Default: 20)</p>
+the threshold of long branches. (Default: 20) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1272,12 +1346,13 @@ Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 <p>Calculate summary statistics for terminal branch lengths in a phylogeny.</p>
 <p>Terminal branch lengths can be useful for phylogeny diagnostics.</p>
 <p>To obtain all terminal branch lengths, use the -v/\-\-verbose option.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>terminal_branch_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>terminal_branch_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all terminal branch lengths</p>
+<em>-v/\-\-verbose</em>: optional argument to print all terminal branch lengths <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1287,11 +1362,12 @@ Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 <p>Function names: tip_labels; tree_labels; labels; tl <br/>
 Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 <p>Prints the tip labels (or names) a phylogeny.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_labels<span class="w"> </span>&lt;tree&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_labels<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1302,13 +1378,14 @@ Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
 <p>Distances are in substitutions per site.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>&lt;tip_1&gt;<span class="w"> </span>&lt;tip_2&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>&lt;tip_1&gt;<span class="w"> </span>&lt;tip_2&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree_file&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;tip_1&gt;</em>: second argument should be the name of the first tip of interest <br/>
-<em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest</p>
+<em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1320,13 +1397,14 @@ Command line interface: pk_tip_to_tip_node_distance; pk_t2t_node_dist; pk_t2t_nd
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
 <p>Distance is measured by the number of nodes between one tip
 and another.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_to_tip_node_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>&lt;tip_1&gt;<span class="w"> </span>&lt;tip_2&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_to_tip_node_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>&lt;tip_1&gt;<span class="w"> </span>&lt;tip_2&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree_file&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;tip_1&gt;</em>: second argument should be the name of the first tip of interest <br/>
-<em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest</p>
+<em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1336,11 +1414,12 @@ and another.</p>
 <p>Function names: total_tree_length; tree_len <br/>
 Command line interface: pk_total_tree_length; pk_tree_len</p>
 <p>Calculate total tree length, which is a sum of all branches.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>total_tree_length<span class="w"> </span>&lt;tree&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>total_tree_length<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1359,11 +1438,12 @@ used as a measure of the signal-to-noise ratio in a phylogeny.</p>
 Lanyon, The Auk (1988), doi: 10.1093/auk/105.3.565 and
 Phillips and Penny, Molecular Phylogenetics and Evolution
 (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>treeness<span class="w"> </span>&lt;tree&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>treeness<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree&gt;</em>: first argument after function name should be a tree file</p>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1387,7 +1467,7 @@ value of saturation minus 1. Thus, lower values in the second column
 are indicative of values closer to one and, thus, less saturation.</p>
 <p>Saturation is calculated following Philippe et al., PLoS
 Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1395,7 +1475,8 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
 <em>-t/\-\-tree</em>: a tree file <br/>
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
 <em>-v/\-\-verbose</em>: print out patristic distances and uncorrected <br/>
-distances used to determine saturation</p>
+distances used to determine saturation <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 </section>
 <section id="treeness-over-rcv">
 <h3>Treeness over RCV<a class="headerlink" href="#treeness-over-rcv" title="Link to this heading"></a></h3>
@@ -1411,12 +1492,13 @@ col2: treeness
 col3: RCV</p>
 <p>Calculate treeness/RCV following Phillips and Penny, Molecular
 Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>treeness_over_rcv<span class="w"> </span>-a/--alignment<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t/--tree<span class="w"> </span>&lt;tree&gt;
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>treeness_over_rcv<span class="w"> </span>-a/--alignment<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t/--tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-a/\-\-alignment</em>: an alignment file <br/>
-<em>-t/\-\-tree</em>: a tree file</p>
+<em>-t/\-\-tree</em>: a tree file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 </section>
 </section>
 </section>

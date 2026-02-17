@@ -82,6 +82,17 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.5</strong>:
+JSON output expansion and harmonization:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--json</span></code> support to the remaining CLI commands, including
+<code class="docutils literal notranslate"><span class="pre">create_concatenation_matrix</span></code> and <code class="docutils literal notranslate"><span class="pre">nearest_neighbor_interchange</span></code></p></li>
+<li><p>Standardized JSON metadata key naming for improved consistency across commands</p></li>
+<li><p>Added canonical <code class="docutils literal notranslate"><span class="pre">rows</span></code> payloads for list-style JSON outputs while preserving
+legacy keys for backward compatibility</p></li>
+<li><p>Expanded integration test coverage for JSON payloads and performed full
+regression verification</p></li>
+</ul>
 <p><strong>2.1.4</strong>:
 New alignment utilities, masking support, and composition/RCV correctness updates:</p>
 <ul class="simple">
