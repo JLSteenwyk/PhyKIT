@@ -6,6 +6,22 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.4**:
+New alignment utilities, masking support, and composition/RCV correctness updates:
+
+* Added new alignment commands:
+  - ``alignment_entropy`` (site entropy reporting)
+  - ``occupancy_per_taxon`` (per-taxon valid-site occupancy)
+  - ``composition_per_taxon`` (per-taxon symbol composition, excluding invalid symbols)
+  - ``mask_alignment`` (column masking by gap fraction, occupancy, and optional entropy)
+* Updated saturation slope calculation to use NumPy no-intercept least-squares
+  (fit constrained through the origin), replacing sklearn in this code path
+* Updated ``rcv`` and ``rcvt`` handling to be case-insensitive and to exclude
+  gaps/ambiguous symbols from counts and normalization
+* Clarified valid-length normalization in RCV calculations and related docs/help text
+* Documentation maintenance updates to improve rendering consistency and remove
+  duplicate changelog maintenance burden
+
 **2.1.0**:
 Major performance improvements, expanded Python support, and bug fixes:
 

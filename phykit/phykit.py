@@ -32,14 +32,18 @@ class _LazyServiceFactory:
 # Alignment service loaders
 AlignmentLength = _LazyServiceFactory("phykit.services.alignment.alignment_length", "AlignmentLength")
 AlignmentLengthNoGaps = _LazyServiceFactory("phykit.services.alignment.alignment_length_no_gaps", "AlignmentLengthNoGaps")
+AlignmentEntropy = _LazyServiceFactory("phykit.services.alignment.alignment_entropy", "AlignmentEntropy")
 AlignmentRecoding = _LazyServiceFactory("phykit.services.alignment.alignment_recoding", "AlignmentRecoding")
 ColumnScore = _LazyServiceFactory("phykit.services.alignment.column_score", "ColumnScore")
 CompositionalBiasPerSite = _LazyServiceFactory("phykit.services.alignment.compositional_bias_per_site", "CompositionalBiasPerSite")
+CompositionPerTaxon = _LazyServiceFactory("phykit.services.alignment.composition_per_taxon", "CompositionPerTaxon")
 CreateConcatenationMatrix = _LazyServiceFactory("phykit.services.alignment.create_concatenation_matrix", "CreateConcatenationMatrix")
 DNAThreader = _LazyServiceFactory("phykit.services.alignment.dna_threader", "DNAThreader")
 EvolutionaryRatePerSite = _LazyServiceFactory("phykit.services.alignment.evolutionary_rate_per_site", "EvolutionaryRatePerSite")
 Faidx = _LazyServiceFactory("phykit.services.alignment.faidx", "Faidx")
 GCContent = _LazyServiceFactory("phykit.services.alignment.gc_content", "GCContent")
+MaskAlignment = _LazyServiceFactory("phykit.services.alignment.mask_alignment", "MaskAlignment")
+OccupancyPerTaxon = _LazyServiceFactory("phykit.services.alignment.occupancy_per_taxon", "OccupancyPerTaxon")
 PairwiseIdentity = _LazyServiceFactory("phykit.services.alignment.pairwise_identity", "PairwiseIdentity")
 ParsimonyInformative = _LazyServiceFactory("phykit.services.alignment.parsimony_informative_sites", "ParsimonyInformative")
 RelativeCompositionVariability = _LazyServiceFactory("phykit.services.alignment.rcv", "RelativeCompositionVariability")
@@ -160,12 +164,16 @@ class Phykit(object):
                     - calculates alignment length
                 alignment_length_no_gaps (alias: aln_len_no_gaps; alng)
                     - calculates alignment length after removing sites with gaps
+                alignment_entropy (alias: aln_entropy; entropy)
+                    - calculates site-wise alignment entropy
                 alignment_recoding (alias: aln_recoding, recode)
                     - recode alignments using reduced character schemes
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
                 compositional_bias_per_site (alias: comp_bias_per_site; cbps)
                     - detects site-wise compositional biases in an alignment
+                composition_per_taxon (alias: comp_taxon; comp_tax)
+                    - calculates sequence composition per taxon
                 create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments
                 evolutionary_rate_per_site (alias: evo_rate_per_site; erps)
@@ -174,6 +182,10 @@ class Phykit(object):
                     - extract query fasta entry from multi-fasta file
                 gc_content (alias: gc)
                     - calculate GC content of a fasta entries or entries thereof
+                mask_alignment (alias: mask_aln; mask)
+                    - mask alignment sites based on thresholds
+                occupancy_per_taxon (alias: occupancy_taxon; occ_tax)
+                    - calculates alignment occupancy per taxon
                 pairwise_identity (alias: pairwise_id, pi)
                     - calculates average pairwise identify among sequences in
                       an alignment file. This is a proxy for evolutionary rate
@@ -290,6 +302,8 @@ class Phykit(object):
             return self.alignment_length(argv)
         elif command in ["aln_len_no_gaps", "alng"]:
             return self.alignment_length_no_gaps(argv)
+        elif command in ["aln_entropy", "entropy"]:
+            return self.alignment_entropy(argv)
         elif command in ["aln_recoding", "recode"]:
             return self.alignment_recoding(argv)
         elif command == "cs":
@@ -302,8 +316,14 @@ class Phykit(object):
             return self.faidx(argv)
         elif command == "gc":
             return self.gc_content(argv)
+        elif command in ["mask_aln", "mask"]:
+            return self.mask_alignment(argv)
+        elif command in ["occupancy_taxon", "occ_tax"]:
+            return self.occupancy_per_taxon(argv)
         elif command in ["pairwise_id", "pi"]:
             return self.pairwise_identity(argv)
+        elif command in ["comp_taxon", "comp_tax"]:
+            return self.composition_per_taxon(argv)
         elif command == "pis":
             return self.parsimony_informative_sites(argv)
         elif command in ["rel_comp_var", "relative_composition_variability"]:
@@ -481,6 +501,49 @@ class Phykit(object):
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
+
+    @staticmethod
+    def alignment_entropy(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate alignment entropy.
+
+                Site-wise entropy is calculated using Shannon entropy.
+                By default, this function prints the mean site entropy.
+                With the -v/--verbose option, entropy is printed for each
+                site in the alignment.
+
+                Aliases:
+                  alignment_entropy, aln_entropy, entropy
+                Command line interfaces:
+                  pk_alignment_entropy, pk_aln_entropy, pk_entropy
+
+                Usage:
+                phykit alignment_entropy <alignment> [-v/--verbose]
+
+                Options
+                =====================================================
+                <alignment>                 first argument after
+                                            function name should be
+                                            an alignment file
+
+                -v/--verbose                optional argument to print
+                                            entropy for each site
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        args = parser.parse_args(argv)
+        AlignmentEntropy(args).run()
 
     @staticmethod
     def alignment_recoding(argv):
@@ -700,6 +763,42 @@ class Phykit(object):
         CompositionalBiasPerSite(args).run()
 
     @staticmethod
+    def composition_per_taxon(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate sequence composition per taxon in an alignment.
+
+                Composition is reported as symbol:frequency values for each
+                taxon, where frequencies are calculated from valid
+                (non-gap/non-ambiguous) characters.
+
+                Aliases:
+                  composition_per_taxon, comp_taxon, comp_tax
+                Command line interfaces:
+                  pk_composition_per_taxon, pk_comp_taxon, pk_comp_tax
+
+                Usage:
+                phykit composition_per_taxon <alignment>
+
+                Options
+                =====================================================
+                <alignment>                 first argument after
+                                            function name should be
+                                            an alignment file
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        CompositionPerTaxon(args).run()
+
+    @staticmethod
     def evolutionary_rate_per_site(argv):
         parser = ArgumentParser(
             add_help=True,
@@ -833,6 +932,95 @@ class Phykit(object):
         )
         args = parser.parse_args(argv)
         GCContent(args).run()
+
+    @staticmethod
+    def mask_alignment(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Mask alignment sites based on threshold criteria.
+
+                Sites are retained when they pass all active thresholds:
+                maximum gap fraction, minimum occupancy, and maximum
+                site entropy.
+
+                Aliases:
+                  mask_alignment, mask_aln, mask
+                Command line interfaces:
+                  pk_mask_alignment, pk_mask_aln, pk_mask
+
+                Usage:
+                phykit mask_alignment <alignment> [-g/--max_gap <float>]
+                  [-o/--min_occupancy <float>] [-e/--max_entropy <float>]
+
+                Options
+                =====================================================
+                <alignment>                 first argument after
+                                            function name should be
+                                            an alignment file
+
+                -g/--max_gap                maximum allowed fraction of
+                                            missing/invalid characters
+                                            at a site (default: 1.0)
+
+                -o/--min_occupancy          minimum required occupancy
+                                            at a site (default: 0.0)
+
+                -e/--max_entropy            maximum allowed site entropy
+                                            (default: no filter)
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("-g", "--max_gap", type=float, default=1.0, help=SUPPRESS)
+        parser.add_argument(
+            "-o", "--min_occupancy", type=float, default=0.0, help=SUPPRESS
+        )
+        parser.add_argument(
+            "-e", "--max_entropy", type=float, required=False, help=SUPPRESS
+        )
+        args = parser.parse_args(argv)
+        MaskAlignment(args).run()
+
+    @staticmethod
+    def occupancy_per_taxon(argv):
+        parser = ArgumentParser(
+            add_help=True,
+            usage=SUPPRESS,
+            formatter_class=RawDescriptionHelpFormatter,
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate occupancy per taxon in an alignment.
+
+                Occupancy is the fraction of valid (non-gap/non-ambiguous)
+                characters for each taxon.
+
+                Aliases:
+                  occupancy_per_taxon, occupancy_taxon, occ_tax
+                Command line interfaces:
+                  pk_occupancy_per_taxon, pk_occupancy_taxon, pk_occ_tax
+
+                Usage:
+                phykit occupancy_per_taxon <alignment>
+
+                Options
+                =====================================================
+                <alignment>                 first argument after
+                                            function name should be
+                                            an alignment file
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        OccupancyPerTaxon(args).run()
 
     @staticmethod
     def pairwise_identity(argv):
@@ -2700,12 +2888,20 @@ def alignment_length_no_gaps(argv=None):
     Phykit.alignment_length_no_gaps(sys.argv[1:])
 
 
+def alignment_entropy(argv=None):
+    Phykit.alignment_entropy(sys.argv[1:])
+
+
 def column_score(argv=None):
     Phykit.column_score(sys.argv[1:])
 
 
 def compositional_bias_per_site(argv=None):
     Phykit.compositional_bias_per_site(sys.argv[1:])
+
+
+def composition_per_taxon(argv=None):
+    Phykit.composition_per_taxon(sys.argv[1:])
 
 
 def evolutionary_rate_per_site(argv=None):
@@ -2718,6 +2914,14 @@ def faidx(argv=None):
 
 def gc_content(argv=None):
     Phykit.gc_content(sys.argv[1:])
+
+
+def mask_alignment(argv=None):
+    Phykit.mask_alignment(sys.argv[1:])
+
+
+def occupancy_per_taxon(argv=None):
+    Phykit.occupancy_per_taxon(sys.argv[1:])
 
 
 def pairwise_identity(argv=None):
