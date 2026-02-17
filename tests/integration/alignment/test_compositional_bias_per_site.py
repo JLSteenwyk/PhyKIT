@@ -147,3 +147,42 @@ class TestCompositionalBiasPerSite(object):
             "p_value_corrected": 1.0,
             "site": 3,
         }
+
+    @patch("phykit.services.alignment.compositional_bias_per_site.CompositionalBiasPerSite._plot_compositional_bias_manhattan")
+    @patch("builtins.print")
+    def test_compositional_bias_per_site_plot(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "compositional_bias_per_site",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--plot",
+            "--plot-output",
+            "cbps_test_plot.png",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        assert any(
+            call.args[0] == "Saved compositional bias plot: cbps_test_plot.png"
+            for call in mocked_print.mock_calls
+        )
+
+    @patch("phykit.services.alignment.compositional_bias_per_site.CompositionalBiasPerSite._plot_compositional_bias_manhattan")
+    @patch("builtins.print")
+    def test_compositional_bias_per_site_plot_json(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "compositional_bias_per_site",
+            f"{here.parent.parent.parent}/sample_files/simple.fa",
+            "--plot",
+            "--plot-output",
+            "cbps_test_plot_json.png",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["plot_output"] == "cbps_test_plot_json.png"

@@ -66,7 +66,7 @@ class AlignmentLengthNoGaps(Alignment):
         """
         Count sites in the alignment with no gaps
         """
-        gap_chars = set(self.get_gap_chars())
+        gap_chars = set(self.get_gap_chars(is_protein))
 
         # Convert alignment to numpy array
         alignment_array = np.array([

@@ -34,6 +34,7 @@ AlignmentLength = _LazyServiceFactory("phykit.services.alignment.alignment_lengt
 AlignmentLengthNoGaps = _LazyServiceFactory("phykit.services.alignment.alignment_length_no_gaps", "AlignmentLengthNoGaps")
 AlignmentEntropy = _LazyServiceFactory("phykit.services.alignment.alignment_entropy", "AlignmentEntropy")
 AlignmentRecoding = _LazyServiceFactory("phykit.services.alignment.alignment_recoding", "AlignmentRecoding")
+AlignmentOutlierTaxa = _LazyServiceFactory("phykit.services.alignment.alignment_outlier_taxa", "AlignmentOutlierTaxa")
 ColumnScore = _LazyServiceFactory("phykit.services.alignment.column_score", "ColumnScore")
 CompositionalBiasPerSite = _LazyServiceFactory("phykit.services.alignment.compositional_bias_per_site", "CompositionalBiasPerSite")
 CompositionPerTaxon = _LazyServiceFactory("phykit.services.alignment.composition_per_taxon", "CompositionPerTaxon")
@@ -43,6 +44,7 @@ EvolutionaryRatePerSite = _LazyServiceFactory("phykit.services.alignment.evoluti
 Faidx = _LazyServiceFactory("phykit.services.alignment.faidx", "Faidx")
 GCContent = _LazyServiceFactory("phykit.services.alignment.gc_content", "GCContent")
 MaskAlignment = _LazyServiceFactory("phykit.services.alignment.mask_alignment", "MaskAlignment")
+PlotAlignmentQC = _LazyServiceFactory("phykit.services.alignment.plot_alignment_qc", "PlotAlignmentQC")
 OccupancyPerTaxon = _LazyServiceFactory("phykit.services.alignment.occupancy_per_taxon", "OccupancyPerTaxon")
 PairwiseIdentity = _LazyServiceFactory("phykit.services.alignment.pairwise_identity", "PairwiseIdentity")
 ParsimonyInformative = _LazyServiceFactory("phykit.services.alignment.parsimony_informative_sites", "ParsimonyInformative")
@@ -89,7 +91,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
-help_header = f"""
+BANNER = rf"""
                  _____  _           _  _______ _______ 
                 |  __ \| |         | |/ /_   _|__   __|
                 | |__) | |__  _   _| ' /  | |    | |   
@@ -106,30 +108,24 @@ help_header = f"""
 
 """
 
+# Backward-compatible module alias used by command-specific parser descriptions.
+help_header = BANNER
 
-class Phykit(object):
-    help_header = f"""
-                 _____  _           _  _______ _______ 
-                |  __ \| |         | |/ /_   _|__   __|
-                | |__) | |__  _   _| ' /  | |    | |   
-                |  ___/| '_ \| | | |  <   | |    | |   
-                | |    | | | | |_| | . \ _| |_   | |   
-                |_|    |_| |_|\__, |_|\_\_____|  |_|   
-                               __/ |                   
-                              |___/   
-                            
-                Version: {__version__}
-                Citation: Steenwyk et al. 2021, Bioinformatics. doi: 10.1093/bioinformatics/btab096
-                Documentation link: https://jlsteenwyk.com/PhyKIT
-                Publication link: https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675
 
-    """
+def _new_parser(*, description: str) -> ArgumentParser:
+    return ArgumentParser(
+        add_help=True,
+        usage=SUPPRESS,
+        formatter_class=RawDescriptionHelpFormatter,
+        description=description,
+    )
+
+
+class Phykit:
+    help_header = BANNER
 
     def __init__(self):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {self.help_header}
@@ -168,6 +164,8 @@ class Phykit(object):
                     - calculates site-wise alignment entropy
                 alignment_recoding (alias: aln_recoding, recode)
                     - recode alignments using reduced character schemes
+                alignment_outlier_taxa (alias: outlier_taxa; aot)
+                    - identify potential outlier taxa and why they were flagged
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
                 compositional_bias_per_site (alias: comp_bias_per_site; cbps)
@@ -184,6 +182,8 @@ class Phykit(object):
                     - calculate GC content of a fasta entries or entries thereof
                 mask_alignment (alias: mask_aln; mask)
                     - mask alignment sites based on thresholds
+                plot_alignment_qc (alias: plot_qc; paqc)
+                    - generate multi-panel alignment quality-control plot
                 occupancy_per_taxon (alias: occupancy_taxon; occ_tax)
                     - calculates alignment occupancy per taxon
                 pairwise_identity (alias: pairwise_id, pi)
@@ -294,119 +294,114 @@ class Phykit(object):
 
     ## Aliases
     def run_alias(self, command, argv):
-        # version
-        if command in ["version", "v"]:
-            return self.version()
-        # Alignment aliases
-        if command in ["aln_len", "al"]:
-            return self.alignment_length(argv)
-        elif command in ["aln_len_no_gaps", "alng"]:
-            return self.alignment_length_no_gaps(argv)
-        elif command in ["aln_entropy", "entropy"]:
-            return self.alignment_entropy(argv)
-        elif command in ["aln_recoding", "recode"]:
-            return self.alignment_recoding(argv)
-        elif command == "cs":
-            return self.column_score(argv)
-        elif command in ["comp_bias_per_site", "cbps"]:
-            return self.compositional_bias_per_site(argv)
-        elif command in ["evo_rate_per_site", "erps"]:
-            return self.evolutionary_rate_per_site(argv)
-        elif command in ["get_entry", "ge"]:
-            return self.faidx(argv)
-        elif command == "gc":
-            return self.gc_content(argv)
-        elif command in ["mask_aln", "mask"]:
-            return self.mask_alignment(argv)
-        elif command in ["occupancy_taxon", "occ_tax"]:
-            return self.occupancy_per_taxon(argv)
-        elif command in ["pairwise_id", "pi"]:
-            return self.pairwise_identity(argv)
-        elif command in ["comp_taxon", "comp_tax"]:
-            return self.composition_per_taxon(argv)
-        elif command == "pis":
-            return self.parsimony_informative_sites(argv)
-        elif command in ["rel_comp_var", "relative_composition_variability"]:
-            return self.rcv(argv)
-        elif command in ["relative_composition_variability_taxon", "rel_comp_var_taxon"]:
-            return self.rcvt(argv)
-        elif command == "rename_fasta":
-            return self.rename_fasta_entries(argv)
-        elif command in ["sum_of_pairs_score", "sops", "sop"]:
-            return self.sum_of_pairs_score(argv)
-        elif command == "vs":
-            return self.variable_sites(argv)
-        # Tree aliases
-        elif command == "bss":
-            return self.bipartition_support_stats(argv)
-        elif command == "blm":
-            return self.branch_length_multiplier(argv)
-        elif command in ["collapse", "cb"]:
-            return self.collapse_branches(argv)
-        elif command == "cover":
-            return self.covarying_evolutionary_rates(argv)
-        elif command == "degree_of_violation_of_a_molecular_clock":
-            return self.dvmc(argv)
-        elif command == "evo_rate":
-            return self.evolutionary_rate(argv)
-        elif command == "clan_check":
-            return self.hidden_paralogy_check(argv)
-        elif command == "ibs":
-            return self.internal_branch_stats(argv)
-        elif command == "il":
-            return self.internode_labeler(argv)
-        elif command in ["lca_subtree"]:
-            return self.last_common_ancestor_subtree(argv)
-        elif command in ["long_branch_score", "lbs"]:
-            return self.lb_score(argv)
-        elif command == "is_monophyletic":
-            return self.monophyly_check(argv)
-        elif command == "nni":
-            return self.nearest_neighbor_interchange(argv)
-        elif command == "pd":
-            return self.patristic_distances(argv)
-        elif command in ["polyt_test", "ptt", "polyt"]:
-            return self.polytomy_test(argv)
-        elif command in ["print", "pt"]:
-            return self.print_tree(argv)
-        elif command == "prune":
-            return self.prune_tree(argv)
-        elif command in ["rename_tree", "rename_tips"]:
-            return self.rename_tree_tips(argv)
-        elif command in ["robinson_foulds_distance", "rf_dist", "rf"]:
-            return self.rf_distance(argv)
-        elif command in ["root", "rt"]:
-            return self.root_tree(argv)
-        elif command in ["spurious_seq", "ss"]:
-            return self.spurious_sequence(argv)
-        elif command == "tbs":
-            return self.terminal_branch_stats(argv)
-        elif command in ["labels", "tree_labels", "tl"]:
-            return self.tip_labels(argv)
-        elif command in ["t2t_dist", "t2t"]:
-            return self.tip_to_tip_distance(argv)
-        elif command in ["t2t_node_dist", "t2t_nd"]:
-            return self.tip_to_tip_node_distance(argv)
-        elif command == "tree_len":
-            return self.total_tree_length(argv)
-        elif command == "tness":
-            return self.treeness(argv)
-        # Alignment- and tree-based aliases
-        elif command == "sat":
-            return self.saturation(argv)
-        elif command in ["toverr", "tor"]:
-            return self.treeness_over_rcv(argv)
-        # Helper aliases
-        elif command in ["create_concat", "cc"]:
-            return self.create_concatenation_matrix(argv)
-        elif command in ["pal2nal", "p2n"]:
-            return self.thread_dna(argv)
-        else:
-            print(textwrap.dedent(help_header))
-            print(
-                "Invalid command option. See help for a complete list of commands and aliases."
-            )
-            sys.exit(1)
+        alias_to_handler = {
+            # version
+            "version": "version",
+            "v": "version",
+            # Alignment aliases
+            "aln_len": "alignment_length",
+            "al": "alignment_length",
+            "aln_len_no_gaps": "alignment_length_no_gaps",
+            "alng": "alignment_length_no_gaps",
+            "aln_entropy": "alignment_entropy",
+            "entropy": "alignment_entropy",
+            "aln_recoding": "alignment_recoding",
+            "recode": "alignment_recoding",
+            "outlier_taxa": "alignment_outlier_taxa",
+            "aot": "alignment_outlier_taxa",
+            "cs": "column_score",
+            "comp_bias_per_site": "compositional_bias_per_site",
+            "cbps": "compositional_bias_per_site",
+            "evo_rate_per_site": "evolutionary_rate_per_site",
+            "erps": "evolutionary_rate_per_site",
+            "get_entry": "faidx",
+            "ge": "faidx",
+            "gc": "gc_content",
+            "mask_aln": "mask_alignment",
+            "mask": "mask_alignment",
+            "plot_qc": "plot_alignment_qc",
+            "paqc": "plot_alignment_qc",
+            "occupancy_taxon": "occupancy_per_taxon",
+            "occ_tax": "occupancy_per_taxon",
+            "pairwise_id": "pairwise_identity",
+            "pi": "pairwise_identity",
+            "comp_taxon": "composition_per_taxon",
+            "comp_tax": "composition_per_taxon",
+            "pis": "parsimony_informative_sites",
+            "rel_comp_var": "rcv",
+            "relative_composition_variability": "rcv",
+            "relative_composition_variability_taxon": "rcvt",
+            "rel_comp_var_taxon": "rcvt",
+            "rename_fasta": "rename_fasta_entries",
+            "sum_of_pairs_score": "sum_of_pairs_score",
+            "sops": "sum_of_pairs_score",
+            "sop": "sum_of_pairs_score",
+            "vs": "variable_sites",
+            # Tree aliases
+            "bss": "bipartition_support_stats",
+            "blm": "branch_length_multiplier",
+            "collapse": "collapse_branches",
+            "cb": "collapse_branches",
+            "cover": "covarying_evolutionary_rates",
+            "degree_of_violation_of_a_molecular_clock": "dvmc",
+            "evo_rate": "evolutionary_rate",
+            "clan_check": "hidden_paralogy_check",
+            "ibs": "internal_branch_stats",
+            "il": "internode_labeler",
+            "lca_subtree": "last_common_ancestor_subtree",
+            "long_branch_score": "lb_score",
+            "lbs": "lb_score",
+            "is_monophyletic": "monophyly_check",
+            "nni": "nearest_neighbor_interchange",
+            "pd": "patristic_distances",
+            "polyt_test": "polytomy_test",
+            "ptt": "polytomy_test",
+            "polyt": "polytomy_test",
+            "print": "print_tree",
+            "pt": "print_tree",
+            "prune": "prune_tree",
+            "rename_tree": "rename_tree_tips",
+            "rename_tips": "rename_tree_tips",
+            "robinson_foulds_distance": "rf_distance",
+            "rf_dist": "rf_distance",
+            "rf": "rf_distance",
+            "root": "root_tree",
+            "rt": "root_tree",
+            "spurious_seq": "spurious_sequence",
+            "ss": "spurious_sequence",
+            "tbs": "terminal_branch_stats",
+            "labels": "tip_labels",
+            "tree_labels": "tip_labels",
+            "tl": "tip_labels",
+            "t2t_dist": "tip_to_tip_distance",
+            "t2t": "tip_to_tip_distance",
+            "t2t_node_dist": "tip_to_tip_node_distance",
+            "t2t_nd": "tip_to_tip_node_distance",
+            "tree_len": "total_tree_length",
+            "tness": "treeness",
+            # Alignment- and tree-based aliases
+            "sat": "saturation",
+            "toverr": "treeness_over_rcv",
+            "tor": "treeness_over_rcv",
+            # Helper aliases
+            "create_concat": "create_concatenation_matrix",
+            "cc": "create_concatenation_matrix",
+            "pal2nal": "thread_dna",
+            "p2n": "thread_dna",
+        }
+
+        handler_name = alias_to_handler.get(command)
+        if handler_name:
+            handler = getattr(self, handler_name)
+            if handler_name == "version":
+                return handler()
+            return handler(argv)
+
+        print(textwrap.dedent(BANNER))
+        print(
+            "Invalid command option. See help for a complete list of commands and aliases."
+        )
+        sys.exit(1)
 
     ## print version
     def version(self):
@@ -421,10 +416,7 @@ class Phykit(object):
     ## Alignment functions
     @staticmethod
     def alignment_length(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -463,10 +455,7 @@ class Phykit(object):
 
     @staticmethod
     def alignment_length_no_gaps(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -512,10 +501,7 @@ class Phykit(object):
 
     @staticmethod
     def alignment_entropy(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -533,7 +519,7 @@ class Phykit(object):
                   pk_alignment_entropy, pk_aln_entropy, pk_entropy
 
                 Usage:
-                phykit alignment_entropy <alignment> [-v/--verbose] [--json]
+                phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -544,6 +530,12 @@ class Phykit(object):
                 -v/--verbose                optional argument to print
                                             entropy for each site
 
+                --plot                      optional argument to save a
+                                            per-site alignment entropy plot
+
+                --plot-output               output path for plot
+                                            (default: alignment_entropy_plot.png)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -553,16 +545,21 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="alignment_entropy_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         AlignmentEntropy(args).run()
 
     @staticmethod
     def alignment_recoding(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -698,11 +695,86 @@ class Phykit(object):
         AlignmentRecoding(args).run()
 
     @staticmethod
+    def alignment_outlier_taxa(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Identify potential outlier taxa in an alignment.
+
+                The following features are evaluated for each taxon:
+                1) gap_rate: fraction of gap/ambiguous characters
+                2) occupancy: fraction of valid characters
+                3) composition_distance: Euclidean distance from median composition profile
+                4) long_branch_proxy: mean pairwise sequence distance to other taxa
+                5) rcvt: relative composition variability per taxon
+                6) entropy_burden: mean site entropy over valid positions
+
+                Taxa are flagged when one or more feature values exceed
+                their feature-specific outlier threshold (or drop below the
+                occupancy threshold).
+
+                Aliases:
+                  alignment_outlier_taxa, outlier_taxa, aot
+                Command line interfaces:
+                  pk_alignment_outlier_taxa, pk_outlier_taxa, pk_aot
+
+                Usage:
+                phykit alignment_outlier_taxa <alignment>
+                  [--gap-z <float>] [--composition-z <float>] [--distance-z <float>]
+                  [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>]
+                  [--json]
+
+                Options
+                =====================================================
+                <alignment>                 first argument after
+                                            function name should be
+                                            an alignment file
+
+                --gap-z                     z-threshold for gap_rate
+                                            outlier detection
+
+                --composition-z             z-threshold for
+                                            composition_distance outlier
+                                            detection
+
+                --distance-z                z-threshold for
+                                            long_branch_proxy outlier
+                                            detection
+
+                --rcvt-z                    z-threshold for
+                                            rcvt outlier detection
+
+                --occupancy-z               z-threshold for
+                                            low-occupancy outlier detection
+
+                --entropy-z                 z-threshold for
+                                            entropy_burden outlier detection
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--gap-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--composition-z", type=float, default=3.0, required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--distance-z", type=float, default=3.0, required=False, help=SUPPRESS
+        )
+        parser.add_argument("--rcvt-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--occupancy-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--entropy-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        AlignmentOutlierTaxa(args).run()
+
+    @staticmethod
     def column_score(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -745,10 +817,7 @@ class Phykit(object):
 
     @staticmethod
     def compositional_bias_per_site(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -768,7 +837,7 @@ class Phykit(object):
                   pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
 
                 Usage:
-                phykit compositional_bias_per_site <alignment> [--json]
+                phykit compositional_bias_per_site <alignment> [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -776,22 +845,34 @@ class Phykit(object):
                                             function name should be a
                                             fasta alignment file
 
+                --plot                      optional argument to save a
+                                            Manhattan-style plot of
+                                            compositional bias per site
+
+                --plot-output               output path for plot
+                                            (default: compositional_bias_per_site_plot.png)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="compositional_bias_per_site_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CompositionalBiasPerSite(args).run()
 
     @staticmethod
     def composition_per_taxon(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -828,10 +909,7 @@ class Phykit(object):
 
     @staticmethod
     def evolutionary_rate_per_site(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -854,7 +932,7 @@ class Phykit(object):
         
 
                 Usage:
-                phykit evo_rate_per_site <fasta> [--json]
+                phykit evo_rate_per_site <fasta> [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -862,22 +940,33 @@ class Phykit(object):
                                             function name should be a
                                             query fasta file
 
+                --plot                      optional argument to save a
+                                            per-site evolutionary-rate plot
+
+                --plot-output               output path for plot
+                                            (default: evolutionary_rate_per_site_plot.png)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="evolutionary_rate_per_site_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         EvolutionaryRatePerSite(args).run()
 
     @staticmethod
     def faidx(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -923,10 +1012,7 @@ class Phykit(object):
 
     @staticmethod
     def gc_content(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -975,10 +1061,7 @@ class Phykit(object):
 
     @staticmethod
     def mask_alignment(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1032,11 +1115,81 @@ class Phykit(object):
         MaskAlignment(args).run()
 
     @staticmethod
+    def plot_alignment_qc(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Generate a multi-panel alignment quality-control plot.
+
+                The figure summarizes per-taxon occupancy and gap rates,
+                composition-distance versus long-branch proxy, and counts
+                of feature-based outlier flags.
+
+                Features evaluated:
+                gap_rate, occupancy, composition_distance, long_branch_proxy,
+                rcvt, entropy_burden
+
+                Aliases:
+                  plot_alignment_qc, plot_qc, paqc
+                Command line interfaces:
+                  pk_plot_alignment_qc, pk_plot_qc, pk_paqc
+
+                Usage:
+                phykit plot_alignment_qc <alignment> [-o/--output <path>]
+                  [--width <float>] [--height <float>] [--dpi <int>]
+                  [--gap-z <float>] [--composition-z <float>] [--distance-z <float>]
+                  [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>]
+                  [--json]
+
+                Options
+                =====================================================
+                <alignment>                 first argument after
+                                            function name should be
+                                            an alignment file
+
+                -o/--output                output image path
+                                            (default: alignment_qc.png)
+
+                --width                    figure width in inches
+                                            (default: 14.0)
+
+                --height                   figure height in inches
+                                            (default: 10.0)
+
+                --dpi                      image DPI (default: 300)
+
+                --gap-z                    z-threshold for gap_rate outliers
+                --composition-z            z-threshold for composition_distance outliers
+                --distance-z               z-threshold for long_branch_proxy outliers
+                --rcvt-z                   z-threshold for rcvt outliers
+                --occupancy-z              z-threshold for low occupancy outliers
+                --entropy-z                z-threshold for entropy_burden outliers
+
+                --json                     optional argument to output
+                                            metadata as JSON
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("-o", "--output", type=str, default="alignment_qc.png", required=False, help=SUPPRESS)
+        parser.add_argument("--width", type=float, default=14.0, required=False, help=SUPPRESS)
+        parser.add_argument("--height", type=float, default=10.0, required=False, help=SUPPRESS)
+        parser.add_argument("--dpi", type=int, default=300, required=False, help=SUPPRESS)
+        parser.add_argument("--gap-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--composition-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--distance-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--rcvt-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--occupancy-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--entropy-z", type=float, default=3.0, required=False, help=SUPPRESS)
+        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        args = parser.parse_args(argv)
+        PlotAlignmentQC(args).run()
+
+    @staticmethod
     def occupancy_per_taxon(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1072,10 +1225,7 @@ class Phykit(object):
 
     @staticmethod
     def pairwise_identity(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1101,7 +1251,7 @@ class Phykit(object):
                   pk_pairwise_identity, pk_pairwise_id, pk_pi
 
                 Usage:
-                phykit pairwise_identity <alignment> [-v/--verbose] [--json]
+                phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>] [--json]
 
                 Options
                 =====================================================
@@ -1113,6 +1263,12 @@ class Phykit(object):
                                             identity per pair
 
                 -e/--exclude_gaps           if a site has a gap, ignore it
+
+                --plot                      optional argument to save a clustered
+                                            pairwise-identity heatmap
+
+                --plot-output               output path for heatmap
+                                            (default: pairwise_identity_heatmap.png)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1126,16 +1282,21 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            required=False,
+            default="pairwise_identity_heatmap.png",
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 
     @staticmethod
     def parsimony_informative_sites(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1183,10 +1344,7 @@ class Phykit(object):
 
     @staticmethod
     def rcv(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1226,10 +1384,7 @@ class Phykit(object):
 
     @staticmethod
     def rcvt(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1247,7 +1402,8 @@ class Phykit(object):
                   pk_relative_composition_variability_taxon, pk_rel_comp_var_taxon, pk_rcvt
 
                 Usage:
-                phykit relative_composition_variability_taxon <alignment> [--json]
+                phykit relative_composition_variability_taxon <alignment>
+                  [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -1255,22 +1411,27 @@ class Phykit(object):
                                             function name should be
                                             an alignment file          
 
+                --plot                      optional argument to output
+                                            an RCVT barplot (PNG)
+
+                --plot-output               output path for plot
+                                            (default: rcvt_plot.png)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument("--plot-output", type=str, default="rcvt_plot.png", required=False, help=SUPPRESS)
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         RelativeCompositionVariabilityTaxon(args).run()
 
     @staticmethod
     def rename_fasta_entries(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1322,10 +1483,7 @@ class Phykit(object):
 
     @staticmethod
     def sum_of_pairs_score(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1368,10 +1526,7 @@ class Phykit(object):
 
     @staticmethod
     def variable_sites(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1418,10 +1573,7 @@ class Phykit(object):
     ## Tree functions
     @staticmethod
     def bipartition_support_stats(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1478,10 +1630,7 @@ class Phykit(object):
 
     @staticmethod
     def branch_length_multiplier(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header} 
@@ -1529,10 +1678,7 @@ class Phykit(object):
 
     @staticmethod
     def collapse_branches(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header} 
@@ -1580,10 +1726,7 @@ class Phykit(object):
 
     @staticmethod
     def covarying_evolutionary_rates(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1619,7 +1762,7 @@ class Phykit(object):
 
                 Usage:
                 phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
-                    -r/--reference <reference_tree_file> [-v/--verbose] [--json]
+                    -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -1640,6 +1783,12 @@ class Phykit(object):
                                             lengths shared between
                                             tree 0 and tree 1
 
+                --plot                      optional argument to save a
+                                            covarying-rates scatter plot
+
+                --plot-output               output path for plot
+                                            (default: covarying_rates_plot.png)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -1653,16 +1802,21 @@ class Phykit(object):
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="covarying_rates_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CovaryingEvolutionaryRates(args).run()
 
     @staticmethod
     def dvmc(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1705,10 +1859,7 @@ class Phykit(object):
 
     @staticmethod
     def evolutionary_rate(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1746,10 +1897,7 @@ class Phykit(object):
 
     @staticmethod
     def hidden_paralogy_check(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1819,10 +1967,7 @@ class Phykit(object):
 
     @staticmethod
     def internal_branch_stats(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1865,10 +2010,7 @@ class Phykit(object):
 
     @staticmethod
     def internode_labeler(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1907,10 +2049,7 @@ class Phykit(object):
 
     @staticmethod
     def last_common_ancestor_subtree(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -1953,10 +2092,7 @@ class Phykit(object):
 
     @staticmethod
     def lb_score(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2009,10 +2145,7 @@ class Phykit(object):
 
     @staticmethod
     def monophyly_check(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2067,10 +2200,7 @@ class Phykit(object):
 
     @staticmethod
     def nearest_neighbor_interchange(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2116,10 +2246,7 @@ class Phykit(object):
 
     @staticmethod
     def patristic_distances(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2166,10 +2293,7 @@ class Phykit(object):
 
     @staticmethod
     def polytomy_test(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2233,10 +2357,7 @@ class Phykit(object):
 
     @staticmethod
     def print_tree(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2280,10 +2401,7 @@ class Phykit(object):
 
     @staticmethod
     def prune_tree(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2341,10 +2459,7 @@ class Phykit(object):
 
     @staticmethod
     def rename_tree_tips(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2396,10 +2511,7 @@ class Phykit(object):
 
     @staticmethod
     def rf_distance(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2454,10 +2566,7 @@ class Phykit(object):
 
     @staticmethod
     def root_tree(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2509,10 +2618,7 @@ class Phykit(object):
 
     @staticmethod
     def spurious_sequence(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header} 
@@ -2570,10 +2676,7 @@ class Phykit(object):
 
     @staticmethod
     def terminal_branch_stats(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2616,10 +2719,7 @@ class Phykit(object):
 
     @staticmethod
     def tip_labels(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2652,10 +2752,7 @@ class Phykit(object):
 
     @staticmethod
     def tip_to_tip_distance(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2671,6 +2768,7 @@ class Phykit(object):
 
                 Usage:
                 phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2> [--json]
+                phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -2686,24 +2784,40 @@ class Phykit(object):
                                             function name should be
                                             the second tip name
 
+                --all-pairs                 optional argument to report
+                                            all pairwise tip distances
+
+                --plot                      optional argument to save a
+                                            clustered distance heatmap
+                                            (requires --all-pairs)
+
+                --plot-output               output path for heatmap
+                                            (default: tip_to_tip_distance_heatmap.png)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
             ),
         )
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
-        parser.add_argument("tip_1", type=str, help=SUPPRESS)
-        parser.add_argument("tip_2", type=str, help=SUPPRESS)
+        parser.add_argument("tip_1", type=str, nargs="?", help=SUPPRESS)
+        parser.add_argument("tip_2", type=str, nargs="?", help=SUPPRESS)
+        parser.add_argument("--all-pairs", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="tip_to_tip_distance_heatmap.png",
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         TipToTipDistance(args).run()
 
     @staticmethod
     def tip_to_tip_node_distance(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2749,10 +2863,7 @@ class Phykit(object):
 
     @staticmethod
     def total_tree_length(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2785,10 +2896,7 @@ class Phykit(object):
 
     @staticmethod
     def treeness(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2834,10 +2942,7 @@ class Phykit(object):
     ## Alignment and tree functions
     @staticmethod
     def saturation(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2865,7 +2970,7 @@ class Phykit(object):
                   pk_saturation, pk_sat
 
                 Usage:
-                phykit saturation -a <alignment> -t <tree> [-v/--verbose] [--json]
+                phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -2878,6 +2983,12 @@ class Phykit(object):
                 -v/--verbose                print out patristic distances
                                             and uncorrected distances used
                                             to determine saturation
+
+                --plot                      optional argument to save a
+                                            saturation scatter plot
+
+                --plot-output               output path for saturation plot
+                                            (default: saturation_plot.png)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -2896,16 +3007,21 @@ class Phykit(object):
         parser.add_argument(
             "-e", "--exclude_gaps", action="store_true", required=False, help=SUPPRESS
         )
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="saturation_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         Saturation(args).run()
 
     @staticmethod
     def treeness_over_rcv(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2956,10 +3072,7 @@ class Phykit(object):
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -2986,7 +3099,8 @@ class Phykit(object):
                   pk_create_concatenation_matrix, pk_create_concat, pk_cc
 
                 Usage:
-                phykit create_concatenation_matrix -a <file> -p <string> [--json]
+                phykit create_concatenation_matrix -a <file> -p <string>
+                  [--plot-occupancy] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -3001,6 +3115,13 @@ class Phykit(object):
 
                 -p/--prefix                 prefix of output files
 
+                --plot-occupancy            optional argument to generate
+                                            occupancy map figure
+
+                --plot-output               output path for occupancy
+                                            figure. default:
+                                            <prefix>.occupancy.png
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -3008,16 +3129,15 @@ class Phykit(object):
         )
         parser.add_argument("-a", "--alignment_list", type=str, help=SUPPRESS)
         parser.add_argument("-p", "--prefix", type=str, help=SUPPRESS)
+        parser.add_argument("--plot-occupancy", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument("--plot-output", type=str, required=False, default=None, help=SUPPRESS)
         parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
         args = parser.parse_args(argv)
         CreateConcatenationMatrix(args).run()
 
     @staticmethod
     def thread_dna(argv):
-        parser = ArgumentParser(
-            add_help=True,
-            usage=SUPPRESS,
-            formatter_class=RawDescriptionHelpFormatter,
+        parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
@@ -3102,6 +3222,10 @@ def alignment_entropy(argv=None):
     Phykit.alignment_entropy(sys.argv[1:])
 
 
+def alignment_outlier_taxa(argv=None):
+    Phykit.alignment_outlier_taxa(sys.argv[1:])
+
+
 def column_score(argv=None):
     Phykit.column_score(sys.argv[1:])
 
@@ -3128,6 +3252,10 @@ def gc_content(argv=None):
 
 def mask_alignment(argv=None):
     Phykit.mask_alignment(sys.argv[1:])
+
+
+def plot_alignment_qc(argv=None):
+    Phykit.plot_alignment_qc(sys.argv[1:])
 
 
 def occupancy_per_taxon(argv=None):

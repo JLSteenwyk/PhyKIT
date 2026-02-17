@@ -147,12 +147,12 @@ class Tree(BaseService):
         if not tree:
             tree = self.read_tree_file()
 
-        inter_len = float(0.0)
+        inter_len = 0.0
         # determine internal branch lengths
-        for interal in tree.get_nonterminals():
+        for internal in tree.get_nonterminals():
             # only include if a branch length value is present
-            if interal.branch_length != None:
-                inter_len += interal.branch_length
+            if internal.branch_length is not None:
+                inter_len += internal.branch_length
         # determine total branch length
         total_len = tree.total_branch_length()
 
@@ -171,7 +171,8 @@ class Tree(BaseService):
             except BrokenPipeError:
                 pass
 
-    def get_gap_chars(is_protein: bool) -> List[str]:
+    @staticmethod
+    def get_gap_chars(is_protein: bool = False) -> List[str]:
         if is_protein:
             return ["-", "?", "*", "X", "x"]
         else:

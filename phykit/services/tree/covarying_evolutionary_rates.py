@@ -1,7 +1,5 @@
-import copy
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from functools import lru_cache
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import pickle
 
 from scipy.stats import pearsonr, zscore
@@ -20,6 +18,8 @@ class CovaryingEvolutionaryRates(Tree):
             verbose=parsed["verbose"],
         )
         self.json_output = parsed["json_output"]
+        self.plot = parsed["plot"]
+        self.plot_output = parsed["plot_output"]
 
     def run(self):
         tree_zero = self.read_tree_file()
@@ -84,6 +84,13 @@ class CovaryingEvolutionaryRates(Tree):
             pearsonr(tree_zero_corr_branch_lengths, tree_one_corr_branch_lengths)
         )
 
+        if self.plot:
+            self._plot_covarying_rates_scatter(
+                tree_zero_corr_branch_lengths,
+                tree_one_corr_branch_lengths,
+                corr,
+            )
+
         try:
             if self.json_output:
                 if self.verbose:
@@ -99,21 +106,19 @@ class CovaryingEvolutionaryRates(Tree):
                             tip_names,
                         )
                     ]
-                    print_json(
-                        dict(
-                            verbose=True,
-                            rows=rows,
-                            branches=rows,
-                        )
-                    )
+                    payload = dict(verbose=True, rows=rows, branches=rows)
+                    if self.plot:
+                        payload["plot_output"] = self.plot_output
+                    print_json(payload)
                 else:
-                    print_json(
-                        dict(
-                            verbose=False,
-                            correlation=round(float(corr[0]), 4),
-                            p_value=round(float(corr[1]), 6),
-                        )
+                    payload = dict(
+                        verbose=False,
+                        correlation=round(float(corr[0]), 4),
+                        p_value=round(float(corr[1]), 6),
                     )
+                    if self.plot:
+                        payload["plot_output"] = self.plot_output
+                    print_json(payload)
                 return
 
             if self.verbose:
@@ -127,6 +132,8 @@ class CovaryingEvolutionaryRates(Tree):
                     )
             else:
                 print(f"{round(corr[0], 4)}\t{round(corr[1], 6)}")
+            if self.plot:
+                print(f"Saved covarying rates plot: {self.plot_output}")
         except BrokenPipeError:
             pass
 
@@ -137,7 +144,67 @@ class CovaryingEvolutionaryRates(Tree):
             reference=args.reference,
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
+            plot=getattr(args, "plot", False),
+            plot_output=getattr(args, "plot_output", "covarying_rates_plot.png"),
         )
+
+    def _plot_covarying_rates_scatter(self, x_vals, y_vals, corr):
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print(
+                "matplotlib is required for --plot in covarying_evolutionary_rates. Install matplotlib and retry."
+            )
+            raise SystemExit(2)
+
+        x = np.asarray(x_vals, dtype=float)
+        y = np.asarray(y_vals, dtype=float)
+        finite_mask = np.isfinite(x) & np.isfinite(y)
+        x = x[finite_mask]
+        y = y[finite_mask]
+
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.scatter(
+            x,
+            y,
+            s=14,
+            alpha=0.6,
+            color="#2b8cbe",
+            edgecolors="none",
+        )
+
+        if x.size >= 2:
+            slope, intercept = np.polyfit(x, y, 1)
+            x_line = np.linspace(float(np.min(x)), float(np.max(x)), 200)
+            y_line = slope * x_line + intercept
+            ax.plot(
+                x_line,
+                y_line,
+                color="#000000",
+                linestyle="--",
+                linewidth=2.0,
+                label=f"Best fit (slope={slope:.4f})",
+            )
+            ax.legend(loc="best", frameon=False)
+
+        ax.set_title("Covarying Evolutionary Rates")
+        ax.set_xlabel("Tree zero relative rate (z-score)")
+        ax.set_ylabel("Tree one relative rate (z-score)")
+        ax.text(
+            0.02,
+            0.98,
+            f"r={float(corr[0]):.4f}\np={float(corr[1]):.6g}",
+            transform=ax.transAxes,
+            va="top",
+            ha="left",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", alpha=0.8, edgecolor="none"),
+        )
+        fig.tight_layout()
+        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
     def get_indices_of_outlier_branch_lengths(
         self, corr_branch_lengths, outlier_indices

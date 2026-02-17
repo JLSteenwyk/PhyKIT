@@ -1,10 +1,8 @@
 import pytest
 import sys
 import json
-from math import isclose
-from mock import patch, call
+from mock import patch
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -57,32 +55,20 @@ class TestPruneTree(object):
 
     @patch("builtins.print")
     def test_prune_wrong_path_tre(self, mocked_print):
-        testargs = [
-            "phykit",
-            "prune",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tr",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_prune.txt",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_prune_wrong_path_list(self, mocked_print):
-        testargs = [
-            "phykit",
-            "prune",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_prune.tx",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

@@ -5,10 +5,8 @@ Unit tests for caching utilities
 import os
 import tempfile
 import shutil
-import pickle
 from unittest import TestCase
-from unittest.mock import Mock, patch, MagicMock
-import json
+from unittest.mock import Mock, patch
 
 from phykit.helpers.caching import (
     ResultCache,
@@ -129,7 +127,7 @@ class TestResultCache(TestCase):
         try:
             # Should not raise exception
             self.cache.set(test_key, "test_value")
-        except:
+        except Exception:
             self.fail("set() raised exception unexpectedly")
         finally:
             # Restore permissions
@@ -211,8 +209,8 @@ class TestCachedComputation(TestCase):
             return x ** 2
 
         # Add some cached results
-        result1 = test_function(2)
-        result2 = test_function(3)
+        test_function(2)
+        test_function(3)
 
         # Clear cache
         test_function.clear_cache()

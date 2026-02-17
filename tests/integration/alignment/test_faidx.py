@@ -40,7 +40,7 @@ class TestFaidx(object):
         assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
-    def test_faidx_alias1(self, mocked_print):
+    def test_faidx_protein_entry(self, mocked_print):
         expected_result = ">1\nA-GTAT"
         testargs = [
             "phykit",

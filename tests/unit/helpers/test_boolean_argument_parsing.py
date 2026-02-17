@@ -1,4 +1,3 @@
-import argparse
 
 import pytest
 
@@ -8,42 +7,42 @@ class TestBooleanHandling(object):
     def test_str2bool_true_boolean(self):
         v = True
         v = str2bool(v)
-        assert v == True
+        assert v is True
 
     def test_str2bool_false_boolean(self):
         v = False
         v = str2bool(v)
-        assert v == False
+        assert v is False
 
     def test_str2bool_true_str_boolean(self):
         v = 'true'
         v = str2bool(v)
-        assert v == True
+        assert v is True
 
     def test_str2bool_false_str_boolean(self):
         v = 'false'
         v = str2bool(v)
-        assert v == False
+        assert v is False
 
-    def test_str2bool_true_str_boolean(self):
+    def test_str2bool_t_str_boolean(self):
         v = 't'
         v = str2bool(v)
-        assert v == True
+        assert v is True
 
-    def test_str2bool_false_str_boolean(self):
+    def test_str2bool_f_str_boolean(self):
         v = 'f'
         v = str2bool(v)
-        assert v == False
+        assert v is False
 
     def test_str2bool_1_str_boolean(self):
         v = '1'
         v = str2bool(v)
-        assert v == True
+        assert v is True
 
     def test_str2bool_0_str_boolean(self):
         v = '0'
         v = str2bool(v)
-        assert v == False
+        assert v is False
 
     def test_str2bool_argument_type_error(self):
         v = 'Not_valid'
@@ -51,4 +50,3 @@ class TestBooleanHandling(object):
             v = str2bool(v)
         assert "Boolean value expected." in str(excinfo.value)
         
-

@@ -1,6 +1,5 @@
 import sys
 from typing import Dict, List, Union
-from functools import lru_cache
 import multiprocessing as mp
 from functools import partial
 
@@ -121,7 +120,7 @@ class HiddenParalogyCheck(Tree):
 
     def read_clades_file(self, clades: str) -> List[List[str]]:
         try:
-            with open(clades, 'r') as file:
+            with open(clades) as file:
                 return [line.split() for line in file.readlines()]
         except FileNotFoundError:
             print("Clade file not found. Please check the path.")

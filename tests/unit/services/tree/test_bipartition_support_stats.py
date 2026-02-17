@@ -3,8 +3,6 @@ import sys
 import json
 
 from argparse import Namespace
-from Bio import Phylo
-from math import isclose
 from mock import patch, call
 
 from phykit.phykit import Phykit
@@ -46,7 +44,7 @@ class TestBipartitionSupportStats(object):
             with pytest.raises(SystemExit) as pytest_wrapped_e:
                 Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         mocked_print.assert_has_calls([
             call("Please check filename and pathing"),
         ])

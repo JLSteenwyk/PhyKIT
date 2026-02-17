@@ -4,13 +4,7 @@ Unit tests for HiddenParalogyCheck class
 
 import unittest
 from unittest.mock import Mock, MagicMock, patch, call, mock_open
-import sys
-import tempfile
-import os
 from argparse import Namespace
-from Bio import Phylo
-from io import StringIO
-import multiprocessing as mp
 
 from phykit.services.tree.hidden_paralogy_check import HiddenParalogyCheck
 

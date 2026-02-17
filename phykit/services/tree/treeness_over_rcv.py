@@ -1,22 +1,8 @@
-from enum import Enum
 from typing import Dict
 
 from .base import Tree
 from ..alignment.base import Alignment
 from ...helpers.json_output import print_json
-
-
-# TODO: Here next
-class FileFormat(Enum):
-    fasta = "fasta"
-    clustal = "clustal"
-    maf = "maf"
-    mauve = "mauve"
-    phylip = "phylip"
-    phylip_seq = "phylip-sequential"
-    phylip_rel = "phylip-relaxed"
-    stockholm = "stockholm"
-
 
 class TreenessOverRCV(Tree):
     def __init__(self, args) -> None:

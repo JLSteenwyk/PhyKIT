@@ -37,7 +37,7 @@ class TestAlignmentLengthNoGaps(object):
         expected_length = 6
         expected_aln_len_no_gaps = 3
         expected_aln_len_no_gaps_per = 50.0
-        mock_get_sites_no_gaps_count = mocker.patch(
+        mocker.patch(
             "phykit.services.alignment.alignment_length_no_gaps.AlignmentLengthNoGaps.get_sites_no_gaps_count",
             return_value=expected_aln_len_no_gaps
         )

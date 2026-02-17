@@ -92,30 +92,18 @@ class TestRF(object):
 
     @patch("builtins.print")
     def test_rf_distance_incorrect_tree0_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "rf",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tr",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_other_topology.tre",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_rf_distance_incorrect_tree1_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "rf",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_other_topology.tr",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

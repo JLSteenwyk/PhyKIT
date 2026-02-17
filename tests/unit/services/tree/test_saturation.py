@@ -9,9 +9,8 @@ from argparse import Namespace
 from Bio import Align
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-import multiprocessing as mp
 
-from phykit.services.tree.saturation import Saturation, FileFormat
+from phykit.services.tree.saturation import Saturation
 
 
 class TestSaturation(unittest.TestCase):
@@ -48,13 +47,6 @@ class TestSaturation(unittest.TestCase):
         self.assertEqual(processed["alignment_file_path"], "my_alignment.fasta")
         self.assertTrue(processed["exclude_gaps"])
         self.assertTrue(processed["verbose"])
-
-    def test_file_format_enum(self):
-        """Test FileFormat enum"""
-        self.assertEqual(FileFormat.fasta.value, "fasta")
-        self.assertEqual(FileFormat.clustal.value, "clustal")
-        self.assertEqual(FileFormat.phylip.value, "phylip")
-        self.assertEqual(FileFormat.stockholm.value, "stockholm")
 
     def test_process_combo_batch_without_gaps(self):
         """Test processing combination batch without gap exclusion"""

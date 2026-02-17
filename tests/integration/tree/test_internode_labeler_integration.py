@@ -72,18 +72,11 @@ class TestInternodeLabeler(object):
 
     @patch("builtins.print")
     def test_internode_labeler_incorrect_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "internode_labeler",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            "-o",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.custom_out_internode_labels.tre"
-        ]
         
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

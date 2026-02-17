@@ -1,7 +1,5 @@
 import pytest
 from argparse import Namespace
-from Bio import Phylo
-from math import isclose
 
 from phykit.services.tree.dvmc import DVMC
 

@@ -1,5 +1,4 @@
 import pytest
-from argparse import Namespace
 from pathlib import Path
 
 from Bio import AlignIO
@@ -11,6 +10,7 @@ here = Path(__file__)
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "integration: mark as integration test")
+    config.addinivalue_line("markers", "slow: mark as slow-running test")
 
 # alignment fixtures
 @pytest.fixture
@@ -61,4 +61,3 @@ def small_aspergillus_tree(mocker):
     return Phylo.read(
         f"{here.parent}/sample_files/small_Aspergillus_tree.tre", "newick",
     )
-

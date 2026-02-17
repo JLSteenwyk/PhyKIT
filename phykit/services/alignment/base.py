@@ -111,7 +111,8 @@ class Alignment(BaseService):
 
         return float(np.sum(indiv_rcv_values))
 
-    def get_gap_chars(is_protein: bool) -> List[str]:
+    @staticmethod
+    def get_gap_chars(is_protein: bool = False) -> List[str]:
         if is_protein:
             return ["-", "?", "*", "X", "x"]
         else:

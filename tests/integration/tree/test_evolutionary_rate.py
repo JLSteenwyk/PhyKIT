@@ -37,15 +37,10 @@ class TestEvoRate(object):
 
     @patch("builtins.print")
     def test_evolutionary_rate_bad_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "evo_rate",
-            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefil",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")

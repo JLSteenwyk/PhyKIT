@@ -2,7 +2,7 @@
 Streaming utilities for memory-efficient processing of large files
 """
 
-from typing import Iterator, Tuple, Optional
+from typing import Iterator, Optional
 import mmap
 import os
 from Bio import SeqIO
@@ -31,9 +31,8 @@ class StreamingFastaReader:
         """
         Stream sequences one at a time.
         """
-        with open(self.file_path, 'r') as handle:
-            for record in SeqIO.parse(handle, "fasta"):
-                yield record
+        with open(self.file_path) as handle:
+            yield from SeqIO.parse(handle, "fasta")
 
     def stream_chunks(self) -> Iterator[list]:
         """

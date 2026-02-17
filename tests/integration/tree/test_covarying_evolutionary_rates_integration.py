@@ -1,10 +1,8 @@
 import pytest
 import sys
 import json
-from math import isclose
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -74,98 +72,50 @@ class TestCovaryingEvolutionaryRates(object):
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree0(self, mocked_print):
-        testargs = [
-            "phykit",
-            "cover",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tr",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
-            "-r",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree1(self, mocked_print):
-        testargs = [
-            "phykit",
-            "cover",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tr",
-            "-r",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_reference(self, mocked_print):
-        testargs = [
-            "phykit",
-            "cover",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
-            "-r",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tr",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree_topology(self, mocked_print):
-        testargs = [
-            "phykit",
-            "cover",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
-            "-r",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_3_incorrect_topology.tre ",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_no_common_tips(self, mocked_print):
-        testargs = [
-            "phykit",
-            "cover",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_no_match_0.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_no_match_1.tre",
-            "-r",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_tree_topologies_do_not_match(self, mocked_print):
-        testargs = [
-            "phykit",
-            "cover",
-            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_wrong_topology.tre",
-            "-r",
-            f"{here.parent.parent.parent}/sample_files/tree_simple_3_incorrect_topology.tre ",
-        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -225,3 +175,48 @@ class TestCovaryingEvolutionaryRates(object):
             "tree_one_rate": -1.3686,
             "tree_zero_rate": -0.333,
         }
+
+    @patch("phykit.services.tree.covarying_evolutionary_rates.CovaryingEvolutionaryRates._plot_covarying_rates_scatter")
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_plot(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "--plot",
+            "--plot-output",
+            "cover_test_plot.png",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        assert any(
+            call.args[0] == "Saved covarying rates plot: cover_test_plot.png"
+            for call in mocked_print.mock_calls
+        )
+
+    @patch("phykit.services.tree.covarying_evolutionary_rates.CovaryingEvolutionaryRates._plot_covarying_rates_scatter")
+    @patch("builtins.print")
+    def test_covarying_evolutionary_rates_plot_json(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+            "--plot",
+            "--plot-output",
+            "cover_test_plot_json.png",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["plot_output"] == "cover_test_plot_json.png"

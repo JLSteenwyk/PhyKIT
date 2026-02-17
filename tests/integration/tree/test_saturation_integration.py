@@ -43,36 +43,20 @@ class TestSaturation(object):
 
     @patch("builtins.print")
     def test_saturation_incorrect_tree_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "saturation",
-            "-t",
-            f"{here.parent.parent.parent}/sample_files/does_not_exist",
-            "-a",
-            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_saturation_incorrect_alignment_path(self, mocked_print):
-        testargs = [
-            "phykit",
-            "saturation",
-            "-t",
-            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
-            "-a",
-            f"{here.parent.parent.parent}/sample_files/does_not_exist",
-        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
@@ -201,3 +185,48 @@ class TestSaturation(object):
             "uncorrected_distance": 0.3864,
             "patristic_distance": 0.6176,
         }
+
+    @patch("phykit.services.tree.saturation.Saturation._plot_saturation_scatter")
+    @patch("builtins.print")
+    def test_saturation_plot(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
+            "--plot",
+            "--plot-output",
+            "saturation_test_plot.png",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        assert any(
+            call.args[0] == "Saved saturation plot: saturation_test_plot.png"
+            for call in mocked_print.mock_calls
+        )
+
+    @patch("phykit.services.tree.saturation.Saturation._plot_saturation_scatter")
+    @patch("builtins.print")
+    def test_saturation_plot_json(self, mocked_print, mocked_plot):
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
+            "--plot",
+            "--plot-output",
+            "saturation_test_plot_json.png",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_plot.called
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["plot_output"] == "saturation_test_plot_json.png"

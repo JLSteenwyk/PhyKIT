@@ -1,8 +1,5 @@
-from enum import Enum
-import re
 import sys
-from typing import Dict, Tuple
-from collections import Counter
+from typing import Dict
 import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
@@ -10,16 +7,6 @@ from Bio.Align import MultipleSeqAlignment
 from .base import Alignment
 from ...helpers.files import get_alignment_and_format
 from ...helpers.json_output import print_json
-
-
-class FileFormat(Enum):
-    fasta = "fasta"
-    clustal = "clustal"
-    maf = "maf"
-    mauve = "mauve"
-    phylip = "phylip"
-    phylip_seq = "phylip-sequential"
-    stockholm = "stockholm"
 
 
 class GCContent(Alignment):
@@ -37,7 +24,7 @@ class GCContent(Alignment):
 
         if self.json_output:
             if self.verbose:
-                rows = self.calculate_gc_per_sequence_data(records)
+                rows = self.calculate_gc_per_sequence_data(records, is_protein)
                 row_payload = [
                     dict(taxon=taxon, gc_content=round(gc_content, 4))
                     for taxon, gc_content in rows
@@ -53,15 +40,15 @@ class GCContent(Alignment):
                 print_json(
                     dict(
                         verbose=False,
-                        gc_content=self.calculate_gc_total_value(records),
+                        gc_content=self.calculate_gc_total_value(records, is_protein),
                     )
                 )
             return
 
         if self.verbose:
-            self.calculate_gc_per_sequence(records)
+            self.calculate_gc_per_sequence(records, is_protein)
         else:
-            self.calculate_gc_total(records)
+            self.calculate_gc_total(records, is_protein)
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(
@@ -71,9 +58,9 @@ class GCContent(Alignment):
         )
 
     def calculate_gc_per_sequence_data(
-        self, records: MultipleSeqAlignment
+        self, records: MultipleSeqAlignment, is_protein: bool = False
     ) -> list[tuple[str, float]]:
-        gap_chars = set(self.get_gap_chars())
+        gap_chars = set(self.get_gap_chars(is_protein))
         output = []
         for record in records:
             seq_arr = np.array(list(str(record.seq).upper()), dtype='U1')
@@ -88,15 +75,21 @@ class GCContent(Alignment):
             output.append((record.id, float(gc_content)))
         return output
 
-    def calculate_gc_per_sequence(self, records: MultipleSeqAlignment) -> None:
-        for record_id, gc_content in self.calculate_gc_per_sequence_data(records):
+    def calculate_gc_per_sequence(
+        self, records: MultipleSeqAlignment, is_protein: bool = False
+    ) -> None:
+        for record_id, gc_content in self.calculate_gc_per_sequence_data(
+            records, is_protein
+        ):
             try:
                 print(f"{record_id}\t{round(gc_content, 4)}")
             except BrokenPipeError:
                 pass
 
-    def calculate_gc_total_value(self, records: MultipleSeqAlignment) -> float:
-        gap_chars = set(self.get_gap_chars())
+    def calculate_gc_total_value(
+        self, records: MultipleSeqAlignment, is_protein: bool = False
+    ) -> float:
+        gap_chars = set(self.get_gap_chars(is_protein))
 
         # Combine all sequences into one array
         all_seqs = [list(str(record.seq).upper()) for record in records]
@@ -115,13 +108,7 @@ class GCContent(Alignment):
         )
         sys.exit(2)
 
-    def calculate_gc_total(self, records: MultipleSeqAlignment) -> None:
-        print(self.calculate_gc_total_value(records))
-
-    def remove_gaps_and_count_gc(self, seq: str) -> Tuple[str, float]:
-        gap_chars = self.get_gap_chars()
-        pattern = "[" + "".join(re.escape(char) for char in gap_chars) + "]"
-        cleaned_seq = re.sub(pattern, "", seq)
-        gc_count = Counter(cleaned_seq.upper())["G"] + Counter(cleaned_seq.upper())["C"]
-
-        return cleaned_seq, gc_count
+    def calculate_gc_total(
+        self, records: MultipleSeqAlignment, is_protein: bool = False
+    ) -> None:
+        print(self.calculate_gc_total_value(records, is_protein))

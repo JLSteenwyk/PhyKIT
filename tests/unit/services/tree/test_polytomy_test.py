@@ -3,15 +3,9 @@ Unit tests for PolytomyTest class
 """
 
 import unittest
-from unittest.mock import Mock, MagicMock, patch, call, mock_open
-import sys
-import tempfile
-import os
+from unittest.mock import Mock, MagicMock, patch, mock_open
 from argparse import Namespace
-from Bio import Phylo
 from Bio.Phylo import Newick
-from scipy.stats import _stats_py
-import multiprocessing as mp
 
 from phykit.services.tree.polytomy_test import PolytomyTest
 

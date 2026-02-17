@@ -1,9 +1,6 @@
 import pytest
 from argparse import Namespace
-from Bio import Phylo
-from math import isclose
 
-from phykit.services.tree.internode_labeler import InternodeLabeler
 
 
 @pytest.fixture
