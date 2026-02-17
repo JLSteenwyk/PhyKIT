@@ -1,6 +1,5 @@
 import pytest
 import sys
-import json
 
 from argparse import Namespace
 from mock import patch, call
@@ -75,23 +74,19 @@ class TestBipartitionSupportStats(object):
             "get_bipartition_support_vals",
             return_value=([85.0, 100.0], [["a", "b"], ["c", "d"]]),
         )
+        dumped_json = '{"summary":{"mean":92.5},"verbose":false,"thresholds":[]}'
+        mock_dumps = mocker.patch(
+            "phykit.services.tree.bipartition_support_stats.json.dumps",
+            return_value=dumped_json,
+        )
 
         t.run()
 
-        json_payload = next(
-            (
-                call_args.args[0]
-                for call_args in mocked_print.mock_calls
-                if call_args.args
-                and isinstance(call_args.args[0], str)
-                and call_args.args[0].strip().startswith("{")
-            ),
-            None,
-        )
-        assert json_payload is not None
-        payload = json.loads(json_payload)
+        assert mock_dumps.called
+        payload = mock_dumps.call_args.args[0]
         assert payload["verbose"] is False
         assert payload["summary"]["mean"] == 92.5
+        mocked_print.assert_called_with(dumped_json)
 
 
     # def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):
