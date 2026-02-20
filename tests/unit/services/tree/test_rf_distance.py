@@ -143,3 +143,54 @@ class TestRobinsonFouldsDistance(object):
         for observed, anticipated in zip(results, expected):
             assert observed[0] == anticipated[0]
             assert observed[1] == pytest.approx(anticipated[1])
+
+    def test_run_text_output_with_pruning(self, mocker, args):
+        rf = RobinsonFouldsDistance(args)
+        tree_zero = mocker.Mock()
+        tree_one = mocker.Mock()
+        term_zero = mocker.Mock()
+        term_zero.name = "A"
+        term_one = mocker.Mock()
+        term_one.name = "A"
+        tree_zero.get_terminals.return_value = [term_zero]
+        tree_one.get_terminals.return_value = [term_one]
+        mocker.patch.object(rf, "read_tree_file", return_value=tree_zero)
+        mocker.patch.object(rf, "read_tree1_file", return_value=tree_one)
+        mocker.patch.object(
+            rf,
+            "get_tip_names_from_tree",
+            side_effect=[["A", "B"], ["A", "C"]],
+        )
+        mocker.patch.object(rf, "prune_tree_using_taxa_list", side_effect=[tree_zero, tree_one])
+        mocker.patch.object(rf, "calculate_robinson_foulds_distance", return_value=(4, 0.5))
+        mocked_print = mocker.patch("builtins.print")
+
+        rf.run()
+
+        assert rf.prune_tree_using_taxa_list.call_count == 2
+        tree_zero.root_with_outgroup.assert_called_once_with("A")
+        tree_one.root_with_outgroup.assert_called_once_with("A")
+        mocked_print.assert_called_once_with("4\t0.5")
+
+    def test_run_json_output(self, mocker):
+        args = Namespace(tree_zero="/some/path/to/file.tre", tree_one="/some/path/to/file.tre", json=True)
+        rf = RobinsonFouldsDistance(args)
+        tree_zero = mocker.Mock()
+        tree_one = mocker.Mock()
+        term_zero = mocker.Mock()
+        term_zero.name = "A"
+        term_one = mocker.Mock()
+        term_one.name = "A"
+        tree_zero.get_terminals.return_value = [term_zero]
+        tree_one.get_terminals.return_value = [term_one]
+        mocker.patch.object(rf, "read_tree_file", return_value=tree_zero)
+        mocker.patch.object(rf, "read_tree1_file", return_value=tree_one)
+        mocker.patch.object(rf, "get_tip_names_from_tree", side_effect=[["A"], ["A"]])
+        mocker.patch.object(rf, "calculate_robinson_foulds_distance", return_value=(3, 0.375))
+        mocked_json = mocker.patch("phykit.services.tree.rf_distance.print_json")
+
+        rf.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["plain_rf"] == 3
+        assert payload["normalized_rf"] == 0.375

@@ -3,6 +3,7 @@ Unit tests for Saturation class
 """
 
 import unittest
+import builtins
 from unittest.mock import Mock, MagicMock, patch, call
 import numpy as np
 from argparse import Namespace
@@ -47,6 +48,12 @@ class TestSaturation(unittest.TestCase):
         self.assertEqual(processed["alignment_file_path"], "my_alignment.fasta")
         self.assertTrue(processed["exclude_gaps"])
         self.assertTrue(processed["verbose"])
+
+    def test_should_use_multiprocessing_env_controls(self):
+        with patch.dict("os.environ", {"PHYKIT_DISABLE_MP": "1"}, clear=False):
+            self.assertFalse(self.saturation._should_use_multiprocessing(9999))
+        with patch.dict("os.environ", {"PHYKIT_FORCE_MP": "1"}, clear=False):
+            self.assertTrue(self.saturation._should_use_multiprocessing(1))
 
     def test_process_combo_batch_without_gaps(self):
         """Test processing combination batch without gap exclusion"""
@@ -314,6 +321,72 @@ class TestSaturation(unittest.TestCase):
         call_args = self.saturation.print_res.call_args[0]
         self.assertFalse(call_args[0])  # verbose
         self.assertEqual(len(call_args[1]), 1)  # combos
+
+    @patch("phykit.services.tree.saturation.print_json")
+    def test_print_res_json_non_verbose(self, mock_json):
+        self.saturation.json_output = True
+        self.saturation.plot = False
+        self.saturation.print_res(
+            False,
+            [("a", "b")],
+            [0.25],
+            [0.5],
+            0.8,
+        )
+        payload = mock_json.call_args.args[0]
+        self.assertFalse(payload["verbose"])
+        self.assertEqual(payload["summary"]["slope"], 0.8)
+
+    @patch("phykit.services.tree.saturation.print_json")
+    def test_print_res_json_verbose_with_plot(self, mock_json):
+        self.saturation.json_output = True
+        self.saturation.plot = True
+        self.saturation.plot_output = "sat.png"
+        self.saturation.print_res(
+            True,
+            [("a", "b")],
+            [0.25],
+            [0.5],
+            0.8,
+        )
+        payload = mock_json.call_args.args[0]
+        self.assertTrue(payload["verbose"])
+        self.assertEqual(payload["rows"], payload["pairs"])
+        self.assertEqual(payload["plot_output"], "sat.png")
+
+    def test_plot_saturation_scatter_importerror(self):
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name.startswith("matplotlib"):
+                raise ImportError("no matplotlib")
+            return original_import(name, globals, locals, fromlist, level)
+
+        with patch("builtins.__import__", side_effect=fake_import):
+            with self.assertRaises(SystemExit) as exc:
+                self.saturation._plot_saturation_scatter(np.array([0.1]), np.array([0.2]), 0.5)
+        self.assertEqual(exc.exception.code, 2)
+
+    @patch('phykit.services.tree.saturation.get_alignment_and_format_helper')
+    def test_run_with_plot_calls_plotter(self, mock_get_alignment):
+        self.saturation.plot = True
+        self.saturation._plot_saturation_scatter = Mock()
+
+        seq1 = SeqRecord(Seq("ATCG"), id="seq1", name="seq1")
+        seq2 = SeqRecord(Seq("ATGG"), id="seq2", name="seq2")
+        alignment = Align.MultipleSeqAlignment([seq1, seq2])
+        mock_get_alignment.return_value = (alignment, None, False)
+
+        mock_tree = Mock()
+        self.saturation.read_tree_file = Mock(return_value=mock_tree)
+        self.saturation.get_tip_names_from_tree = Mock(return_value=['seq1', 'seq2'])
+        self.saturation.loop_through_combos_and_calculate_pds_and_pis = Mock(
+            return_value=([0.15], [0.25])
+        )
+        self.saturation.print_res = Mock()
+
+        self.saturation.run()
+        self.saturation._plot_saturation_scatter.assert_called_once()
 
     def test_loop_through_combos_with_gaps_sequential(self):
         """Test sequential processing with gap exclusion"""
