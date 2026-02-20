@@ -2,6 +2,7 @@ from argparse import Namespace
 
 import numpy as np
 import pytest
+import builtins
 
 from phykit.services.tree.tip_to_tip_distance import TipToTipDistance
 
@@ -142,3 +143,65 @@ class TestTipToTipDistance:
         mocked_print = mocker.patch("builtins.print")
         service.run()
         mocked_print.assert_called_once_with("a\tb\t1.0")
+
+    def test_run_exits_without_tips_when_not_all_pairs(self, mocker):
+        args = Namespace(tree_zero="/some/path/to/file.tre", all_pairs=False, tip_1=None, tip_2=None, json=False)
+        service = TipToTipDistance(args)
+        mocker.patch.object(TipToTipDistance, "read_tree_file", return_value=_Tree(["a", "b"]))
+        with pytest.raises(SystemExit) as excinfo:
+            service.run()
+        assert excinfo.value.code == 2
+
+    def test_run_pairwise_text_output(self, mocker, capsys):
+        args = Namespace(tree_zero="/some/path/to/file.tre", tip_1="a", tip_2="b", json=False, all_pairs=False)
+        service = TipToTipDistance(args)
+        mocker.patch.object(TipToTipDistance, "read_tree_file", return_value=_Tree(["a", "b"]))
+        mocker.patch.object(TipToTipDistance, "check_leaves")
+        mocker.patch("phykit.services.tree.tip_to_tip_distance.TreeMixin.distance", return_value=2.34567)
+        service.run()
+        out, _ = capsys.readouterr()
+        assert out.strip() == "2.3457"
+
+    def test_plot_tip_distance_heatmap_creates_file(self, tmp_path):
+        pytest.importorskip("matplotlib")
+        out = tmp_path / "tip_heatmap.png"
+        service = TipToTipDistance(
+            Namespace(tree_zero="/some/path/to/file.tre", all_pairs=True, plot=True, plot_output=str(out))
+        )
+        service._plot_tip_distance_heatmap(
+            [
+                {"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.0},
+                {"taxon_a": "a", "taxon_b": "c", "tip_to_tip_distance": 2.0},
+                {"taxon_a": "b", "taxon_b": "c", "tip_to_tip_distance": 3.0},
+            ]
+        )
+        assert out.exists()
+
+    def test_plot_tip_distance_heatmap_empty_rows(self):
+        pytest.importorskip("matplotlib")
+        service = TipToTipDistance(Namespace(tree_zero="/some/path/to/file.tre", all_pairs=True, plot=True))
+        service._plot_tip_distance_heatmap([])
+
+    def test_plot_tip_distance_heatmap_importerror(self, monkeypatch, capsys):
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name.startswith("matplotlib"):
+                raise ImportError("no matplotlib")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        service = TipToTipDistance(Namespace(tree_zero="/some/path/to/file.tre", all_pairs=True, plot=True))
+        with pytest.raises(SystemExit) as exc:
+            service._plot_tip_distance_heatmap([{"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.0}])
+        assert exc.value.code == 2
+        out, _ = capsys.readouterr()
+        assert "matplotlib is required for --plot in tip_to_tip_distance" in out
+
+    def test_check_leaves_first_missing(self, mocker, args):
+        service = TipToTipDistance(args)
+        tree = _Tree(["a", "b"])
+        mocker.patch("phykit.services.tree.tip_to_tip_distance.TreeMixin.find_any", return_value=None)
+        with pytest.raises(SystemExit) as excinfo:
+            service.check_leaves(tree, "missing", "b")
+        assert excinfo.value.code == 2

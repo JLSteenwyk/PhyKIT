@@ -3,6 +3,7 @@ from argparse import Namespace
 from math import isclose
 
 from phykit.services.tree.treeness import Treeness
+import phykit.services.tree.treeness as treeness_module
 
 
 @pytest.fixture
@@ -39,3 +40,23 @@ class TestTreeness(object):
         res = t.calculate_treeness(tree_simple)
         assert isinstance(res, float)
         assert isclose(res, 0.12599722400563595, rel_tol=0.001)
+
+    def test_process_args_defaults_json_false(self):
+        parsed = Treeness(Namespace(tree="x.tre")).process_args(Namespace(tree="x.tre"))
+        assert parsed["json_output"] is False
+
+    def test_run_prints_value(self, mocker, capsys):
+        t = Treeness(Namespace(tree="x.tre", json=False))
+        mocker.patch.object(Treeness, "read_tree_file", return_value=object())
+        mocker.patch.object(Treeness, "calculate_treeness", return_value=0.987654)
+        t.run()
+        out, _ = capsys.readouterr()
+        assert out.strip() == "0.9877"
+
+    def test_run_json(self, mocker):
+        t = Treeness(Namespace(tree="x.tre", json=True))
+        mocker.patch.object(Treeness, "read_tree_file", return_value=object())
+        mocker.patch.object(Treeness, "calculate_treeness", return_value=0.11111)
+        mocked_json = mocker.patch.object(treeness_module, "print_json")
+        t.run()
+        mocked_json.assert_called_once_with({"treeness": 0.1111})
