@@ -3,7 +3,6 @@
 import logging
 import sys
 import textwrap
-import importlib
 
 from .version import __version__
 
@@ -14,76 +13,11 @@ from argparse import (
 )
 
 from .helpers.boolean_argument_parsing import str2bool
+from .cli_registry import ALIAS_TO_HANDLER
+from .service_factories import SERVICE_FACTORIES
 
-
-class _LazyServiceFactory:
-    def __init__(self, module_path: str, class_name: str):
-        self.module_path = module_path
-        self.class_name = class_name
-        self._klass = None
-
-    def __call__(self, *args, **kwargs):
-        if self._klass is None:
-            module = importlib.import_module(self.module_path)
-            self._klass = getattr(module, self.class_name)
-        return self._klass(*args, **kwargs)
-
-
-# Alignment service loaders
-AlignmentLength = _LazyServiceFactory("phykit.services.alignment.alignment_length", "AlignmentLength")
-AlignmentLengthNoGaps = _LazyServiceFactory("phykit.services.alignment.alignment_length_no_gaps", "AlignmentLengthNoGaps")
-AlignmentEntropy = _LazyServiceFactory("phykit.services.alignment.alignment_entropy", "AlignmentEntropy")
-AlignmentRecoding = _LazyServiceFactory("phykit.services.alignment.alignment_recoding", "AlignmentRecoding")
-AlignmentOutlierTaxa = _LazyServiceFactory("phykit.services.alignment.alignment_outlier_taxa", "AlignmentOutlierTaxa")
-ColumnScore = _LazyServiceFactory("phykit.services.alignment.column_score", "ColumnScore")
-CompositionalBiasPerSite = _LazyServiceFactory("phykit.services.alignment.compositional_bias_per_site", "CompositionalBiasPerSite")
-CompositionPerTaxon = _LazyServiceFactory("phykit.services.alignment.composition_per_taxon", "CompositionPerTaxon")
-CreateConcatenationMatrix = _LazyServiceFactory("phykit.services.alignment.create_concatenation_matrix", "CreateConcatenationMatrix")
-DNAThreader = _LazyServiceFactory("phykit.services.alignment.dna_threader", "DNAThreader")
-EvolutionaryRatePerSite = _LazyServiceFactory("phykit.services.alignment.evolutionary_rate_per_site", "EvolutionaryRatePerSite")
-Faidx = _LazyServiceFactory("phykit.services.alignment.faidx", "Faidx")
-GCContent = _LazyServiceFactory("phykit.services.alignment.gc_content", "GCContent")
-MaskAlignment = _LazyServiceFactory("phykit.services.alignment.mask_alignment", "MaskAlignment")
-PlotAlignmentQC = _LazyServiceFactory("phykit.services.alignment.plot_alignment_qc", "PlotAlignmentQC")
-OccupancyPerTaxon = _LazyServiceFactory("phykit.services.alignment.occupancy_per_taxon", "OccupancyPerTaxon")
-PairwiseIdentity = _LazyServiceFactory("phykit.services.alignment.pairwise_identity", "PairwiseIdentity")
-ParsimonyInformative = _LazyServiceFactory("phykit.services.alignment.parsimony_informative_sites", "ParsimonyInformative")
-RelativeCompositionVariability = _LazyServiceFactory("phykit.services.alignment.rcv", "RelativeCompositionVariability")
-RelativeCompositionVariabilityTaxon = _LazyServiceFactory("phykit.services.alignment.rcvt", "RelativeCompositionVariabilityTaxon")
-RenameFastaEntries = _LazyServiceFactory("phykit.services.alignment.rename_fasta_entries", "RenameFastaEntries")
-SumOfPairsScore = _LazyServiceFactory("phykit.services.alignment.sum_of_pairs_score", "SumOfPairsScore")
-VariableSites = _LazyServiceFactory("phykit.services.alignment.variable_sites", "VariableSites")
-
-# Tree service loaders
-BipartitionSupportStats = _LazyServiceFactory("phykit.services.tree.bipartition_support_stats", "BipartitionSupportStats")
-BranchLengthMultiplier = _LazyServiceFactory("phykit.services.tree.branch_length_multiplier", "BranchLengthMultiplier")
-CollapseBranches = _LazyServiceFactory("phykit.services.tree.collapse_branches", "CollapseBranches")
-CovaryingEvolutionaryRates = _LazyServiceFactory("phykit.services.tree.covarying_evolutionary_rates", "CovaryingEvolutionaryRates")
-DVMC = _LazyServiceFactory("phykit.services.tree.dvmc", "DVMC")
-EvolutionaryRate = _LazyServiceFactory("phykit.services.tree.evolutionary_rate", "EvolutionaryRate")
-HiddenParalogyCheck = _LazyServiceFactory("phykit.services.tree.hidden_paralogy_check", "HiddenParalogyCheck")
-InternalBranchStats = _LazyServiceFactory("phykit.services.tree.internal_branch_stats", "InternalBranchStats")
-InternodeLabeler = _LazyServiceFactory("phykit.services.tree.internode_labeler", "InternodeLabeler")
-LastCommonAncestorSubtree = _LazyServiceFactory("phykit.services.tree.last_common_ancestor_subtree", "LastCommonAncestorSubtree")
-LBScore = _LazyServiceFactory("phykit.services.tree.lb_score", "LBScore")
-MonophylyCheck = _LazyServiceFactory("phykit.services.tree.monophyly_check", "MonophylyCheck")
-NearestNeighborInterchange = _LazyServiceFactory("phykit.services.tree.nearest_neighbor_interchange", "NearestNeighborInterchange")
-PatristicDistances = _LazyServiceFactory("phykit.services.tree.patristic_distances", "PatristicDistances")
-PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "PolytomyTest")
-PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")
-PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")
-RenameTreeTips = _LazyServiceFactory("phykit.services.tree.rename_tree_tips", "RenameTreeTips")
-RobinsonFouldsDistance = _LazyServiceFactory("phykit.services.tree.rf_distance", "RobinsonFouldsDistance")
-RootTree = _LazyServiceFactory("phykit.services.tree.root_tree", "RootTree")
-Saturation = _LazyServiceFactory("phykit.services.tree.saturation", "Saturation")
-SpuriousSequence = _LazyServiceFactory("phykit.services.tree.spurious_sequence", "SpuriousSequence")
-TerminalBranchStats = _LazyServiceFactory("phykit.services.tree.terminal_branch_stats", "TerminalBranchStats")
-TipLabels = _LazyServiceFactory("phykit.services.tree.tip_labels", "TipLabels")
-TipToTipDistance = _LazyServiceFactory("phykit.services.tree.tip_to_tip_distance", "TipToTipDistance")
-TipToTipNodeDistance = _LazyServiceFactory("phykit.services.tree.tip_to_tip_node_distance", "TipToTipNodeDistance")
-TotalTreeLength = _LazyServiceFactory("phykit.services.tree.total_tree_length", "TotalTreeLength")
-Treeness = _LazyServiceFactory("phykit.services.tree.treeness", "Treeness")
-TreenessOverRCV = _LazyServiceFactory("phykit.services.tree.treeness_over_rcv", "TreenessOverRCV")
+# Expose legacy factory names used by static command handlers in this module.
+globals().update(SERVICE_FACTORIES)
 
 
 logger = logging.getLogger(__name__)
@@ -119,6 +53,10 @@ def _new_parser(*, description: str) -> ArgumentParser:
         formatter_class=RawDescriptionHelpFormatter,
         description=description,
     )
+
+
+def _add_json_argument(parser: ArgumentParser) -> None:
+    parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
 
 
 class Phykit:
@@ -294,103 +232,7 @@ class Phykit:
 
     ## Aliases
     def run_alias(self, command, argv):
-        alias_to_handler = {
-            # version
-            "version": "version",
-            "v": "version",
-            # Alignment aliases
-            "aln_len": "alignment_length",
-            "al": "alignment_length",
-            "aln_len_no_gaps": "alignment_length_no_gaps",
-            "alng": "alignment_length_no_gaps",
-            "aln_entropy": "alignment_entropy",
-            "entropy": "alignment_entropy",
-            "aln_recoding": "alignment_recoding",
-            "recode": "alignment_recoding",
-            "outlier_taxa": "alignment_outlier_taxa",
-            "aot": "alignment_outlier_taxa",
-            "cs": "column_score",
-            "comp_bias_per_site": "compositional_bias_per_site",
-            "cbps": "compositional_bias_per_site",
-            "evo_rate_per_site": "evolutionary_rate_per_site",
-            "erps": "evolutionary_rate_per_site",
-            "get_entry": "faidx",
-            "ge": "faidx",
-            "gc": "gc_content",
-            "mask_aln": "mask_alignment",
-            "mask": "mask_alignment",
-            "plot_qc": "plot_alignment_qc",
-            "paqc": "plot_alignment_qc",
-            "occupancy_taxon": "occupancy_per_taxon",
-            "occ_tax": "occupancy_per_taxon",
-            "pairwise_id": "pairwise_identity",
-            "pi": "pairwise_identity",
-            "comp_taxon": "composition_per_taxon",
-            "comp_tax": "composition_per_taxon",
-            "pis": "parsimony_informative_sites",
-            "rel_comp_var": "rcv",
-            "relative_composition_variability": "rcv",
-            "relative_composition_variability_taxon": "rcvt",
-            "rel_comp_var_taxon": "rcvt",
-            "rename_fasta": "rename_fasta_entries",
-            "sum_of_pairs_score": "sum_of_pairs_score",
-            "sops": "sum_of_pairs_score",
-            "sop": "sum_of_pairs_score",
-            "vs": "variable_sites",
-            # Tree aliases
-            "bss": "bipartition_support_stats",
-            "blm": "branch_length_multiplier",
-            "collapse": "collapse_branches",
-            "cb": "collapse_branches",
-            "cover": "covarying_evolutionary_rates",
-            "degree_of_violation_of_a_molecular_clock": "dvmc",
-            "evo_rate": "evolutionary_rate",
-            "clan_check": "hidden_paralogy_check",
-            "ibs": "internal_branch_stats",
-            "il": "internode_labeler",
-            "lca_subtree": "last_common_ancestor_subtree",
-            "long_branch_score": "lb_score",
-            "lbs": "lb_score",
-            "is_monophyletic": "monophyly_check",
-            "nni": "nearest_neighbor_interchange",
-            "pd": "patristic_distances",
-            "polyt_test": "polytomy_test",
-            "ptt": "polytomy_test",
-            "polyt": "polytomy_test",
-            "print": "print_tree",
-            "pt": "print_tree",
-            "prune": "prune_tree",
-            "rename_tree": "rename_tree_tips",
-            "rename_tips": "rename_tree_tips",
-            "robinson_foulds_distance": "rf_distance",
-            "rf_dist": "rf_distance",
-            "rf": "rf_distance",
-            "root": "root_tree",
-            "rt": "root_tree",
-            "spurious_seq": "spurious_sequence",
-            "ss": "spurious_sequence",
-            "tbs": "terminal_branch_stats",
-            "labels": "tip_labels",
-            "tree_labels": "tip_labels",
-            "tl": "tip_labels",
-            "t2t_dist": "tip_to_tip_distance",
-            "t2t": "tip_to_tip_distance",
-            "t2t_node_dist": "tip_to_tip_node_distance",
-            "t2t_nd": "tip_to_tip_node_distance",
-            "tree_len": "total_tree_length",
-            "tness": "treeness",
-            # Alignment- and tree-based aliases
-            "sat": "saturation",
-            "toverr": "treeness_over_rcv",
-            "tor": "treeness_over_rcv",
-            # Helper aliases
-            "create_concat": "create_concatenation_matrix",
-            "cc": "create_concatenation_matrix",
-            "pal2nal": "thread_dna",
-            "p2n": "thread_dna",
-        }
-
-        handler_name = alias_to_handler.get(command)
+        handler_name = ALIAS_TO_HANDLER.get(command)
         if handler_name:
             handler = getattr(self, handler_name)
             if handler_name == "version":
@@ -449,7 +291,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         AlignmentLength(args).run()
 
@@ -495,7 +337,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         AlignmentLengthNoGaps(args).run()
 
@@ -553,7 +395,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         AlignmentEntropy(args).run()
 
@@ -690,7 +532,7 @@ class Phykit:
 
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("-c", "--code", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         AlignmentRecoding(args).run()
 
@@ -768,7 +610,7 @@ class Phykit:
         parser.add_argument("--rcvt-z", type=float, default=3.0, required=False, help=SUPPRESS)
         parser.add_argument("--occupancy-z", type=float, default=3.0, required=False, help=SUPPRESS)
         parser.add_argument("--entropy-z", type=float, default=3.0, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         AlignmentOutlierTaxa(args).run()
 
@@ -811,7 +653,7 @@ class Phykit:
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         ColumnScore(args).run()
 
@@ -866,7 +708,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         CompositionalBiasPerSite(args).run()
 
@@ -903,7 +745,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         CompositionPerTaxon(args).run()
 
@@ -960,7 +802,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         EvolutionaryRatePerSite(args).run()
 
@@ -1006,7 +848,7 @@ class Phykit:
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-e", "--entry", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         Faidx(args).run()
 
@@ -1055,7 +897,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         GCContent(args).run()
 
@@ -1110,7 +952,7 @@ class Phykit:
         parser.add_argument(
             "-e", "--max_entropy", type=float, required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         MaskAlignment(args).run()
 
@@ -1183,7 +1025,7 @@ class Phykit:
         parser.add_argument("--rcvt-z", type=float, default=3.0, required=False, help=SUPPRESS)
         parser.add_argument("--occupancy-z", type=float, default=3.0, required=False, help=SUPPRESS)
         parser.add_argument("--entropy-z", type=float, default=3.0, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         PlotAlignmentQC(args).run()
 
@@ -1219,7 +1061,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         OccupancyPerTaxon(args).run()
 
@@ -1290,7 +1132,7 @@ class Phykit:
             default="pairwise_identity_heatmap.png",
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         PairwiseIdentity(args).run()
 
@@ -1338,7 +1180,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         ParsimonyInformative(args).run()
 
@@ -1378,7 +1220,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         RelativeCompositionVariability(args).run()
 
@@ -1425,7 +1267,7 @@ class Phykit:
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, default="rcvt_plot.png", required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         RelativeCompositionVariabilityTaxon(args).run()
 
@@ -1477,7 +1319,7 @@ class Phykit:
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         RenameFastaEntries(args).run()
 
@@ -1520,7 +1362,7 @@ class Phykit:
         )
         parser.add_argument("fasta", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--reference", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         SumOfPairsScore(args).run()
 
@@ -1566,7 +1408,7 @@ class Phykit:
             ),
         )
         parser.add_argument("alignment", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         VariableSites(args).run()
 
@@ -1624,7 +1466,7 @@ class Phykit:
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
         parser.add_argument("--thresholds", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         BipartitionSupportStats(args).run()
 
@@ -1672,7 +1514,7 @@ class Phykit:
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-f", "--factor", type=float, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         BranchLengthMultiplier(args).run()
 
@@ -1720,7 +1562,7 @@ class Phykit:
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-s", "--support", type=float, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         CollapseBranches(args).run()
 
@@ -1810,7 +1652,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         CovaryingEvolutionaryRates(args).run()
 
@@ -1853,7 +1695,7 @@ class Phykit:
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         DVMC(args).run()
 
@@ -1891,7 +1733,7 @@ class Phykit:
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         EvolutionaryRate(args).run()
 
@@ -1961,7 +1803,7 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-c", "--clade", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         HiddenParalogyCheck(args).run()
 
@@ -2004,7 +1846,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         InternalBranchStats(args).run()
 
@@ -2043,7 +1885,7 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         InternodeLabeler(args).run()
 
@@ -2086,7 +1928,7 @@ class Phykit:
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         LastCommonAncestorSubtree(args).run()
 
@@ -2139,7 +1981,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         LBScore(args).run()
 
@@ -2194,7 +2036,7 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("list_of_taxa", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         MonophylyCheck(args).run()
 
@@ -2240,7 +2082,7 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         NearestNeighborInterchange(args).run()
 
@@ -2287,7 +2129,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         PatristicDistances(args).run()
 
@@ -2351,7 +2193,7 @@ class Phykit:
         )
         parser.add_argument("-t", "--trees", type=str, help=SUPPRESS)
         parser.add_argument("-g", "--groups", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         PolytomyTest(args).run()
 
@@ -2395,7 +2237,7 @@ class Phykit:
         parser.add_argument(
             "-r", "--remove", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         PrintTree(args).run()
 
@@ -2453,7 +2295,7 @@ class Phykit:
         parser.add_argument(
             "-k", "--keep", type=str2bool, nargs="?", default=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         PruneTree(args).run()
 
@@ -2505,7 +2347,7 @@ class Phykit:
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-i", "--idmap", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         RenameTreeTips(args).run()
 
@@ -2560,7 +2402,7 @@ class Phykit:
         )
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
         parser.add_argument("tree_one", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         RobinsonFouldsDistance(args).run()
 
@@ -2612,7 +2454,7 @@ class Phykit:
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-r", "--root", type=str, required=True, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         RootTree(args).run()
 
@@ -2670,7 +2512,7 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-f", "--factor", type=float, required=False, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         SpuriousSequence(args).run()
 
@@ -2713,7 +2555,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         TerminalBranchStats(args).run()
 
@@ -2746,7 +2588,7 @@ class Phykit:
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         TipLabels(args).run()
 
@@ -2811,7 +2653,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         TipToTipDistance(args).run()
 
@@ -2857,7 +2699,7 @@ class Phykit:
         parser.add_argument("tree_zero", type=str, help=SUPPRESS)
         parser.add_argument("tip_1", type=str, help=SUPPRESS)
         parser.add_argument("tip_2", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         TipToTipNodeDistance(args).run()
 
@@ -2890,7 +2732,7 @@ class Phykit:
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         TotalTreeLength(args).run()
 
@@ -2935,7 +2777,7 @@ class Phykit:
             ),
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         Treeness(args).run()
 
@@ -3015,7 +2857,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         Saturation(args).run()
 
@@ -3065,7 +2907,7 @@ class Phykit:
         parser.add_argument(
             "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         TreenessOverRCV(args).run()
 
@@ -3131,7 +2973,7 @@ class Phykit:
         parser.add_argument("-p", "--prefix", type=str, help=SUPPRESS)
         parser.add_argument("--plot-occupancy", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, required=False, default=None, help=SUPPRESS)
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         CreateConcatenationMatrix(args).run()
 
@@ -3200,7 +3042,7 @@ class Phykit:
         parser.add_argument(
             "-s", "--stop", type=str2bool, nargs="?", default=True, help=SUPPRESS
         )
-        parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
+        _add_json_argument(parser)
         args = parser.parse_args(argv)
         DNAThreader(args).run()
 

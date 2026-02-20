@@ -72,35 +72,23 @@ class Tree(BaseService):
             return ""
 
     def read_tree_file(self):
-        try:
-            file_hash = self._get_file_hash(self.tree_file_path)
-            tree = self._cached_tree_read(self.tree_file_path, self.tree_format, file_hash)
-            # Return a deep copy to prevent modifications to the cached tree
-            return copy.deepcopy(tree)
-        except FileNotFoundError:
-            print(f"{self.tree_file_path} corresponds to no such file or directory.")
-            print("Please check filename and pathing")
-            sys.exit(2)
+        return self._read_tree_with_error(self.tree_file_path, "tree_file_path")
 
     def read_tree1_file(self):
-        try:
-            file_hash = self._get_file_hash(self.tree1_file_path)
-            tree = self._cached_tree_read(self.tree1_file_path, self.tree_format, file_hash)
-            # Return a deep copy to prevent modifications to the cached tree
-            return copy.deepcopy(tree)
-        except FileNotFoundError:
-            print(f"{self.tree1_file_path} corresponds to no such file or directory.")
-            print("Please check filename and pathing")
-            sys.exit(2)
+        return self._read_tree_with_error(self.tree1_file_path, "tree1_file_path")
 
     def read_reference_tree_file(self):
+        return self._read_tree_with_error(self.reference, "reference")
+
+    def _read_tree_with_error(self, tree_path: str, attr_name: str):
         try:
-            file_hash = self._get_file_hash(self.reference)
-            tree = self._cached_tree_read(self.reference, self.tree_format, file_hash)
+            file_hash = self._get_file_hash(tree_path)
+            tree = self._cached_tree_read(tree_path, self.tree_format, file_hash)
             # Return a deep copy to prevent modifications to the cached tree
             return copy.deepcopy(tree)
         except FileNotFoundError:
-            print(f"{self.reference} corresponds to no such file or directory.")
+            path = getattr(self, attr_name)
+            print(f"{path} corresponds to no such file or directory.")
             print("Please check filename and pathing")
             sys.exit(2)
 
