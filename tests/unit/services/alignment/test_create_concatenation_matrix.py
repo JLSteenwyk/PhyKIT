@@ -1,124 +1,275 @@
 from argparse import Namespace
+from collections import defaultdict
+from pathlib import Path
+
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 import pytest
-from textwrap import dedent
 
 from phykit.services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
+import phykit.services.alignment.create_concatenation_matrix as ccm_module
+
+
+def _write_fasta(path: Path, records):
+    lines = []
+    for taxon, seq in records:
+        lines.append(f">{taxon}")
+        lines.append(seq)
+    path.write_text("\n".join(lines) + "\n")
+
 
 @pytest.fixture
 def args():
-    kwargs = dict(
-        alignment_list="/some/path/to/file",
-        prefix="some_str")
-    return Namespace(**kwargs)
+    return Namespace(alignment_list="/some/path/to/file", prefix="some_prefix")
 
-@pytest.fixture
-def taxa_list():
-    return [
-        'Kpol',
-        'Kpha',
-        'Kbla',
-        'Sdai',
-        'Scas',
-        'Snag',
-        'Kafr',
-        'Cgla',
-        'Suva',
-        'Skud',
-        'Smik',
-        'Scer'
-    ]
 
-class TestCreateConcatenationMatrix(object):
+class TestCreateConcatenationMatrix:
     def test_init_sets_alignment_list_path(self, args):
         ccm = CreateConcatenationMatrix(args)
         assert ccm.alignment_list_path == args.alignment_list
         assert ccm.prefix == args.prefix
         assert ccm.output_file_path is None
-    
-    def test_taxa_names_acquisition(self, alignments, args, taxa_list):
+        assert ccm.json_output is False
+        assert ccm.plot_occupancy is False
+        assert ccm.plot_output is None
+
+    def test_process_args_reads_optional_flags(self):
+        parsed = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list="x.list",
+                prefix="x",
+                json=True,
+                plot_occupancy=True,
+                plot_output="occ.png",
+            )
+        ).process_args(
+            Namespace(
+                alignment_list="x.list",
+                prefix="x",
+                json=True,
+                plot_occupancy=True,
+                plot_output="occ.png",
+            )
+        )
+        assert parsed["json_output"] is True
+        assert parsed["plot_occupancy"] is True
+        assert parsed["plot_output"] == "occ.png"
+
+    def test_read_alignment_paths_missing_file_exits(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        with pytest.raises(SystemExit) as exc:
+            ccm.read_alignment_paths("/definitely/not/found.txt")
+        assert exc.value.code == 2
+
+    def test_get_taxa_from_alignment(self, tmp_path, args):
+        fasta = tmp_path / "gene.fa"
+        _write_fasta(fasta, [("A", "ACGT"), ("B", "A-GT")])
+        ccm = CreateConcatenationMatrix(args)
+        taxa = ccm._get_taxa_from_alignment(str(fasta))
+        assert taxa == {"A", "B"}
+
+    def test_get_taxa_names_sequential(self, tmp_path, args):
+        fastas = []
+        for idx, entries in enumerate(
+            [
+                [("A", "AAAA"), ("B", "CCCC")],
+                [("A", "GGGG"), ("C", "TTTT")],
+            ]
+        ):
+            fasta = tmp_path / f"gene_{idx}.fa"
+            _write_fasta(fasta, entries)
+            fastas.append(str(fasta))
 
         ccm = CreateConcatenationMatrix(args)
-        taxa = ccm.get_taxa_names(alignments)
+        taxa = ccm.get_taxa_names(fastas)
+        assert taxa == ["A", "B", "C"]
 
-        assert isinstance(taxa, list)
-        assert sorted(taxa) == sorted(taxa_list)
+    def test_get_taxa_names_parallel_fallback(self, monkeypatch, args):
+        class FailingExecutor:
+            def __init__(self, *_, **__):
+                pass
 
-    def test_print_start_message(self, alignments, args, taxa_list, capfd):
+            def __enter__(self):
+                raise RuntimeError("no multiprocessing")
 
-        expected_start_message = dedent("""
-            --------------------
-            | General features |
-            --------------------
-            Total number of taxa: 12
-            Total number of alignments: 3
-
-
-            ----------------
-            | Output files |
-            ----------------
-            Partition file output: test.partition
-            Concatenated fasta output: test.fa
-            Occupancy report: test.occupancy
-
-        """)
-
-        file_partition = 'test.partition'
-        fasta_output = 'test.fa'
-        file_occupancy = 'test.occupancy'
+            def __exit__(self, exc_type, exc, tb):
+                return False
 
         ccm = CreateConcatenationMatrix(args)
-        ccm.print_start_message(
-            taxa_list,
-            alignments,
-            file_partition,
-            fasta_output,
-            file_occupancy
+        monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
+        monkeypatch.setattr(
+            ccm,
+            "_get_taxa_from_alignment",
+            lambda path: {path.split("_")[-1]},
         )
 
-        out, _ = capfd.readouterr()
-        assert out == expected_start_message
+        paths = [f"gene_{i}" for i in range(11)]
+        taxa = ccm.get_taxa_names(paths)
+        assert len(taxa) == 11
 
-    # def test_create_concatenation_matrix(self, args, mocker):
-    #     prefix = "my_cool_prefix"
-    #     alignment_list_path = "my/swaggy/path.txt"
-    #     file_partition_filename = f"{prefix}.partition"
-    #     fasta_output_filename = f"{prefix}.fa"
-    #     file_occupancy_filename = f"{prefix}.occupancy"
-    #     alignment_paths = ['path/to/file_A.fa', 'path/to/file_B.fa', 'path/to/file_C.fa']
-    #     taxa_names = ['A', 'B', 'C', 'D']
+    def test_create_missing_seq_str(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        missing_seq, og_len = ccm.create_missing_seq_str([SeqRecord(Seq("ACGT"), id="A")])
+        assert missing_seq == "????"
+        assert og_len == 4
 
-    #     mocked_read_alignment_paths = mocker.path(
-    #         "phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix.read_alignment_paths",
-    #         return_value=alignment_paths
-    #     )
-    #     mocked_get_taxa_names = mocker.path(
-    #         "phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix.get_taxa_names",
-    #         return_value=taxa_names
-    #     )
-    #     mocked_print_start_message = mocker.patch(
-    #         "phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix.print_start_message"
-    #     )
-    #     mocked_create_output_files = mocker.patch(
-    #         "phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix.create_output_files"
-    #     )
-    #     mocked_get_list_of_taxa_and_records = mocker.patch(
-    #         "phykit.services.alignment.create_concatenation_matrix.CreateConcatenationMatrix.get_list_of_taxa_and_records"
-    #     )
-    #     ccm = CreateConcatenationMatrix(args)
-    #     res = ccm.create_concatenation_matrix(alignment_list_path, prefix)
-    #     assert res is None
-    #     assert mocked_print_start_message.called_with(
-    #         taxa_names,
-    #         alignment_paths,
-    #         file_partition_filename,
-    #         fasta_output_filename,
-    #         file_occupancy_filename
-    #     )
-    #     assert mocked_get_taxa_names.called_with(
-    #         alignment_paths
-    #     )
-    #     assert mocked_create_output_files.called_with(
-    #         file_partition_filename,
-    #         file_occupancy_filename
-    #     )
+    def test_create_missing_seq_str_empty_exits(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        with pytest.raises(SystemExit) as exc:
+            ccm.create_missing_seq_str([])
+        assert exc.value.code == 2
 
+    def test_process_taxa_sequences_adds_missing(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        records = [SeqRecord(Seq("ACGT"), id="A")]
+        concatenated_seqs = defaultdict(list)
+        ccm.process_taxa_sequences(records, ["A", "B"], concatenated_seqs, "????")
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["????"]
+
+    def test_add_to_partition_info(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        partition_info, first_len, second_len = ccm.add_to_partition_info([], 10, "AUTO", "g1.fa", 1, 0)
+        assert partition_info == ["AUTO, g1.fa=1-10\n"]
+        assert first_len == 11
+        assert second_len == 10
+
+    def test_add_to_occupancy_info(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        occ = ccm.add_to_occupancy_info([], {"A"}, ["A", "B"], "g1.fa")
+        assert occ == ["g1.fa\t1\t1\t0.5000\tB\n"]
+
+    def test_fasta_and_text_file_writers(self, tmp_path, args):
+        ccm = CreateConcatenationMatrix(args)
+        fasta_out = tmp_path / "out.fa"
+        ccm.fasta_file_write(str(fasta_out), {"A": ["AA", "CC"], "B": ["GG"]})
+        assert fasta_out.read_text() == ">A\nAACC\n>B\nGG\n"
+
+        text_out = tmp_path / "out.txt"
+        ccm.write_occupancy_or_partition_file(["x\n", "y\n"], str(text_out))
+        assert text_out.read_text() == "x\ny\n"
+
+    def test_process_alignment_file_populates_missing_taxa(self, tmp_path):
+        fasta = tmp_path / "gene.fa"
+        _write_fasta(fasta, [("A", "ACGT"), ("C", "AAGT")])
+        _, seq_dict, present_taxa, og_len = CreateConcatenationMatrix._process_alignment_file(
+            str(fasta),
+            ["A", "B", "C"],
+        )
+        assert present_taxa == {"A", "C"}
+        assert og_len == 4
+        assert seq_dict["A"] == "ACGT"
+        assert seq_dict["B"] == "????"
+        assert seq_dict["C"] == "AAGT"
+
+    def test_create_concatenation_matrix_sequential(self, tmp_path):
+        gene1 = tmp_path / "g1.fa"
+        gene2 = tmp_path / "g2.fa"
+        _write_fasta(gene1, [("A", "ACGT"), ("B", "A-GT")])
+        _write_fasta(gene2, [("A", "TT"), ("C", "TA")])
+
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{gene1}\n{gene2}\n")
+        prefix = tmp_path / "nested" / "concat"
+
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=False,
+                plot_occupancy=False,
+            )
+        )
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        fasta_text = Path(f"{prefix}.fa").read_text()
+        occupancy_text = Path(f"{prefix}.occupancy").read_text()
+        partition_text = Path(f"{prefix}.partition").read_text()
+
+        assert ">A\nACGTTT\n" in fasta_text
+        assert ">B\nA-GT??\n" in fasta_text
+        assert ">C\n????TA\n" in fasta_text
+        assert "AUTO, " in partition_text
+        assert str(gene1) in occupancy_text
+        assert str(gene2) in occupancy_text
+
+    def test_create_concatenation_matrix_parallel_fallback(self, tmp_path, monkeypatch):
+        class FailingExecutor:
+            def __init__(self, *_, **__):
+                pass
+
+            def __enter__(self):
+                raise RuntimeError("disabled")
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        gene_files = []
+        for idx, entries in enumerate(
+            [
+                [("A", "AA"), ("B", "CC")],
+                [("A", "GG"), ("C", "TT")],
+                [("B", "TA"), ("C", "AT")],
+            ]
+        ):
+            gene = tmp_path / f"g{idx}.fa"
+            _write_fasta(gene, entries)
+            gene_files.append(gene)
+
+        alignment_list = tmp_path / "alignments_parallel.txt"
+        alignment_list.write_text("\n".join(str(p) for p in gene_files) + "\n")
+        prefix = tmp_path / "concat_parallel"
+
+        monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
+        ccm = CreateConcatenationMatrix(
+            Namespace(alignment_list=str(alignment_list), prefix=str(prefix), json=False, plot_occupancy=False)
+        )
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        assert Path(f"{prefix}.fa").exists()
+        assert Path(f"{prefix}.occupancy").exists()
+        assert Path(f"{prefix}.partition").exists()
+
+    def test_plot_concatenation_occupancy(self, tmp_path, args):
+        pytest.importorskip("matplotlib")
+        ccm = CreateConcatenationMatrix(args)
+        output_file = tmp_path / "occ.png"
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B"],
+            alignment_paths=["g1.fa", "g2.fa"],
+            concatenated_seqs={"A": ["AC", "GT"], "B": ["A-", "G?"]},
+            present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+            gene_lengths=[2, 2],
+            output_file=str(output_file),
+        )
+        assert output_file.exists()
+
+    def test_create_concatenation_matrix_json_and_plot(self, tmp_path, monkeypatch):
+        gene1 = tmp_path / "g1.fa"
+        gene2 = tmp_path / "g2.fa"
+        _write_fasta(gene1, [("A", "AC"), ("B", "TT")])
+        _write_fasta(gene2, [("A", "GA"), ("C", "TA")])
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{gene1}\n{gene2}\n")
+        prefix = tmp_path / "concat_json"
+        captured = {}
+
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=True,
+                plot_occupancy=True,
+                plot_output=str(tmp_path / "custom_plot.png"),
+            )
+        )
+
+        monkeypatch.setattr(ccm, "_plot_concatenation_occupancy", lambda **kwargs: captured.setdefault("plot", kwargs))
+        monkeypatch.setattr(ccm_module, "print_json", lambda payload: captured.setdefault("payload", payload))
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        assert captured["plot"]["output_file"] == str(tmp_path / "custom_plot.png")
+        assert captured["payload"]["total_alignments"] == 2
+        assert captured["payload"]["total_taxa"] == 3
+        assert captured["payload"]["concatenated_length"] == 4
+        assert "occupancy_plot" in captured["payload"]["output_files"]
