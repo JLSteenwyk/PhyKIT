@@ -36,6 +36,13 @@ class TestPolytomyTest(unittest.TestCase):
 
         self.assertEqual(processed["trees"], "my_trees.txt")
         self.assertEqual(processed["groups"], "my_groups.txt")
+        self.assertFalse(processed["json_output"])
+
+    def test_should_use_multiprocessing_env_controls(self):
+        with patch.dict("os.environ", {"PHYKIT_DISABLE_MP": "1"}, clear=False):
+            self.assertFalse(self.polytomy._should_use_multiprocessing(1000))
+        with patch.dict("os.environ", {"PHYKIT_FORCE_MP": "1"}, clear=False):
+            self.assertTrue(self.polytomy._should_use_multiprocessing(1))
 
     def test_read_in_groups_success(self):
         """Test reading groups file successfully"""
@@ -90,6 +97,11 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(groups_of_groups["test1"][1], ["seq3", "seq4"])
         self.assertEqual(groups_of_groups["test1"][2], ["seq5", "seq6"])
         self.assertEqual(outgroup_taxa, ["out1", "out2"])
+
+    def test_guess_tips_from_groups(self):
+        groups = {"test1": [["a", "b"], ["c"], ["d"]]}
+        tips = self.polytomy._guess_tips_from_groups(groups, ["out"])
+        self.assertEqual(set(tips), {"a", "b", "c", "d", "out"})
 
     def test_count_number_of_groups_in_triplet(self):
         """Test counting groups represented in a triplet"""
@@ -191,6 +203,13 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.assertFalse(result)
 
+    def test_prepare_tree_for_triplets_handles_rooting_error(self):
+        tree = Mock()
+        tree.root_with_outgroup.side_effect = ValueError("cannot root")
+        with patch("copy.deepcopy", return_value=tree):
+            prepared = self.polytomy._prepare_tree_for_triplets(tree, ["out"])
+        self.assertIs(prepared, tree)
+
     def test_determine_sisters_from_triplet(self):
         """Test determining which taxa are sisters"""
         groups = [["seq1", "seq2"], ["seq3", "seq4"], ["seq5", "seq6"]]
@@ -267,6 +286,13 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(gene_support["0-2"], 1)  # tree2 max
         self.assertEqual(gene_support["1-2"], 1)  # tree3 max
 
+    def test_get_triplet_and_gene_support_freq_counts_missing_keys_filled(self):
+        summary = {"tree1": {"0-2": 2}}
+        _, gene_support = self.polytomy.get_triplet_and_gene_support_freq_counts(summary)
+        self.assertEqual(summary["tree1"]["0-1"], 0)
+        self.assertEqual(summary["tree1"]["1-2"], 0)
+        self.assertEqual(gene_support["0-2"], 1)
+
     @patch('phykit.services.tree.polytomy_test.chisquare')
     def test_chisquare_tests(self, mock_chisquare):
         """Test chi-square statistical tests"""
@@ -326,6 +352,25 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
             self.polytomy.print_gene_support_freq_res(mock_result, gene_support_freq, trees_file_path)
         except BrokenPipeError:
             self.fail("BrokenPipeError was not caught")
+
+    def test_print_gene_support_freq_res_json(self):
+        self.polytomy.json_output = True
+        mock_result = Mock()
+        mock_result.statistic = 4.56789
+        mock_result.pvalue = 0.01234567
+        gene_support_freq = {"0-1": 3, "0-2": 4, "1-2": 5}
+        with patch("phykit.services.tree.polytomy_test.print_json") as mocked_json:
+            self.polytomy.print_gene_support_freq_res(mock_result, gene_support_freq, ["tree1.tre"])
+        payload = mocked_json.call_args.args[0]
+        self.assertEqual(payload["gene_support_frequency"]["chi_squared"], 4.5679)
+        self.assertEqual(payload["gene_support_frequency"]["p_value"], 0.012346)
+        self.assertEqual(payload["gene_support_frequency"]["total_genes"], 12)
+
+    def test_find_sister_pair_handles_value_error(self):
+        tree = Mock()
+        tree.common_ancestor.side_effect = ValueError("bad")
+        pair = self.polytomy._find_sister_pair(tree, ("a", "b", "c"), {})
+        self.assertIsNone(pair)
 
     @patch('phykit.services.tree.polytomy_test.Phylo.read')
     def test_process_tree_batch(self, mock_phylo_read):

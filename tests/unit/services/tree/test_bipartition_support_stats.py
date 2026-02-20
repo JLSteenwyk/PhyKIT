@@ -1,8 +1,8 @@
 import pytest
 import sys
-
 from argparse import Namespace
 from mock import patch, call
+import numpy as np
 
 from phykit.phykit import Phykit
 from phykit.services.tree.bipartition_support_stats import BipartitionSupportStats
@@ -53,6 +53,26 @@ class TestBipartitionSupportStats(object):
         t = BipartitionSupportStats(args)
         assert t.thresholds == [70.0, 85.5, 90.0]
 
+    def test_parse_thresholds_none(self, args):
+        t = BipartitionSupportStats(args)
+        assert t.parse_thresholds(None) == []
+
+    def test_parse_thresholds_invalid_exits(self, args, capsys):
+        t = BipartitionSupportStats(args)
+        with pytest.raises(SystemExit) as exc:
+            t.parse_thresholds("70,abc")
+        assert exc.value.code == 2
+        out, _ = capsys.readouterr()
+        assert "must be numeric" in out
+
+    def test_parse_thresholds_empty_exits(self, args, capsys):
+        t = BipartitionSupportStats(args)
+        with pytest.raises(SystemExit) as exc:
+            t.parse_thresholds(" , ")
+        assert exc.value.code == 2
+        out, _ = capsys.readouterr()
+        assert "Provide at least one numeric cutoff" in out
+
     def test_threshold_stats(self, args):
         args.thresholds = "90,100"
         t = BipartitionSupportStats(args)
@@ -61,6 +81,51 @@ class TestBipartitionSupportStats(object):
             {"threshold": 90.0, "count_below": 2, "fraction_below": 0.5},
             {"threshold": 100.0, "count_below": 2, "fraction_below": 0.5},
         ]
+
+    def test_threshold_stats_empty_bs_vals(self, args):
+        args.thresholds = "70,90"
+        t = BipartitionSupportStats(args)
+        stats = t.calculate_threshold_stats([], t.thresholds)
+        assert stats == [
+            {"threshold": 70.0, "count_below": 0, "fraction_below": 0.0},
+            {"threshold": 90.0, "count_below": 0, "fraction_below": 0.0},
+        ]
+
+    def test_to_builtin_converts_numpy_scalars(self, args):
+        t = BipartitionSupportStats(args)
+        value = {"a": np.int64(1), "b": [np.float64(1.5)]}
+        converted = t._to_builtin(value)
+        assert converted == {"a": 1, "b": [1.5]}
+
+    def test_get_bipartition_support_vals(self, small_aspergillus_tree, args):
+        t = BipartitionSupportStats(args)
+        vals, names = t.get_bipartition_support_vals(small_aspergillus_tree)
+        assert len(vals) == len(names)
+        assert len(vals) > 0
+        assert isinstance(names[0], list)
+
+    def test_build_json_output_verbose(self, args):
+        args.verbose = True
+        t = BipartitionSupportStats(args)
+        payload = t.build_json_output(
+            bs_vals=[90.0, 100.0],
+            term_names=[["A", "B"], ["C", "D"]],
+            threshold_stats=[{"threshold": 95.0, "count_below": 1, "fraction_below": 0.5}],
+        )
+        assert payload["verbose"] is True
+        assert payload["bipartitions"][0]["support"] == 90.0
+        assert payload["thresholds"][0]["threshold"] == 95.0
+
+    def test_build_json_output_non_verbose(self, args):
+        args.verbose = False
+        t = BipartitionSupportStats(args)
+        payload = t.build_json_output(
+            bs_vals=[90.0, 100.0],
+            term_names=[["A", "B"], ["C", "D"]],
+            threshold_stats=[],
+        )
+        assert payload["verbose"] is False
+        assert "summary" in payload
 
     @patch("builtins.print")
     def test_json_output_mode(self, mocked_print, mocker, args):
@@ -87,6 +152,45 @@ class TestBipartitionSupportStats(object):
         assert payload["verbose"] is False
         assert payload["summary"]["mean"] == 92.5
         mocked_print.assert_called_with(dumped_json)
+
+    def test_json_output_mode_handles_broken_pipe(self, mocker, args):
+        args.json = True
+        args.verbose = True
+        t = BipartitionSupportStats(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(t, "get_bipartition_support_vals", return_value=([85.0], [["a", "b"]]))
+        mocker.patch.object(t, "calculate_threshold_stats", return_value=[])
+        mocker.patch("phykit.services.tree.bipartition_support_stats.json.dumps", return_value='{"ok": true}')
+        mocker.patch("builtins.print", side_effect=BrokenPipeError)
+        t.run()
+
+    def test_run_verbose_prints_bipartitions(self, mocker, args):
+        args.verbose = True
+        args.json = False
+        t = BipartitionSupportStats(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(t, "get_bipartition_support_vals", return_value=([85.0], [["a", "b"]]))
+        mocker.patch.object(t, "calculate_threshold_stats", return_value=[])
+        mocked_print = mocker.patch("builtins.print")
+        t.run()
+        mocked_print.assert_called_with(85.0, "a;b")
+
+    def test_run_nonverbose_prints_summary_and_thresholds(self, mocker, args):
+        args.verbose = False
+        args.json = False
+        t = BipartitionSupportStats(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(t, "get_bipartition_support_vals", return_value=([85.0, 100.0], [["a"], ["b"]]))
+        mocker.patch.object(
+            t,
+            "calculate_threshold_stats",
+            return_value=[{"threshold": 90.0, "count_below": 1, "fraction_below": 0.5}],
+        )
+        mocked_summary = mocker.patch("phykit.services.tree.bipartition_support_stats.print_summary_statistics")
+        mocked_print = mocker.patch("builtins.print")
+        t.run()
+        mocked_summary.assert_called_once()
+        mocked_print.assert_called_with("below 90.0: 1 (50.0%)")
 
 
     # def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):

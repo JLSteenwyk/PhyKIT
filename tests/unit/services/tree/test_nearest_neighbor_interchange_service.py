@@ -41,6 +41,22 @@ class TestNearestNeighborInterchange:
         assert isinstance(neighbors, list)
         assert len(neighbors) >= 1
 
+    def test_get_neighbors_exercises_right_child_branch(self, args):
+        service = NearestNeighborInterchange(args)
+        # This topology has a non-root internal clade as parent's right child,
+        # which exercises the alternate branch in get_neighbors.
+        tree = Phylo.read(StringIO("((A:1,(B:1,C:1):1):1,(D:1,E:1):1);"), "newick")
+        neighbors = service.get_neighbors(tree)
+        assert len(neighbors) >= 1
+        assert all(hasattr(n, "root") for n in neighbors)
+
+    def test_get_neighbors_exercises_left_child_branch(self, args):
+        service = NearestNeighborInterchange(args)
+        # This topology has a non-root internal clade as parent's left child.
+        tree = Phylo.read(StringIO("((((A:1,B:1):1,C:1):1,D:1):1,(E:1,F:1):1);"), "newick")
+        neighbors = service.get_neighbors(tree)
+        assert len(neighbors) >= 1
+
     def test_run_json_payload(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", output="/tmp/nnis.tre", json=True)
         service = NearestNeighborInterchange(args)

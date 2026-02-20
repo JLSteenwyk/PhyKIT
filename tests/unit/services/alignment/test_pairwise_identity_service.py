@@ -2,11 +2,13 @@ from argparse import Namespace
 
 import numpy as np
 import pytest
+import builtins
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.pairwise_identity import PairwiseIdentity
+import phykit.services.alignment.pairwise_identity as pairwise_identity_module
 
 
 @pytest.fixture
@@ -151,3 +153,120 @@ class TestPairwiseIdentity:
         service.run()
         mocked_summary.assert_called_once_with({"mean": 0.75})
         mocked_print.assert_called_once_with("Saved pairwise identity heatmap: out.png")
+
+    def test_should_use_multiprocessing_respects_env(self, args, monkeypatch):
+        service = PairwiseIdentity(args)
+        monkeypatch.setenv("PHYKIT_DISABLE_MP", "1")
+        assert service._should_use_multiprocessing(99999) is False
+        monkeypatch.delenv("PHYKIT_DISABLE_MP")
+        monkeypatch.setenv("PHYKIT_FORCE_MP", "1")
+        assert service._should_use_multiprocessing(1) is True
+        monkeypatch.delenv("PHYKIT_FORCE_MP")
+        assert service._should_use_multiprocessing(service.MP_MIN_PAIRS - 1) is False
+        assert service._should_use_multiprocessing(service.MP_MIN_PAIRS) is True
+
+    def test_process_args_defaults(self):
+        parsed = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=False)
+        ).process_args(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=False)
+        )
+        assert parsed["json_output"] is False
+        assert parsed["plot"] is False
+        assert parsed["plot_output"] == "pairwise_identity_heatmap.png"
+
+    def test_print_json_output_non_verbose(self, mocker):
+        service = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=True, json=True, plot=False)
+        )
+        mocked_json = mocker.patch("phykit.services.alignment.pairwise_identity.print_json")
+        service._print_json_output(pair_ids=[["a", "b"]], pairwise_identities={"a-b": 0.5}, stats={"mean": 0.5})
+        payload = mocked_json.call_args.args[0]
+        assert payload["verbose"] is False
+        assert payload["exclude_gaps"] is True
+        assert payload["summary"] == {"mean": 0.5}
+
+    def test_plot_pairwise_identity_heatmap_creates_file(self, tmp_path):
+        pytest.importorskip("matplotlib")
+        output = tmp_path / "pairwise.png"
+        service = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=False, plot=True, plot_output=str(output))
+        )
+        service._plot_pairwise_identity_heatmap(
+            taxa=["a", "b", "c"],
+            pair_ids=[["a", "b"], ["a", "c"], ["b", "c"]],
+            pairwise_identities={"a-b": 0.8, "a-c": 0.5, "b-c": 0.6},
+        )
+        assert output.exists()
+
+    def test_plot_pairwise_identity_heatmap_importerror(self, monkeypatch, capsys):
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name.startswith("matplotlib"):
+                raise ImportError("no matplotlib")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        service = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=False)
+        )
+        with pytest.raises(SystemExit) as exc:
+            service._plot_pairwise_identity_heatmap(["a"], [], {})
+        assert exc.value.code == 2
+        out, _ = capsys.readouterr()
+        assert "matplotlib is required for --plot in pairwise_identity" in out
+
+    def test_plot_pairwise_identity_heatmap_empty_taxa_returns(self):
+        pytest.importorskip("matplotlib")
+        service = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=False)
+        )
+        service._plot_pairwise_identity_heatmap([], [], {})
+
+    def test_run_verbose_handles_broken_pipe(self, mocker):
+        service = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=True, exclude_gaps=False, json=False, plot=False)
+        )
+        alignment = _simple_alignment()
+        mocker.patch.object(PairwiseIdentity, "get_alignment_and_format", return_value=(alignment, "fasta", False))
+        mocker.patch.object(
+            PairwiseIdentity,
+            "calculate_pairwise_identities",
+            return_value=([["a", "b"]], {"a-b": 0.75}, {"mean": 0.75}),
+        )
+        mocker.patch("builtins.print", side_effect=BrokenPipeError)
+        service.run()
+
+    def test_calculate_pairwise_identities_multiprocessing_branch(self, mocker, args, monkeypatch):
+        class FakePool:
+            def __init__(self, processes):
+                self.processes = processes
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, process_func, chunks):
+                return [process_func(chunk) for chunk in chunks]
+
+            def imap(self, process_func, chunks):
+                for chunk in chunks:
+                    yield process_func(chunk)
+
+        service = PairwiseIdentity(args)
+        mocker.patch.object(PairwiseIdentity, "_should_use_multiprocessing", return_value=True)
+        mocker.patch("phykit.services.alignment.pairwise_identity.mp.Pool", FakePool)
+        mocker.patch("phykit.services.alignment.pairwise_identity.mp.cpu_count", return_value=2)
+        monkeypatch.setattr(pairwise_identity_module.sys.stderr, "isatty", lambda: False)
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            _simple_alignment(),
+            exclude_gaps=False,
+            is_protein=False,
+        )
+        assert len(pair_ids) == 3
+        assert "a-b" in identities
+        assert "mean" in stats
