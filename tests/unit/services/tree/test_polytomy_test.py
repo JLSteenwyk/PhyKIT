@@ -403,6 +403,34 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
             result = self.polytomy._process_tree_batch(tree_batch, groups_of_groups, outgroup_taxa)
             self.assertEqual(result, {})
 
+    def test_process_tree_batch_fast_path_with_legacy_fallback(self):
+        tree_batch = ["tree1.tre"]
+        groups_of_groups = {"test": [["a"], ["b"], ["c"]]}
+        outgroup_taxa = ["out"]
+
+        self.polytomy._read_tree_with_cache = Mock(return_value=Mock())
+        self.polytomy._prepare_tree_for_triplets = Mock(return_value=Mock())
+        self.polytomy._evaluate_tree_triplets_fast = Mock(return_value={})
+        self.polytomy.get_tip_names_from_tree = Mock(return_value=["a", "b", "c", "out"])
+        self.polytomy._legacy_triplet_pass = Mock(return_value={"0-1": 2})
+
+        result = self.polytomy._process_tree_batch(tree_batch, groups_of_groups, outgroup_taxa)
+
+        self.assertEqual(result, {"tree1.tre": {"0-1": 2}})
+
+    def test_process_tree_batch_fast_path_direct_counts(self):
+        tree_batch = ["tree1.tre"]
+        groups_of_groups = {"test": [["a"], ["b"], ["c"]]}
+        outgroup_taxa = ["out"]
+
+        self.polytomy._read_tree_with_cache = Mock(return_value=Mock())
+        self.polytomy._prepare_tree_for_triplets = Mock(return_value=Mock())
+        self.polytomy._evaluate_tree_triplets_fast = Mock(return_value={"0-2": 3})
+
+        result = self.polytomy._process_tree_batch(tree_batch, groups_of_groups, outgroup_taxa)
+
+        self.assertEqual(result, {"tree1.tre": {"0-2": 3}})
+
     @patch('phykit.services.tree.polytomy_test.read_single_column_file_to_list')
     @patch('phykit.services.tree.polytomy_test.Phylo.read')
     def test_loop_through_trees_sequential(self, mock_phylo_read, mock_read_file):
@@ -465,6 +493,29 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         mock_pool.map.assert_called_once()
         self.assertEqual(len(summary), 2)
 
+    @patch("phykit.services.tree.polytomy_test.ThreadPoolExecutor")
+    @patch("phykit.services.tree.polytomy_test.mp.Pool")
+    def test_loop_through_trees_parallel_fallback_threadpool(self, mock_pool_class, mock_executor_class):
+        self.polytomy.MP_MIN_TREES = 2
+        trees = ["tree1.tre", "tree2.tre", "tree3.tre", "tree4.tre"]
+        groups_of_groups = {"test": [["a"], ["b"], ["c"]]}
+        outgroup_taxa = ["out"]
+
+        mock_pool_class.return_value.__enter__.return_value.map.side_effect = OSError("mp fail")
+        mock_executor = MagicMock()
+        mock_executor_class.return_value.__enter__.return_value = mock_executor
+        mock_executor.map.return_value = [
+            {"tree1.tre": {"0-1": 1}},
+            {"tree1.tre": {"0-1": 2}, "tree2.tre": {"1-2": 1}},
+        ]
+
+        summary = self.polytomy.loop_through_trees_and_examine_sister_support_among_triplets(
+            trees, groups_of_groups, outgroup_taxa
+        )
+
+        self.assertEqual(summary["tree1.tre"]["0-1"], 3)
+        self.assertEqual(summary["tree2.tre"]["1-2"], 1)
+
     def test_examine_all_triplets_sequential(self):
         """Test sequential processing of triplets (small dataset)"""
         tips = ["seq1", "seq2", "seq3", "seq4", "out1"]
@@ -481,6 +532,70 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         # Should process sequentially for small dataset
         self.polytomy.get_triplet_tree.assert_called()
+
+    def test_examine_all_triplets_large_uses_fast_summary(self):
+        tips = ["a", "b", "c", "d"]
+        tree_file = "big.tre"
+        summary = {}
+        groups_of_groups = {"test": [["a", "b", "c", "d"], ["e", "f", "g", "h"], ["i", "j", "k", "l"]]}
+        outgroup_taxa = ["out"]
+
+        self.polytomy._read_tree_with_cache = Mock(return_value=Mock())
+        self.polytomy._prepare_tree_for_triplets = Mock(return_value=Mock())
+        self.polytomy._evaluate_tree_triplets_fast = Mock(return_value={"0-1": 4})
+
+        result = self.polytomy.examine_all_triplets_and_sister_pairing(
+            tips, tree_file, summary, groups_of_groups, outgroup_taxa
+        )
+
+        self.assertEqual(result[tree_file]["0-1"], 4)
+
+    def test_examine_all_triplets_large_legacy_on_empty_fast(self):
+        tips = ["a", "b", "c"]
+        tree_file = "big.tre"
+        summary = {}
+        groups_of_groups = {"test": [["a", "b", "c", "d"], ["e", "f", "g", "h"], ["i", "j", "k", "l"]]}
+        outgroup_taxa = ["out"]
+
+        self.polytomy._read_tree_with_cache = Mock(return_value=Mock())
+        self.polytomy._prepare_tree_for_triplets = Mock(return_value=Mock())
+        self.polytomy._evaluate_tree_triplets_fast = Mock(return_value={})
+        self.polytomy._legacy_triplet_pass = Mock(return_value={"0-2": 5})
+
+        result = self.polytomy.examine_all_triplets_and_sister_pairing(
+            tips, tree_file, summary, groups_of_groups, outgroup_taxa
+        )
+
+        self.assertEqual(result[tree_file]["0-2"], 5)
+
+    def test_examine_all_triplets_large_file_not_found_legacy(self):
+        tips = ["a", "b", "c"]
+        tree_file = "missing.tre"
+        summary = {}
+        groups_of_groups = {"test": [["a", "b", "c", "d"], ["e", "f", "g", "h"], ["i", "j", "k", "l"]]}
+        outgroup_taxa = ["out"]
+
+        self.polytomy._read_tree_with_cache = Mock(side_effect=FileNotFoundError())
+        self.polytomy._legacy_triplet_pass = Mock(return_value={"1-2": 6})
+
+        result = self.polytomy.examine_all_triplets_and_sister_pairing(
+            tips, tree_file, summary, groups_of_groups, outgroup_taxa
+        )
+
+        self.assertEqual(result[tree_file]["1-2"], 6)
+
+    def test_evaluate_tree_triplets_fast(self):
+        tree = Mock()
+        groups_of_groups = {"test": [["a"], ["b"], ["c"]]}
+
+        self.polytomy.get_tip_names_from_tree = Mock(return_value=["a", "b", "c"])
+        self.polytomy._build_clade_terminal_cache = Mock(return_value={})
+        self.polytomy._find_sister_pair = Mock(return_value=("a", "b"))
+        self.polytomy.determine_sisters_from_triplet = Mock(return_value="0-1")
+
+        result = self.polytomy._evaluate_tree_triplets_fast(tree, groups_of_groups)
+
+        self.assertEqual(result, {"0-1": 1})
 
     def test_process_triplet_batch(self):
         """Test processing a batch of triplets"""

@@ -65,3 +65,54 @@ class TestMonophylyCheck:
         with pytest.raises(SystemExit) as excinfo:
             service.run()
         assert excinfo.value.code == 2
+
+    def test_run_happy_path(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", list_of_taxa="/some/path/to/taxa.txt")
+        service = MonophylyCheck(args)
+
+        root_tree = mocker.Mock()
+        clade_tree = mocker.Mock()
+        root_tree.common_ancestor.return_value = clade_tree
+
+        mocker.patch.object(service, "read_tree_file", return_value=root_tree)
+        mocker.patch(
+            "phykit.services.tree.monophyly_check.read_single_column_file_to_list",
+            return_value=["a", "b", "c"],
+        )
+        mocker.patch.object(
+            service,
+            "get_tip_names_from_tree",
+            side_effect=[["a", "b", "c", "d"], ["a", "b", "c"]],
+        )
+        mocker.patch.object(service, "shared_tips", return_value=["a", "b", "c"])
+        mocker.patch.object(
+            service,
+            "get_bootstrap_statistics",
+            return_value={"mean": 90.0, "maximum": 100.0, "minimum": 80.0, "standard_deviation": 10.0},
+        )
+        mocked_print_results = mocker.patch.object(service, "print_results")
+
+        service.run()
+
+        root_tree.root_with_outgroup.assert_called_once_with(["d"])
+        mocked_print_results.assert_called_once()
+        res_arr = mocked_print_results.call_args.args[0]
+        assert res_arr[0][0] == "monophyletic"
+
+    def test_print_results_text_paths(self, mocker, args):
+        service = MonophylyCheck(args)
+        service.json_output = False
+        mocked_print = mocker.patch("builtins.print")
+
+        service.print_results(
+            [
+                ["not_monophyletic", 95.0, 100.0, 85.0, 7.0, ["z", "a"]],
+                ["monophyletic", 92.0, 100.0, 90.0, 3.0, []],
+                ["insufficient_taxon_representation"],
+            ]
+        )
+
+        calls = [c.args[0] for c in mocked_print.call_args_list]
+        assert any("not_monophyletic" in c and "a;z" in c for c in calls)
+        assert any(c.startswith("monophyletic\t92.0") for c in calls)
+        assert "insufficient_taxon_representation" in calls

@@ -118,3 +118,103 @@ class TestPatristicDistances(object):
 
         assert combos == expected_combos
         assert patristic_distances == expected_distances
+
+    def test_calculate_distance_between_pairs_parallel_tty_path(self, mocker, args):
+        t = PatristicDistances(args)
+        tips = [f"tip{i}" for i in range(15)]
+        tree = _IndexedDummyTree()
+
+        class DummyPool:
+            def __init__(self, processes):
+                self.processes = processes
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, func, chunks):
+                return [func(chunk) for chunk in chunks]
+
+            def imap(self, func, chunks):
+                for chunk in chunks:
+                    yield func(chunk)
+
+        mocker.patch("phykit.services.tree.patristic_distances.mp.Pool", DummyPool)
+        mocker.patch("phykit.services.tree.patristic_distances.mp.cpu_count", return_value=4)
+        mocker.patch("phykit.services.tree.patristic_distances.pickle.dumps", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.patristic_distances.pickle.loads", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.patristic_distances.sys.stderr.isatty", return_value=True)
+        mocked_tqdm = mocker.patch(
+            "phykit.services.tree.patristic_distances.tqdm",
+            side_effect=lambda iterable, **kwargs: iterable,
+        )
+
+        combos, patristic_distances = t.calculate_distance_between_pairs(tips, tree)
+
+        assert mocked_tqdm.called
+        assert len(combos) == len(patristic_distances)
+
+    def test_run_json_verbose(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", verbose=True, json=True)
+        t = PatristicDistances(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(
+            t,
+            "calculate_patristic_distances",
+            return_value=([1.23456], [("a", "b")], {"mean": 1.23456}),
+        )
+        mocked_json = mocker.patch("phykit.services.tree.patristic_distances.print_json")
+
+        t.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["verbose"] is True
+        assert payload["rows"] == payload["pairs"]
+        assert payload["rows"][0]["patristic_distance"] == 1.2346
+
+    def test_run_json_non_verbose(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", verbose=False, json=True)
+        t = PatristicDistances(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(
+            t,
+            "calculate_patristic_distances",
+            return_value=([1.0], [("a", "b")], {"mean": 1.0}),
+        )
+        mocked_json = mocker.patch("phykit.services.tree.patristic_distances.print_json")
+
+        t.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["verbose"] is False
+        assert payload["summary"]["mean"] == 1.0
+
+    def test_run_verbose_handles_broken_pipe(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", verbose=True, json=False)
+        t = PatristicDistances(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(
+            t,
+            "calculate_patristic_distances",
+            return_value=([1.0], [("a", "b")], {"mean": 1.0}),
+        )
+        mocker.patch("builtins.print", side_effect=BrokenPipeError())
+
+        t.run()
+
+    def test_run_non_verbose_prints_summary(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", verbose=False, json=False)
+        t = PatristicDistances(args)
+        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(
+            t,
+            "calculate_patristic_distances",
+            return_value=([1.0], [("a", "b")], {"mean": 1.0}),
+        )
+        mocked_summary = mocker.patch("phykit.services.tree.patristic_distances.print_summary_statistics")
+
+        t.run()
+
+        mocked_summary.assert_called_once_with({"mean": 1.0})

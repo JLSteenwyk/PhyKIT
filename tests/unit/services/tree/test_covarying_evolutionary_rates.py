@@ -3,9 +3,13 @@ Unit tests for CovaryingEvolutionaryRates class
 """
 
 import unittest
+import builtins
 from unittest.mock import Mock, MagicMock, patch
 from concurrent.futures import Future
 from argparse import Namespace
+import pytest
+import types
+import sys
 
 from phykit.services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
 
@@ -612,6 +616,240 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
             self.cov_rates.run()
         except BrokenPipeError:
             self.fail("BrokenPipeError was not caught")
+
+    def test_plot_covarying_rates_scatter_importerror(self):
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name.startswith("matplotlib"):
+                raise ImportError("no matplotlib")
+            return original_import(name, globals, locals, fromlist, level)
+
+        with patch("builtins.__import__", side_effect=fake_import):
+            with self.assertRaises(SystemExit) as exc:
+                self.cov_rates._plot_covarying_rates_scatter([0.1, 0.2], [0.3, 0.4], [0.5, 0.01])
+        self.assertEqual(exc.exception.code, 2)
+
+    @patch("phykit.services.tree.covarying_evolutionary_rates.print_json")
+    def test_run_json_non_verbose(self, mock_json):
+        self.cov_rates.json_output = True
+        self.cov_rates.verbose = False
+        self.cov_rates.plot = False
+
+        self.cov_rates.read_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
+        self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
+        self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
+        self.cov_rates.correct_branch_lengths = Mock(return_value=([1.0, 2.0], [2.0, 3.0], [["a"], ["b"]]))
+        self.cov_rates.get_indices_of_outlier_branch_lengths = Mock(return_value=[])
+        self.cov_rates.remove_outliers_based_on_indices = Mock(side_effect=lambda x, y: x)
+
+        self.cov_rates.run()
+        payload = mock_json.call_args.args[0]
+        self.assertFalse(payload["verbose"])
+        self.assertIn("correlation", payload)
+        self.assertIn("p_value", payload)
+
+    @patch("phykit.services.tree.covarying_evolutionary_rates.print_json")
+    def test_run_json_verbose_with_plot(self, mock_json):
+        self.cov_rates.json_output = True
+        self.cov_rates.verbose = True
+        self.cov_rates.plot = True
+        self.cov_rates.plot_output = "cover.png"
+        self.cov_rates._plot_covarying_rates_scatter = Mock()
+
+        self.cov_rates.read_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
+        self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
+        self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
+        self.cov_rates.correct_branch_lengths = Mock(return_value=([1.0, 2.0], [2.0, 3.0], [["a"], ["b"]]))
+        self.cov_rates.get_indices_of_outlier_branch_lengths = Mock(return_value=[])
+        self.cov_rates.remove_outliers_based_on_indices = Mock(side_effect=lambda x, y: x)
+
+        self.cov_rates.run()
+        self.cov_rates._plot_covarying_rates_scatter.assert_called_once()
+        payload = mock_json.call_args.args[0]
+        self.assertTrue(payload["verbose"])
+        self.assertEqual(payload["rows"], payload["branches"])
+        self.assertEqual(payload["plot_output"], "cover.png")
+
+    @patch("phykit.services.tree.covarying_evolutionary_rates.print_json")
+    def test_run_json_non_verbose_with_plot_output(self, mock_json):
+        self.cov_rates.json_output = True
+        self.cov_rates.verbose = False
+        self.cov_rates.plot = True
+        self.cov_rates.plot_output = "plot-file.png"
+        self.cov_rates._plot_covarying_rates_scatter = Mock()
+
+        self.cov_rates.read_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
+        self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
+        self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
+        self.cov_rates.correct_branch_lengths = Mock(return_value=([1.0, 2.0], [2.0, 3.0], [["a"], ["b"]]))
+        self.cov_rates.get_indices_of_outlier_branch_lengths = Mock(return_value=[])
+        self.cov_rates.remove_outliers_based_on_indices = Mock(side_effect=lambda x, y: x)
+
+        self.cov_rates.run()
+        payload = mock_json.call_args.args[0]
+        self.assertEqual(payload["plot_output"], "plot-file.png")
+
+    @patch("builtins.print")
+    def test_run_non_verbose_with_plot_prints_saved_path(self, mock_print):
+        self.cov_rates.plot = True
+        self.cov_rates.plot_output = "saved.png"
+        self.cov_rates._plot_covarying_rates_scatter = Mock()
+
+        self.cov_rates.read_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
+        self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
+        self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
+        self.cov_rates.correct_branch_lengths = Mock(return_value=([1.0, 2.0], [2.0, 3.0], [["a"], ["b"]]))
+        self.cov_rates.get_indices_of_outlier_branch_lengths = Mock(return_value=[])
+        self.cov_rates.remove_outliers_based_on_indices = Mock(side_effect=lambda x, y: x)
+
+        self.cov_rates.run()
+        printed_lines = [c.args[0] for c in mock_print.call_args_list]
+        self.assertEqual(len(printed_lines), 2)
+        self.assertTrue(any("Saved covarying rates plot: saved.png" == line for line in printed_lines))
+
+    @patch("pickle.loads")
+    def test_process_terminal_batch_reraises_system_exit(self, mock_loads):
+        tree0 = Mock()
+        tree1 = Mock()
+        tree0.common_ancestor.side_effect = SystemExit(2)
+        mock_loads.side_effect = [tree0, tree1]
+
+        with self.assertRaises(SystemExit):
+            CovaryingEvolutionaryRates._process_terminal_batch(
+                b"t0", b"t1", [("terminal", 1.0, ["a"])]
+            )
+
+    @patch("pickle.loads")
+    def test_process_nonterminal_batch_reraises_keyboard_interrupt(self, mock_loads):
+        tree0 = Mock()
+        tree1 = Mock()
+        tree0.common_ancestor.side_effect = KeyboardInterrupt()
+        mock_loads.side_effect = [tree0, tree1]
+
+        with self.assertRaises(KeyboardInterrupt):
+            CovaryingEvolutionaryRates._process_nonterminal_batch(
+                b"t0", b"t1", [(["a", "b"], 1.0)]
+            )
+
+    def test_correct_branch_lengths_parallel_fallback(self):
+        mock_t0 = Mock()
+        mock_t1 = Mock()
+        mock_sp = Mock()
+
+        terminals = []
+        for i in range(30):
+            term = Mock()
+            term.name = f"t{i}"
+            term.branch_length = 1.0
+            terminals.append(term)
+        nonterminals = []
+        for _ in range(25):
+            nonterm = Mock()
+            nonterm.branch_length = 1.0
+            nonterminals.append(nonterm)
+
+        mock_sp.get_terminals.return_value = terminals
+        mock_sp.get_nonterminals.return_value = nonterminals
+        self.cov_rates.get_tip_names_from_tree = Mock(side_effect=lambda node: [getattr(node, "name", "n")])
+
+        node0 = Mock()
+        node0.branch_length = 2.0
+        node1 = Mock()
+        node1.branch_length = 4.0
+        mock_t0.common_ancestor.return_value = node0
+        mock_t1.common_ancestor.return_value = node1
+
+        with patch("phykit.services.tree.covarying_evolutionary_rates.pickle.dumps", return_value=b"pickled"), \
+             patch("phykit.services.tree.covarying_evolutionary_rates.ProcessPoolExecutor", side_effect=OSError()):
+            l0, l1, tip_names = self.cov_rates.correct_branch_lengths(mock_t0, mock_t1, mock_sp)
+
+        self.assertTrue(len(l0) > 0)
+        self.assertEqual(len(l0), len(l1))
+        self.assertTrue(len(tip_names) > 0)
+
+    def test_plot_covarying_rates_scatter_success(self):
+        fake_pyplot = types.ModuleType("matplotlib.pyplot")
+
+        class DummyAx:
+            def __init__(self):
+                self.scatter_called = False
+                self.plot_called = False
+
+            def scatter(self, *args, **kwargs):
+                self.scatter_called = True
+
+            def plot(self, *args, **kwargs):
+                self.plot_called = True
+
+            def legend(self, *args, **kwargs):
+                pass
+
+            def set_title(self, *args, **kwargs):
+                pass
+
+            def set_xlabel(self, *args, **kwargs):
+                pass
+
+            def set_ylabel(self, *args, **kwargs):
+                pass
+
+            def text(self, *args, **kwargs):
+                pass
+
+            @property
+            def transAxes(self):
+                return object()
+
+        class DummyFig:
+            def __init__(self):
+                self.saved = False
+
+            def tight_layout(self):
+                pass
+
+            def savefig(self, *args, **kwargs):
+                self.saved = True
+
+        dummy_ax = DummyAx()
+        dummy_fig = DummyFig()
+        fake_pyplot.subplots = lambda figsize: (dummy_fig, dummy_ax)
+        fake_pyplot.close = lambda fig: None
+
+        fake_matplotlib = types.ModuleType("matplotlib")
+        fake_matplotlib.use = lambda backend: None
+        fake_matplotlib.pyplot = fake_pyplot
+        old_matplotlib = sys.modules.get("matplotlib")
+        old_pyplot = sys.modules.get("matplotlib.pyplot")
+        sys.modules["matplotlib"] = fake_matplotlib
+        sys.modules["matplotlib.pyplot"] = fake_pyplot
+        try:
+            self.cov_rates._plot_covarying_rates_scatter([0.1, 0.2], [0.3, 0.4], [0.5, 0.01])
+        finally:
+            if old_matplotlib is not None:
+                sys.modules["matplotlib"] = old_matplotlib
+            else:
+                sys.modules.pop("matplotlib", None)
+            if old_pyplot is not None:
+                sys.modules["matplotlib.pyplot"] = old_pyplot
+            else:
+                sys.modules.pop("matplotlib.pyplot", None)
+
+        self.assertTrue(dummy_ax.scatter_called)
+        self.assertTrue(dummy_ax.plot_called)
+        self.assertTrue(dummy_fig.saved)
 
 
 if __name__ == '__main__':
