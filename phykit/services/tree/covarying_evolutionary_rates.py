@@ -299,6 +299,36 @@ class CovaryingEvolutionaryRates(Tree):
                 continue
         return results
 
+    def _process_terminals_sequential(self, terminals, t0, t1, l0, l1, tip_names):
+        for i in terminals:
+            sp_tips = self.get_tip_names_from_tree(i)
+            tip_names.append(sp_tips)
+            try:
+                newtree = t0.common_ancestor(i.name)
+                newtree1 = t1.common_ancestor(i.name)
+                if newtree.branch_length and i.branch_length:
+                    l0.append(round(newtree.branch_length / i.branch_length, 6))
+                    l1.append(round(newtree1.branch_length / i.branch_length, 6))
+            except Exception as err:
+                if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                    raise
+                continue
+
+    def _process_nonterminals_sequential(self, nonterminals, t0, t1, l0, l1, tip_names):
+        for i in nonterminals:
+            sp_tips = self.get_tip_names_from_tree(i)
+            try:
+                newtree = t0.common_ancestor(sp_tips)
+                newtree1 = t1.common_ancestor(sp_tips)
+                if newtree.branch_length and newtree1.branch_length and i.branch_length:
+                    l0.append(round(newtree.branch_length / i.branch_length, 6))
+                    l1.append(round(newtree1.branch_length / i.branch_length, 6))
+                    tip_names.append(sp_tips)
+            except Exception as err:
+                if isinstance(err, (SystemExit, KeyboardInterrupt)):
+                    raise
+                continue
+
     def correct_branch_lengths(self, t0, t1, sp):
         """
         obtain a list of corrected branch lengths with parallel processing
@@ -314,33 +344,8 @@ class CovaryingEvolutionaryRates(Tree):
         # Process sequentially if small dataset or use parallel processing
         if len(terminals) + len(nonterminals) < 50:
             # Original sequential processing for small datasets
-            for i in terminals:
-                sp_tips = self.get_tip_names_from_tree(i)
-                tip_names.append(sp_tips)
-                try:
-                    newtree = t0.common_ancestor(i.name)
-                    newtree1 = t1.common_ancestor(i.name)
-                    if newtree.branch_length and i.branch_length:
-                        l0.append(round(newtree.branch_length / i.branch_length, 6))
-                        l1.append(round(newtree1.branch_length / i.branch_length, 6))
-                except Exception as err:
-                    if isinstance(err, (SystemExit, KeyboardInterrupt)):
-                        raise
-                    continue
-
-            for i in nonterminals:
-                sp_tips = self.get_tip_names_from_tree(i)
-                try:
-                    newtree = t0.common_ancestor(sp_tips)
-                    newtree1 = t1.common_ancestor(sp_tips)
-                    if newtree.branch_length and newtree1.branch_length and i.branch_length:
-                        l0.append(round(newtree.branch_length / i.branch_length, 6))
-                        l1.append(round(newtree1.branch_length / i.branch_length, 6))
-                        tip_names.append(sp_tips)
-                except Exception as err:
-                    if isinstance(err, (SystemExit, KeyboardInterrupt)):
-                        raise
-                    continue
+            self._process_terminals_sequential(terminals, t0, t1, l0, l1, tip_names)
+            self._process_nonterminals_sequential(nonterminals, t0, t1, l0, l1, tip_names)
         else:
             # Parallel processing for large datasets
             tree0_pickle = pickle.dumps(t0)
@@ -384,32 +389,7 @@ class CovaryingEvolutionaryRates(Tree):
                             l1.append(bl1)
                             tip_names.append(sp_tips)
             except (OSError, ValueError, RuntimeError):
-                for i in terminals:
-                    sp_tips = self.get_tip_names_from_tree(i)
-                    tip_names.append(sp_tips)
-                    try:
-                        newtree = t0.common_ancestor(i.name)
-                        newtree1 = t1.common_ancestor(i.name)
-                        if newtree.branch_length and i.branch_length:
-                            l0.append(round(newtree.branch_length / i.branch_length, 6))
-                            l1.append(round(newtree1.branch_length / i.branch_length, 6))
-                    except Exception as err:
-                        if isinstance(err, (SystemExit, KeyboardInterrupt)):
-                            raise
-                        continue
-
-                for i in nonterminals:
-                    sp_tips = self.get_tip_names_from_tree(i)
-                    try:
-                        newtree = t0.common_ancestor(sp_tips)
-                        newtree1 = t1.common_ancestor(sp_tips)
-                        if newtree.branch_length and newtree1.branch_length and i.branch_length:
-                            l0.append(round(newtree.branch_length / i.branch_length, 6))
-                            l1.append(round(newtree1.branch_length / i.branch_length, 6))
-                            tip_names.append(sp_tips)
-                    except Exception as err:
-                        if isinstance(err, (SystemExit, KeyboardInterrupt)):
-                            raise
-                        continue
+                self._process_terminals_sequential(terminals, t0, t1, l0, l1, tip_names)
+                self._process_nonterminals_sequential(nonterminals, t0, t1, l0, l1, tip_names)
 
         return (l0, l1, tip_names)

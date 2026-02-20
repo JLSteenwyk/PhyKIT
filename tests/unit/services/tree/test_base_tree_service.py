@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from phykit.services.tree.base import Tree
+from phykit.errors import PhykitUserError
 
 
 class _Tip:
@@ -82,11 +83,10 @@ class TestTreeBase:
 
     def test_read_tree1_file_not_found_exits(self, capsys):
         service = Tree(tree1_file_path="/missing/tree1.tre")
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(PhykitUserError) as exc:
             service.read_tree1_file()
         assert exc.value.code == 2
-        out, _ = capsys.readouterr()
-        assert "corresponds to no such file or directory" in out
+        assert "corresponds to no such file or directory" in exc.value.messages[0]
 
     def test_read_tree1_file_success_returns_deepcopy(self, mocker):
         service = Tree(tree1_file_path="x1.tre")
@@ -99,11 +99,10 @@ class TestTreeBase:
 
     def test_read_reference_tree_file_not_found_exits(self, capsys):
         service = Tree(reference="/missing/ref.tre")
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(PhykitUserError) as exc:
             service.read_reference_tree_file()
         assert exc.value.code == 2
-        out, _ = capsys.readouterr()
-        assert "corresponds to no such file or directory" in out
+        assert "corresponds to no such file or directory" in exc.value.messages[0]
 
     def test_read_reference_tree_file_success_returns_deepcopy(self, mocker):
         service = Tree(reference="ref.tre")
@@ -116,11 +115,10 @@ class TestTreeBase:
 
     def test_read_tree_with_error_uses_requested_attr_name(self, capsys):
         service = Tree(tree_file_path="/missing/tree.tre")
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(PhykitUserError) as exc:
             service._read_tree_with_error("/missing/tree.tre", "tree_file_path")
         assert exc.value.code == 2
-        out, _ = capsys.readouterr()
-        assert "/missing/tree.tre corresponds to no such file or directory." in out
+        assert "/missing/tree.tre corresponds to no such file or directory." in exc.value.messages[0]
 
     def test_write_tree_file_delegates_to_phylo(self, mocker):
         service = Tree()
@@ -141,11 +139,10 @@ class TestTreeBase:
 
     def test_shared_tips_no_overlap_exits(self, capsys):
         service = Tree()
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(PhykitUserError) as exc:
             service.shared_tips(["a"], ["b"])
         assert exc.value.code == 2
-        out, _ = capsys.readouterr()
-        assert "no common tips" in out
+        assert exc.value.messages == ["no common tips"]
 
     def test_prune_tree_using_taxa_list(self):
         service = Tree()

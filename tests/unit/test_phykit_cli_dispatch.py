@@ -2,6 +2,7 @@ import pytest
 
 import phykit.phykit as phykit_module
 from phykit.phykit import Phykit
+from phykit.errors import PhykitUserError
 
 
 COMMAND_METHODS = [
@@ -269,3 +270,20 @@ class TestPhykitCliDispatch:
         method = getattr(phykit_module.Phykit, method_name)
         method(["ignored"])
         assert calls["ran"] is True
+
+    def test_run_service_renders_phykit_user_error(self, monkeypatch, capsys):
+        class FakeParser:
+            def parse_args(self, argv):
+                return object()
+
+        class FakeRunner:
+            def run(self):
+                raise PhykitUserError(["line one", "line two"], code=2)
+
+        with pytest.raises(SystemExit) as exc:
+            phykit_module._run_service(FakeParser(), [], lambda args: FakeRunner())
+
+        assert exc.value.code == 2
+        out, _ = capsys.readouterr()
+        assert "line one" in out
+        assert "line two" in out

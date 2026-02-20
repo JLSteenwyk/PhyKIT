@@ -1,4 +1,3 @@
-import sys
 import copy
 from typing import List
 from functools import lru_cache
@@ -8,6 +7,7 @@ import hashlib
 from Bio import Phylo
 
 from ..base import BaseService
+from ...errors import PhykitUserError
 
 
 class Tree(BaseService):
@@ -88,9 +88,13 @@ class Tree(BaseService):
             return copy.deepcopy(tree)
         except FileNotFoundError:
             path = getattr(self, attr_name)
-            print(f"{path} corresponds to no such file or directory.")
-            print("Please check filename and pathing")
-            sys.exit(2)
+            raise PhykitUserError(
+                [
+                    f"{path} corresponds to no such file or directory.",
+                    "Please check filename and pathing",
+                ],
+                code=2,
+            )
 
     def write_tree_file(self, tree, output_file_path):
         return Phylo.write(tree, output_file_path, self.tree_format)
@@ -119,8 +123,7 @@ class Tree(BaseService):
         if len(a_set.intersection(b_set)) > 0:
             return list(a_set.intersection(b_set))
         else:
-            print("no common tips")
-            sys.exit(2)
+            raise PhykitUserError(["no common tips"], code=2)
 
     def prune_tree_using_taxa_list(self, tree, taxa_to_prune: list):
         """

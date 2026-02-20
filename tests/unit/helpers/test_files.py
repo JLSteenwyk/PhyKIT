@@ -10,20 +10,23 @@ from phykit.helpers.files import (
     is_protein_alignment,
     read_single_column_file_to_list,
 )
+from phykit.errors import PhykitUserError
 
 
 class TestFileErrorHandling:
     def test_get_alignment_and_format_error_handling(self):
         file_path = "not_real_file"
-        with pytest.raises(SystemExit) as excinfo:
+        with pytest.raises(PhykitUserError) as excinfo:
             get_alignment_and_format(file_path)
-        assert excinfo.type is SystemExit
+        assert excinfo.value.code == 2
+        assert "corresponds to no such file" in excinfo.value.messages[0]
 
     def test_get_read_single_column_file_to_list_error_handling(self):
         file_path = "not_real_file"
-        with pytest.raises(SystemExit) as excinfo:
+        with pytest.raises(PhykitUserError) as excinfo:
             read_single_column_file_to_list(file_path)
-        assert excinfo.type is SystemExit
+        assert excinfo.value.code == 2
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
 
 
 class TestFormatDetection:
@@ -75,7 +78,7 @@ class TestAlignmentReadAndType:
     def test_get_alignment_and_format_unknown_format_exits(self, tmp_path: Path):
         bad = tmp_path / "bad.aln"
         bad.write_text("not-an-alignment\nstill-not-an-alignment\n")
-        with pytest.raises(SystemExit) as excinfo:
+        with pytest.raises(PhykitUserError) as excinfo:
             get_alignment_and_format(str(bad))
         assert excinfo.value.code == 2
 
