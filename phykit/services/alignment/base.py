@@ -1,5 +1,3 @@
-import sys
-
 from typing import List
 
 from ..base import BaseService
@@ -44,12 +42,7 @@ class Alignment(BaseService):
         """
         automatic file type determination
         """
-        try:
-            return get_alignment_and_format_helper(self.alignment_file_path)
-        except FileNotFoundError:
-            print("Input corresponds to no such file or directory.")
-            print("Please double check pathing and filenames")
-            sys.exit(2)
+        return get_alignment_and_format_helper(self.alignment_file_path)
 
     def calculate_rcv(self) -> float:
         import numpy as np

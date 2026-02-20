@@ -1,5 +1,4 @@
 from enum import Enum
-import sys
 from typing import Tuple, Optional
 from functools import lru_cache
 import hashlib
@@ -7,6 +6,7 @@ import os
 
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
+from ..errors import PhykitUserError
 
 
 class FileFormat(Enum):
@@ -60,9 +60,13 @@ def get_alignment_and_format(
 ) -> Tuple[MultipleSeqAlignment, str, bool]:
     # Check if file exists first
     if not os.path.exists(alignment_file_path):
-        print(f"{alignment_file_path} corresponds to no such file.")
-        print("Please check file name and pathing")
-        sys.exit(2)
+        raise PhykitUserError(
+            [
+                f"{alignment_file_path} corresponds to no such file.",
+                "Please check file name and pathing",
+            ],
+            code=2,
+        )
 
     # Try to detect format by content first
     detected_format = _detect_format_by_content(alignment_file_path)
@@ -95,9 +99,13 @@ def get_alignment_and_format(
             continue
 
     # If we get here, no format worked
-    print(f"Could not determine format for {alignment_file_path}")
-    print("Please ensure the file is in a supported format")
-    sys.exit(2)
+    raise PhykitUserError(
+        [
+            f"Could not determine format for {alignment_file_path}",
+            "Please ensure the file is in a supported format",
+        ],
+        code=2,
+    )
 
 
 def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
@@ -120,6 +128,10 @@ def read_single_column_file_to_list(single_col_file_path: str) -> list:
         with open(single_col_file_path) as f:
             return [line.rstrip("\n").strip() for line in f]
     except FileNotFoundError:
-        print(f"{single_col_file_path} corresponds to no such file or directory.")
-        print("Please check file name and pathing")
-        sys.exit(2)
+        raise PhykitUserError(
+            [
+                f"{single_col_file_path} corresponds to no such file or directory.",
+                "Please check file name and pathing",
+            ],
+            code=2,
+        )
