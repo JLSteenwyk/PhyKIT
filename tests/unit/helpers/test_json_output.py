@@ -23,3 +23,17 @@ class TestJsonOutput:
         print_json(payload)
         parsed = json.loads(mocked_print.call_args.args[0])
         assert parsed == {"a": 1, "b": 2.5}
+
+    def test_to_builtin_json_types_converts_tuple_and_nested_values(self):
+        payload = {
+            "t": (np.int64(1), np.float64(2.0)),
+            "nested": [{"x": np.array([np.int64(3)])}],
+        }
+        assert to_builtin_json_types(payload) == {
+            "t": [1, 2.0],
+            "nested": [{"x": [3]}],
+        }
+
+    @patch("builtins.print", side_effect=BrokenPipeError)
+    def test_print_json_handles_broken_pipe(self, _mocked_print):
+        print_json({"a": 1})
