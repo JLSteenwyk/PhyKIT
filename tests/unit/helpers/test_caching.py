@@ -289,6 +289,18 @@ class TestAlignmentCache(TestCase):
         result2 = self.cache.get_stats("hash2", "mean")
         self.assertIsNone(result2)
 
+    def test_column_cache_invalidates_lru_on_set(self):
+        self.cache.set_column("hash1", 0, "ATCG")
+        self.assertEqual(self.cache.get_column("hash1", 0), "ATCG")
+        self.cache.set_column("hash1", 0, "GGGG")
+        self.assertEqual(self.cache.get_column("hash1", 0), "GGGG")
+
+    def test_stats_cache_invalidates_lru_on_set(self):
+        self.cache.set_stats("hash1", "mean", {"mean": 0.5})
+        self.assertEqual(self.cache.get_stats("hash1", "mean"), {"mean": 0.5})
+        self.cache.set_stats("hash1", "mean", {"mean": 0.9})
+        self.assertEqual(self.cache.get_stats("hash1", "mean"), {"mean": 0.9})
+
     def test_clear(self):
         """Test clearing all caches"""
         # Add some cached data

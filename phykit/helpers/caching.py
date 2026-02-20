@@ -162,6 +162,8 @@ class AlignmentCache:
         Cache alignment column.
         """
         self._column_cache[f"{alignment_hash}_{column_idx}"] = column
+        # Prevent stale values from the lru_cache layer.
+        self.get_column.cache_clear()
 
     @lru_cache(maxsize=128)
     def get_stats(self, alignment_hash: str, stat_type: str) -> Any:
@@ -175,6 +177,8 @@ class AlignmentCache:
         Cache alignment statistics.
         """
         self._stats_cache[f"{alignment_hash}_{stat_type}"] = stats
+        # Prevent stale values from the lru_cache layer.
+        self.get_stats.cache_clear()
 
     def clear(self) -> None:
         """

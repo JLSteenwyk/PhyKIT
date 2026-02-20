@@ -114,6 +114,14 @@ class TestTreeBase:
         assert out == source_tree
         assert out is not source_tree
 
+    def test_read_tree_with_error_uses_requested_attr_name(self, capsys):
+        service = Tree(tree_file_path="/missing/tree.tre")
+        with pytest.raises(SystemExit) as exc:
+            service._read_tree_with_error("/missing/tree.tre", "tree_file_path")
+        assert exc.value.code == 2
+        out, _ = capsys.readouterr()
+        assert "/missing/tree.tre corresponds to no such file or directory." in out
+
     def test_write_tree_file_delegates_to_phylo(self, mocker):
         service = Tree()
         mocked_write = mocker.patch("phykit.services.tree.base.Phylo.write", return_value=1)
