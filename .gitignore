@@ -146,3 +146,7 @@ output/
 submitting_to_conda.txt
 
 scripts
+
+# Audit
+audit.sh
+audit_results/
