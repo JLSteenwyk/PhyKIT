@@ -6,6 +6,20 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.7**:
+Added a missing-taxa-aware consensus tree utility:
+
+* Added new ``consensus_tree`` command (aliases: ``consensus``, ``ctree``)
+  with strict and majority-rule modes
+* Added ``--missing-taxa`` handling:
+  ``error`` (default) or ``shared`` (prune all trees to the shared taxa set)
+* Added JSON output support for consensus metadata and Newick output
+* Added new CLI entry points:
+  ``pk_consensus_tree``, ``pk_consensus``, ``pk_ctree``
+* Added unit/integration test coverage for parsing, alias dispatch,
+  and missing-taxa behavior
+* Updated usage documentation and top-level command help text
+
 **2.1.6**:
 Expanded plotting support for alignment/tree QC workflows:
 
