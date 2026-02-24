@@ -53,6 +53,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "collapse": "collapse_branches",
     "cb": "collapse_branches",
     "cover": "covarying_evolutionary_rates",
+    "consensus": "consensus_tree",
+    "ctree": "consensus_tree",
     "degree_of_violation_of_a_molecular_clock": "dvmc",
     "evo_rate": "evolutionary_rate",
     "clan_check": "hidden_paralogy_check",
@@ -99,4 +101,3 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "pal2nal": "thread_dna",
     "p2n": "thread_dna",
 }
-

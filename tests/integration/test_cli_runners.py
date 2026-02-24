@@ -209,6 +209,21 @@ class TestBrokenPipeError(object):
     def test_pk_cover(self):
         exit_status = self._run_cli("pk_cover")
         assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_consensus_tree(self):
+        exit_status = self._run_cli("pk_consensus_tree")
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_consensus(self):
+        exit_status = self._run_cli("pk_consensus")
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_ctree(self):
+        exit_status = self._run_cli("pk_ctree")
+        assert exit_status == 0
     
     @pytest.mark.slow
     def test_pk_dvmc(self):

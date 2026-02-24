@@ -47,6 +47,7 @@ BipartitionSupportStats = _LazyServiceFactory("phykit.services.tree.bipartition_
 BranchLengthMultiplier = _LazyServiceFactory("phykit.services.tree.branch_length_multiplier", "BranchLengthMultiplier")
 CollapseBranches = _LazyServiceFactory("phykit.services.tree.collapse_branches", "CollapseBranches")
 CovaryingEvolutionaryRates = _LazyServiceFactory("phykit.services.tree.covarying_evolutionary_rates", "CovaryingEvolutionaryRates")
+ConsensusTree = _LazyServiceFactory("phykit.services.tree.consensus_tree", "ConsensusTree")
 DVMC = _LazyServiceFactory("phykit.services.tree.dvmc", "DVMC")
 EvolutionaryRate = _LazyServiceFactory("phykit.services.tree.evolutionary_rate", "EvolutionaryRate")
 HiddenParalogyCheck = _LazyServiceFactory("phykit.services.tree.hidden_paralogy_check", "HiddenParalogyCheck")
@@ -78,4 +79,3 @@ SERVICE_FACTORIES: Dict[str, _LazyServiceFactory] = {
     for name, value in locals().items()
     if isinstance(value, _LazyServiceFactory)
 }
-

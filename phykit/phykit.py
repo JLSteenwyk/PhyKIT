@@ -168,6 +168,8 @@ class Phykit:
                     - collapses branches according to bipartition support
                 covarying_evolutionary_rates (alias: cover)
                     - calculates correlation in the evolutionary rate of two trees
+                consensus_tree (alias: consensus; ctree)
+                    - infer strict or majority-rule consensus from a tree collection
                 degree_of_violation_of_a_molecular_clock (alias: dvmc)
                     - reports the degree of violation of the molecular clock
                 evolutionary_rate (alias: evo_rate)
@@ -2219,6 +2221,72 @@ class Phykit:
         _run_service(parser, argv, PrintTree)
 
     @staticmethod
+    def consensus_tree(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Infer a consensus tree from a collection of trees.
+
+                Input can be either:
+                1) a file with one Newick tree per line, or
+                2) a file with one tree-file path per line.
+
+                If input trees have different taxon sets, use
+                --missing-taxa shared to prune each tree to the
+                intersection of taxa before inferring consensus.
+
+                Aliases:
+                  consensus_tree, consensus, ctree
+                Command line interfaces:
+                  pk_consensus_tree, pk_consensus, pk_ctree
+
+                Usage:
+                phykit consensus_tree -t/--trees <trees>
+                    [-m/--method strict|majority]
+                    [--missing-taxa error|shared] [--json]
+
+                Options
+                =====================================================
+                -t/--trees                 file containing trees or
+                                           tree paths
+
+                -m/--method                consensus method to infer
+                                           (Default: majority)
+
+                --missing-taxa             how to handle mismatched
+                                           taxa across trees:
+                                           error or shared
+                                           (Default: error)
+
+                --json                     optional argument to output
+                                           results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--trees", type=str, required=True, help=SUPPRESS)
+        parser.add_argument(
+            "-m",
+            "--method",
+            type=str,
+            choices=["strict", "majority"],
+            default="majority",
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--missing-taxa",
+            type=str,
+            choices=["error", "shared"],
+            default="error",
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, ConsensusTree)
+
+    @staticmethod
     def prune_tree(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3157,6 +3225,10 @@ def polytomy_test(argv=None):
 
 def print_tree(argv=None):
     Phykit.print_tree(sys.argv[1:])
+
+
+def consensus_tree(argv=None):
+    Phykit.consensus_tree(sys.argv[1:])
 
 
 def prune_tree(argv=None):
