@@ -73,6 +73,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "ppca": "phylogenetic_pca",
     "phylomorpho": "phylomorphospace",
     "phmo": "phylomorphospace",
+    "phylo_regression": "phylogenetic_regression",
+    "pgls": "phylogenetic_regression",
     "polyt_test": "polytomy_test",
     "ptt": "polytomy_test",
     "polyt": "polytomy_test",
