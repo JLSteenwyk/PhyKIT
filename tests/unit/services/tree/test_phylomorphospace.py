@@ -77,6 +77,7 @@ class TestProcessArgs:
         assert svc.json_output is True
 
     def test_auto_select_two_trait_file(self, auto_select_two_trait_file, tmp_path):
+        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "auto.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -94,6 +95,7 @@ class TestProcessArgs:
 
 class TestRun:
     def test_basic_text_output(self, default_args, tmp_path, capsys):
+        pytest.importorskip("matplotlib")
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
         svc.run()
@@ -102,6 +104,7 @@ class TestRun:
         assert Path(default_args.plot_output).exists()
 
     def test_json_output(self, default_args, tmp_path, capsys):
+        pytest.importorskip("matplotlib")
         default_args.json = True
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
@@ -143,6 +146,7 @@ class TestRun:
             svc.run()
 
     def test_plot_creates_file(self, default_args, tmp_path):
+        pytest.importorskip("matplotlib")
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
         svc.run()
@@ -152,6 +156,7 @@ class TestRun:
 
 class TestPlot:
     def test_with_color_by_column(self, tmp_path):
+        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "color_col.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -168,6 +173,7 @@ class TestPlot:
         assert Path(plot_path).stat().st_size > 0
 
     def test_with_color_by_discrete_file(self, tmp_path):
+        pytest.importorskip("matplotlib")
         color_file = tmp_path / "groups.tsv"
         color_file.write_text(
             "raccoon\tgroup_A\n"
@@ -196,9 +202,35 @@ class TestPlot:
 
 
 class TestReconstructAncestralScores:
-    def test_all_nodes_scored(self, default_args, tmp_path):
-        default_args.plot_output = str(tmp_path / "test.png")
-        svc = Phylomorphospace(default_args)
+    @pytest.fixture(autouse=True)
+    def _make_trait_data(self, tmp_path):
+        """Create local trait data so tests don't depend on sample_files."""
+        self._trait_file = str(tmp_path / "traits.tsv")
+        Path(self._trait_file).write_text(
+            "taxon\tbody_mass\tbrain_size\n"
+            "raccoon\t1.04\t1.60\n"
+            "bear\t2.39\t2.66\n"
+            "sea_lion\t2.30\t2.74\n"
+            "seal\t1.88\t2.45\n"
+            "monkey\t0.60\t1.85\n"
+            "cat\t0.56\t1.30\n"
+            "weasel\t-0.30\t0.85\n"
+            "dog\t1.18\t1.87\n"
+        )
+
+    def _make_svc(self):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=self._trait_file,
+            trait_x="body_mass",
+            trait_y="brain_size",
+            color_by=None,
+            plot_output="unused.png",
+            json=False,
+        )
+        return Phylomorphospace(args)
+
+    def _get_data(self, svc):
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(
@@ -210,6 +242,11 @@ class TestReconstructAncestralScores:
         data = np.array(
             [[traits[name][x_idx], traits[name][y_idx]] for name in ordered_names]
         )
+        return tree, ordered_names, data
+
+    def test_all_nodes_scored(self):
+        svc = self._make_svc()
+        tree, ordered_names, data = self._get_data(svc)
         node_estimates, node_distances, tree_pruned = (
             svc._reconstruct_ancestral_scores(tree, data, ordered_names)
         )
@@ -219,20 +256,9 @@ class TestReconstructAncestralScores:
         for clade in all_clades:
             assert id(clade) in node_estimates
 
-    def test_tips_match_input(self, default_args, tmp_path):
-        default_args.plot_output = str(tmp_path / "test.png")
-        svc = Phylomorphospace(default_args)
-        tree = svc.read_tree_file()
-        tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(
-            svc.trait_data_path, tree_tips
-        )
-        ordered_names = sorted(traits.keys())
-        x_idx = trait_names.index("body_mass")
-        y_idx = trait_names.index("brain_size")
-        data = np.array(
-            [[traits[name][x_idx], traits[name][y_idx]] for name in ordered_names]
-        )
+    def test_tips_match_input(self):
+        svc = self._make_svc()
+        tree, ordered_names, data = self._get_data(svc)
         node_estimates, _, tree_pruned = svc._reconstruct_ancestral_scores(
             tree, data, ordered_names
         )
@@ -244,20 +270,9 @@ class TestReconstructAncestralScores:
                 est = node_estimates[id(tip)]
                 np.testing.assert_array_almost_equal(est, data[idx])
 
-    def test_root_in_range(self, default_args, tmp_path):
-        default_args.plot_output = str(tmp_path / "test.png")
-        svc = Phylomorphospace(default_args)
-        tree = svc.read_tree_file()
-        tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(
-            svc.trait_data_path, tree_tips
-        )
-        ordered_names = sorted(traits.keys())
-        x_idx = trait_names.index("body_mass")
-        y_idx = trait_names.index("brain_size")
-        data = np.array(
-            [[traits[name][x_idx], traits[name][y_idx]] for name in ordered_names]
-        )
+    def test_root_in_range(self):
+        svc = self._make_svc()
+        tree, ordered_names, data = self._get_data(svc)
         node_estimates, _, tree_pruned = svc._reconstruct_ancestral_scores(
             tree, data, ordered_names
         )
