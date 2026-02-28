@@ -6,6 +6,11 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.11**:
+Maintenance:
+
+* Added ``matplotlib>=3.7.0`` as a required dependency
+
 **2.1.10**:
 Added phylomorphospace:
 
