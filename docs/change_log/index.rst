@@ -6,6 +6,38 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.10**:
+Added phylomorphospace:
+
+* Added new ``phylomorphospace`` command (aliases: ``phylomorpho``, ``phmo``)
+  for plotting raw traits with the phylogeny overlaid via ML-reconstructed
+  ancestral states at internal nodes
+* Tree edges colored by distance from root (coolwarm colormap with colorbar)
+* Optional ``--color-by`` for tip point coloring (continuous or discrete)
+* Auto-selects first two trait columns when the file has exactly 2 traits
+  and ``--trait-x`` / ``--trait-y`` are omitted
+* JSON output support via ``--json``
+* Added new CLI entry points:
+  ``pk_phylomorphospace``, ``pk_phylomorpho``, ``pk_phmo``
+
+**2.1.9**:
+Added phylogenetic PCA:
+
+* Added new ``phylogenetic_pca`` command (aliases: ``phylo_pca``, ``phyl_pca``, ``ppca``)
+  implementing Revell (2009) phylogenetic PCA for multi-trait data
+* Two methods: ``BM`` (Brownian motion) and ``lambda`` (joint Pagel's lambda
+  estimation across all traits)
+* Two modes: ``cov`` (covariance PCA) and ``corr`` (correlation PCA)
+* Tab-delimited multi-trait file input with header row, comment/blank-line support,
+  and automatic taxon-mismatch handling (intersection with stderr warnings)
+* Optional ``--plot`` argument to generate PCA scatter plot (PC1 vs PC2) with
+  taxon labels and variance-explained axes
+* JSON output support via ``--json``
+* Added new CLI entry points:
+  ``pk_phylogenetic_pca``, ``pk_phylo_pca``, ``pk_phyl_pca``, ``pk_ppca``
+* Benchmarked against R phytools ``phyl.pca()`` (Revell 2012): eigenvalues,
+  loadings, and scores match across all method/mode combinations within 1e-4
+
 **2.1.8**:
 Added phylogenetic signal analysis:
 
