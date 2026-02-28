@@ -66,6 +66,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "is_monophyletic": "monophyly_check",
     "nni": "nearest_neighbor_interchange",
     "pd": "patristic_distances",
+    "phylo_signal": "phylogenetic_signal",
+    "ps": "phylogenetic_signal",
     "polyt_test": "polytomy_test",
     "ptt": "polytomy_test",
     "polyt": "polytomy_test",
