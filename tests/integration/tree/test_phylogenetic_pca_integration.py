@@ -89,6 +89,7 @@ class TestPhylogeneticPCAIntegration:
 
     @patch("builtins.print")
     def test_ppca_plot(self, mocked_print, tmp_path):
+        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "pca_plot.png")
         testargs = [
             "phykit",
@@ -106,6 +107,7 @@ class TestPhylogeneticPCAIntegration:
 
     @patch("builtins.print")
     def test_ppca_plot_tree(self, mocked_print, tmp_path):
+        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "pca_tree.png")
         testargs = [
             "phykit",
@@ -124,6 +126,7 @@ class TestPhylogeneticPCAIntegration:
 
     @patch("builtins.print")
     def test_ppca_color_by_column(self, mocked_print, tmp_path):
+        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "pca_color.png")
         testargs = [
             "phykit",
@@ -142,6 +145,7 @@ class TestPhylogeneticPCAIntegration:
 
     @patch("builtins.print")
     def test_ppca_plot_tree_with_color_by(self, mocked_print, tmp_path):
+        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "pca_both.png")
         testargs = [
             "phykit",
