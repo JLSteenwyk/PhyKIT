@@ -190,6 +190,9 @@ class Phykit:
                     - make nearest neighbor interchange moves on a tree
                 patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
+                phylogenetic_signal (alias: phylo_signal; ps)
+                    - calculate phylogenetic signal (Blomberg's K or Pagel's
+                      lambda) for continuous trait data
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -2115,6 +2118,83 @@ class Phykit:
         _run_service(parser, argv, PatristicDistances)
 
     @staticmethod
+    def phylogenetic_signal(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate phylogenetic signal for continuous trait data.
+
+                Supports two methods:
+                  - blombergs_k: Blomberg's K statistic (Blomberg et al. 2003)
+                    with permutation-based p-value.
+                  - lambda: Pagel's lambda (Pagel 1999) with likelihood ratio
+                    test p-value.
+
+                Trait file should be tab-delimited with two columns:
+                  taxon_name<tab>trait_value
+
+                Lines starting with '#' are treated as comments.
+
+                Output for blombergs_k: K_value<tab>p_value
+                Output for lambda: lambda_value<tab>log_likelihood<tab>p_value
+
+                Aliases:
+                  phylogenetic_signal, phylo_signal, ps
+                Command line interfaces:
+                  pk_phylogenetic_signal, pk_phylo_signal, pk_ps
+
+                Usage:
+                phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon_name<tab>trait_value)
+
+                -m/--method                 method to use: blombergs_k
+                                            or lambda (default: blombergs_k)
+
+                -p/--permutations           number of permutations for
+                                            blombergs_k (default: 1000)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-m",
+            "--method",
+            type=str,
+            required=False,
+            default="blombergs_k",
+            choices=["blombergs_k", "lambda"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "-p",
+            "--permutations",
+            type=int,
+            required=False,
+            default=1000,
+            help=SUPPRESS,
+            metavar="",
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhylogeneticSignal)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3217,6 +3297,10 @@ def nearest_neighbor_interchange(argv=None):
 
 def patristic_distances(argv=None):
     Phykit.patristic_distances(sys.argv[1:])
+
+
+def phylogenetic_signal(argv=None):
+    Phykit.phylogenetic_signal(sys.argv[1:])
 
 
 def polytomy_test(argv=None):

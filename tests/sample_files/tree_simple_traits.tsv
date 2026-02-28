@@ -1,0 +1,10 @@
+# Trait data for tree_simple.tre taxa
+# body mass (kg, log-transformed)
+raccoon	1.04
+bear	2.39
+sea_lion	2.30
+seal	1.88
+monkey	0.60
+cat	0.56
+weasel	-0.30
+dog	1.18

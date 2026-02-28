@@ -6,6 +6,22 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.8**:
+Added phylogenetic signal analysis:
+
+* Added new ``phylogenetic_signal`` command (aliases: ``phylo_signal``, ``ps``)
+  with support for Blomberg's K and Pagel's lambda
+* Blomberg's K includes permutation-based p-value (configurable ``--permutations``)
+* Pagel's lambda uses ML optimization with likelihood ratio test p-value
+* Tab-delimited trait file input with comment/blank-line support and
+  automatic taxon-mismatch handling (intersection with stderr warnings)
+* JSON output support via ``--json``
+* Added new CLI entry points:
+  ``pk_phylogenetic_signal``, ``pk_phylo_signal``, ``pk_ps``
+* Validated against R phytools ``phylosig()`` across 95 simulated datasets
+  (5-50 tips; pure-birth, coalescent; random, BM, and known-lambda traits):
+  Pearson r = 1.0 for K, r > 0.999 for lambda, log-likelihood, and LRT p-value
+
 **2.1.7**:
 Added a missing-taxa-aware consensus tree utility:
 
