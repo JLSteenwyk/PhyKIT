@@ -61,6 +61,7 @@ PatristicDistances = _LazyServiceFactory("phykit.services.tree.patristic_distanc
 PhylogeneticSignal = _LazyServiceFactory("phykit.services.tree.phylogenetic_signal", "PhylogeneticSignal")
 PhylogeneticPCA = _LazyServiceFactory("phykit.services.tree.phylogenetic_pca", "PhylogeneticPCA")
 Phylomorphospace = _LazyServiceFactory("phykit.services.tree.phylomorphospace", "Phylomorphospace")
+PhylogeneticRegression = _LazyServiceFactory("phykit.services.tree.phylogenetic_regression", "PhylogeneticRegression")
 PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "PolytomyTest")
 PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")
 PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")

@@ -199,6 +199,8 @@ class Phykit:
                 phylomorphospace (alias: phylomorpho; phmo)
                     - plot raw traits with phylogeny overlaid via ancestral
                       reconstruction
+                phylogenetic_regression (alias: phylo_regression; pgls)
+                    - fit phylogenetic generalized least squares (PGLS) regression
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -2406,6 +2408,89 @@ class Phykit:
         _run_service(parser, argv, Phylomorphospace)
 
     @staticmethod
+    def phylogenetic_regression(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Fit a Phylogenetic Generalized Least Squares (PGLS)
+                regression while accounting for phylogenetic non-independence
+                among species, analogous to R's caper::pgls().
+
+                Input is a phylogenetic tree and a tab-delimited
+                multi-trait file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Two methods are available:
+                - BM (default): Brownian motion (lambda fixed at 1)
+                - lambda: jointly estimates Pagel's lambda via ML
+
+                Output includes coefficient estimates, standard errors,
+                t-values, p-values, R-squared, F-statistic, log-likelihood,
+                and AIC.
+
+                Aliases:
+                  phylogenetic_regression, phylo_regression, pgls
+                Command line interfaces:
+                  pk_phylogenetic_regression, pk_phylo_regression, pk_pgls
+
+                Usage:
+                phykit phylogenetic_regression -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] [-m <method>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited multi-trait file
+                                            with header row
+
+                -y/--response               response (dependent) variable
+                                            column name
+
+                -x/--predictors             one or more predictor column
+                                            names
+
+                -m/--method                 method to use: BM or lambda
+                                            (default: BM)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-y", "--response", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-x",
+            "--predictors",
+            type=str,
+            nargs="+",
+            required=True,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "-m",
+            "--method",
+            type=str,
+            required=False,
+            default="BM",
+            choices=["BM", "lambda"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhylogeneticRegression)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3520,6 +3605,10 @@ def phylogenetic_pca(argv=None):
 
 def phylomorphospace(argv=None):
     Phykit.phylomorphospace(sys.argv[1:])
+
+
+def phylogenetic_regression(argv=None):
+    Phykit.phylogenetic_regression(sys.argv[1:])
 
 
 def polytomy_test(argv=None):

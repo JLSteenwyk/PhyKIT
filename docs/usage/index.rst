@@ -1457,6 +1457,55 @@ Options: |br|
 
 |
 
+Phylogenetic regression (PGLS)
+##############################
+Function names: phylogenetic_regression; phylo_regression; pgls |br|
+Command line interface: pk_phylogenetic_regression; pk_phylo_regression; pk_pgls
+
+Fit a Phylogenetic Generalized Least Squares (PGLS) regression while
+accounting for phylogenetic non-independence among species, analogous to
+R's ``caper::pgls()``.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.
+
+Two methods are available:
+
+- **BM** (default): Brownian motion with lambda fixed at 1
+- **lambda**: jointly estimates Pagel's lambda via maximum likelihood
+
+Output includes coefficient estimates, standard errors, t-values, p-values,
+R-squared, adjusted R-squared, F-statistic, log-likelihood, and AIC.
+
+The implementation uses the raw phylogenetic variance-covariance (VCV) matrix
+for GLS estimation, matching the approach used by R's ``caper::pgls()``.
+Note that this differs from ``nlme::gls()`` with ``corBrownian``, which
+normalizes the VCV to a correlation matrix (ones on the diagonal). For
+non-ultrametric trees the two approaches yield different coefficient estimates;
+PhyKIT follows the ``caper`` convention.
+
+All results have been validated against R 4.4.0 using manual GLS with
+``ape::vcv()`` (raw VCV). Coefficients, standard errors, t-values, p-values,
+R-squared, F-statistic, log-likelihood, and AIC match R to at least four
+decimal places for both simple and multiple regression.
+
+.. code-block:: shell
+
+   phykit phylogenetic_regression -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] [-m <method>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*-y/\\-\\-response*: response (dependent) variable column name |br|
+*-x/\\-\\-predictors*: one or more predictor column names |br|
+*-m/\\-\\-method*: method to use: BM or lambda (default: BM) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 Polytomy testing
 ################
 Function names: polytomy_test; polyt_test; polyt; ptt |br|
