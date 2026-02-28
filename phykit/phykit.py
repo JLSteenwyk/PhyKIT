@@ -193,6 +193,12 @@ class Phykit:
                 phylogenetic_signal (alias: phylo_signal; ps)
                     - calculate phylogenetic signal (Blomberg's K or Pagel's
                       lambda) for continuous trait data
+                phylogenetic_pca (alias: phylo_pca; phyl_pca; ppca)
+                    - performs phylogenetic PCA (Revell 2009) on continuous
+                      multi-trait data
+                phylomorphospace (alias: phylomorpho; phmo)
+                    - plot raw traits with phylogeny overlaid via ancestral
+                      reconstruction
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -2195,6 +2201,211 @@ class Phykit:
         _run_service(parser, argv, PhylogeneticSignal)
 
     @staticmethod
+    def phylogenetic_pca(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Perform phylogenetic PCA (Revell 2009) on continuous
+                multi-trait data while accounting for phylogenetic
+                non-independence among species.
+
+                Input is a phylogenetic tree and a tab-delimited
+                multi-trait file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Two methods are available:
+                - BM (default): standard Brownian motion
+                - lambda: jointly estimates Pagel's lambda across all traits
+
+                Two modes are available:
+                - cov (default): PCA on the evolutionary rate (covariance) matrix
+                - corr: PCA on the evolutionary rate correlation matrix
+
+                Aliases:
+                  phylogenetic_pca, phylo_pca, phyl_pca, ppca
+                Command line interfaces:
+                  pk_phylogenetic_pca, pk_phylo_pca, pk_phyl_pca, pk_ppca
+
+                Usage:
+                phykit phylogenetic_pca -t <tree> -d <trait_data> [-m <method>] [--mode <mode>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited multi-trait file
+                                            with header row
+
+                -m/--method                 method to use: BM or lambda
+                                            (default: BM)
+
+                --mode                      PCA mode: cov or corr
+                                            (default: cov)
+
+                --plot                      optional argument to save a
+                                            PCA scatter plot (PC1 vs PC2)
+
+                --plot-tree                 overlay phylogeny as a
+                                            phylomorphospace in PC space
+                                            (edges colored by distance
+                                            from root)
+
+                --color-by                  color tip points by trait;
+                                            specify a column name from the
+                                            multi-trait file or a separate
+                                            tab-delimited file (taxon<tab>value)
+
+                --plot-output               output path for PCA plot
+                                            (default: phylogenetic_pca_plot.png)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-m",
+            "--method",
+            type=str,
+            required=False,
+            default="BM",
+            choices=["BM", "lambda"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--mode",
+            type=str,
+            required=False,
+            default="cov",
+            choices=["cov", "corr"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument("--plot-tree", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--color-by",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="phylogenetic_pca_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhylogeneticPCA)
+
+    @staticmethod
+    def phylomorphospace(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Plot a phylomorphospace: two raw traits in trait space
+                with the phylogeny overlaid via ML-reconstructed
+                ancestral states at internal nodes.
+
+                Tree edges are colored by distance from root (coolwarm
+                colormap). Tip points are colored by --color-by if
+                specified, otherwise default blue.
+
+                Input is a phylogenetic tree and a tab-delimited
+                multi-trait file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                If the trait file has exactly 2 traits and --trait-x /
+                --trait-y are omitted, the first two columns are used
+                automatically.
+
+                Aliases:
+                  phylomorphospace, phylomorpho, phmo
+                Command line interfaces:
+                  pk_phylomorphospace, pk_phylomorpho, pk_phmo
+
+                Usage:
+                phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited multi-trait file
+                                            with header row
+
+                --trait-x                   column name for x-axis trait
+
+                --trait-y                   column name for y-axis trait
+
+                --color-by                  color tip points by trait;
+                                            specify a column name from the
+                                            multi-trait file or a separate
+                                            tab-delimited file
+
+                --plot-output               output path for plot
+                                            (default: phylomorphospace_plot.png)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--trait-x",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--trait-y",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--color-by",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="phylomorphospace_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, Phylomorphospace)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3301,6 +3512,14 @@ def patristic_distances(argv=None):
 
 def phylogenetic_signal(argv=None):
     Phykit.phylogenetic_signal(sys.argv[1:])
+
+
+def phylogenetic_pca(argv=None):
+    Phykit.phylogenetic_pca(sys.argv[1:])
+
+
+def phylomorphospace(argv=None):
+    Phykit.phylomorphospace(sys.argv[1:])
 
 
 def polytomy_test(argv=None):

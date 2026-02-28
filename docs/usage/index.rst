@@ -1347,6 +1347,116 @@ Options: |br|
 
 |
 
+Phylogenetic PCA
+################
+Function names: phylogenetic_pca; phylo_pca; phyl_pca; ppca |br|
+Command line interface: pk_phylogenetic_pca; pk_phylo_pca; pk_phyl_pca; pk_ppca
+
+Perform phylogenetic PCA (Revell 2009) on continuous multi-trait data while
+accounting for phylogenetic non-independence among species.
+
+Standard PCA assumes independent observations, but species share evolutionary
+history. Phylogenetic PCA uses the phylogenetic variance-covariance matrix to
+compute GLS-based means and an evolutionary rate matrix, then performs
+eigendecomposition to extract principal components that reflect correlated
+trait evolution.
+
+Two methods are available:
+
+- **BM** (default): assumes traits evolved under Brownian motion. The
+  phylogenetic VCV matrix is used directly.
+- **lambda**: jointly estimates a single Pagel's lambda parameter across all
+  traits by maximum likelihood, then rescales the off-diagonal elements of the
+  VCV matrix. This accounts for deviations from Brownian motion.
+
+Two modes are available:
+
+- **cov** (default): PCA on the evolutionary rate (covariance) matrix.
+- **corr**: PCA on the evolutionary rate correlation matrix, which
+  standardizes traits to equal variance before extracting components.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.
+
+Output includes eigenvalues with proportion of variance explained, trait
+loadings, and taxon scores for each principal component. When ``method=lambda``
+is used, the estimated lambda and log-likelihood are also reported.
+
+Results have been benchmarked against the R package
+`phytools <https://cran.r-project.org/package=phytools>`_
+(``phyl.pca`` function; Revell 2012). Eigenvalues, loadings, and scores match
+phytools across all method/mode combinations (BM+cov, BM+corr, lambda+cov,
+lambda+corr) within numerical tolerance (1e-4).
+
+.. image:: ../_static/docs_img/phylogenetic_pca_plot.png
+   :align: center
+
+|
+
+.. code-block:: shell
+
+   phykit phylogenetic_pca -t <tree> -d <trait_data> [-m <method>] [--mode <mode>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*-m/\\-\\-method*: method to use: ``BM`` or ``lambda`` (default: BM) |br|
+*--mode*: PCA mode: ``cov`` or ``corr`` (default: cov) |br|
+*--plot*: optional argument to save a PCA scatter plot (PC1 vs PC2) |br|
+*--plot-tree*: overlay the phylogeny as a phylomorphospace in PC space (edges colored by distance from root) |br|
+*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
+*--plot-output*: output path for PCA plot (default: phylogenetic_pca_plot.png) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Phylomorphospace
+################
+Function names: phylomorphospace; phylomorpho; phmo |br|
+Command line interface: pk_phylomorphospace; pk_phylomorpho; pk_phmo
+
+Plot a phylomorphospace: two raw traits in trait space with the phylogeny
+overlaid via ML-reconstructed ancestral states at internal nodes. This differs
+from the ``phylogenetic_pca --plot-tree`` option, which plots in PC space;
+``phylomorphospace`` plots raw trait values directly on the x and y axes.
+
+Tree edges connect species through ML-reconstructed ancestral states and are
+colored by distance from root (coolwarm colormap with colorbar). Tip points
+default to blue, or can be colored by a continuous or discrete variable using
+the ``--color-by`` option.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.
+
+If the trait file has exactly 2 trait columns and ``--trait-x`` / ``--trait-y``
+are omitted, the first two columns are selected automatically.
+
+.. image:: ../_static/docs_img/phylomorphospace_plot.png
+   :align: center
+
+|
+
+.. code-block:: shell
+
+   phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*--trait-x*: column name for x-axis trait |br|
+*--trait-y*: column name for y-axis trait |br|
+*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
+*--plot-output*: output path for plot (default: phylomorphospace_plot.png) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 Polytomy testing
 ################
 Function names: polytomy_test; polyt_test; polyt; ptt |br|
