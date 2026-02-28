@@ -18,7 +18,6 @@ MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
 class TestPhylomorphospaceIntegration:
     @patch("builtins.print")
     def test_basic_invocation(self, mocked_print, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "phmo.png")
         testargs = [
             "phykit",
@@ -37,7 +36,6 @@ class TestPhylomorphospaceIntegration:
 
     @patch("builtins.print")
     def test_alias_phylomorpho(self, mocked_print, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "phmo_alias.png")
         testargs = [
             "phykit",
@@ -55,7 +53,6 @@ class TestPhylomorphospaceIntegration:
 
     @patch("builtins.print")
     def test_alias_phmo(self, mocked_print, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "phmo_short.png")
         testargs = [
             "phykit",
@@ -73,7 +70,6 @@ class TestPhylomorphospaceIntegration:
 
     @patch("builtins.print")
     def test_with_color_by(self, mocked_print, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "phmo_color.png")
         testargs = [
             "phykit",
@@ -93,7 +89,6 @@ class TestPhylomorphospaceIntegration:
 
     @patch("builtins.print")
     def test_json_output(self, mocked_print, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "phmo_json.png")
         testargs = [
             "phykit",
@@ -115,7 +110,6 @@ class TestPhylomorphospaceIntegration:
 
     @patch("builtins.print")
     def test_auto_select_two_traits(self, mocked_print, tmp_path):
-        pytest.importorskip("matplotlib")
         # Create a 2-trait file
         trait_file = tmp_path / "two_traits.tsv"
         trait_file.write_text(

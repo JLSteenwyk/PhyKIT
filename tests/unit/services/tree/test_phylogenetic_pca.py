@@ -539,7 +539,6 @@ class TestRun:
         assert ev["PC3"] == pytest.approx(0.0003075388, abs=1e-4)
 
     def test_plot_creates_file(self, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "test_pca.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -560,7 +559,6 @@ class TestRun:
         assert "Saved PCA plot:" in out
 
     def test_plot_json_includes_plot_output(self, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "test_pca.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -594,7 +592,6 @@ class TestRun:
         assert "Saved PCA plot:" not in out
 
     def test_plot_tree_creates_file(self, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "test_tree.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -613,7 +610,6 @@ class TestRun:
         assert os.path.getsize(plot_path) > 0
 
     def test_plot_color_by_column(self, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "test_color.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -632,7 +628,6 @@ class TestRun:
         assert os.path.getsize(plot_path) > 0
 
     def test_plot_tree_and_color_by_together(self, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "test_both.png")
         args = Namespace(
             tree=TREE_SIMPLE,
