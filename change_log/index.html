@@ -80,6 +80,38 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.10</strong>:
+Added phylomorphospace:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylomorpho</span></code>, <code class="docutils literal notranslate"><span class="pre">phmo</span></code>)
+for plotting raw traits with the phylogeny overlaid via ML-reconstructed
+ancestral states at internal nodes</p></li>
+<li><p>Tree edges colored by distance from root (coolwarm colormap with colorbar)</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--color-by</span></code> for tip point coloring (continuous or discrete)</p></li>
+<li><p>Auto-selects first two trait columns when the file has exactly 2 traits
+and <code class="docutils literal notranslate"><span class="pre">--trait-x</span></code> / <code class="docutils literal notranslate"><span class="pre">--trait-y</span></code> are omitted</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points:
+<code class="docutils literal notranslate"><span class="pre">pk_phylomorphospace</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_phylomorpho</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_phmo</span></code></p></li>
+</ul>
+<p><strong>2.1.9</strong>:
+Added phylogenetic PCA:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phylogenetic_pca</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">phyl_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">ppca</span></code>)
+implementing Revell (2009) phylogenetic PCA for multi-trait data</p></li>
+<li><p>Two methods: <code class="docutils literal notranslate"><span class="pre">BM</span></code> (Brownian motion) and <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (joint Pagel's lambda
+estimation across all traits)</p></li>
+<li><p>Two modes: <code class="docutils literal notranslate"><span class="pre">cov</span></code> (covariance PCA) and <code class="docutils literal notranslate"><span class="pre">corr</span></code> (correlation PCA)</p></li>
+<li><p>Tab-delimited multi-trait file input with header row, comment/blank-line support,
+and automatic taxon-mismatch handling (intersection with stderr warnings)</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot</span></code> argument to generate PCA scatter plot (PC1 vs PC2) with
+taxon labels and variance-explained axes</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points:
+<code class="docutils literal notranslate"><span class="pre">pk_phylogenetic_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_phylo_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_phyl_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_ppca</span></code></p></li>
+<li><p>Benchmarked against R phytools <code class="docutils literal notranslate"><span class="pre">phyl.pca()</span></code> (Revell 2012): eigenvalues,
+loadings, and scores match across all method/mode combinations within 1e-4</p></li>
+</ul>
 <p><strong>2.1.8</strong>:
 Added phylogenetic signal analysis:</p>
 <ul class="simple">
