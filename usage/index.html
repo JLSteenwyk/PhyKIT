@@ -95,8 +95,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#monophyly-check">Monophyly check</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#nearest-neighbor-interchange">Nearest neighbor interchange</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#prune-tree">Prune tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#robinson-foulds-distance">Robinson-Foulds distance</a></li>
@@ -1246,6 +1248,48 @@ will be tab separated.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="phylogenetic-signal">
+<h3>Phylogenetic signal<a class="headerlink" href="#phylogenetic-signal" title="Link to this heading"></a></h3>
+<p>Function names: phylogenetic_signal; phylo_signal; ps <br/>
+Command line interface: pk_phylogenetic_signal; pk_phylo_signal; pk_ps</p>
+<p>Calculate phylogenetic signal for continuous trait data on a phylogeny.</p>
+<p>Two methods are available:</p>
+<ul class="simple">
+<li><p><strong>Blomberg's K</strong> (Blomberg et al. 2003): measures the degree of phylogenetic
+signal relative to expectation under Brownian motion. K = 1 indicates trait
+variation consistent with BM; K &lt; 1 indicates less phylogenetic signal than
+expected; K &gt; 1 indicates more. P-value is computed via permutation test.</p></li>
+<li><p><strong>Pagel's lambda</strong> (Pagel 1999): a tree-scaling parameter estimated by
+maximum likelihood. Lambda = 0 indicates no phylogenetic signal; lambda = 1
+indicates trait evolution consistent with BM. P-value is computed via
+likelihood ratio test against lambda = 0.</p></li>
+</ul>
+<p>The trait file should be tab-delimited with two columns (taxon_name&lt;tab&gt;trait_value).
+Lines starting with '#' are treated as comments. If the tree and trait file have
+different taxa, the intersection is used and warnings are printed to stderr.</p>
+<p>Output for Blomberg's K: K_value&lt;tab&gt;p_value <br/>
+Output for Pagel's lambda: lambda_value&lt;tab&gt;log_likelihood&lt;tab&gt;p_value</p>
+<p>Results have been validated against the R package phytools (<code class="docutils literal notranslate"><span class="pre">phylosig</span></code> function)
+across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
+(pure-birth, coalescent), trait models (random, Brownian motion, known lambda),
+and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</p>
+<img alt="../_images/phylogenetic_signal_validation.png" class="align-center" src="../_images/phylogenetic_signal_validation.png" />
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>&lt;permutations&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
+<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: blombergs_k) <br/>
+<em>-p/\-\-permutations</em>: number of permutations for Blomberg's K (default: 1000) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="polytomy-testing">
 <h3>Polytomy testing<a class="headerlink" href="#polytomy-testing" title="Link to this heading"></a></h3>
 <p>Function names: polytomy_test; polyt_test; polyt; ptt <br/>
@@ -1300,6 +1344,32 @@ but branch lengths can be removed using the -r/--remove argument.</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-r/\-\-remove</em>: optional argument to print the phylogeny without branch
 lengths <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="consensus-tree">
+<h3>Consensus tree<a class="headerlink" href="#consensus-tree" title="Link to this heading"></a></h3>
+<p>Function names: consensus_tree; consensus; ctree <br/>
+Command line interface: pk_consensus_tree; pk_consensus; pk_ctree</p>
+<p>Infer a consensus tree from a collection of trees.</p>
+<p>Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.</p>
+<p>Consensus methods:
+* <code class="docutils literal notranslate"><span class="pre">majority</span></code>: majority-rule consensus (default) <br/>
+* <code class="docutils literal notranslate"><span class="pre">strict</span></code>: strict consensus</p>
+<p>Missing taxa handling:
+* <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">error</span></code> (default): exits if trees do not share identical tip sets <br/>
+* <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">shared</span></code>: prunes all trees to the intersection of taxa before inferring consensus</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consensus_tree<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>-m/--method<span class="w"> </span>strict<span class="p">|</span>majority<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
+<em>-m/\-\-method</em>: consensus method (<code class="docutils literal notranslate"><span class="pre">strict</span></code> or <code class="docutils literal notranslate"><span class="pre">majority</span></code>; default: <code class="docutils literal notranslate"><span class="pre">majority</span></code>) <br/>
+<em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

@@ -1299,6 +1299,54 @@ Options: |br|
 
 |
 
+Phylogenetic signal
+####################
+Function names: phylogenetic_signal; phylo_signal; ps |br|
+Command line interface: pk_phylogenetic_signal; pk_phylo_signal; pk_ps
+
+Calculate phylogenetic signal for continuous trait data on a phylogeny.
+
+Two methods are available:
+
+- **Blomberg's K** (Blomberg et al. 2003): measures the degree of phylogenetic
+  signal relative to expectation under Brownian motion. K = 1 indicates trait
+  variation consistent with BM; K < 1 indicates less phylogenetic signal than
+  expected; K > 1 indicates more. P-value is computed via permutation test.
+- **Pagel's lambda** (Pagel 1999): a tree-scaling parameter estimated by
+  maximum likelihood. Lambda = 0 indicates no phylogenetic signal; lambda = 1
+  indicates trait evolution consistent with BM. P-value is computed via
+  likelihood ratio test against lambda = 0.
+
+The trait file should be tab-delimited with two columns (taxon_name<tab>trait_value).
+Lines starting with '#' are treated as comments. If the tree and trait file have
+different taxa, the intersection is used and warnings are printed to stderr.
+
+Output for Blomberg's K: K_value<tab>p_value |br|
+Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value
+
+Results have been validated against the R package phytools (``phylosig`` function)
+across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
+(pure-birth, coalescent), trait models (random, Brownian motion, known lambda),
+and branch length scales. All metrics show Pearson r > 0.999 with phytools.
+
+.. image:: ../_static/docs_img/phylogenetic_signal_validation.png
+   :align: center
+
+|
+
+.. code-block:: shell
+
+   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
+*-m/\\-\\-method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
+*-p/\\-\\-permutations*: number of permutations for Blomberg's K (default: 1000) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 Polytomy testing
 ################
 Function names: polytomy_test; polyt_test; polyt; ptt |br|
@@ -1365,6 +1413,37 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-r/\\-\\-remove*: optional argument to print the phylogeny without branch
 lengths |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Consensus tree
+##############
+Function names: consensus_tree; consensus; ctree |br|
+Command line interface: pk_consensus_tree; pk_consensus; pk_ctree
+
+Infer a consensus tree from a collection of trees.
+
+Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.
+
+Consensus methods:
+* ``majority``: majority-rule consensus (default) |br|
+* ``strict``: strict consensus
+
+Missing taxa handling:
+* ``--missing-taxa error`` (default): exits if trees do not share identical tip sets |br|
+* ``--missing-taxa shared``: prunes all trees to the intersection of taxa before inferring consensus
+
+.. code-block:: shell
+
+   phykit consensus_tree -t/--trees <trees> [-m/--method strict|majority] [--missing-taxa error|shared] [--json]
+
+Options: |br|
+*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*-m/\\-\\-method*: consensus method (``strict`` or ``majority``; default: ``majority``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
 *--json*: optional argument to print results as JSON
 
 |

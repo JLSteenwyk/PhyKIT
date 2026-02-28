@@ -80,6 +80,36 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.8</strong>:
+Added phylogenetic signal analysis:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">ps</span></code>)
+with support for Blomberg's K and Pagel's lambda</p></li>
+<li><p>Blomberg's K includes permutation-based p-value (configurable <code class="docutils literal notranslate"><span class="pre">--permutations</span></code>)</p></li>
+<li><p>Pagel's lambda uses ML optimization with likelihood ratio test p-value</p></li>
+<li><p>Tab-delimited trait file input with comment/blank-line support and
+automatic taxon-mismatch handling (intersection with stderr warnings)</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points:
+<code class="docutils literal notranslate"><span class="pre">pk_phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_phylo_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_ps</span></code></p></li>
+<li><p>Validated against R phytools <code class="docutils literal notranslate"><span class="pre">phylosig()</span></code> across 95 simulated datasets
+(5-50 tips; pure-birth, coalescent; random, BM, and known-lambda traits):
+Pearson r = 1.0 for K, r &gt; 0.999 for lambda, log-likelihood, and LRT p-value</p></li>
+</ul>
+<p><strong>2.1.7</strong>:
+Added a missing-taxa-aware consensus tree utility:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">consensus_tree</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">consensus</span></code>, <code class="docutils literal notranslate"><span class="pre">ctree</span></code>)
+with strict and majority-rule modes</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span></code> handling:
+<code class="docutils literal notranslate"><span class="pre">error</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">shared</span></code> (prune all trees to the shared taxa set)</p></li>
+<li><p>Added JSON output support for consensus metadata and Newick output</p></li>
+<li><p>Added new CLI entry points:
+<code class="docutils literal notranslate"><span class="pre">pk_consensus_tree</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_consensus</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_ctree</span></code></p></li>
+<li><p>Added unit/integration test coverage for parsing, alias dispatch,
+and missing-taxa behavior</p></li>
+<li><p>Updated usage documentation and top-level command help text</p></li>
+</ul>
 <p><strong>2.1.6</strong>:
 Expanded plotting support for alignment/tree QC workflows:</p>
 <ul class="simple">
