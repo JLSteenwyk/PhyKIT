@@ -80,6 +80,26 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.12</strong>:
+Added phylogenetic regression (PGLS):</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phylogenetic_regression</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_regression</span></code>, <code class="docutils literal notranslate"><span class="pre">pgls</span></code>)
+for fitting Phylogenetic Generalized Least Squares regression while
+accounting for phylogenetic non-independence among species</p></li>
+<li><p>Supports Brownian motion (BM) and Pagel's lambda estimation methods</p></li>
+<li><p>Outputs coefficient estimates, standard errors, t-values, p-values,
+R-squared, F-statistic, log-likelihood, and AIC</p></li>
+<li><p>Supports multiple predictor variables</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Results validated against R 4.4.0 (manual GLS with <code class="docutils literal notranslate"><span class="pre">ape::vcv()</span></code>, matching
+<code class="docutils literal notranslate"><span class="pre">caper::pgls()</span></code> behavior); coefficients, standard errors, t-values,
+p-values, R-squared, F-statistic, log-likelihood, and AIC match to at least
+four decimal places</p></li>
+<li><p>Uses the raw phylogenetic VCV matrix (not the normalized correlation matrix
+used by <code class="docutils literal notranslate"><span class="pre">nlme::gls</span></code> with <code class="docutils literal notranslate"><span class="pre">corBrownian</span></code>)</p></li>
+<li><p>Added new CLI entry points:
+<code class="docutils literal notranslate"><span class="pre">pk_phylogenetic_regression</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_phylo_regression</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_pgls</span></code></p></li>
+</ul>
 <p><strong>2.1.11</strong>:
 Maintenance:</p>
 <ul class="simple">

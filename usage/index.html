@@ -98,6 +98,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-pca">Phylogenetic PCA</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
@@ -1384,6 +1385,49 @@ are omitted, the first two columns are selected automatically.</p>
 <em>--trait-y</em>: column name for y-axis trait <br/>
 <em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
 <em>--plot-output</em>: output path for plot (default: phylomorphospace_plot.png) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phylogenetic-regression-pgls">
+<h3>Phylogenetic regression (PGLS)<a class="headerlink" href="#phylogenetic-regression-pgls" title="Link to this heading"></a></h3>
+<p>Function names: phylogenetic_regression; phylo_regression; pgls <br/>
+Command line interface: pk_phylogenetic_regression; pk_phylo_regression; pk_pgls</p>
+<p>Fit a Phylogenetic Generalized Least Squares (PGLS) regression while
+accounting for phylogenetic non-independence among species, analogous to
+R's <code class="docutils literal notranslate"><span class="pre">caper::pgls()</span></code>.</p>
+<p>The multi-trait input file should be tab-delimited with a header row:
+<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code>
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.</p>
+<p>Two methods are available:</p>
+<ul class="simple">
+<li><p><strong>BM</strong> (default): Brownian motion with lambda fixed at 1</p></li>
+<li><p><strong>lambda</strong>: jointly estimates Pagel's lambda via maximum likelihood</p></li>
+</ul>
+<p>Output includes coefficient estimates, standard errors, t-values, p-values,
+R-squared, adjusted R-squared, F-statistic, log-likelihood, and AIC.</p>
+<p>The implementation uses the raw phylogenetic variance-covariance (VCV) matrix
+for GLS estimation, matching the approach used by R's <code class="docutils literal notranslate"><span class="pre">caper::pgls()</span></code>.
+Note that this differs from <code class="docutils literal notranslate"><span class="pre">nlme::gls()</span></code> with <code class="docutils literal notranslate"><span class="pre">corBrownian</span></code>, which
+normalizes the VCV to a correlation matrix (ones on the diagonal). For
+non-ultrametric trees the two approaches yield different coefficient estimates;
+PhyKIT follows the <code class="docutils literal notranslate"><span class="pre">caper</span></code> convention.</p>
+<p>All results have been validated against R 4.4.0 using manual GLS with
+<code class="docutils literal notranslate"><span class="pre">ape::vcv()</span></code> (raw VCV). Coefficients, standard errors, t-values, p-values,
+R-squared, F-statistic, log-likelihood, and AIC match R to at least four
+decimal places for both simple and multiple regression.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_regression<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
+<em>-y/\-\-response</em>: response (dependent) variable column name <br/>
+<em>-x/\-\-predictors</em>: one or more predictor column names <br/>
+<em>-m/\-\-method</em>: method to use: BM or lambda (default: BM) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

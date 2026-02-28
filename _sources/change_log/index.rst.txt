@@ -6,6 +6,26 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.12**:
+Added phylogenetic regression (PGLS):
+
+* Added new ``phylogenetic_regression`` command (aliases: ``phylo_regression``, ``pgls``)
+  for fitting Phylogenetic Generalized Least Squares regression while
+  accounting for phylogenetic non-independence among species
+* Supports Brownian motion (BM) and Pagel's lambda estimation methods
+* Outputs coefficient estimates, standard errors, t-values, p-values,
+  R-squared, F-statistic, log-likelihood, and AIC
+* Supports multiple predictor variables
+* JSON output support via ``--json``
+* Results validated against R 4.4.0 (manual GLS with ``ape::vcv()``, matching
+  ``caper::pgls()`` behavior); coefficients, standard errors, t-values,
+  p-values, R-squared, F-statistic, log-likelihood, and AIC match to at least
+  four decimal places
+* Uses the raw phylogenetic VCV matrix (not the normalized correlation matrix
+  used by ``nlme::gls`` with ``corBrownian``)
+* Added new CLI entry points:
+  ``pk_phylogenetic_regression``, ``pk_phylo_regression``, ``pk_pgls``
+
 **2.1.11**:
 Maintenance:
 
