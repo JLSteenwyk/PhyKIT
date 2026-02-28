@@ -20,6 +20,7 @@ CLASSIFIERS = [
 
 REQUIRES = [
     "biopython>=1.82",
+    "matplotlib>=3.7.0",
     "numpy>=1.24.0",
     "scipy>=1.11.3",
     "scikit-learn>=1.4.2",

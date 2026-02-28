@@ -77,7 +77,6 @@ class TestProcessArgs:
         assert svc.json_output is True
 
     def test_auto_select_two_trait_file(self, auto_select_two_trait_file, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "auto.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -95,7 +94,6 @@ class TestProcessArgs:
 
 class TestRun:
     def test_basic_text_output(self, default_args, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
         svc.run()
@@ -104,7 +102,6 @@ class TestRun:
         assert Path(default_args.plot_output).exists()
 
     def test_json_output(self, default_args, tmp_path, capsys):
-        pytest.importorskip("matplotlib")
         default_args.json = True
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
@@ -146,7 +143,6 @@ class TestRun:
             svc.run()
 
     def test_plot_creates_file(self, default_args, tmp_path):
-        pytest.importorskip("matplotlib")
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
         svc.run()
@@ -156,7 +152,6 @@ class TestRun:
 
 class TestPlot:
     def test_with_color_by_column(self, tmp_path):
-        pytest.importorskip("matplotlib")
         plot_path = str(tmp_path / "color_col.png")
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -173,7 +168,6 @@ class TestPlot:
         assert Path(plot_path).stat().st_size > 0
 
     def test_with_color_by_discrete_file(self, tmp_path):
-        pytest.importorskip("matplotlib")
         color_file = tmp_path / "groups.tsv"
         color_file.write_text(
             "raccoon\tgroup_A\n"
