@@ -226,6 +226,9 @@ class Phykit:
                 ouwie (alias: fit_ouwie; multi_regime_ou)
                     - fit multi-regime OU models (BM1, BMS, OU1,
                       OUM, OUMV, OUMA, OUMVA; Beaulieu et al. 2012)
+                ou_shift_detection (alias: ou_shifts; l1ou; detect_shifts)
+                    - automatic OU shift detection using LASSO
+                      (Khabbazian et al. 2016)
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -3322,6 +3325,63 @@ class Phykit:
         _run_service(parser, argv, OUwie)
 
     @staticmethod
+    def ou_shift_detection(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Automatic OU shift detection using LASSO (l1ou approach).
+
+                Discovers where on the phylogeny the adaptive optimum
+                changed, using the LASSO-based approach from
+                Khabbazian et al. (2016). No regime file is needed —
+                only a tree and trait data.
+
+                Aliases:
+                  ou_shift_detection, ou_shifts, l1ou, detect_shifts
+                Command line interfaces:
+                  pk_ou_shift_detection, pk_ou_shifts, pk_l1ou, pk_detect_shifts
+
+                Usage:
+                phykit l1ou -t <tree> -d <trait_data> [--criterion pBIC] [--max-shifts N] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon<tab>value)
+
+                --criterion                 model selection criterion:
+                                            pBIC (default), BIC, or AICc
+
+                --max-shifts                maximum number of shifts to
+                                            consider (default: n/2)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--criterion", type=str, required=False, default="pBIC",
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--max-shifts", type=int, required=False, default=None,
+            help=SUPPRESS, metavar="", dest="max_shifts"
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, OUShiftDetection)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4497,6 +4557,10 @@ def fit_continuous(argv=None):
 
 def ouwie(argv=None):
     Phykit.ouwie(sys.argv[1:])
+
+
+def ou_shift_detection(argv=None):
+    Phykit.ou_shift_detection(sys.argv[1:])
 
 
 def polytomy_test(argv=None):
