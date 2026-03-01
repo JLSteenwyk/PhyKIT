@@ -1338,6 +1338,148 @@ The R equivalent is ``caper::pgls()`` or ``nlme::gls()`` with ``ape::corBrownian
 
 |
 
+10. Reconstructing ancestral trait values and mapping them onto a phylogeny
+###########################################################################
+
+A common question in comparative biology is: what were the trait values of
+ancestral species? Ancestral state reconstruction (ASR) uses the trait values
+observed at the tips of a phylogeny together with a model of trait evolution
+(Brownian motion) to estimate what trait values were at each internal node.
+
+**Hypothetical study question.** Given body mass data for 8 mammal species,
+what were the estimated body masses of their ancestors, and how do trait
+values change along branches of the phylogeny?
+
+PhyKIT's ``ancestral_state_reconstruction`` command (aliases: ``asr``,
+``anc_recon``) implements two ML methods: ``fast`` (Felsenstein's pruning
+algorithm, analogous to ``phytools::fastAnc()``) and ``ml`` (full VCV-based
+ML with exact conditional CIs, analogous to ``ape::ace()``). |br|
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Trait data </data/tree_simple_traits.tsv>`;
+   :download:`Multi-trait data </data/tree_simple_multi_traits.tsv>`
+
+|
+
+Step 0: Prepare data
+********************
+
+Two input files are needed: a phylogenetic tree and a trait data file.
+The trait data can be either a two-column file (``taxon<tab>value``) or
+a multi-trait file with a header row (use ``-c`` to select a column).
+
+|
+
+Step 1: Run fast ancestral reconstruction
+******************************************
+
+Estimate ancestral body masses using the fast (pruning) method:
+
+.. code-block:: shell
+
+   phykit ancestral_state_reconstruction \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv
+
+|
+
+Step 2: Run with confidence intervals
+***************************************
+
+Add the ``--ci`` flag for 95% confidence intervals:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       --ci
+
+|
+
+Step 3: Use the VCV-based ML method
+*************************************
+
+For exact conditional confidence intervals, use the ``ml`` method:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       -m ml --ci
+
+|
+
+Step 4: Generate a contMap plot
+********************************
+
+Visualize trait values mapped onto the phylogeny with a continuous
+color gradient:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       --plot contmap.png
+
+|
+
+Step 5: Use a multi-trait file
+*******************************
+
+When your data file contains multiple traits with a header row, use
+``-c`` to select a specific column:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       -c body_mass --ci
+
+|
+
+Step 6: Export results as JSON
+*******************************
+
+For downstream scripting, results can be exported as JSON:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       --json
+
+The JSON output includes the method used, trait name, number of tips,
+log-likelihood, sigma-squared (BM rate), ancestral estimates with
+optional CIs, and observed tip values.
+
+|
+
+Summary
+*******
+
+In this tutorial, we used ancestral state reconstruction to estimate
+ancestral body mass values for 8 mammal species. The key steps were:
+(1) running the fast method for quick estimates, (2) adding confidence
+intervals, (3) using the full ML method for exact CIs, (4) generating
+contMap plots, (5) using multi-trait files, and (6) exporting to JSON.
+
+The ``fast`` method is recommended for large trees due to its O(n) time
+complexity, while the ``ml`` method provides exact conditional confidence
+intervals at O(n^3) cost.
+
+The R equivalents are ``phytools::fastAnc()`` for the fast method,
+``ape::ace(type="ML")`` for the ML method, and ``phytools::contMap()``
+for the contMap visualization.
+
+|
+
 .. |br| raw:: html
 
   <br/>

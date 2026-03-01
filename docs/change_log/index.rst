@@ -6,6 +6,108 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.15**:
+Added ancestral state reconstruction:
+
+* Added new ``ancestral_state_reconstruction`` command (aliases: ``asr``,
+  ``anc_recon``) for estimating ancestral states of continuous traits using
+  maximum likelihood, analogous to R's ``phytools::fastAnc()`` and
+  ``ape::ace(type="ML")``
+* Two methods: ``fast`` (two-pass Felsenstein's algorithm, O(n)) and ``ml``
+  (full VCV-based ML with exact conditional CIs, O(n^3))
+* Optional ``--ci`` flag to include 95% confidence intervals
+* Optional ``--plot`` argument to generate a contMap plot showing continuous
+  trait values mapped onto the phylogeny with a color gradient
+* Supports both two-column single-trait files and multi-trait files with
+  ``-c`` flag to select a trait column
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_ancestral_state_reconstruction``,
+  ``pk_asr``, ``pk_anc_recon``
+* Results validated against R 4.4.0 (``phytools::fastAnc`` with
+  ``vars=TRUE, CI=TRUE``):
+
+  Point estimates — ``fast`` method vs R's ``phytools::fastAnc()``
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 15 30 15 15 15
+
+     * - Node
+       - Descendants
+       - PhyKIT
+       - R ``fastAnc``
+       - Error
+     * - N1 (root)
+       - all 8 tips
+       - 1.6446924
+       - 1.6446924
+       - 0.0000000
+     * - N2
+       - bear, raccoon
+       - 1.7012405
+       - 1.7012405
+       - 0.0000000
+     * - N3
+       - 5 taxa
+       - 1.4564597
+       - 1.4564597
+       - 0.0000000
+     * - N4
+       - sea_lion, seal
+       - 1.8090745
+       - 1.8090745
+       - 0.0000000
+     * - N5
+       - cat, monkey, weasel
+       - 1.2565917
+       - 1.2565917
+       - 0.0000000
+     * - N6
+       - cat, monkey
+       - 0.9894725
+       - 0.9894725
+       - 0.0000000
+
+  95% CIs — ``fast`` method vs R's ``fastAnc(CI=TRUE)``
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 12 22 22 12
+
+     * - Node
+       - PhyKIT CI
+       - R CI
+       - Error
+     * - N1 (root)
+       - [0.894, 2.396]
+       - [0.894, 2.396]
+       - 0.000
+     * - N2
+       - [0.970, 2.433]
+       - [0.970, 2.433]
+       - 0.000
+     * - N3
+       - [0.639, 2.274]
+       - [0.639, 2.274]
+       - 0.000
+     * - N4
+       - [0.976, 2.642]
+       - [0.976, 2.642]
+       - 0.000
+     * - N5
+       - [0.355, 2.158]
+       - [0.355, 2.158]
+       - 0.000
+     * - N6
+       - [-0.565, 2.544]
+       - [-0.565, 2.544]
+       - 0.000
+
+  - ``fast`` and ``ml`` methods produce identical point estimates
+    (within 1e-6)
+  - Sigma-squared (BM rate) = 0.04389 (matches R's PIC-based estimate
+    within 1e-3)
+
 **2.1.13**:
 Added stochastic character mapping (SIMMAP):
 

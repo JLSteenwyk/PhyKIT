@@ -99,7 +99,10 @@ setup(
             "pk_sop = phykit.phykit:sum_of_pairs_score",
             "pk_variable_sites = phykit.phykit:variable_sites",
             "pk_vs = phykit.phykit:variable_sites",
-            "pk_bipartition_support_stats = phykit.phykit:bipartition_support_stats", # Tree-based functions
+            "pk_ancestral_state_reconstruction = phykit.phykit:ancestral_state_reconstruction", # Tree-based functions
+            "pk_asr = phykit.phykit:ancestral_state_reconstruction",
+            "pk_anc_recon = phykit.phykit:ancestral_state_reconstruction",
+            "pk_bipartition_support_stats = phykit.phykit:bipartition_support_stats",
             "pk_bss = phykit.phykit:bipartition_support_stats",
             "pk_branch_length_multiplier = phykit.phykit:branch_length_multiplier",
             "pk_blm = phykit.phykit:branch_length_multiplier",

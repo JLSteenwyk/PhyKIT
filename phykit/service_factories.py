@@ -42,6 +42,8 @@ RenameFastaEntries = _LazyServiceFactory("phykit.services.alignment.rename_fasta
 SumOfPairsScore = _LazyServiceFactory("phykit.services.alignment.sum_of_pairs_score", "SumOfPairsScore")
 VariableSites = _LazyServiceFactory("phykit.services.alignment.variable_sites", "VariableSites")
 
+AncestralReconstruction = _LazyServiceFactory("phykit.services.tree.ancestral_reconstruction", "AncestralReconstruction")
+
 # Tree service loaders
 BipartitionSupportStats = _LazyServiceFactory("phykit.services.tree.bipartition_support_stats", "BipartitionSupportStats")
 BranchLengthMultiplier = _LazyServiceFactory("phykit.services.tree.branch_length_multiplier", "BranchLengthMultiplier")

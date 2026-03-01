@@ -160,6 +160,9 @@ class Phykit:
 
                 Tree-based commands
                 ===================
+                ancestral_state_reconstruction (alias: asr; anc_recon)
+                    - estimate ancestral states for continuous traits using
+                      ML (fast or VCV-based) with optional contMap plot
                 bipartition_support_stats (alias: bss)
                     - calculates summary statistics for bipartition support
                 branch_length_multiplier (alias: blm)
@@ -1421,6 +1424,86 @@ class Phykit:
         _run_service(parser, argv, VariableSites)
 
     ## Tree functions
+    @staticmethod
+    def ancestral_state_reconstruction(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Estimate ancestral states for continuous traits using
+                maximum likelihood, analogous to R's phytools::fastAnc()
+                and ape::ace(type="ML"). Optionally produce a contMap
+                plot showing continuous trait values mapped onto the
+                phylogeny.
+
+                Two methods are available:
+                - fast (default): Felsenstein's pruning/contrasts shortcut,
+                  O(n) time
+                - ml: full VCV-based ML with exact conditional CIs, O(n^3)
+
+                Both methods produce identical point estimates; ml gives
+                exact conditional confidence intervals.
+
+                Input trait data can be either:
+                (1) A two-column file (taxon<tab>value) when -c is omitted
+                (2) A multi-trait file with header row when -c specifies
+                    which column to use
+
+                Aliases:
+                  ancestral_state_reconstruction, asr, anc_recon
+                Command line interfaces:
+                  pk_ancestral_state_reconstruction, pk_asr, pk_anc_recon
+
+                Usage:
+                phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [-m <method>] [--ci] [--plot <output>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             trait data file (2-column or
+                                            multi-trait with header)
+
+                -c/--trait                  trait column name (required
+                                            for multi-trait files)
+
+                -m/--method                 method to use: fast or ml
+                                            (default: fast)
+
+                --ci                        include 95% confidence
+                                            intervals
+
+                --plot                      output path for contMap plot
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-c", "--trait", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-m", "--method", type=str, required=False, default="fast",
+            choices=["fast", "ml"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--ci", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, AncestralReconstruction)
+
     @staticmethod
     def bipartition_support_stats(argv):
         parser = _new_parser(
@@ -3632,6 +3715,10 @@ def variable_sites(argv=None):
 
 
 # Tree-based functions
+def ancestral_state_reconstruction(argv=None):
+    Phykit.ancestral_state_reconstruction(sys.argv[1:])
+
+
 def bipartition_support_stats(argv=None):
     Phykit.bipartition_support_stats(sys.argv[1:])
 
