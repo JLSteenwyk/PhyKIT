@@ -1076,7 +1076,11 @@ Step 5: Nonlinear ordination with t-SNE and UMAP
 
 While PCA provides a linear ordination, nonlinear methods like t-SNE and UMAP can
 reveal additional structure in high-dimensional trait spaces. The same GLS-centering
-is applied before the nonlinear embedding.
+is applied before the nonlinear embedding. For t-SNE and UMAP, the phylogeny is
+overlaid on the plot by default (edges colored by distance from root). Use
+``--no-plot-tree`` to disable this, or ``--tree-color-by`` to color edges by a trait
+instead of distance from root. UMAP axes are unlabeled since the coordinates are
+not directly interpretable.
 
 Running t-SNE:
 
@@ -1085,7 +1089,7 @@ Running t-SNE:
    phykit ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --method tsne --seed 42
+       --method tsne --seed 42 --plot
 
 .. image:: ../_static/docs_img/phylogenetic_tsne_plot.png
    :align: center
@@ -1099,7 +1103,7 @@ Running UMAP:
    phykit ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --method umap --seed 42
+       --method umap --seed 42 --plot
 
 .. image:: ../_static/docs_img/phylogenetic_umap_plot.png
    :align: center
@@ -1115,14 +1119,23 @@ Using Pagel's lambda correction with t-SNE:
        -d tests/sample_files/tree_simple_multi_traits.tsv \
        --method tsne --correction lambda --seed 42 --json
 
-Generating a scatter plot with phylogeny overlay:
+Coloring phylogeny edges by a trait (e.g., body_mass) instead of distance from root:
 
 .. code-block:: shell
 
    phykit ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --method tsne --plot --plot-tree --color-by body_mass --seed 42
+       --method tsne --plot --tree-color-by body_mass --seed 42
+
+Disabling the phylogeny overlay:
+
+.. code-block:: shell
+
+   phykit ordination \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --method umap --plot --no-plot-tree --seed 42
 
 |
 
