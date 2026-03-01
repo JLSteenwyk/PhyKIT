@@ -80,6 +80,42 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.13</strong>:
+Added stochastic character mapping (SIMMAP):</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">simmap</span></code>, <code class="docutils literal notranslate"><span class="pre">scm</span></code>)
+for performing Stochastic Character Mapping of discrete traits onto a
+phylogeny (Huelsenbeck et al. 2003; Bollback 2006), analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::make.simmap()</span></code></p></li>
+<li><p>Fits a continuous-time Markov chain (CTMC) rate matrix Q via maximum
+likelihood using Felsenstein's pruning algorithm</p></li>
+<li><p>Three substitution models: ER (equal rates), SYM (symmetric), ARD (all
+rates differ)</p></li>
+<li><p>Simulates character histories conditioned on tip states via rejection
+sampling</p></li>
+<li><p>Reports mean dwelling times, mean transition counts, and posterior node
+probabilities across simulations</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot</span></code> argument to generate a horizontal phylogram with
+branches colored by mapped character state</p></li>
+<li><p>Reproducible simulations via <code class="docutils literal notranslate"><span class="pre">--seed</span></code> argument</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Results validated against R 4.4.0 (<code class="docutils literal notranslate"><span class="pre">phytools::fitMk</span></code> and
+<code class="docutils literal notranslate"><span class="pre">phytools::make.simmap</span></code>):</p>
+<ul>
+<li><p>ER log-likelihood: R = -8.7889, PhyKIT = -8.7874 (within 0.002);
+both are valid ML estimates on a flat likelihood surface</p></li>
+<li><p>ARD log-likelihood: R = -8.4305, PhyKIT = -8.3845; PhyKIT's
+multi-start optimizer finds a slightly better local optimum</p></li>
+<li><p>Total tree length conserved exactly (277.2772)</p></li>
+<li><p>Dwelling times sum to total tree length across all simulations</p></li>
+<li><p>Q matrix structural properties verified: rows sum to zero,
+off-diagonal elements positive, diagonal elements negative</p></li>
+<li><p>Model nesting confirmed: ARD loglik &gt;= SYM loglik &gt;= ER loglik</p></li>
+</ul>
+</li>
+<li><p>Added new CLI entry points:
+<code class="docutils literal notranslate"><span class="pre">pk_stochastic_character_map</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_simmap</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_scm</span></code></p></li>
+</ul>
 <p><strong>2.1.12</strong>:
 Added phylogenetic regression (PGLS):</p>
 <ul class="simple">

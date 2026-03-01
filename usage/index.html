@@ -99,6 +99,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-pca">Phylogenetic PCA</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
@@ -1428,6 +1429,53 @@ decimal places for both simple and multiple regression.</p>
 <em>-y/\-\-response</em>: response (dependent) variable column name <br/>
 <em>-x/\-\-predictors</em>: one or more predictor column names <br/>
 <em>-m/\-\-method</em>: method to use: BM or lambda (default: BM) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="stochastic-character-mapping-simmap">
+<h3>Stochastic character mapping (SIMMAP)<a class="headerlink" href="#stochastic-character-mapping-simmap" title="Link to this heading"></a></h3>
+<p>Function names: stochastic_character_map; simmap; scm <br/>
+Command line interface: pk_stochastic_character_map; pk_simmap; pk_scm</p>
+<p>Perform Stochastic Character Mapping (SIMMAP) of discrete traits onto a
+phylogeny (Huelsenbeck et al. 2003; Bollback 2006), analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::make.simmap()</span></code>.</p>
+<p>Fits a continuous-time Markov chain (CTMC) rate matrix Q via maximum
+likelihood using Felsenstein's pruning algorithm. Three substitution models
+are available:</p>
+<ul class="simple">
+<li><p><strong>ER</strong> (equal rates): 1 free parameter</p></li>
+<li><p><strong>SYM</strong> (symmetric rates): k(k-1)/2 free parameters</p></li>
+<li><p><strong>ARD</strong> (all rates differ): k(k-1) free parameters</p></li>
+</ul>
+<p>The input trait file should be tab-delimited with a header row:
+<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait_column&lt;tab&gt;...</span></code>
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.</p>
+<p>Output includes the fitted Q matrix, log-likelihood, mean dwelling times,
+mean transition counts, and posterior probabilities at internal nodes.</p>
+<p>Optionally, a horizontal phylogram plot with branches colored by mapped
+character state can be generated using the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> argument.</p>
+<p>All results have been validated against R 4.4.0 using <code class="docutils literal notranslate"><span class="pre">phytools::fitMk</span></code>
+and <code class="docutils literal notranslate"><span class="pre">phytools::make.simmap</span></code>. ER log-likelihoods match R to within 0.002
+(both optimizers converge to the same flat plateau). For the ARD model,
+PhyKIT's multi-start optimizer finds a slightly better local optimum
+than R (loglik -8.38 vs -8.43). Dwelling times sum to total tree length
+exactly, and Q matrix structural properties (rows sum to zero, model
+nesting) are verified.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>stochastic_character_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file with header row <br/>
+<em>-c/\-\-trait</em>: column name for discrete character trait <br/>
+<em>-m/\-\-model</em>: substitution model: ER, SYM, or ARD (default: ER) <br/>
+<em>-n/\-\-nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>--plot</em>: output plot file path for phylogram with colored branches <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

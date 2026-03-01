@@ -518,6 +518,826 @@ In summary, calculating sum-of-pairs score and column score can help assess the 
 
 |
 
+5. Mapping the evolutionary history of discrete traits
+######################################################
+
+A common question in comparative biology is: how did a discrete trait, such as diet, habitat,
+or reproductive strategy, evolve across a phylogeny? Simply labeling tips on a tree does not
+tell us *when* or *how often* transitions between states occurred. Stochastic character mapping
+(`Huelsenbeck et al. 2003 <https://doi.org/10.1080/10635150390192780>`_;
+`Bollback 2006 <https://doi.org/10.1186/1471-2148-6-88>`_)
+addresses this by simulating plausible evolutionary histories of a discrete trait along each
+branch, conditioned on the observed tip states and a fitted substitution model. This approach
+is widely used in macroevolutionary studies to quantify the tempo and mode of trait evolution
+(`O'Meara 2012 <https://doi.org/10.1146/annurev-ecolsys-110411-160331>`_).
+
+**Hypothetical study question.** Suppose we are studying a group of eight mammal species and
+want to understand how diet (carnivore, herbivore, or omnivore) has evolved across the
+phylogeny. Specifically, we want to know: (1) Is the transition rate between all dietary states
+equal, or are some transitions more frequent than others? (2) How much evolutionary time has
+been spent in each dietary state? (3) How many transitions between states occurred on average?
+
+PhyKIT's ``stochastic_character_map`` command (alias: ``simmap``) lets us answer these
+questions directly from the command line.
+
+In this tutorial, we will use test data included with PhyKIT: an eight-taxon mammal phylogeny
+and a tab-delimited file assigning each species to a dietary category. |br|
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Discrete trait data </data/tree_simple_discrete_traits.tsv>`
+
+|
+
+Step 0: Prepare data
+********************
+
+Two input files are needed: a phylogenetic tree in Newick format and a tab-delimited trait
+file with a header row. The trait file looks like this:
+
+.. code-block:: text
+
+   taxon	diet
+   raccoon	carnivore
+   bear	carnivore
+   sea_lion	carnivore
+   seal	herbivore
+   monkey	herbivore
+   cat	omnivore
+   weasel	omnivore
+   dog	omnivore
+
+The first column is the taxon name (must match the tree tip labels) and subsequent columns
+contain discrete trait values. You specify which column to use with the ``-c/--trait`` flag.
+Lines starting with ``#`` are treated as comments and blank lines are ignored.
+
+Both files are included in the PhyKIT test suite at ``tests/sample_files/tree_simple.tre`` and
+``tests/sample_files/tree_simple_discrete_traits.tsv``.
+
+|
+
+Step 1: Fit a substitution model and run stochastic mapping
+***********************************************************
+
+First, run stochastic character mapping with the default equal-rates (ER) model and 100
+simulations:
+
+.. code-block:: shell
+
+   phykit simmap \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet \
+       -n 100 \
+       --seed 42
+
+This produces the following output:
+
+.. code-block:: text
+
+   Stochastic Character Mapping (SIMMAP)
+
+   Model: ER
+   Number of simulations: 100
+
+   Fitted Q matrix:
+                    carnivore   herbivore    omnivore
+   carnivore          -0.1138      0.0569      0.0569
+   herbivore           0.0569     -0.1138      0.0569
+   omnivore            0.0569      0.0569     -0.1138
+
+   Log-likelihood: -8.7874
+
+   Mean dwelling times:
+     carnivore         99.08 (35.7%)
+     herbivore         89.18 (32.2%)
+     omnivore          89.02 (32.1%)
+
+   Mean transitions:
+     carnivore -> herbivore:  5.51
+     carnivore -> omnivore:  5.69
+     herbivore -> carnivore:  5.48
+     herbivore -> omnivore:  5.37
+     omnivore -> carnivore:  4.94
+     omnivore -> herbivore:  4.89
+     Total:                      31.88
+
+**Interpreting the output.** The fitted Q matrix shows the instantaneous rates of transition
+between states. Under the ER model, all off-diagonal rates are equal (0.0569 per unit branch
+length). The log-likelihood of -8.79 is the maximized log-likelihood of the data given the
+model.
+
+The mean dwelling times tell us how much total evolutionary time (summed across all branches)
+was spent in each state, averaged over all 100 simulated histories. Here, the three dietary
+states have roughly equal dwelling times, reflecting the ER model's symmetry and the
+distribution of states across the tree.
+
+The mean transition counts show how many times each type of state change occurred on average.
+These are averaged across 100 stochastic maps.
+
+|
+
+Step 2: Compare substitution models
+************************************
+
+Is the equal-rates model adequate, or do different transitions have different rates? We can
+compare the ER model with the all-rates-different (ARD) model:
+
+.. code-block:: shell
+
+   phykit simmap \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet \
+       -m ARD \
+       -n 100 \
+       --seed 42
+
+You can also try the symmetric (SYM) model, which assumes forward and reverse rates between
+any pair of states are equal but allows different pairs to differ:
+
+.. code-block:: shell
+
+   phykit simmap \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet \
+       -m SYM \
+       -n 100 \
+       --seed 42
+
+Compare the log-likelihoods across models to assess fit. Because ARD has more parameters than
+SYM, which has more than ER, a likelihood ratio test or AIC comparison can be used to
+determine whether the additional parameters are justified.
+
+|
+
+Step 3: Generate a stochastic character map plot
+************************************************
+
+To visualize one of the simulated character histories on the phylogeny, use the ``--plot``
+flag:
+
+.. code-block:: shell
+
+   phykit simmap \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet \
+       -n 100 \
+       --seed 42 \
+       --plot simmap_diet.png
+
+This generates a horizontal phylogram with branches colored by the mapped character state.
+Each branch segment is colored according to the state occupied during that interval,
+reflecting one of the simulated character histories. A legend maps colors to states.
+
+|
+
+Step 4: Export results as JSON
+******************************
+
+For downstream analysis or scripting, results can be exported as JSON:
+
+.. code-block:: shell
+
+   phykit simmap \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet \
+       -n 100 \
+       --seed 42 \
+       --json
+
+The JSON output includes the fitted Q matrix, log-likelihood, state list, mean dwelling times
+and proportions, and mean transition counts. This can be parsed with standard JSON tools
+(e.g., ``jq``, Python's ``json`` module) for further analysis.
+
+|
+
+Step 5: Ensure reproducibility
+******************************
+
+The ``--seed`` flag ensures that the stochastic simulations are reproducible. Running the same
+command with the same seed will produce identical results. This is important for
+reproducibility in publications. Omitting ``--seed`` produces different results each time due
+to the stochastic nature of the simulations.
+
+|
+
+Summary
+*******
+
+In this tutorial, we used stochastic character mapping to reconstruct the evolutionary history
+of diet across a mammal phylogeny. The key steps were: (1) fitting a continuous-time Markov
+chain rate matrix to estimate transition rates, (2) comparing equal-rates and
+all-rates-different models to assess whether transition rates vary, (3) simulating character
+histories to estimate dwelling times and transition counts, and (4) plotting a stochastic
+character map for visualization.
+
+For methodological details, see
+`Huelsenbeck et al. (2003) <https://doi.org/10.1080/10635150390192780>`_ and
+`Bollback (2006) <https://doi.org/10.1186/1471-2148-6-88>`_.
+The R equivalent is ``phytools::make.simmap()``
+(`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
+
+|
+
+6. Testing for phylogenetic signal in continuous traits
+#######################################################
+
+A fundamental question in comparative biology is whether closely related species resemble each
+other more than expected by chance — a pattern known as phylogenetic signal
+(`Blomberg et al. 2003 <https://doi.org/10.1111/j.0014-3820.2003.tb00285.x>`_;
+`Pagel 1999 <https://doi.org/10.1038/44766>`_).
+Quantifying phylogenetic signal helps determine whether phylogenetic comparative methods
+(e.g., PGLS, phylogenetic PCA) are necessary for a given trait, and provides insight into
+the evolutionary processes shaping trait variation
+(`Münkemüller et al. 2012 <https://doi.org/10.1111/j.2041-210X.2012.00196.x>`_).
+
+**Hypothetical study question.** Suppose we are studying body mass evolution across eight
+mammal species and want to know: does body mass exhibit significant phylogenetic signal?
+In other words, do closely related species tend to have more similar body masses than
+species drawn at random from the tree?
+
+PhyKIT's ``phylogenetic_signal`` command (aliases: ``phylo_signal``, ``ps``) implements two
+widely used measures: Blomberg's K and Pagel's lambda.
+
+In this tutorial, we will use the test data included with PhyKIT: an eight-taxon mammal
+phylogeny and a tab-delimited trait file containing log-transformed body mass values. |br|
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Continuous trait data </data/tree_simple_traits.tsv>`
+
+|
+
+Step 0: Prepare data
+********************
+
+Two input files are needed: a phylogenetic tree in Newick format and a tab-delimited trait
+file with two columns (taxon name and trait value). Lines starting with ``#`` are treated
+as comments. The trait file looks like this:
+
+.. code-block:: text
+
+   # Trait data for tree_simple.tre taxa
+   # body mass (kg, log-transformed)
+   raccoon	1.04
+   bear	2.39
+   sea_lion	2.30
+   seal	1.88
+   monkey	0.60
+   cat	0.56
+   weasel	-0.30
+   dog	1.18
+
+Both files are included in the PhyKIT test suite at ``tests/sample_files/tree_simple.tre`` and
+``tests/sample_files/tree_simple_traits.tsv``.
+
+|
+
+Step 1: Calculate Blomberg's K
+******************************
+
+Blomberg's K compares the observed trait variance partitioned across the phylogeny to the
+expectation under Brownian motion. K = 1 indicates trait evolution consistent with Brownian
+motion; K < 1 suggests less phylogenetic signal than expected (e.g., convergent evolution);
+K > 1 suggests stronger signal than expected (e.g., trait conservatism within clades).
+
+Statistical significance is assessed via a permutation test that shuffles trait values among
+tips.
+
+.. code-block:: shell
+
+   phykit phylogenetic_signal \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv
+
+.. code-block:: text
+
+   0.5842	0.474
+
+col1: Blomberg's K statistic |br|
+col2: p-value (permutation test, 1000 permutations)
+
+**Interpretation.** K = 0.58 (< 1), suggesting that body mass shows *less* phylogenetic
+signal than expected under pure Brownian motion in this clade. The p-value of 0.47 is
+non-significant, meaning we cannot reject the null hypothesis that there is no phylogenetic
+signal. With only 8 taxa, statistical power is limited, so this result should be interpreted
+cautiously.
+
+|
+
+Step 2: Calculate Pagel's lambda
+********************************
+
+Pagel's lambda scales the off-diagonal elements of the phylogenetic variance-covariance
+matrix. Lambda = 1 indicates strong phylogenetic signal (consistent with Brownian motion);
+lambda = 0 indicates no phylogenetic signal (traits evolve independently of phylogeny).
+Significance is assessed via a likelihood ratio test comparing the fitted lambda model to
+a model with lambda fixed at 0.
+
+.. code-block:: shell
+
+   phykit phylogenetic_signal \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       -m lambda
+
+.. code-block:: text
+
+   1.0	-11.5697	0.7165
+
+col1: estimated lambda |br|
+col2: log-likelihood of the fitted model |br|
+col3: p-value (likelihood ratio test)
+
+**Interpretation.** Lambda = 1.0 indicates a maximum-likelihood estimate consistent with
+Brownian motion. However, the LRT p-value of 0.72 is non-significant, meaning the fitted
+model does not significantly improve over the null (lambda = 0). Again, with 8 taxa, power
+is limited.
+
+|
+
+Step 3: Export results as JSON
+******************************
+
+For scripting or downstream analysis, use ``--json``:
+
+.. code-block:: shell
+
+   phykit phylogenetic_signal \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       --json
+
+.. code-block:: json
+
+   {"K": 0.5842, "p_value": 0.474, "permutations": 1000}
+
+.. code-block:: shell
+
+   phykit phylogenetic_signal \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_traits.tsv \
+       -m lambda \
+       --json
+
+.. code-block:: json
+
+   {"lambda": 1.0, "log_likelihood": -11.5697, "p_value": 0.7165}
+
+|
+
+Summary
+*******
+
+In this tutorial, we used two measures of phylogenetic signal — Blomberg's K and Pagel's
+lambda — to assess whether body mass evolution in a mammal clade is structured by
+phylogenetic relationships. Both measures can help researchers decide whether phylogenetic
+comparative methods are needed for their data and provide insight into the tempo and mode
+of trait evolution.
+
+For methodological details, see
+`Blomberg et al. (2003) <https://doi.org/10.1111/j.0014-3820.2003.tb00285.x>`_ and
+`Pagel (1999) <https://doi.org/10.1038/44766>`_.
+The R equivalent is ``phytools::phylosig()``
+(`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
+
+|
+
+7. Phylogenetic PCA for multivariate trait analysis
+###################################################
+
+When analyzing multiple continuous traits across species, standard PCA ignores the
+phylogenetic non-independence among species: closely related species share evolutionary
+history and thus cannot be treated as independent data points. Phylogenetic PCA
+(`Revell 2009 <https://doi.org/10.1111/j.1558-5646.2009.00616.x>`_)
+addresses this by incorporating the phylogenetic variance-covariance matrix into the PCA,
+producing ordinations that properly account for shared ancestry.
+
+**Hypothetical study question.** Suppose we have measured body mass, brain size, and
+longevity for eight mammal species and want to identify the major axes of morphological
+variation while accounting for phylogenetic relationships. Which traits load most heavily
+on the primary axes? Do any species emerge as outliers after phylogenetic correction?
+
+PhyKIT's ``phylogenetic_pca`` command (aliases: ``phylo_pca``, ``phyl_pca``, ``ppca``)
+implements Revell's (2009) phylogenetic PCA with support for Brownian motion and
+Pagel's lambda estimation methods, and both covariance and correlation modes. |br|
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Multi-trait data </data/tree_simple_multi_traits.tsv>`
+
+|
+
+Step 0: Prepare data
+********************
+
+Two input files are needed: a phylogenetic tree and a tab-delimited multi-trait file
+with a header row. The trait file looks like this:
+
+.. code-block:: text
+
+   taxon	body_mass	brain_size	longevity
+   raccoon	1.04	1.60	1.28
+   bear	2.39	2.66	1.36
+   sea_lion	2.30	2.74	1.46
+   seal	1.88	2.45	1.60
+   monkey	0.60	1.85	2.00
+   cat	0.56	1.30	1.18
+   weasel	-0.30	0.85	1.04
+   dog	1.18	1.87	1.20
+
+Both files are included in the PhyKIT test suite at ``tests/sample_files/tree_simple.tre``
+and ``tests/sample_files/tree_simple_multi_traits.tsv``.
+
+|
+
+Step 1: Run phylogenetic PCA with Brownian motion
+**************************************************
+
+The default method uses a Brownian motion model for the phylogenetic covariance structure:
+
+.. code-block:: shell
+
+   phykit phylogenetic_pca \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv
+
+.. code-block:: text
+
+   Eigenvalues:
+   	PC1	PC2	PC3
+   eigenvalue	0.080180	0.002924	0.000308
+   proportion	0.961261	0.035052	0.003687
+
+   Loadings:
+   	PC1	PC2	PC3
+   body_mass	-0.734739	-0.422613	-0.530619
+   brain_size	-0.527400	-0.136064	0.838651
+   longevity	-0.426623	0.896038	-0.122915
+
+   Scores:
+   	PC1	PC2	PC3
+   bear	-0.978191	-0.029290	-0.026787
+   cat	1.442009	0.176467	-0.093072
+   dog	0.651723	-0.091427	0.046142
+   monkey	0.640466	1.097251	0.208068
+   raccoon	0.867121	0.067199	-0.114611
+   sea_lion	-0.860400	-0.199268	0.115102
+   seal	-0.522584	0.277539	0.059107
+   weasel	2.639715	-0.088806	0.080512
+
+**Interpretation.** PC1 explains 96.1% of the total phylogenetically-corrected variance and
+loads most heavily on body mass (-0.73), followed by brain size (-0.53) and longevity (-0.43).
+This suggests that a single axis of overall body size captures most of the morphological
+variation. Weasel (score = 2.64) and cat (1.44) are the strongest outliers on PC1, reflecting
+their small body size, brain size, and short longevity relative to the larger-bodied species.
+PC2 (3.5% variance) is dominated by longevity (0.90), separating monkey (high longevity) from
+the other species.
+
+|
+
+Step 2: Use correlation mode
+*****************************
+
+When traits are measured on different scales, correlation-mode PCA is often preferred because
+it standardizes each trait to unit variance before decomposition:
+
+.. code-block:: shell
+
+   phykit phylogenetic_pca \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --mode corr
+
+.. code-block:: text
+
+   Eigenvalues:
+   	PC1	PC2	PC3
+   eigenvalue	2.849006	0.140247	0.010747
+   proportion	0.949669	0.046749	0.003582
+
+Correlation-mode eigenvalues sum to the number of traits (3.0) rather than total variance.
+The loadings and scores change accordingly, but the overall pattern remains similar.
+
+|
+
+Step 3: Estimate Pagel's lambda jointly
+****************************************
+
+Instead of assuming pure Brownian motion, the lambda method jointly estimates Pagel's lambda
+across all traits, downweighting the phylogenetic covariance structure if the data warrant it:
+
+.. code-block:: shell
+
+   phykit phylogenetic_pca \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       -m lambda \
+       --json
+
+The JSON output includes the estimated lambda value, eigenvalues, loadings, scores, and
+log-likelihood. A lambda near 1 indicates that Brownian motion adequately describes the
+covariance structure, while a lambda near 0 suggests traits evolved independently of
+phylogeny.
+
+|
+
+Step 4: Generate a PCA plot
+****************************
+
+To visualize the ordination, use the ``--plot`` flag:
+
+.. code-block:: shell
+
+   phykit phylogenetic_pca \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --plot ppca_plot.png
+
+This generates a scatter plot of PC1 vs PC2 with taxon labels and variance-explained
+percentages on the axes.
+
+|
+
+Summary
+*******
+
+In this tutorial, we used phylogenetic PCA to identify the major axes of morphological
+variation among mammal species while accounting for shared evolutionary history. The key
+steps were: (1) running PCA under Brownian motion, (2) comparing covariance and correlation
+modes, (3) jointly estimating Pagel's lambda, and (4) visualizing the ordination.
+
+For methodological details, see
+`Revell (2009) <https://doi.org/10.1111/j.1558-5646.2009.00616.x>`_.
+The R equivalent is ``phytools::phyl.pca()``
+(`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
+
+|
+
+8. Visualizing trait evolution with phylomorphospace
+####################################################
+
+Phylomorphospace plots overlay the phylogeny onto a two-dimensional trait space, connecting
+species to their ancestors via edges that trace the evolutionary trajectory of traits
+(`Sidlauskas 2008 <https://doi.org/10.1111/j.1558-5646.2008.00469.x>`_).
+Internal node positions are estimated by maximum-likelihood ancestral state reconstruction.
+This visualization reveals how lineages have moved through morphospace over evolutionary
+time — showing convergence, divergence, and the overall geometry of trait evolution.
+
+**Hypothetical study question.** Suppose we want to visualize how body mass and brain size
+have coevolved across our eight mammal species. Do closely related species cluster together
+in trait space? Have any lineages converged on similar body mass–brain size combinations
+despite being distantly related?
+
+PhyKIT's ``phylomorphospace`` command (aliases: ``phylomorpho``, ``phmo``) generates these
+plots directly from the command line. |br|
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Multi-trait data </data/tree_simple_multi_traits.tsv>`
+
+|
+
+Step 0: Prepare data
+********************
+
+Two input files are needed: a phylogenetic tree and a tab-delimited multi-trait file with a
+header row (same format as for phylogenetic PCA). When the trait file has exactly two trait
+columns, they are automatically selected. With three or more traits, you must specify
+which two traits to plot using ``--trait-x`` and ``--trait-y``.
+
+|
+
+Step 1: Generate a phylomorphospace plot
+****************************************
+
+Since our trait file has three traits (body_mass, brain_size, longevity), we specify which
+two to plot:
+
+.. code-block:: shell
+
+   phykit phylomorphospace \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --trait-x body_mass \
+       --trait-y brain_size
+
+This generates a plot file (``phylomorphospace_plot.png`` by default) showing:
+
+- **Tip points** positioned at observed trait values for each species
+- **Internal nodes** positioned at ML-reconstructed ancestral trait values
+- **Tree edges** connecting parent and child nodes, colored by distance from the root
+  (coolwarm colormap with colorbar)
+- **Tip labels** identifying each species
+
+**Interpretation.** In the resulting plot, species with large body mass and brain size
+(bear, sea_lion, seal) cluster in the upper right, while small-bodied species (weasel, cat)
+appear in the lower left. The tree edges show the evolutionary trajectories: the ancestral
+node reconstructions reveal whether lineages traveled through morphospace gradually or
+underwent rapid shifts.
+
+|
+
+Step 2: Export data as JSON
+****************************
+
+For programmatic access to the tip data and reconstructed ancestral states:
+
+.. code-block:: shell
+
+   phykit phylomorphospace \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --trait-x body_mass \
+       --trait-y brain_size \
+       --json
+
+The JSON output includes the tip data, selected traits, and output path, enabling custom
+post-processing or alternative visualizations.
+
+|
+
+Summary
+*******
+
+In this tutorial, we used phylomorphospace to visualize the coevolution of body mass and
+brain size across a mammal phylogeny. The plot reveals evolutionary trajectories through
+trait space and highlights patterns of convergence or divergence. Combined with
+phylogenetic PCA and phylogenetic signal analyses, phylomorphospace provides a powerful
+complement for understanding multivariate trait evolution.
+
+For methodological details, see
+`Sidlauskas (2008) <https://doi.org/10.1111/j.1558-5646.2008.00469.x>`_.
+The R equivalent is ``phytools::phylomorphospace()``
+(`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
+
+|
+
+9. Phylogenetic regression (PGLS)
+##################################
+
+Standard linear regression assumes that data points are independent and identically
+distributed. In comparative biology, species are not independent because they share
+evolutionary history. Phylogenetic Generalized Least Squares (PGLS) addresses this by
+incorporating the phylogenetic variance-covariance matrix into the regression model,
+properly accounting for the expected covariance among species due to shared ancestry
+(`Grafen 1989 <https://doi.org/10.1098/rstb.1989.0106>`_;
+`Martins and Hansen 1997 <https://doi.org/10.1086/286013>`_;
+`Freckleton et al. 2002 <https://doi.org/10.1086/343873>`_).
+
+**Hypothetical study question.** A classic question in comparative biology is the
+relationship between brain size and body mass across species. Specifically: does brain
+size predict body mass after accounting for the phylogenetic non-independence among
+species? Is the relationship significant, and how much variance does it explain?
+
+PhyKIT's ``phylogenetic_regression`` command (aliases: ``phylo_regression``, ``pgls``)
+fits PGLS regressions under a Brownian motion model. |br|
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Multi-trait data </data/tree_simple_multi_traits.tsv>`
+
+|
+
+Step 0: Prepare data
+********************
+
+Three input files/specifications are needed: a phylogenetic tree, a tab-delimited
+multi-trait file with a header row, and the specification of response (``-y``) and
+predictor (``-x``) variables. The trait file is the same format used for phylogenetic
+PCA and phylomorphospace.
+
+|
+
+Step 1: Run a simple PGLS regression
+*************************************
+
+Test whether brain size predicts body mass:
+
+.. code-block:: shell
+
+   phykit phylogenetic_regression \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       -y body_mass \
+       -x brain_size
+
+.. code-block:: text
+
+   Phylogenetic Generalized Least Squares (PGLS)
+
+   Formula: body_mass ~ brain_size
+
+   Coefficients:
+                           Estimate   Std.Error     t-value     p-value
+   (Intercept)              -1.3350      0.2000     -6.6733    0.000548    ***
+   brain_size                1.3778      0.0877     15.7140    0.000004    ***
+   ---
+   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1
+
+   Residual standard error: 0.0349 on 6 degrees of freedom
+   Multiple R-squared: 0.9763    Adjusted R-squared: 0.9723
+   F-statistic: 246.93 on 1 and 6 DF    p-value: 0.000004
+   Log-likelihood: 3.3957    AIC: -0.7915
+
+**Interpretation.** After accounting for phylogenetic relatedness, brain size is a highly
+significant predictor of body mass (t = 15.71, p < 0.0001). The coefficient estimate of
+1.38 indicates that for each unit increase in log brain size, log body mass increases by
+approximately 1.38 units. The model explains 97.6% of the variance (R-squared = 0.9763),
+with an F-statistic of 246.93.
+
+The negative intercept (-1.34) means that at the reference level of brain size (log brain
+size = 0), the predicted log body mass is negative. The significance codes (``***``)
+indicate p < 0.001.
+
+|
+
+Step 2: Run a multiple regression
+***********************************
+
+Test whether adding longevity as a second predictor improves the model:
+
+.. code-block:: shell
+
+   phykit phylogenetic_regression \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       -y body_mass \
+       -x brain_size longevity
+
+.. code-block:: text
+
+   Phylogenetic Generalized Least Squares (PGLS)
+
+   Formula: body_mass ~ brain_size + longevity
+
+   Coefficients:
+                           Estimate   Std.Error     t-value     p-value
+   (Intercept)              -1.2194      0.3985     -3.0601    0.028099    *
+   brain_size                1.4466      0.2205      6.5608    0.001233    **
+   longevity                -0.0879      0.2545     -0.3455    0.743755
+   ---
+   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1
+
+   Residual standard error: 0.0377 on 5 degrees of freedom
+   Multiple R-squared: 0.9768    Adjusted R-squared: 0.9676
+   F-statistic: 105.40 on 2 and 5 DF    p-value: 0.000082
+   Log-likelihood: 3.4901    AIC: 1.0197
+
+**Interpretation.** Longevity is not a significant predictor of body mass (t = -0.35,
+p = 0.74) after accounting for brain size and phylogenetic relatedness. The adjusted
+R-squared decreases slightly (0.9676 vs 0.9723), and the AIC increases (1.02 vs -0.79),
+confirming that adding longevity does not improve the model. Brain size remains the
+dominant predictor.
+
+|
+
+Step 3: Export results as JSON
+******************************
+
+For downstream scripting, results can be exported as JSON:
+
+.. code-block:: shell
+
+   phykit phylogenetic_regression \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       -y body_mass \
+       -x brain_size \
+       --json
+
+The JSON output includes all regression statistics: coefficients, standard errors, t-values,
+p-values, R-squared, adjusted R-squared, F-statistic, log-likelihood, AIC, fitted values,
+and residuals for each taxon.
+
+|
+
+Summary
+*******
+
+In this tutorial, we used PGLS to test the relationship between body mass and brain size
+while accounting for phylogenetic non-independence. The key steps were: (1) fitting a simple
+regression with one predictor, (2) extending to multiple predictors to evaluate model
+improvement, and (3) exporting results as JSON. PGLS is essential whenever comparing traits
+across species because ignoring phylogenetic structure inflates degrees of freedom and can
+produce spurious correlations.
+
+For methodological details, see
+`Freckleton et al. (2002) <https://doi.org/10.1086/343873>`_ and
+`Symonds and Blomberg (2014) <https://doi.org/10.1007/978-3-662-43550-2_5>`_.
+The R equivalent is ``caper::pgls()`` or ``nlme::gls()`` with ``ape::corBrownian()``.
+
+|
+
 .. |br| raw:: html
 
   <br/>
