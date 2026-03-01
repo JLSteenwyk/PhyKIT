@@ -206,6 +206,14 @@ class Phykit:
                     - fit phylogenetic generalized least squares (PGLS) regression
                 stochastic_character_map (alias: simmap; scm)
                     - stochastic character mapping (SIMMAP) of discrete traits
+                cont_map (alias: contmap; cmap)
+                    - continuous trait map (contMap) visualization on a phylogeny
+                density_map (alias: densitymap; dmap)
+                    - density map of posterior state probabilities on a phylogeny
+                cophylo (alias: tanglegram; tangle)
+                    - cophylogenetic (tanglegram) plot of two phylogenies
+                phenogram (alias: traitgram; tg)
+                    - phenogram (traitgram) visualization of trait evolution
                 rate_heterogeneity (alias: brownie; rh)
                     - test for rate heterogeneity across tree regimes
                       using multi-rate Brownian motion (O'Meara et al. 2006)
@@ -2670,6 +2678,240 @@ class Phykit:
         _run_service(parser, argv, StochasticCharacterMap)
 
     @staticmethod
+    def cont_map(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Continuous Trait Map (contMap) visualization.
+
+                Runs ancestral state reconstruction internally (fast
+                Felsenstein two-pass algorithm) and produces a contMap
+                plot: a phylogram with branches colored by a continuous
+                gradient (coolwarm colormap) representing inferred
+                trait values.
+
+                Input is a phylogenetic tree and a tab-delimited file
+                with two columns: taxon_name<tab>trait_value (no header).
+
+                Aliases:
+                  cont_map, contmap, cmap
+                Command line interfaces:
+                  pk_cont_map, pk_contmap, pk_cmap
+
+                Usage:
+                phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon<tab>value, no header)
+
+                -o/--output                 output plot file path
+                                            (required)
+
+                --json                      optional argument to also
+                                            output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, ContMap)
+
+    @staticmethod
+    def density_map(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Density Map visualization of posterior discrete state
+                probabilities along each branch of a phylogeny.
+
+                Runs stochastic character mapping internally (N
+                simulations), then for each point along each branch
+                computes the fraction of simulations in each state.
+                Branches are colored by a gradient reflecting these
+                probabilities. Analogous to R's phytools::densityMap().
+
+                Input is a phylogenetic tree and a tab-delimited file
+                with a header row: taxon<tab>trait_column<tab>...
+
+                Aliases:
+                  density_map, densitymap, dmap
+                Command line interfaces:
+                  pk_density_map, pk_densitymap, pk_dmap
+
+                Usage:
+                phykit density_map -t <tree> -d <trait_data> -c <trait> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            with header row
+
+                -c/--trait                  column name for discrete
+                                            character trait
+
+                -n/--nsim                   number of stochastic
+                                            mapping simulations
+                                            (default: 100)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                -o/--output                 output plot file path
+                                            (required)
+
+                --json                      optional argument to also
+                                            output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-c", "--trait", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-n", "--nsim", type=int, required=False, default=100,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--seed", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, DensityMap)
+
+    @staticmethod
+    def phenogram(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Plot a phenogram (traitgram) showing continuous trait
+                evolution across a phylogeny. X-axis shows distance from
+                root (time), Y-axis shows trait values. Tips are plotted
+                at observed values, internal nodes at ML ancestral
+                estimates. Analogous to R's phytools::phenogram().
+
+                Aliases:
+                  phenogram, traitgram, tg
+                Command line interfaces:
+                  pk_phenogram, pk_traitgram, pk_tg
+
+                Usage:
+                phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon<tab>value)
+
+                -o/--output                 output plot file path
+                                            (required)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, Phenogram)
+
+    @staticmethod
+    def cophylo(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Cophylogenetic (tanglegram) plot of two phylogenies.
+                Draws two trees facing each other with connecting lines
+                between matching taxa, analogous to R's phytools::cophylo().
+
+                By default, taxa are matched by identical tip names.
+                A mapping file can be provided to match differently named
+                taxa. Internal nodes of tree2 are rotated to minimize
+                line crossings.
+
+                Aliases:
+                  cophylo, tanglegram, tangle
+                Command line interfaces:
+                  pk_cophylo, pk_tanglegram, pk_tangle
+
+                Usage:
+                phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree1                  first tree file
+
+                -t2/--tree2                 second tree file
+
+                -o/--output                 output plot file path
+                                            (required)
+
+                -m/--mapping                optional tab-delimited
+                                            mapping file
+                                            (taxon1<tab>taxon2)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree1", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-t2", "--tree2", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-m", "--mapping", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, Cophylo)
+
+    @staticmethod
     def rate_heterogeneity(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3871,6 +4113,22 @@ def phylogenetic_regression(argv=None):
 
 def stochastic_character_map(argv=None):
     Phykit.stochastic_character_map(sys.argv[1:])
+
+
+def cont_map(argv=None):
+    Phykit.cont_map(sys.argv[1:])
+
+
+def density_map(argv=None):
+    Phykit.density_map(sys.argv[1:])
+
+
+def phenogram(argv=None):
+    Phykit.phenogram(sys.argv[1:])
+
+
+def cophylo(argv=None):
+    Phykit.cophylo(sys.argv[1:])
 
 
 def rate_heterogeneity(argv=None):

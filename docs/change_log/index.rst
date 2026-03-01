@@ -7,6 +7,25 @@ Change log
 Major changes to PhyKIT are summarized here.
 
 **2.1.16**:
+Added visualization commands and rate heterogeneity test:
+
+* Added new ``cont_map`` command (aliases: ``contmap``, ``cmap``)
+  for plotting a phylogram with branches colored by continuous trait
+  values via ML ancestral reconstruction (analogous to R's
+  ``phytools::contMap()``)
+* Added new ``density_map`` command (aliases: ``densitymap``, ``dmap``)
+  for plotting posterior probabilities of discrete character states
+  along phylogeny branches from stochastic character mapping (analogous
+  to R's ``phytools::densityMap()``)
+* Added new ``phenogram`` command (aliases: ``traitgram``, ``tg``)
+  for plotting a phenogram (traitgram) showing trait evolution along a
+  phylogeny with X-axis = distance from root, Y-axis = trait value
+  (analogous to R's ``phytools::phenogram()``)
+* Added new ``cophylo`` command (aliases: ``tanglegram``, ``tangle``)
+  for plotting cophylogenetic tanglegrams of two phylogenies with
+  connecting lines between matching taxa and node rotation to minimize
+  crossings (analogous to R's ``phytools::cophylo()``)
+
 Added rate heterogeneity test:
 
 * Added new ``rate_heterogeneity`` command (aliases: ``brownie``, ``rh``)
