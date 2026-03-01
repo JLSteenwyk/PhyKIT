@@ -206,6 +206,9 @@ class Phykit:
                     - fit phylogenetic generalized least squares (PGLS) regression
                 stochastic_character_map (alias: simmap; scm)
                     - stochastic character mapping (SIMMAP) of discrete traits
+                rate_heterogeneity (alias: brownie; rh)
+                    - test for rate heterogeneity across tree regimes
+                      using multi-rate Brownian motion (O'Meara et al. 2006)
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -2667,6 +2670,81 @@ class Phykit:
         _run_service(parser, argv, StochasticCharacterMap)
 
     @staticmethod
+    def rate_heterogeneity(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Test for rate heterogeneity across phylogenetic regimes
+                using multi-rate Brownian motion (O'Meara et al. 2006),
+                analogous to R's phytools::brownie.lite().
+
+                Fits single-rate vs. multi-rate BM models and performs a
+                likelihood ratio test. Users specify a tree, continuous
+                trait data, and a regime file mapping tips to regimes.
+
+                Regime assignments to internal branches are inferred via
+                Fitch parsimony. Per-regime VCV matrices are decomposed
+                and per-regime sigma-squared values are estimated via ML.
+
+                Aliases:
+                  rate_heterogeneity, brownie, rh
+                Command line interfaces:
+                  pk_rate_heterogeneity, pk_brownie, pk_rh
+
+                Usage:
+                phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon<tab>value)
+
+                -r/--regime_data            tab-delimited regime file
+                                            (taxon<tab>regime_label)
+
+                -n/--nsim                   number of parametric
+                                            bootstrap simulations
+                                            (default: 0, no bootstrap)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                --plot                      output plot file path
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-r", "--regime_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-n", "--nsim", type=int, required=False, default=0,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--seed", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, RateHeterogeneity)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3793,6 +3871,10 @@ def phylogenetic_regression(argv=None):
 
 def stochastic_character_map(argv=None):
     Phykit.stochastic_character_map(sys.argv[1:])
+
+
+def rate_heterogeneity(argv=None):
+    Phykit.rate_heterogeneity(sys.argv[1:])
 
 
 def polytomy_test(argv=None):

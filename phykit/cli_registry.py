@@ -79,6 +79,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "anc_recon": "ancestral_state_reconstruction",
     "simmap": "stochastic_character_map",
     "scm": "stochastic_character_map",
+    "brownie": "rate_heterogeneity",
+    "rh": "rate_heterogeneity",
     "polyt_test": "polytomy_test",
     "ptt": "polytomy_test",
     "polyt": "polytomy_test",

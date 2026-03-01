@@ -1596,6 +1596,42 @@ Options: |br|
 
 |
 
+Rate heterogeneity test (multi-rate Brownian motion)
+####################################################
+Function names: rate_heterogeneity; brownie; rh |br|
+Command line interface: pk_rate_heterogeneity; pk_brownie; pk_rh
+
+Test for rate heterogeneity across phylogenetic regimes using multi-rate
+Brownian motion (O'Meara et al. 2006), analogous to R's
+``phytools::brownie.lite()``.
+
+Fits single-rate vs. multi-rate BM models and performs a likelihood ratio
+test. Users specify a tree, continuous trait data, and a regime file
+mapping tips to regimes (tab-delimited, ``taxon<tab>regime_label``).
+
+Regime assignments to internal branches are inferred via Fitch parsimony.
+Per-regime VCV matrices are decomposed and per-regime sigma-squared values
+are estimated via maximum likelihood.
+
+Optionally, a parametric bootstrap can be run to compute a simulated
+p-value (``-n/--nsim``). A horizontal phylogram with branches colored by
+regime can be generated using ``--plot``.
+
+.. code-block:: shell
+
+   phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
+*-n/\\-\\-nsim*: number of parametric bootstrap simulations (default: 0) |br|
+*--seed*: random seed for reproducibility |br|
+*--plot*: output plot file path for phylogram with colored branches |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 Polytomy testing
 ################
 Function names: polytomy_test; polyt_test; polyt; ptt |br|
