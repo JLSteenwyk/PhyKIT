@@ -205,6 +205,8 @@ class Phykit:
                       reconstruction
                 phylogenetic_regression (alias: phylo_regression; pgls)
                     - fit phylogenetic generalized least squares (PGLS) regression
+                phylogenetic_glm (alias: phylo_glm; pglm)
+                    - fit phylogenetic GLM for binary (logistic) or count (Poisson) data
                 stochastic_character_map (alias: simmap; scm)
                     - stochastic character mapping (SIMMAP) of discrete traits
                 cont_map (alias: contmap; cmap)
@@ -2677,6 +2679,126 @@ class Phykit:
         _run_service(parser, argv, PhylogeneticRegression)
 
     @staticmethod
+    def phylogenetic_glm(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Fit a Phylogenetic Generalized Linear Model (GLM) for binary
+                or count response data while accounting for phylogenetic
+                non-independence among species.
+
+                Two families are supported:
+                - binomial: logistic regression via Maximum Penalized Likelihood
+                  Estimation (logistic_MPLE; Ives & Garland 2010)
+                - poisson: Poisson regression via Generalized Estimating Equations
+                  (poisson_GEE; Paradis & Claude 2002)
+
+                Input is a phylogenetic tree and a tab-delimited multi-trait
+                file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Output includes coefficient estimates, standard errors,
+                z-values, p-values, log-likelihood, and AIC. For binomial
+                models, the estimated phylogenetic signal parameter alpha is
+                reported. For Poisson models, the overdispersion parameter
+                phi is reported.
+
+                Aliases:
+                  phylogenetic_glm, phylo_glm, pglm
+                Command line interfaces:
+                  pk_phylogenetic_glm, pk_phylo_glm, pk_pglm
+
+                Usage:
+                phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited multi-trait file
+                                            with header row
+
+                -y/--response               response (dependent) variable
+                                            column name
+
+                -x/--predictors             one or more predictor column
+                                            names
+
+                --family                    distribution family: binomial
+                                            or poisson
+
+                --method                    estimation method: logistic_MPLE
+                                            or poisson_GEE (auto from family)
+
+                --btol                      linear predictor bound for
+                                            logistic model (default: 10)
+
+                --log-alpha-bound           bound on log(alpha*Tmax) for
+                                            logistic model (default: 4)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-y", "--response", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-x",
+            "--predictors",
+            type=str,
+            nargs="+",
+            required=True,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--family",
+            type=str,
+            required=True,
+            choices=["binomial", "poisson"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--method",
+            type=str,
+            required=False,
+            default=None,
+            choices=["logistic_MPLE", "poisson_GEE"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--btol",
+            type=float,
+            required=False,
+            default=10,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--log-alpha-bound",
+            type=float,
+            required=False,
+            default=4,
+            dest="log_alpha_bound",
+            help=SUPPRESS,
+            metavar="",
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhylogeneticGLM)
+
+    @staticmethod
     def stochastic_character_map(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4265,6 +4387,10 @@ def phylomorphospace(argv=None):
 
 def phylogenetic_regression(argv=None):
     Phykit.phylogenetic_regression(sys.argv[1:])
+
+
+def phylogenetic_glm(argv=None):
+    Phykit.phylogenetic_glm(sys.argv[1:])
 
 
 def stochastic_character_map(argv=None):
