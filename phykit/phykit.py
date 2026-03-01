@@ -223,6 +223,9 @@ class Phykit:
                 fit_continuous (alias: fitcontinuous; fc)
                     - compare continuous trait evolution models
                       (BM, OU, EB, Lambda, Delta, Kappa, White)
+                ouwie (alias: fit_ouwie; multi_regime_ou)
+                    - fit multi-regime OU models (BM1, BMS, OU1,
+                      OUM, OUMV, OUMA, OUMVA; Beaulieu et al. 2012)
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -3257,6 +3260,68 @@ class Phykit:
         _run_service(parser, argv, FitContinuous)
 
     @staticmethod
+    def ouwie(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Fit multi-regime Ornstein-Uhlenbeck models of continuous
+                trait evolution (Beaulieu et al. 2012), analogous to
+                R's OUwie package.
+
+                Models:
+                  BM1   — single-rate Brownian motion
+                  BMS   — multi-rate Brownian motion (per-regime sigma2)
+                  OU1   — single-regime Ornstein-Uhlenbeck
+                  OUM   — multi-regime OU (per-regime optima)
+                  OUMV  — OUM + per-regime sigma2
+                  OUMA  — OUM + per-regime alpha
+                  OUMVA — all parameters regime-specific
+
+                Aliases:
+                  ouwie, fit_ouwie, multi_regime_ou
+                Command line interfaces:
+                  pk_ouwie, pk_fit_ouwie, pk_multi_regime_ou
+
+                Usage:
+                phykit ouwie -t <tree> -d <trait_data> -r <regime_data> [--models BM1,OUM,OUMVA] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon<tab>value)
+
+                -r/--regime_data            tab-delimited regime file
+                                            (taxon<tab>regime_label)
+
+                --models                    comma-separated list of models
+                                            to fit (default: all 7)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-r", "--regime_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--models", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, OUwie)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4419,6 +4484,10 @@ def rate_heterogeneity(argv=None):
 
 def fit_continuous(argv=None):
     Phykit.fit_continuous(sys.argv[1:])
+
+
+def ouwie(argv=None):
+    Phykit.ouwie(sys.argv[1:])
 
 
 def polytomy_test(argv=None):

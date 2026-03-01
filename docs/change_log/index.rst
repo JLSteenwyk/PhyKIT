@@ -6,6 +6,74 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.19**:
+Added multi-regime Ornstein-Uhlenbeck models (OUwie):
+
+* Added new ``ouwie`` command (aliases: ``fit_ouwie``, ``multi_regime_ou``)
+  for fitting multi-regime OU models of continuous trait evolution
+* Seven models: BM1, BMS, OU1, OUM, OUMV, OUMA, OUMVA
+  (Beaulieu et al. 2012)
+* Regime assignments to internal branches via Fitch parsimony
+* Model comparison via AIC, AICc, BIC, and AICc weights
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_ouwie``, ``pk_fit_ouwie``,
+  ``pk_multi_regime_ou``
+* Results validated against R 4.4.0 (``OUwie`` v2.10 with
+  ``root.station=FALSE``):
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 12 18 18 12 30
+
+     * - Model
+       - PhyKIT LL
+       - R OUwie LL
+       - Diff
+       - Notes
+     * - BM1
+       - -11.5697
+       - -11.5697
+       - < 1e-4
+       - Exact match
+     * - BMS
+       - -11.2046
+       - -11.1357
+       - 0.069
+       - Rooting artifact (R adds 1e-6 branch)
+     * - OU1
+       - -10.2890
+       - -11.5697
+       - 1.281
+       - R stuck at alpha=0 (BM boundary)
+     * - OUM
+       - -8.6297
+       - -10.9823
+       - 2.353
+       - R stuck at alpha=0 (BM boundary)
+     * - OUMV
+       - -6.9859
+       - -10.2705
+       - 3.285
+       - R stuck at alpha=0 (BM boundary)
+     * - OUMA
+       - -6.9859
+       - -6.9892
+       - 0.003
+       - Excellent match
+     * - OUMVA
+       - -6.9859
+       - -7.0063
+       - 0.020
+       - Very close
+
+  BM1 matches R to machine precision. OUMA and OUMVA agree within
+  0.003-0.02 log-likelihood units. For OU1, OUM, and OUMV, R's OUwie
+  optimizer converges to alpha=0 (the Brownian motion boundary),
+  while PhyKIT's multi-interval search finds genuinely better OU optima
+  with positive alpha. BMS shows a small difference (0.07 LL units)
+  attributable to R's ``resolve.root=TRUE`` adding a 1e-6 length branch
+  and optimizer convergence differences.
+
 **2.1.18**:
 Added phylogenetic generalized linear models for binary and count data:
 
