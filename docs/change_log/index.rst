@@ -6,6 +6,68 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.16**:
+Added rate heterogeneity test:
+
+* Added new ``rate_heterogeneity`` command (aliases: ``brownie``, ``rh``)
+  for testing whether continuous trait evolution rates differ across
+  phylogenetic regimes using multi-rate Brownian motion (O'Meara et al.
+  2006), analogous to R's ``phytools::brownie.lite()``
+* Fits single-rate vs. multi-rate BM models and performs a likelihood
+  ratio test (chi-squared)
+* Optional parametric bootstrap via ``-n/--nsim``
+* Regime assignments to internal branches inferred via Fitch parsimony
+* Optional ``--plot`` argument for regime-colored phylogram
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_rate_heterogeneity``,
+  ``pk_brownie``, ``pk_rh``
+* Results validated against R 4.4.0 (``phytools::brownie.lite`` with
+  ``paintSubTree(stem=TRUE)``):
+
+  PhyKIT uses Fitch parsimony for regime assignment, which matches
+  R's ``paintSubTree(stem=TRUE)`` behavior.
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 30 20 20 20
+
+     * - Parameter
+       - PhyKIT
+       - R ``brownie.lite``
+       - Difference
+     * - Single-rate sigma2
+       - 0.03841
+       - 0.03841
+       - < 1e-11
+     * - Single-rate LL
+       - -11.56968
+       - -11.56968
+       - < 1e-14
+     * - Single-rate anc. state
+       - 1.64469
+       - 1.64469
+       - < 1e-15
+     * - Multi-rate sigma2 (terrestrial)
+       - 0.05002
+       - 0.04998
+       - 3.9e-05
+     * - Multi-rate sigma2 (aquatic)
+       - 0.00881
+       - 0.00889
+       - 8.1e-05
+     * - Multi-rate LL
+       - -11.20459
+       - -11.20461
+       - 1.6e-05
+     * - Chi-squared p-value
+       - 0.39283
+       - 0.39284
+       - 1.1e-05
+
+  Single-rate model matches to machine precision. Multi-rate model
+  matches to within optimizer convergence tolerance (both converge to
+  the same flat likelihood plateau).
+
 **2.1.15**:
 Added ancestral state reconstruction:
 

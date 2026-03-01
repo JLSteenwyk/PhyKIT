@@ -1532,6 +1532,96 @@ for the contMap visualization.
 
 |
 
+9. Testing for rate heterogeneity across phylogenetic regimes
+#############################################################
+
+A key question in comparative biology is whether the rate of trait evolution differs
+across lineages — for example, whether aquatic mammals evolve body size at a different
+rate than terrestrial mammals. Rate heterogeneity tests address this by fitting
+single-rate vs. multi-rate Brownian motion models and comparing them with a likelihood
+ratio test (`O'Meara et al. 2006 <https://doi.org/10.1111/j.0014-3820.2006.tb00514.x>`_).
+
+PhyKIT's ``rate_heterogeneity`` command (aliases: ``brownie``, ``rh``) implements
+this test, analogous to R's ``phytools::brownie.lite()``.
+
+|
+
+Step 0: Prepare data
+********************
+
+You need three input files:
+
+1. A phylogenetic tree in Newick format
+2. A tab-delimited trait file (``taxon<tab>value``)
+3. A tab-delimited regime file (``taxon<tab>regime_label``)
+
+We will use the test data included with PhyKIT: an eight-taxon mammal phylogeny,
+log-transformed body mass values, and regime assignments (aquatic vs. terrestrial). |br|
+
+|
+
+Step 1: Run the rate heterogeneity test
+****************************************
+
+.. code-block:: shell
+
+   phykit rh -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv
+
+This fits both single-rate and multi-rate BM models and reports the likelihood
+ratio test results.
+
+|
+
+Step 2: Add a parametric bootstrap
+***********************************
+
+For small sample sizes, the chi-squared approximation may be unreliable. Use the
+``-n`` flag to run a parametric bootstrap:
+
+.. code-block:: shell
+
+   phykit rh -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv -n 100 --seed 42
+
+The ``--seed`` flag ensures reproducibility.
+
+|
+
+Step 3: Generate a regime tree plot
+************************************
+
+Visualize which branches belong to which regime:
+
+.. code-block:: shell
+
+   phykit rh -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv --plot regime_tree.png
+
+|
+
+Step 4: Export as JSON
+**********************
+
+.. code-block:: shell
+
+   phykit rh -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv --json
+
+|
+
+Summary
+*******
+
+In this tutorial, we used the rate heterogeneity test to ask whether body mass
+evolves at different rates in aquatic vs. terrestrial mammals. The key steps
+were: (1) fitting single-rate and multi-rate BM models, (2) performing a
+likelihood ratio test, (3) optionally running a parametric bootstrap, and
+(4) visualizing regime assignments on the phylogeny.
+
+For methodological details, see
+`O'Meara et al. (2006) <https://doi.org/10.1111/j.0014-3820.2006.tb00514.x>`_.
+The R equivalent is ``phytools::brownie.lite()``
+(`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
+
+|
+
 .. |br| raw:: html
 
   <br/>

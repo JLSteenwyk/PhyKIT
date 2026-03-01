@@ -65,6 +65,7 @@ PhylogeneticPCA = _LazyServiceFactory("phykit.services.tree.phylogenetic_pca", "
 Phylomorphospace = _LazyServiceFactory("phykit.services.tree.phylomorphospace", "Phylomorphospace")
 PhylogeneticRegression = _LazyServiceFactory("phykit.services.tree.phylogenetic_regression", "PhylogeneticRegression")
 StochasticCharacterMap = _LazyServiceFactory("phykit.services.tree.stochastic_character_map", "StochasticCharacterMap")
+RateHeterogeneity = _LazyServiceFactory("phykit.services.tree.rate_heterogeneity", "RateHeterogeneity")
 PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "PolytomyTest")
 PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")
 PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")
