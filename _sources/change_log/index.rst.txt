@@ -7,20 +7,23 @@ Change log
 Major changes to PhyKIT are summarized here.
 
 **2.1.17**:
-Added phylogenetically-corrected dimensionality reduction and continuous trait
-evolution model comparison:
+Unified phylogenetic PCA and dimensionality reduction into a single
+``phylogenetic_ordination`` command, and added continuous trait evolution
+model comparison:
 
-* Added new ``phylogenetic_dimreduce`` command (aliases: ``phylo_dimreduce``,
-  ``dimreduce``, ``pdr``) for phylogenetically-corrected t-SNE or UMAP
-  dimensionality reduction on continuous multi-trait data
-* GLS-centering via phylogenetic VCV matrix (same as phylogenetic PCA)
-* Supports t-SNE and UMAP methods with auto-adjusted parameters for small
-  phylogenetic datasets
+* Merged ``phylogenetic_pca`` and ``phylogenetic_dimreduce`` into a unified
+  ``phylogenetic_ordination`` command (aliases: ``phylo_ordination``,
+  ``ordination``, ``ord``) supporting PCA, t-SNE, and UMAP via ``--method``
+* All previous aliases remain functional: ``phylo_pca``, ``phyl_pca``,
+  ``ppca``, ``phylo_dimreduce``, ``dimreduce``, ``pdr``
+* PCA's old ``-m/--method`` (BM/lambda) is now ``--correction``
+* GLS-centering via phylogenetic VCV matrix for all methods
+* Auto-adjusted parameters for small datasets (t-SNE/UMAP)
 * Optional Pagel's lambda correction via ``--correction lambda``
 * Optional scatter plot with phylogeny overlay (``--plot``, ``--plot-tree``)
 * JSON output support via ``--json``
-* Added new CLI entry points: ``pk_phylogenetic_dimreduce``,
-  ``pk_phylo_dimreduce``, ``pk_dimreduce``, ``pk_pdr``
+* Added new CLI entry points: ``pk_phylogenetic_ordination``,
+  ``pk_phylo_ordination``, ``pk_ordination``, ``pk_ord``
 
 Added continuous trait evolution model comparison:
 

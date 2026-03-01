@@ -81,20 +81,23 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
 <p><strong>2.1.17</strong>:
-Added phylogenetically-corrected dimensionality reduction and continuous trait
-evolution model comparison:</p>
+Unified phylogenetic PCA and dimensionality reduction into a single
+<code class="docutils literal notranslate"><span class="pre">phylogenetic_ordination</span></code> command, and added continuous trait evolution
+model comparison:</p>
 <ul class="simple">
-<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phylogenetic_dimreduce</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_dimreduce</span></code>,
-<code class="docutils literal notranslate"><span class="pre">dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pdr</span></code>) for phylogenetically-corrected t-SNE or UMAP
-dimensionality reduction on continuous multi-trait data</p></li>
-<li><p>GLS-centering via phylogenetic VCV matrix (same as phylogenetic PCA)</p></li>
-<li><p>Supports t-SNE and UMAP methods with auto-adjusted parameters for small
-phylogenetic datasets</p></li>
+<li><p>Merged <code class="docutils literal notranslate"><span class="pre">phylogenetic_pca</span></code> and <code class="docutils literal notranslate"><span class="pre">phylogenetic_dimreduce</span></code> into a unified
+<code class="docutils literal notranslate"><span class="pre">phylogenetic_ordination</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_ordination</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ordination</span></code>, <code class="docutils literal notranslate"><span class="pre">ord</span></code>) supporting PCA, t-SNE, and UMAP via <code class="docutils literal notranslate"><span class="pre">--method</span></code></p></li>
+<li><p>All previous aliases remain functional: <code class="docutils literal notranslate"><span class="pre">phylo_pca</span></code>, <code class="docutils literal notranslate"><span class="pre">phyl_pca</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ppca</span></code>, <code class="docutils literal notranslate"><span class="pre">phylo_dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pdr</span></code></p></li>
+<li><p>PCA's old <code class="docutils literal notranslate"><span class="pre">-m/--method</span></code> (BM/lambda) is now <code class="docutils literal notranslate"><span class="pre">--correction</span></code></p></li>
+<li><p>GLS-centering via phylogenetic VCV matrix for all methods</p></li>
+<li><p>Auto-adjusted parameters for small datasets (t-SNE/UMAP)</p></li>
 <li><p>Optional Pagel's lambda correction via <code class="docutils literal notranslate"><span class="pre">--correction</span> <span class="pre">lambda</span></code></p></li>
 <li><p>Optional scatter plot with phylogeny overlay (<code class="docutils literal notranslate"><span class="pre">--plot</span></code>, <code class="docutils literal notranslate"><span class="pre">--plot-tree</span></code>)</p></li>
 <li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
-<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_phylogenetic_dimreduce</span></code>,
-<code class="docutils literal notranslate"><span class="pre">pk_phylo_dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_pdr</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_phylogenetic_ordination</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_phylo_ordination</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_ordination</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_ord</span></code></p></li>
 </ul>
 <p>Added continuous trait evolution model comparison:</p>
 <ul class="simple">

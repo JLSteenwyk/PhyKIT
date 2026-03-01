@@ -97,8 +97,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#nearest-neighbor-interchange">Nearest neighbor interchange</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-pca">Phylogenetic PCA</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-dimensionality-reduction">Phylogenetic Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
@@ -1335,18 +1334,29 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 <div class="line"><br /></div>
 </div>
 </section>
-<section id="phylogenetic-pca">
-<h3>Phylogenetic PCA<a class="headerlink" href="#phylogenetic-pca" title="Link to this heading"></a></h3>
-<p>Function names: phylogenetic_pca; phylo_pca; phyl_pca; ppca <br/>
-Command line interface: pk_phylogenetic_pca; pk_phylo_pca; pk_phyl_pca; pk_ppca</p>
-<p>Perform phylogenetic PCA (Revell 2009) on continuous multi-trait data while
-accounting for phylogenetic non-independence among species.</p>
-<p>Standard PCA assumes independent observations, but species share evolutionary
-history. Phylogenetic PCA uses the phylogenetic variance-covariance matrix to
-compute GLS-based means and an evolutionary rate matrix, then performs
-eigendecomposition to extract principal components that reflect correlated
-trait evolution.</p>
-<p>Two methods are available:</p>
+<section id="phylogenetic-ordination">
+<h3>Phylogenetic Ordination<a class="headerlink" href="#phylogenetic-ordination" title="Link to this heading"></a></h3>
+<p>Function names: phylogenetic_ordination; phylo_ordination; ordination; ord;
+phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr <br/>
+Command line interface: pk_phylogenetic_ordination; pk_phylo_ordination;
+pk_ordination; pk_ord; pk_phylo_pca; pk_phyl_pca; pk_ppca;
+pk_phylo_dimreduce; pk_dimreduce; pk_pdr</p>
+<p>Perform phylogenetic ordination (PCA, t-SNE, or UMAP) on continuous multi-trait
+data while accounting for phylogenetic non-independence among species.</p>
+<p>All methods use GLS-centering via the phylogenetic variance-covariance matrix.
+For PCA, eigendecomposition of the evolutionary rate matrix is performed to
+extract principal components. For t-SNE and UMAP, nonlinear embedding is
+applied to the GLS-centered data.</p>
+<p>Three ordination methods are available via <code class="docutils literal notranslate"><span class="pre">--method</span></code>:</p>
+<ul class="simple">
+<li><p><strong>pca</strong> (default): phylogenetic PCA (Revell 2009). Performs eigendecomposition
+of the evolutionary rate matrix.</p></li>
+<li><p><strong>tsne</strong>: t-SNE embedding of the GLS-centered data. Perplexity is auto-set
+to <code class="docutils literal notranslate"><span class="pre">min(30,</span> <span class="pre">(n-1)/3)</span></code>; requires at least 4 taxa.</p></li>
+<li><p><strong>umap</strong>: UMAP embedding of the GLS-centered data. n_neighbors is auto-set
+to <code class="docutils literal notranslate"><span class="pre">min(15,</span> <span class="pre">n-1)</span></code>; requires at least 3 taxa.</p></li>
+</ul>
+<p>Two phylogenetic correction modes are available via <code class="docutils literal notranslate"><span class="pre">--correction</span></code>:</p>
 <ul class="simple">
 <li><p><strong>BM</strong> (default): assumes traits evolved under Brownian motion. The
 phylogenetic VCV matrix is used directly.</p></li>
@@ -1354,7 +1364,7 @@ phylogenetic VCV matrix is used directly.</p></li>
 traits by maximum likelihood, then rescales the off-diagonal elements of the
 VCV matrix. This accounts for deviations from Brownian motion.</p></li>
 </ul>
-<p>Two modes are available:</p>
+<p>For PCA, two modes are available via <code class="docutils literal notranslate"><span class="pre">--mode</span></code>:</p>
 <ul class="simple">
 <li><p><strong>cov</strong> (default): PCA on the evolutionary rate (covariance) matrix.</p></li>
 <li><p><strong>corr</strong>: PCA on the evolutionary rate correlation matrix, which
@@ -1365,10 +1375,11 @@ standardizes traits to equal variance before extracting components.</p></li>
 Lines starting with '#' are treated as comments. If the tree and trait file
 have different taxa, the intersection is used and warnings are printed to
 stderr.</p>
-<p>Output includes eigenvalues with proportion of variance explained, trait
-loadings, and taxon scores for each principal component. When <code class="docutils literal notranslate"><span class="pre">method=lambda</span></code>
+<p>PCA output includes eigenvalues with proportion of variance explained, trait
+loadings, and taxon scores for each principal component. t-SNE/UMAP output
+includes method parameters and embedding coordinates. When <code class="docutils literal notranslate"><span class="pre">correction=lambda</span></code>
 is used, the estimated lambda and log-likelihood are also reported.</p>
-<p>Results have been benchmarked against the R package
+<p>PCA results have been benchmarked against the R package
 <a class="reference external" href="https://cran.r-project.org/package=phytools">phytools</a>
 (<code class="docutils literal notranslate"><span class="pre">phyl.pca</span></code> function; Revell 2012). Eigenvalues, loadings, and scores match
 phytools across all method/mode combinations (BM+cov, BM+corr, lambda+cov,
@@ -1377,59 +1388,24 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_pca<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--mode<span class="w"> </span>&lt;mode&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_ordination<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>&lt;pca<span class="p">|</span>tsne<span class="p">|</span>umap&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--correction<span class="w"> </span>&lt;BM<span class="p">|</span>lambda&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--mode<span class="w"> </span>&lt;cov<span class="p">|</span>corr&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-components<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--perplexity<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-neighbors<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--min-dist<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-t/\-\-tree</em>: a tree file in Newick format <br/>
 <em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
-<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">BM</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: BM) <br/>
-<em>--mode</em>: PCA mode: <code class="docutils literal notranslate"><span class="pre">cov</span></code> or <code class="docutils literal notranslate"><span class="pre">corr</span></code> (default: cov) <br/>
-<em>--plot</em>: optional argument to save a PCA scatter plot (PC1 vs PC2) <br/>
-<em>--plot-tree</em>: overlay the phylogeny as a phylomorphospace in PC space (edges colored by distance from root) <br/>
-<em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
-<em>--plot-output</em>: output path for PCA plot (default: phylogenetic_pca_plot.png) <br/>
-<em>--json</em>: optional argument to print results as JSON</p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-</section>
-<section id="phylogenetic-dimensionality-reduction">
-<h3>Phylogenetic Dimensionality Reduction<a class="headerlink" href="#phylogenetic-dimensionality-reduction" title="Link to this heading"></a></h3>
-<p>Function names: phylogenetic_dimreduce; phylo_dimreduce; dimreduce; pdr <br/>
-Command line interface: pk_phylogenetic_dimreduce; pk_phylo_dimreduce; pk_dimreduce; pk_pdr</p>
-<p>Perform phylogenetically-corrected t-SNE or UMAP dimensionality reduction on
-continuous multi-trait data. The phylogenetic correction uses GLS-centering via
-the tree's variance-covariance matrix (identical to phylogenetic PCA), then
-applies standard t-SNE or UMAP to the centered data. This provides nonlinear
-dimensionality reduction methods as a complement to phylogenetic PCA.</p>
-<p>Both methods automatically adjust parameters for small phylogenetic datasets:</p>
-<ul class="simple">
-<li><p><strong>t-SNE</strong>: perplexity is set to <code class="docutils literal notranslate"><span class="pre">min(30,</span> <span class="pre">(n-1)/3)</span></code>; requires at least 4 taxa.</p></li>
-<li><p><strong>UMAP</strong>: n_neighbors is set to <code class="docutils literal notranslate"><span class="pre">min(15,</span> <span class="pre">n-1)</span></code>; requires at least 3 taxa.</p></li>
-</ul>
-<p>Two phylogenetic correction modes are available:</p>
-<ul class="simple">
-<li><p><strong>BM</strong> (default): assumes traits evolved under Brownian motion.</p></li>
-<li><p><strong>lambda</strong>: jointly estimates Pagel's lambda across all traits.</p></li>
-</ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_dimreduce<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>&lt;tsne<span class="p">|</span>umap&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--correction<span class="w"> </span>&lt;BM<span class="p">|</span>lambda&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-components<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--perplexity<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-neighbors<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--min-dist<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
-</pre></div>
-</div>
-<p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
-<em>--method</em>: dimensionality reduction method: <code class="docutils literal notranslate"><span class="pre">tsne</span></code> or <code class="docutils literal notranslate"><span class="pre">umap</span></code> (default: tsne) <br/>
+<em>--method</em>: ordination method: <code class="docutils literal notranslate"><span class="pre">pca</span></code>, <code class="docutils literal notranslate"><span class="pre">tsne</span></code>, or <code class="docutils literal notranslate"><span class="pre">umap</span></code> (default: pca) <br/>
 <em>--correction</em>: phylogenetic correction: <code class="docutils literal notranslate"><span class="pre">BM</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: BM) <br/>
-<em>--n-components</em>: number of embedding dimensions (default: 2) <br/>
+<em>--mode</em>: PCA mode: <code class="docutils literal notranslate"><span class="pre">cov</span></code> or <code class="docutils literal notranslate"><span class="pre">corr</span></code> (default: cov; PCA only) <br/>
+<em>--n-components</em>: number of embedding dimensions (default: 2; tsne/umap only) <br/>
 <em>--perplexity</em>: t-SNE perplexity (default: auto) <br/>
 <em>--n-neighbors</em>: UMAP n_neighbors (default: auto) <br/>
 <em>--min-dist</em>: UMAP min_dist (default: 0.1) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: optional argument to save a scatter plot <br/>
-<em>--plot-tree</em>: overlay phylogeny edges via ancestral reconstruction (edges colored by distance from root) <br/>
-<em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) <br/>
-<em>--plot-output</em>: output path for plot (default: phylo_dimreduce_plot.png) <br/>
+<em>--plot-tree</em>: overlay the phylogeny via ancestral reconstruction (edges colored by distance from root) <br/>
+<em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
+<em>--plot-output</em>: output path for plot (default: phylo_ordination_plot.png) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1441,7 +1417,7 @@ dimensionality reduction methods as a complement to phylogenetic PCA.</p>
 Command line interface: pk_phylomorphospace; pk_phylomorpho; pk_phmo</p>
 <p>Plot a phylomorphospace: two raw traits in trait space with the phylogeny
 overlaid via ML-reconstructed ancestral states at internal nodes. This differs
-from the <code class="docutils literal notranslate"><span class="pre">phylogenetic_pca</span> <span class="pre">--plot-tree</span></code> option, which plots in PC space;
+from the <code class="docutils literal notranslate"><span class="pre">phylogenetic_ordination</span> <span class="pre">--plot-tree</span></code> option, which plots in PC space;
 <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code> plots raw trait values directly on the x and y axes.</p>
 <p>Tree edges connect species through ML-reconstructed ancestral states and are
 colored by distance from root (coolwarm colormap with colorbar). Tip points
