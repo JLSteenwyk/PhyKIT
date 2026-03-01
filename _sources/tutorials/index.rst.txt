@@ -1925,6 +1925,140 @@ BIC, and the number of tips.
 
 |
 
+Multi-regime OU models (OUwie)
+##############################
+
+PhyKIT's ``ouwie`` command (aliases: ``fit_ouwie``, ``multi_regime_ou``)
+fits multi-regime Ornstein-Uhlenbeck models, analogous to R's OUwie
+package (Beaulieu et al. 2012). These models allow different clades to
+evolve toward different trait optima with potentially different rates.
+
+|
+
+**Step 1: Prepare input files**
+
+You need three files:
+
+1. **Newick tree file** -- a phylogenetic tree in Newick format. The tree
+   should include all taxa present in the trait and regime files.
+
+2. **Trait data file** -- a tab-delimited file with two columns: taxon name
+   and continuous trait value (no header row). Lines starting with ``#``
+   are treated as comments.
+
+   .. code-block:: none
+
+      dog	1.1
+      bear	1.9
+      raccoon	1.5
+      seal	1.8
+      sea_lion	1.8
+      cat	0.5
+      weasel	1.7
+      monkey	0.3
+
+3. **Regime data file** -- a tab-delimited file with two columns: taxon
+   name and discrete regime label (no header row). Regime labels can be
+   any string (e.g., ``aquatic`` / ``terrestrial``, ``herbivore`` /
+   ``carnivore``). Internal branch regimes are inferred via Fitch
+   parsimony.
+
+   .. code-block:: none
+
+      dog	terrestrial
+      bear	terrestrial
+      raccoon	terrestrial
+      seal	aquatic
+      sea_lion	aquatic
+      cat	terrestrial
+      weasel	terrestrial
+      monkey	terrestrial
+
+|
+
+**Step 2: Run OUwie with all models**
+
+.. code-block:: shell
+
+   phykit ouwie -t tree.nwk -d traits.tsv -r regimes.tsv
+
+This fits all 7 models (BM1, BMS, OU1, OUM, OUMV, OUMA, OUMVA) and
+prints a comparison table ranked by AICc.
+
+|
+
+**Step 3: Run with a subset of models**
+
+To compare only specific models, use ``--models``:
+
+.. code-block:: shell
+
+   phykit ouwie -t tree.nwk -d traits.tsv -r regimes.tsv --models BM1,OUM,OUMVA
+
+|
+
+**Step 4: Interpret the output**
+
+The output table includes:
+
+- **logLik** -- log-likelihood (higher = better fit)
+- **AICc** -- small-sample corrected AIC (lower = better)
+- **BIC** -- Bayesian Information Criterion (lower = better)
+- **k** -- number of free parameters
+- **AICc_w** -- AICc weight (relative support, sums to 1 across models)
+- **Params** -- estimated parameter values
+
+Key parameters:
+
+- **sigma2** -- diffusion rate (BM rate of evolution)
+- **alpha** -- strength of selection toward the optimum (OU pull-back
+  parameter; larger values = stronger constraint)
+- **theta** -- trait optimum for each regime (the value the trait is
+  "pulled" toward)
+- **z0** -- root ancestral state (BM models only)
+
+|
+
+**Step 5: Model selection guidance**
+
+- If **BM1** is best, a single Brownian motion rate explains the data.
+- If **BMS** is best, different regimes evolve at different rates but
+  without directional selection.
+- If **OUM** is best, different regimes have different trait optima --
+  the most common finding in comparative studies.
+- If **OUMV** or **OUMA** is best, regimes differ in both optima and
+  either rates (OUMV) or selection strength (OUMA).
+- If **OUMVA** is best, all parameters are regime-specific. Be cautious
+  with this model on small datasets as it has the most parameters (3R).
+
+Use AICc for small datasets (n < 40 * k) and BIC when you prefer a
+more conservative penalty on model complexity.
+
+|
+
+**Step 6: JSON output for downstream analysis**
+
+.. code-block:: shell
+
+   phykit ouwie -t tree.nwk -d traits.tsv -r regimes.tsv --json
+
+The JSON output includes all model results, the best model by AICc and
+BIC, regime labels, and parameter estimates. This is useful for
+programmatic downstream analysis or integration into pipelines.
+
+|
+
+**Comparison with R's OUwie**
+
+PhyKIT's OUwie implementation has been validated against R's OUwie
+package (v2.10). BM1 matches R exactly. OUMA and OUMVA agree within
+0.003-0.02 log-likelihood units. For OU1, OUM, and OUMV, PhyKIT's
+multi-interval optimizer finds better OU optima than R's default
+optimizer, which can get stuck at the BM boundary (alpha=0) on some
+datasets.
+
+|
+
 .. |br| raw:: html
 
   <br/>

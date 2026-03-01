@@ -147,6 +147,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization-commands">13. Visualization commands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">14. Comparing continuous trait evolution models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">Multi-regime OU models (OUwie)</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1880,6 +1881,131 @@ better-fitting models.</p>
 </div>
 <p>The JSON output includes all model results, the best model by AIC and
 BIC, and the number of tips.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="multi-regime-ou-models-ouwie">
+<h2>Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h2>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ouwie</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fit_ouwie</span></code>, <code class="docutils literal notranslate"><span class="pre">multi_regime_ou</span></code>)
+fits multi-regime Ornstein-Uhlenbeck models, analogous to R's OUwie
+package (Beaulieu et al. 2012). These models allow different clades to
+evolve toward different trait optima with potentially different rates.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 1: Prepare input files</strong></p>
+<p>You need three files:</p>
+<ol class="arabic">
+<li><p><strong>Newick tree file</strong> -- a phylogenetic tree in Newick format. The tree
+should include all taxa present in the trait and regime files.</p></li>
+<li><p><strong>Trait data file</strong> -- a tab-delimited file with two columns: taxon name
+and continuous trait value (no header row). Lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code>
+are treated as comments.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dog       1.1
+bear      1.9
+raccoon   1.5
+seal      1.8
+sea_lion  1.8
+cat       0.5
+weasel    1.7
+monkey    0.3
+</pre></div>
+</div>
+</li>
+<li><p><strong>Regime data file</strong> -- a tab-delimited file with two columns: taxon
+name and discrete regime label (no header row). Regime labels can be
+any string (e.g., <code class="docutils literal notranslate"><span class="pre">aquatic</span></code> / <code class="docutils literal notranslate"><span class="pre">terrestrial</span></code>, <code class="docutils literal notranslate"><span class="pre">herbivore</span></code> /
+<code class="docutils literal notranslate"><span class="pre">carnivore</span></code>). Internal branch regimes are inferred via Fitch
+parsimony.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dog       terrestrial
+bear      terrestrial
+raccoon   terrestrial
+seal      aquatic
+sea_lion  aquatic
+cat       terrestrial
+weasel    terrestrial
+monkey    terrestrial
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 2: Run OUwie with all models</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv
+</pre></div>
+</div>
+<p>This fits all 7 models (BM1, BMS, OU1, OUM, OUMV, OUMA, OUMVA) and
+prints a comparison table ranked by AICc.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Run with a subset of models</strong></p>
+<p>To compare only specific models, use <code class="docutils literal notranslate"><span class="pre">--models</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv<span class="w"> </span>--models<span class="w"> </span>BM1,OUM,OUMVA
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 4: Interpret the output</strong></p>
+<p>The output table includes:</p>
+<ul class="simple">
+<li><p><strong>logLik</strong> -- log-likelihood (higher = better fit)</p></li>
+<li><p><strong>AICc</strong> -- small-sample corrected AIC (lower = better)</p></li>
+<li><p><strong>BIC</strong> -- Bayesian Information Criterion (lower = better)</p></li>
+<li><p><strong>k</strong> -- number of free parameters</p></li>
+<li><p><strong>AICc_w</strong> -- AICc weight (relative support, sums to 1 across models)</p></li>
+<li><p><strong>Params</strong> -- estimated parameter values</p></li>
+</ul>
+<p>Key parameters:</p>
+<ul class="simple">
+<li><p><strong>sigma2</strong> -- diffusion rate (BM rate of evolution)</p></li>
+<li><p><strong>alpha</strong> -- strength of selection toward the optimum (OU pull-back
+parameter; larger values = stronger constraint)</p></li>
+<li><p><strong>theta</strong> -- trait optimum for each regime (the value the trait is
+&quot;pulled&quot; toward)</p></li>
+<li><p><strong>z0</strong> -- root ancestral state (BM models only)</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 5: Model selection guidance</strong></p>
+<ul class="simple">
+<li><p>If <strong>BM1</strong> is best, a single Brownian motion rate explains the data.</p></li>
+<li><p>If <strong>BMS</strong> is best, different regimes evolve at different rates but
+without directional selection.</p></li>
+<li><p>If <strong>OUM</strong> is best, different regimes have different trait optima --
+the most common finding in comparative studies.</p></li>
+<li><p>If <strong>OUMV</strong> or <strong>OUMA</strong> is best, regimes differ in both optima and
+either rates (OUMV) or selection strength (OUMA).</p></li>
+<li><p>If <strong>OUMVA</strong> is best, all parameters are regime-specific. Be cautious
+with this model on small datasets as it has the most parameters (3R).</p></li>
+</ul>
+<p>Use AICc for small datasets (n &lt; 40 * k) and BIC when you prefer a
+more conservative penalty on model complexity.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 6: JSON output for downstream analysis</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes all model results, the best model by AICc and
+BIC, regime labels, and parameter estimates. This is useful for
+programmatic downstream analysis or integration into pipelines.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Comparison with R's OUwie</strong></p>
+<p>PhyKIT's OUwie implementation has been validated against R's OUwie
+package (v2.10). BM1 matches R exactly. OUMA and OUMVA agree within
+0.003-0.02 log-likelihood units. For OU1, OUM, and OUMV, PhyKIT's
+multi-interval optimizer finds better OU optima than R's default
+optimizer, which can get stuck at the BM boundary (alpha=0) on some
+datasets.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

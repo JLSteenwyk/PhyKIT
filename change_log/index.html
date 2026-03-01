@@ -80,6 +80,90 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.19</strong>:
+Added multi-regime Ornstein-Uhlenbeck models (OUwie):</p>
+<ul>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">ouwie</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fit_ouwie</span></code>, <code class="docutils literal notranslate"><span class="pre">multi_regime_ou</span></code>)
+for fitting multi-regime OU models of continuous trait evolution</p></li>
+<li><p>Seven models: BM1, BMS, OU1, OUM, OUMV, OUMA, OUMVA
+(Beaulieu et al. 2012)</p></li>
+<li><p>Regime assignments to internal branches via Fitch parsimony</p></li>
+<li><p>Model comparison via AIC, AICc, BIC, and AICc weights</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_ouwie</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_fit_ouwie</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_multi_regime_ou</span></code></p></li>
+<li><p>Results validated against R 4.4.0 (<code class="docutils literal notranslate"><span class="pre">OUwie</span></code> v2.10 with
+<code class="docutils literal notranslate"><span class="pre">root.station=FALSE</span></code>):</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 13.3%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 13.3%" />
+<col style="width: 33.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>PhyKIT LL</p></th>
+<th class="head"><p>R OUwie LL</p></th>
+<th class="head"><p>Diff</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>BM1</p></td>
+<td><p>-11.5697</p></td>
+<td><p>-11.5697</p></td>
+<td><p>&lt; 1e-4</p></td>
+<td><p>Exact match</p></td>
+</tr>
+<tr class="row-odd"><td><p>BMS</p></td>
+<td><p>-11.2046</p></td>
+<td><p>-11.1357</p></td>
+<td><p>0.069</p></td>
+<td><p>Rooting artifact (R adds 1e-6 branch)</p></td>
+</tr>
+<tr class="row-even"><td><p>OU1</p></td>
+<td><p>-10.2890</p></td>
+<td><p>-11.5697</p></td>
+<td><p>1.281</p></td>
+<td><p>R stuck at alpha=0 (BM boundary)</p></td>
+</tr>
+<tr class="row-odd"><td><p>OUM</p></td>
+<td><p>-8.6297</p></td>
+<td><p>-10.9823</p></td>
+<td><p>2.353</p></td>
+<td><p>R stuck at alpha=0 (BM boundary)</p></td>
+</tr>
+<tr class="row-even"><td><p>OUMV</p></td>
+<td><p>-6.9859</p></td>
+<td><p>-10.2705</p></td>
+<td><p>3.285</p></td>
+<td><p>R stuck at alpha=0 (BM boundary)</p></td>
+</tr>
+<tr class="row-odd"><td><p>OUMA</p></td>
+<td><p>-6.9859</p></td>
+<td><p>-6.9892</p></td>
+<td><p>0.003</p></td>
+<td><p>Excellent match</p></td>
+</tr>
+<tr class="row-even"><td><p>OUMVA</p></td>
+<td><p>-6.9859</p></td>
+<td><p>-7.0063</p></td>
+<td><p>0.020</p></td>
+<td><p>Very close</p></td>
+</tr>
+</tbody>
+</table>
+<p>BM1 matches R to machine precision. OUMA and OUMVA agree within
+0.003-0.02 log-likelihood units. For OU1, OUM, and OUMV, R's OUwie
+optimizer converges to alpha=0 (the Brownian motion boundary),
+while PhyKIT's multi-interval search finds genuinely better OU optima
+with positive alpha. BMS shows a small difference (0.07 LL units)
+attributable to R's <code class="docutils literal notranslate"><span class="pre">resolve.root=TRUE</span></code> adding a 1e-6 length branch
+and optimizer convergence differences.</p>
+</li>
+</ul>
 <p><strong>2.1.18</strong>:
 Added phylogenetic generalized linear models for binary and count data:</p>
 <ul>

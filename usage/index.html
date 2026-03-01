@@ -104,6 +104,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-regime-ou-models-ouwie">Multi-regime OU models (OUwie)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
@@ -1657,6 +1658,80 @@ OU          alpha     0.0012     0.0385    1.6420    -11.568    29.14   2.00    
 
 Best model (AIC): BM
 Best model (BIC): BM
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="multi-regime-ou-models-ouwie">
+<h3>Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h3>
+<p>Function names: ouwie; fit_ouwie; multi_regime_ou <br/>
+Command line interface: pk_ouwie; pk_fit_ouwie; pk_multi_regime_ou</p>
+<p>Fit multi-regime Ornstein-Uhlenbeck models of continuous trait evolution,
+analogous to R's <code class="docutils literal notranslate"><span class="pre">OUwie</span></code> package (Beaulieu et al. 2012). Fits up to 7
+models and ranks them by AICc, BIC, and AICc weights. Regime assignments
+to internal branches are inferred via Fitch parsimony.</p>
+<p>Models:</p>
+<ul class="simple">
+<li><p><strong>BM1</strong> -- single-rate Brownian motion (2 params)</p></li>
+<li><p><strong>BMS</strong> -- multi-rate Brownian motion with per-regime sigma2 (R+1 params)</p></li>
+<li><p><strong>OU1</strong> -- single-regime Ornstein-Uhlenbeck (3 params)</p></li>
+<li><p><strong>OUM</strong> -- multi-regime OU with per-regime trait optima (R+2 params)</p></li>
+<li><p><strong>OUMV</strong> -- OUM + per-regime sigma2 (2R+1 params)</p></li>
+<li><p><strong>OUMA</strong> -- OUM + per-regime alpha (2R+1 params)</p></li>
+<li><p><strong>OUMVA</strong> -- all parameters regime-specific (3R params)</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-r<span class="w"> </span>&lt;regime_data&gt;<span class="w"> </span><span class="o">[</span>--models<span class="w"> </span>BM1,OUM,OUMVA<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-r/\-\-regime_data</em>: tab-delimited regime file (taxon&lt;tab&gt;regime_label) <br/>
+<em>--models</em>: comma-separated list of models to fit (default: all 7) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>The trait data file is a two-column tab-delimited file mapping taxon names
+to continuous trait values:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dog  1.1
+bear 1.9
+raccoon      1.5
+seal 1.8
+sea_lion     1.8
+cat  0.5
+weasel       1.7
+monkey       0.3
+</pre></div>
+</div>
+<p>The regime data file is a two-column tab-delimited file mapping taxon names
+to discrete regime labels (e.g., habitat, diet category):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dog  terrestrial
+bear terrestrial
+raccoon      terrestrial
+seal aquatic
+sea_lion     aquatic
+cat  terrestrial
+weasel       terrestrial
+monkey       terrestrial
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>OUwie Model Comparison
+======================
+Regimes: aquatic, terrestrial
+
+Model      logLik     AICc      BIC     k  AICc_w  Params
+-----  ----------  -------  -------  ----  ------  ------
+OUMVA     -6.9859  27.9717  29.5459     6  0.0040  alpha={aquatic:0.38, terrestrial:0.38}, sigma2={aquatic:0.01, terrestrial:0.05}, theta={aquatic:1.80, terrestrial:1.24}
+OUMA      -6.9859  27.9717  29.0119     5  0.0040  alpha={aquatic:0.38, terrestrial:0.38}, sigma2=0.0384, theta={aquatic:1.80, terrestrial:1.24}
+OUMV      -6.9859  27.9717  29.0119     5  0.0040  alpha=0.3849, sigma2={aquatic:0.01, terrestrial:0.05}, theta={aquatic:1.80, terrestrial:1.24}
+OUM       -8.6297  25.2594  26.3276     4  0.0488  alpha=0.0706, sigma2=0.0329, theta={aquatic:1.80, terrestrial:1.33}
+OU1      -10.2890  27.2447  28.0459     3  0.0063  alpha=0.0398, sigma2=0.0363, theta=1.64
+BMS      -11.2046  29.0759  29.8771     3  0.0024  sigma2={aquatic:0.01, terrestrial:0.05}, z0=1.64
+BM1      -11.5697  27.1393  27.6735     2  0.0073  sigma2=0.0384, z0=1.64
+
+Best model (AICc): OUM
+Best model (BIC): OUM
 </pre></div>
 </div>
 <div class="line-block">
