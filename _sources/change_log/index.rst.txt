@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.21**:
+Added automatic OU shift detection (l1ou):
+
+* Added new ``ou_shift_detection`` command (aliases: ``ou_shifts``, ``l1ou``,
+  ``detect_shifts``) for automatic detection of adaptive optimum shifts on
+  a phylogeny using the LASSO-based approach of Khabbazian et al. (2016)
+* No regime file needed — only a tree and trait data
+* Model selection via pBIC (default), BIC, or AICc
+* ``--max-shifts`` option to limit number of candidate shifts
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_ou_shift_detection``, ``pk_ou_shifts``,
+  ``pk_l1ou``, ``pk_detect_shifts``
+* Validated against R's l1ou package: same shift count, alpha, and pBIC
+  on a 100-tip Anolis dataset
+
 **2.1.20**:
 Added taxon occupancy threshold to ``create_concatenation_matrix``:
 

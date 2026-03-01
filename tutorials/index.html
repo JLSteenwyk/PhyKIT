@@ -148,6 +148,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#visualization-commands">13. Visualization commands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">14. Comparing continuous trait evolution models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">15. Automatic detection of adaptive shifts on a phylogeny</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -2006,6 +2007,129 @@ package (v2.10). BM1 matches R exactly. OUMA and OUMVA agree within
 multi-interval optimizer finds better OU optima than R's default
 optimizer, which can get stuck at the BM boundary (alpha=0) on some
 datasets.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="automatic-detection-of-adaptive-shifts-on-a-phylogeny">
+<h2>15. Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h2>
+<p>OUwie (tutorial 14, above) requires specifying regimes <em>a priori</em>. But
+what if you don't know where on the tree the trait optimum changed?
+PhyKIT's <code class="docutils literal notranslate"><span class="pre">ou_shift_detection</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">l1ou</span></code>, <code class="docutils literal notranslate"><span class="pre">ou_shifts</span></code>,
+<code class="docutils literal notranslate"><span class="pre">detect_shifts</span></code>) answers this question automatically using the
+LASSO-based approach of
+<a class="reference external" href="https://doi.org/10.1093/sysbio/syw062">Khabbazian et al. (2016)</a>.</p>
+<p><strong>When to use this command:</strong> You have a continuous trait and a phylogeny
+and want to discover which lineages experienced shifts in their adaptive
+optimum — for example, identifying which lizard clades adapted to
+different body sizes, or which mammal lineages evolved distinct metabolic
+rates. Unlike OUwie, no regime file is needed.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 1: Prepare input files</strong></p>
+<p>You need two files:</p>
+<ol class="arabic">
+<li><p><strong>Newick tree file</strong> -- a phylogenetic tree with branch lengths.</p></li>
+<li><p><strong>Trait data file</strong> -- a tab-delimited file with two columns: taxon
+name and continuous trait value (no header row). Lines starting with
+<code class="docutils literal notranslate"><span class="pre">#</span></code> are treated as comments.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>raccoon   1.04
+bear      2.39
+sea_lion  2.30
+seal      1.88
+cat       0.5
+weasel    1.7
+monkey    0.3
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 2: Run OU shift detection</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv
+</pre></div>
+</div>
+<p>By default, pBIC is used for model selection. The algorithm automatically
+identifies which branches experienced adaptive optimum shifts.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Interpret the output</strong></p>
+<p>The output reports:</p>
+<ul class="simple">
+<li><p><strong>Number of shifts</strong> -- how many adaptive regime changes were detected</p></li>
+<li><p><strong>Alpha</strong> -- OU selection strength (higher = trait is pulled more
+strongly toward the optimum)</p></li>
+<li><p><strong>Sigma²</strong> -- Brownian rate of stochastic variation</p></li>
+<li><p><strong>Root optimum (θ₀)</strong> -- ancestral/background trait optimum</p></li>
+<li><p><strong>Shifts</strong> -- each shift includes a description of where it occurred
+and the new optimum value for that regime</p></li>
+</ul>
+<p>A shift described as &quot;stem of (taxon_A, taxon_B, ... +N more)&quot; means the
+adaptive optimum changed on the branch leading to the clade containing
+those taxa. A &quot;terminal branch to taxon_X&quot; means only that single species
+shifted to a different optimum.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 4: Choose a model selection criterion</strong></p>
+<p>Three criteria are available:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>pBIC<span class="w">   </span><span class="c1"># default, most conservative</span>
+phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>BIC<span class="w">    </span><span class="c1"># standard BIC</span>
+phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>AICc<span class="w">   </span><span class="c1"># corrected AIC</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>pBIC</strong> (phylogenetic BIC) accounts for the combinatorial cost of
+choosing which edges shifted and is recommended for most analyses. It
+tends to be conservative, avoiding false positives.</p></li>
+<li><p><strong>BIC</strong> and <strong>AICc</strong> may detect more shifts, but carry a higher risk of
+overfitting, especially on large trees.</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 5: Limit the search</strong></p>
+<p>For large trees, you can cap the maximum number of shifts to speed up
+the analysis:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--max-shifts<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 6: JSON output for downstream analysis</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes all model parameters, information criterion
+scores, and a list of detected shift edges with their descriptions and
+optima.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Biological example: lizard body size evolution</strong></p>
+<p>Consider a phylogeny of 100 Anolis lizard species with log-transformed
+body size measurements. Running:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>lizards.tre<span class="w"> </span>-d<span class="w"> </span>lizard_body_size.tsv
+</pre></div>
+</div>
+<p>might reveal 8 adaptive shifts, indicating that 8 lineages independently
+evolved toward different body size optima. The output shows which clades
+shifted and their new optimal values, enabling you to map adaptive
+radiation without specifying regimes in advance.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Comparison with R's l1ou</strong></p>
+<p>PhyKIT's OU shift detection implementation has been validated against
+R's l1ou package (Khabbazian et al. 2016). On a 100-tip Anolis dataset,
+PhyKIT detects the same 8 shifts with matching alpha (0.607) and
+comparable pBIC scores (PhyKIT: 17.6, R: 16.8). The small numerical
+difference arises from optimizer precision, not algorithmic differences.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

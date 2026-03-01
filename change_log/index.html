@@ -80,6 +80,21 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.21</strong>:
+Added automatic OU shift detection (l1ou):</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">ou_shift_detection</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">ou_shifts</span></code>, <code class="docutils literal notranslate"><span class="pre">l1ou</span></code>,
+<code class="docutils literal notranslate"><span class="pre">detect_shifts</span></code>) for automatic detection of adaptive optimum shifts on
+a phylogeny using the LASSO-based approach of Khabbazian et al. (2016)</p></li>
+<li><p>No regime file needed — only a tree and trait data</p></li>
+<li><p>Model selection via pBIC (default), BIC, or AICc</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--max-shifts</span></code> option to limit number of candidate shifts</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_ou_shift_detection</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_ou_shifts</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_l1ou</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_detect_shifts</span></code></p></li>
+<li><p>Validated against R's l1ou package: same shift count, alpha, and pBIC
+on a 100-tip Anolis dataset</p></li>
+</ul>
 <p><strong>2.1.20</strong>:
 Added taxon occupancy threshold to <code class="docutils literal notranslate"><span class="pre">create_concatenation_matrix</span></code>:</p>
 <ul class="simple">

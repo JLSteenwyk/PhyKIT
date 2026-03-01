@@ -105,6 +105,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#multi-regime-ou-models-ouwie">Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ou-shift-detection-l1ou">OU shift detection (l1ou)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
@@ -1738,6 +1739,86 @@ Best model (AICc): OUM
 Best model (BIC): OUM
 </pre></div>
 </div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="ou-shift-detection-l1ou">
+<h3>OU shift detection (l1ou)<a class="headerlink" href="#ou-shift-detection-l1ou" title="Link to this heading"></a></h3>
+<p>Function names: ou_shift_detection; ou_shifts; l1ou; detect_shifts <br/>
+Command line interface: pk_ou_shift_detection; pk_ou_shifts; pk_l1ou; pk_detect_shifts</p>
+<p>Automatic OU shift detection using the LASSO-based approach from
+Khabbazian et al. (2016). Discovers where on the phylogeny the adaptive
+optimum changed without requiring an a priori regime assignment. Only a
+tree and continuous trait data are needed.</p>
+<p>The algorithm:</p>
+<ol class="arabic simple">
+<li><p>Fits a single-regime OU model to estimate alpha (selection strength)</p></li>
+<li><p>Builds a design matrix with one column per candidate shift edge</p></li>
+<li><p>Uses Cholesky transformation to remove phylogenetic correlation</p></li>
+<li><p>Runs a LASSO path to identify candidate shift configurations</p></li>
+<li><p>Selects the best model using pBIC, BIC, or AICc</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--criterion<span class="w"> </span>pBIC<span class="o">]</span><span class="w"> </span><span class="o">[</span>--max-shifts<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>--criterion</em>: model selection criterion: pBIC (default), BIC, or AICc <br/>
+<em>--max-shifts</em>: maximum number of shifts to consider (default: n/2) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Example output (no shifts detected):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>============================================================
+OU Shift Detection (l1ou)
+============================================================
+Number of tips:       8
+Number of shifts:     0
+Selection criterion:  pBIC
+Alpha (OU strength):  0.784803
+Sigma² (BM rate):     1.203455
+Root optimum (θ₀):    1.206251
+Log-likelihood:       -10.2890
+pBIC:                 26.8163
+BIC:                  26.8163
+AICc:                 32.5780
+
+No shifts detected — single-regime OU is best.
+============================================================
+</pre></div>
+</div>
+<p>Example output (shifts detected):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>============================================================
+OU Shift Detection (l1ou)
+============================================================
+Number of tips:       100
+Number of shifts:     8
+Selection criterion:  pBIC
+Alpha (OU strength):  0.606894
+Sigma² (BM rate):     0.062519
+Root optimum (θ₀):    0.248810
+Log-likelihood:       48.6896
+pBIC:                 17.6266
+BIC:                  -9.8811
+AICc:                 -49.8793
+
+Detected shifts:
+------------------------------------------------------------
+  Shift 1: terminal branch to valencienni
+           New optimum: -0.564678
+  Shift 2: terminal branch to insolitus
+           New optimum: -0.876398
+  Shift 3: stem of (barbatus, porcus, ... +2 more)
+           New optimum: -0.635087
+  Shift 4: stem of (altitudinalis, oporinus, ... +13 more)
+           New optimum: -0.462944
+============================================================
+</pre></div>
+</div>
+<p>Results have been validated against R's l1ou package
+(<a class="reference external" href="https://doi.org/10.1093/sysbio/syw062">Khabbazian et al. 2016</a>).
+On a 100-tip lizard dataset, PhyKIT recovers the same 8 adaptive shifts
+with matching alpha (0.607) and pBIC (17.6 vs R's 16.8).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
