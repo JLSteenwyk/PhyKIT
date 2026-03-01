@@ -1372,37 +1372,53 @@ a multi-trait file with a header row (use ``-c`` to select a column).
 
 |
 
-Step 1: Run fast ancestral reconstruction
-******************************************
+Step 1: Run fast ancestral reconstruction with confidence intervals
+*******************************************************************
 
-Estimate ancestral body masses using the fast (pruning) method:
+Estimate ancestral body masses using the fast (two-pass Felsenstein) method
+with 95% confidence intervals:
 
 .. code-block:: shell
 
    phykit ancestral_state_reconstruction \
        -t tests/sample_files/tree_simple.tre \
-       -d tests/sample_files/tree_simple_traits.tsv
-
-|
-
-Step 2: Run with confidence intervals
-***************************************
-
-Add the ``--ci`` flag for 95% confidence intervals:
-
-.. code-block:: shell
-
-   phykit asr \
-       -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_traits.tsv \
        --ci
 
+.. code-block:: text
+
+   Ancestral State Reconstruction
+
+   Method: fast (Felsenstein's contrasts)
+   Trait: trait
+   Number of tips: 8
+
+   Log-likelihood: -11.6038
+   Sigma-squared (BM rate): 0.043893
+
+   Ancestral estimates:
+     Node         Descendants    Estimate                  95% CI
+     N1 (root)              8      1.6447        [0.8937, 2.3957]
+     N2                     2      1.7012        [0.9697, 2.4328]
+     N3                     5      1.4565        [0.6387, 2.2742]
+     N4                     2      1.8091        [0.9757, 2.6425]
+     N5                     3      1.2566        [0.3555, 2.1577]
+     N6                     2      0.9895       [-0.5654, 2.5443]
+
+**Interpretation.** The root ancestor (N1) is estimated to have had a log body
+mass of 1.64 (95% CI: 0.89 -- 2.40). Node N6 (the ancestor of cat and monkey)
+has the widest confidence interval [-0.57, 2.54], reflecting the long branch
+lengths separating these taxa. Node N4 (sea_lion + seal ancestor) has the
+highest estimate (1.81), consistent with these being the largest-bodied members
+of that clade.
+
 |
 
-Step 3: Use the VCV-based ML method
+Step 2: Use the VCV-based ML method
 *************************************
 
-For exact conditional confidence intervals, use the ``ml`` method:
+For exact conditional confidence intervals computed from the full
+phylogenetic variance-covariance matrix, use the ``ml`` method:
 
 .. code-block:: shell
 
@@ -1411,13 +1427,20 @@ For exact conditional confidence intervals, use the ``ml`` method:
        -d tests/sample_files/tree_simple_traits.tsv \
        -m ml --ci
 
+Both methods produce identical point estimates. The ``ml`` method computes CIs
+from the conditional distribution of internal node values given the observed
+tips, while ``fast`` uses the pruning-based variance. For bifurcating trees
+the CIs are identical; for polytomies they may differ slightly.
+
 |
 
-Step 4: Generate a contMap plot
+Step 3: Generate a contMap plot
 ********************************
 
-Visualize trait values mapped onto the phylogeny with a continuous
-color gradient:
+The ``--plot`` option produces a contMap visualization analogous to R's
+``phytools::contMap()``. Branches are colored by a continuous gradient
+representing the interpolated trait value from the parent's estimate to the
+child's estimate:
 
 .. code-block:: shell
 
@@ -1426,9 +1449,35 @@ color gradient:
        -d tests/sample_files/tree_simple_traits.tsv \
        --plot contmap.png
 
+.. image:: ../_static/img/asr_contmap.png
+   :align: center
+   :width: 80%
+
 |
 
-Step 5: Use a multi-trait file
+**Interpretation.** The contMap shows how log body mass varies across the
+phylogeny. Warm colors (red) indicate higher body mass values, while cool
+colors (blue) indicate lower values. The gradient along each branch reflects
+the linear interpolation between the parent and child ancestral estimates.
+The bear + raccoon clade (top) shows uniformly warm colors consistent with
+high body mass, while the weasel lineage transitions toward cooler colors
+reflecting its much lower body mass (-0.30). The cat + monkey clade shows
+moderate values transitioning from the ancestral estimate.
+
+The contMap can be combined with ``--ci`` and ``-m ml`` to use a specific
+method for the underlying reconstruction, or with ``-c`` to select a trait
+from a multi-trait file:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       -c brain_size --plot brain_contmap.png --ci
+
+|
+
+Step 4: Use a multi-trait file
 *******************************
 
 When your data file contains multiple traits with a header row, use
@@ -1443,7 +1492,7 @@ When your data file contains multiple traits with a header row, use
 
 |
 
-Step 6: Export results as JSON
+Step 5: Export results as JSON
 *******************************
 
 For downstream scripting, results can be exported as JSON:
@@ -1466,13 +1515,16 @@ Summary
 
 In this tutorial, we used ancestral state reconstruction to estimate
 ancestral body mass values for 8 mammal species. The key steps were:
-(1) running the fast method for quick estimates, (2) adding confidence
-intervals, (3) using the full ML method for exact CIs, (4) generating
-contMap plots, (5) using multi-trait files, and (6) exporting to JSON.
+(1) running the fast method with confidence intervals to see which
+ancestors had the highest or lowest estimated trait values, (2) using
+the full ML method for exact conditional CIs, (3) generating contMap
+plots to visualize how trait values change across the phylogeny, (4)
+using multi-trait files, and (5) exporting to JSON.
 
 The ``fast`` method is recommended for large trees due to its O(n) time
 complexity, while the ``ml`` method provides exact conditional confidence
-intervals at O(n^3) cost.
+intervals at O(n^3) cost. Both methods produce identical point estimates
+that match R's ``phytools::fastAnc()`` to machine precision.
 
 The R equivalents are ``phytools::fastAnc()`` for the fast method,
 ``ape::ace(type="ML")`` for the ML method, and ``phytools::contMap()``
