@@ -2105,6 +2105,43 @@ lengths |br|
 
 |
 
+Consensus network
+#################
+Function names: consensus_network; consnet; splitnet; splits_network |br|
+Command line interface: pk_consensus_network; pk_consnet; pk_splitnet; pk_splits_network
+
+Extract bipartition splits from a collection of gene trees and summarize
+conflicting phylogenetic signal. Counts how frequently each non-trivial
+bipartition appears across input trees and filters by a minimum frequency
+threshold. Optionally draws a circular splits network diagram.
+
+Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.
+
+.. code-block:: shell
+
+   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>] [--json]
+
+Options: |br|
+*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*--threshold*: minimum split frequency to include, between 0 and 1 (default: ``0.1``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--plot-output*: output filename for the circular splits network plot (optional) |br|
+*--json*: optional argument to print results as JSON
+
+When ``--plot-output`` is specified, a circular splits network diagram is produced.
+Taxa are arranged at equal angles around a circle. Each split is drawn as a chord
+connecting the boundary points between the two sides of the bipartition. Chord
+thickness and opacity scale with split frequency — thicker, darker lines indicate
+splits supported by more gene trees.
+
+.. image:: ../_static/img/consensus_network_example.png
+   :align: center
+   :width: 80%
+
+|
+
 Consensus tree
 ##############
 Function names: consensus_tree; consensus; ctree |br|

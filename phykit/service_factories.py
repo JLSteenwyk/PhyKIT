@@ -49,6 +49,7 @@ BipartitionSupportStats = _LazyServiceFactory("phykit.services.tree.bipartition_
 BranchLengthMultiplier = _LazyServiceFactory("phykit.services.tree.branch_length_multiplier", "BranchLengthMultiplier")
 CollapseBranches = _LazyServiceFactory("phykit.services.tree.collapse_branches", "CollapseBranches")
 CovaryingEvolutionaryRates = _LazyServiceFactory("phykit.services.tree.covarying_evolutionary_rates", "CovaryingEvolutionaryRates")
+ConsensusNetwork = _LazyServiceFactory("phykit.services.tree.consensus_network", "ConsensusNetwork")
 ConsensusTree = _LazyServiceFactory("phykit.services.tree.consensus_tree", "ConsensusTree")
 DVMC = _LazyServiceFactory("phykit.services.tree.dvmc", "DVMC")
 EvolutionaryRate = _LazyServiceFactory("phykit.services.tree.evolutionary_rate", "EvolutionaryRate")

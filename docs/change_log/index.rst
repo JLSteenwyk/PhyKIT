@@ -6,6 +6,20 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.22**:
+Added consensus splits network for visualizing conflicting phylogenetic signal:
+
+* Added new ``consensus_network`` command (aliases: ``consnet``, ``splitnet``,
+  ``splits_network``) for extracting bipartition splits from gene trees and
+  summarizing conflicting phylogenetic signal
+* Counts frequency of each non-trivial bipartition across input trees
+* ``--threshold`` option to filter splits by minimum frequency (default: 0.1)
+* ``--plot-output`` option to generate a circular splits network diagram
+* ``--missing-taxa shared`` support for trees with different taxon sets
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_consensus_network``, ``pk_consnet``,
+  ``pk_splitnet``, ``pk_splits_network``
+
 **2.1.21**:
 Added automatic OU shift detection (l1ou):
 

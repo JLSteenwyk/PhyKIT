@@ -171,6 +171,9 @@ class Phykit:
                     - collapses branches according to bipartition support
                 covarying_evolutionary_rates (alias: cover)
                     - calculates correlation in the evolutionary rate of two trees
+                consensus_network (alias: consnet; splitnet; splits_network)
+                    - extract bipartition splits from gene trees and visualize
+                      conflicting phylogenetic signal as a splits network
                 consensus_tree (alias: consensus; ctree)
                     - infer strict or majority-rule consensus from a tree collection
                 degree_of_violation_of_a_molecular_clock (alias: dvmc)
@@ -3554,6 +3557,86 @@ class Phykit:
         _run_service(parser, argv, ConsensusTree)
 
     @staticmethod
+    def consensus_network(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Extract bipartition splits from a collection of gene trees
+                and summarize conflicting phylogenetic signal.
+
+                Counts how frequently each non-trivial bipartition appears
+                across input trees and filters by a minimum frequency
+                threshold.  Optionally draws a circular splits network
+                diagram.
+
+                Input can be either:
+                1) a file with one Newick tree per line, or
+                2) a file with one tree-file path per line.
+
+                Aliases:
+                  consensus_network, consnet, splitnet, splits_network
+                Command line interfaces:
+                  pk_consensus_network, pk_consnet, pk_splitnet,
+                  pk_splits_network
+
+                Usage:
+                phykit consensus_network -t/--trees <trees>
+                    [--threshold 0.1]
+                    [--missing-taxa error|shared]
+                    [--plot-output <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--trees                 file containing trees or
+                                           tree paths
+
+                --threshold                minimum split frequency
+                                           to include (0-1)
+                                           (Default: 0.1)
+
+                --missing-taxa             how to handle mismatched
+                                           taxa across trees:
+                                           error or shared
+                                           (Default: error)
+
+                --plot-output              output filename for the
+                                           circular splits network
+                                           plot (optional)
+
+                --json                     optional argument to output
+                                           results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--trees", type=str, required=True, help=SUPPRESS)
+        parser.add_argument(
+            "--threshold",
+            type=float,
+            default=0.1,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--missing-taxa",
+            type=str,
+            choices=["error", "shared"],
+            default="error",
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, ConsensusNetwork)
+
+    @staticmethod
     def prune_tree(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4569,6 +4652,10 @@ def polytomy_test(argv=None):
 
 def print_tree(argv=None):
     Phykit.print_tree(sys.argv[1:])
+
+
+def consensus_network(argv=None):
+    Phykit.consensus_network(sys.argv[1:])
 
 
 def consensus_tree(argv=None):
