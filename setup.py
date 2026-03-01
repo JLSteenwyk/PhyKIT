@@ -24,6 +24,7 @@ REQUIRES = [
     "numpy>=1.24.0",
     "scipy>=1.11.3",
     "scikit-learn>=1.4.2",
+    "umap-learn>=0.5.0",
     "tqdm>=4.65.0"
 ]
 
@@ -142,6 +143,10 @@ setup(
             "pk_phylo_pca = phykit.phykit:phylogenetic_pca",
             "pk_phyl_pca = phykit.phykit:phylogenetic_pca",
             "pk_ppca = phykit.phykit:phylogenetic_pca",
+            "pk_phylogenetic_dimreduce = phykit.phykit:phylogenetic_dimreduce",
+            "pk_phylo_dimreduce = phykit.phykit:phylogenetic_dimreduce",
+            "pk_dimreduce = phykit.phykit:phylogenetic_dimreduce",
+            "pk_pdr = phykit.phykit:phylogenetic_dimreduce",
             "pk_phylomorphospace = phykit.phykit:phylomorphospace",
             "pk_phylomorpho = phykit.phykit:phylomorphospace",
             "pk_phmo = phykit.phykit:phylomorphospace",

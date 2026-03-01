@@ -199,6 +199,9 @@ class Phykit:
                 phylogenetic_pca (alias: phylo_pca; phyl_pca; ppca)
                     - performs phylogenetic PCA (Revell 2009) on continuous
                       multi-trait data
+                phylogenetic_dimreduce (alias: phylo_dimreduce; dimreduce; pdr)
+                    - phylogenetically-corrected t-SNE or UMAP dimensionality
+                      reduction on continuous multi-trait data
                 phylomorphospace (alias: phylomorpho; phmo)
                     - plot raw traits with phylogeny overlaid via ancestral
                       reconstruction
@@ -2412,6 +2415,159 @@ class Phykit:
         _run_service(parser, argv, PhylogeneticPCA)
 
     @staticmethod
+    def phylogenetic_dimreduce(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Perform phylogenetically-corrected t-SNE or UMAP
+                dimensionality reduction on continuous multi-trait data.
+
+                Phylogenetic correction uses GLS-centering via the tree's
+                variance-covariance matrix (identical to phylogenetic PCA),
+                then applies t-SNE or UMAP to the centered data.
+
+                Input is a phylogenetic tree and a tab-delimited
+                multi-trait file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Aliases:
+                  phylogenetic_dimreduce, phylo_dimreduce, dimreduce, pdr
+                Command line interfaces:
+                  pk_phylogenetic_dimreduce, pk_phylo_dimreduce, pk_dimreduce, pk_pdr
+
+                Usage:
+                phykit phylogenetic_dimreduce -t <tree> -d <trait_data> [--method <tsne|umap>] [--correction <BM|lambda>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited multi-trait file
+                                            with header row
+
+                --method                    dimensionality reduction method:
+                                            tsne or umap (default: tsne)
+
+                --correction                phylogenetic correction: BM or
+                                            lambda (default: BM)
+
+                --n-components              number of embedding dimensions
+                                            (default: 2)
+
+                --perplexity                t-SNE perplexity (default: auto)
+
+                --n-neighbors               UMAP n_neighbors (default: auto)
+
+                --min-dist                  UMAP min_dist (default: 0.1)
+
+                --seed                      random seed for reproducibility
+
+                --plot                      optional argument to save a
+                                            scatter plot
+
+                --plot-tree                 overlay phylogeny edges via
+                                            ancestral reconstruction
+
+                --color-by                  color tip points by trait;
+                                            specify a column name from the
+                                            multi-trait file or a separate
+                                            tab-delimited file (taxon<tab>value)
+
+                --plot-output               output path for plot
+                                            (default: phylo_dimreduce_plot.png)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--method",
+            type=str,
+            required=False,
+            default="tsne",
+            choices=["tsne", "umap"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--correction",
+            type=str,
+            required=False,
+            default="BM",
+            choices=["BM", "lambda"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--n-components",
+            type=int,
+            required=False,
+            default=2,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--perplexity",
+            type=float,
+            required=False,
+            default=None,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--n-neighbors",
+            type=int,
+            required=False,
+            default=None,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--min-dist",
+            type=float,
+            required=False,
+            default=0.1,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--seed",
+            type=int,
+            required=False,
+            default=None,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument("--plot-tree", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--color-by",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="phylo_dimreduce_plot.png",
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhylogeneticDimreduce)
+
+    @staticmethod
     def phylomorphospace(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4162,6 +4318,10 @@ def phylogenetic_signal(argv=None):
 
 def phylogenetic_pca(argv=None):
     Phykit.phylogenetic_pca(sys.argv[1:])
+
+
+def phylogenetic_dimreduce(argv=None):
+    Phykit.phylogenetic_dimreduce(sys.argv[1:])
 
 
 def phylomorphospace(argv=None):
