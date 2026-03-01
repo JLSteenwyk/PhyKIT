@@ -217,6 +217,9 @@ class Phykit:
                 rate_heterogeneity (alias: brownie; rh)
                     - test for rate heterogeneity across tree regimes
                       using multi-rate Brownian motion (O'Meara et al. 2006)
+                fit_continuous (alias: fitcontinuous; fc)
+                    - compare continuous trait evolution models
+                      (BM, OU, EB, Lambda, Delta, Kappa, White)
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -2987,6 +2990,64 @@ class Phykit:
         _run_service(parser, argv, RateHeterogeneity)
 
     @staticmethod
+    def fit_continuous(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compare models of continuous trait evolution on a phylogeny.
+
+                Fits up to 7 models (BM, OU, EB, Lambda, Delta, Kappa, White)
+                and ranks them by AIC, BIC, and AIC weights — analogous to
+                R's geiger::fitContinuous().
+
+                Models:
+                  BM      — Brownian motion (baseline)
+                  OU      — Ornstein-Uhlenbeck (stabilizing selection)
+                  EB      — Early Burst (Harmon et al. 2010)
+                  Lambda  — Pagel's lambda (phylogenetic signal)
+                  Delta   — Pagel's delta (tempo of evolution)
+                  Kappa   — Pagel's kappa (punctuational vs gradual)
+                  White   — White noise (no phylogenetic signal)
+
+                Aliases:
+                  fit_continuous, fitcontinuous, fc
+                Command line interfaces:
+                  pk_fit_continuous, pk_fitcontinuous, pk_fc
+
+                Usage:
+                phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (taxon<tab>value)
+
+                --models                    comma-separated list of models
+                                            to fit (default: all 7)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--models", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, FitContinuous)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4133,6 +4194,10 @@ def cophylo(argv=None):
 
 def rate_heterogeneity(argv=None):
     Phykit.rate_heterogeneity(sys.argv[1:])
+
+
+def fit_continuous(argv=None):
+    Phykit.fit_continuous(sys.argv[1:])
 
 
 def polytomy_test(argv=None):

@@ -1663,6 +1663,70 @@ For methodological details, see
 
 |
 
+13. Comparing continuous trait evolution models
+###############################################
+
+A common analysis in comparative methods is determining which model of
+continuous trait evolution best explains observed trait variation on a
+phylogeny. PhyKIT's ``fit_continuous`` command (aliases: ``fitcontinuous``,
+``fc``) fits up to 7 models and ranks them by AIC, BIC, and AIC weights,
+analogous to R's ``geiger::fitContinuous()``.
+
+|
+
+**Step 0: Prepare data**
+
+You need a Newick tree file and a tab-delimited trait file
+(``taxon<tab>value``). For example:
+
+.. code-block:: text
+
+   raccoon	1.04
+   bear	2.39
+   sea_lion	2.30
+   seal	1.88
+
+|
+
+**Step 1: Run fit_continuous with all models**
+
+.. code-block:: shell
+
+   phykit fit_continuous -t tree.nwk -d traits.tsv
+
+This fits BM, OU, EB, Lambda, Delta, Kappa, and White models and prints
+a ranked table.
+
+|
+
+**Step 2: Interpret the AIC/BIC table**
+
+The output table shows each model's parameter estimate, sigma-squared,
+ancestral state (z0), log-likelihood, AIC, delta-AIC, AIC weight, BIC,
+and delta-BIC. Lower AIC/BIC values and higher AIC weights indicate
+better-fitting models.
+
+|
+
+**Step 3: Run with a subset of models**
+
+.. code-block:: shell
+
+   phykit fc -t tree.nwk -d traits.tsv --models BM,OU,Lambda
+
+|
+
+**Step 4: JSON output for downstream analysis**
+
+.. code-block:: shell
+
+   phykit fc -t tree.nwk -d traits.tsv --json
+
+The JSON output includes all model results, the best model by AIC and
+BIC, and the number of tips.
+
+|
+
 .. |br| raw:: html
 
   <br/>
