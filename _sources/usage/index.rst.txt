@@ -1632,6 +1632,116 @@ Options: |br|
 
 |
 
+Continuous trait mapping (contMap)
+##################################
+Function names: cont_map; contmap; cmap |br|
+Command line interface: pk_cont_map; pk_contmap; pk_cmap
+
+Plot a phylogram with branches colored by continuous trait values
+(analogous to R's ``phytools::contMap()``). Ancestral states are
+estimated via maximum-likelihood (two-pass Felsenstein algorithm)
+and mapped onto branches using a color gradient (coolwarm colormap).
+
+.. code-block:: shell
+
+   phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/contmap_example.png
+   :align: center
+   :width: 80%
+
+|
+
+Density map
+###########
+Function names: density_map; densitymap; dmap |br|
+Command line interface: pk_density_map; pk_densitymap; pk_dmap
+
+Plot a phylogram with branches colored by posterior probabilities of
+discrete character states from stochastic character mapping (analogous
+to R's ``phytools::densityMap()``). Runs N simulations of stochastic
+character mapping internally and, for each point along each branch,
+computes the fraction of simulations in each state.
+
+.. code-block:: shell
+
+   phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>state) |br|
+*-c/\\-\\-trait*: column name of the trait to map |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*-n/\\-\\-nsim*: number of stochastic mapping simulations (default: 100) |br|
+*--seed*: random seed for reproducibility |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/densitymap_example.png
+   :align: center
+   :width: 80%
+
+|
+
+Phenogram (traitgram)
+#####################
+Function names: phenogram; traitgram; tg |br|
+Command line interface: pk_phenogram; pk_traitgram; pk_tg
+
+Plot a phenogram (traitgram) showing trait evolution along a phylogeny
+(analogous to R's ``phytools::phenogram()``). The X-axis represents
+distance from the root and the Y-axis represents trait values.
+Ancestral states are reconstructed via maximum-likelihood.
+
+.. code-block:: shell
+
+   phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/phenogram_example.png
+   :align: center
+   :width: 80%
+
+|
+
+Cophylogenetic plot (tanglegram)
+################################
+Function names: cophylo; tanglegram; tangle |br|
+Command line interface: pk_cophylo; pk_tanglegram; pk_tangle
+
+Plot a cophylogenetic tanglegram of two phylogenies (analogous to R's
+``phytools::cophylo()``). Draws two trees facing each other with
+connecting lines between matching taxa. By default, taxa are matched
+by identical tip names. Internal nodes of tree2 are rotated to minimize
+line crossings.
+
+.. code-block:: shell
+
+   phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree1*: first tree file in Newick format |br|
+*-t2/\\-\\-tree2*: second tree file in Newick format |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*-m/\\-\\-mapping*: optional tab-delimited mapping file (taxon1<tab>taxon2) |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/cophylo_example.png
+   :align: center
+   :width: 80%
+
+|
+
 Polytomy testing
 ################
 Function names: polytomy_test; polyt_test; polyt; ptt |br|

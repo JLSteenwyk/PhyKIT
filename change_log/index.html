@@ -81,7 +81,26 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
 <p><strong>2.1.16</strong>:
-Added rate heterogeneity test:</p>
+Added visualization commands and rate heterogeneity test:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">cont_map</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">contmap</span></code>, <code class="docutils literal notranslate"><span class="pre">cmap</span></code>)
+for plotting a phylogram with branches colored by continuous trait
+values via ML ancestral reconstruction (analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>)</p></li>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">density_map</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">densitymap</span></code>, <code class="docutils literal notranslate"><span class="pre">dmap</span></code>)
+for plotting posterior probabilities of discrete character states
+along phylogeny branches from stochastic character mapping (analogous
+to R's <code class="docutils literal notranslate"><span class="pre">phytools::densityMap()</span></code>)</p></li>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phenogram</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">traitgram</span></code>, <code class="docutils literal notranslate"><span class="pre">tg</span></code>)
+for plotting a phenogram (traitgram) showing trait evolution along a
+phylogeny with X-axis = distance from root, Y-axis = trait value
+(analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::phenogram()</span></code>)</p></li>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">cophylo</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">tanglegram</span></code>, <code class="docutils literal notranslate"><span class="pre">tangle</span></code>)
+for plotting cophylogenetic tanglegrams of two phylogenies with
+connecting lines between matching taxa and node rotation to minimize
+crossings (analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::cophylo()</span></code>)</p></li>
+</ul>
+<p>Added rate heterogeneity test:</p>
 <ul>
 <li><p>Added new <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">brownie</span></code>, <code class="docutils literal notranslate"><span class="pre">rh</span></code>)
 for testing whether continuous trait evolution rates differ across

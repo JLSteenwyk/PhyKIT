@@ -128,7 +128,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#id37">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">9. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">11. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#id38">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-run-the-rate-heterogeneity-test">Step 1: Run the rate heterogeneity test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-add-a-parametric-bootstrap">Step 2: Add a parametric bootstrap</a></li>
@@ -137,6 +137,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#id39">Summary</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#visualization-commands">12. Visualization commands</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1531,7 +1532,7 @@ for the contMap visualization.</p>
 </section>
 </section>
 <section id="testing-for-rate-heterogeneity-across-phylogenetic-regimes">
-<h2>9. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
+<h2>11. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
 <p>A key question in comparative biology is whether the rate of trait evolution differs
 across lineages — for example, whether aquatic mammals evolve body size at a different
 rate than terrestrial mammals. Rate heterogeneity tests address this by fitting
@@ -1613,6 +1614,37 @@ The R equivalent is <code class="docutils literal notranslate"><span class="pre"
 <div class="line"><br /></div>
 </div>
 </section>
+</section>
+<section id="visualization-commands">
+<h2>12. Visualization commands<a class="headerlink" href="#visualization-commands" title="Link to this heading"></a></h2>
+<p>PhyKIT provides several phylogenetic visualization commands analogous to
+R's <code class="docutils literal notranslate"><span class="pre">phytools</span></code> plotting functions. All produce publication-quality plots
+saved at 300 DPI.</p>
+<p><strong>contMap</strong> — continuous trait mapping onto a phylogram:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-o<span class="w"> </span>contmap.png
+</pre></div>
+</div>
+<p><strong>densityMap</strong> — posterior state probabilities from stochastic character mapping:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>density_map<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-c<span class="w"> </span>diet<span class="w"> </span>-o<span class="w"> </span>densitymap.png<span class="w"> </span>-n<span class="w"> </span><span class="m">100</span>
+</pre></div>
+</div>
+<p><strong>phenogram (traitgram)</strong> — trait values vs. distance from root:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-o<span class="w"> </span>phenogram.png
+</pre></div>
+</div>
+<p><strong>cophylo (tanglegram)</strong> — two trees facing each other with connecting lines:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cophylo<span class="w"> </span>-t<span class="w"> </span>tree1.nwk<span class="w"> </span>-t2<span class="w"> </span>tree2.nwk<span class="w"> </span>-o<span class="w"> </span>tanglegram.png
+</pre></div>
+</div>
+<p>All visualization commands support <code class="docutils literal notranslate"><span class="pre">--json</span></code> output. The <code class="docutils literal notranslate"><span class="pre">density_map</span></code> command
+also supports <code class="docutils literal notranslate"><span class="pre">--seed</span></code> for reproducibility and <code class="docutils literal notranslate"><span class="pre">-n</span></code> to set the number of
+stochastic mapping simulations. The <code class="docutils literal notranslate"><span class="pre">cophylo</span></code> command supports <code class="docutils literal notranslate"><span class="pre">-m/--mapping</span></code>
+for a tab-delimited file matching taxa between trees with different tip names.</p>
+<p>For methodological details, see
+<a class="reference external" href="https://doi.org/10.1111/j.2041-210X.2011.00169.x">Revell (2012)</a>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 </section>
 </section>
 

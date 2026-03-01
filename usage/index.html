@@ -102,6 +102,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cophylogenetic-plot-tanglegram">Cophylogenetic plot (tanglegram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
@@ -1543,6 +1547,100 @@ regime can be generated using <code class="docutils literal notranslate"><span c
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="continuous-trait-mapping-contmap">
+<h3>Continuous trait mapping (contMap)<a class="headerlink" href="#continuous-trait-mapping-contmap" title="Link to this heading"></a></h3>
+<p>Function names: cont_map; contmap; cmap <br/>
+Command line interface: pk_cont_map; pk_contmap; pk_cmap</p>
+<p>Plot a phylogram with branches colored by continuous trait values
+(analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>). Ancestral states are
+estimated via maximum-likelihood (two-pass Felsenstein algorithm)
+and mapped onto branches using a color gradient (coolwarm colormap).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-o/\-\-output</em>: output plot file path (required) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<a class="reference internal image-reference" href="../_images/contmap_example.png"><img alt="../_images/contmap_example.png" class="align-center" src="../_images/contmap_example.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="density-map">
+<h3>Density map<a class="headerlink" href="#density-map" title="Link to this heading"></a></h3>
+<p>Function names: density_map; densitymap; dmap <br/>
+Command line interface: pk_density_map; pk_densitymap; pk_dmap</p>
+<p>Plot a phylogram with branches colored by posterior probabilities of
+discrete character states from stochastic character mapping (analogous
+to R's <code class="docutils literal notranslate"><span class="pre">phytools::densityMap()</span></code>). Runs N simulations of stochastic
+character mapping internally and, for each point along each branch,
+computes the fraction of simulations in each state.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>density_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;state) <br/>
+<em>-c/\-\-trait</em>: column name of the trait to map <br/>
+<em>-o/\-\-output</em>: output plot file path (required) <br/>
+<em>-n/\-\-nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<a class="reference internal image-reference" href="../_images/densitymap_example.png"><img alt="../_images/densitymap_example.png" class="align-center" src="../_images/densitymap_example.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phenogram-traitgram">
+<h3>Phenogram (traitgram)<a class="headerlink" href="#phenogram-traitgram" title="Link to this heading"></a></h3>
+<p>Function names: phenogram; traitgram; tg <br/>
+Command line interface: pk_phenogram; pk_traitgram; pk_tg</p>
+<p>Plot a phenogram (traitgram) showing trait evolution along a phylogeny
+(analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::phenogram()</span></code>). The X-axis represents
+distance from the root and the Y-axis represents trait values.
+Ancestral states are reconstructed via maximum-likelihood.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-o/\-\-output</em>: output plot file path (required) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<a class="reference internal image-reference" href="../_images/phenogram_example.png"><img alt="../_images/phenogram_example.png" class="align-center" src="../_images/phenogram_example.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="cophylogenetic-plot-tanglegram">
+<h3>Cophylogenetic plot (tanglegram)<a class="headerlink" href="#cophylogenetic-plot-tanglegram" title="Link to this heading"></a></h3>
+<p>Function names: cophylo; tanglegram; tangle <br/>
+Command line interface: pk_cophylo; pk_tanglegram; pk_tangle</p>
+<p>Plot a cophylogenetic tanglegram of two phylogenies (analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::cophylo()</span></code>). Draws two trees facing each other with
+connecting lines between matching taxa. By default, taxa are matched
+by identical tip names. Internal nodes of tree2 are rotated to minimize
+line crossings.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cophylo<span class="w"> </span>-t<span class="w"> </span>&lt;tree1&gt;<span class="w"> </span>-t2<span class="w"> </span>&lt;tree2&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;mapping&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree1</em>: first tree file in Newick format <br/>
+<em>-t2/\-\-tree2</em>: second tree file in Newick format <br/>
+<em>-o/\-\-output</em>: output plot file path (required) <br/>
+<em>-m/\-\-mapping</em>: optional tab-delimited mapping file (taxon1&lt;tab&gt;taxon2) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<a class="reference internal image-reference" href="../_images/cophylo_example.png"><img alt="../_images/cophylo_example.png" class="align-center" src="../_images/cophylo_example.png" style="width: 80%;" />
+</a>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

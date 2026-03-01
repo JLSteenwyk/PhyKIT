@@ -1532,8 +1532,8 @@ for the contMap visualization.
 
 |
 
-9. Testing for rate heterogeneity across phylogenetic regimes
-#############################################################
+11. Testing for rate heterogeneity across phylogenetic regimes
+##############################################################
 
 A key question in comparative biology is whether the rate of trait evolution differs
 across lineages — for example, whether aquatic mammals evolve body size at a different
@@ -1619,6 +1619,47 @@ For methodological details, see
 `O'Meara et al. (2006) <https://doi.org/10.1111/j.0014-3820.2006.tb00514.x>`_.
 The R equivalent is ``phytools::brownie.lite()``
 (`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
+
+|
+
+12. Visualization commands
+##########################
+
+PhyKIT provides several phylogenetic visualization commands analogous to
+R's ``phytools`` plotting functions. All produce publication-quality plots
+saved at 300 DPI.
+
+**contMap** — continuous trait mapping onto a phylogram:
+
+.. code-block:: shell
+
+   phykit cont_map -t tree.nwk -d traits.tsv -o contmap.png
+
+**densityMap** — posterior state probabilities from stochastic character mapping:
+
+.. code-block:: shell
+
+   phykit density_map -t tree.nwk -d traits.tsv -c diet -o densitymap.png -n 100
+
+**phenogram (traitgram)** — trait values vs. distance from root:
+
+.. code-block:: shell
+
+   phykit phenogram -t tree.nwk -d traits.tsv -o phenogram.png
+
+**cophylo (tanglegram)** — two trees facing each other with connecting lines:
+
+.. code-block:: shell
+
+   phykit cophylo -t tree1.nwk -t2 tree2.nwk -o tanglegram.png
+
+All visualization commands support ``--json`` output. The ``density_map`` command
+also supports ``--seed`` for reproducibility and ``-n`` to set the number of
+stochastic mapping simulations. The ``cophylo`` command supports ``-m/--mapping``
+for a tab-delimited file matching taxa between trees with different tip names.
+
+For methodological details, see
+`Revell (2012) <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_.
 
 |
 
