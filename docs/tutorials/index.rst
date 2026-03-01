@@ -2196,6 +2196,99 @@ difference arises from optimizer precision, not algorithmic differences.
 
 |
 
+16. Visualizing conflicting phylogenetic signal with splits networks
+#####################################################################
+
+When analyzing phylogenomic datasets, different genes often support
+conflicting tree topologies. PhyKIT's ``consensus_network`` command
+(aliases: ``consnet``, ``splitnet``, ``splits_network``) extracts
+bipartition splits from gene trees, counts their frequency, and
+optionally visualizes them as a circular splits network.
+
+|
+
+**Step 1: Prepare a gene-tree file**
+
+Create a file with one Newick tree per line (or one tree-file path per line):
+
+.. code-block:: none
+
+   ((A,B),((C,D),(E,F)));
+   ((A,B),(C,(D,(E,F))));
+   ((A,B),((C,D),(E,F)));
+   (((B,C),A),(D,(E,F)));
+
+|
+
+**Step 2: Run the consensus network analysis**
+
+.. code-block:: shell
+
+   phykit consnet -t gene_trees.nwk
+
+This prints a summary of all splits found above the default threshold (0.1):
+
+.. code-block:: none
+
+   Number of input trees: 4
+   Number of taxa: 6
+   Threshold: 0.1
+   Total unique splits: 3
+   Splits above threshold: 3
+   ---
+   {E, F}   4/4   1.0000
+   {A, B}   3/4   0.7500
+   {C, D}   2/4   0.5000
+
+|
+
+**Step 3: Adjust the threshold**
+
+To show only splits present in at least 50% of gene trees:
+
+.. code-block:: shell
+
+   phykit consnet -t gene_trees.nwk --threshold 0.5
+
+|
+
+**Step 4: Generate a circular splits network plot**
+
+.. code-block:: shell
+
+   phykit consnet -t gene_trees.nwk --plot-output network.png
+
+This creates a circular diagram where taxa are placed at equal angles.
+Chords connect boundary points of each split; thicker/more opaque chords
+indicate higher-frequency splits.
+
+.. image:: ../_static/img/consensus_network_example.png
+   :align: center
+   :width: 80%
+
+|
+
+**Step 5: JSON output**
+
+For programmatic downstream analysis:
+
+.. code-block:: shell
+
+   phykit consnet -t gene_trees.nwk --json
+
+|
+
+**Handling trees with different taxon sets**
+
+If some gene trees are missing taxa, use ``--missing-taxa shared`` to
+prune all trees to their intersection before extracting splits:
+
+.. code-block:: shell
+
+   phykit consnet -t gene_trees.nwk --missing-taxa shared
+
+|
+
 .. |br| raw:: html
 
   <br/>

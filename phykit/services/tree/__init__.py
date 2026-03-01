@@ -6,6 +6,7 @@ _EXPORTS = {
     "BranchLengthMultiplier": "branch_length_multiplier",
     "CollapseBranches": "collapse_branches",
     "CovaryingEvolutionaryRates": "covarying_evolutionary_rates",
+    "ConsensusNetwork": "consensus_network",
     "ConsensusTree": "consensus_tree",
     "DVMC": "dvmc",
     "EvolutionaryRate": "evolutionary_rate",
