@@ -6,6 +6,97 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.18**:
+Added phylogenetic generalized linear models for binary and count data:
+
+* Added new ``phylogenetic_glm`` command (aliases: ``phylo_glm``, ``pglm``)
+  for fitting phylogenetic GLMs
+* Binomial family: logistic regression via Maximum Penalized Likelihood
+  Estimation (logistic_MPLE; Ives & Garland 2010) with Firth's penalty.
+  Log-likelihood computed via pruning algorithm for a 2-state CTMC on the
+  phylogeny. Fisher information computed via O(n) tree-based three-point
+  algorithm.
+* Poisson family: Poisson regression via Generalized Estimating Equations
+  (poisson_GEE; Paradis & Claude 2002) with overdispersion estimation
+* Jointly estimates phylogenetic signal parameter alpha (binomial) or
+  overdispersion phi (Poisson)
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_phylogenetic_glm``, ``pk_phylo_glm``,
+  ``pk_pglm``
+* Results validated against R 4.4.0 (``phylolm::phyloglm()``):
+
+  Poisson GEE (``count_trait ~ body_mass``):
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 30 20 20 20
+
+     * - Parameter
+       - PhyKIT
+       - R ``phyloglm``
+       - Difference
+     * - Intercept
+       - 0.6741
+       - 0.6741
+       - < 1e-4
+     * - body_mass
+       - 0.5968
+       - 0.5968
+       - < 1e-4
+     * - SE(Intercept)
+       - 0.1678
+       - 0.1678
+       - < 1e-4
+     * - SE(body_mass)
+       - 0.0877
+       - 0.0877
+       - < 1e-4
+     * - Overdispersion (phi)
+       - 0.1730
+       - 0.1730
+       - < 1e-4
+
+  Poisson GEE matches R to within numerical precision.
+
+  Logistic MPLE (``binary_trait ~ body_mass``):
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 30 20 20 20
+
+     * - Parameter
+       - PhyKIT
+       - R ``phyloglm``
+       - Difference
+     * - Intercept
+       - -2.2374
+       - -2.1210
+       - 0.116
+     * - body_mass
+       - 2.2432
+       - 2.2158
+       - 0.027
+     * - alpha
+       - 0.0215
+       - 0.0274
+       - 0.006
+     * - Log-likelihood
+       - -1.833
+       - -1.870
+       - 0.037
+     * - AIC
+       - 9.665
+       - 9.740
+       - 0.075
+
+  Logistic MPLE coefficients agree to within ~5%. Small differences arise
+  from how R's ``ape::branching.times()`` computes node heights for
+  non-ultrametric trees, which slightly affects the Ives & Garland branch
+  length transformation for the Fisher information penalty. Both
+  implementations use the same 2-state CTMC pruning log-likelihood
+  (verified to match R exactly at -1.870 when evaluated at R's optimal
+  parameters).
+
 **2.1.17**:
 Unified phylogenetic PCA and dimensionality reduction into a single
 ``phylogenetic_ordination`` command, and added continuous trait evolution
