@@ -1081,7 +1081,87 @@ The R equivalent is ``phytools::phyl.pca()``
 
 |
 
-8. Visualizing trait evolution with phylomorphospace
+8. Phylogenetic dimensionality reduction with t-SNE and UMAP
+#############################################################
+
+While phylogenetic PCA provides a linear ordination of multivariate trait data,
+nonlinear methods like t-SNE and UMAP can reveal additional structure in high-dimensional
+trait spaces. PhyKIT's ``phylogenetic_dimreduce`` command (aliases: ``phylo_dimreduce``,
+``dimreduce``, ``pdr``) applies phylogenetically-corrected t-SNE or UMAP: the data are
+first GLS-centered using the phylogenetic variance-covariance matrix (the same correction
+used in phylogenetic PCA), then a nonlinear embedding is computed.
+
+**Hypothetical study question.** Suppose we have measured body mass, brain size, and
+longevity for eight mammal species and want to explore nonlinear patterns in multivariate
+trait space while accounting for phylogenetic non-independence. Are there clusters or
+gradients that linear PCA might miss?
+
+.. centered::
+   Download test data:
+   :download:`tree <https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple.tre>` and
+   :download:`traits <https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple_multi_traits.tsv>` |br|
+
+Running t-SNE (default method):
+
+.. code-block:: shell
+
+   phykit dimreduce \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --seed 42
+
+.. code-block:: text
+
+   Method: tsne
+   Correction: BM
+   Perplexity: 2.33
+
+   Embedding:
+   	Dim1	Dim2
+   bear	...	...
+   cat	...	...
+   ...
+
+Running UMAP:
+
+.. code-block:: shell
+
+   phykit dimreduce \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --method umap --seed 42
+
+Using Pagel's lambda correction:
+
+.. code-block:: shell
+
+   phykit dimreduce \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --correction lambda --seed 42 --json
+
+Generating a scatter plot with phylogeny overlay:
+
+.. code-block:: shell
+
+   phykit dimreduce \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --plot --plot-tree --color-by body_mass --seed 42
+
+|
+
+Summary
+*******
+
+In this tutorial, we used phylogenetically-corrected t-SNE and UMAP to explore nonlinear
+structure in multivariate trait data while accounting for shared evolutionary history.
+Both methods automatically adjust their parameters for small phylogenetic datasets
+(t-SNE perplexity and UMAP n_neighbors).
+
+|
+
+9. Visualizing trait evolution with phylomorphospace
 ####################################################
 
 Phylomorphospace plots overlay the phylogeny onto a two-dimensional trait space, connecting
@@ -1181,8 +1261,8 @@ The R equivalent is ``phytools::phylomorphospace()``
 
 |
 
-9. Phylogenetic regression (PGLS)
-##################################
+10. Phylogenetic regression (PGLS)
+###################################
 
 Standard linear regression assumes that data points are independent and identically
 distributed. In comparative biology, species are not independent because they share
@@ -1338,8 +1418,8 @@ The R equivalent is ``caper::pgls()`` or ``nlme::gls()`` with ``ape::corBrownian
 
 |
 
-10. Reconstructing ancestral trait values and mapping them onto a phylogeny
-###########################################################################
+11. Reconstructing ancestral trait values and mapping them onto a phylogeny
+############################################################################
 
 A common question in comparative biology is: what were the trait values of
 ancestral species? Ancestral state reconstruction (ASR) uses the trait values
@@ -1532,8 +1612,8 @@ for the contMap visualization.
 
 |
 
-11. Testing for rate heterogeneity across phylogenetic regimes
-##############################################################
+12. Testing for rate heterogeneity across phylogenetic regimes
+###############################################################
 
 A key question in comparative biology is whether the rate of trait evolution differs
 across lineages — for example, whether aquatic mammals evolve body size at a different
@@ -1622,8 +1702,8 @@ The R equivalent is ``phytools::brownie.lite()``
 
 |
 
-12. Visualization commands
-##########################
+13. Visualization commands
+###########################
 
 PhyKIT provides several phylogenetic visualization commands analogous to
 R's ``phytools`` plotting functions. All produce publication-quality plots
@@ -1663,8 +1743,8 @@ For methodological details, see
 
 |
 
-13. Comparing continuous trait evolution models
-###############################################
+14. Comparing continuous trait evolution models
+################################################
 
 A common analysis in comparative methods is determining which model of
 continuous trait evolution best explains observed trait variation on a

@@ -7,6 +7,21 @@ Change log
 Major changes to PhyKIT are summarized here.
 
 **2.1.17**:
+Added phylogenetically-corrected dimensionality reduction and continuous trait
+evolution model comparison:
+
+* Added new ``phylogenetic_dimreduce`` command (aliases: ``phylo_dimreduce``,
+  ``dimreduce``, ``pdr``) for phylogenetically-corrected t-SNE or UMAP
+  dimensionality reduction on continuous multi-trait data
+* GLS-centering via phylogenetic VCV matrix (same as phylogenetic PCA)
+* Supports t-SNE and UMAP methods with auto-adjusted parameters for small
+  phylogenetic datasets
+* Optional Pagel's lambda correction via ``--correction lambda``
+* Optional scatter plot with phylogeny overlay (``--plot``, ``--plot-tree``)
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_phylogenetic_dimreduce``,
+  ``pk_phylo_dimreduce``, ``pk_dimreduce``, ``pk_pdr``
+
 Added continuous trait evolution model comparison:
 
 * Added new ``fit_continuous`` command (aliases: ``fitcontinuous``, ``fc``)

@@ -62,6 +62,7 @@ NearestNeighborInterchange = _LazyServiceFactory("phykit.services.tree.nearest_n
 PatristicDistances = _LazyServiceFactory("phykit.services.tree.patristic_distances", "PatristicDistances")
 PhylogeneticSignal = _LazyServiceFactory("phykit.services.tree.phylogenetic_signal", "PhylogeneticSignal")
 PhylogeneticPCA = _LazyServiceFactory("phykit.services.tree.phylogenetic_pca", "PhylogeneticPCA")
+PhylogeneticDimreduce = _LazyServiceFactory("phykit.services.tree.phylogenetic_dimreduce", "PhylogeneticDimreduce")
 Phylomorphospace = _LazyServiceFactory("phykit.services.tree.phylomorphospace", "Phylomorphospace")
 PhylogeneticRegression = _LazyServiceFactory("phykit.services.tree.phylogenetic_regression", "PhylogeneticRegression")
 StochasticCharacterMap = _LazyServiceFactory("phykit.services.tree.stochastic_character_map", "StochasticCharacterMap")
