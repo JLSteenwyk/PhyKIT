@@ -1087,6 +1087,11 @@ Running t-SNE:
        -d tests/sample_files/tree_simple_multi_traits.tsv \
        --method tsne --seed 42
 
+.. image:: ../_static/docs_img/phylogenetic_tsne_plot.png
+   :align: center
+
+|
+
 Running UMAP:
 
 .. code-block:: shell
@@ -1095,6 +1100,11 @@ Running UMAP:
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
        --method umap --seed 42
+
+.. image:: ../_static/docs_img/phylogenetic_umap_plot.png
+   :align: center
+
+|
 
 Using Pagel's lambda correction with t-SNE:
 

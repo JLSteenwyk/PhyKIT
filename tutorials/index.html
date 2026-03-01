@@ -1127,12 +1127,20 @@ is applied before the nonlinear embedding.</p>
 <span class="w">    </span>--method<span class="w"> </span>tsne<span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span>
 </pre></div>
 </div>
+<img alt="../_images/phylogenetic_tsne_plot.png" class="align-center" src="../_images/phylogenetic_tsne_plot.png" />
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 <p>Running UMAP:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ordination<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--method<span class="w"> </span>umap<span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span>
 </pre></div>
+</div>
+<img alt="../_images/phylogenetic_umap_plot.png" class="align-center" src="../_images/phylogenetic_umap_plot.png" />
+<div class="line-block">
+<div class="line"><br /></div>
 </div>
 <p>Using Pagel's lambda correction with t-SNE:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ordination<span class="w"> </span><span class="se">\</span>

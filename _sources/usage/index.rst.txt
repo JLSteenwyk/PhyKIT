@@ -1445,6 +1445,16 @@ lambda+corr) within numerical tolerance (1e-4).
 
 |
 
+.. image:: ../_static/docs_img/phylogenetic_tsne_plot.png
+   :align: center
+
+|
+
+.. image:: ../_static/docs_img/phylogenetic_umap_plot.png
+   :align: center
+
+|
+
 .. code-block:: shell
 
    phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
