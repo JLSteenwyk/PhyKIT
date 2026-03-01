@@ -495,7 +495,7 @@ matrices.</p>
 1) A fasta file with '.fa' appended to the prefix specified with the -p/\-\-prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--plot-occupancy<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-occupancy<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -503,6 +503,10 @@ matrices.</p>
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
 <em>-p/\-\-prefix</em>: prefix of output files <br/>
+<em>--threshold</em>: minimum fraction of informative (non-gap, non-ambiguous) sites across the
+concatenated alignment for a taxon to be included. Taxa whose effective occupancy falls
+below this value are excluded from the output. Set to 0 to disable filtering
+(default: 0). <br/>
 <em>--plot-occupancy</em>: optional argument to output an occupancy map figure where
 x-axis shows concatenated positions with gene boundaries and y-axis shows taxa
 sorted by total occupancy. Colors denote represented characters, gap/ambiguous

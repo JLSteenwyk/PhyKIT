@@ -80,6 +80,17 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.20</strong>:
+Added taxon occupancy threshold to <code class="docutils literal notranslate"><span class="pre">create_concatenation_matrix</span></code>:</p>
+<ul class="simple">
+<li><p>New <code class="docutils literal notranslate"><span class="pre">--threshold</span></code> option (default 0) excludes taxa whose effective
+representation (fraction of informative, non-gap/non-ambiguous characters)
+falls below the specified value</p></li>
+<li><p>Filtering is disabled by default; set <code class="docutils literal notranslate"><span class="pre">--threshold</span> <span class="pre">0.5</span></code> (for example)
+to exclude poorly represented taxa</p></li>
+<li><p>Excluded taxa are reported to stderr with their effective occupancy</p></li>
+<li><p>JSON output includes <code class="docutils literal notranslate"><span class="pre">threshold</span></code> and <code class="docutils literal notranslate"><span class="pre">excluded_taxa</span></code> fields</p></li>
+</ul>
 <p><strong>2.1.19</strong>:
 Added multi-regime Ornstein-Uhlenbeck models (OUwie):</p>
 <ul>
