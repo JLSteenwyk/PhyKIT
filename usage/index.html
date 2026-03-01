@@ -112,6 +112,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#cophylogenetic-plot-tanglegram">Cophylogenetic plot (tanglegram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#prune-tree">Prune tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
@@ -1972,6 +1973,37 @@ but branch lengths can be removed using the -r/--remove argument.</p>
 <em>-r/\-\-remove</em>: optional argument to print the phylogeny without branch
 lengths <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="consensus-network">
+<h3>Consensus network<a class="headerlink" href="#consensus-network" title="Link to this heading"></a></h3>
+<p>Function names: consensus_network; consnet; splitnet; splits_network <br/>
+Command line interface: pk_consensus_network; pk_consnet; pk_splitnet; pk_splits_network</p>
+<p>Extract bipartition splits from a collection of gene trees and summarize
+conflicting phylogenetic signal. Counts how frequently each non-trivial
+bipartition appears across input trees and filters by a minimum frequency
+threshold. Optionally draws a circular splits network diagram.</p>
+<p>Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consensus_network<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span><span class="m">0</span>.1<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
+<em>--threshold</em>: minimum split frequency to include, between 0 and 1 (default: <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) <br/>
+<em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
+<em>--plot-output</em>: output filename for the circular splits network plot (optional) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> is specified, a circular splits network diagram is produced.
+Taxa are arranged at equal angles around a circle. Each split is drawn as a chord
+connecting the boundary points between the two sides of the bipartition. Chord
+thickness and opacity scale with split frequency — thicker, darker lines indicate
+splits supported by more gene trees.</p>
+<a class="reference internal image-reference" href="../_images/consensus_network_example.png"><img alt="../_images/consensus_network_example.png" class="align-center" src="../_images/consensus_network_example.png" style="width: 80%;" />
+</a>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

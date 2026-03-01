@@ -80,6 +80,20 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.22</strong>:
+Added consensus splits network for visualizing conflicting phylogenetic signal:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">consnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splitnet</span></code>,
+<code class="docutils literal notranslate"><span class="pre">splits_network</span></code>) for extracting bipartition splits from gene trees and
+summarizing conflicting phylogenetic signal</p></li>
+<li><p>Counts frequency of each non-trivial bipartition across input trees</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--threshold</span></code> option to filter splits by minimum frequency (default: 0.1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> option to generate a circular splits network diagram</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">shared</span></code> support for trees with different taxon sets</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_consensus_network</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_consnet</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_splitnet</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_splits_network</span></code></p></li>
+</ul>
 <p><strong>2.1.21</strong>:
 Added automatic OU shift detection (l1ou):</p>
 <ul class="simple">

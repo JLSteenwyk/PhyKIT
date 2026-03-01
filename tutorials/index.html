@@ -149,6 +149,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">14. Comparing continuous trait evolution models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">Multi-regime OU models (OUwie)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">15. Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">16. Visualizing conflicting phylogenetic signal with splits networks</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -2130,6 +2131,84 @@ R's l1ou package (Khabbazian et al. 2016). On a 100-tip Anolis dataset,
 PhyKIT detects the same 8 shifts with matching alpha (0.607) and
 comparable pBIC scores (PhyKIT: 17.6, R: 16.8). The small numerical
 difference arises from optimizer precision, not algorithmic differences.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="visualizing-conflicting-phylogenetic-signal-with-splits-networks">
+<h2>16. Visualizing conflicting phylogenetic signal with splits networks<a class="headerlink" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks" title="Link to this heading"></a></h2>
+<p>When analyzing phylogenomic datasets, different genes often support
+conflicting tree topologies. PhyKIT's <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code> command
+(aliases: <code class="docutils literal notranslate"><span class="pre">consnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splitnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splits_network</span></code>) extracts
+bipartition splits from gene trees, counts their frequency, and
+optionally visualizes them as a circular splits network.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 1: Prepare a gene-tree file</strong></p>
+<p>Create a file with one Newick tree per line (or one tree-file path per line):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>((A,B),((C,D),(E,F)));
+((A,B),(C,(D,(E,F))));
+((A,B),((C,D),(E,F)));
+(((B,C),A),(D,(E,F)));
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 2: Run the consensus network analysis</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk
+</pre></div>
+</div>
+<p>This prints a summary of all splits found above the default threshold (0.1):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Number of input trees: 4
+Number of taxa: 6
+Threshold: 0.1
+Total unique splits: 3
+Splits above threshold: 3
+---
+{E, F}   4/4   1.0000
+{A, B}   3/4   0.7500
+{C, D}   2/4   0.5000
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Adjust the threshold</strong></p>
+<p>To show only splits present in at least 50% of gene trees:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--threshold<span class="w"> </span><span class="m">0</span>.5
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 4: Generate a circular splits network plot</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--plot-output<span class="w"> </span>network.png
+</pre></div>
+</div>
+<p>This creates a circular diagram where taxa are placed at equal angles.
+Chords connect boundary points of each split; thicker/more opaque chords
+indicate higher-frequency splits.</p>
+<a class="reference internal image-reference" href="../_images/consensus_network_example.png"><img alt="../_images/consensus_network_example.png" class="align-center" src="../_images/consensus_network_example.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 5: JSON output</strong></p>
+<p>For programmatic downstream analysis:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Handling trees with different taxon sets</strong></p>
+<p>If some gene trees are missing taxa, use <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">shared</span></code> to
+prune all trees to their intersection before extracting splits:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--missing-taxa<span class="w"> </span>shared
+</pre></div>
+</div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
