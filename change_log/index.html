@@ -81,7 +81,22 @@
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
 <p><strong>2.1.17</strong>:
-Added continuous trait evolution model comparison:</p>
+Added phylogenetically-corrected dimensionality reduction and continuous trait
+evolution model comparison:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">phylogenetic_dimreduce</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_dimreduce</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pdr</span></code>) for phylogenetically-corrected t-SNE or UMAP
+dimensionality reduction on continuous multi-trait data</p></li>
+<li><p>GLS-centering via phylogenetic VCV matrix (same as phylogenetic PCA)</p></li>
+<li><p>Supports t-SNE and UMAP methods with auto-adjusted parameters for small
+phylogenetic datasets</p></li>
+<li><p>Optional Pagel's lambda correction via <code class="docutils literal notranslate"><span class="pre">--correction</span> <span class="pre">lambda</span></code></p></li>
+<li><p>Optional scatter plot with phylogeny overlay (<code class="docutils literal notranslate"><span class="pre">--plot</span></code>, <code class="docutils literal notranslate"><span class="pre">--plot-tree</span></code>)</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_phylogenetic_dimreduce</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_phylo_dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_dimreduce</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_pdr</span></code></p></li>
+</ul>
+<p>Added continuous trait evolution model comparison:</p>
 <ul class="simple">
 <li><p>Added new <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fitcontinuous</span></code>, <code class="docutils literal notranslate"><span class="pre">fc</span></code>)
 for comparing models of continuous trait evolution on a phylogeny,

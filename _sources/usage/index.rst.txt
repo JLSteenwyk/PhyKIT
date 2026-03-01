@@ -1450,6 +1450,49 @@ Options: |br|
 
 |
 
+Phylogenetic Dimensionality Reduction
+######################################
+Function names: phylogenetic_dimreduce; phylo_dimreduce; dimreduce; pdr |br|
+Command line interface: pk_phylogenetic_dimreduce; pk_phylo_dimreduce; pk_dimreduce; pk_pdr
+
+Perform phylogenetically-corrected t-SNE or UMAP dimensionality reduction on
+continuous multi-trait data. The phylogenetic correction uses GLS-centering via
+the tree's variance-covariance matrix (identical to phylogenetic PCA), then
+applies standard t-SNE or UMAP to the centered data. This provides nonlinear
+dimensionality reduction methods as a complement to phylogenetic PCA.
+
+Both methods automatically adjust parameters for small phylogenetic datasets:
+
+- **t-SNE**: perplexity is set to ``min(30, (n-1)/3)``; requires at least 4 taxa.
+- **UMAP**: n_neighbors is set to ``min(15, n-1)``; requires at least 3 taxa.
+
+Two phylogenetic correction modes are available:
+
+- **BM** (default): assumes traits evolved under Brownian motion.
+- **lambda**: jointly estimates Pagel's lambda across all traits.
+
+.. code-block:: shell
+
+   phykit phylogenetic_dimreduce -t <tree> -d <trait_data> [--method <tsne|umap>] [--correction <BM|lambda>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*--method*: dimensionality reduction method: ``tsne`` or ``umap`` (default: tsne) |br|
+*--correction*: phylogenetic correction: ``BM`` or ``lambda`` (default: BM) |br|
+*--n-components*: number of embedding dimensions (default: 2) |br|
+*--perplexity*: t-SNE perplexity (default: auto) |br|
+*--n-neighbors*: UMAP n_neighbors (default: auto) |br|
+*--min-dist*: UMAP min_dist (default: 0.1) |br|
+*--seed*: random seed for reproducibility |br|
+*--plot*: optional argument to save a scatter plot |br|
+*--plot-tree*: overlay phylogeny edges via ancestral reconstruction (edges colored by distance from root) |br|
+*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) |br|
+*--plot-output*: output path for plot (default: phylo_dimreduce_plot.png) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 Phylomorphospace
 ################
 Function names: phylomorphospace; phylomorpho; phmo |br|
