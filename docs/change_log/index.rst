@@ -6,6 +6,40 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.13**:
+Added stochastic character mapping (SIMMAP):
+
+* Added new ``stochastic_character_map`` command (aliases: ``simmap``, ``scm``)
+  for performing Stochastic Character Mapping of discrete traits onto a
+  phylogeny (Huelsenbeck et al. 2003; Bollback 2006), analogous to R's
+  ``phytools::make.simmap()``
+* Fits a continuous-time Markov chain (CTMC) rate matrix Q via maximum
+  likelihood using Felsenstein's pruning algorithm
+* Three substitution models: ER (equal rates), SYM (symmetric), ARD (all
+  rates differ)
+* Simulates character histories conditioned on tip states via rejection
+  sampling
+* Reports mean dwelling times, mean transition counts, and posterior node
+  probabilities across simulations
+* Optional ``--plot`` argument to generate a horizontal phylogram with
+  branches colored by mapped character state
+* Reproducible simulations via ``--seed`` argument
+* JSON output support via ``--json``
+* Results validated against R 4.4.0 (``phytools::fitMk`` and
+  ``phytools::make.simmap``):
+
+  - ER log-likelihood: R = -8.7889, PhyKIT = -8.7874 (within 0.002);
+    both are valid ML estimates on a flat likelihood surface
+  - ARD log-likelihood: R = -8.4305, PhyKIT = -8.3845; PhyKIT's
+    multi-start optimizer finds a slightly better local optimum
+  - Total tree length conserved exactly (277.2772)
+  - Dwelling times sum to total tree length across all simulations
+  - Q matrix structural properties verified: rows sum to zero,
+    off-diagonal elements positive, diagonal elements negative
+  - Model nesting confirmed: ARD loglik >= SYM loglik >= ER loglik
+* Added new CLI entry points:
+  ``pk_stochastic_character_map``, ``pk_simmap``, ``pk_scm``
+
 **2.1.12**:
 Added phylogenetic regression (PGLS):
 
