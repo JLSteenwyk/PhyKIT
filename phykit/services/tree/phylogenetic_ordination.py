@@ -11,13 +11,14 @@ from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
 
 
-class PhylogeneticDimreduce(Tree):
+class PhylogeneticOrdination(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"])
         self.trait_data_path = parsed["trait_data_path"]
         self.method = parsed["method"]
         self.correction = parsed["correction"]
+        self.mode = parsed["mode"]
         self.n_components = parsed["n_components"]
         self.perplexity = parsed["perplexity"]
         self.n_neighbors = parsed["n_neighbors"]
@@ -64,6 +65,82 @@ class PhylogeneticDimreduce(Tree):
 
         Z = Y - np.outer(ones, a_hat)
 
+        if self.method == "pca":
+            self._run_pca(
+                Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
+                lambda_val, log_likelihood,
+            )
+        elif self.method == "tsne":
+            self._run_dimreduce(
+                Z, n, tree, ordered_names, trait_names, Y,
+                lambda_val, log_likelihood,
+            )
+        else:  # umap
+            self._run_dimreduce(
+                Z, n, tree, ordered_names, trait_names, Y,
+                lambda_val, log_likelihood,
+            )
+
+    def _run_pca(
+        self, Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
+        lambda_val, log_likelihood,
+    ) -> None:
+        R = (Z.T @ C_inv @ Z) / (n - 1)
+
+        Z_std = None
+        if self.mode == "corr":
+            D = np.sqrt(np.diag(R))
+            D_inv = np.diag(1.0 / D)
+            R_corr = D_inv @ R @ D_inv
+            eigenvalues, eigenvectors = np.linalg.eigh(R_corr)
+        else:
+            eigenvalues, eigenvectors = np.linalg.eigh(R)
+
+        idx = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+
+        pc_labels = [f"PC{i+1}" for i in range(p)]
+
+        total_var = np.sum(eigenvalues)
+        proportions = eigenvalues / total_var
+
+        if self.mode == "corr":
+            Z_std = Z @ D_inv
+            scores = Z_std @ eigenvectors
+        else:
+            scores = Z @ eigenvectors
+
+        if self.plot:
+            self._plot_pca(
+                scores, ordered_names, pc_labels, proportions,
+                tree=tree, eigenvectors=eigenvectors, Z=Z, Z_std=Z_std,
+                trait_names=trait_names, Y=Y,
+            )
+
+        result = self._format_pca_result(
+            eigenvalues, proportions, eigenvectors, scores,
+            trait_names, ordered_names, pc_labels,
+            lambda_val, log_likelihood,
+        )
+
+        if self.json_output:
+            if self.plot:
+                result["plot_output"] = self.plot_output
+            print_json(result)
+        else:
+            self._print_pca_text_output(
+                eigenvalues, proportions, eigenvectors, scores,
+                trait_names, ordered_names, pc_labels,
+                lambda_val, log_likelihood,
+            )
+            if self.plot:
+                print(f"\nSaved PCA plot: {self.plot_output}")
+
+    def _run_dimreduce(
+        self, Z, n, tree, ordered_names, trait_names, Y,
+        lambda_val, log_likelihood,
+    ) -> None:
         if self.method == "tsne":
             embedding, params = self._embed_tsne(Z, n)
         else:
@@ -76,7 +153,7 @@ class PhylogeneticDimreduce(Tree):
                 trait_names=trait_names, Y=Y,
             )
 
-        result = self._format_result(
+        result = self._format_dimreduce_result(
             embedding, ordered_names, params,
             lambda_val, log_likelihood,
         )
@@ -86,7 +163,7 @@ class PhylogeneticDimreduce(Tree):
                 result["plot_output"] = self.plot_output
             print_json(result)
         else:
-            self._print_text_output(
+            self._print_dimreduce_text_output(
                 embedding, ordered_names, params,
                 lambda_val, log_likelihood,
             )
@@ -97,8 +174,9 @@ class PhylogeneticDimreduce(Tree):
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
-            method=getattr(args, "method", "tsne"),
+            method=getattr(args, "method", "pca"),
             correction=getattr(args, "correction", "BM"),
+            mode=getattr(args, "mode", "cov"),
             n_components=getattr(args, "n_components", 2),
             perplexity=getattr(args, "perplexity", None),
             n_neighbors=getattr(args, "n_neighbors", None),
@@ -106,7 +184,7 @@ class PhylogeneticDimreduce(Tree):
             seed=getattr(args, "seed", None),
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
-            plot_output=getattr(args, "plot_output", "phylo_dimreduce_plot.png"),
+            plot_output=getattr(args, "plot_output", "phylo_ordination_plot.png"),
             plot_tree=getattr(args, "plot_tree", False),
             color_by=getattr(args, "color_by", None),
         )
@@ -115,7 +193,7 @@ class PhylogeneticDimreduce(Tree):
         tips = list(tree.get_terminals())
         if len(tips) < 3:
             raise PhykitUserError(
-                ["Tree must have at least 3 tips for phylogenetic dimensionality reduction."],
+                ["Tree must have at least 3 tips for phylogenetic ordination."],
                 code=2,
             )
         for clade in tree.find_clades():
@@ -511,6 +589,215 @@ class PhylogeneticDimreduce(Tree):
             categories = sorted(set(values))
             return np.array(values), categories, "discrete"
 
+    # --- PCA output ---
+
+    def _format_pca_result(
+        self,
+        eigenvalues, proportions, eigenvectors, scores,
+        trait_names, taxon_names, pc_labels,
+        lambda_val, log_likelihood,
+    ) -> Dict:
+        result = {
+            "eigenvalues": {pc_labels[i]: float(eigenvalues[i]) for i in range(len(pc_labels))},
+            "proportion_of_variance": {pc_labels[i]: float(proportions[i]) for i in range(len(pc_labels))},
+            "loadings": {
+                trait_names[j]: {pc_labels[i]: float(eigenvectors[j, i]) for i in range(len(pc_labels))}
+                for j in range(len(trait_names))
+            },
+            "scores": {
+                taxon_names[k]: {pc_labels[i]: float(scores[k, i]) for i in range(len(pc_labels))}
+                for k in range(len(taxon_names))
+            },
+        }
+        if lambda_val is not None:
+            result["lambda"] = float(lambda_val)
+            result["log_likelihood"] = float(log_likelihood)
+        return result
+
+    def _print_pca_text_output(
+        self,
+        eigenvalues, proportions, eigenvectors, scores,
+        trait_names, taxon_names, pc_labels,
+        lambda_val, log_likelihood,
+    ) -> None:
+        def fmt(v):
+            return f"{v:.6f}"
+
+        print("Eigenvalues:")
+        print("\t" + "\t".join(pc_labels))
+        print("eigenvalue\t" + "\t".join(fmt(v) for v in eigenvalues))
+        print("proportion\t" + "\t".join(fmt(v) for v in proportions))
+
+        print("\nLoadings:")
+        print("\t" + "\t".join(pc_labels))
+        for j, trait in enumerate(trait_names):
+            row = "\t".join(fmt(eigenvectors[j, i]) for i in range(len(pc_labels)))
+            print(f"{trait}\t{row}")
+
+        print("\nScores:")
+        print("\t" + "\t".join(pc_labels))
+        for k, taxon in enumerate(taxon_names):
+            row = "\t".join(fmt(scores[k, i]) for i in range(len(pc_labels)))
+            print(f"{taxon}\t{row}")
+
+        if lambda_val is not None:
+            print(f"\nLambda: {fmt(lambda_val)}")
+            print(f"Log-likelihood: {fmt(log_likelihood)}")
+
+    # --- Dimreduce output ---
+
+    def _format_dimreduce_result(
+        self,
+        embedding: np.ndarray,
+        taxon_names: List[str],
+        params: Dict,
+        lambda_val,
+        log_likelihood,
+    ) -> Dict:
+        dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
+        result = {
+            "method": self.method,
+            "correction": self.correction,
+            "n_components": self.n_components,
+            "parameters": params,
+            "embedding": {
+                taxon_names[k]: {
+                    dim_labels[i]: round(float(embedding[k, i]), 6)
+                    for i in range(self.n_components)
+                }
+                for k in range(len(taxon_names))
+            },
+        }
+        if lambda_val is not None:
+            result["lambda"] = float(lambda_val)
+            result["log_likelihood"] = float(log_likelihood)
+        return result
+
+    def _print_dimreduce_text_output(
+        self,
+        embedding: np.ndarray,
+        taxon_names: List[str],
+        params: Dict,
+        lambda_val,
+        log_likelihood,
+    ) -> None:
+        def fmt(v):
+            return f"{v:.6f}"
+
+        dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
+
+        print(f"Method: {self.method}")
+        print(f"Correction: {self.correction}")
+
+        if "perplexity" in params:
+            print(f"Perplexity: {params['perplexity']}")
+        if "n_neighbors" in params:
+            print(f"n_neighbors: {params['n_neighbors']}")
+        if "min_dist" in params:
+            print(f"min_dist: {params['min_dist']}")
+
+        print(f"\nEmbedding:")
+        print("\t" + "\t".join(dim_labels))
+        for k, taxon in enumerate(taxon_names):
+            row = "\t".join(fmt(embedding[k, i]) for i in range(self.n_components))
+            print(f"{taxon}\t{row}")
+
+        if lambda_val is not None:
+            print(f"\nLambda: {fmt(lambda_val)}")
+            print(f"Log-likelihood: {fmt(log_likelihood)}")
+
+    # --- Plotting ---
+
+    def _plot_pca(
+        self,
+        scores: np.ndarray,
+        taxon_names: List[str],
+        pc_labels: List[str],
+        proportions: np.ndarray,
+        tree=None,
+        eigenvectors=None,
+        Z=None,
+        Z_std=None,
+        trait_names=None,
+        Y=None,
+    ) -> None:
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
+            from matplotlib.colors import Normalize
+        except ImportError:
+            print("matplotlib is required for --plot. Install matplotlib and retry.")
+            raise SystemExit(2)
+
+        fig, ax = plt.subplots(figsize=(7, 5))
+
+        if self.plot_tree and tree is not None and eigenvectors is not None:
+            data_for_anc = Z_std if Z_std is not None else Z
+            node_estimates, node_distances, tree_pruned = \
+                self._reconstruct_ancestral_scores(
+                    tree, data_for_anc @ eigenvectors, taxon_names
+                )
+
+            all_dists = [d for d in node_distances.values()]
+            max_dist = max(all_dists) if all_dists else 1.0
+
+            segments = []
+            colors = []
+            norm = Normalize(vmin=0, vmax=max_dist)
+            cmap = plt.get_cmap("coolwarm")
+
+            for clade in tree_pruned.find_clades(order="preorder"):
+                parent_id = id(clade)
+                if parent_id not in node_estimates:
+                    continue
+                parent_scores = node_estimates[parent_id]
+
+                for child in clade.clades:
+                    child_id = id(child)
+                    if child_id not in node_estimates:
+                        continue
+                    child_scores = node_estimates[child_id]
+
+                    x0, y0 = parent_scores[0], parent_scores[1]
+                    x1, y1 = child_scores[0], child_scores[1]
+                    segments.append([(x0, y0), (x1, y1)])
+
+                    parent_dist = node_distances.get(parent_id, 0)
+                    child_dist = node_distances.get(child_id, 0)
+                    mid_dist = (parent_dist + child_dist) / 2.0
+                    colors.append(mid_dist)
+
+            if segments:
+                lc = LineCollection(
+                    segments,
+                    array=np.array(colors),
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=1.0,
+                    alpha=0.7,
+                    zorder=2,
+                )
+                ax.add_collection(lc)
+                cbar = fig.colorbar(lc, ax=ax, pad=0.02, fraction=0.046)
+                cbar.set_label("Distance from root")
+
+        self._draw_points(ax, fig, scores, taxon_names, trait_names, Y)
+
+        ax.axhline(0, color="#cccccc", linewidth=0.8, linestyle="--", zorder=1)
+        ax.axvline(0, color="#cccccc", linewidth=0.8, linestyle="--", zorder=1)
+
+        ax.set_xlabel(
+            f"{pc_labels[0]} ({proportions[0]*100:.1f}% variance explained)"
+        )
+        ax.set_ylabel(
+            f"{pc_labels[1]} ({proportions[1]*100:.1f}% variance explained)"
+        )
+        fig.tight_layout()
+        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
     def _plot_dimreduce(
         self,
         embedding: np.ndarray,
@@ -582,6 +869,17 @@ class PhylogeneticDimreduce(Tree):
                 cbar = fig.colorbar(lc, ax=ax, pad=0.02, fraction=0.046)
                 cbar.set_label("Distance from root")
 
+        self._draw_points(ax, fig, embedding, taxon_names, trait_names, Y)
+
+        ax.set_xlabel(dim_labels[0])
+        ax.set_ylabel(dim_labels[1])
+        fig.tight_layout()
+        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+    def _draw_points(self, ax, fig, coords, taxon_names, trait_names, Y):
+        import matplotlib.pyplot as plt
+
         color_values = None
         color_categories = None
         color_kind = None
@@ -592,8 +890,8 @@ class PhylogeneticDimreduce(Tree):
 
         if color_values is not None and color_kind == "continuous":
             scatter = ax.scatter(
-                embedding[:, 0],
-                embedding[:, 1],
+                coords[:, 0],
+                coords[:, 1],
                 s=40,
                 alpha=0.8,
                 c=color_values,
@@ -611,8 +909,8 @@ class PhylogeneticDimreduce(Tree):
                        for i, cat in enumerate(unique_cats)}
             point_colors = [cat_map[v] for v in color_values]
             ax.scatter(
-                embedding[:, 0],
-                embedding[:, 1],
+                coords[:, 0],
+                coords[:, 1],
                 s=40,
                 alpha=0.8,
                 c=point_colors,
@@ -629,8 +927,8 @@ class PhylogeneticDimreduce(Tree):
             ax.legend(handles=handles, title=self.color_by, fontsize=7, title_fontsize=8)
         else:
             ax.scatter(
-                embedding[:, 0],
-                embedding[:, 1],
+                coords[:, 0],
+                coords[:, 1],
                 s=40,
                 alpha=0.8,
                 color="#2b8cbe",
@@ -642,74 +940,8 @@ class PhylogeneticDimreduce(Tree):
         for k, name in enumerate(taxon_names):
             ax.annotate(
                 name,
-                (embedding[k, 0], embedding[k, 1]),
+                (coords[k, 0], coords[k, 1]),
                 textcoords="offset points",
                 xytext=(5, 5),
                 fontsize=8,
             )
-
-        ax.set_xlabel(dim_labels[0])
-        ax.set_ylabel(dim_labels[1])
-        fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
-        plt.close(fig)
-
-    def _format_result(
-        self,
-        embedding: np.ndarray,
-        taxon_names: List[str],
-        params: Dict,
-        lambda_val,
-        log_likelihood,
-    ) -> Dict:
-        dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
-        result = {
-            "method": self.method,
-            "correction": self.correction,
-            "n_components": self.n_components,
-            "parameters": params,
-            "embedding": {
-                taxon_names[k]: {
-                    dim_labels[i]: round(float(embedding[k, i]), 6)
-                    for i in range(self.n_components)
-                }
-                for k in range(len(taxon_names))
-            },
-        }
-        if lambda_val is not None:
-            result["lambda"] = float(lambda_val)
-            result["log_likelihood"] = float(log_likelihood)
-        return result
-
-    def _print_text_output(
-        self,
-        embedding: np.ndarray,
-        taxon_names: List[str],
-        params: Dict,
-        lambda_val,
-        log_likelihood,
-    ) -> None:
-        def fmt(v):
-            return f"{v:.6f}"
-
-        dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
-
-        print(f"Method: {self.method}")
-        print(f"Correction: {self.correction}")
-
-        if "perplexity" in params:
-            print(f"Perplexity: {params['perplexity']}")
-        if "n_neighbors" in params:
-            print(f"n_neighbors: {params['n_neighbors']}")
-        if "min_dist" in params:
-            print(f"min_dist: {params['min_dist']}")
-
-        print(f"\nEmbedding:")
-        print("\t" + "\t".join(dim_labels))
-        for k, taxon in enumerate(taxon_names):
-            row = "\t".join(fmt(embedding[k, i]) for i in range(self.n_components))
-            print(f"{taxon}\t{row}")
-
-        if lambda_val is not None:
-            print(f"\nLambda: {fmt(lambda_val)}")
-            print(f"Log-likelihood: {fmt(log_likelihood)}")
