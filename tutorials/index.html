@@ -119,27 +119,34 @@
 <li class="toctree-l3"><a class="reference internal" href="#id34">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny">10. Reconstructing ancestral trait values and mapping them onto a phylogeny</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id36">Step 0: Prepare data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#phylogenetic-glm-for-binary-and-count-data">10. Phylogenetic GLM for binary and count data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-fit-a-binomial-logistic-model">Step 1: Fit a binomial (logistic) model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-fit-a-poisson-model-for-count-data">Step 2: Fit a Poisson model for count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id36">Step 3: Export results as JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id37">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny">11. Reconstructing ancestral trait values and mapping them onto a phylogeny</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id38">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-run-fast-ancestral-reconstruction-with-confidence-intervals">Step 1: Run fast ancestral reconstruction with confidence intervals</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-use-the-vcv-based-ml-method">Step 2: Use the VCV-based ML method</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-3-generate-a-contmap-plot">Step 3: Generate a contMap plot</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-4-use-a-multi-trait-file">Step 4: Use a multi-trait file</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-5-export-results-as-json">Step 5: Export results as JSON</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id37">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id39">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">11. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id38">Step 0: Prepare data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">12. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id40">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-run-the-rate-heterogeneity-test">Step 1: Run the rate heterogeneity test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-add-a-parametric-bootstrap">Step 2: Add a parametric bootstrap</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-3-generate-a-regime-tree-plot">Step 3: Generate a regime tree plot</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-4-export-as-json">Step 4: Export as JSON</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id39">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id41">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#visualization-commands">12. Visualization commands</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">13. Comparing continuous trait evolution models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualization-commands">13. Visualization commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">14. Comparing continuous trait evolution models</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1421,8 +1428,118 @@ The R equivalent is <code class="docutils literal notranslate"><span class="pre"
 </div>
 </section>
 </section>
+<section id="phylogenetic-glm-for-binary-and-count-data">
+<h2>10. Phylogenetic GLM for binary and count data<a class="headerlink" href="#phylogenetic-glm-for-binary-and-count-data" title="Link to this heading"></a></h2>
+<p>Standard PGLS handles continuous response variables. When the response is binary
+(e.g., presence/absence) or count data (e.g., number of offspring), a Generalized
+Linear Model is needed. Phylogenetic GLM extends GLM to account for phylogenetic
+non-independence among species.</p>
+<p><strong>Hypothetical study question.</strong> Is body mass a significant predictor of a binary
+trait (e.g., dietary specialization) or a count trait (e.g., litter size) after
+accounting for phylogenetic relationships?</p>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">phylogenetic_glm</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_glm</span></code>, <code class="docutils literal notranslate"><span class="pre">pglm</span></code>) supports
+two families: binomial (logistic MPLE) and Poisson (GEE). <br/></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference external" href="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple.tre">tree</a> and
+<a class="reference external" href="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple_glm_traits.tsv">traits</a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-1-fit-a-binomial-logistic-model">
+<h3>Step 1: Fit a binomial (logistic) model<a class="headerlink" href="#step-1-fit-a-binomial-logistic-model" title="Link to this heading"></a></h3>
+<p>Test whether body mass predicts a binary trait:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_glm_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-y<span class="w"> </span>binary_trait<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-x<span class="w"> </span>body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--family<span class="w"> </span>binomial
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Phylogenetic GLM (Logistic MPLE)
+
+Formula: binary_trait ~ body_mass
+Family: binomial, Method: logistic_MPLE
+
+Estimated alpha: 0.0183
+
+Coefficients:
+                        Estimate   Std.Error     z-value     p-value
+(Intercept)             -10.0000     23.6347     -0.4231    0.672218
+body_mass                10.0000     22.0222      0.4541    0.649766
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+
+Log-likelihood: -5.3694    AIC: 16.7387
+Number of observations: 8
+</pre></div>
+</div>
+<p>The logistic MPLE method jointly estimates regression coefficients and the
+phylogenetic signal parameter alpha. The coefficients hit the btol boundary
+in this example due to quasi-complete separation in the small dataset.</p>
+</section>
+<section id="step-2-fit-a-poisson-model-for-count-data">
+<h3>Step 2: Fit a Poisson model for count data<a class="headerlink" href="#step-2-fit-a-poisson-model-for-count-data" title="Link to this heading"></a></h3>
+<p>Test whether body mass predicts count data:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_glm_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-y<span class="w"> </span>count_trait<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-x<span class="w"> </span>body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--family<span class="w"> </span>poisson
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Phylogenetic GLM (Poisson GEE)
+
+Formula: count_trait ~ body_mass
+Family: poisson, Method: poisson_GEE
+
+Overdispersion (phi): 0.1730
+
+Coefficients:
+                        Estimate   Std.Error     z-value     p-value
+(Intercept)               0.6741      0.1678      4.0176    0.000059    ***
+body_mass                 0.5968      0.0877      6.8082    0.000000    ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+
+Log-likelihood: -13.4024    AIC: 30.8048
+Number of observations: 8
+</pre></div>
+</div>
+<p>The Poisson GEE uses phylogenetic correlations derived from the tree and
+reports the overdispersion parameter phi. Both predictors are highly significant.</p>
+</section>
+<section id="id36">
+<h3>Step 3: Export results as JSON<a class="headerlink" href="#id36" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_glm_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-y<span class="w"> </span>count_trait<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-x<span class="w"> </span>body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--family<span class="w"> </span>poisson<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--json
+</pre></div>
+</div>
+</section>
+<section id="id37">
+<h3>Summary<a class="headerlink" href="#id37" title="Link to this heading"></a></h3>
+<p>In this tutorial, we used phylogenetic GLMs to model binary and count response
+variables while accounting for phylogenetic non-independence. The key steps were:
+(1) fitting a logistic model for binary data with the binomial family,
+(2) fitting a Poisson model for count data, and (3) exporting results as JSON.
+Phylogenetic GLM complements PGLS by handling non-continuous response variables.</p>
+<p>For methodological details, see
+<a class="reference external" href="https://doi.org/10.1086/656006">Ives and Garland (2010)</a> for logistic MPLE
+and <a class="reference external" href="https://doi.org/10.1046/j.1420-9101.2002.00405.x">Paradis and Claude (2002)</a>
+for Poisson GEE. The R equivalent is <code class="docutils literal notranslate"><span class="pre">phylolm::phyloglm()</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
 <section id="reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny">
-<h2>10. Reconstructing ancestral trait values and mapping them onto a phylogeny<a class="headerlink" href="#reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny" title="Link to this heading"></a></h2>
+<h2>11. Reconstructing ancestral trait values and mapping them onto a phylogeny<a class="headerlink" href="#reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny" title="Link to this heading"></a></h2>
 <p>A common question in comparative biology is: what were the trait values of
 ancestral species? Ancestral state reconstruction (ASR) uses the trait values
 observed at the tips of a phylogeny together with a model of trait evolution
@@ -1441,8 +1558,8 @@ ML with exact conditional CIs, analogous to <code class="docutils literal notran
 <a class="reference download internal" download="" href="../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
-<section id="id36">
-<h3>Step 0: Prepare data<a class="headerlink" href="#id36" title="Link to this heading"></a></h3>
+<section id="id38">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id38" title="Link to this heading"></a></h3>
 <p>Two input files are needed: a phylogenetic tree and a trait data file.
 The trait data can be either a two-column file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>) or
 a multi-trait file with a header row (use <code class="docutils literal notranslate"><span class="pre">-c</span></code> to select a column).</p>
@@ -1575,8 +1692,8 @@ optional CIs, and observed tip values.</p>
 <div class="line"><br /></div>
 </div>
 </section>
-<section id="id37">
-<h3>Summary<a class="headerlink" href="#id37" title="Link to this heading"></a></h3>
+<section id="id39">
+<h3>Summary<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
 <p>In this tutorial, we used ancestral state reconstruction to estimate
 ancestral body mass values for 8 mammal species. The key steps were:
 (1) running the fast method with confidence intervals to see which
@@ -1597,7 +1714,7 @@ for the contMap visualization.</p>
 </section>
 </section>
 <section id="testing-for-rate-heterogeneity-across-phylogenetic-regimes">
-<h2>11. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
+<h2>12. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
 <p>A key question in comparative biology is whether the rate of trait evolution differs
 across lineages — for example, whether aquatic mammals evolve body size at a different
 rate than terrestrial mammals. Rate heterogeneity tests address this by fitting
@@ -1608,8 +1725,8 @@ this test, analogous to R's <code class="docutils literal notranslate"><span cla
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<section id="id38">
-<h3>Step 0: Prepare data<a class="headerlink" href="#id38" title="Link to this heading"></a></h3>
+<section id="id40">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id40" title="Link to this heading"></a></h3>
 <p>You need three input files:</p>
 <ol class="arabic simple">
 <li><p>A phylogenetic tree in Newick format</p></li>
@@ -1664,8 +1781,8 @@ ratio test results.</p>
 <div class="line"><br /></div>
 </div>
 </section>
-<section id="id39">
-<h3>Summary<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
+<section id="id41">
+<h3>Summary<a class="headerlink" href="#id41" title="Link to this heading"></a></h3>
 <p>In this tutorial, we used the rate heterogeneity test to ask whether body mass
 evolves at different rates in aquatic vs. terrestrial mammals. The key steps
 were: (1) fitting single-rate and multi-rate BM models, (2) performing a
@@ -1681,7 +1798,7 @@ The R equivalent is <code class="docutils literal notranslate"><span class="pre"
 </section>
 </section>
 <section id="visualization-commands">
-<h2>12. Visualization commands<a class="headerlink" href="#visualization-commands" title="Link to this heading"></a></h2>
+<h2>13. Visualization commands<a class="headerlink" href="#visualization-commands" title="Link to this heading"></a></h2>
 <p>PhyKIT provides several phylogenetic visualization commands analogous to
 R's <code class="docutils literal notranslate"><span class="pre">phytools</span></code> plotting functions. All produce publication-quality plots
 saved at 300 DPI.</p>
@@ -1712,7 +1829,7 @@ for a tab-delimited file matching taxa between trees with different tip names.</
 </div>
 </section>
 <section id="comparing-continuous-trait-evolution-models">
-<h2>13. Comparing continuous trait evolution models<a class="headerlink" href="#comparing-continuous-trait-evolution-models" title="Link to this heading"></a></h2>
+<h2>14. Comparing continuous trait evolution models<a class="headerlink" href="#comparing-continuous-trait-evolution-models" title="Link to this heading"></a></h2>
 <p>A common analysis in comparative methods is determining which model of
 continuous trait evolution best explains observed trait variation on a
 phylogeny. PhyKIT's <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fitcontinuous</span></code>,

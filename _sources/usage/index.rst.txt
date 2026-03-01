@@ -1573,6 +1573,49 @@ Options: |br|
 
 |
 
+Phylogenetic GLM
+################
+Function names: phylogenetic_glm; phylo_glm; pglm |br|
+Command line interface: pk_phylogenetic_glm; pk_phylo_glm; pk_pglm
+
+Fit a Phylogenetic Generalized Linear Model (GLM) for binary or count
+response data while accounting for phylogenetic non-independence among
+species.
+
+Two families are supported:
+
+- **binomial**: logistic regression via Maximum Penalized Likelihood
+  Estimation (logistic_MPLE; Ives & Garland 2010). Uses Firth's penalty
+  to prevent bias from complete/quasi-complete separation, and jointly
+  estimates the phylogenetic signal parameter alpha via a two-state
+  continuous-time Markov chain on the tree.
+- **poisson**: Poisson regression via Generalized Estimating Equations
+  (poisson_GEE; Paradis & Claude 2002). Uses Fisher scoring with the
+  phylogenetic correlation matrix and reports an overdispersion parameter.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+
+Output includes coefficient estimates, standard errors, z-values,
+p-values, log-likelihood, and AIC.
+
+.. code-block:: shell
+
+   phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*-y/\\-\\-response*: response (dependent) variable column name |br|
+*-x/\\-\\-predictors*: one or more predictor column names |br|
+*--family*: distribution family: binomial or poisson |br|
+*--method*: estimation method: logistic_MPLE or poisson_GEE (auto from family) |br|
+*--btol*: linear predictor bound for logistic model (default: 10) |br|
+*--log-alpha-bound*: bound on log(alpha) for logistic model (default: 4) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 Stochastic character mapping (SIMMAP)
 #####################################
 Function names: stochastic_character_map; simmap; scm |br|

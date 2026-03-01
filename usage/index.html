@@ -100,6 +100,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-glm">Phylogenetic GLM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
@@ -1497,6 +1498,45 @@ decimal places for both simple and multiple regression.</p>
 <em>-y/\-\-response</em>: response (dependent) variable column name <br/>
 <em>-x/\-\-predictors</em>: one or more predictor column names <br/>
 <em>-m/\-\-method</em>: method to use: BM or lambda (default: BM) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phylogenetic-glm">
+<h3>Phylogenetic GLM<a class="headerlink" href="#phylogenetic-glm" title="Link to this heading"></a></h3>
+<p>Function names: phylogenetic_glm; phylo_glm; pglm <br/>
+Command line interface: pk_phylogenetic_glm; pk_phylo_glm; pk_pglm</p>
+<p>Fit a Phylogenetic Generalized Linear Model (GLM) for binary or count
+response data while accounting for phylogenetic non-independence among
+species.</p>
+<p>Two families are supported:</p>
+<ul class="simple">
+<li><p><strong>binomial</strong>: logistic regression via Maximum Penalized Likelihood
+Estimation (logistic_MPLE; Ives &amp; Garland 2010). Uses Firth's penalty
+to prevent bias from complete/quasi-complete separation, and jointly
+estimates the phylogenetic signal parameter alpha via a two-state
+continuous-time Markov chain on the tree.</p></li>
+<li><p><strong>poisson</strong>: Poisson regression via Generalized Estimating Equations
+(poisson_GEE; Paradis &amp; Claude 2002). Uses Fisher scoring with the
+phylogenetic correlation matrix and reports an overdispersion parameter.</p></li>
+</ul>
+<p>The multi-trait input file should be tab-delimited with a header row:
+<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code></p>
+<p>Output includes coefficient estimates, standard errors, z-values,
+p-values, log-likelihood, and AIC.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span>--family<span class="w"> </span>&lt;binomial<span class="p">|</span>poisson&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
+<em>-y/\-\-response</em>: response (dependent) variable column name <br/>
+<em>-x/\-\-predictors</em>: one or more predictor column names <br/>
+<em>--family</em>: distribution family: binomial or poisson <br/>
+<em>--method</em>: estimation method: logistic_MPLE or poisson_GEE (auto from family) <br/>
+<em>--btol</em>: linear predictor bound for logistic model (default: 10) <br/>
+<em>--log-alpha-bound</em>: bound on log(alpha) for logistic model (default: 4) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
