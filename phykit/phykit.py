@@ -4181,20 +4181,28 @@ class Phykit:
 
                 Usage:
                 phykit create_concatenation_matrix -a <file> -p <string>
-                  [--plot-occupancy] [--plot-output <path>] [--json]
+                  [--threshold <float>] [--plot-occupancy]
+                  [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
                 -a/--alignment              alignment list file. File
                                             should contain a single
                                             column list of alignment
-                                            sequence files to concatenate 
+                                            sequence files to concatenate
                                             into a single matrix. Provide
                                             path to files relative to
                                             working directory or provide
                                             absolute path.
 
                 -p/--prefix                 prefix of output files
+
+                --threshold                 minimum fraction of informative
+                                            (non-gap, non-ambiguous) sites
+                                            across the concatenated alignment
+                                            for a taxon to be included.
+                                            Set to 0 to disable filtering.
+                                            default: 0
 
                 --plot-occupancy            optional argument to generate
                                             occupancy map figure
@@ -4210,6 +4218,7 @@ class Phykit:
         )
         parser.add_argument("-a", "--alignment_list", type=str, help=SUPPRESS)
         parser.add_argument("-p", "--prefix", type=str, help=SUPPRESS)
+        parser.add_argument("--threshold", type=float, required=False, default=0, help=SUPPRESS)
         parser.add_argument("--plot-occupancy", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, required=False, default=None, help=SUPPRESS)
         _add_json_argument(parser)

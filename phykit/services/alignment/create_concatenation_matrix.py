@@ -25,6 +25,7 @@ class CreateConcatenationMatrix(Alignment):
         self.json_output = parsed["json_output"]
         self.plot_occupancy = parsed["plot_occupancy"]
         self.plot_output = parsed["plot_output"]
+        self.threshold = parsed["threshold"]
 
     def run(self) -> None:
         self.create_concatenation_matrix(
@@ -39,6 +40,7 @@ class CreateConcatenationMatrix(Alignment):
             json_output=getattr(args, "json", False),
             plot_occupancy=getattr(args, "plot_occupancy", False),
             plot_output=getattr(args, "plot_output", None),
+            threshold=getattr(args, "threshold", 0),
         )
 
     def _plot_concatenation_occupancy(
@@ -285,6 +287,35 @@ class CreateConcatenationMatrix(Alignment):
 
         return alignment_path, seq_dict, present_taxa, og_len
 
+    def _compute_effective_occupancy(
+        self,
+        concatenated_seqs: Dict[str, List[str]],
+        threshold: float,
+    ) -> Tuple[Dict[str, float], set]:
+        """Compute per-taxon effective occupancy and return taxa to exclude.
+
+        Effective occupancy is the fraction of informative (non-gap,
+        non-ambiguous) characters across all concatenated positions.
+        """
+        invalid_chars = {"-", "?", "*", "X", "x", "N", "n"}
+        occupancy = {}
+        excluded = set()
+
+        for taxon, seq_parts in concatenated_seqs.items():
+            total_positions = 0
+            informative = 0
+            for part in seq_parts:
+                total_positions += len(part)
+                for ch in part:
+                    if ch not in invalid_chars:
+                        informative += 1
+            eff = informative / total_positions if total_positions > 0 else 0.0
+            occupancy[taxon] = eff
+            if eff < threshold:
+                excluded.add(taxon)
+
+        return occupancy, excluded
+
     def create_concatenation_matrix(self, alignment_list_path: str, prefix: str) -> None:
         alignment_paths = self.read_alignment_paths(alignment_list_path)
         taxa = self.get_taxa_names(alignment_paths)
@@ -369,6 +400,37 @@ class CreateConcatenationMatrix(Alignment):
         if isinstance(concatenated_seqs, defaultdict):
             concatenated_seqs = dict(concatenated_seqs)
 
+        # Apply threshold filtering
+        excluded_taxa_info = []
+        if self.threshold > 0:
+            occupancy_scores, excluded = self._compute_effective_occupancy(
+                concatenated_seqs, self.threshold
+            )
+            if excluded:
+                excluded_taxa_info = sorted(
+                    [
+                        {"taxon": t, "effective_occupancy": round(occupancy_scores[t], 4)}
+                        for t in excluded
+                    ],
+                    key=lambda x: x["taxon"],
+                )
+                for t in excluded:
+                    del concatenated_seqs[t]
+                taxa = [t for t in taxa if t not in excluded]
+                # Rebuild occupancy info with filtered taxa
+                occupancy_info = []
+                for gene_idx, alignment_path in enumerate(alignment_paths):
+                    present_taxa = present_taxa_by_gene[gene_idx]
+                    # Only consider taxa that survived filtering
+                    filtered_present = present_taxa - excluded
+                    occupancy_info = self.add_to_occupancy_info(
+                        occupancy_info, filtered_present, taxa, alignment_path
+                    )
+                if not self.json_output:
+                    print(f"Threshold ({self.threshold}): excluded {len(excluded)} taxa")
+                    for info in excluded_taxa_info:
+                        print(f"  {info['taxon']}: effective occupancy = {info['effective_occupancy']}")
+
         # Write output files
         self.fasta_file_write(fasta_output, concatenated_seqs)
         self.write_occupancy_or_partition_file(occupancy_info, file_occupancy)
@@ -391,6 +453,8 @@ class CreateConcatenationMatrix(Alignment):
                 total_taxa=len(taxa),
                 total_alignments=len(alignment_paths),
                 concatenated_length=second_len,
+                threshold=self.threshold,
+                excluded_taxa=excluded_taxa_info,
                 output_files=dict(
                     fasta=fasta_output,
                     partition=file_partition,

@@ -401,13 +401,17 @@ PhyKIT will output three files:
 
 .. code-block:: shell
 
-	phykit create_concat -a <file> -p <string> [--plot-occupancy] [--plot-output <path>] [--json]
+	phykit create_concat -a <file> -p <string> [--threshold <float>] [--plot-occupancy] [--plot-output <path>] [--json]
 
 Options: |br|
 *-a/\\-\\-alignment*: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
 *-p/\\-\\-prefix*: prefix of output files |br|
+*--threshold*: minimum fraction of informative (non-gap, non-ambiguous) sites across the
+concatenated alignment for a taxon to be included. Taxa whose effective occupancy falls
+below this value are excluded from the output. Set to 0 to disable filtering
+(default: 0). |br|
 *--plot-occupancy*: optional argument to output an occupancy map figure where
 x-axis shows concatenated positions with gene boundaries and y-axis shows taxa
 sorted by total occupancy. Colors denote represented characters, gap/ambiguous

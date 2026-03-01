@@ -276,3 +276,44 @@ class TestCreateConcatenationMatrix(object):
         assert mocked_plot.called
         payload = json.loads(mocked_print.call_args.args[0])
         assert payload["output_files"]["occupancy_plot"] == custom_plot
+
+    @patch("builtins.print")
+    def test_create_concatenation_matrix_threshold(self, mocked_print):
+        prefix = "output/create_concat_matrix_threshold"
+        testargs = [
+            "phykit",
+            "create_concatenation_matrix",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/test_alignment_123.txt",
+            "-p",
+            prefix,
+            "--threshold",
+            "0.5",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        fasta_path = f"{prefix}.fa"
+        with open(fasta_path, "r") as f:
+            fasta_content = f.read()
+
+        # Parse taxa names from the FASTA output
+        taxa_in_output = set()
+        for line in fasta_content.strip().split("\n"):
+            if line.startswith(">"):
+                taxa_in_output.add(line[1:])
+
+        # All taxa in output should have effective occupancy >= 0.5
+        # Taxa with < 50% informative characters should be excluded
+        for taxon in taxa_in_output:
+            # Find the taxon's sequence
+            lines = fasta_content.strip().split("\n")
+            for i, line in enumerate(lines):
+                if line == f">{taxon}" and i + 1 < len(lines):
+                    seq = lines[i + 1]
+                    invalid_chars = {"-", "?", "*", "X", "x", "N", "n"}
+                    informative = sum(1 for ch in seq if ch not in invalid_chars)
+                    occupancy = informative / len(seq) if seq else 0
+                    assert occupancy >= 0.5, (
+                        f"Taxon {taxon} has occupancy {occupancy:.4f} < 0.5 but was not excluded"
+                    )
