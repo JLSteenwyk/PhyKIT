@@ -29,6 +29,7 @@ class PhylogeneticOrdination(Tree):
         self.plot_output = parsed["plot_output"]
         self.plot_tree = parsed["plot_tree"]
         self.color_by = parsed["color_by"]
+        self.tree_color_by = parsed["tree_color_by"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -70,12 +71,7 @@ class PhylogeneticOrdination(Tree):
                 Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
                 lambda_val, log_likelihood,
             )
-        elif self.method == "tsne":
-            self._run_dimreduce(
-                Z, n, tree, ordered_names, trait_names, Y,
-                lambda_val, log_likelihood,
-            )
-        else:  # umap
+        else:  # tsne or umap
             self._run_dimreduce(
                 Z, n, tree, ordered_names, trait_names, Y,
                 lambda_val, log_likelihood,
@@ -171,10 +167,16 @@ class PhylogeneticOrdination(Tree):
                 print(f"\nSaved plot: {self.plot_output}")
 
     def process_args(self, args) -> Dict[str, str]:
+        method = getattr(args, "method", "pca")
+        plot_tree = getattr(args, "plot_tree", False)
+        no_plot_tree = getattr(args, "no_plot_tree", False)
+        # For tsne/umap, default to showing the tree unless --no-plot-tree
+        if method in ("tsne", "umap") and not no_plot_tree:
+            plot_tree = True
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
-            method=getattr(args, "method", "pca"),
+            method=method,
             correction=getattr(args, "correction", "BM"),
             mode=getattr(args, "mode", "cov"),
             n_components=getattr(args, "n_components", 2),
@@ -185,8 +187,9 @@ class PhylogeneticOrdination(Tree):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "phylo_ordination_plot.png"),
-            plot_tree=getattr(args, "plot_tree", False),
+            plot_tree=plot_tree,
             color_by=getattr(args, "color_by", None),
+            tree_color_by=getattr(args, "tree_color_by", None),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -725,8 +728,6 @@ class PhylogeneticOrdination(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
-            from matplotlib.collections import LineCollection
-            from matplotlib.colors import Normalize
         except ImportError:
             print("matplotlib is required for --plot. Install matplotlib and retry.")
             raise SystemExit(2)
@@ -735,53 +736,10 @@ class PhylogeneticOrdination(Tree):
 
         if self.plot_tree and tree is not None and eigenvectors is not None:
             data_for_anc = Z_std if Z_std is not None else Z
-            node_estimates, node_distances, tree_pruned = \
-                self._reconstruct_ancestral_scores(
-                    tree, data_for_anc @ eigenvectors, taxon_names
-                )
-
-            all_dists = [d for d in node_distances.values()]
-            max_dist = max(all_dists) if all_dists else 1.0
-
-            segments = []
-            colors = []
-            norm = Normalize(vmin=0, vmax=max_dist)
-            cmap = plt.get_cmap("coolwarm")
-
-            for clade in tree_pruned.find_clades(order="preorder"):
-                parent_id = id(clade)
-                if parent_id not in node_estimates:
-                    continue
-                parent_scores = node_estimates[parent_id]
-
-                for child in clade.clades:
-                    child_id = id(child)
-                    if child_id not in node_estimates:
-                        continue
-                    child_scores = node_estimates[child_id]
-
-                    x0, y0 = parent_scores[0], parent_scores[1]
-                    x1, y1 = child_scores[0], child_scores[1]
-                    segments.append([(x0, y0), (x1, y1)])
-
-                    parent_dist = node_distances.get(parent_id, 0)
-                    child_dist = node_distances.get(child_id, 0)
-                    mid_dist = (parent_dist + child_dist) / 2.0
-                    colors.append(mid_dist)
-
-            if segments:
-                lc = LineCollection(
-                    segments,
-                    array=np.array(colors),
-                    cmap=cmap,
-                    norm=norm,
-                    linewidths=1.0,
-                    alpha=0.7,
-                    zorder=2,
-                )
-                ax.add_collection(lc)
-                cbar = fig.colorbar(lc, ax=ax, pad=0.02, fraction=0.046)
-                cbar.set_label("Distance from root")
+            self._draw_tree_overlay(
+                ax, fig, tree, data_for_anc @ eigenvectors, taxon_names,
+                trait_names, Y,
+            )
 
         self._draw_points(ax, fig, scores, taxon_names, trait_names, Y)
 
@@ -811,71 +769,161 @@ class PhylogeneticOrdination(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
-            from matplotlib.collections import LineCollection
-            from matplotlib.colors import Normalize
         except ImportError:
             print("matplotlib is required for --plot. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
         fig, ax = plt.subplots(figsize=(7, 5))
 
         if self.plot_tree and tree is not None and Z is not None:
-            node_estimates, node_distances, tree_pruned = \
-                self._reconstruct_ancestral_scores(
-                    tree, embedding, taxon_names
-                )
-
-            all_dists = [d for d in node_distances.values()]
-            max_dist = max(all_dists) if all_dists else 1.0
-
-            segments = []
-            colors = []
-            norm = Normalize(vmin=0, vmax=max_dist)
-            cmap = plt.get_cmap("coolwarm")
-
-            for clade in tree_pruned.find_clades(order="preorder"):
-                parent_id = id(clade)
-                if parent_id not in node_estimates:
-                    continue
-                parent_scores = node_estimates[parent_id]
-
-                for child in clade.clades:
-                    child_id = id(child)
-                    if child_id not in node_estimates:
-                        continue
-                    child_scores = node_estimates[child_id]
-
-                    x0, y0 = parent_scores[0], parent_scores[1]
-                    x1, y1 = child_scores[0], child_scores[1]
-                    segments.append([(x0, y0), (x1, y1)])
-
-                    parent_dist = node_distances.get(parent_id, 0)
-                    child_dist = node_distances.get(child_id, 0)
-                    mid_dist = (parent_dist + child_dist) / 2.0
-                    colors.append(mid_dist)
-
-            if segments:
-                lc = LineCollection(
-                    segments,
-                    array=np.array(colors),
-                    cmap=cmap,
-                    norm=norm,
-                    linewidths=1.0,
-                    alpha=0.7,
-                    zorder=2,
-                )
-                ax.add_collection(lc)
-                cbar = fig.colorbar(lc, ax=ax, pad=0.02, fraction=0.046)
-                cbar.set_label("Distance from root")
+            self._draw_tree_overlay(ax, fig, tree, embedding, taxon_names, trait_names, Y)
 
         self._draw_points(ax, fig, embedding, taxon_names, trait_names, Y)
 
-        ax.set_xlabel(dim_labels[0])
-        ax.set_ylabel(dim_labels[1])
+        if self.method == "umap":
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_xlabel("")
+            ax.set_ylabel("")
+        else:
+            dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
+            ax.set_xlabel(dim_labels[0])
+            ax.set_ylabel(dim_labels[1])
         fig.tight_layout()
         fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
         plt.close(fig)
+
+    def _draw_tree_overlay(
+        self, ax, fig, tree, scores, taxon_names, trait_names, Y,
+    ):
+        from matplotlib.collections import LineCollection
+        from matplotlib.colors import Normalize
+        import matplotlib.pyplot as plt
+
+        node_estimates, node_distances, tree_pruned = \
+            self._reconstruct_ancestral_scores(tree, scores, taxon_names)
+
+        # Determine edge coloring strategy
+        tree_color_by = self.tree_color_by
+        edge_values = None
+        edge_label = "Distance from root"
+        edge_cmap = "coolwarm"
+
+        if tree_color_by is not None:
+            # Reconstruct ancestral values for the chosen trait
+            anc_trait_vals, _, _ = self._resolve_tree_color_trait(
+                tree_color_by, trait_names, Y, taxon_names, tree,
+            )
+            if anc_trait_vals is not None:
+                edge_values = anc_trait_vals
+                edge_label = tree_color_by
+                edge_cmap = "viridis"
+
+        all_dists = list(node_distances.values())
+        max_dist = max(all_dists) if all_dists else 1.0
+
+        segments = []
+        colors = []
+
+        for clade in tree_pruned.find_clades(order="preorder"):
+            parent_id = id(clade)
+            if parent_id not in node_estimates:
+                continue
+            parent_scores = node_estimates[parent_id]
+
+            for child in clade.clades:
+                child_id = id(child)
+                if child_id not in node_estimates:
+                    continue
+                child_scores = node_estimates[child_id]
+
+                x0, y0 = parent_scores[0], parent_scores[1]
+                x1, y1 = child_scores[0], child_scores[1]
+                segments.append([(x0, y0), (x1, y1)])
+
+                if edge_values is not None:
+                    p_val = edge_values.get(parent_id, 0)
+                    c_val = edge_values.get(child_id, 0)
+                    colors.append((p_val + c_val) / 2.0)
+                else:
+                    parent_dist = node_distances.get(parent_id, 0)
+                    child_dist = node_distances.get(child_id, 0)
+                    colors.append((parent_dist + child_dist) / 2.0)
+
+        if segments:
+            if edge_values is not None:
+                vmin = min(colors)
+                vmax = max(colors)
+            else:
+                vmin = 0
+                vmax = max_dist
+            norm = Normalize(vmin=vmin, vmax=vmax)
+            cmap = plt.get_cmap(edge_cmap)
+
+            lc = LineCollection(
+                segments,
+                array=np.array(colors),
+                cmap=cmap,
+                norm=norm,
+                linewidths=1.0,
+                alpha=0.7,
+                zorder=2,
+            )
+            ax.add_collection(lc)
+            cbar = fig.colorbar(lc, ax=ax, pad=0.02, fraction=0.046)
+            cbar.set_label(edge_label)
+
+    def _resolve_tree_color_trait(
+        self, tree_color_by, trait_names, Y, taxon_names, tree,
+    ):
+        """Reconstruct ancestral values for a trait to color tree edges."""
+        # Get per-tip values
+        if tree_color_by in (trait_names or []):
+            col_idx = trait_names.index(tree_color_by)
+            tip_vals = Y[:, col_idx]
+        elif os.path.isfile(tree_color_by):
+            name_to_idx = {name: i for i, name in enumerate(taxon_names)}
+            tip_vals = np.zeros(len(taxon_names))
+            with open(tree_color_by) as f:
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    parts = stripped.split("\t")
+                    if len(parts) < 2:
+                        continue
+                    taxon = parts[0]
+                    if taxon in name_to_idx:
+                        try:
+                            tip_vals[name_to_idx[taxon]] = float(parts[1])
+                        except ValueError:
+                            return None, None, None
+            # Check all taxa covered
+            found = set()
+            with open(tree_color_by) as f:
+                for line in f:
+                    stripped = line.strip()
+                    if stripped and not stripped.startswith("#"):
+                        parts = stripped.split("\t")
+                        if parts[0] in name_to_idx:
+                            found.add(parts[0])
+            if len(found) < len(taxon_names):
+                return None, None, None
+        else:
+            return None, None, None
+
+        # Reconstruct ancestral trait values via the same post-order method
+        # but on the 1D trait column reshaped to (n, 1)
+        trait_col = tip_vals.reshape(-1, 1)
+        node_estimates, node_distances, tree_pruned = \
+            self._reconstruct_ancestral_scores(tree, trait_col, taxon_names)
+
+        # Flatten: node_id -> scalar
+        anc_vals = {}
+        for node_id, est in node_estimates.items():
+            anc_vals[node_id] = float(est[0])
+
+        return anc_vals, node_distances, tree_pruned
 
     def _draw_points(self, ax, fig, coords, taxon_names, trait_names, Y):
         import matplotlib.pyplot as plt
