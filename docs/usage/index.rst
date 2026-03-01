@@ -1632,6 +1632,53 @@ Options: |br|
 
 |
 
+Continuous trait evolution model comparison (fitContinuous)
+##########################################################
+Function names: fit_continuous; fitcontinuous; fc |br|
+Command line interface: pk_fit_continuous; pk_fitcontinuous; pk_fc
+
+Compare models of continuous trait evolution on a phylogeny, analogous to
+R's ``geiger::fitContinuous()``. Fits up to 7 models and ranks them by
+AIC, BIC, and AIC weights.
+
+Models:
+
+- **BM** -- Brownian motion (baseline, 2 params)
+- **OU** -- Ornstein-Uhlenbeck / stabilizing selection (3 params)
+- **EB** -- Early Burst (Harmon et al. 2010) (3 params)
+- **Lambda** -- Pagel's lambda / phylogenetic signal (3 params)
+- **Delta** -- Pagel's delta / tempo of evolution (3 params)
+- **Kappa** -- Pagel's kappa / punctuational vs gradual (3 params)
+- **White** -- White noise / no phylogenetic signal (2 params)
+
+.. code-block:: shell
+
+   phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*--models*: comma-separated list of models to fit (default: all 7) |br|
+*--json*: optional argument to print results as JSON
+
+Example output:
+
+.. code-block:: text
+
+   Model Comparison (fitContinuous)
+
+   Number of tips: 8
+
+   Model       Param     Value      Sigma2    z0        LL         AIC     dAIC    AICw    BIC     dBIC
+   BM          -         -          0.0384    1.6447    -11.570    27.14   0.00    0.453   27.83   0.00
+   OU          alpha     0.0012     0.0385    1.6420    -11.568    29.14   2.00    0.167   30.18   2.35
+   ...
+
+   Best model (AIC): BM
+   Best model (BIC): BM
+
+|
+
 Continuous trait mapping (contMap)
 ##################################
 Function names: cont_map; contmap; cmap |br|

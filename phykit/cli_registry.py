@@ -89,6 +89,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "tangle": "cophylo",
     "brownie": "rate_heterogeneity",
     "rh": "rate_heterogeneity",
+    "fitcontinuous": "fit_continuous",
+    "fc": "fit_continuous",
     "polyt_test": "polytomy_test",
     "ptt": "polytomy_test",
     "polyt": "polytomy_test",

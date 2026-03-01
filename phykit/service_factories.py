@@ -70,6 +70,7 @@ DensityMap = _LazyServiceFactory("phykit.services.tree.density_map", "DensityMap
 Phenogram = _LazyServiceFactory("phykit.services.tree.phenogram", "Phenogram")
 Cophylo = _LazyServiceFactory("phykit.services.tree.cophylo", "Cophylo")
 RateHeterogeneity = _LazyServiceFactory("phykit.services.tree.rate_heterogeneity", "RateHeterogeneity")
+FitContinuous = _LazyServiceFactory("phykit.services.tree.fit_continuous", "FitContinuous")
 PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "PolytomyTest")
 PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")
 PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")

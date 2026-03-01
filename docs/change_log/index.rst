@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.17**:
+Added continuous trait evolution model comparison:
+
+* Added new ``fit_continuous`` command (aliases: ``fitcontinuous``, ``fc``)
+  for comparing models of continuous trait evolution on a phylogeny,
+  analogous to R's ``geiger::fitContinuous()``
+* Fits 7 models: BM, OU, EB, Lambda, Delta, Kappa, White
+* Ranks models by AIC, BIC, and AIC weights
+* Optional subset of models via ``--models``
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_fit_continuous``,
+  ``pk_fitcontinuous``, ``pk_fc``
+
 **2.1.16**:
 Added visualization commands and rate heterogeneity test:
 
