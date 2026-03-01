@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.17</strong>:
+Added continuous trait evolution model comparison:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fitcontinuous</span></code>, <code class="docutils literal notranslate"><span class="pre">fc</span></code>)
+for comparing models of continuous trait evolution on a phylogeny,
+analogous to R's <code class="docutils literal notranslate"><span class="pre">geiger::fitContinuous()</span></code></p></li>
+<li><p>Fits 7 models: BM, OU, EB, Lambda, Delta, Kappa, White</p></li>
+<li><p>Ranks models by AIC, BIC, and AIC weights</p></li>
+<li><p>Optional subset of models via <code class="docutils literal notranslate"><span class="pre">--models</span></code></p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_fit_continuous</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_fitcontinuous</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_fc</span></code></p></li>
+</ul>
 <p><strong>2.1.16</strong>:
 Added visualization commands and rate heterogeneity test:</p>
 <ul class="simple">

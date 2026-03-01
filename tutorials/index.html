@@ -138,6 +138,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization-commands">12. Visualization commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">13. Comparing continuous trait evolution models</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1642,6 +1643,62 @@ stochastic mapping simulations. The <code class="docutils literal notranslate"><
 for a tab-delimited file matching taxa between trees with different tip names.</p>
 <p>For methodological details, see
 <a class="reference external" href="https://doi.org/10.1111/j.2041-210X.2011.00169.x">Revell (2012)</a>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="comparing-continuous-trait-evolution-models">
+<h2>13. Comparing continuous trait evolution models<a class="headerlink" href="#comparing-continuous-trait-evolution-models" title="Link to this heading"></a></h2>
+<p>A common analysis in comparative methods is determining which model of
+continuous trait evolution best explains observed trait variation on a
+phylogeny. PhyKIT's <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fitcontinuous</span></code>,
+<code class="docutils literal notranslate"><span class="pre">fc</span></code>) fits up to 7 models and ranks them by AIC, BIC, and AIC weights,
+analogous to R's <code class="docutils literal notranslate"><span class="pre">geiger::fitContinuous()</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 0: Prepare data</strong></p>
+<p>You need a Newick tree file and a tab-delimited trait file
+(<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>). For example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>raccoon      1.04
+bear 2.39
+sea_lion     2.30
+seal 1.88
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 1: Run fit_continuous with all models</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv
+</pre></div>
+</div>
+<p>This fits BM, OU, EB, Lambda, Delta, Kappa, and White models and prints
+a ranked table.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 2: Interpret the AIC/BIC table</strong></p>
+<p>The output table shows each model's parameter estimate, sigma-squared,
+ancestral state (z0), log-likelihood, AIC, delta-AIC, AIC weight, BIC,
+and delta-BIC. Lower AIC/BIC values and higher AIC weights indicate
+better-fitting models.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Run with a subset of models</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span><span class="nb">fc</span><span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--models<span class="w"> </span>BM,OU,Lambda
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 4: JSON output for downstream analysis</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span><span class="nb">fc</span><span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes all model results, the best model by AIC and
+BIC, and the number of tips.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

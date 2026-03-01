@@ -102,6 +102,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
@@ -1547,6 +1548,49 @@ regime can be generated using <code class="docutils literal notranslate"><span c
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="continuous-trait-evolution-model-comparison-fitcontinuous">
+<h3>Continuous trait evolution model comparison (fitContinuous)<a class="headerlink" href="#continuous-trait-evolution-model-comparison-fitcontinuous" title="Link to this heading"></a></h3>
+<p>Function names: fit_continuous; fitcontinuous; fc <br/>
+Command line interface: pk_fit_continuous; pk_fitcontinuous; pk_fc</p>
+<p>Compare models of continuous trait evolution on a phylogeny, analogous to
+R's <code class="docutils literal notranslate"><span class="pre">geiger::fitContinuous()</span></code>. Fits up to 7 models and ranks them by
+AIC, BIC, and AIC weights.</p>
+<p>Models:</p>
+<ul class="simple">
+<li><p><strong>BM</strong> -- Brownian motion (baseline, 2 params)</p></li>
+<li><p><strong>OU</strong> -- Ornstein-Uhlenbeck / stabilizing selection (3 params)</p></li>
+<li><p><strong>EB</strong> -- Early Burst (Harmon et al. 2010) (3 params)</p></li>
+<li><p><strong>Lambda</strong> -- Pagel's lambda / phylogenetic signal (3 params)</p></li>
+<li><p><strong>Delta</strong> -- Pagel's delta / tempo of evolution (3 params)</p></li>
+<li><p><strong>Kappa</strong> -- Pagel's kappa / punctuational vs gradual (3 params)</p></li>
+<li><p><strong>White</strong> -- White noise / no phylogenetic signal (2 params)</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--models<span class="w"> </span>BM,OU,Lambda<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>--models</em>: comma-separated list of models to fit (default: all 7) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Example output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Model Comparison (fitContinuous)
+
+Number of tips: 8
+
+Model       Param     Value      Sigma2    z0        LL         AIC     dAIC    AICw    BIC     dBIC
+BM          -         -          0.0384    1.6447    -11.570    27.14   0.00    0.453   27.83   0.00
+OU          alpha     0.0012     0.0385    1.6420    -11.568    29.14   2.00    0.167   30.18   2.35
+...
+
+Best model (AIC): BM
+Best model (BIC): BM
+</pre></div>
+</div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
