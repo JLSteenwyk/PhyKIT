@@ -75,6 +75,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "phmo": "phylomorphospace",
     "phylo_regression": "phylogenetic_regression",
     "pgls": "phylogenetic_regression",
+    "asr": "ancestral_state_reconstruction",
+    "anc_recon": "ancestral_state_reconstruction",
     "simmap": "stochastic_character_map",
     "scm": "stochastic_character_map",
     "polyt_test": "polytomy_test",
