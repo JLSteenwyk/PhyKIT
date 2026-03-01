@@ -1457,7 +1457,7 @@ lambda+corr) within numerical tolerance (1e-4).
 
 .. code-block:: shell
 
-   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
@@ -1471,8 +1471,10 @@ Options: |br|
 *--min-dist*: UMAP min_dist (default: 0.1) |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: optional argument to save a scatter plot |br|
-*--plot-tree*: overlay the phylogeny via ancestral reconstruction (edges colored by distance from root) |br|
+*--plot-tree*: overlay the phylogeny via ancestral reconstruction (default for tsne/umap; opt-in for pca) |br|
+*--no-plot-tree*: disable the phylogeny overlay for tsne/umap plots |br|
 *--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
+*--tree-color-by*: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) |br|
 *--plot-output*: output path for plot (default: phylo_ordination_plot.png) |br|
 *--json*: optional argument to print results as JSON
 

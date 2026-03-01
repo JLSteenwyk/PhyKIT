@@ -2332,7 +2332,7 @@ class Phykit:
                   pk_phylo_dimreduce, pk_dimreduce, pk_pdr
 
                 Usage:
-                phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+                phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -2366,11 +2366,19 @@ class Phykit:
 
                 --plot-tree                 overlay phylogeny edges via
                                             ancestral reconstruction
+                                            (default for tsne/umap)
+
+                --no-plot-tree              disable phylogeny overlay for
+                                            tsne/umap plots
 
                 --color-by                  color tip points by trait;
                                             specify a column name from the
                                             multi-trait file or a separate
                                             tab-delimited file (taxon<tab>value)
+
+                --tree-color-by             color phylogeny edges by a trait;
+                                            specify a column name or a file
+                                            (default: distance from root)
 
                 --plot-output               output path for plot
                                             (default: phylo_ordination_plot.png)
@@ -2455,8 +2463,17 @@ class Phykit:
         )
         parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-tree", action="store_true", required=False, help=SUPPRESS)
+        parser.add_argument("--no-plot-tree", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument(
             "--color-by",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--tree-color-by",
             type=str,
             default=None,
             required=False,
