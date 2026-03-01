@@ -118,6 +118,17 @@
 <li class="toctree-l3"><a class="reference internal" href="#id34">Summary</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny">10. Reconstructing ancestral trait values and mapping them onto a phylogeny</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id36">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-run-fast-ancestral-reconstruction">Step 1: Run fast ancestral reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-run-with-confidence-intervals">Step 2: Run with confidence intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-use-the-vcv-based-ml-method">Step 3: Use the VCV-based ML method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-generate-a-contmap-plot">Step 4: Generate a contMap plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-5-use-a-multi-trait-file">Step 5: Use a multi-trait file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-6-export-results-as-json">Step 6: Export results as JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id37">Summary</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1331,6 +1342,135 @@ produce spurious correlations.</p>
 <a class="reference external" href="https://doi.org/10.1086/343873">Freckleton et al. (2002)</a> and
 <a class="reference external" href="https://doi.org/10.1007/978-3-662-43550-2_5">Symonds and Blomberg (2014)</a>.
 The R equivalent is <code class="docutils literal notranslate"><span class="pre">caper::pgls()</span></code> or <code class="docutils literal notranslate"><span class="pre">nlme::gls()</span></code> with <code class="docutils literal notranslate"><span class="pre">ape::corBrownian()</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny">
+<h2>10. Reconstructing ancestral trait values and mapping them onto a phylogeny<a class="headerlink" href="#reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny" title="Link to this heading"></a></h2>
+<p>A common question in comparative biology is: what were the trait values of
+ancestral species? Ancestral state reconstruction (ASR) uses the trait values
+observed at the tips of a phylogeny together with a model of trait evolution
+(Brownian motion) to estimate what trait values were at each internal node.</p>
+<p><strong>Hypothetical study question.</strong> Given body mass data for 8 mammal species,
+what were the estimated body masses of their ancestors, and how do trait
+values change along branches of the phylogeny?</p>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">asr</span></code>,
+<code class="docutils literal notranslate"><span class="pre">anc_recon</span></code>) implements two ML methods: <code class="docutils literal notranslate"><span class="pre">fast</span></code> (Felsenstein's pruning
+algorithm, analogous to <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code>) and <code class="docutils literal notranslate"><span class="pre">ml</span></code> (full VCV-based
+ML with exact conditional CIs, analogous to <code class="docutils literal notranslate"><span class="pre">ape::ace()</span></code>). <br/></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="id36">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id36" title="Link to this heading"></a></h3>
+<p>Two input files are needed: a phylogenetic tree and a trait data file.
+The trait data can be either a two-column file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>) or
+a multi-trait file with a header row (use <code class="docutils literal notranslate"><span class="pre">-c</span></code> to select a column).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-run-fast-ancestral-reconstruction">
+<h3>Step 1: Run fast ancestral reconstruction<a class="headerlink" href="#step-1-run-fast-ancestral-reconstruction" title="Link to this heading"></a></h3>
+<p>Estimate ancestral body masses using the fast (pruning) method:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_traits.tsv
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-run-with-confidence-intervals">
+<h3>Step 2: Run with confidence intervals<a class="headerlink" href="#step-2-run-with-confidence-intervals" title="Link to this heading"></a></h3>
+<p>Add the <code class="docutils literal notranslate"><span class="pre">--ci</span></code> flag for 95% confidence intervals:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ci
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-use-the-vcv-based-ml-method">
+<h3>Step 3: Use the VCV-based ML method<a class="headerlink" href="#step-3-use-the-vcv-based-ml-method" title="Link to this heading"></a></h3>
+<p>For exact conditional confidence intervals, use the <code class="docutils literal notranslate"><span class="pre">ml</span></code> method:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-m<span class="w"> </span>ml<span class="w"> </span>--ci
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-generate-a-contmap-plot">
+<h3>Step 4: Generate a contMap plot<a class="headerlink" href="#step-4-generate-a-contmap-plot" title="Link to this heading"></a></h3>
+<p>Visualize trait values mapped onto the phylogeny with a continuous
+color gradient:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot<span class="w"> </span>contmap.png
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-5-use-a-multi-trait-file">
+<h3>Step 5: Use a multi-trait file<a class="headerlink" href="#step-5-use-a-multi-trait-file" title="Link to this heading"></a></h3>
+<p>When your data file contains multiple traits with a header row, use
+<code class="docutils literal notranslate"><span class="pre">-c</span></code> to select a specific column:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>body_mass<span class="w"> </span>--ci
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-6-export-results-as-json">
+<h3>Step 6: Export results as JSON<a class="headerlink" href="#step-6-export-results-as-json" title="Link to this heading"></a></h3>
+<p>For downstream scripting, results can be exported as JSON:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes the method used, trait name, number of tips,
+log-likelihood, sigma-squared (BM rate), ancestral estimates with
+optional CIs, and observed tip values.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="id37">
+<h3>Summary<a class="headerlink" href="#id37" title="Link to this heading"></a></h3>
+<p>In this tutorial, we used ancestral state reconstruction to estimate
+ancestral body mass values for 8 mammal species. The key steps were:
+(1) running the fast method for quick estimates, (2) adding confidence
+intervals, (3) using the full ML method for exact CIs, (4) generating
+contMap plots, (5) using multi-trait files, and (6) exporting to JSON.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">fast</span></code> method is recommended for large trees due to its O(n) time
+complexity, while the <code class="docutils literal notranslate"><span class="pre">ml</span></code> method provides exact conditional confidence
+intervals at O(n^3) cost.</p>
+<p>The R equivalents are <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> for the fast method,
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code> for the ML method, and <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>
+for the contMap visualization.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

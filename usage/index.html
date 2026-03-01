@@ -81,6 +81,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#branch-length-multiplier">Branch length multiplier</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
@@ -896,6 +897,39 @@ doi: 10.1093/gbe/evw179.</p>
 </section>
 <section id="tree-based-functions">
 <h2>Tree-based functions<a class="headerlink" href="#tree-based-functions" title="Link to this heading"></a></h2>
+<section id="ancestral-state-reconstruction">
+<h3>Ancestral state reconstruction<a class="headerlink" href="#ancestral-state-reconstruction" title="Link to this heading"></a></h3>
+<p>Function names: ancestral_state_reconstruction; asr; anc_recon <br/>
+Command line interface: pk_ancestral_state_reconstruction; pk_asr; pk_anc_recon</p>
+<p>Estimate ancestral states for continuous traits using maximum likelihood,
+analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> and <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code>.
+Optionally produce a contMap plot showing continuous trait values mapped
+onto the phylogeny.</p>
+<p>Two methods are available:</p>
+<ul class="simple">
+<li><p><strong>fast</strong> (default): Felsenstein's pruning/contrasts shortcut, O(n) time</p></li>
+<li><p><strong>ml</strong>: full VCV-based ML with exact conditional CIs, O(n^3)</p></li>
+</ul>
+<p>Both methods produce identical point estimates; <code class="docutils literal notranslate"><span class="pre">ml</span></code> gives exact
+conditional confidence intervals.</p>
+<p>Input trait data can be either a two-column file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>)
+when <code class="docutils literal notranslate"><span class="pre">-c</span></code> is omitted, or a multi-trait file with header row when <code class="docutils literal notranslate"><span class="pre">-c</span></code>
+specifies which column to use.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a phylogenetic tree file <br/>
+<em>-d/\-\-trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
+<em>-c/\-\-trait</em>: trait column name (required for multi-trait files) <br/>
+<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">ml</span></code> (default: <code class="docutils literal notranslate"><span class="pre">fast</span></code>) <br/>
+<em>--ci</em>: include 95% confidence intervals <br/>
+<em>--plot</em>: output path for contMap plot (requires matplotlib) <br/>
+<em>--json</em>: output results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="bipartition-support-statistics">
 <h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Link to this heading"></a></h3>
 <p>Function names: bipartition_support_stats; bss <br/>

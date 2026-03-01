@@ -80,6 +80,137 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.15</strong>:
+Added ancestral state reconstruction:</p>
+<ul>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">asr</span></code>,
+<code class="docutils literal notranslate"><span class="pre">anc_recon</span></code>) for estimating ancestral states of continuous traits using
+maximum likelihood, analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code></p></li>
+<li><p>Two methods: <code class="docutils literal notranslate"><span class="pre">fast</span></code> (two-pass Felsenstein's algorithm, O(n)) and <code class="docutils literal notranslate"><span class="pre">ml</span></code>
+(full VCV-based ML with exact conditional CIs, O(n^3))</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--ci</span></code> flag to include 95% confidence intervals</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot</span></code> argument to generate a contMap plot showing continuous
+trait values mapped onto the phylogeny with a color gradient</p></li>
+<li><p>Supports both two-column single-trait files and multi-trait files with
+<code class="docutils literal notranslate"><span class="pre">-c</span></code> flag to select a trait column</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_ancestral_state_reconstruction</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_asr</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_anc_recon</span></code></p></li>
+<li><p>Results validated against R 4.4.0 (<code class="docutils literal notranslate"><span class="pre">phytools::fastAnc</span></code> with
+<code class="docutils literal notranslate"><span class="pre">vars=TRUE,</span> <span class="pre">CI=TRUE</span></code>):</p>
+<p>Point estimates — <code class="docutils literal notranslate"><span class="pre">fast</span></code> method vs R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 16.7%" />
+<col style="width: 33.3%" />
+<col style="width: 16.7%" />
+<col style="width: 16.7%" />
+<col style="width: 16.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Node</p></th>
+<th class="head"><p>Descendants</p></th>
+<th class="head"><p>PhyKIT</p></th>
+<th class="head"><p>R <code class="docutils literal notranslate"><span class="pre">fastAnc</span></code></p></th>
+<th class="head"><p>Error</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>N1 (root)</p></td>
+<td><p>all 8 tips</p></td>
+<td><p>1.6446924</p></td>
+<td><p>1.6446924</p></td>
+<td><p>0.0000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>N2</p></td>
+<td><p>bear, raccoon</p></td>
+<td><p>1.7012405</p></td>
+<td><p>1.7012405</p></td>
+<td><p>0.0000000</p></td>
+</tr>
+<tr class="row-even"><td><p>N3</p></td>
+<td><p>5 taxa</p></td>
+<td><p>1.4564597</p></td>
+<td><p>1.4564597</p></td>
+<td><p>0.0000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>N4</p></td>
+<td><p>sea_lion, seal</p></td>
+<td><p>1.8090745</p></td>
+<td><p>1.8090745</p></td>
+<td><p>0.0000000</p></td>
+</tr>
+<tr class="row-even"><td><p>N5</p></td>
+<td><p>cat, monkey, weasel</p></td>
+<td><p>1.2565917</p></td>
+<td><p>1.2565917</p></td>
+<td><p>0.0000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>N6</p></td>
+<td><p>cat, monkey</p></td>
+<td><p>0.9894725</p></td>
+<td><p>0.9894725</p></td>
+<td><p>0.0000000</p></td>
+</tr>
+</tbody>
+</table>
+<p>95% CIs — <code class="docutils literal notranslate"><span class="pre">fast</span></code> method vs R's <code class="docutils literal notranslate"><span class="pre">fastAnc(CI=TRUE)</span></code></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 17.6%" />
+<col style="width: 32.4%" />
+<col style="width: 32.4%" />
+<col style="width: 17.6%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Node</p></th>
+<th class="head"><p>PhyKIT CI</p></th>
+<th class="head"><p>R CI</p></th>
+<th class="head"><p>Error</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>N1 (root)</p></td>
+<td><p>[0.894, 2.396]</p></td>
+<td><p>[0.894, 2.396]</p></td>
+<td><p>0.000</p></td>
+</tr>
+<tr class="row-odd"><td><p>N2</p></td>
+<td><p>[0.970, 2.433]</p></td>
+<td><p>[0.970, 2.433]</p></td>
+<td><p>0.000</p></td>
+</tr>
+<tr class="row-even"><td><p>N3</p></td>
+<td><p>[0.639, 2.274]</p></td>
+<td><p>[0.639, 2.274]</p></td>
+<td><p>0.000</p></td>
+</tr>
+<tr class="row-odd"><td><p>N4</p></td>
+<td><p>[0.976, 2.642]</p></td>
+<td><p>[0.976, 2.642]</p></td>
+<td><p>0.000</p></td>
+</tr>
+<tr class="row-even"><td><p>N5</p></td>
+<td><p>[0.355, 2.158]</p></td>
+<td><p>[0.355, 2.158]</p></td>
+<td><p>0.000</p></td>
+</tr>
+<tr class="row-odd"><td><p>N6</p></td>
+<td><p>[-0.565, 2.544]</p></td>
+<td><p>[-0.565, 2.544]</p></td>
+<td><p>0.000</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fast</span></code> and <code class="docutils literal notranslate"><span class="pre">ml</span></code> methods produce identical point estimates
+(within 1e-6)</p></li>
+<li><p>Sigma-squared (BM rate) = 0.04389 (matches R's PIC-based estimate
+within 1e-3)</p></li>
+</ul>
+</li>
+</ul>
 <p><strong>2.1.13</strong>:
 Added stochastic character mapping (SIMMAP):</p>
 <ul class="simple">
