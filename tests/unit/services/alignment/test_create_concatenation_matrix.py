@@ -32,6 +32,7 @@ class TestCreateConcatenationMatrix:
         assert ccm.json_output is False
         assert ccm.plot_occupancy is False
         assert ccm.plot_output is None
+        assert ccm.threshold == 0
 
     def test_process_args_reads_optional_flags(self):
         parsed = CreateConcatenationMatrix(
@@ -273,3 +274,105 @@ class TestCreateConcatenationMatrix:
         assert captured["payload"]["total_taxa"] == 3
         assert captured["payload"]["concatenated_length"] == 4
         assert "occupancy_plot" in captured["payload"]["output_files"]
+
+    def test_compute_effective_occupancy_all_valid(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        seqs = {"A": ["ACGT", "TTGG"]}
+        occupancy, excluded = ccm._compute_effective_occupancy(seqs, 0.5)
+        assert occupancy["A"] == 1.0
+        assert excluded == set()
+
+    def test_compute_effective_occupancy_all_gaps(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        seqs = {"A": ["----", "NNNN"]}
+        occupancy, excluded = ccm._compute_effective_occupancy(seqs, 0.5)
+        assert occupancy["A"] == 0.0
+        assert "A" in excluded
+
+    def test_compute_effective_occupancy_mixed(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        # 4 informative out of 8 total = 0.5
+        seqs = {"A": ["AC--", "??GT"]}
+        occupancy, excluded = ccm._compute_effective_occupancy(seqs, 0.5)
+        assert occupancy["A"] == 0.5
+        # 0.5 is not < 0.5, so not excluded
+        assert excluded == set()
+
+    def test_threshold_excludes_low_occupancy_taxon(self, tmp_path):
+        gene1 = tmp_path / "g1.fa"
+        gene2 = tmp_path / "g2.fa"
+        # A is fully present in both genes
+        # B has only gaps/ambiguous chars
+        _write_fasta(gene1, [("A", "ACGT"), ("B", "----")])
+        _write_fasta(gene2, [("A", "TTGG"), ("B", "NNNN")])
+
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{gene1}\n{gene2}\n")
+        prefix = tmp_path / "concat_thresh"
+
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=False,
+                plot_occupancy=False,
+                threshold=0.5,
+            )
+        )
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        fasta_text = Path(f"{prefix}.fa").read_text()
+        assert ">A\n" in fasta_text
+        assert ">B\n" not in fasta_text
+
+    def test_threshold_zero_disables_filtering(self, tmp_path):
+        gene1 = tmp_path / "g1.fa"
+        gene2 = tmp_path / "g2.fa"
+        _write_fasta(gene1, [("A", "ACGT"), ("B", "----")])
+        _write_fasta(gene2, [("A", "TTGG"), ("B", "NNNN")])
+
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{gene1}\n{gene2}\n")
+        prefix = tmp_path / "concat_nofilt"
+
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=False,
+                plot_occupancy=False,
+                threshold=0,
+            )
+        )
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        fasta_text = Path(f"{prefix}.fa").read_text()
+        assert ">A\n" in fasta_text
+        assert ">B\n" in fasta_text
+
+    def test_threshold_one_excludes_all_but_complete(self, tmp_path):
+        gene1 = tmp_path / "g1.fa"
+        gene2 = tmp_path / "g2.fa"
+        # A: fully present in both → occupancy 1.0
+        # B: present in gene1, missing from gene2 → has ???? → occupancy 0.5
+        _write_fasta(gene1, [("A", "ACGT"), ("B", "TTGG")])
+        _write_fasta(gene2, [("A", "AACC")])
+
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{gene1}\n{gene2}\n")
+        prefix = tmp_path / "concat_strict"
+
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=False,
+                plot_occupancy=False,
+                threshold=1.0,
+            )
+        )
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        fasta_text = Path(f"{prefix}.fa").read_text()
+        assert ">A\n" in fasta_text
+        assert ">B\n" not in fasta_text
