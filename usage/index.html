@@ -101,6 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
@@ -1508,6 +1509,37 @@ nesting) are verified.</p>
 <em>-c/\-\-trait</em>: column name for discrete character trait <br/>
 <em>-m/\-\-model</em>: substitution model: ER, SYM, or ARD (default: ER) <br/>
 <em>-n/\-\-nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>--plot</em>: output plot file path for phylogram with colored branches <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="rate-heterogeneity-test-multi-rate-brownian-motion">
+<h3>Rate heterogeneity test (multi-rate Brownian motion)<a class="headerlink" href="#rate-heterogeneity-test-multi-rate-brownian-motion" title="Link to this heading"></a></h3>
+<p>Function names: rate_heterogeneity; brownie; rh <br/>
+Command line interface: pk_rate_heterogeneity; pk_brownie; pk_rh</p>
+<p>Test for rate heterogeneity across phylogenetic regimes using multi-rate
+Brownian motion (O'Meara et al. 2006), analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::brownie.lite()</span></code>.</p>
+<p>Fits single-rate vs. multi-rate BM models and performs a likelihood ratio
+test. Users specify a tree, continuous trait data, and a regime file
+mapping tips to regimes (tab-delimited, <code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;regime_label</span></code>).</p>
+<p>Regime assignments to internal branches are inferred via Fitch parsimony.
+Per-regime VCV matrices are decomposed and per-regime sigma-squared values
+are estimated via maximum likelihood.</p>
+<p>Optionally, a parametric bootstrap can be run to compute a simulated
+p-value (<code class="docutils literal notranslate"><span class="pre">-n/--nsim</span></code>). A horizontal phylogram with branches colored by
+regime can be generated using <code class="docutils literal notranslate"><span class="pre">--plot</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rate_heterogeneity<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-r<span class="w"> </span>&lt;regime_data&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
+<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-r/\-\-regime_data</em>: tab-delimited regime file (taxon&lt;tab&gt;regime_label) <br/>
+<em>-n/\-\-nsim</em>: number of parametric bootstrap simulations (default: 0) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
 <em>--json</em>: optional argument to print results as JSON</p>

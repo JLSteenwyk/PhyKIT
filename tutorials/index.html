@@ -128,6 +128,15 @@
 <li class="toctree-l3"><a class="reference internal" href="#id37">Summary</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">9. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id38">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-run-the-rate-heterogeneity-test">Step 1: Run the rate heterogeneity test</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-add-a-parametric-bootstrap">Step 2: Add a parametric bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-generate-a-regime-tree-plot">Step 3: Generate a regime tree plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-export-as-json">Step 4: Export as JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id39">Summary</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1516,6 +1525,90 @@ that match R's <code class="docutils literal notranslate"><span class="pre">phyt
 <p>The R equivalents are <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> for the fast method,
 <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code> for the ML method, and <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>
 for the contMap visualization.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="testing-for-rate-heterogeneity-across-phylogenetic-regimes">
+<h2>9. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
+<p>A key question in comparative biology is whether the rate of trait evolution differs
+across lineages — for example, whether aquatic mammals evolve body size at a different
+rate than terrestrial mammals. Rate heterogeneity tests address this by fitting
+single-rate vs. multi-rate Brownian motion models and comparing them with a likelihood
+ratio test (<a class="reference external" href="https://doi.org/10.1111/j.0014-3820.2006.tb00514.x">O'Meara et al. 2006</a>).</p>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">brownie</span></code>, <code class="docutils literal notranslate"><span class="pre">rh</span></code>) implements
+this test, analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::brownie.lite()</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="id38">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id38" title="Link to this heading"></a></h3>
+<p>You need three input files:</p>
+<ol class="arabic simple">
+<li><p>A phylogenetic tree in Newick format</p></li>
+<li><p>A tab-delimited trait file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>)</p></li>
+<li><p>A tab-delimited regime file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;regime_label</span></code>)</p></li>
+</ol>
+<p>We will use the test data included with PhyKIT: an eight-taxon mammal phylogeny,
+log-transformed body mass values, and regime assignments (aquatic vs. terrestrial). <br/></p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-run-the-rate-heterogeneity-test">
+<h3>Step 1: Run the rate heterogeneity test<a class="headerlink" href="#step-1-run-the-rate-heterogeneity-test" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rh<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-r<span class="w"> </span>tree_simple_regimes.tsv
+</pre></div>
+</div>
+<p>This fits both single-rate and multi-rate BM models and reports the likelihood
+ratio test results.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-add-a-parametric-bootstrap">
+<h3>Step 2: Add a parametric bootstrap<a class="headerlink" href="#step-2-add-a-parametric-bootstrap" title="Link to this heading"></a></h3>
+<p>For small sample sizes, the chi-squared approximation may be unreliable. Use the
+<code class="docutils literal notranslate"><span class="pre">-n</span></code> flag to run a parametric bootstrap:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rh<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-r<span class="w"> </span>tree_simple_regimes.tsv<span class="w"> </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--seed</span></code> flag ensures reproducibility.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-generate-a-regime-tree-plot">
+<h3>Step 3: Generate a regime tree plot<a class="headerlink" href="#step-3-generate-a-regime-tree-plot" title="Link to this heading"></a></h3>
+<p>Visualize which branches belong to which regime:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rh<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-r<span class="w"> </span>tree_simple_regimes.tsv<span class="w"> </span>--plot<span class="w"> </span>regime_tree.png
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-export-as-json">
+<h3>Step 4: Export as JSON<a class="headerlink" href="#step-4-export-as-json" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rh<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-r<span class="w"> </span>tree_simple_regimes.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="id39">
+<h3>Summary<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
+<p>In this tutorial, we used the rate heterogeneity test to ask whether body mass
+evolves at different rates in aquatic vs. terrestrial mammals. The key steps
+were: (1) fitting single-rate and multi-rate BM models, (2) performing a
+likelihood ratio test, (3) optionally running a parametric bootstrap, and
+(4) visualizing regime assignments on the phylogeny.</p>
+<p>For methodological details, see
+<a class="reference external" href="https://doi.org/10.1111/j.0014-3820.2006.tb00514.x">O'Meara et al. (2006)</a>.
+The R equivalent is <code class="docutils literal notranslate"><span class="pre">phytools::brownie.lite()</span></code>
+(<a class="reference external" href="https://doi.org/10.1111/j.2041-210X.2011.00169.x">Revell 2012</a>).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

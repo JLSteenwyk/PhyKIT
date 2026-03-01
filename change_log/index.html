@@ -80,6 +80,82 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.16</strong>:
+Added rate heterogeneity test:</p>
+<ul>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">brownie</span></code>, <code class="docutils literal notranslate"><span class="pre">rh</span></code>)
+for testing whether continuous trait evolution rates differ across
+phylogenetic regimes using multi-rate Brownian motion (O'Meara et al.
+2006), analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::brownie.lite()</span></code></p></li>
+<li><p>Fits single-rate vs. multi-rate BM models and performs a likelihood
+ratio test (chi-squared)</p></li>
+<li><p>Optional parametric bootstrap via <code class="docutils literal notranslate"><span class="pre">-n/--nsim</span></code></p></li>
+<li><p>Regime assignments to internal branches inferred via Fitch parsimony</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot</span></code> argument for regime-colored phylogram</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_rate_heterogeneity</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_brownie</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_rh</span></code></p></li>
+<li><p>Results validated against R 4.4.0 (<code class="docutils literal notranslate"><span class="pre">phytools::brownie.lite</span></code> with
+<code class="docutils literal notranslate"><span class="pre">paintSubTree(stem=TRUE)</span></code>):</p>
+<p>PhyKIT uses Fitch parsimony for regime assignment, which matches
+R's <code class="docutils literal notranslate"><span class="pre">paintSubTree(stem=TRUE)</span></code> behavior.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33.3%" />
+<col style="width: 22.2%" />
+<col style="width: 22.2%" />
+<col style="width: 22.2%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>PhyKIT</p></th>
+<th class="head"><p>R <code class="docutils literal notranslate"><span class="pre">brownie.lite</span></code></p></th>
+<th class="head"><p>Difference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Single-rate sigma2</p></td>
+<td><p>0.03841</p></td>
+<td><p>0.03841</p></td>
+<td><p>&lt; 1e-11</p></td>
+</tr>
+<tr class="row-odd"><td><p>Single-rate LL</p></td>
+<td><p>-11.56968</p></td>
+<td><p>-11.56968</p></td>
+<td><p>&lt; 1e-14</p></td>
+</tr>
+<tr class="row-even"><td><p>Single-rate anc. state</p></td>
+<td><p>1.64469</p></td>
+<td><p>1.64469</p></td>
+<td><p>&lt; 1e-15</p></td>
+</tr>
+<tr class="row-odd"><td><p>Multi-rate sigma2 (terrestrial)</p></td>
+<td><p>0.05002</p></td>
+<td><p>0.04998</p></td>
+<td><p>3.9e-05</p></td>
+</tr>
+<tr class="row-even"><td><p>Multi-rate sigma2 (aquatic)</p></td>
+<td><p>0.00881</p></td>
+<td><p>0.00889</p></td>
+<td><p>8.1e-05</p></td>
+</tr>
+<tr class="row-odd"><td><p>Multi-rate LL</p></td>
+<td><p>-11.20459</p></td>
+<td><p>-11.20461</p></td>
+<td><p>1.6e-05</p></td>
+</tr>
+<tr class="row-even"><td><p>Chi-squared p-value</p></td>
+<td><p>0.39283</p></td>
+<td><p>0.39284</p></td>
+<td><p>1.1e-05</p></td>
+</tr>
+</tbody>
+</table>
+<p>Single-rate model matches to machine precision. Multi-rate model
+matches to within optimizer convergence tolerance (both converge to
+the same flat likelihood plateau).</p>
+</li>
+</ul>
 <p><strong>2.1.15</strong>:
 Added ancestral state reconstruction:</p>
 <ul>
