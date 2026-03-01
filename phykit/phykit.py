@@ -201,6 +201,8 @@ class Phykit:
                       reconstruction
                 phylogenetic_regression (alias: phylo_regression; pgls)
                     - fit phylogenetic generalized least squares (PGLS) regression
+                stochastic_character_map (alias: simmap; scm)
+                    - stochastic character mapping (SIMMAP) of discrete traits
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -2491,6 +2493,97 @@ class Phykit:
         _run_service(parser, argv, PhylogeneticRegression)
 
     @staticmethod
+    def stochastic_character_map(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Perform Stochastic Character Mapping (SIMMAP) of discrete
+                traits onto a phylogeny (Huelsenbeck et al. 2003;
+                Bollback 2006), analogous to R's phytools::make.simmap().
+
+                Fits a continuous-time Markov chain (CTMC) rate matrix Q
+                via maximum likelihood, then simulates character histories
+                conditioned on tip states. Three models are available:
+                ER (equal rates), SYM (symmetric), ARD (all rates differ).
+
+                Input is a phylogenetic tree and a tab-delimited file
+                with a header row: taxon<tab>trait_column<tab>...
+
+                Output includes the fitted Q matrix, log-likelihood,
+                mean dwelling times, and mean transition counts.
+
+                Aliases:
+                  stochastic_character_map, simmap, scm
+                Command line interfaces:
+                  pk_stochastic_character_map, pk_simmap, pk_scm
+
+                Usage:
+                phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            with header row
+
+                -c/--trait                  column name for discrete
+                                            character trait
+
+                -m/--model                  substitution model: ER,
+                                            SYM, or ARD (default: ER)
+
+                -n/--nsim                   number of stochastic
+                                            mapping simulations
+                                            (default: 100)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                --plot                      output plot file path
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-c", "--trait", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-m",
+            "--model",
+            type=str,
+            required=False,
+            default="ER",
+            choices=["ER", "SYM", "ARD"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "-n", "--nsim", type=int, required=False, default=100,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--seed", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, StochasticCharacterMap)
+
+    @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -3609,6 +3702,10 @@ def phylomorphospace(argv=None):
 
 def phylogenetic_regression(argv=None):
     Phykit.phylogenetic_regression(sys.argv[1:])
+
+
+def stochastic_character_map(argv=None):
+    Phykit.stochastic_character_map(sys.argv[1:])
 
 
 def polytomy_test(argv=None):
