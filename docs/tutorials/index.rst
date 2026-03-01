@@ -909,24 +909,29 @@ The R equivalent is ``phytools::phylosig()``
 
 |
 
-7. Phylogenetic PCA for multivariate trait analysis
-###################################################
+7. Phylogenetic ordination for multivariate trait analysis
+###########################################################
 
-When analyzing multiple continuous traits across species, standard PCA ignores the
-phylogenetic non-independence among species: closely related species share evolutionary
-history and thus cannot be treated as independent data points. Phylogenetic PCA
-(`Revell 2009 <https://doi.org/10.1111/j.1558-5646.2009.00616.x>`_)
-addresses this by incorporating the phylogenetic variance-covariance matrix into the PCA,
+When analyzing multiple continuous traits across species, standard ordination methods
+ignore the phylogenetic non-independence among species: closely related species share
+evolutionary history and thus cannot be treated as independent data points. Phylogenetic
+ordination addresses this by incorporating the phylogenetic variance-covariance matrix,
 producing ordinations that properly account for shared ancestry.
+
+PhyKIT's ``phylogenetic_ordination`` command (aliases: ``phylo_ordination``, ``ordination``,
+``ord``, ``phylo_pca``, ``phyl_pca``, ``ppca``, ``phylo_dimreduce``, ``dimreduce``, ``pdr``)
+supports three ordination methods:
+
+- **PCA** (default): phylogenetic PCA (`Revell 2009 <https://doi.org/10.1111/j.1558-5646.2009.00616.x>`_)
+  with Brownian motion or Pagel's lambda correction, and covariance or correlation modes
+- **t-SNE**: phylogenetically-corrected t-SNE for nonlinear dimensionality reduction
+- **UMAP**: phylogenetically-corrected UMAP for nonlinear dimensionality reduction
 
 **Hypothetical study question.** Suppose we have measured body mass, brain size, and
 longevity for eight mammal species and want to identify the major axes of morphological
 variation while accounting for phylogenetic relationships. Which traits load most heavily
 on the primary axes? Do any species emerge as outliers after phylogenetic correction?
-
-PhyKIT's ``phylogenetic_pca`` command (aliases: ``phylo_pca``, ``phyl_pca``, ``ppca``)
-implements Revell's (2009) phylogenetic PCA with support for Brownian motion and
-Pagel's lambda estimation methods, and both covariance and correlation modes. |br|
+Are there nonlinear patterns that PCA might miss?
 
 .. centered::
    Download test data:
@@ -961,11 +966,11 @@ and ``tests/sample_files/tree_simple_multi_traits.tsv``.
 Step 1: Run phylogenetic PCA with Brownian motion
 **************************************************
 
-The default method uses a Brownian motion model for the phylogenetic covariance structure:
+The default method is PCA with Brownian motion for the phylogenetic covariance structure:
 
 .. code-block:: shell
 
-   phykit phylogenetic_pca \
+   phykit phylogenetic_ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv
 
@@ -1011,7 +1016,7 @@ it standardizes each trait to unit variance before decomposition:
 
 .. code-block:: shell
 
-   phykit phylogenetic_pca \
+   phykit ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
        --mode corr
@@ -1031,15 +1036,15 @@ The loadings and scores change accordingly, but the overall pattern remains simi
 Step 3: Estimate Pagel's lambda jointly
 ****************************************
 
-Instead of assuming pure Brownian motion, the lambda method jointly estimates Pagel's lambda
+Instead of assuming pure Brownian motion, the lambda correction jointly estimates Pagel's lambda
 across all traits, downweighting the phylogenetic covariance structure if the data warrant it:
 
 .. code-block:: shell
 
-   phykit phylogenetic_pca \
+   phykit ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
-       -m lambda \
+       --correction lambda \
        --json
 
 The JSON output includes the estimated lambda value, eigenvalues, loadings, scores, and
@@ -1056,112 +1061,78 @@ To visualize the ordination, use the ``--plot`` flag:
 
 .. code-block:: shell
 
-   phykit phylogenetic_pca \
+   phykit ordination \
        -t tests/sample_files/tree_simple.tre \
        -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --plot ppca_plot.png
+       --plot --plot-output ppca_plot.png
 
 This generates a scatter plot of PC1 vs PC2 with taxon labels and variance-explained
 percentages on the axes.
 
 |
 
+Step 5: Nonlinear ordination with t-SNE and UMAP
+*************************************************
+
+While PCA provides a linear ordination, nonlinear methods like t-SNE and UMAP can
+reveal additional structure in high-dimensional trait spaces. The same GLS-centering
+is applied before the nonlinear embedding.
+
+Running t-SNE:
+
+.. code-block:: shell
+
+   phykit ordination \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --method tsne --seed 42
+
+Running UMAP:
+
+.. code-block:: shell
+
+   phykit ordination \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --method umap --seed 42
+
+Using Pagel's lambda correction with t-SNE:
+
+.. code-block:: shell
+
+   phykit ordination \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --method tsne --correction lambda --seed 42 --json
+
+Generating a scatter plot with phylogeny overlay:
+
+.. code-block:: shell
+
+   phykit ordination \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_multi_traits.tsv \
+       --method tsne --plot --plot-tree --color-by body_mass --seed 42
+
+|
+
 Summary
 *******
 
-In this tutorial, we used phylogenetic PCA to identify the major axes of morphological
+In this tutorial, we used phylogenetic ordination to identify the major axes of morphological
 variation among mammal species while accounting for shared evolutionary history. The key
 steps were: (1) running PCA under Brownian motion, (2) comparing covariance and correlation
-modes, (3) jointly estimating Pagel's lambda, and (4) visualizing the ordination.
+modes, (3) jointly estimating Pagel's lambda, (4) visualizing the ordination, and
+(5) exploring nonlinear structure with t-SNE and UMAP.
 
-For methodological details, see
+For PCA methodological details, see
 `Revell (2009) <https://doi.org/10.1111/j.1558-5646.2009.00616.x>`_.
 The R equivalent is ``phytools::phyl.pca()``
 (`Revell 2012 <https://doi.org/10.1111/j.2041-210X.2011.00169.x>`_).
 
 |
 
-8. Phylogenetic dimensionality reduction with t-SNE and UMAP
-#############################################################
-
-While phylogenetic PCA provides a linear ordination of multivariate trait data,
-nonlinear methods like t-SNE and UMAP can reveal additional structure in high-dimensional
-trait spaces. PhyKIT's ``phylogenetic_dimreduce`` command (aliases: ``phylo_dimreduce``,
-``dimreduce``, ``pdr``) applies phylogenetically-corrected t-SNE or UMAP: the data are
-first GLS-centered using the phylogenetic variance-covariance matrix (the same correction
-used in phylogenetic PCA), then a nonlinear embedding is computed.
-
-**Hypothetical study question.** Suppose we have measured body mass, brain size, and
-longevity for eight mammal species and want to explore nonlinear patterns in multivariate
-trait space while accounting for phylogenetic non-independence. Are there clusters or
-gradients that linear PCA might miss?
-
-.. centered::
-   Download test data:
-   :download:`tree <https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple.tre>` and
-   :download:`traits <https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple_multi_traits.tsv>` |br|
-
-Running t-SNE (default method):
-
-.. code-block:: shell
-
-   phykit dimreduce \
-       -t tests/sample_files/tree_simple.tre \
-       -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --seed 42
-
-.. code-block:: text
-
-   Method: tsne
-   Correction: BM
-   Perplexity: 2.33
-
-   Embedding:
-   	Dim1	Dim2
-   bear	...	...
-   cat	...	...
-   ...
-
-Running UMAP:
-
-.. code-block:: shell
-
-   phykit dimreduce \
-       -t tests/sample_files/tree_simple.tre \
-       -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --method umap --seed 42
-
-Using Pagel's lambda correction:
-
-.. code-block:: shell
-
-   phykit dimreduce \
-       -t tests/sample_files/tree_simple.tre \
-       -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --correction lambda --seed 42 --json
-
-Generating a scatter plot with phylogeny overlay:
-
-.. code-block:: shell
-
-   phykit dimreduce \
-       -t tests/sample_files/tree_simple.tre \
-       -d tests/sample_files/tree_simple_multi_traits.tsv \
-       --plot --plot-tree --color-by body_mass --seed 42
-
-|
-
-Summary
-*******
-
-In this tutorial, we used phylogenetically-corrected t-SNE and UMAP to explore nonlinear
-structure in multivariate trait data while accounting for shared evolutionary history.
-Both methods automatically adjust their parameters for small phylogenetic datasets
-(t-SNE perplexity and UMAP n_neighbors).
-
-|
-
-9. Visualizing trait evolution with phylomorphospace
+8. Visualizing trait evolution with phylomorphospace
 ####################################################
 
 Phylomorphospace plots overlay the phylogeny onto a two-dimensional trait space, connecting
@@ -1261,8 +1232,8 @@ The R equivalent is ``phytools::phylomorphospace()``
 
 |
 
-10. Phylogenetic regression (PGLS)
-###################################
+9. Phylogenetic regression (PGLS)
+##################################
 
 Standard linear regression assumes that data points are independent and identically
 distributed. In comparative biology, species are not independent because they share
@@ -1418,7 +1389,7 @@ The R equivalent is ``caper::pgls()`` or ``nlme::gls()`` with ``ape::corBrownian
 
 |
 
-11. Reconstructing ancestral trait values and mapping them onto a phylogeny
+10. Reconstructing ancestral trait values and mapping them onto a phylogeny
 ############################################################################
 
 A common question in comparative biology is: what were the trait values of
@@ -1612,7 +1583,7 @@ for the contMap visualization.
 
 |
 
-12. Testing for rate heterogeneity across phylogenetic regimes
+11. Testing for rate heterogeneity across phylogenetic regimes
 ###############################################################
 
 A key question in comparative biology is whether the rate of trait evolution differs
@@ -1702,7 +1673,7 @@ The R equivalent is ``phytools::brownie.lite()``
 
 |
 
-13. Visualization commands
+12. Visualization commands
 ###########################
 
 PhyKIT provides several phylogenetic visualization commands analogous to
@@ -1743,7 +1714,7 @@ For methodological details, see
 
 |
 
-14. Comparing continuous trait evolution models
+13. Comparing continuous trait evolution models
 ################################################
 
 A common analysis in comparative methods is determining which model of

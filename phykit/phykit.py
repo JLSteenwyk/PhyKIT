@@ -196,12 +196,10 @@ class Phykit:
                 phylogenetic_signal (alias: phylo_signal; ps)
                     - calculate phylogenetic signal (Blomberg's K or Pagel's
                       lambda) for continuous trait data
-                phylogenetic_pca (alias: phylo_pca; phyl_pca; ppca)
-                    - performs phylogenetic PCA (Revell 2009) on continuous
-                      multi-trait data
-                phylogenetic_dimreduce (alias: phylo_dimreduce; dimreduce; pdr)
-                    - phylogenetically-corrected t-SNE or UMAP dimensionality
-                      reduction on continuous multi-trait data
+                phylogenetic_ordination (alias: phylo_ordination; ordination; ord;
+                    phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr)
+                    - phylogenetic ordination (PCA, t-SNE, or UMAP) on
+                      continuous multi-trait data
                 phylomorphospace (alias: phylomorpho; phmo)
                     - plot raw traits with phylogeny overlaid via ancestral
                       reconstruction
@@ -2305,140 +2303,36 @@ class Phykit:
         _run_service(parser, argv, PhylogeneticSignal)
 
     @staticmethod
-    def phylogenetic_pca(argv):
+    def phylogenetic_ordination(argv):
         parser = _new_parser(
             description=textwrap.dedent(
                 f"""\
                 {help_header}
 
-                Perform phylogenetic PCA (Revell 2009) on continuous
-                multi-trait data while accounting for phylogenetic
-                non-independence among species.
-
-                Input is a phylogenetic tree and a tab-delimited
-                multi-trait file with a header row:
-                taxon<tab>trait1<tab>trait2<tab>...
-
-                Two methods are available:
-                - BM (default): standard Brownian motion
-                - lambda: jointly estimates Pagel's lambda across all traits
-
-                Two modes are available:
-                - cov (default): PCA on the evolutionary rate (covariance) matrix
-                - corr: PCA on the evolutionary rate correlation matrix
-
-                Aliases:
-                  phylogenetic_pca, phylo_pca, phyl_pca, ppca
-                Command line interfaces:
-                  pk_phylogenetic_pca, pk_phylo_pca, pk_phyl_pca, pk_ppca
-
-                Usage:
-                phykit phylogenetic_pca -t <tree> -d <trait_data> [-m <method>] [--mode <mode>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
-
-                Options
-                =====================================================
-                -t/--tree                   a tree file
-
-                -d/--trait_data             tab-delimited multi-trait file
-                                            with header row
-
-                -m/--method                 method to use: BM or lambda
-                                            (default: BM)
-
-                --mode                      PCA mode: cov or corr
-                                            (default: cov)
-
-                --plot                      optional argument to save a
-                                            PCA scatter plot (PC1 vs PC2)
-
-                --plot-tree                 overlay phylogeny as a
-                                            phylomorphospace in PC space
-                                            (edges colored by distance
-                                            from root)
-
-                --color-by                  color tip points by trait;
-                                            specify a column name from the
-                                            multi-trait file or a separate
-                                            tab-delimited file (taxon<tab>value)
-
-                --plot-output               output path for PCA plot
-                                            (default: phylogenetic_pca_plot.png)
-
-                --json                      optional argument to output
-                                            results as JSON
-                """
-            ),
-        )
-        parser.add_argument(
-            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
-        )
-        parser.add_argument(
-            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
-        )
-        parser.add_argument(
-            "-m",
-            "--method",
-            type=str,
-            required=False,
-            default="BM",
-            choices=["BM", "lambda"],
-            help=SUPPRESS,
-            metavar="",
-        )
-        parser.add_argument(
-            "--mode",
-            type=str,
-            required=False,
-            default="cov",
-            choices=["cov", "corr"],
-            help=SUPPRESS,
-            metavar="",
-        )
-        parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
-        parser.add_argument("--plot-tree", action="store_true", required=False, help=SUPPRESS)
-        parser.add_argument(
-            "--color-by",
-            type=str,
-            default=None,
-            required=False,
-            help=SUPPRESS,
-            metavar="",
-        )
-        parser.add_argument(
-            "--plot-output",
-            type=str,
-            default="phylogenetic_pca_plot.png",
-            required=False,
-            help=SUPPRESS,
-        )
-        _add_json_argument(parser)
-        _run_service(parser, argv, PhylogeneticPCA)
-
-    @staticmethod
-    def phylogenetic_dimreduce(argv):
-        parser = _new_parser(
-            description=textwrap.dedent(
-                f"""\
-                {help_header}
-
-                Perform phylogenetically-corrected t-SNE or UMAP
-                dimensionality reduction on continuous multi-trait data.
+                Perform phylogenetic ordination (PCA, t-SNE, or UMAP) on
+                continuous multi-trait data while accounting for
+                phylogenetic non-independence among species.
 
                 Phylogenetic correction uses GLS-centering via the tree's
-                variance-covariance matrix (identical to phylogenetic PCA),
-                then applies t-SNE or UMAP to the centered data.
+                variance-covariance matrix. For PCA, eigendecomposition
+                of the evolutionary rate matrix is performed. For t-SNE
+                and UMAP, nonlinear embedding is applied to the
+                GLS-centered data.
 
                 Input is a phylogenetic tree and a tab-delimited
                 multi-trait file with a header row:
                 taxon<tab>trait1<tab>trait2<tab>...
 
                 Aliases:
-                  phylogenetic_dimreduce, phylo_dimreduce, dimreduce, pdr
+                  phylogenetic_ordination, phylo_ordination, ordination, ord,
+                  phylo_pca, phyl_pca, ppca, phylo_dimreduce, dimreduce, pdr
                 Command line interfaces:
-                  pk_phylogenetic_dimreduce, pk_phylo_dimreduce, pk_dimreduce, pk_pdr
+                  pk_phylogenetic_ordination, pk_phylo_ordination, pk_ordination,
+                  pk_ord, pk_phylo_pca, pk_phyl_pca, pk_ppca,
+                  pk_phylo_dimreduce, pk_dimreduce, pk_pdr
 
                 Usage:
-                phykit phylogenetic_dimreduce -t <tree> -d <trait_data> [--method <tsne|umap>] [--correction <BM|lambda>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+                phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
 
                 Options
                 =====================================================
@@ -2447,14 +2341,17 @@ class Phykit:
                 -d/--trait_data             tab-delimited multi-trait file
                                             with header row
 
-                --method                    dimensionality reduction method:
-                                            tsne or umap (default: tsne)
+                --method                    ordination method: pca, tsne, or
+                                            umap (default: pca)
 
                 --correction                phylogenetic correction: BM or
                                             lambda (default: BM)
 
+                --mode                      PCA mode: cov or corr
+                                            (default: cov; PCA only)
+
                 --n-components              number of embedding dimensions
-                                            (default: 2)
+                                            (default: 2; tsne/umap only)
 
                 --perplexity                t-SNE perplexity (default: auto)
 
@@ -2476,7 +2373,7 @@ class Phykit:
                                             tab-delimited file (taxon<tab>value)
 
                 --plot-output               output path for plot
-                                            (default: phylo_dimreduce_plot.png)
+                                            (default: phylo_ordination_plot.png)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -2493,8 +2390,8 @@ class Phykit:
             "--method",
             type=str,
             required=False,
-            default="tsne",
-            choices=["tsne", "umap"],
+            default="pca",
+            choices=["pca", "tsne", "umap"],
             help=SUPPRESS,
             metavar="",
         )
@@ -2504,6 +2401,15 @@ class Phykit:
             required=False,
             default="BM",
             choices=["BM", "lambda"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--mode",
+            type=str,
+            required=False,
+            default="cov",
+            choices=["cov", "corr"],
             help=SUPPRESS,
             metavar="",
         )
@@ -2560,12 +2466,20 @@ class Phykit:
         parser.add_argument(
             "--plot-output",
             type=str,
-            default="phylo_dimreduce_plot.png",
+            default="phylo_ordination_plot.png",
             required=False,
             help=SUPPRESS,
         )
         _add_json_argument(parser)
-        _run_service(parser, argv, PhylogeneticDimreduce)
+        _run_service(parser, argv, PhylogeneticOrdination)
+
+    @staticmethod
+    def phylogenetic_pca(argv):
+        Phykit.phylogenetic_ordination(argv)
+
+    @staticmethod
+    def phylogenetic_dimreduce(argv):
+        Phykit.phylogenetic_ordination(argv)
 
     @staticmethod
     def phylomorphospace(argv):
@@ -4316,12 +4230,16 @@ def phylogenetic_signal(argv=None):
     Phykit.phylogenetic_signal(sys.argv[1:])
 
 
+def phylogenetic_ordination(argv=None):
+    Phykit.phylogenetic_ordination(sys.argv[1:])
+
+
 def phylogenetic_pca(argv=None):
-    Phykit.phylogenetic_pca(sys.argv[1:])
+    Phykit.phylogenetic_ordination(sys.argv[1:])
 
 
 def phylogenetic_dimreduce(argv=None):
-    Phykit.phylogenetic_dimreduce(sys.argv[1:])
+    Phykit.phylogenetic_ordination(sys.argv[1:])
 
 
 def phylomorphospace(argv=None):

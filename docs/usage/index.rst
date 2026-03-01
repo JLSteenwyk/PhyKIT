@@ -1384,21 +1384,32 @@ Options: |br|
 
 |
 
-Phylogenetic PCA
-################
-Function names: phylogenetic_pca; phylo_pca; phyl_pca; ppca |br|
-Command line interface: pk_phylogenetic_pca; pk_phylo_pca; pk_phyl_pca; pk_ppca
+Phylogenetic Ordination
+#######################
+Function names: phylogenetic_ordination; phylo_ordination; ordination; ord;
+phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr |br|
+Command line interface: pk_phylogenetic_ordination; pk_phylo_ordination;
+pk_ordination; pk_ord; pk_phylo_pca; pk_phyl_pca; pk_ppca;
+pk_phylo_dimreduce; pk_dimreduce; pk_pdr
 
-Perform phylogenetic PCA (Revell 2009) on continuous multi-trait data while
-accounting for phylogenetic non-independence among species.
+Perform phylogenetic ordination (PCA, t-SNE, or UMAP) on continuous multi-trait
+data while accounting for phylogenetic non-independence among species.
 
-Standard PCA assumes independent observations, but species share evolutionary
-history. Phylogenetic PCA uses the phylogenetic variance-covariance matrix to
-compute GLS-based means and an evolutionary rate matrix, then performs
-eigendecomposition to extract principal components that reflect correlated
-trait evolution.
+All methods use GLS-centering via the phylogenetic variance-covariance matrix.
+For PCA, eigendecomposition of the evolutionary rate matrix is performed to
+extract principal components. For t-SNE and UMAP, nonlinear embedding is
+applied to the GLS-centered data.
 
-Two methods are available:
+Three ordination methods are available via ``--method``:
+
+- **pca** (default): phylogenetic PCA (Revell 2009). Performs eigendecomposition
+  of the evolutionary rate matrix.
+- **tsne**: t-SNE embedding of the GLS-centered data. Perplexity is auto-set
+  to ``min(30, (n-1)/3)``; requires at least 4 taxa.
+- **umap**: UMAP embedding of the GLS-centered data. n_neighbors is auto-set
+  to ``min(15, n-1)``; requires at least 3 taxa.
+
+Two phylogenetic correction modes are available via ``--correction``:
 
 - **BM** (default): assumes traits evolved under Brownian motion. The
   phylogenetic VCV matrix is used directly.
@@ -1406,7 +1417,7 @@ Two methods are available:
   traits by maximum likelihood, then rescales the off-diagonal elements of the
   VCV matrix. This accounts for deviations from Brownian motion.
 
-Two modes are available:
+For PCA, two modes are available via ``--mode``:
 
 - **cov** (default): PCA on the evolutionary rate (covariance) matrix.
 - **corr**: PCA on the evolutionary rate correlation matrix, which
@@ -1418,11 +1429,12 @@ Lines starting with '#' are treated as comments. If the tree and trait file
 have different taxa, the intersection is used and warnings are printed to
 stderr.
 
-Output includes eigenvalues with proportion of variance explained, trait
-loadings, and taxon scores for each principal component. When ``method=lambda``
+PCA output includes eigenvalues with proportion of variance explained, trait
+loadings, and taxon scores for each principal component. t-SNE/UMAP output
+includes method parameters and embedding coordinates. When ``correction=lambda``
 is used, the estimated lambda and log-likelihood are also reported.
 
-Results have been benchmarked against the R package
+PCA results have been benchmarked against the R package
 `phytools <https://cran.r-project.org/package=phytools>`_
 (``phyl.pca`` function; Revell 2012). Eigenvalues, loadings, and scores match
 phytools across all method/mode combinations (BM+cov, BM+corr, lambda+cov,
@@ -1435,60 +1447,23 @@ lambda+corr) within numerical tolerance (1e-4).
 
 .. code-block:: shell
 
-   phykit phylogenetic_pca -t <tree> -d <trait_data> [-m <method>] [--mode <mode>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
 *-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
-*-m/\\-\\-method*: method to use: ``BM`` or ``lambda`` (default: BM) |br|
-*--mode*: PCA mode: ``cov`` or ``corr`` (default: cov) |br|
-*--plot*: optional argument to save a PCA scatter plot (PC1 vs PC2) |br|
-*--plot-tree*: overlay the phylogeny as a phylomorphospace in PC space (edges colored by distance from root) |br|
-*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
-*--plot-output*: output path for PCA plot (default: phylogenetic_pca_plot.png) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Phylogenetic Dimensionality Reduction
-######################################
-Function names: phylogenetic_dimreduce; phylo_dimreduce; dimreduce; pdr |br|
-Command line interface: pk_phylogenetic_dimreduce; pk_phylo_dimreduce; pk_dimreduce; pk_pdr
-
-Perform phylogenetically-corrected t-SNE or UMAP dimensionality reduction on
-continuous multi-trait data. The phylogenetic correction uses GLS-centering via
-the tree's variance-covariance matrix (identical to phylogenetic PCA), then
-applies standard t-SNE or UMAP to the centered data. This provides nonlinear
-dimensionality reduction methods as a complement to phylogenetic PCA.
-
-Both methods automatically adjust parameters for small phylogenetic datasets:
-
-- **t-SNE**: perplexity is set to ``min(30, (n-1)/3)``; requires at least 4 taxa.
-- **UMAP**: n_neighbors is set to ``min(15, n-1)``; requires at least 3 taxa.
-
-Two phylogenetic correction modes are available:
-
-- **BM** (default): assumes traits evolved under Brownian motion.
-- **lambda**: jointly estimates Pagel's lambda across all traits.
-
-.. code-block:: shell
-
-   phykit phylogenetic_dimreduce -t <tree> -d <trait_data> [--method <tsne|umap>] [--correction <BM|lambda>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--color-by <col_or_file>] [--plot-output <path>] [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
-*--method*: dimensionality reduction method: ``tsne`` or ``umap`` (default: tsne) |br|
+*--method*: ordination method: ``pca``, ``tsne``, or ``umap`` (default: pca) |br|
 *--correction*: phylogenetic correction: ``BM`` or ``lambda`` (default: BM) |br|
-*--n-components*: number of embedding dimensions (default: 2) |br|
+*--mode*: PCA mode: ``cov`` or ``corr`` (default: cov; PCA only) |br|
+*--n-components*: number of embedding dimensions (default: 2; tsne/umap only) |br|
 *--perplexity*: t-SNE perplexity (default: auto) |br|
 *--n-neighbors*: UMAP n_neighbors (default: auto) |br|
 *--min-dist*: UMAP min_dist (default: 0.1) |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: optional argument to save a scatter plot |br|
-*--plot-tree*: overlay phylogeny edges via ancestral reconstruction (edges colored by distance from root) |br|
-*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) |br|
-*--plot-output*: output path for plot (default: phylo_dimreduce_plot.png) |br|
+*--plot-tree*: overlay the phylogeny via ancestral reconstruction (edges colored by distance from root) |br|
+*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
+*--plot-output*: output path for plot (default: phylo_ordination_plot.png) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1500,7 +1475,7 @@ Command line interface: pk_phylomorphospace; pk_phylomorpho; pk_phmo
 
 Plot a phylomorphospace: two raw traits in trait space with the phylogeny
 overlaid via ML-reconstructed ancestral states at internal nodes. This differs
-from the ``phylogenetic_pca --plot-tree`` option, which plots in PC space;
+from the ``phylogenetic_ordination --plot-tree`` option, which plots in PC space;
 ``phylomorphospace`` plots raw trait values directly on the x and y axes.
 
 Tree edges connect species through ML-reconstructed ancestral states and are

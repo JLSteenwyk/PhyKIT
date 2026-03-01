@@ -1,12 +1,12 @@
 import os
+import json
 
 import pytest
-import json
 import numpy as np
 from argparse import Namespace
 from pathlib import Path
 
-from phykit.services.tree.phylogenetic_pca import PhylogeneticPCA
+from phykit.services.tree.phylogenetic_ordination import PhylogeneticOrdination
 from phykit.errors import PhykitUserError
 
 
@@ -21,7 +21,8 @@ def default_args():
     return Namespace(
         tree=TREE_SIMPLE,
         trait_data=MULTI_TRAITS_FILE,
-        method="BM",
+        method="pca",
+        correction="BM",
         mode="cov",
         json=False,
     )
@@ -32,7 +33,8 @@ def corr_args():
     return Namespace(
         tree=TREE_SIMPLE,
         trait_data=MULTI_TRAITS_FILE,
-        method="BM",
+        method="pca",
+        correction="BM",
         mode="corr",
         json=False,
     )
@@ -43,7 +45,8 @@ def lambda_args():
     return Namespace(
         tree=TREE_SIMPLE,
         trait_data=MULTI_TRAITS_FILE,
-        method="lambda",
+        method="pca",
+        correction="lambda",
         mode="cov",
         json=False,
     )
@@ -54,36 +57,113 @@ def lambda_corr_args():
     return Namespace(
         tree=TREE_SIMPLE,
         trait_data=MULTI_TRAITS_FILE,
-        method="lambda",
+        method="pca",
+        correction="lambda",
         mode="corr",
         json=False,
+    )
+
+
+@pytest.fixture
+def tsne_args():
+    return Namespace(
+        tree=TREE_SIMPLE,
+        trait_data=MULTI_TRAITS_FILE,
+        method="tsne",
+        correction="BM",
+        n_components=2,
+        perplexity=None,
+        n_neighbors=None,
+        min_dist=0.1,
+        seed=42,
+        json=False,
+        plot=False,
+        plot_output="phylo_ordination_plot.png",
+        plot_tree=False,
+        color_by=None,
+    )
+
+
+@pytest.fixture
+def umap_args():
+    return Namespace(
+        tree=TREE_SIMPLE,
+        trait_data=MULTI_TRAITS_FILE,
+        method="umap",
+        correction="BM",
+        n_components=2,
+        perplexity=None,
+        n_neighbors=None,
+        min_dist=0.1,
+        seed=42,
+        json=False,
+        plot=False,
+        plot_output="phylo_ordination_plot.png",
+        plot_tree=False,
+        color_by=None,
     )
 
 
 class TestProcessArgs:
     def test_defaults(self):
         args = Namespace(tree="t.tre", trait_data="d.tsv")
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         assert svc.tree_file_path == "t.tre"
         assert svc.trait_data_path == "d.tsv"
-        assert svc.method == "BM"
+        assert svc.method == "pca"
+        assert svc.correction == "BM"
         assert svc.mode == "cov"
         assert svc.json_output is False
 
-    def test_overrides(self):
+    def test_pca_overrides(self):
         args = Namespace(
             tree="t.tre", trait_data="d.tsv",
-            json=True, method="lambda", mode="corr",
+            json=True, method="pca", correction="lambda", mode="corr",
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         assert svc.json_output is True
-        assert svc.method == "lambda"
+        assert svc.method == "pca"
+        assert svc.correction == "lambda"
         assert svc.mode == "corr"
+
+    def test_tsne_overrides(self):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="d.tsv",
+            method="tsne",
+            correction="lambda",
+            n_components=3,
+            perplexity=10.0,
+            n_neighbors=5,
+            min_dist=0.5,
+            seed=99,
+            json=True,
+        )
+        svc = PhylogeneticOrdination(args)
+        assert svc.method == "tsne"
+        assert svc.correction == "lambda"
+        assert svc.n_components == 3
+        assert svc.perplexity == 10.0
+        assert svc.n_neighbors == 5
+        assert svc.min_dist == 0.5
+        assert svc.seed == 99
+        assert svc.json_output is True
+
+    def test_umap_defaults(self):
+        args = Namespace(tree="t.tre", trait_data="d.tsv", method="umap")
+        svc = PhylogeneticOrdination(args)
+        assert svc.method == "umap"
+        assert svc.correction == "BM"
+        assert svc.n_components == 2
+        assert svc.perplexity is None
+        assert svc.n_neighbors is None
+        assert svc.min_dist == 0.1
+        assert svc.seed is None
 
 
 class TestParseMultiTraitFile:
     def test_valid_file(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -93,28 +173,28 @@ class TestParseMultiTraitFile:
         assert traits["weasel"] == pytest.approx([-0.30, 0.85, 1.79])
 
     def test_missing_file(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
             svc._parse_multi_trait_file("/nonexistent/path.tsv", ["a", "b", "c"])
 
     def test_non_numeric_value(self, default_args, tmp_path):
         trait_file = tmp_path / "bad.tsv"
         trait_file.write_text("taxon\ttrait1\ntaxon1\tabc\n")
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
             svc._parse_multi_trait_file(str(trait_file), ["taxon1"])
 
     def test_wrong_column_count(self, default_args, tmp_path):
         trait_file = tmp_path / "bad.tsv"
         trait_file.write_text("taxon\ttrait1\ttrait2\ntaxon1\t1.0\n")
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
             svc._parse_multi_trait_file(str(trait_file), ["taxon1"])
 
     def test_header_only(self, default_args, tmp_path):
         trait_file = tmp_path / "header_only.tsv"
         trait_file.write_text("taxon\ttrait1\ttrait2\n")
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
             svc._parse_multi_trait_file(str(trait_file), ["taxon1", "taxon2", "taxon3"])
 
@@ -124,7 +204,7 @@ class TestParseMultiTraitFile:
             "# comment\n\ntaxon\tt1\tt2\n"
             "taxon1\t1.0\t2.0\ntaxon2\t3.0\t4.0\ntaxon3\t5.0\t6.0\n"
         )
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         trait_names, traits = svc._parse_multi_trait_file(
             str(trait_file), ["taxon1", "taxon2", "taxon3"]
         )
@@ -136,7 +216,7 @@ class TestParseMultiTraitFile:
         trait_file.write_text(
             "taxon\tt1\ntaxon1\t1.0\ntaxon2\t2.0\ntaxon3\t3.0\nextra\t4.0\n"
         )
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         trait_names, traits = svc._parse_multi_trait_file(
             str(trait_file), ["taxon1", "taxon2", "taxon3", "taxon4"]
         )
@@ -147,21 +227,21 @@ class TestParseMultiTraitFile:
     def test_too_few_shared_taxa(self, default_args, tmp_path):
         trait_file = tmp_path / "few.tsv"
         trait_file.write_text("taxon\tt1\ntaxon1\t1.0\ntaxon2\t2.0\n")
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
             svc._parse_multi_trait_file(str(trait_file), ["taxon1", "taxon2"])
 
 
 class TestBuildVCVMatrix:
     def test_symmetric(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = sorted(svc.get_tip_names_from_tree(tree))
         vcv = svc._build_vcv_matrix(tree, tips)
         np.testing.assert_array_almost_equal(vcv, vcv.T)
 
     def test_diagonal_is_root_to_tip(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = sorted(svc.get_tip_names_from_tree(tree))
         vcv = svc._build_vcv_matrix(tree, tips)
@@ -170,7 +250,7 @@ class TestBuildVCVMatrix:
             assert vcv[i, i] == pytest.approx(expected, rel=1e-6)
 
     def test_correct_shape(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = sorted(svc.get_tip_names_from_tree(tree))
         vcv = svc._build_vcv_matrix(tree, tips)
@@ -180,7 +260,6 @@ class TestBuildVCVMatrix:
 class TestPhylogeneticPCACov:
     """Test BM + cov mode against R phytools::phyl.pca reference values."""
 
-    # R reference values from phyl.pca(tree, traits, method="BM", mode="cov")
     REF_EIGENVALUES = [0.0801798810, 0.0029237493, 0.0003075388]
     REF_LOADINGS = np.array([
         [0.7347392318, -0.4226132689, 0.5306187767],
@@ -199,7 +278,7 @@ class TestPhylogeneticPCACov:
     }
 
     def test_eigenvalues(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         svc._validate_tree(tree)
         tips = svc.get_tip_names_from_tree(tree)
@@ -223,7 +302,7 @@ class TestPhylogeneticPCACov:
         np.testing.assert_allclose(eigenvalues, self.REF_EIGENVALUES, atol=1e-4)
 
     def test_loadings(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -244,13 +323,12 @@ class TestPhylogeneticPCACov:
         idx = np.argsort(eigenvalues)[::-1]
         eigenvectors = eigenvectors[:, idx]
 
-        # Compare abs values (eigenvectors defined up to sign)
         np.testing.assert_allclose(
             np.abs(eigenvectors), np.abs(self.REF_LOADINGS), atol=1e-4
         )
 
     def test_scores(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -272,11 +350,9 @@ class TestPhylogeneticPCACov:
         eigenvectors = eigenvectors[:, idx]
         scores = Z @ eigenvectors
 
-        # Compare each column up to global sign flip
         for k, name in enumerate(ordered_names):
             ref = np.array(self.REF_SCORES[name])
             computed = scores[k]
-            # Either signs match or all signs are flipped per PC
             for pc in range(p):
                 assert abs(abs(computed[pc]) - abs(ref[pc])) < 1e-4, (
                     f"Score mismatch for {name}, PC{pc+1}: "
@@ -305,7 +381,7 @@ class TestPhylogeneticPCACorr:
     }
 
     def test_eigenvalues(self, corr_args):
-        svc = PhylogeneticPCA(corr_args)
+        svc = PhylogeneticOrdination(corr_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -332,7 +408,7 @@ class TestPhylogeneticPCACorr:
         np.testing.assert_allclose(eigenvalues, self.REF_EIGENVALUES, atol=1e-4)
 
     def test_loadings(self, corr_args):
-        svc = PhylogeneticPCA(corr_args)
+        svc = PhylogeneticOrdination(corr_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -362,7 +438,7 @@ class TestPhylogeneticPCACorr:
         )
 
     def test_scores(self, corr_args):
-        svc = PhylogeneticPCA(corr_args)
+        svc = PhylogeneticOrdination(corr_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -408,7 +484,7 @@ class TestPhylogeneticPCALambda:
     REF_EIGENVALUES = [0.076301214816, 0.002241847818, 0.000315397635]
 
     def test_lambda_value(self, lambda_args):
-        svc = PhylogeneticPCA(lambda_args)
+        svc = PhylogeneticOrdination(lambda_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -422,12 +498,10 @@ class TestPhylogeneticPCALambda:
         lambda_val, log_likelihood = svc._multi_trait_lambda(Y, vcv, max_lam)
 
         assert lambda_val == pytest.approx(self.REF_LAMBDA, abs=1e-3)
-        # Log-likelihood may differ slightly from R due to optimizer internals;
-        # both converge to lambda ≈ 0 and the LL surface is flat there.
         assert log_likelihood == pytest.approx(self.REF_LOG_LIKELIHOOD, abs=0.2)
 
     def test_eigenvalues(self, lambda_args):
-        svc = PhylogeneticPCA(lambda_args)
+        svc = PhylogeneticOrdination(lambda_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -441,7 +515,6 @@ class TestPhylogeneticPCALambda:
 
         lambda_val, _ = svc._multi_trait_lambda(Y, vcv, max_lam)
 
-        # Transform VCV
         diag_vals = np.diag(vcv).copy()
         vcv_t = vcv * lambda_val
         np.fill_diagonal(vcv_t, diag_vals)
@@ -459,9 +532,234 @@ class TestPhylogeneticPCALambda:
         np.testing.assert_allclose(eigenvalues, self.REF_EIGENVALUES, atol=1e-4)
 
 
+class TestTSNEEmbedding:
+    def test_shape(self, tsne_args):
+        svc = PhylogeneticOrdination(tsne_args)
+        tree = svc.read_tree_file()
+        tips = svc.get_tip_names_from_tree(tree)
+        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        vcv = svc._build_vcv_matrix(tree, ordered_names)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+
+        embedding, params = svc._embed_tsne(Z, n)
+        assert embedding.shape == (n, 2)
+
+    def test_deterministic_with_seed(self, tsne_args):
+        svc = PhylogeneticOrdination(tsne_args)
+        tree = svc.read_tree_file()
+        tips = svc.get_tip_names_from_tree(tree)
+        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        vcv = svc._build_vcv_matrix(tree, ordered_names)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+
+        embedding1, _ = svc._embed_tsne(Z, n)
+        embedding2, _ = svc._embed_tsne(Z, n)
+        np.testing.assert_array_almost_equal(embedding1, embedding2)
+
+    def test_auto_perplexity(self, tsne_args):
+        svc = PhylogeneticOrdination(tsne_args)
+        tree = svc.read_tree_file()
+        tips = svc.get_tip_names_from_tree(tree)
+        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        vcv = svc._build_vcv_matrix(tree, ordered_names)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+
+        _, params = svc._embed_tsne(Z, n)
+        expected_perplexity = min(30.0, (n - 1) / 3.0)
+        assert params["perplexity"] == round(expected_perplexity, 2)
+
+
+class TestUMAPEmbedding:
+    def test_shape(self, umap_args):
+        svc = PhylogeneticOrdination(umap_args)
+        tree = svc.read_tree_file()
+        tips = svc.get_tip_names_from_tree(tree)
+        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        vcv = svc._build_vcv_matrix(tree, ordered_names)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+
+        embedding, params = svc._embed_umap(Z, n)
+        assert embedding.shape == (n, 2)
+
+    def test_deterministic_with_seed(self, umap_args):
+        svc = PhylogeneticOrdination(umap_args)
+        tree = svc.read_tree_file()
+        tips = svc.get_tip_names_from_tree(tree)
+        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        vcv = svc._build_vcv_matrix(tree, ordered_names)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+
+        embedding1, _ = svc._embed_umap(Z, n)
+        embedding2, _ = svc._embed_umap(Z, n)
+        np.testing.assert_array_almost_equal(embedding1, embedding2)
+
+    def test_auto_n_neighbors(self, umap_args):
+        svc = PhylogeneticOrdination(umap_args)
+        tree = svc.read_tree_file()
+        tips = svc.get_tip_names_from_tree(tree)
+        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        vcv = svc._build_vcv_matrix(tree, ordered_names)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+
+        _, params = svc._embed_umap(Z, n)
+        expected_neighbors = min(15, n - 1)
+        assert params["n_neighbors"] == expected_neighbors
+
+
+class TestLambdaCorrection:
+    def test_lambda_produces_different_embedding(self, tsne_args):
+        svc_bm = PhylogeneticOrdination(tsne_args)
+        tree = svc_bm.read_tree_file()
+        tips = svc_bm.get_tip_names_from_tree(tree)
+        trait_names, traits = svc_bm._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        ordered_names = sorted(traits.keys())
+        n = len(ordered_names)
+        p = len(trait_names)
+        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+
+        # BM centering
+        vcv_bm = svc_bm._build_vcv_matrix(tree, ordered_names)
+        C_inv_bm = np.linalg.inv(vcv_bm)
+        ones = np.ones(n)
+        denom_bm = ones @ C_inv_bm @ ones
+        a_hat_bm = np.array([(ones @ C_inv_bm @ Y[:, j]) / denom_bm for j in range(p)])
+        Z_bm = Y - np.outer(ones, a_hat_bm)
+
+        # Lambda centering
+        vcv_lam = svc_bm._build_vcv_matrix(tree, ordered_names)
+        max_lam = svc_bm._max_lambda(tree)
+        lambda_val, _ = svc_bm._multi_trait_lambda(Y, vcv_lam, max_lam)
+        diag_vals = np.diag(vcv_lam).copy()
+        vcv_lam = vcv_lam * lambda_val
+        np.fill_diagonal(vcv_lam, diag_vals)
+        C_inv_lam = np.linalg.inv(vcv_lam)
+        denom_lam = ones @ C_inv_lam @ ones
+        a_hat_lam = np.array([(ones @ C_inv_lam @ Y[:, j]) / denom_lam for j in range(p)])
+        Z_lam = Y - np.outer(ones, a_hat_lam)
+
+        assert not np.allclose(Z_bm, Z_lam)
+
+    def test_lambda_value_returned(self):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="lambda",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=True,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+
+
+class TestSmallSampleGuards:
+    def test_tsne_too_few_taxa(self, tmp_path):
+        tree_file = tmp_path / "small.tre"
+        tree_file.write_text("((A:1,B:1):1,C:2);")
+        trait_file = tmp_path / "small.tsv"
+        trait_file.write_text("taxon\tt1\tt2\nA\t1.0\t2.0\nB\t3.0\t4.0\nC\t5.0\t6.0\n")
+        args = Namespace(
+            tree=str(tree_file),
+            trait_data=str(trait_file),
+            method="tsne",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=False,
+            plot=False,
+            plot_output="test.png",
+            plot_tree=False,
+            color_by=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+        assert any("perplexity" in m for m in exc_info.value.messages)
+
+    def test_umap_too_few_taxa(self, tmp_path):
+        tree_file = tmp_path / "tiny.tre"
+        tree_file.write_text("(A:1,B:1);")
+        trait_file = tmp_path / "tiny.tsv"
+        trait_file.write_text("taxon\tt1\tt2\nA\t1.0\t2.0\nB\t3.0\t4.0\n")
+        args = Namespace(
+            tree=str(tree_file),
+            trait_data=str(trait_file),
+            method="umap",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=False,
+            plot=False,
+            plot_output="test.png",
+            plot_tree=False,
+            color_by=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        with pytest.raises(PhykitUserError):
+            svc.run()
+
+
 class TestRun:
-    def test_bm_cov_text_output(self, default_args, capsys):
-        svc = PhylogeneticPCA(default_args)
+    def test_pca_cov_text_output(self, default_args, capsys):
+        svc = PhylogeneticOrdination(default_args)
         svc.run()
         out, _ = capsys.readouterr()
         assert "Eigenvalues:" in out
@@ -471,30 +769,31 @@ class TestRun:
         assert "body_mass" in out
         assert "raccoon" in out
 
-    def test_bm_corr_text_output(self, corr_args, capsys):
-        svc = PhylogeneticPCA(corr_args)
+    def test_pca_corr_text_output(self, corr_args, capsys):
+        svc = PhylogeneticOrdination(corr_args)
         svc.run()
         out, _ = capsys.readouterr()
         assert "Eigenvalues:" in out
         assert "Loadings:" in out
         assert "Scores:" in out
 
-    def test_lambda_text_output(self, lambda_args, capsys):
-        svc = PhylogeneticPCA(lambda_args)
+    def test_pca_lambda_text_output(self, lambda_args, capsys):
+        svc = PhylogeneticOrdination(lambda_args)
         svc.run()
         out, _ = capsys.readouterr()
         assert "Lambda:" in out
         assert "Log-likelihood:" in out
 
-    def test_json_output_bm_cov(self, capsys):
+    def test_pca_json_output(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=True,
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         out, _ = capsys.readouterr()
         data = json.loads(out)
@@ -504,15 +803,16 @@ class TestRun:
         assert "scores" in data
         assert "lambda" not in data
 
-    def test_json_output_lambda(self, capsys):
+    def test_pca_lambda_json_output(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="lambda",
+            method="pca",
+            correction="lambda",
             mode="cov",
             json=True,
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         out, _ = capsys.readouterr()
         data = json.loads(out)
@@ -520,16 +820,16 @@ class TestRun:
         assert "lambda" in data
         assert "log_likelihood" in data
 
-    def test_run_eigenvalues_match_reference(self, capsys):
-        """End-to-end: run() eigenvalues match R reference."""
+    def test_pca_eigenvalues_match_reference(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=True,
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         out, _ = capsys.readouterr()
         data = json.loads(out)
@@ -538,12 +838,102 @@ class TestRun:
         assert ev["PC2"] == pytest.approx(0.0029237493, abs=1e-4)
         assert ev["PC3"] == pytest.approx(0.0003075388, abs=1e-4)
 
-    def test_plot_creates_file(self, tmp_path, capsys):
+    def test_tsne_text_output(self, tsne_args, capsys):
+        svc = PhylogeneticOrdination(tsne_args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        assert "Method: tsne" in out
+        assert "Correction: BM" in out
+        assert "Perplexity:" in out
+        assert "Embedding:" in out
+        assert "Dim1" in out
+        assert "Dim2" in out
+        assert "raccoon" in out
+
+    def test_umap_text_output(self, umap_args, capsys):
+        svc = PhylogeneticOrdination(umap_args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        assert "Method: umap" in out
+        assert "n_neighbors:" in out
+        assert "Embedding:" in out
+
+    def test_tsne_json_output(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=True,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert data["method"] == "tsne"
+        assert data["correction"] == "BM"
+        assert "embedding" in data
+        assert "bear" in data["embedding"]
+        assert "Dim1" in data["embedding"]["bear"]
+        assert "Dim2" in data["embedding"]["bear"]
+        assert "lambda" not in data
+
+    def test_dimreduce_lambda_json_output(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="lambda",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=True,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "lambda" in data
+        assert "log_likelihood" in data
+        assert "embedding" in data
+
+    def test_subset_check(self, tsne_args, capsys):
+        svc = PhylogeneticOrdination(tsne_args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        for taxon in ["bear", "cat", "dog", "monkey", "raccoon", "sea_lion", "seal", "weasel"]:
+            assert taxon in out
+
+    def test_no_plot_by_default(self, tmp_path, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="pca",
+            correction="BM",
+            mode="cov",
+            json=False,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        assert "Saved PCA plot:" not in out
+
+
+class TestPlot:
+    def test_pca_plot_creates_file(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_pca.png")
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=False,
             plot=True,
@@ -551,19 +941,20 @@ class TestRun:
             plot_tree=False,
             color_by=None,
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
         out, _ = capsys.readouterr()
         assert "Saved PCA plot:" in out
 
-    def test_plot_json_includes_plot_output(self, tmp_path, capsys):
+    def test_pca_plot_json_includes_plot_output(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_pca.png")
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=True,
             plot=True,
@@ -571,32 +962,20 @@ class TestRun:
             plot_tree=False,
             color_by=None,
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         out, _ = capsys.readouterr()
         data = json.loads(out)
         assert "plot_output" in data
         assert data["plot_output"] == plot_path
 
-    def test_no_plot_by_default(self, tmp_path, capsys):
-        args = Namespace(
-            tree=TREE_SIMPLE,
-            trait_data=MULTI_TRAITS_FILE,
-            method="BM",
-            mode="cov",
-            json=False,
-        )
-        svc = PhylogeneticPCA(args)
-        svc.run()
-        out, _ = capsys.readouterr()
-        assert "Saved PCA plot:" not in out
-
-    def test_plot_tree_creates_file(self, tmp_path, capsys):
+    def test_pca_plot_tree_creates_file(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_tree.png")
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=False,
             plot=True,
@@ -604,17 +983,18 @@ class TestRun:
             plot_tree=True,
             color_by=None,
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
-    def test_plot_color_by_column(self, tmp_path, capsys):
+    def test_pca_plot_color_by_column(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_color.png")
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=False,
             plot=True,
@@ -622,17 +1002,18 @@ class TestRun:
             plot_tree=False,
             color_by="body_mass",
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
         svc.run()
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
-    def test_plot_tree_and_color_by_together(self, tmp_path, capsys):
+    def test_pca_plot_tree_and_color_by_together(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_both.png")
         args = Namespace(
             tree=TREE_SIMPLE,
             trait_data=MULTI_TRAITS_FILE,
-            method="BM",
+            method="pca",
+            correction="BM",
             mode="cov",
             json=False,
             plot=True,
@@ -640,7 +1021,78 @@ class TestRun:
             plot_tree=True,
             color_by="body_mass",
         )
-        svc = PhylogeneticPCA(args)
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
+    def test_dimreduce_plot_created(self, tmp_path, capsys):
+        plot_path = str(tmp_path / "test_dimreduce.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=False,
+            plot=True,
+            plot_output=plot_path,
+            plot_tree=False,
+            color_by=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+        out, _ = capsys.readouterr()
+        assert "Saved plot:" in out
+
+    def test_dimreduce_plot_tree_created(self, tmp_path, capsys):
+        plot_path = str(tmp_path / "test_tree.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=False,
+            plot=True,
+            plot_output=plot_path,
+            plot_tree=True,
+            color_by=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
+    def test_dimreduce_color_by_works(self, tmp_path, capsys):
+        plot_path = str(tmp_path / "test_color.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=False,
+            plot=True,
+            plot_output=plot_path,
+            plot_tree=False,
+            color_by="body_mass",
+        )
+        svc = PhylogeneticOrdination(args)
         svc.run()
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
@@ -648,7 +1100,7 @@ class TestRun:
 
 class TestReconstructAncestralScores:
     def test_all_nodes_get_scores(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -673,13 +1125,12 @@ class TestReconstructAncestralScores:
         node_estimates, node_distances, tree_pruned = \
             svc._reconstruct_ancestral_scores(tree, scores, ordered_names)
 
-        # All clades should have estimates
         all_clades = list(tree_pruned.find_clades())
         for clade in all_clades:
             assert id(clade) in node_estimates
 
     def test_tips_match_original_scores(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -711,7 +1162,7 @@ class TestReconstructAncestralScores:
             np.testing.assert_array_almost_equal(tip_scores, expected)
 
     def test_root_within_tip_range(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -737,7 +1188,6 @@ class TestReconstructAncestralScores:
             svc._reconstruct_ancestral_scores(tree, scores, ordered_names)
 
         root_scores = node_estimates[id(tree_pruned.root)]
-        # Root PC1 should be within range of tip PC1 values
         tip_pc1 = scores[:, 0]
         assert root_scores[0] >= min(tip_pc1) - 0.5
         assert root_scores[0] <= max(tip_pc1) + 0.5
@@ -745,7 +1195,7 @@ class TestReconstructAncestralScores:
 
 class TestParseColorBy:
     def test_column_name_match(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -761,7 +1211,7 @@ class TestParseColorBy:
         assert len(categories) == 0
 
     def test_continuous_file(self, default_args, tmp_path):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -780,7 +1230,7 @@ class TestParseColorBy:
         assert len(values) == len(ordered_names)
 
     def test_discrete_file(self, default_args, tmp_path):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
@@ -801,7 +1251,7 @@ class TestParseColorBy:
         assert len(values) == len(ordered_names)
 
     def test_invalid_input(self, default_args):
-        svc = PhylogeneticPCA(default_args)
+        svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
