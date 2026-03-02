@@ -113,6 +113,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quartet-network">Quartet network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#prune-tree">Prune tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
@@ -2003,6 +2004,64 @@ connecting the boundary points between the two sides of the bipartition. Chord
 thickness and opacity scale with split frequency — thicker, darker lines indicate
 splits supported by more gene trees.</p>
 <a class="reference internal image-reference" href="../_images/consensus_network_example.png"><img alt="../_images/consensus_network_example.png" class="align-center" src="../_images/consensus_network_example.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="quartet-network">
+<h3>Quartet network<a class="headerlink" href="#quartet-network" title="Link to this heading"></a></h3>
+<p>Function names: quartet_network; quartet_net; qnet; nanuq <br/>
+Command line interface: pk_quartet_network; pk_quartet_net; pk_qnet; pk_nanuq</p>
+<p>Quartet-based network inference (NANUQ-style) for distinguishing incomplete
+lineage sorting (ILS) from hybridization/gene flow using quartet concordance
+factors from gene trees.</p>
+<p>For each 4-taxon subset, counts how many gene trees display each of the 3
+possible unrooted topologies and applies two hypothesis tests:</p>
+<ol class="arabic simple">
+<li><p><strong>Star test</strong> (Pearson chi-squared): tests whether the three topology
+counts are consistent with a star tree (equal probabilities 1/3 each).
+If p_star &gt; beta (default 0.95), the quartet is classified as
+<em>unresolved</em>.</p></li>
+<li><p><strong>T3 tree model test</strong> (G-test / likelihood ratio): tests whether the
+counts are consistent with any resolved quartet tree under the
+multispecies coalescent.  If p_tree &gt; alpha (default 0.05), the quartet
+is classified as <em>tree-like</em> (conflict is due to ILS).</p></li>
+<li><p>If both tests reject their null hypotheses, the quartet is classified as
+<em>hybrid</em> (asymmetric discordance indicating gene flow or hybridization).</p></li>
+</ol>
+<p>This algorithm matches the NANUQ method of Allman, Baños &amp; Rhodes (2019),
+implemented in R's MSCquartets package.</p>
+<p>Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_network<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>--alpha<span class="w"> </span><span class="m">0</span>.05<span class="o">]</span><span class="w"> </span><span class="o">[</span>--beta<span class="w"> </span><span class="m">0</span>.95<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
+<em>--alpha</em>: significance level for the T3 tree model test (default: <code class="docutils literal notranslate"><span class="pre">0.05</span></code>) <br/>
+<em>--beta</em>: threshold for the star tree test; quartets with p_star &gt; beta are called unresolved (default: <code class="docutils literal notranslate"><span class="pre">0.95</span></code>) <br/>
+<em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
+<em>--plot-output</em>: output filename for the quartet network plot (optional) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> is specified, a NANUQ-style splits graph is drawn from
+the quartet distance matrix using Neighbor-Joining and circular split
+decomposition.  Tree-like relationships appear as simple branching, while
+hybridization / reticulation produces characteristic box (parallelogram)
+structures — the same style of output produced by R's MSCquartets +
+NeighborNet pipeline.</p>
+<p><strong>No hybridization signal</strong> — all quartets are tree-like, so the splits graph
+is a clean unrooted tree:</p>
+<a class="reference internal image-reference" href="../_images/quartet_network_tree.png"><img alt="../_images/quartet_network_tree.png" class="align-center" src="../_images/quartet_network_tree.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Hybridization signal present</strong> — hybrid quartets introduce conflicting
+splits that appear as boxes in the network, indicating reticulation among
+C, D, E, and F:</p>
+<a class="reference internal image-reference" href="../_images/quartet_network_hybrid.png"><img alt="../_images/quartet_network_hybrid.png" class="align-center" src="../_images/quartet_network_hybrid.png" style="width: 80%;" />
 </a>
 <div class="line-block">
 <div class="line"><br /></div>

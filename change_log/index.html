@@ -80,6 +80,83 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.24</strong>:
+Added quartet-based network inference (NANUQ-style) for distinguishing ILS
+from hybridization:</p>
+<ul>
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">quartet_network</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">quartet_net</span></code>, <code class="docutils literal notranslate"><span class="pre">qnet</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nanuq</span></code>) for computing quartet concordance factors from gene trees and
+classifying each quartet as tree-like, hybrid, or unresolved</p></li>
+<li><p>Implements the NANUQ algorithm (Allman, Baños &amp; Rhodes 2019): star test
+(Pearson chi-squared against uniform 1/3) followed by T3 tree model test
+(G-test / likelihood ratio with conservative chi-squared df=1 p-value)</p></li>
+<li><p>Separate <code class="docutils literal notranslate"><span class="pre">--alpha</span></code> (tree test threshold, default 0.05) and <code class="docutils literal notranslate"><span class="pre">--beta</span></code>
+(star test threshold, default 0.95) parameters matching MSCquartets</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> option to generate a species tree with reticulation
+arcs overlaid for hybrid quartets</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">shared</span></code> support for trees with different taxon sets</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Added new CLI entry points: <code class="docutils literal notranslate"><span class="pre">pk_quartet_network</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_quartet_net</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pk_qnet</span></code>, <code class="docutils literal notranslate"><span class="pre">pk_nanuq</span></code></p></li>
+<li><p>Validated against R's MSCquartets v3.2 <code class="docutils literal notranslate"><span class="pre">NANUQ()</span></code> function:</p>
+<ul class="simple">
+<li><p>Star test (p_star) p-values match R exactly</p></li>
+<li><p>T3 tree test (p_tree) p-values match R exactly for large samples;
+small-sample values are slightly conservative (e.g., 0.096 vs 0.214
+for counts 8,0,2) but yield identical classifications</p></li>
+<li><p>All 15 quartets from the sample gene tree file classified identically
+to R's NANUQ (100% agreement)</p></li>
+</ul>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 18.8%" />
+<col style="width: 18.8%" />
+<col style="width: 18.8%" />
+<col style="width: 18.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Counts</p></th>
+<th class="head"><p>p_star (PK)</p></th>
+<th class="head"><p>p_star (R)</p></th>
+<th class="head"><p>p_tree (PK)</p></th>
+<th class="head"><p>p_T3 (R)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>(70, 15, 15)</p></td>
+<td><p>0.0000</p></td>
+<td><p>0.0000</p></td>
+<td><p>1.0000</p></td>
+<td><p>1.000</p></td>
+</tr>
+<tr class="row-odd"><td><p>(45, 35, 20)</p></td>
+<td><p>0.0087</p></td>
+<td><p>0.0087</p></td>
+<td><p>0.0418</p></td>
+<td><p>0.042</p></td>
+</tr>
+<tr class="row-even"><td><p>(10, 0, 0)</p></td>
+<td><p>0.0000</p></td>
+<td><p>0.0000</p></td>
+<td><p>1.0000</p></td>
+<td><p>1.000</p></td>
+</tr>
+<tr class="row-odd"><td><p>(8, 0, 2)</p></td>
+<td><p>0.0055</p></td>
+<td><p>0.0055</p></td>
+<td><p>0.0959</p></td>
+<td><p>0.214</p></td>
+</tr>
+</tbody>
+</table>
+<p>Classifications agree in all cases. The p_tree difference for small
+samples (8,0,2) is due to MSCquartets using a specialized T3 density
+integration for the p-value; the conservative chi-squared(df=1)
+approach is a well-established approximation that improves with sample
+size.</p>
+</li>
+</ul>
 <p><strong>2.1.22</strong>:
 Added consensus splits network for visualizing conflicting phylogenetic signal:</p>
 <ul class="simple">

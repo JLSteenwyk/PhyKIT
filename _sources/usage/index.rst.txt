@@ -2142,6 +2142,76 @@ splits supported by more gene trees.
 
 |
 
+Quartet network
+################
+Function names: quartet_network; quartet_net; qnet; nanuq |br|
+Command line interface: pk_quartet_network; pk_quartet_net; pk_qnet; pk_nanuq
+
+Quartet-based network inference (NANUQ-style) for distinguishing incomplete
+lineage sorting (ILS) from hybridization/gene flow using quartet concordance
+factors from gene trees.
+
+For each 4-taxon subset, counts how many gene trees display each of the 3
+possible unrooted topologies and applies two hypothesis tests:
+
+1. **Star test** (Pearson chi-squared): tests whether the three topology
+   counts are consistent with a star tree (equal probabilities 1/3 each).
+   If p_star > beta (default 0.95), the quartet is classified as
+   *unresolved*.
+
+2. **T3 tree model test** (G-test / likelihood ratio): tests whether the
+   counts are consistent with any resolved quartet tree under the
+   multispecies coalescent.  If p_tree > alpha (default 0.05), the quartet
+   is classified as *tree-like* (conflict is due to ILS).
+
+3. If both tests reject their null hypotheses, the quartet is classified as
+   *hybrid* (asymmetric discordance indicating gene flow or hybridization).
+
+This algorithm matches the NANUQ method of Allman, Baños & Rhodes (2019),
+implemented in R's MSCquartets package.
+
+Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.
+
+.. code-block:: shell
+
+   phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>] [--json]
+
+Options: |br|
+*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*--alpha*: significance level for the T3 tree model test (default: ``0.05``) |br|
+*--beta*: threshold for the star tree test; quartets with p_star > beta are called unresolved (default: ``0.95``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--plot-output*: output filename for the quartet network plot (optional) |br|
+*--json*: optional argument to print results as JSON
+
+When ``--plot-output`` is specified, a NANUQ-style splits graph is drawn from
+the quartet distance matrix using Neighbor-Joining and circular split
+decomposition.  Tree-like relationships appear as simple branching, while
+hybridization / reticulation produces characteristic box (parallelogram)
+structures — the same style of output produced by R's MSCquartets +
+NeighborNet pipeline.
+
+**No hybridization signal** — all quartets are tree-like, so the splits graph
+is a clean unrooted tree:
+
+.. image:: ../_static/img/quartet_network_tree.png
+   :align: center
+   :width: 80%
+
+|
+
+**Hybridization signal present** — hybrid quartets introduce conflicting
+splits that appear as boxes in the network, indicating reticulation among
+C, D, E, and F:
+
+.. image:: ../_static/img/quartet_network_hybrid.png
+   :align: center
+   :width: 80%
+
+|
+
 Consensus tree
 ##############
 Function names: consensus_tree; consensus; ctree |br|
