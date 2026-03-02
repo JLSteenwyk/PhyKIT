@@ -10,6 +10,7 @@ _EXPORTS = {
     "ConsensusTree": "consensus_tree",
     "DVMC": "dvmc",
     "EvolutionaryRate": "evolutionary_rate",
+    "EvoTempoMap": "evo_tempo_map",
     "HiddenParalogyCheck": "hidden_paralogy_check",
     "InternalBranchStats": "internal_branch_stats",
     "InternodeLabeler": "internode_labeler",

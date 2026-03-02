@@ -154,6 +154,7 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "thresh_bayes": "threshold_model",
     "toverr": "treeness_over_rcv",
     "tor": "treeness_over_rcv",
+    "etm": "evo_tempo_map",
     # Helper aliases
     "create_concat": "create_concatenation_matrix",
     "cc": "create_concatenation_matrix",

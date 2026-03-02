@@ -96,6 +96,7 @@ TipToTipNodeDistance = _LazyServiceFactory("phykit.services.tree.tip_to_tip_node
 TotalTreeLength = _LazyServiceFactory("phykit.services.tree.total_tree_length", "TotalTreeLength")
 Treeness = _LazyServiceFactory("phykit.services.tree.treeness", "Treeness")
 TreenessOverRCV = _LazyServiceFactory("phykit.services.tree.treeness_over_rcv", "TreenessOverRCV")
+EvoTempoMap = _LazyServiceFactory("phykit.services.tree.evo_tempo_map", "EvoTempoMap")
 
 SERVICE_FACTORIES: Dict[str, _LazyServiceFactory] = {
     name: value

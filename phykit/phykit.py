@@ -4851,6 +4851,75 @@ class Phykit:
         _add_json_argument(parser)
         _run_service(parser, argv, TreenessOverRCV)
 
+    @staticmethod
+    def evo_tempo_map(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Detect rate-topology associations by comparing branch length
+                distributions between concordant and discordant gene trees at
+                each species tree branch.
+
+                Under the multispecies coalescent, discordant gene trees should
+                have shorter internal branches near the discordant node. Deviations
+                suggest substitution rate heterogeneity correlated with topology
+                (adaptive evolution, different selective pressures, or model
+                misspecification).
+
+                For each internal branch of the species tree, gene trees are
+                classified as concordant or discordant via bipartition matching.
+                The homologous branch length is extracted from each gene tree
+                and the two groups are compared using Mann-Whitney U and
+                permutation tests. P-values are corrected for multiple testing
+                using Benjamini-Hochberg FDR.
+
+                A global treeness (internal/total branch length ratio) comparison
+                is also reported.
+
+                Aliases:
+                  evo_tempo_map, etm
+                Command line interfaces:
+                  pk_evo_tempo_map, pk_etm
+
+                Usage:
+                phykit evo_tempo_map -t/--tree <tree> -g/--gene-trees <gene_trees>
+                    [--plot <output>] [-v/--verbose] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a species tree file
+
+                -g/--gene-trees             multi-Newick file of gene trees
+                                            with branch lengths
+
+                --plot                      optional output path for
+                                            box/strip plot (PNG)
+
+                -v/--verbose                print per-gene-tree details
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot", dest="plot_output", type=str, required=False,
+            default=None, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, EvoTempoMap)
+
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
