@@ -1367,6 +1367,10 @@ Models:
 - **Kappa** -- Pagel's kappa / punctuational vs gradual (3 params)
 - **White** -- White noise / no phylogenetic signal (2 params)
 
+Each model reports R² = 1 - (σ²_model / σ²_White), measuring how much
+variance is explained relative to the white noise baseline. White serves
+as the reference (R² = 0).
+
 .. code-block:: shell
 
    phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [-g <gene_trees>] [--json]
@@ -1931,6 +1935,10 @@ Models:
 - **OUMA** -- OUM + per-regime alpha (2R+1 params)
 - **OUMVA** -- all parameters regime-specific (3R params)
 
+Each model reports R² = 1 - (σ²_model / σ²_BM1), measuring improvement
+over the simplest Brownian motion baseline. For multi-regime models with
+per-regime σ² values, the average is used.
+
 .. code-block:: shell
 
    phykit ouwie -t <tree> -d <trait_data> -r <regime_data> [--models BM1,OUM,OUMVA] [--json]
@@ -2384,7 +2392,8 @@ The multi-trait input file should be tab-delimited with a header row:
 ``taxon<tab>trait1<tab>trait2<tab>...``
 
 Output includes coefficient estimates, standard errors, z-values,
-p-values, log-likelihood, and AIC.
+p-values, log-likelihood, AIC, and McFadden's pseudo-R² (computed from
+full vs. intercept-only model log-likelihoods).
 
 .. code-block:: shell
 
@@ -2528,6 +2537,11 @@ Two methods are available:
 Output includes coefficient estimates, standard errors, t-values, p-values,
 R-squared, adjusted R-squared, F-statistic, log-likelihood, and AIC.
 
+A three-way variance decomposition is also reported: R²_total (variance
+explained by phylogeny + predictors combined), R²_pred (predictor contribution
+given phylogeny, = standard R²), and R²_phylo (phylogeny's unique contribution).
+R²_phylo + R²_pred = R²_total.
+
 The implementation uses the raw phylogenetic variance-covariance (VCV) matrix
 for GLS estimation, matching the approach used by R's ``caper::pgls()``.
 Note that this differs from ``nlme::gls()`` with ``corBrownian``, which
@@ -2579,8 +2593,12 @@ The trait file should be tab-delimited with two columns (taxon_name<tab>trait_va
 Lines starting with '#' are treated as comments. If the tree and trait file have
 different taxa, the intersection is used and warnings are printed to stderr.
 
-Output for Blomberg's K: K_value<tab>p_value |br|
-Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value
+Output for Blomberg's K: K_value<tab>p_value<tab>R2_phylo |br|
+Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value<tab>R2_phylo
+
+R²_phylo reports the fraction of trait variance explained by phylogenetic structure:
+``R²_phylo = 1 - (σ²_BM / σ²_WN)``. Values near 1 indicate strong phylogenetic signal;
+values near 0 indicate phylogeny explains little trait variance.
 
 Results have been validated against the R package phytools (``phylosig`` function)
 across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
@@ -2849,6 +2867,10 @@ are estimated via maximum likelihood.
 Optionally, a parametric bootstrap can be run to compute a simulated
 p-value (``-n/--nsim``). A horizontal phylogram with branches colored by
 regime can be generated using ``--plot``.
+
+An effect size metric R²_regime is also reported, measuring the variance
+reduction from regime-specific rates vs. a single rate, weighted by the
+number of tips per regime.
 
 .. code-block:: shell
 

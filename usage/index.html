@@ -1318,6 +1318,9 @@ AIC, BIC, and AIC weights.</p>
 <li><p><strong>Kappa</strong> -- Pagel's kappa / punctuational vs gradual (3 params)</p></li>
 <li><p><strong>White</strong> -- White noise / no phylogenetic signal (2 params)</p></li>
 </ul>
+<p>Each model reports R² = 1 - (σ²_model / σ²_White), measuring how much
+variance is explained relative to the white noise baseline. White serves
+as the reference (R² = 0).</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--models<span class="w"> </span>BM,OU,Lambda<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
@@ -1787,6 +1790,9 @@ to internal branches are inferred via Fitch parsimony.</p>
 <li><p><strong>OUMA</strong> -- OUM + per-regime alpha (2R+1 params)</p></li>
 <li><p><strong>OUMVA</strong> -- all parameters regime-specific (3R params)</p></li>
 </ul>
+<p>Each model reports R² = 1 - (σ²_model / σ²_BM1), measuring improvement
+over the simplest Brownian motion baseline. For multi-regime models with
+per-regime σ² values, the average is used.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-r<span class="w"> </span>&lt;regime_data&gt;<span class="w"> </span><span class="o">[</span>--models<span class="w"> </span>BM1,OUM,OUMVA<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
@@ -2175,7 +2181,8 @@ phylogenetic correlation matrix and reports an overdispersion parameter.</p></li
 <p>The multi-trait input file should be tab-delimited with a header row:
 <code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code></p>
 <p>Output includes coefficient estimates, standard errors, z-values,
-p-values, log-likelihood, and AIC.</p>
+p-values, log-likelihood, AIC, and McFadden's pseudo-R² (computed from
+full vs. intercept-only model log-likelihoods).</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span>--family<span class="w"> </span>&lt;binomial<span class="p">|</span>poisson&gt;<span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
@@ -2301,6 +2308,10 @@ stderr.</p>
 </ul>
 <p>Output includes coefficient estimates, standard errors, t-values, p-values,
 R-squared, adjusted R-squared, F-statistic, log-likelihood, and AIC.</p>
+<p>A three-way variance decomposition is also reported: R²_total (variance
+explained by phylogeny + predictors combined), R²_pred (predictor contribution
+given phylogeny, = standard R²), and R²_phylo (phylogeny's unique contribution).
+R²_phylo + R²_pred = R²_total.</p>
 <p>The implementation uses the raw phylogenetic variance-covariance (VCV) matrix
 for GLS estimation, matching the approach used by R's <code class="docutils literal notranslate"><span class="pre">caper::pgls()</span></code>.
 Note that this differs from <code class="docutils literal notranslate"><span class="pre">nlme::gls()</span></code> with <code class="docutils literal notranslate"><span class="pre">corBrownian</span></code>, which
@@ -2345,8 +2356,11 @@ likelihood ratio test against lambda = 0.</p></li>
 <p>The trait file should be tab-delimited with two columns (taxon_name&lt;tab&gt;trait_value).
 Lines starting with '#' are treated as comments. If the tree and trait file have
 different taxa, the intersection is used and warnings are printed to stderr.</p>
-<p>Output for Blomberg's K: K_value&lt;tab&gt;p_value <br/>
-Output for Pagel's lambda: lambda_value&lt;tab&gt;log_likelihood&lt;tab&gt;p_value</p>
+<p>Output for Blomberg's K: K_value&lt;tab&gt;p_value&lt;tab&gt;R2_phylo <br/>
+Output for Pagel's lambda: lambda_value&lt;tab&gt;log_likelihood&lt;tab&gt;p_value&lt;tab&gt;R2_phylo</p>
+<p>R²_phylo reports the fraction of trait variance explained by phylogenetic structure:
+<code class="docutils literal notranslate"><span class="pre">R²_phylo</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">(σ²_BM</span> <span class="pre">/</span> <span class="pre">σ²_WN)</span></code>. Values near 1 indicate strong phylogenetic signal;
+values near 0 indicate phylogeny explains little trait variance.</p>
 <p>Results have been validated against the R package phytools (<code class="docutils literal notranslate"><span class="pre">phylosig</span></code> function)
 across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
 (pure-birth, coalescent), trait models (random, Brownian motion, known lambda),
@@ -2563,6 +2577,9 @@ are estimated via maximum likelihood.</p>
 <p>Optionally, a parametric bootstrap can be run to compute a simulated
 p-value (<code class="docutils literal notranslate"><span class="pre">-n/--nsim</span></code>). A horizontal phylogram with branches colored by
 regime can be generated using <code class="docutils literal notranslate"><span class="pre">--plot</span></code>.</p>
+<p>An effect size metric R²_regime is also reported, measuring the variance
+reduction from regime-specific rates vs. a single rate, weighted by the
+number of tips per regime.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rate_heterogeneity<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-r<span class="w"> </span>&lt;regime_data&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>

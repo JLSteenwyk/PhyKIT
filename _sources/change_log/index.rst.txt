@@ -6,6 +6,28 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.30**:
+Added phylogenetic effect size (R² variance decomposition) to all
+phylogenetic comparative method commands:
+
+* ``phylogenetic_signal``: reports R²_phylo = 1 - (σ²_BM / σ²_WN),
+  the fraction of trait variance explained by phylogenetic structure
+* ``phylogenetic_regression`` (PGLS): reports three-way decomposition:
+  R²_total (phylo + predictor), R²_pred (predictor given phylogeny),
+  and R²_phylo (phylogeny's unique contribution)
+* ``phylogenetic_glm``: reports McFadden's pseudo-R² for both Poisson
+  GEE and Logistic MPLE, computed from full vs. intercept-only model
+  log-likelihoods
+* ``fit_continuous``: reports per-model R² = 1 - (σ²_model / σ²_White),
+  measuring how much each evolutionary model reduces unexplained variance
+  compared to white noise
+* ``rate_heterogeneity``: reports R²_regime, the variance reduction from
+  regime-specific rates vs. a single rate, weighted by tips per regime
+* ``ouwie``: reports per-model R² = 1 - (σ²_model / σ²_BM1), measuring
+  improvement over the simplest Brownian motion baseline
+* All effect sizes appear in both text and JSON output
+* R validation scripts provided in ``tests/r_validation/``
+
 **2.1.29**:
 Added discordance-aware VCV matrix support for phylogenetic comparative methods:
 

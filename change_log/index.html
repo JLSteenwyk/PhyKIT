@@ -80,6 +80,28 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.30</strong>:
+Added phylogenetic effect size (R² variance decomposition) to all
+phylogenetic comparative method commands:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>: reports R²_phylo = 1 - (σ²_BM / σ²_WN),
+the fraction of trait variance explained by phylogenetic structure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phylogenetic_regression</span></code> (PGLS): reports three-way decomposition:
+R²_total (phylo + predictor), R²_pred (predictor given phylogeny),
+and R²_phylo (phylogeny's unique contribution)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phylogenetic_glm</span></code>: reports McFadden's pseudo-R² for both Poisson
+GEE and Logistic MPLE, computed from full vs. intercept-only model
+log-likelihoods</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>: reports per-model R² = 1 - (σ²_model / σ²_White),
+measuring how much each evolutionary model reduces unexplained variance
+compared to white noise</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code>: reports R²_regime, the variance reduction from
+regime-specific rates vs. a single rate, weighted by tips per regime</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ouwie</span></code>: reports per-model R² = 1 - (σ²_model / σ²_BM1), measuring
+improvement over the simplest Brownian motion baseline</p></li>
+<li><p>All effect sizes appear in both text and JSON output</p></li>
+<li><p>R validation scripts provided in <code class="docutils literal notranslate"><span class="pre">tests/r_validation/</span></code></p></li>
+</ul>
 <p><strong>2.1.29</strong>:
 Added discordance-aware VCV matrix support for phylogenetic comparative methods:</p>
 <ul class="simple">
