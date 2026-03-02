@@ -108,6 +108,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evolutionary-tempo-mapping">Evolutionary tempo mapping</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#hidden-paralogy-check">Hidden paralogy check</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
@@ -320,6 +321,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-consensus-network"><span class="std std-ref">Consensus network</span></a>: Consensus network from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-consensus-tree"><span class="std std-ref">Consensus tree</span></a>: Consensus tree from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-cophylo"><span class="std std-ref">Cophylogenetic plot (tanglegram)</span></a>: Tanglegram for comparing two trees</p></li>
+<li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
 <li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a>: Topological distance between trees</p></li>
@@ -1476,6 +1478,71 @@ computes the fraction of simulations in each state.</p>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/densitymap_example.png"><img alt="../_images/densitymap_example.png" class="align-center" src="../_images/densitymap_example.png" style="width: 80%;" />
 </a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="evolutionary-tempo-mapping">
+<span id="cmd-evo-tempo-map"></span><h3>Evolutionary tempo mapping<a class="headerlink" href="#evolutionary-tempo-mapping" title="Link to this heading"></a></h3>
+<p>Function names: evo_tempo_map; etm <br/>
+Command line interface: pk_evo_tempo_map; pk_etm</p>
+<p>Detect rate-topology associations by comparing branch length distributions
+between concordant and discordant gene trees at each species tree branch.</p>
+<p>Under the multispecies coalescent, discordant gene trees should have shorter
+internal branches near the discordant node (because the coalescence happened
+deeper, in the ancestral population). Deviations from this expectation suggest
+substitution rate heterogeneity correlated with topology, which could indicate
+adaptive evolution, different selective pressures in hybridizing lineages, or
+systematic error from model misspecification.</p>
+<p>For each internal branch of the species tree, gene trees are classified as
+concordant or discordant via bipartition matching (same as gCF). The homologous
+branch length is extracted from each gene tree and the two groups are compared
+using a Mann-Whitney U test and a permutation test (1000 permutations). P-values
+are corrected for multiple testing using Benjamini-Hochberg FDR.</p>
+<p>A global treeness (internal/total branch length ratio) comparison between
+concordant and discordant gene trees is also reported.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_tempo_map<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a species tree file <br/>
+<em>-g/\-\-gene-trees</em>: multi-Newick file of gene trees with branch lengths <br/>
+<em>--plot</em>: optional output path for box/strip plot (PNG) <br/>
+<em>-v/\-\-verbose</em>: print per-gene-tree classification details <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Example output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
+----------------------------------------------------------------------------------------------------------
+bear,dog,raccoon                     6       1    3.875000    3.600000          NA          NA          NA
+bear,raccoon                         7       3    0.880000    0.700000    0.516667    0.077000    0.516667
+cat,monkey                          10       0   20.450000          NA          NA          NA          NA
+cat,monkey,weasel                    9       1    2.120000    2.800000          NA          NA          NA
+sea_lion,seal                        9       1    7.500000    7.200000          NA          NA          NA
+---
+Global treeness: concordant=0.126489 (n=6), discordant=0.119014 (n=4)
+Branches tested: 1, significant (FDR&lt;0.05): 0
+</pre></div>
+</div>
+<p>Each row corresponds to an internal branch of the species tree identified by the
+smaller partition of taxa. The <code class="docutils literal notranslate"><span class="pre">n_conc</span></code> and <code class="docutils literal notranslate"><span class="pre">n_disc</span></code> columns show how many gene
+trees are concordant or discordant at that branch. The <code class="docutils literal notranslate"><span class="pre">med_conc</span></code> and <code class="docutils literal notranslate"><span class="pre">med_disc</span></code>
+columns show the median branch length (in substitutions/site) for each group. The
+<code class="docutils literal notranslate"><span class="pre">U_pval</span></code> is the two-sided Mann-Whitney U test p-value, <code class="docutils literal notranslate"><span class="pre">perm_pval</span></code> is the
+permutation test p-value (1000 permutations), and <code class="docutils literal notranslate"><span class="pre">fdr_p</span></code> is the
+Benjamini-Hochberg corrected p-value. Branches with fewer than 2 gene trees
+in either group show <code class="docutils literal notranslate"><span class="pre">NA</span></code> for p-values.</p>
+<p>The global treeness comparison tests whether concordant gene trees have
+systematically different ratios of internal to total branch lengths.</p>
+<p>To generate a visualization:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_tempo_map<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>--plot<span class="w"> </span>tempo_map.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/tutorial_etm_plot.png"><img alt="../_images/tutorial_etm_plot.png" class="align-center" src="../_images/tutorial_etm_plot.png" style="width: 80%;" />
+</a>
+<p>The plot shows grouped box plots with jittered data points for each species tree
+branch, comparing branch lengths between concordant (blue) and discordant (orange)
+gene trees. Branches where the FDR-corrected p-value is below 0.05 are marked
+with an asterisk.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

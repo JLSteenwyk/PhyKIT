@@ -2621,6 +2621,8 @@ histories rather than just the species tree.</p>
 <p>We will:</p>
 <ol class="arabic simple">
 <li><p>Quantify gene tree conflict with a splits network (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>)</p></li>
+<li><p>Test for rate-topology associations (<code class="docutils literal notranslate"><span class="pre">evo_tempo_map</span></code>)</p></li>
+<li><p>Identify diversification patterns (<code class="docutils literal notranslate"><span class="pre">ltt</span></code>)</p></li>
 <li><p>Reconstruct ancestral states accounting for discordance (<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>)</p></li>
 <li><p>Run comparative methods with discordance-aware variance-covariance
 matrices (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>, <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>)</p></li>
@@ -2690,7 +2692,55 @@ Steps 3-4 become especially important.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Identify diversification patterns with LTT</strong></p>
+<p><strong>Step 2: Test for rate-topology associations with evolutionary tempo mapping</strong></p>
+<p>The splits network shows <em>which</em> branches have discordance — but do the
+discordant gene trees also differ in branch lengths? Under the coalescent,
+discordant gene trees should have shorter internal branches at the
+discordant node (deeper coalescence). If discordant gene trees instead
+show anomalously <em>long</em> branches, that suggests substitution rate
+heterogeneity correlated with topology — potentially adaptive evolution
+or systematic error from model misspecification.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_tempo_map<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
+----------------------------------------------------------------------------------------------------------
+bear,dog,raccoon                     6       1    3.875000    3.600000          NA          NA          NA
+bear,raccoon                         7       3    0.880000    0.700000    0.516667    0.077000    0.516667
+cat,monkey                          10       0   20.450000          NA          NA          NA          NA
+cat,monkey,weasel                    9       1    2.120000    2.800000          NA          NA          NA
+sea_lion,seal                        9       1    7.500000    7.200000          NA          NA          NA
+---
+Global treeness: concordant=0.126489 (n=6), discordant=0.119014 (n=4)
+Branches tested: 1, significant (FDR&lt;0.05): 0
+</pre></div>
+</div>
+<p>The {bear,raccoon} branch is the only one with enough discordant gene trees
+(3) for a statistical test. The median branch length is 0.88 in concordant
+gene trees vs. 0.70 in discordant ones — shorter internal branches in the
+discordant trees, consistent with the coalescent expectation. The difference
+is not significant (U p = 0.52), suggesting neutral sorting rather than
+rate heterogeneity at this branch.</p>
+<p>The global treeness comparison shows that concordant gene trees have slightly
+higher treeness (0.126 vs. 0.119), meaning they have proportionally more
+internal branch length. This is expected: concordant gene trees have resolved
+internodes, while discordant ones tend to have shorter internal branches
+from deeper coalescence.</p>
+<p>To visualize the concordant vs. discordant branch length distributions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>etm<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--plot<span class="w"> </span>tempo_map.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/tutorial_etm_plot.png"><img alt="../_images/tutorial_etm_plot.png" class="align-center" src="../_images/tutorial_etm_plot.png" style="width: 80%;" />
+</a>
+<p>The box/strip plot shows concordant (blue) and discordant (orange) branch
+lengths at each species tree branch. Branches with significantly different
+distributions (FDR &lt; 0.05) would be marked with an asterisk — none are
+significant in this small dataset.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Identify diversification patterns with LTT</strong></p>
 <p>Before diving into trait analyses, examine the tempo of diversification.
 For a suspected rapid radiation, the lineage-through-time (LTT) plot
 can confirm whether most speciation events were clustered early in the
@@ -2711,7 +2761,7 @@ network.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Concordance-aware ancestral state reconstruction</strong></p>
+<p><strong>Step 4: Concordance-aware ancestral state reconstruction</strong></p>
 <p>Standard ASR operates on a single species tree, ignoring gene tree
 conflict. For our clade, the ancestral thermal tolerance at the base of
 the radiation is of particular interest — but if 40% of gene trees
@@ -2766,7 +2816,7 @@ reconstructions.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: Discordance-aware comparative methods</strong></p>
+<p><strong>Step 5: Discordance-aware comparative methods</strong></p>
 <p>Now we return to our original question: <em>does thermal tolerance predict
 metabolic rate?</em> In a clade with substantial gene tree conflict, the
 species tree alone may not accurately represent how species are related
@@ -2821,6 +2871,10 @@ coherent story:</p>
 <li><p><strong>Quantify conflict</strong> (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>) — the splits network
 shows that several deep bipartitions are supported by only 40-60%
 of gene trees, confirming substantial discordance.</p></li>
+<li><p><strong>Rate-topology associations</strong> (<code class="docutils literal notranslate"><span class="pre">evo_tempo_map</span></code>) — discordant gene
+trees have shorter internal branches than concordant ones, consistent
+with the coalescent expectation. No significant rate heterogeneity
+is detected, suggesting neutral sorting rather than adaptive evolution.</p></li>
 <li><p><strong>Examine diversification</strong> (<code class="docutils literal notranslate"><span class="pre">ltt</span></code>) — a significantly negative
 gamma statistic confirms that most speciation events were clustered
 in a short burst, explaining the ILS-driven gene tree conflict.</p></li>

@@ -2762,8 +2762,10 @@ histories rather than just the species tree.
 We will:
 
 1. Quantify gene tree conflict with a splits network (``consensus_network``)
-2. Reconstruct ancestral states accounting for discordance (``concordance_asr``)
-3. Run comparative methods with discordance-aware variance-covariance
+2. Test for rate-topology associations (``evo_tempo_map``)
+3. Identify diversification patterns (``ltt``)
+4. Reconstruct ancestral states accounting for discordance (``concordance_asr``)
+5. Run comparative methods with discordance-aware variance-covariance
    matrices (``pgls``, ``phylogenetic_signal``, ``fit_continuous``)
 
 |
@@ -2841,7 +2843,66 @@ Steps 3-4 become especially important.
 
 |
 
-**Step 2: Identify diversification patterns with LTT**
+**Step 2: Test for rate-topology associations with evolutionary tempo mapping**
+
+The splits network shows *which* branches have discordance — but do the
+discordant gene trees also differ in branch lengths? Under the coalescent,
+discordant gene trees should have shorter internal branches at the
+discordant node (deeper coalescence). If discordant gene trees instead
+show anomalously *long* branches, that suggests substitution rate
+heterogeneity correlated with topology — potentially adaptive evolution
+or systematic error from model misspecification.
+
+.. code-block:: shell
+
+   phykit evo_tempo_map -t tree_simple.tre -g gene_trees_simple.nwk
+
+Expected output:
+
+.. code-block:: text
+
+   branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
+   ----------------------------------------------------------------------------------------------------------
+   bear,dog,raccoon                     6       1    3.875000    3.600000          NA          NA          NA
+   bear,raccoon                         7       3    0.880000    0.700000    0.516667    0.077000    0.516667
+   cat,monkey                          10       0   20.450000          NA          NA          NA          NA
+   cat,monkey,weasel                    9       1    2.120000    2.800000          NA          NA          NA
+   sea_lion,seal                        9       1    7.500000    7.200000          NA          NA          NA
+   ---
+   Global treeness: concordant=0.126489 (n=6), discordant=0.119014 (n=4)
+   Branches tested: 1, significant (FDR<0.05): 0
+
+The {bear,raccoon} branch is the only one with enough discordant gene trees
+(3) for a statistical test. The median branch length is 0.88 in concordant
+gene trees vs. 0.70 in discordant ones — shorter internal branches in the
+discordant trees, consistent with the coalescent expectation. The difference
+is not significant (U p = 0.52), suggesting neutral sorting rather than
+rate heterogeneity at this branch.
+
+The global treeness comparison shows that concordant gene trees have slightly
+higher treeness (0.126 vs. 0.119), meaning they have proportionally more
+internal branch length. This is expected: concordant gene trees have resolved
+internodes, while discordant ones tend to have shorter internal branches
+from deeper coalescence.
+
+To visualize the concordant vs. discordant branch length distributions:
+
+.. code-block:: shell
+
+   phykit etm -t tree_simple.tre -g gene_trees_simple.nwk --plot tempo_map.png
+
+.. image:: ../_static/img/tutorial_etm_plot.png
+   :align: center
+   :width: 80%
+
+The box/strip plot shows concordant (blue) and discordant (orange) branch
+lengths at each species tree branch. Branches with significantly different
+distributions (FDR < 0.05) would be marked with an asterisk — none are
+significant in this small dataset.
+
+|
+
+**Step 3: Identify diversification patterns with LTT**
 
 Before diving into trait analyses, examine the tempo of diversification.
 For a suspected rapid radiation, the lineage-through-time (LTT) plot
@@ -2866,7 +2927,7 @@ network.
 
 |
 
-**Step 3: Concordance-aware ancestral state reconstruction**
+**Step 4: Concordance-aware ancestral state reconstruction**
 
 Standard ASR operates on a single species tree, ignoring gene tree
 conflict. For our clade, the ancestral thermal tolerance at the base of
@@ -2933,7 +2994,7 @@ For distribution-based reconstruction and confidence intervals:
 
 |
 
-**Step 4: Discordance-aware comparative methods**
+**Step 5: Discordance-aware comparative methods**
 
 Now we return to our original question: *does thermal tolerance predict
 metabolic rate?* In a clade with substantial gene tree conflict, the
@@ -3001,14 +3062,18 @@ coherent story:
 1. **Quantify conflict** (``consensus_network``) — the splits network
    shows that several deep bipartitions are supported by only 40-60%
    of gene trees, confirming substantial discordance.
-2. **Examine diversification** (``ltt``) — a significantly negative
+2. **Rate-topology associations** (``evo_tempo_map``) — discordant gene
+   trees have shorter internal branches than concordant ones, consistent
+   with the coalescent expectation. No significant rate heterogeneity
+   is detected, suggesting neutral sorting rather than adaptive evolution.
+3. **Examine diversification** (``ltt``) — a significantly negative
    gamma statistic confirms that most speciation events were clustered
    in a short burst, explaining the ILS-driven gene tree conflict.
-3. **Concordance-aware ASR** (``concordance_asr``) — ancestral thermal
+4. **Concordance-aware ASR** (``concordance_asr``) — ancestral thermal
    tolerance estimates at the rapid-radiation node have wide confidence
    intervals, reflecting genuine uncertainty about which species were
    ancestrally sister to each other.
-4. **Discordance-aware comparative methods** (``pgls``,
+5. **Discordance-aware comparative methods** (``pgls``,
    ``phylogenetic_signal``, ``fit_continuous``) — using the genome-wide
    average VCV produces more conservative (and more accurate) p-values
    for the thermal tolerance–metabolic rate relationship.
