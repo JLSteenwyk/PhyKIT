@@ -1,6 +1,6 @@
 from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from Bio import Phylo
 from scipy.stats import binomtest
@@ -140,6 +140,18 @@ class DiscordanceAsymmetry(Tree):
                 f"Summary: {summary['n_branches_tested']} branches tested, "
                 f"{summary['n_significant_fdr05']} significant (FDR<0.05)"
             )
+
+            if self.verbose:
+                print()
+                for entry in branch_results:
+                    branch_label = ",".join(entry["split"])
+                    total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
+                    gcf = entry["n_concordant"] / total if total > 0 else 1.0
+                    print(f"Branch: {branch_label}")
+                    print(
+                        f"  gCF={gcf:.3f}  gDF1={entry['n_alt1']}/{total}  "
+                        f"gDF2={entry['n_alt2']}/{total}"
+                    )
         except BrokenPipeError:
             pass
 
@@ -406,17 +418,16 @@ class DiscordanceAsymmetry(Tree):
         all_taxa_fs = frozenset(all_taxa)
         parent_map = self._build_parent_map(species_tree)
 
-        # Extract bipartitions from all gene trees (topology only, no lengths)
+        # Extract bipartitions from all gene trees (topology only, no lengths).
+        # Restrict bipartitions to shared taxa without mutating gene tree objects.
         gene_tree_splits = []
         for gt in gene_trees:
-            gt_taxa = set(t.name for t in gt.get_terminals())
-            if gt_taxa != set(all_taxa):
-                taxa_to_remove = gt_taxa - set(all_taxa)
-                for taxon in taxa_to_remove:
-                    gt.prune(taxon)
             splits = set()
             for clade in gt.get_nonterminals():
-                tips = frozenset(t.name for t in clade.get_terminals())
+                tips = frozenset(
+                    t.name for t in clade.get_terminals()
+                    if t.name in all_taxa_fs
+                )
                 if len(tips) <= 1 or tips == all_taxa_fs:
                     continue
                 splits.add(self._canonical_split(tips, all_taxa_fs))

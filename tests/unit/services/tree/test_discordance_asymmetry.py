@@ -296,6 +296,15 @@ class TestRun:
         data = json.loads(captured.out)
         assert data["summary"]["n_gene_trees"] == 10
 
+    def test_verbose_output(self, capsys):
+        svc = self._make_svc(verbose=True)
+        svc.run()
+        captured = capsys.readouterr()
+        assert "Branch:" in captured.out
+        assert "gCF=" in captured.out
+        assert "gDF1=" in captured.out
+        assert "gDF2=" in captured.out
+
 
 class TestPlot:
     def _make_svc(self, plot_output):
