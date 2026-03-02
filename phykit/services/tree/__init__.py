@@ -36,6 +36,7 @@ _EXPORTS = {
     "TipToTipNodeDistance": "tip_to_tip_node_distance",
     "TotalTreeLength": "total_tree_length",
     "Treeness": "treeness",
+    "ThresholdModel": "threshold_model",
     "TreenessOverRCV": "treeness_over_rcv",
 }
 

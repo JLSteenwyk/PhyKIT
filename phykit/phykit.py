@@ -240,6 +240,9 @@ class Phykit:
                       gamma statistic for diversification rate testing
                 network_signal (alias: netsig; net_signal)
                     - phylogenetic signal on a network
+                threshold_model (alias: threshold; thresh; threshbayes)
+                    - Felsenstein (2012) threshold model for
+                      trait correlation via MCMC
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -4020,6 +4023,100 @@ class Phykit:
         _run_service(parser, argv, RelativeRateTest)
 
     @staticmethod
+    def threshold_model(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Felsenstein (2012) threshold model.
+
+                Estimates the correlation between two traits (binary
+                discrete and/or continuous) using a latent-liability
+                Brownian motion model and MCMC sampling.  Binary
+                discrete characters are modelled as arising from
+                continuous liabilities that cross a threshold at 0.
+
+                This is the equivalent of phytools::threshBayes in R.
+
+                Aliases:
+                  threshold_model, threshold, thresh, threshbayes,
+                  thresh_bayes
+                Command line interfaces:
+                  pk_threshold_model, pk_threshold, pk_thresh,
+                  pk_threshbayes, pk_thresh_bayes
+
+                Usage:
+                phykit threshold_model -t <tree> -d <trait_data>
+                    --traits <trait1,trait2> --types <type1,type2>
+                    [--ngen 100000] [--sample 100] [--burnin 0.2]
+                    [--seed <int>] [--plot <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a rooted phylogeny file
+                                            with branch lengths
+                                            (required)
+
+                -d/--trait-data             tab-delimited trait file
+                                            with header row (required)
+
+                --traits                    comma-separated pair of
+                                            trait column names
+
+                --types                     comma-separated pair of
+                                            trait types (discrete or
+                                            continuous)
+
+                --ngen                      number of MCMC generations
+                                            (default: 100000)
+
+                --sample                    sample frequency
+                                            (default: 100)
+
+                --burnin                    burn-in fraction
+                                            (default: 0.2)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                --plot                      output filename for
+                                            trace plots (optional)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS)
+        parser.add_argument(
+            "-d", "--trait-data", dest="trait_data", type=str, required=True, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--traits", type=str, required=True, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--types", type=str, required=True, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--ngen", type=int, default=100000, required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--sample", type=int, default=100, required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--burnin", type=float, default=0.2, required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--seed", type=int, default=None, required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--plot", dest="plot_output", type=str, default=None, required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, ThresholdModel)
+
+    @staticmethod
     def rename_tree_tips(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -5006,6 +5103,10 @@ def prune_tree(argv=None):
 
 def relative_rate_test(argv=None):
     Phykit.relative_rate_test(sys.argv[1:])
+
+
+def threshold_model(argv=None):
+    Phykit.threshold_model(sys.argv[1:])
 
 
 def rename_tree_tips(argv=None):

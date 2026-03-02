@@ -6,6 +6,29 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.28**:
+Added Felsenstein (2012) threshold model for trait correlation via MCMC:
+
+* Added new ``threshold_model`` command (aliases: ``threshold``, ``thresh``,
+  ``threshbayes``, ``thresh_bayes``) for estimating evolutionary correlations
+  between binary discrete and/or continuous traits using a latent-liability
+  Brownian motion model
+* Implements the Gibbs/Metropolis-Hastings MCMC sampler following
+  phytools::threshBayes (Revell 2014): binary characters are modelled as
+  continuous liabilities crossing a threshold at 0
+* Supports all trait combinations: discrete+continuous, discrete+discrete,
+  and continuous+continuous
+* Adaptive proposal tuning during burn-in targeting ~23% acceptance rate
+* Output includes posterior summary (mean, median, 95% HPD) for the
+  correlation (r), rate parameters (sigma2), and ancestral values
+* Optional ``--plot`` generates a 3x2 figure: trace plots (left column)
+  and posterior density histograms with 95% HPD shading (right column)
+  for convergence diagnostics and posterior visualization
+* JSON output (``--json``) with full posterior samples for custom analysis
+* Reproducible results via ``--seed`` for random number generation
+* Cross-validated against R's phytools::threshBayes: posterior means and
+  95% intervals agree within expected MCMC sampling variation
+
 **2.1.27**:
 Added lineage-through-time (LTT) plot and Pybus & Harvey gamma statistic:
 

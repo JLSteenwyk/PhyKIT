@@ -146,6 +146,10 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "tness": "treeness",
     # Alignment- and tree-based aliases
     "sat": "saturation",
+    "threshold": "threshold_model",
+    "thresh": "threshold_model",
+    "threshbayes": "threshold_model",
+    "thresh_bayes": "threshold_model",
     "toverr": "treeness_over_rcv",
     "tor": "treeness_over_rcv",
     # Helper aliases
