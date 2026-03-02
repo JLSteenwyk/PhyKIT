@@ -1,4 +1,5 @@
 import itertools
+import math
 from pathlib import Path
 from typing import Dict, List
 
@@ -26,6 +27,7 @@ class RelativeRateTest(Tree):
         )
         self.alignment_list = parsed.get("alignment_list")
         self.json_output = parsed["json_output"]
+        self.plot_output = parsed.get("plot_output")
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -34,6 +36,7 @@ class RelativeRateTest(Tree):
             alignment_list=getattr(args, "alignment_list", None),
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
+            plot_output=getattr(args, "plot_output", None),
         )
 
     # ------------------------------------------------------------------
@@ -224,10 +227,84 @@ class RelativeRateTest(Tree):
             # Single mode
             results = self._run_single(self.alignment_file_path, tree, outgroup)
             self._output_single(outgroup, results)
+            if self.plot_output:
+                self._plot_heatmap(results, self.plot_output)
         else:
             raise PhykitUserError(
                 ["Provide -a (single alignment) or -l (alignment list)."]
             )
+
+    # ------------------------------------------------------------------
+    # Plotting
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _plot_heatmap(results: List[Dict], output_path: str) -> None:
+        """Plot a symmetric heatmap of -log10(p_fdr) for all pairwise tests."""
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            import numpy as np
+        except ImportError:
+            print("matplotlib and numpy are required for --plot-output. "
+                  "Install them and retry.")
+            raise SystemExit(2)
+
+        taxa = sorted(
+            set(r["taxon1"] for r in results) | set(r["taxon2"] for r in results)
+        )
+        n = len(taxa)
+        idx = {t: i for i, t in enumerate(taxa)}
+
+        matrix = np.full((n, n), np.nan)
+        for r in results:
+            i, j = idx[r["taxon1"]], idx[r["taxon2"]]
+            val = -math.log10(r["p_fdr"]) if r["p_fdr"] > 0 else 10.0
+            matrix[i, j] = val
+            matrix[j, i] = val
+
+        fig, ax = plt.subplots(figsize=(max(4, n * 0.8 + 1), max(4, n * 0.8 + 1)))
+        cmap = plt.cm.YlOrRd.copy()
+        cmap.set_bad(color="white")
+
+        # Fix scale so non-significant data always looks light:
+        # vmin=0, vmax at least -log10(0.05) ≈ 1.3
+        sig_threshold = -math.log10(0.05)
+        data_max = float(np.nanmax(matrix)) if not np.all(np.isnan(matrix)) else 0.0
+        vmax = max(sig_threshold, data_max) * 1.1
+
+        im = ax.imshow(
+            matrix, cmap=cmap, aspect="equal", interpolation="nearest",
+            vmin=0.0, vmax=vmax,
+        )
+
+        ax.set_xticks(range(n))
+        ax.set_yticks(range(n))
+        ax.set_xticklabels(taxa, rotation=45, ha="right", fontsize=9)
+        ax.set_yticklabels(taxa, fontsize=9)
+
+        for i in range(n):
+            for j in range(n):
+                if not np.isnan(matrix[i, j]):
+                    p_fdr = None
+                    for r in results:
+                        ri, rj = idx[r["taxon1"]], idx[r["taxon2"]]
+                        if (ri == i and rj == j) or (ri == j and rj == i):
+                            p_fdr = r["p_fdr"]
+                            break
+                    if p_fdr is not None and p_fdr < 0.05:
+                        ax.text(j, i, "*", ha="center", va="center",
+                                fontsize=14, fontweight="bold", color="black")
+
+        cbar = fig.colorbar(im, ax=ax, shrink=0.8)
+        cbar.set_label("$-\\log_{10}$(FDR-corrected p-value)", fontsize=10)
+
+        cbar.ax.axhline(y=sig_threshold, color="black", linewidth=1.5, linestyle="--")
+
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
     # ------------------------------------------------------------------
     # Output

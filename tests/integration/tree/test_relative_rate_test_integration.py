@@ -98,3 +98,27 @@ class TestRelativeRateTestIntegration:
 
         output = "\n".join(str(call) for call in mocked_print.call_args_list)
         assert "Number of alignments: 2" in output
+
+    @patch("builtins.print")
+    def test_plot_output(self, mocked_print, tmp_path):
+        aln = tmp_path / "test.fa"
+        aln.write_text(
+            ">A\nACGTACGTACGTACGTACGT\n"
+            ">B\nACGTACGTACTAACTAACGT\n"
+            ">C\nACTAACGTACGTACGTACGT\n"
+            ">O\nACGTACGTACGTACGTACGT\n"
+        )
+        tree = tmp_path / "test.tre"
+        tree.write_text("(((A:0.1,B:0.1):0.05,C:0.15):0.1,O:0.2);")
+        plot_path = str(tmp_path / "rrt_heatmap.png")
+
+        testargs = [
+            "phykit", "rrt", "-a", str(aln), "-t", str(tree),
+            "--plot-output", plot_path,
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        import os
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0

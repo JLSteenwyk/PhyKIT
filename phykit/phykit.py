@@ -3838,6 +3838,9 @@ class Phykit:
 
                 -v/--verbose                print detailed output
 
+                --plot-output               save pairwise p-value
+                                            heatmap to this path
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -3855,6 +3858,9 @@ class Phykit:
         )
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--plot-output", type=str, required=False, help=SUPPRESS, metavar=""
         )
         _add_json_argument(parser)
         _run_service(parser, argv, RelativeRateTest)
