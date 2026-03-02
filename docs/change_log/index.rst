@@ -6,6 +6,23 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.27**:
+Added lineage-through-time (LTT) plot and Pybus & Harvey gamma statistic:
+
+* Added new ``ltt`` command (aliases: ``gamma_stat``, ``gamma``)
+  for testing temporal variation in diversification rates
+* Implements the Pybus & Harvey (2000) gamma statistic: under
+  constant-rate pure-birth, gamma ~ N(0,1); negative = decelerating
+  diversification, positive = accelerating
+* Optional ``--plot-output`` generates a step-function LTT plot with
+  log-scaled y-axis showing lineage accumulation through time
+* Verbose mode (``-v``) prints branching times and full LTT data
+* JSON output support via ``--json``
+* Validated against R's ``ape::gammaStat()`` (ape v5.8.1, R 4.4.0):
+  gamma values match to 10 decimal places across 4 test topologies
+  (balanced 8-tip: -1.4142135624, ladder 5-tip: -0.7142857143,
+  recent burst 10-tip: 2.2824790785, early burst 7-tip: -3.5362021857)
+
 **2.1.26**:
 Added phylogenetic signal on networks:
 

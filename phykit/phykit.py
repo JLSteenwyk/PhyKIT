@@ -235,6 +235,9 @@ class Phykit:
                 quartet_network (alias: quartet_net; qnet; nanuq)
                     - quartet-based network inference (NANUQ-style)
                       distinguishing ILS from hybridization
+                ltt (alias: gamma_stat; gamma)
+                    - lineage-through-time plot and Pybus & Harvey
+                      gamma statistic for diversification rate testing
                 network_signal (alias: netsig; net_signal)
                     - phylogenetic signal on a network
                 polytomy_test (alias: polyt_test; polyt; ptt)
@@ -3835,6 +3838,65 @@ class Phykit:
         _run_service(parser, argv, NetworkSignal)
 
     @staticmethod
+    def ltt(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Lineage-through-time plot and gamma statistic.
+
+                Computes the Pybus & Harvey (2000) gamma statistic
+                to test for temporal variation in diversification
+                rates.  Under a constant-rate pure-birth process,
+                gamma ~ N(0,1).  Negative values indicate early
+                diversification (decelerating); positive values
+                indicate late diversification (accelerating).
+
+                Optionally generates a lineage-through-time plot.
+
+                Aliases:
+                  ltt, gamma_stat, gamma
+                Command line interfaces:
+                  pk_ltt, pk_gamma_stat, pk_gamma
+
+                Usage:
+                phykit ltt -t <tree> [-v/--verbose]
+                    [--plot-output <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a rooted phylogeny file
+                                            with branch lengths
+                                            (required)
+
+                -v/--verbose                print branching times
+                                            and LTT data points
+
+                --plot-output               output filename for the
+                                            lineage-through-time
+                                            plot (optional)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, LTT)
+
+    @staticmethod
     def prune_tree(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4924,6 +4986,10 @@ def consensus_network(argv=None):
 
 def quartet_network(argv=None):
     Phykit.quartet_network(sys.argv[1:])
+
+
+def ltt(argv=None):
+    Phykit.ltt(sys.argv[1:])
 
 
 def network_signal(argv=None):

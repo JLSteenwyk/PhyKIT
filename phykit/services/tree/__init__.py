@@ -15,6 +15,7 @@ _EXPORTS = {
     "InternodeLabeler": "internode_labeler",
     "LastCommonAncestorSubtree": "last_common_ancestor_subtree",
     "LBScore": "lb_score",
+    "LTT": "ltt",
     "MonophylyCheck": "monophyly_check",
     "NearestNeighborInterchange": "nearest_neighbor_interchange",
     "PatristicDistances": "patristic_distances",
