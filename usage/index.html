@@ -96,6 +96,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#concordance-aware-ancestral-state-reconstruction">Concordance-aware ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#branch-length-multiplier">Branch length multiplier</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
@@ -335,6 +336,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <h3>Trait evolution<a class="headerlink" href="#trait-evolution" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-ancestral-state-reconstruction"><span class="std std-ref">Ancestral state reconstruction</span></a> -- Reconstruct ancestral character states</p></li>
+<li><p><a class="reference internal" href="#cmd-concordance-asr"><span class="std std-ref">Concordance-aware ASR</span></a> -- ASR incorporating gene tree discordance</p></li>
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a> -- Map continuous traits onto a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a> -- Posterior density of stochastic character maps</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a> -- Compare continuous trait evolution models</p></li>
@@ -1095,6 +1097,45 @@ specifies which column to use.</p>
 <em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">ml</span></code> (default: <code class="docutils literal notranslate"><span class="pre">fast</span></code>) <br/>
 <em>--ci</em>: include 95% confidence intervals <br/>
 <em>--plot</em>: output path for contMap plot (requires matplotlib) <br/>
+<em>--json</em>: output results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="concordance-aware-ancestral-state-reconstruction">
+<span id="cmd-concordance-asr"></span><h3>Concordance-aware ancestral state reconstruction<a class="headerlink" href="#concordance-aware-ancestral-state-reconstruction" title="Link to this heading"></a></h3>
+<p>Function names: concordance_asr; conc_asr; casr <br/>
+Command line interface: pk_concordance_asr; pk_conc_asr; pk_casr</p>
+<p>Concordance-aware ancestral state reconstruction that incorporates gene
+tree discordance into ancestral estimates. Standard ASR operates on a
+single species tree and ignores gene tree conflict. This command propagates
+topological uncertainty from gene tree discordance into ancestral state
+estimates using gene concordance factors (gCF).</p>
+<p>Two strategies are available:</p>
+<ul class="simple">
+<li><p><strong>weighted</strong> (default): For each internal node, compute gCF (fraction of
+gene trees supporting the species-tree bipartition) and gDF1, gDF2
+(fractions for NNI alternatives). Run ASR on the species tree and NNI
+alternative trees, then combine estimates weighted by concordance. Uses the
+law of total variance to separate topological vs parameter uncertainty.</p></li>
+<li><p><strong>distribution</strong>: Run ASR independently on each gene tree, map nodes across
+trees by descendant-set identity, and report concordance-weighted means with
+percentile confidence intervals (2.5th--97.5th).</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;
+<span class="w">    </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>weighted<span class="p">|</span>distribution<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: species tree file <br/>
+<em>-g/\-\-gene-trees</em>: file with gene trees (multi-Newick, one per line) <br/>
+<em>-d/\-\-trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
+<em>-c/\-\-trait</em>: trait column name (required for multi-trait files) <br/>
+<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">weighted</span></code> or <code class="docutils literal notranslate"><span class="pre">distribution</span></code> (default: <code class="docutils literal notranslate"><span class="pre">weighted</span></code>) <br/>
+<em>--ci</em>: include 95% confidence intervals <br/>
+<em>--plot</em>: output path for concordance ASR plot <br/>
+<em>--missing-taxa</em>: how to handle taxa mismatches: <code class="docutils literal notranslate"><span class="pre">shared</span></code> (default, prune to intersection) or <code class="docutils literal notranslate"><span class="pre">error</span></code> (reject) <br/>
 <em>--json</em>: output results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
