@@ -54,6 +54,20 @@
 <li class="toctree-l3"><a class="reference internal" href="#command-line-interfaces">Command line interfaces</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#functions-by-analytical-category">Functions by analytical category</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-quality-statistics">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-manipulation">Alignment manipulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tree-summary-statistics">Tree summary statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tree-manipulation-utilities">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tree-comparison-consensus">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trait-evolution">Trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-comparative-methods">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate-analysis">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#homology-assessment">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#saturation-model-adequacy">Saturation &amp; model adequacy</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#alignment-based-functions">Alignment-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-entropy">Alignment entropy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
@@ -110,7 +124,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-glm">Phylogenetic GLM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cmd-phylogenetic-signal">Phylogenetic signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
@@ -229,10 +243,147 @@ pk_tness<span class="w"> </span>-h
 </div>
 </section>
 </section>
+<section id="functions-by-analytical-category">
+<h2>Functions by analytical category<a class="headerlink" href="#functions-by-analytical-category" title="Link to this heading"></a></h2>
+<p>The functions above are organized by input type. Below, the same functions
+are grouped by analytical purpose to help you find the right tool for your analysis.</p>
+<section id="alignment-quality-statistics">
+<h3>Alignment quality &amp; statistics<a class="headerlink" href="#alignment-quality-statistics" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-alignment-entropy"><span class="std std-ref">Alignment entropy</span></a> -- Shannon entropy across alignment sites</p></li>
+<li><p><a class="reference internal" href="#cmd-alignment-length"><span class="std std-ref">Alignment length</span></a> -- Length of an input alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-alignment-length-no-gaps"><span class="std std-ref">Alignment length no gaps</span></a> -- Alignment length excluding gapped sites</p></li>
+<li><p><a class="reference internal" href="#cmd-alignment-outlier-taxa"><span class="std std-ref">Alignment outlier taxa</span></a> -- Identify outlier taxa in alignments</p></li>
+<li><p><a class="reference internal" href="#cmd-column-score"><span class="std std-ref">Column score</span></a> -- Column score for alignment quality</p></li>
+<li><p><a class="reference internal" href="#cmd-compositional-bias-per-site"><span class="std std-ref">Compositional bias per site</span></a> -- Detect compositional bias across sites</p></li>
+<li><p><a class="reference internal" href="#cmd-composition-per-taxon"><span class="std std-ref">Composition per taxon</span></a> -- Nucleotide or amino acid composition per taxon</p></li>
+<li><p><a class="reference internal" href="#cmd-evolutionary-rate-per-site"><span class="std std-ref">Evolutionary Rate per Site</span></a> -- Site-specific evolutionary rate estimation</p></li>
+<li><p><a class="reference internal" href="#cmd-gc-content"><span class="std std-ref">Guanine-cytosine (GC) content</span></a> -- GC content of an alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-occupancy-per-taxon"><span class="std std-ref">Occupancy per taxon</span></a> -- Taxon occupancy in alignment columns</p></li>
+<li><p><a class="reference internal" href="#cmd-pairwise-identity"><span class="std std-ref">Pairwise identity</span></a> -- Pairwise sequence identity in an alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-parsimony-informative-sites"><span class="std std-ref">Parsimony informative sites</span></a> -- Count parsimony informative sites</p></li>
+<li><p><a class="reference internal" href="#cmd-plot-alignment-qc"><span class="std std-ref">Plot alignment QC</span></a> -- Visual quality control plots for alignments</p></li>
+<li><p><a class="reference internal" href="#cmd-relative-composition-variability"><span class="std std-ref">Relative composition variability</span></a> -- Composition variability across taxa</p></li>
+<li><p><a class="reference internal" href="#cmd-relative-composition-variability-taxon"><span class="std std-ref">Relative composition variability, taxon</span></a> -- Per-taxon relative composition variability</p></li>
+<li><p><a class="reference internal" href="#cmd-sum-of-pairs-score"><span class="std std-ref">Sum-of-pairs score</span></a> -- Sum-of-pairs alignment quality score</p></li>
+<li><p><a class="reference internal" href="#cmd-variable-sites"><span class="std std-ref">Variable sites</span></a> -- Count variable sites in an alignment</p></li>
+</ul>
+</section>
+<section id="alignment-manipulation">
+<h3>Alignment manipulation<a class="headerlink" href="#alignment-manipulation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-alignment-recoding"><span class="std std-ref">Alignment recoding</span></a> -- Recode alignment into reduced alphabets</p></li>
+<li><p><a class="reference internal" href="#cmd-create-concatenation-matrix"><span class="std std-ref">Create concatenation matrix</span></a> -- Concatenate multiple alignments into a supermatrix</p></li>
+<li><p><a class="reference internal" href="#cmd-faidx"><span class="std std-ref">Faidx</span></a> -- Extract entries from FASTA files</p></li>
+<li><p><a class="reference internal" href="#cmd-mask-alignment"><span class="std std-ref">Mask alignment</span></a> -- Mask sites in an alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-rename-fasta-entries"><span class="std std-ref">Rename FASTA entries</span></a> -- Rename entries in a FASTA file</p></li>
+<li><p><a class="reference internal" href="#cmd-thread-dna"><span class="std std-ref">Protein-to-nucleotide alignment</span></a> -- Thread nucleotide onto protein alignment</p></li>
+</ul>
+</section>
+<section id="tree-summary-statistics">
+<h3>Tree summary statistics<a class="headerlink" href="#tree-summary-statistics" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-bipartition-support-stats"><span class="std std-ref">Bipartition support statistics</span></a> -- Summary statistics of bipartition support values</p></li>
+<li><p><a class="reference internal" href="#cmd-degree-of-violation-of-a-molecular-clock"><span class="std std-ref">Degree of violation of the molecular clock</span></a> -- Measure molecular clock violation</p></li>
+<li><p><a class="reference internal" href="#cmd-evolutionary-rate"><span class="std std-ref">Evolutionary rate</span></a> -- Calculate tree-based evolutionary rate</p></li>
+<li><p><a class="reference internal" href="#cmd-internal-branch-stats"><span class="std std-ref">Internal branch statistics</span></a> -- Summary statistics of internal branch lengths</p></li>
+<li><p><a class="reference internal" href="#cmd-ltt"><span class="std std-ref">Lineage-through-time plot and gamma statistic</span></a> -- Lineage-through-time analysis and gamma statistic</p></li>
+<li><p><a class="reference internal" href="#cmd-long-branch-score"><span class="std std-ref">Long branch score</span></a> -- Identify long branches in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-patristic-distances"><span class="std std-ref">Patristic distances</span></a> -- Pairwise patristic distances between taxa</p></li>
+<li><p><a class="reference internal" href="#cmd-terminal-branch-stats"><span class="std std-ref">Terminal branch statistics</span></a> -- Summary statistics of terminal branch lengths</p></li>
+<li><p><a class="reference internal" href="#cmd-tip-to-tip-distance"><span class="std std-ref">Tip-to-tip distance</span></a> -- Distance between two tips in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-tip-to-tip-node-distance"><span class="std std-ref">Tip-to-tip node distance</span></a> -- Node distance between two tips</p></li>
+<li><p><a class="reference internal" href="#cmd-total-tree-length"><span class="std std-ref">Total tree length</span></a> -- Sum of all branch lengths</p></li>
+<li><p><a class="reference internal" href="#cmd-treeness"><span class="std std-ref">Treeness</span></a> -- Ratio of internal to total branch lengths</p></li>
+</ul>
+</section>
+<section id="tree-manipulation-utilities">
+<h3>Tree manipulation &amp; utilities<a class="headerlink" href="#tree-manipulation-utilities" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-branch-length-multiplier"><span class="std std-ref">Branch length multiplier</span></a> -- Multiply branch lengths by a factor</p></li>
+<li><p><a class="reference internal" href="#cmd-collapse-branches"><span class="std std-ref">Collapse bipartitions</span></a> -- Collapse low-support bipartitions</p></li>
+<li><p><a class="reference internal" href="#cmd-internode-labeler"><span class="std std-ref">Internode labeler</span></a> -- Label internal nodes of a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-last-common-ancestor-subtree"><span class="std std-ref">Last common ancestor subtree</span></a> -- Extract subtree from LCA of specified taxa</p></li>
+<li><p><a class="reference internal" href="#cmd-monophyly-check"><span class="std std-ref">Monophyly check</span></a> -- Test monophyly of a group of taxa</p></li>
+<li><p><a class="reference internal" href="#cmd-nearest-neighbor-interchange"><span class="std std-ref">Nearest neighbor interchange</span></a> -- Generate NNI tree rearrangements</p></li>
+<li><p><a class="reference internal" href="#cmd-print-tree"><span class="std std-ref">Print tree</span></a> -- Print ASCII representation of a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-prune-tree"><span class="std std-ref">Prune tree</span></a> -- Prune taxa from a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-rename-tree-tips"><span class="std std-ref">Rename tree tips</span></a> -- Rename tip labels in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-root-tree"><span class="std std-ref">Root tree</span></a> -- Root or reroot a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-tip-labels"><span class="std std-ref">Tip labels</span></a> -- Print tip labels of a tree</p></li>
+</ul>
+</section>
+<section id="tree-comparison-consensus">
+<h3>Tree comparison &amp; consensus<a class="headerlink" href="#tree-comparison-consensus" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-consensus-network"><span class="std std-ref">Consensus network</span></a> -- Consensus network from multiple trees</p></li>
+<li><p><a class="reference internal" href="#cmd-consensus-tree"><span class="std std-ref">Consensus tree</span></a> -- Consensus tree from multiple trees</p></li>
+<li><p><a class="reference internal" href="#cmd-cophylo"><span class="std std-ref">Cophylogenetic plot (tanglegram)</span></a> -- Tanglegram for comparing two trees</p></li>
+<li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a> -- Test for polytomies in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a> -- Quartet-based network visualization</p></li>
+<li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a> -- Topological distance between trees</p></li>
+</ul>
+</section>
+<section id="phylogenetic-signal">
+<h3>Phylogenetic signal<a class="headerlink" href="#phylogenetic-signal" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-network-signal"><span class="std std-ref">Network signal</span></a> -- Phylogenetic signal on networks</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-signal"><span class="std std-ref">Phylogenetic signal</span></a> -- Test for phylogenetic signal in traits</p></li>
+</ul>
+</section>
+<section id="trait-evolution">
+<h3>Trait evolution<a class="headerlink" href="#trait-evolution" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-ancestral-state-reconstruction"><span class="std std-ref">Ancestral state reconstruction</span></a> -- Reconstruct ancestral character states</p></li>
+<li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a> -- Map continuous traits onto a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a> -- Posterior density of stochastic character maps</p></li>
+<li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a> -- Compare continuous trait evolution models</p></li>
+<li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a> -- Detect OU regime shifts on a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a> -- Multi-regime Ornstein-Uhlenbeck models</p></li>
+<li><p><a class="reference internal" href="#cmd-phenogram"><span class="std std-ref">Phenogram (traitgram)</span></a> -- Phenogram visualizing trait evolution</p></li>
+<li><p><a class="reference internal" href="#cmd-rate-heterogeneity"><span class="std std-ref">Rate heterogeneity test (multi-rate Brownian motion)</span></a> -- Test for rate heterogeneity in trait evolution</p></li>
+<li><p><a class="reference internal" href="#cmd-stochastic-character-map"><span class="std std-ref">Stochastic character mapping (SIMMAP)</span></a> -- Stochastic character mapping on a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-threshold-model"><span class="std std-ref">Threshold model</span></a> -- Felsenstein threshold model for trait correlation</p></li>
+</ul>
+</section>
+<section id="phylogenetic-comparative-methods">
+<h3>Phylogenetic comparative methods<a class="headerlink" href="#phylogenetic-comparative-methods" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a> -- Phylogenetic generalized linear model</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic Ordination</span></a> -- Ordination incorporating phylogenetic structure</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-regression"><span class="std std-ref">Phylogenetic regression (PGLS)</span></a> -- Phylogenetic generalized least squares regression</p></li>
+<li><p><a class="reference internal" href="#cmd-phylomorphospace"><span class="std std-ref">Phylomorphospace</span></a> -- Phylomorphospace visualization</p></li>
+</ul>
+</section>
+<section id="evolutionary-rate-analysis">
+<h3>Evolutionary rate analysis<a class="headerlink" href="#evolutionary-rate-analysis" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-covarying-evolutionary-rates"><span class="std std-ref">Covarying evolutionary rates</span></a> -- Detect covariation in evolutionary rates</p></li>
+<li><p><a class="reference internal" href="#cmd-relative-rate-test"><span class="std std-ref">Relative rate test</span></a> -- Relative rate test between lineages</p></li>
+</ul>
+</section>
+<section id="homology-assessment">
+<h3>Homology assessment<a class="headerlink" href="#homology-assessment" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-hidden-paralogy-check"><span class="std std-ref">Hidden paralogy check</span></a> -- Check for hidden paralogy in gene trees</p></li>
+<li><p><a class="reference internal" href="#cmd-spurious-sequence"><span class="std std-ref">Spurious homolog identification</span></a> -- Identify spurious sequences in alignments</p></li>
+</ul>
+</section>
+<section id="saturation-model-adequacy">
+<h3>Saturation &amp; model adequacy<a class="headerlink" href="#saturation-model-adequacy" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="#cmd-saturation"><span class="std std-ref">Saturation</span></a> -- Test for substitution saturation</p></li>
+<li><p><a class="reference internal" href="#cmd-treeness-over-rcv"><span class="std std-ref">Treeness over RCV</span></a> -- Treeness over relative composition variability</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
 <section id="alignment-based-functions">
 <h2>Alignment-based functions<a class="headerlink" href="#alignment-based-functions" title="Link to this heading"></a></h2>
 <section id="alignment-entropy">
-<h3>Alignment entropy<a class="headerlink" href="#alignment-entropy" title="Link to this heading"></a></h3>
+<span id="cmd-alignment-entropy"></span><h3>Alignment entropy<a class="headerlink" href="#alignment-entropy" title="Link to this heading"></a></h3>
 <p>Function names: alignment_entropy; aln_entropy; entropy <br/>
 Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy</p>
 <p>Calculate alignment entropy.</p>
@@ -263,7 +414,7 @@ With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.
 </div>
 </section>
 <section id="alignment-length">
-<h3>Alignment length<a class="headerlink" href="#alignment-length" title="Link to this heading"></a></h3>
+<span id="cmd-alignment-length"></span><h3>Alignment length<a class="headerlink" href="#alignment-length" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/aln_len.png"><img alt="../_images/aln_len.png" class="align-center" src="../_images/aln_len.png" style="width: 75%;" />
 </a>
 <p>Function names: alignment_length; aln_len; al <br/>
@@ -284,7 +435,7 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 </section>
 <section id="alignment-length-no-gaps">
-<h3>Alignment length no gaps<a class="headerlink" href="#alignment-length-no-gaps" title="Link to this heading"></a></h3>
+<span id="cmd-alignment-length-no-gaps"></span><h3>Alignment length no gaps<a class="headerlink" href="#alignment-length-no-gaps" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/aln_len_no_gaps.png"><img alt="../_images/aln_len_no_gaps.png" class="align-center" src="../_images/aln_len_no_gaps.png" style="width: 75%;" />
 </a>
 <p>Function names: alignment_length_no_gaps; aln_len_no_gaps; alng <br/>
@@ -311,7 +462,7 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 </section>
 <section id="alignment-outlier-taxa">
-<h3>Alignment outlier taxa<a class="headerlink" href="#alignment-outlier-taxa" title="Link to this heading"></a></h3>
+<span id="cmd-alignment-outlier-taxa"></span><h3>Alignment outlier taxa<a class="headerlink" href="#alignment-outlier-taxa" title="Link to this heading"></a></h3>
 <p>Function names: alignment_outlier_taxa; outlier_taxa; aot <br/>
 Command line interface: pk_alignment_outlier_taxa; pk_outlier_taxa; pk_aot</p>
 <p>Identify potential outlier taxa in an alignment and explicitly report why each taxon was flagged.</p>
@@ -348,7 +499,7 @@ taxon_e<span class="w"> </span><span class="nv">gap_rate</span><span class="o">=
 </div>
 </section>
 <section id="alignment-recoding">
-<h3>Alignment recoding<a class="headerlink" href="#alignment-recoding" title="Link to this heading"></a></h3>
+<span id="cmd-alignment-recoding"></span><h3>Alignment recoding<a class="headerlink" href="#alignment-recoding" title="Link to this heading"></a></h3>
 <p>Function names: alignment_recoding; aln_recoding; recode <br/>
 Command line interface: pk_alignment_recoding; pk_aln_recoding; pk_recode</p>
 <p>Recode alignments using reduced character states.</p>
@@ -454,7 +605,7 @@ H = C <br/></p>
 </div>
 </section>
 <section id="column-score">
-<h3>Column score<a class="headerlink" href="#column-score" title="Link to this heading"></a></h3>
+<span id="cmd-column-score"></span><h3>Column score<a class="headerlink" href="#column-score" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/column_score.png"><img alt="../_images/column_score.png" class="align-center" src="../_images/column_score.png" style="width: 75%;" />
 </a>
 <p>Function names: column_score; cs <br/>
@@ -480,7 +631,7 @@ to <br/>
 </div>
 </section>
 <section id="composition-per-taxon">
-<h3>Composition per taxon<a class="headerlink" href="#composition-per-taxon" title="Link to this heading"></a></h3>
+<span id="cmd-composition-per-taxon"></span><h3>Composition per taxon<a class="headerlink" href="#composition-per-taxon" title="Link to this heading"></a></h3>
 <p>Function names: composition_per_taxon; comp_taxon; comp_tax <br/>
 Command line interface: pk_composition_per_taxon; pk_comp_taxon; pk_comp_tax</p>
 <p>Calculate sequence composition per taxon in an alignment.</p>
@@ -503,7 +654,7 @@ characters. Symbol order is alphabetical.</p>
 </div>
 </section>
 <section id="compositional-bias-per-site">
-<h3>Compositional bias per site<a class="headerlink" href="#compositional-bias-per-site" title="Link to this heading"></a></h3>
+<span id="cmd-compositional-bias-per-site"></span><h3>Compositional bias per site<a class="headerlink" href="#compositional-bias-per-site" title="Link to this heading"></a></h3>
 <p>Function names: compositional_bias_per_site; comp_bias_per_site; cbps <br/>
 Command line interface: pk_compositional_bias_per_site; pk_comp_bias_per_site; pk_cbps</p>
 <p>Calculates compositional bias per site in an alignment.</p>
@@ -527,7 +678,7 @@ fasta alignment to calculate the site-wise compositional bias of <br/>
 </div>
 </section>
 <section id="create-concatenation-matrix">
-<h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Link to this heading"></a></h3>
+<span id="cmd-create-concatenation-matrix"></span><h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/create_concat_matrix.png"><img alt="../_images/create_concat_matrix.png" class="align-center" src="../_images/create_concat_matrix.png" style="width: 75%;" />
 </a>
 <p>Function names: create_concatenation_matrix, create_concat, cc <br/>
@@ -563,7 +714,7 @@ characters in present genes, and fully absent gene blocks. <br/>
 </div>
 </section>
 <section id="evolutionary-rate-per-site">
-<h3>Evolutionary Rate per Site<a class="headerlink" href="#evolutionary-rate-per-site" title="Link to this heading"></a></h3>
+<span id="cmd-evolutionary-rate-per-site"></span><h3>Evolutionary Rate per Site<a class="headerlink" href="#evolutionary-rate-per-site" title="Link to this heading"></a></h3>
 <p>Function names: evolutionary_rate_per_site; evo_rate_per_site; erps <br/>
 Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_erps</p>
 <p>Estimate evolutionary rate per site.</p>
@@ -584,7 +735,7 @@ fasta alignment to calculate the site-wise evolutionary rate of <br/>
 </div>
 </section>
 <section id="faidx">
-<h3>Faidx<a class="headerlink" href="#faidx" title="Link to this heading"></a></h3>
+<span id="cmd-faidx"></span><h3>Faidx<a class="headerlink" href="#faidx" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/faidx.png"><img alt="../_images/faidx.png" class="align-center" src="../_images/faidx.png" style="width: 75%;" />
 </a>
 <p>Function names: faidx; get_entry; ge <br/>
@@ -608,7 +759,7 @@ should be associated with the -e argument.</p>
 </div>
 </section>
 <section id="guanine-cytosine-gc-content">
-<h3>Guanine-cytosine (GC) content<a class="headerlink" href="#guanine-cytosine-gc-content" title="Link to this heading"></a></h3>
+<span id="cmd-gc-content"></span><h3>Guanine-cytosine (GC) content<a class="headerlink" href="#guanine-cytosine-gc-content" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/gc_content.png"><img alt="../_images/gc_content.png" class="align-center" src="../_images/gc_content.png" style="width: 75%;" />
 </a>
 <p>Function names: gc_content; gc <br/>
@@ -633,7 +784,7 @@ entry <br/>
 </div>
 </section>
 <section id="mask-alignment">
-<h3>Mask alignment<a class="headerlink" href="#mask-alignment" title="Link to this heading"></a></h3>
+<span id="cmd-mask-alignment"></span><h3>Mask alignment<a class="headerlink" href="#mask-alignment" title="Link to this heading"></a></h3>
 <p>Function names: mask_alignment; mask_aln; mask <br/>
 Command line interface: pk_mask_alignment; pk_mask_aln; pk_mask</p>
 <p>Mask alignment sites based on threshold criteria.</p>
@@ -653,7 +804,7 @@ maximum gap fraction, minimum occupancy, and maximum site entropy.</p>
 </div>
 </section>
 <section id="occupancy-per-taxon">
-<h3>Occupancy per taxon<a class="headerlink" href="#occupancy-per-taxon" title="Link to this heading"></a></h3>
+<span id="cmd-occupancy-per-taxon"></span><h3>Occupancy per taxon<a class="headerlink" href="#occupancy-per-taxon" title="Link to this heading"></a></h3>
 <p>Function names: occupancy_per_taxon; occupancy_taxon; occ_tax <br/>
 Command line interface: pk_occupancy_per_taxon; pk_occupancy_taxon; pk_occ_tax</p>
 <p>Calculate occupancy per taxon in an alignment.</p>
@@ -675,7 +826,7 @@ for each taxon.</p>
 </div>
 </section>
 <section id="pairwise-identity">
-<h3>Pairwise identity<a class="headerlink" href="#pairwise-identity" title="Link to this heading"></a></h3>
+<span id="cmd-pairwise-identity"></span><h3>Pairwise identity<a class="headerlink" href="#pairwise-identity" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/pairwise_identity.png"><img alt="../_images/pairwise_identity.png" class="align-center" src="../_images/pairwise_identity.png" style="width: 75%;" />
 </a>
 <p>Function names: pairwise_identity; pairwise_id, pi <br/>
@@ -705,7 +856,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 </div>
 </section>
 <section id="parsimony-informative-sites">
-<h3>Parsimony informative sites<a class="headerlink" href="#parsimony-informative-sites" title="Link to this heading"></a></h3>
+<span id="cmd-parsimony-informative-sites"></span><h3>Parsimony informative sites<a class="headerlink" href="#parsimony-informative-sites" title="Link to this heading"></a></h3>
 <p>Function names: parsimony_informative_sites; pis <br/>
 Command line interface: pk_parsimony_informative_sites; pk_pis</p>
 <p>Calculate the number and percentage of parsimony
@@ -732,7 +883,7 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 </div>
 </section>
 <section id="plot-alignment-qc">
-<h3>Plot alignment QC<a class="headerlink" href="#plot-alignment-qc" title="Link to this heading"></a></h3>
+<span id="cmd-plot-alignment-qc"></span><h3>Plot alignment QC<a class="headerlink" href="#plot-alignment-qc" title="Link to this heading"></a></h3>
 <p>Function names: plot_alignment_qc; plot_qc; paqc <br/>
 Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc</p>
 <p>Generate a multi-panel alignment quality-control plot.</p>
@@ -765,7 +916,7 @@ Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc</p>
 </div>
 </section>
 <section id="protein-to-nucleotide-alignment">
-<h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Link to this heading"></a></h3>
+<span id="cmd-thread-dna"></span><h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Link to this heading"></a></h3>
 <p>Function names: thread_dna; pal2nal, p2n <br/>
 Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
 <p>Thread DNA sequence onto a protein alignment to create a
@@ -798,7 +949,7 @@ If used, stop codons will be removed. <br/>
 </div>
 </section>
 <section id="relative-composition-variability">
-<h3>Relative composition variability<a class="headerlink" href="#relative-composition-variability" title="Link to this heading"></a></h3>
+<span id="cmd-relative-composition-variability"></span><h3>Relative composition variability<a class="headerlink" href="#relative-composition-variability" title="Link to this heading"></a></h3>
 <p>Function names: relative_composition_variability; rel_comp_var; rcv <br/>
 Command line interface: pk_relative_composition_variability; pk_rel_comp_var; pk_rcv</p>
 <p>Calculate RCV (relative composition variability) for an alignment.</p>
@@ -821,7 +972,7 @@ normalized by its valid (non-excluded) sequence length.</p>
 </div>
 </section>
 <section id="relative-composition-variability-taxon">
-<h3>Relative composition variability, taxon<a class="headerlink" href="#relative-composition-variability-taxon" title="Link to this heading"></a></h3>
+<span id="cmd-relative-composition-variability-taxon"></span><h3>Relative composition variability, taxon<a class="headerlink" href="#relative-composition-variability-taxon" title="Link to this heading"></a></h3>
 <p>Function names: relative_composition_variability_taxon; rel_comp_var_taxon; rcvt <br/>
 Command line interface: pk_relative_composition_variability_taxon; pk_rel_comp_var_taxon; pk_rcvt</p>
 <p>Calculate RCVT (relative composition variability, taxon) for an alignment.</p>
@@ -844,7 +995,7 @@ from composition counts and normalization.</p>
 </div>
 </section>
 <section id="rename-fasta-entries">
-<h3>Rename FASTA entries<a class="headerlink" href="#rename-fasta-entries" title="Link to this heading"></a></h3>
+<span id="cmd-rename-fasta-entries"></span><h3>Rename FASTA entries<a class="headerlink" href="#rename-fasta-entries" title="Link to this heading"></a></h3>
 <p>Function names: rename_fasta_entries; rename_fasta <br/>
 Command line interface: pk_rename_fasta_entries; pk_rename_fasta</p>
 <p>Renames fasta entries.</p>
@@ -865,7 +1016,7 @@ an alignment file.</p>
 </div>
 </section>
 <section id="sum-of-pairs-score">
-<h3>Sum-of-pairs score<a class="headerlink" href="#sum-of-pairs-score" title="Link to this heading"></a></h3>
+<span id="cmd-sum-of-pairs-score"></span><h3>Sum-of-pairs score<a class="headerlink" href="#sum-of-pairs-score" title="Link to this heading"></a></h3>
 <p>Function names: sum_of_pairs_score; sops; sop <br/>
 Command line interface: pk_sum_of_pairs_score; pk_sops; pk_sop</p>
 <p>Calculates sum-of-pairs score.</p>
@@ -889,7 +1040,7 @@ to <br/>
 </div>
 </section>
 <section id="variable-sites">
-<h3>Variable sites<a class="headerlink" href="#variable-sites" title="Link to this heading"></a></h3>
+<span id="cmd-variable-sites"></span><h3>Variable sites<a class="headerlink" href="#variable-sites" title="Link to this heading"></a></h3>
 <p>Function names: variable_sites; vs <br/>
 Command line interface: pk_variable_sites; pk_vs</p>
 <p>Calculate the number of variable sites in an alignment.</p>
@@ -917,7 +1068,7 @@ doi: 10.1093/gbe/evw179.</p>
 <section id="tree-based-functions">
 <h2>Tree-based functions<a class="headerlink" href="#tree-based-functions" title="Link to this heading"></a></h2>
 <section id="ancestral-state-reconstruction">
-<h3>Ancestral state reconstruction<a class="headerlink" href="#ancestral-state-reconstruction" title="Link to this heading"></a></h3>
+<span id="cmd-ancestral-state-reconstruction"></span><h3>Ancestral state reconstruction<a class="headerlink" href="#ancestral-state-reconstruction" title="Link to this heading"></a></h3>
 <p>Function names: ancestral_state_reconstruction; asr; anc_recon <br/>
 Command line interface: pk_ancestral_state_reconstruction; pk_asr; pk_anc_recon</p>
 <p>Estimate ancestral states for continuous traits using maximum likelihood,
@@ -950,7 +1101,7 @@ specifies which column to use.</p>
 </div>
 </section>
 <section id="bipartition-support-statistics">
-<h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Link to this heading"></a></h3>
+<span id="cmd-bipartition-support-stats"></span><h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Link to this heading"></a></h3>
 <p>Function names: bipartition_support_stats; bss <br/>
 Command line interface: pk_bipartition_support_stats; pk_bss</p>
 <p>Calculate summary statistics for bipartition support.</p>
@@ -985,7 +1136,7 @@ fraction of bipartitions below each cutoff <br/>
 </div>
 </section>
 <section id="branch-length-multiplier">
-<h3>Branch length multiplier<a class="headerlink" href="#branch-length-multiplier" title="Link to this heading"></a></h3>
+<span id="cmd-branch-length-multiplier"></span><h3>Branch length multiplier<a class="headerlink" href="#branch-length-multiplier" title="Link to this heading"></a></h3>
 <p>Function names: branch_length_multiplier; blm <br/>
 Command line interface: pk_branch_length_multiplier; pk_blm</p>
 <p>Multiply branch lengths in a phylogeny by a given factor.</p>
@@ -1005,7 +1156,7 @@ output will have the same name as the input file but with the suffix &quot;.fact
 </div>
 </section>
 <section id="collapse-bipartitions">
-<h3>Collapse bipartitions<a class="headerlink" href="#collapse-bipartitions" title="Link to this heading"></a></h3>
+<span id="cmd-collapse-branches"></span><h3>Collapse bipartitions<a class="headerlink" href="#collapse-bipartitions" title="Link to this heading"></a></h3>
 <p>Function names: collapse_branches, collapse, cb <br/>
 Command line interface: pk_collapse_branches, pk_collapse, pk_cb</p>
 <p>Collapse branches on a phylogeny according to bipartition support.</p>
@@ -1027,7 +1178,7 @@ output will have the same name as the input file but with the suffix
 </div>
 </section>
 <section id="consensus-network">
-<h3>Consensus network<a class="headerlink" href="#consensus-network" title="Link to this heading"></a></h3>
+<span id="cmd-consensus-network"></span><h3>Consensus network<a class="headerlink" href="#consensus-network" title="Link to this heading"></a></h3>
 <p>Function names: consensus_network; consnet; splitnet; splits_network <br/>
 Command line interface: pk_consensus_network; pk_consnet; pk_splitnet; pk_splits_network</p>
 <p>Extract bipartition splits from a collection of gene trees and summarize
@@ -1058,7 +1209,7 @@ splits supported by more gene trees.</p>
 </div>
 </section>
 <section id="consensus-tree">
-<h3>Consensus tree<a class="headerlink" href="#consensus-tree" title="Link to this heading"></a></h3>
+<span id="cmd-consensus-tree"></span><h3>Consensus tree<a class="headerlink" href="#consensus-tree" title="Link to this heading"></a></h3>
 <p>Function names: consensus_tree; consensus; ctree <br/>
 Command line interface: pk_consensus_tree; pk_consensus; pk_ctree</p>
 <p>Infer a consensus tree from a collection of trees.</p>
@@ -1084,7 +1235,7 @@ Command line interface: pk_consensus_tree; pk_consensus; pk_ctree</p>
 </div>
 </section>
 <section id="continuous-trait-evolution-model-comparison-fitcontinuous">
-<h3>Continuous trait evolution model comparison (fitContinuous)<a class="headerlink" href="#continuous-trait-evolution-model-comparison-fitcontinuous" title="Link to this heading"></a></h3>
+<span id="cmd-fit-continuous"></span><h3>Continuous trait evolution model comparison (fitContinuous)<a class="headerlink" href="#continuous-trait-evolution-model-comparison-fitcontinuous" title="Link to this heading"></a></h3>
 <p>Function names: fit_continuous; fitcontinuous; fc <br/>
 Command line interface: pk_fit_continuous; pk_fitcontinuous; pk_fc</p>
 <p>Compare models of continuous trait evolution on a phylogeny, analogous to
@@ -1127,7 +1278,7 @@ Best model (BIC): BM
 </div>
 </section>
 <section id="continuous-trait-mapping-contmap">
-<h3>Continuous trait mapping (contMap)<a class="headerlink" href="#continuous-trait-mapping-contmap" title="Link to this heading"></a></h3>
+<span id="cmd-cont-map"></span><h3>Continuous trait mapping (contMap)<a class="headerlink" href="#continuous-trait-mapping-contmap" title="Link to this heading"></a></h3>
 <p>Function names: cont_map; contmap; cmap <br/>
 Command line interface: pk_cont_map; pk_contmap; pk_cmap</p>
 <p>Plot a phylogram with branches colored by continuous trait values
@@ -1149,7 +1300,7 @@ and mapped onto branches using a color gradient (coolwarm colormap).</p>
 </div>
 </section>
 <section id="cophylogenetic-plot-tanglegram">
-<h3>Cophylogenetic plot (tanglegram)<a class="headerlink" href="#cophylogenetic-plot-tanglegram" title="Link to this heading"></a></h3>
+<span id="cmd-cophylo"></span><h3>Cophylogenetic plot (tanglegram)<a class="headerlink" href="#cophylogenetic-plot-tanglegram" title="Link to this heading"></a></h3>
 <p>Function names: cophylo; tanglegram; tangle <br/>
 Command line interface: pk_cophylo; pk_tanglegram; pk_tangle</p>
 <p>Plot a cophylogenetic tanglegram of two phylogenies (analogous to R's
@@ -1173,7 +1324,7 @@ line crossings.</p>
 </div>
 </section>
 <section id="covarying-evolutionary-rates">
-<h3>Covarying evolutionary rates<a class="headerlink" href="#covarying-evolutionary-rates" title="Link to this heading"></a></h3>
+<span id="cmd-covarying-evolutionary-rates"></span><h3>Covarying evolutionary rates<a class="headerlink" href="#covarying-evolutionary-rates" title="Link to this heading"></a></h3>
 <p>Function names: covarying_evolutionary_rates; cover <br/>
 Command line interface: pk_covarying_evolutionary_rates; pk_cover</p>
 <p>Determine if two genes have a signature of covariation with one another.
@@ -1211,7 +1362,7 @@ this is a putative species tree. <br/>
 </div>
 </section>
 <section id="degree-of-violation-of-the-molecular-clock">
-<h3>Degree of violation of the molecular clock<a class="headerlink" href="#degree-of-violation-of-the-molecular-clock" title="Link to this heading"></a></h3>
+<span id="cmd-degree-of-violation-of-a-molecular-clock"></span><h3>Degree of violation of the molecular clock<a class="headerlink" href="#degree-of-violation-of-the-molecular-clock" title="Link to this heading"></a></h3>
 <p>Function names: degree_of_violation_of_a_molecular_clock, dvmc <br/>
 Command line interface: pk_degree_of_violation_of_a_molecular_clock, pk_dvmc</p>
 <p>Calculate degree of violation of a molecular clock (or DVMC) in a phylogeny.</p>
@@ -1233,7 +1384,7 @@ prune_tree function.</p>
 </div>
 </section>
 <section id="density-map">
-<h3>Density map<a class="headerlink" href="#density-map" title="Link to this heading"></a></h3>
+<span id="cmd-density-map"></span><h3>Density map<a class="headerlink" href="#density-map" title="Link to this heading"></a></h3>
 <p>Function names: density_map; densitymap; dmap <br/>
 Command line interface: pk_density_map; pk_densitymap; pk_dmap</p>
 <p>Plot a phylogram with branches colored by posterior probabilities of
@@ -1259,7 +1410,7 @@ computes the fraction of simulations in each state.</p>
 </div>
 </section>
 <section id="evolutionary-rate">
-<h3>Evolutionary rate<a class="headerlink" href="#evolutionary-rate" title="Link to this heading"></a></h3>
+<span id="cmd-evolutionary-rate"></span><h3>Evolutionary rate<a class="headerlink" href="#evolutionary-rate" title="Link to this heading"></a></h3>
 <p>Function names: evolutionary_rate, evo_rate <br/>
 Command line interface: pk_evolutionary_rate, pk_evo_rate</p>
 <p>Calculate a tree-based estimation of the evolutionary rate of a gene.</p>
@@ -1278,7 +1429,7 @@ of the Royal Society B (2014).</p>
 </div>
 </section>
 <section id="hidden-paralogy-check">
-<h3>Hidden paralogy check<a class="headerlink" href="#hidden-paralogy-check" title="Link to this heading"></a></h3>
+<span id="cmd-hidden-paralogy-check"></span><h3>Hidden paralogy check<a class="headerlink" href="#hidden-paralogy-check" title="Link to this heading"></a></h3>
 <p>Function names: hidden_paralogy_check, clan_check <br/>
 Command line interface: pk_hidden_paralogy_check, pk_clan_check</p>
 <p>Scan tree for evidence of hidden paralogy.</p>
@@ -1324,7 +1475,7 @@ be scanned for <br/>
 </div>
 </section>
 <section id="internal-branch-statistics">
-<h3>Internal branch statistics<a class="headerlink" href="#internal-branch-statistics" title="Link to this heading"></a></h3>
+<span id="cmd-internal-branch-stats"></span><h3>Internal branch statistics<a class="headerlink" href="#internal-branch-statistics" title="Link to this heading"></a></h3>
 <p>Function names: internal_branch_stats; ibs <br/>
 Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
@@ -1342,7 +1493,7 @@ Command line interface: pk_internal_branch_stats; pk_ibs</p>
 </div>
 </section>
 <section id="internode-labeler">
-<h3>Internode labeler<a class="headerlink" href="#internode-labeler" title="Link to this heading"></a></h3>
+<span id="cmd-internode-labeler"></span><h3>Internode labeler<a class="headerlink" href="#internode-labeler" title="Link to this heading"></a></h3>
 <p>Function names: internode_labeler; il <br/>
 Command line interface: pk_internode_labeler; pk_il</p>
 <p>Appends numerical identifiers to bipartitions in place of support values.
@@ -1360,7 +1511,7 @@ or otherwise.</p>
 </div>
 </section>
 <section id="last-common-ancestor-subtree">
-<h3>Last common ancestor subtree<a class="headerlink" href="#last-common-ancestor-subtree" title="Link to this heading"></a></h3>
+<span id="cmd-last-common-ancestor-subtree"></span><h3>Last common ancestor subtree<a class="headerlink" href="#last-common-ancestor-subtree" title="Link to this heading"></a></h3>
 <p>Function names: last_common_ancestor_subtree; lca_subtree <br/>
 Command line interface: pk_last_common_ancestor_subtree; pk_lca_subtree</p>
 <p>Obtains subtree from a phylogeny by getting the last common ancestor
@@ -1379,7 +1530,7 @@ file with the list of taxa to get the last common ancestor subtree for
 </div>
 </section>
 <section id="lineage-through-time-plot-and-gamma-statistic">
-<h3>Lineage-through-time plot and gamma statistic<a class="headerlink" href="#lineage-through-time-plot-and-gamma-statistic" title="Link to this heading"></a></h3>
+<span id="cmd-ltt"></span><h3>Lineage-through-time plot and gamma statistic<a class="headerlink" href="#lineage-through-time-plot-and-gamma-statistic" title="Link to this heading"></a></h3>
 <p>Function names: ltt; gamma_stat; gamma <br/>
 Command line interface: pk_ltt; pk_gamma_stat; pk_gamma</p>
 <p>Compute the Pybus &amp; Harvey (2000) gamma statistic and generate
@@ -1493,7 +1644,7 @@ source, including the <code class="docutils literal notranslate"><span class="pr
 </div>
 </section>
 <section id="long-branch-score">
-<h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Link to this heading"></a></h3>
+<span id="cmd-long-branch-score"></span><h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Link to this heading"></a></h3>
 <p>Function names: long_branch_score; lb_score; lbs <br/>
 Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs</p>
 <p>Calculate long branch (LB) scores in a phylogeny.</p>
@@ -1519,7 +1670,7 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 </div>
 </section>
 <section id="monophyly-check">
-<h3>Monophyly check<a class="headerlink" href="#monophyly-check" title="Link to this heading"></a></h3>
+<span id="cmd-monophyly-check"></span><h3>Monophyly check<a class="headerlink" href="#monophyly-check" title="Link to this heading"></a></h3>
 <p>Function names: monophyly_check; is_monophyletic <br/>
 Command line interface: pk_monophyly_check; pk_is_monophyletic</p>
 <p>This analysis can be used to determine if a set of
@@ -1551,7 +1702,7 @@ examine the monophyly of <br/>
 </div>
 </section>
 <section id="multi-regime-ou-models-ouwie">
-<h3>Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h3>
+<span id="cmd-ouwie"></span><h3>Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h3>
 <p>Function names: ouwie; fit_ouwie; multi_regime_ou <br/>
 Command line interface: pk_ouwie; pk_fit_ouwie; pk_multi_regime_ou</p>
 <p>Fit multi-regime Ornstein-Uhlenbeck models of continuous trait evolution,
@@ -1625,7 +1776,7 @@ Best model (BIC): OUM
 </div>
 </section>
 <section id="nearest-neighbor-interchange">
-<h3>Nearest neighbor interchange<a class="headerlink" href="#nearest-neighbor-interchange" title="Link to this heading"></a></h3>
+<span id="cmd-nearest-neighbor-interchange"></span><h3>Nearest neighbor interchange<a class="headerlink" href="#nearest-neighbor-interchange" title="Link to this heading"></a></h3>
 <p>Function names: nearest_neighbor_interchange; nni <br/>
 Command line interface: pk_nearest_neighbor_interchange; pk_nni</p>
 <p>Generate all nearest neighbor interchange moves for a binary
@@ -1645,7 +1796,7 @@ file but with the suffix &quot;.nnis&quot;</p>
 </div>
 </section>
 <section id="network-signal">
-<h3>Network signal<a class="headerlink" href="#network-signal" title="Link to this heading"></a></h3>
+<span id="cmd-network-signal"></span><h3>Network signal<a class="headerlink" href="#network-signal" title="Link to this heading"></a></h3>
 <p>Function names: network_signal; netsig; net_signal <br/>
 Command line interface: pk_network_signal; pk_netsig; pk_net_signal</p>
 <p>Compute phylogenetic signal (Blomberg's K and/or Pagel's lambda)
@@ -1813,7 +1964,7 @@ with parents <em>p1</em> and <em>p2</em> is:</p>
 </div>
 </section>
 <section id="ou-shift-detection-l1ou">
-<h3>OU shift detection (l1ou)<a class="headerlink" href="#ou-shift-detection-l1ou" title="Link to this heading"></a></h3>
+<span id="cmd-ou-shift-detection"></span><h3>OU shift detection (l1ou)<a class="headerlink" href="#ou-shift-detection-l1ou" title="Link to this heading"></a></h3>
 <p>Function names: ou_shift_detection; ou_shifts; l1ou; detect_shifts <br/>
 Command line interface: pk_ou_shift_detection; pk_ou_shifts; pk_l1ou; pk_detect_shifts</p>
 <p>Automatic OU shift detection using the LASSO-based approach from
@@ -1893,7 +2044,7 @@ with matching alpha (0.607) and pBIC (17.6 vs R's 16.8).</p>
 </div>
 </section>
 <section id="patristic-distances">
-<h3>Patristic distances<a class="headerlink" href="#patristic-distances" title="Link to this heading"></a></h3>
+<span id="cmd-patristic-distances"></span><h3>Patristic distances<a class="headerlink" href="#patristic-distances" title="Link to this heading"></a></h3>
 <p>Function names: patristic_distances; pd <br/>
 Command line interface: pk_patristic_distances; pk_pd</p>
 <p>Calculate summary statistics among patristic distances in a phylogeny.</p>
@@ -1914,7 +2065,7 @@ will be tab separated.</p>
 </div>
 </section>
 <section id="phenogram-traitgram">
-<h3>Phenogram (traitgram)<a class="headerlink" href="#phenogram-traitgram" title="Link to this heading"></a></h3>
+<span id="cmd-phenogram"></span><h3>Phenogram (traitgram)<a class="headerlink" href="#phenogram-traitgram" title="Link to this heading"></a></h3>
 <p>Function names: phenogram; traitgram; tg <br/>
 Command line interface: pk_phenogram; pk_traitgram; pk_tg</p>
 <p>Plot a phenogram (traitgram) showing trait evolution along a phylogeny
@@ -1936,7 +2087,7 @@ Ancestral states are reconstructed via maximum-likelihood.</p>
 </div>
 </section>
 <section id="phylogenetic-glm">
-<h3>Phylogenetic GLM<a class="headerlink" href="#phylogenetic-glm" title="Link to this heading"></a></h3>
+<span id="cmd-phylogenetic-glm"></span><h3>Phylogenetic GLM<a class="headerlink" href="#phylogenetic-glm" title="Link to this heading"></a></h3>
 <p>Function names: phylogenetic_glm; phylo_glm; pglm <br/>
 Command line interface: pk_phylogenetic_glm; pk_phylo_glm; pk_pglm</p>
 <p>Fit a Phylogenetic Generalized Linear Model (GLM) for binary or count
@@ -1975,7 +2126,7 @@ p-values, log-likelihood, and AIC.</p>
 </div>
 </section>
 <section id="phylogenetic-ordination">
-<h3>Phylogenetic Ordination<a class="headerlink" href="#phylogenetic-ordination" title="Link to this heading"></a></h3>
+<span id="cmd-phylogenetic-ordination"></span><h3>Phylogenetic Ordination<a class="headerlink" href="#phylogenetic-ordination" title="Link to this heading"></a></h3>
 <p>Function names: phylogenetic_ordination; phylo_ordination; ordination; ord;
 phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr <br/>
 Command line interface: pk_phylogenetic_ordination; pk_phylo_ordination;
@@ -2062,7 +2213,7 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 </div>
 </section>
 <section id="phylogenetic-regression-pgls">
-<h3>Phylogenetic regression (PGLS)<a class="headerlink" href="#phylogenetic-regression-pgls" title="Link to this heading"></a></h3>
+<span id="cmd-phylogenetic-regression"></span><h3>Phylogenetic regression (PGLS)<a class="headerlink" href="#phylogenetic-regression-pgls" title="Link to this heading"></a></h3>
 <p>Function names: phylogenetic_regression; phylo_regression; pgls <br/>
 Command line interface: pk_phylogenetic_regression; pk_phylo_regression; pk_pgls</p>
 <p>Fit a Phylogenetic Generalized Least Squares (PGLS) regression while
@@ -2104,8 +2255,8 @@ decimal places for both simple and multiple regression.</p>
 <div class="line"><br /></div>
 </div>
 </section>
-<section id="phylogenetic-signal">
-<h3>Phylogenetic signal<a class="headerlink" href="#phylogenetic-signal" title="Link to this heading"></a></h3>
+<section id="cmd-phylogenetic-signal">
+<span id="id2"></span><h3>Phylogenetic signal<a class="headerlink" href="#cmd-phylogenetic-signal" title="Link to this heading"></a></h3>
 <p>Function names: phylogenetic_signal; phylo_signal; ps <br/>
 Command line interface: pk_phylogenetic_signal; pk_phylo_signal; pk_ps</p>
 <p>Calculate phylogenetic signal for continuous trait data on a phylogeny.</p>
@@ -2147,7 +2298,7 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 </div>
 </section>
 <section id="phylomorphospace">
-<h3>Phylomorphospace<a class="headerlink" href="#phylomorphospace" title="Link to this heading"></a></h3>
+<span id="cmd-phylomorphospace"></span><h3>Phylomorphospace<a class="headerlink" href="#phylomorphospace" title="Link to this heading"></a></h3>
 <p>Function names: phylomorphospace; phylomorpho; phmo <br/>
 Command line interface: pk_phylomorphospace; pk_phylomorpho; pk_phmo</p>
 <p>Plot a phylomorphospace: two raw traits in trait space with the phylogeny
@@ -2185,7 +2336,7 @@ are omitted, the first two columns are selected automatically.</p>
 </div>
 </section>
 <section id="polytomy-testing">
-<h3>Polytomy testing<a class="headerlink" href="#polytomy-testing" title="Link to this heading"></a></h3>
+<span id="cmd-polytomy-test"></span><h3>Polytomy testing<a class="headerlink" href="#polytomy-testing" title="Link to this heading"></a></h3>
 <p>Function names: polytomy_test; polyt_test; polyt; ptt <br/>
 Command line interface: pk_polytomy_test; pk_polyt_test; pk_polyt; pk_ptt</p>
 <p>Conduct a polytomy test for three clades in a phylogeny.</p>
@@ -2224,7 +2375,7 @@ name_of_test<span class="w">    </span>tip_name_A<span class="p">;</span>tip_nam
 </div>
 </section>
 <section id="print-tree">
-<h3>Print tree<a class="headerlink" href="#print-tree" title="Link to this heading"></a></h3>
+<span id="cmd-print-tree"></span><h3>Print tree<a class="headerlink" href="#print-tree" title="Link to this heading"></a></h3>
 <p>Function names: print_tree; print; pt <br/>
 Command line interface: pk_print_tree; pk_print; pk_pt</p>
 <p>Print ascii tree of input phylogeny.</p>
@@ -2244,7 +2395,7 @@ lengths <br/>
 </div>
 </section>
 <section id="prune-tree">
-<h3>Prune tree<a class="headerlink" href="#prune-tree" title="Link to this heading"></a></h3>
+<span id="cmd-prune-tree"></span><h3>Prune tree<a class="headerlink" href="#prune-tree" title="Link to this heading"></a></h3>
 <p>Function names: prune_tree; prune <br/>
 Command line interface: pk_prune_tree; pk_prune</p>
 <p>Prune tips from a phylogeny.</p>
@@ -2267,7 +2418,7 @@ keep them <br/>
 |</p>
 </section>
 <section id="quartet-network">
-<h3>Quartet network<a class="headerlink" href="#quartet-network" title="Link to this heading"></a></h3>
+<span id="cmd-quartet-network"></span><h3>Quartet network<a class="headerlink" href="#quartet-network" title="Link to this heading"></a></h3>
 <p>Function names: quartet_network; quartet_net; qnet; nanuq <br/>
 Command line interface: pk_quartet_network; pk_quartet_net; pk_qnet; pk_nanuq</p>
 <p>Quartet-based network inference (NANUQ-style) for distinguishing incomplete
@@ -2325,7 +2476,7 @@ C, D, E, and F:</p>
 </div>
 </section>
 <section id="rate-heterogeneity-test-multi-rate-brownian-motion">
-<h3>Rate heterogeneity test (multi-rate Brownian motion)<a class="headerlink" href="#rate-heterogeneity-test-multi-rate-brownian-motion" title="Link to this heading"></a></h3>
+<span id="cmd-rate-heterogeneity"></span><h3>Rate heterogeneity test (multi-rate Brownian motion)<a class="headerlink" href="#rate-heterogeneity-test-multi-rate-brownian-motion" title="Link to this heading"></a></h3>
 <p>Function names: rate_heterogeneity; brownie; rh <br/>
 Command line interface: pk_rate_heterogeneity; pk_brownie; pk_rh</p>
 <p>Test for rate heterogeneity across phylogenetic regimes using multi-rate
@@ -2356,7 +2507,7 @@ regime can be generated using <code class="docutils literal notranslate"><span c
 </div>
 </section>
 <section id="rename-tree-tips">
-<h3>Rename tree tips<a class="headerlink" href="#rename-tree-tips" title="Link to this heading"></a></h3>
+<span id="cmd-rename-tree-tips"></span><h3>Rename tree tips<a class="headerlink" href="#rename-tree-tips" title="Link to this heading"></a></h3>
 <p>Function names: rename_tree_tips; rename_tree; rename_tips <br/>
 Command line interface: pk_rename_tree_tips; pk_rename_tree; pk_rename_tips</p>
 <p>Renames tips in a phylogeny.</p>
@@ -2379,7 +2530,7 @@ output will have the same name as the input file but with the suffix &quot;.rena
 </div>
 </section>
 <section id="robinson-foulds-distance">
-<h3>Robinson-Foulds distance<a class="headerlink" href="#robinson-foulds-distance" title="Link to this heading"></a></h3>
+<span id="cmd-robinson-foulds-distance"></span><h3>Robinson-Foulds distance<a class="headerlink" href="#robinson-foulds-distance" title="Link to this heading"></a></h3>
 <p>Function names: robinson_foulds_distance; rf_distance; rf_dist; rf <br/>
 Command line interface: pk_robinson_foulds_distance; pk_rf_distance; pk_rf_dist; pk_rf</p>
 <p>Calculate Robinson-Foulds (RF) distance between two trees.</p>
@@ -2409,7 +2560,7 @@ Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.</p>
 </div>
 </section>
 <section id="root-tree">
-<h3>Root tree<a class="headerlink" href="#root-tree" title="Link to this heading"></a></h3>
+<span id="cmd-root-tree"></span><h3>Root tree<a class="headerlink" href="#root-tree" title="Link to this heading"></a></h3>
 <p>Function names: root_tree; root; rt <br/>
 Command line interface: pk_root_tree; pk_root; pk_rt</p>
 <p>Roots phylogeny using user-specified taxa.</p>
@@ -2430,7 +2581,7 @@ the suffix &quot;.rooted&quot;.</p>
 </div>
 </section>
 <section id="spurious-homolog-identification">
-<h3>Spurious homolog identification<a class="headerlink" href="#spurious-homolog-identification" title="Link to this heading"></a></h3>
+<span id="cmd-spurious-sequence"></span><h3>Spurious homolog identification<a class="headerlink" href="#spurious-homolog-identification" title="Link to this heading"></a></h3>
 <p>Function names: spurious_sequence; spurious_seq; ss <br/>
 Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss</p>
 <p>Determines potentially spurious homologs using branch lengths.</p>
@@ -2462,7 +2613,7 @@ the threshold of long branches. (Default: 20) <br/>
 </div>
 </section>
 <section id="stochastic-character-mapping-simmap">
-<h3>Stochastic character mapping (SIMMAP)<a class="headerlink" href="#stochastic-character-mapping-simmap" title="Link to this heading"></a></h3>
+<span id="cmd-stochastic-character-map"></span><h3>Stochastic character mapping (SIMMAP)<a class="headerlink" href="#stochastic-character-mapping-simmap" title="Link to this heading"></a></h3>
 <p>Function names: stochastic_character_map; simmap; scm <br/>
 Command line interface: pk_stochastic_character_map; pk_simmap; pk_scm</p>
 <p>Perform Stochastic Character Mapping (SIMMAP) of discrete traits onto a
@@ -2509,7 +2660,7 @@ nesting) are verified.</p>
 </div>
 </section>
 <section id="terminal-branch-statistics">
-<h3>Terminal branch statistics<a class="headerlink" href="#terminal-branch-statistics" title="Link to this heading"></a></h3>
+<span id="cmd-terminal-branch-stats"></span><h3>Terminal branch statistics<a class="headerlink" href="#terminal-branch-statistics" title="Link to this heading"></a></h3>
 <p>Function names: terminal_branch_stats; tbs <br/>
 Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 <p>Calculate summary statistics for terminal branch lengths in a phylogeny.</p>
@@ -2527,7 +2678,7 @@ Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 </div>
 </section>
 <section id="threshold-model">
-<h3>Threshold model<a class="headerlink" href="#threshold-model" title="Link to this heading"></a></h3>
+<span id="cmd-threshold-model"></span><h3>Threshold model<a class="headerlink" href="#threshold-model" title="Link to this heading"></a></h3>
 <p>Function names: threshold_model; threshold; thresh; threshbayes; thresh_bayes <br/>
 Command line interface: pk_threshold_model; pk_threshold; pk_thresh; pk_threshbayes; pk_thresh_bayes</p>
 <p>Estimate the evolutionary correlation between two traits using the
@@ -2644,7 +2795,7 @@ statistics (mean, median, 95% HPD), and MCMC metadata.</p>
 </div>
 </section>
 <section id="tip-labels">
-<h3>Tip labels<a class="headerlink" href="#tip-labels" title="Link to this heading"></a></h3>
+<span id="cmd-tip-labels"></span><h3>Tip labels<a class="headerlink" href="#tip-labels" title="Link to this heading"></a></h3>
 <p>Function names: tip_labels; tree_labels; labels; tl <br/>
 Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 <p>Prints the tip labels (or names) a phylogeny.</p>
@@ -2659,7 +2810,7 @@ Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
 </div>
 </section>
 <section id="tip-to-tip-distance">
-<h3>Tip-to-tip distance<a class="headerlink" href="#tip-to-tip-distance" title="Link to this heading"></a></h3>
+<span id="cmd-tip-to-tip-distance"></span><h3>Tip-to-tip distance<a class="headerlink" href="#tip-to-tip-distance" title="Link to this heading"></a></h3>
 <p>Function names: tip_to_tip_distance; t2t_dist; t2t <br/>
 Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
@@ -2681,7 +2832,7 @@ phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tre
 </div>
 </section>
 <section id="tip-to-tip-node-distance">
-<h3>Tip-to-tip node distance<a class="headerlink" href="#tip-to-tip-node-distance" title="Link to this heading"></a></h3>
+<span id="cmd-tip-to-tip-node-distance"></span><h3>Tip-to-tip node distance<a class="headerlink" href="#tip-to-tip-node-distance" title="Link to this heading"></a></h3>
 <p>Function names: tip_to_tip_node_distance; t2t_node_dist; t2t_nd <br/>
 Command line interface: pk_tip_to_tip_node_distance; pk_t2t_node_dist; pk_t2t_nd</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
@@ -2700,7 +2851,7 @@ and another.</p>
 </div>
 </section>
 <section id="total-tree-length">
-<h3>Total tree length<a class="headerlink" href="#total-tree-length" title="Link to this heading"></a></h3>
+<span id="cmd-total-tree-length"></span><h3>Total tree length<a class="headerlink" href="#total-tree-length" title="Link to this heading"></a></h3>
 <p>Function names: total_tree_length; tree_len <br/>
 Command line interface: pk_total_tree_length; pk_tree_len</p>
 <p>Calculate total tree length, which is a sum of all branches.</p>
@@ -2715,7 +2866,7 @@ Command line interface: pk_total_tree_length; pk_tree_len</p>
 </div>
 </section>
 <section id="treeness">
-<h3>Treeness<a class="headerlink" href="#treeness" title="Link to this heading"></a></h3>
+<span id="cmd-treeness"></span><h3>Treeness<a class="headerlink" href="#treeness" title="Link to this heading"></a></h3>
 <p>Function names: treeness; tness <br/>
 Command line interface: pk_treeness; pk_tness</p>
 <p>Calculate treeness statistic for a phylogeny.</p>
@@ -2742,7 +2893,7 @@ Phillips and Penny, Molecular Phylogenetics and Evolution
 <section id="alignment-and-tree-based-functions">
 <h2>Alignment- and tree-based functions<a class="headerlink" href="#alignment-and-tree-based-functions" title="Link to this heading"></a></h2>
 <section id="relative-rate-test">
-<h3>Relative rate test<a class="headerlink" href="#relative-rate-test" title="Link to this heading"></a></h3>
+<span id="cmd-relative-rate-test"></span><h3>Relative rate test<a class="headerlink" href="#relative-rate-test" title="Link to this heading"></a></h3>
 <p>Function names: relative_rate_test; rrt; tajima_rrt <br/>
 Command line interface: pk_relative_rate_test; pk_rrt; pk_tajima_rrt</p>
 <p>Tajima's relative rate test (Tajima, <em>Genetics</em>, 1993).</p>
@@ -2808,7 +2959,7 @@ match to machine precision.</p>
 </div>
 </section>
 <section id="saturation">
-<h3>Saturation<a class="headerlink" href="#saturation" title="Link to this heading"></a></h3>
+<span id="cmd-saturation"></span><h3>Saturation<a class="headerlink" href="#saturation" title="Link to this heading"></a></h3>
 <p>Function names: saturation; sat <br/>
 Command line interface: pk_saturation; pk_sat</p>
 <p>Calculate saturation for a given tree and alignment.</p>
@@ -2837,7 +2988,7 @@ distances used to determine saturation <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 </section>
 <section id="treeness-over-rcv">
-<h3>Treeness over RCV<a class="headerlink" href="#treeness-over-rcv" title="Link to this heading"></a></h3>
+<span id="cmd-treeness-over-rcv"></span><h3>Treeness over RCV<a class="headerlink" href="#treeness-over-rcv" title="Link to this heading"></a></h3>
 <p>Function names: treeness_over_rcv; toverr; tor <br/>
 Command line interface: pk_treeness_over_rcv; pk_toverr; pk_tor</p>
 <p>Calculate treeness/RCV for a given alignment and tree.</p>
