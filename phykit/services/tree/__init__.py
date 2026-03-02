@@ -9,6 +9,7 @@ _EXPORTS = {
     "ConsensusNetwork": "consensus_network",
     "ConsensusTree": "consensus_tree",
     "DVMC": "dvmc",
+    "DiscordanceAsymmetry": "discordance_asymmetry",
     "EvolutionaryRate": "evolutionary_rate",
     "EvoTempoMap": "evo_tempo_map",
     "HiddenParalogyCheck": "hidden_paralogy_check",

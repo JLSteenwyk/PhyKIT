@@ -327,3 +327,28 @@ class TestPlot:
         svc.run()
         # If we get here without error, the test passes
         assert os.path.exists(output)
+
+
+class TestCLI:
+    def test_disc_asym_alias(self, capsys):
+        from phykit.phykit import Phykit
+        sys.argv = [
+            "phykit", "disc_asym",
+            "-t", "tests/sample_files/tree_simple.tre",
+            "-g", "tests/sample_files/gene_trees_simple.nwk",
+        ]
+        Phykit()
+        captured = capsys.readouterr()
+        assert "branch" in captured.out
+        assert "Summary:" in captured.out
+
+    def test_da_alias(self, capsys):
+        from phykit.phykit import Phykit
+        sys.argv = [
+            "phykit", "da",
+            "-t", "tests/sample_files/tree_simple.tre",
+            "-g", "tests/sample_files/gene_trees_simple.nwk",
+        ]
+        Phykit()
+        captured = capsys.readouterr()
+        assert "bear,raccoon" in captured.out

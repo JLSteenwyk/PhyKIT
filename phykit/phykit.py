@@ -4920,6 +4920,67 @@ class Phykit:
         _add_json_argument(parser)
         _run_service(parser, argv, EvoTempoMap)
 
+    @staticmethod
+    def discordance_asymmetry(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Test whether the two discordant NNI alternative topologies
+                at each species tree branch are equally frequent, detecting
+                gene flow direction from asymmetric discordance.
+
+                Under incomplete lineage sorting (ILS) alone, the two minor
+                NNI alternatives (gDF1 and gDF2) should be equally frequent.
+                When they are significantly asymmetric, it suggests
+                introgression or gene flow between specific lineages.
+
+                For each internal branch, a two-sided binomial test (H0:
+                P(alt1) = 0.5) is applied. P-values are corrected for
+                multiple testing using Benjamini-Hochberg FDR.
+
+                Aliases:
+                  discordance_asymmetry, disc_asym, da
+                Command line interfaces:
+                  pk_discordance_asymmetry, pk_disc_asym, pk_da
+
+                Usage:
+                phykit discordance_asymmetry -t/--tree <tree> -g/--gene-trees <gene_trees>
+                    [--plot <output>] [-v/--verbose] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a species tree file
+
+                -g/--gene-trees             multi-Newick file of gene trees
+
+                --plot                      optional output path for
+                                            asymmetry phylogram (PNG)
+
+                -v/--verbose                print per-branch details
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot", dest="plot_output", type=str, required=False,
+            default=None, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, DiscordanceAsymmetry)
+
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
