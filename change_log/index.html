@@ -80,6 +80,20 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.25</strong>:
+Added Tajima's relative rate test:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">relative_rate_test</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">rrt</span></code>, <code class="docutils literal notranslate"><span class="pre">tajima_rrt</span></code>)
+for testing whether two lineages evolved at equal rates</p></li>
+<li><p>Implements Tajima's (1993) chi-squared test on unique substitution counts
+(m1/m2) relative to an outgroup</p></li>
+<li><p>Single alignment mode (<code class="docutils literal notranslate"><span class="pre">-a</span></code>) and batch mode (<code class="docutils literal notranslate"><span class="pre">-l</span></code>) for multi-gene analysis</p></li>
+<li><p>Automatic outgroup inference from rooted tree</p></li>
+<li><p>Bonferroni and Benjamini-Hochberg FDR multiple testing correction</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Validated against R's <code class="docutils literal notranslate"><span class="pre">pegas::rr.test()</span></code>: chi-squared statistics and
+p-values match to machine precision (&lt; 1e-8 difference)</p></li>
+</ul>
 <p><strong>2.1.24</strong>:
 Added quartet-based network inference (NANUQ-style) for distinguishing ILS
 from hybridization:</p>

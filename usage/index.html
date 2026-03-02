@@ -129,6 +129,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#alignment-and-tree-based-functions">Alignment- and tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#relative-rate-test">Relative rate test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#saturation">Saturation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#treeness-over-rcv">Treeness over RCV</a></li>
 </ul>
@@ -2338,6 +2339,49 @@ Phillips and Penny, Molecular Phylogenetics and Evolution
 </section>
 <section id="alignment-and-tree-based-functions">
 <h2>Alignment- and tree-based functions<a class="headerlink" href="#alignment-and-tree-based-functions" title="Link to this heading"></a></h2>
+<section id="relative-rate-test">
+<h3>Relative rate test<a class="headerlink" href="#relative-rate-test" title="Link to this heading"></a></h3>
+<p>Function names: relative_rate_test; rrt; tajima_rrt <br/>
+Command line interface: pk_relative_rate_test; pk_rrt; pk_tajima_rrt</p>
+<p>Tajima's relative rate test (Tajima, <em>Genetics</em>, 1993).</p>
+<p>Tests whether two ingroup lineages have evolved at equal rates
+since diverging from their common ancestor. The outgroup is
+automatically inferred from the rooted tree as the earliest-diverging
+taxon (the single taxon on the smaller side of the root split).
+All pairwise ingroup combinations are tested with Bonferroni
+and Benjamini-Hochberg FDR multiple testing correction.</p>
+<p>At each alignment column, the test classifies informative sites:</p>
+<ul class="simple">
+<li><p><strong>m1</strong>: the first ingroup taxon differs from the outgroup, but the second matches</p></li>
+<li><p><strong>m2</strong>: the second ingroup taxon differs from the outgroup, but the first matches</p></li>
+<li><p>Sites where both differ or both match the outgroup are uninformative and skipped</p></li>
+<li><p>Sites with gaps or ambiguous characters are skipped</p></li>
+</ul>
+<p>Test statistic: <code class="docutils literal notranslate"><span class="pre">chi2</span> <span class="pre">=</span> <span class="pre">(m1</span> <span class="pre">-</span> <span class="pre">m2)^2</span> <span class="pre">/</span> <span class="pre">(m1</span> <span class="pre">+</span> <span class="pre">m2)</span></code>, with 1 degree of freedom.</p>
+<p><strong>Single alignment mode:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_rate_test<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;rooted_tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Batch mode (multiple alignments, one shared tree):</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_rate_test<span class="w"> </span>-l<span class="w"> </span>&lt;alignment_list&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;rooted_tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/\-\-alignment</em>: a single alignment file <br/>
+<em>-l/\-\-alignment-list</em>: a file with one alignment path per line (batch mode) <br/>
+<em>-t/\-\-tree</em>: a rooted tree file <br/>
+<em>-v/\-\-verbose</em>: print additional detail <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
+raw p-value, Bonferroni-corrected p-value, FDR-corrected p-value, and a
+significance indicator. Batch mode aggregates across genes, reporting the
+number and percentage of genes rejecting equal rates for each pair.</p>
+<p>Validated against R's <code class="docutils literal notranslate"><span class="pre">pegas::rr.test()</span></code> — chi-squared and p-values
+match to machine precision.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="saturation">
 <h3>Saturation<a class="headerlink" href="#saturation" title="Link to this heading"></a></h3>
 <p>Function names: saturation; sat <br/>
