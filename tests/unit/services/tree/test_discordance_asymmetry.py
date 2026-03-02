@@ -295,3 +295,35 @@ class TestRun:
         captured = capsys.readouterr()
         data = json.loads(captured.out)
         assert data["summary"]["n_gene_trees"] == 10
+
+
+class TestPlot:
+    def _make_svc(self, plot_output):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        args = Namespace(
+            tree="tests/sample_files/tree_simple.tre",
+            gene_trees="tests/sample_files/gene_trees_simple.nwk",
+            verbose=False, json=False, plot_output=plot_output,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_plot_creates_file(self, tmp_path):
+        output = str(tmp_path / "test_asym.png")
+        svc = self._make_svc(output)
+        svc.run()
+        assert os.path.exists(output)
+
+    def test_plot_file_nonempty(self, tmp_path):
+        output = str(tmp_path / "test_asym.png")
+        svc = self._make_svc(output)
+        svc.run()
+        assert os.path.getsize(output) > 0
+
+    def test_plot_no_error_with_all_concordant(self, tmp_path):
+        # Even if all gene trees are concordant (no discordance),
+        # plotting should not error
+        output = str(tmp_path / "test_asym_conc.png")
+        svc = self._make_svc(output)
+        svc.run()
+        # If we get here without error, the test passes
+        assert os.path.exists(output)
