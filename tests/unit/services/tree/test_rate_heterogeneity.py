@@ -467,6 +467,99 @@ class TestRun:
         assert 0 <= payload["lrt"]["sim_p_value"] <= 1
 
 
+class TestEffectSize:
+    @patch("builtins.print")
+    def test_r2_regime_in_json(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE,
+            nsim=0,
+            seed=None,
+            plot=None,
+            json=True,
+        )
+        svc = RateHeterogeneity(args)
+        svc.run()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert "r_squared_regime" in payload
+        assert isinstance(payload["r_squared_regime"], float)
+        assert np.isfinite(payload["r_squared_regime"])
+
+    @patch("builtins.print")
+    def test_r2_regime_in_text_output(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE,
+            nsim=0,
+            seed=None,
+            plot=None,
+            json=False,
+        )
+        svc = RateHeterogeneity(args)
+        svc.run()
+
+        all_output = " ".join(
+            str(call.args[0]) for call in mocked_print.call_args_list if call.args
+        )
+        assert "R2_regime" in all_output
+
+    @patch("builtins.print")
+    def test_r2_regime_bounded(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE,
+            nsim=0,
+            seed=None,
+            plot=None,
+            json=True,
+        )
+        svc = RateHeterogeneity(args)
+        svc.run()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["r_squared_regime"] <= 1.0
+
+    @patch("builtins.print")
+    def test_r2_regime_matches_reference(self, mocked_print):
+        """R²_regime must match reference values from Fitch-parsimony regime assignment.
+
+        Reference (PhyKIT, tip-count-weighted):
+          sigma2_single = 0.0384065703  (matches R brownie.lite)
+          sigma2_aquatic = 0.0088113062
+          sigma2_terrestrial = 0.0500190412
+          weighted avg = (2/8)*0.00881 + (6/8)*0.05002 = 0.0397170574
+          R²_regime = 1 - 0.0397170574 / 0.0384065703 = -0.0341227314
+
+        Note: R brownie.lite uses stochastic mapping (make.simmap) for
+        regime assignment, so its per-regime σ² values differ from PhyKIT's
+        Fitch parsimony. The single-rate σ² matches exactly.
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE,
+            nsim=0,
+            seed=None,
+            plot=None,
+            json=True,
+        )
+        svc = RateHeterogeneity(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        # Single-rate σ² matches R brownie.lite exactly
+        assert payload["single_rate"]["sigma2"] == pytest.approx(
+            0.0384065703, abs=1e-6
+        )
+        # R²_regime is negative (multi-rate weighted avg > single rate)
+        assert payload["r_squared_regime"] == pytest.approx(
+            -0.0341227314, abs=1e-4
+        )
+
+
 class TestPlot:
     def test_plot_file_created(self, default_args):
         try:

@@ -315,6 +315,123 @@ class TestRun:
         assert set(payload["models"].keys()) == {"BM", "OU", "White"}
 
 
+# ── TestEffectSize ────────────────────────────────────────────────────
+
+
+class TestEffectSize:
+    @patch("builtins.print")
+    def test_r2_in_json(self, mocked_print):
+        """All models have r_squared in JSON output."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models=None,
+            json=True,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        for model_name, model_data in payload["models"].items():
+            assert "r_squared" in model_data, (
+                f"Model {model_name} missing r_squared"
+            )
+
+    @patch("builtins.print")
+    def test_white_noise_r2_zero(self, mocked_print):
+        """White model has R² = 0.0 (it is the baseline)."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models=None,
+            json=True,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        white_r2 = payload["models"]["White"]["r_squared"]
+        assert white_r2 == pytest.approx(0.0, abs=1e-10)
+
+    @patch("builtins.print")
+    def test_bm_r2_positive(self, mocked_print):
+        """BM model has R² > 0 (phylogeny explains some variance)."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models=None,
+            json=True,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        bm_r2 = payload["models"]["BM"]["r_squared"]
+        assert bm_r2 > 0
+
+    @patch("builtins.print")
+    def test_r2_in_text_output(self, mocked_print):
+        """Text output contains R2 column."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models=None,
+            json=False,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        all_output = " ".join(
+            str(call.args[0]) for call in mocked_print.call_args_list if call.args
+        )
+        assert "R2" in all_output
+
+    @patch("builtins.print")
+    def test_subset_models_without_white_still_has_r2(self, mocked_print):
+        """When White isn't selected, R² is still computed."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models="BM,OU",
+            json=True,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert "White" not in payload["models"]
+        for model_name, model_data in payload["models"].items():
+            assert "r_squared" in model_data, (
+                f"Model {model_name} missing r_squared"
+            )
+
+    @patch("builtins.print")
+    def test_r2_matches_reference_values(self, mocked_print):
+        """R² per model must match reference values from concentrated ML.
+
+        Reference values computed via PhyKIT concentrated ML
+        (cross-checked against R geiger::fitContinuous for BM sigma2):
+          R geiger BM sigma2 = 0.0293769595 (rate param, different from residual var)
+          PhyKIT BM sigma2   = 0.0384065703 (residual var = e'C^-1 e / n)
+          PhyKIT White sigma2 = 0.7667234375
+          PhyKIT BM R²       = 0.9499081827  (matches signal R²_phylo exactly)
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models=None,
+            json=True,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        # BM R² should match phylogenetic signal R²_phylo (same formula)
+        assert payload["models"]["BM"]["r_squared"] == pytest.approx(
+            0.9499081827, abs=1e-6
+        )
+        # White noise baseline is always 0
+        assert payload["models"]["White"]["r_squared"] == pytest.approx(0.0, abs=1e-10)
+        # Lambda R² should be very close to BM (lambda ~ 1 for this data)
+        assert payload["models"]["Lambda"]["r_squared"] == pytest.approx(
+            0.9499082047, abs=1e-4
+        )
+
+
 GENE_TREES_FILE = str(SAMPLE_FILES / "gene_trees_simple.nwk")
 
 

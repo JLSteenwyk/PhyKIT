@@ -113,6 +113,21 @@ class RateHeterogeneity(Tree):
         # Build sigma2_multi dict
         sigma2_multi_dict = {regimes[i]: float(sigma2_multi[i]) for i in range(k)}
 
+        # Compute R²_regime: 1 - (σ²_multi_weighted / σ²_single)
+        regime_tip_counts = {}
+        for r_name in regimes:
+            regime_tip_counts[r_name] = sum(
+                1 for t in regime_assignments.values() if t == r_name
+            )
+        sig2_weighted = sum(
+            (regime_tip_counts[r_name] / n) * sigma2_multi_dict[r_name]
+            for r_name in regimes
+        )
+        if sigma2_single > 0:
+            r2_regime = 1.0 - sig2_weighted / sigma2_single
+        else:
+            r2_regime = float("nan")
+
         if self.json_output:
             result = self._format_result(
                 n_tips=n,
@@ -130,6 +145,7 @@ class RateHeterogeneity(Tree):
                 chi2_p=chi2_p,
                 sim_p=sim_p,
                 n_sim_done=n_sim_done,
+                r2_regime=r2_regime,
             )
             if self.plot_output:
                 result["plot_output"] = self.plot_output
@@ -151,6 +167,7 @@ class RateHeterogeneity(Tree):
                 chi2_p=chi2_p,
                 sim_p=sim_p,
                 n_sim_done=n_sim_done,
+                r2_regime=r2_regime,
             )
 
     def process_args(self, args) -> Dict:
@@ -727,7 +744,7 @@ class RateHeterogeneity(Tree):
     def _print_text_output(
         self, *, n_tips, regimes, sigma2_single, anc_single, ll_single,
         aic_single, sigma2_multi_dict, anc_multi, ll_multi, aic_multi,
-        lrt_stat, df, chi2_p, sim_p, n_sim_done,
+        lrt_stat, df, chi2_p, sim_p, n_sim_done, r2_regime,
     ) -> None:
         print("Rate Heterogeneity Test (Multi-rate Brownian Motion)")
 
@@ -755,10 +772,13 @@ class RateHeterogeneity(Tree):
         if sim_p is not None:
             print(f"  Simulated p-value:  {sim_p:.4f} ({n_sim_done} simulations)")
 
+        print(f"\nEffect size:")
+        print(f"  R2_regime: {r2_regime:.4f}")
+
     def _format_result(
         self, *, n_tips, regimes, sigma2_single, anc_single, ll_single,
         aic_single, sigma2_multi_dict, anc_multi, ll_multi, aic_multi,
-        lrt_stat, df, chi2_p, sim_p, n_sim_done,
+        lrt_stat, df, chi2_p, sim_p, n_sim_done, r2_regime,
     ) -> Dict:
         return {
             "n_tips": n_tips,
@@ -782,4 +802,5 @@ class RateHeterogeneity(Tree):
                 "sim_p_value": float(sim_p) if sim_p is not None else None,
                 "n_sim": n_sim_done,
             },
+            "r_squared_regime": float(r2_regime),
         }

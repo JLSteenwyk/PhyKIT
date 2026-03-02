@@ -132,6 +132,33 @@ class PhylogeneticGLM(Tree):
         else:
             result = self._fit_poisson_gee(tree, y, X, ordered_names)
 
+        # Compute McFadden's pseudo-R²: 1 - (LL_full / LL_null)
+        # Temporarily set self.predictors = [] so the fitting methods
+        # produce cosmetic output for the intercept-only model. Only
+        # ll_null is extracted from the null-model result.
+        ll_full = result["log_likelihood"]
+        original_predictors = self.predictors
+        self.predictors = []
+        try:
+            X_null = np.ones((n, 1))
+            if self.family == "poisson":
+                null_result = self._fit_poisson_gee(tree, y, X_null, ordered_names)
+            else:
+                null_result = self._fit_logistic_mple(tree, y, X_null, ordered_names)
+            ll_null = null_result["log_likelihood"]
+            if ll_null != 0:
+                pseudo_r2 = 1.0 - ll_full / ll_null
+            else:
+                pseudo_r2 = float("nan")
+        except Exception:
+            ll_null = float("nan")
+            pseudo_r2 = float("nan")
+        finally:
+            self.predictors = original_predictors
+
+        result["pseudo_r_squared_mcfadden"] = float(pseudo_r2)
+        result["ll_null"] = float(ll_null)
+
         if vcv_meta is not None:
             result["vcv_metadata"] = vcv_meta
 
@@ -943,6 +970,9 @@ class PhylogeneticGLM(Tree):
             f"\nLog-likelihood: {result['log_likelihood']:.4f}    "
             f"AIC: {result['aic']:.4f}"
         )
+        if "pseudo_r_squared_mcfadden" in result:
+            r2_val = result["pseudo_r_squared_mcfadden"]
+            print(f"Pseudo-R² (McFadden): {r2_val:.4f}")
         print(f"Number of observations: {result['n_observations']}")
 
     def _format_result(

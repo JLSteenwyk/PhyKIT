@@ -61,6 +61,24 @@ class FitContinuous(Tree):
 
         results = self._compute_model_comparison(results, n)
 
+        # Always fit White for R² baseline
+        white_sig2 = None
+        for r in results:
+            if r["model"] == "White":
+                white_sig2 = r["sigma2"]
+                break
+        if white_sig2 is None:
+            # White not in selected models — fit silently
+            white_result = self._fit_white(x)
+            white_sig2 = white_result["sigma2"]
+
+        # Add R² to each model
+        for r in results:
+            if white_sig2 > 0:
+                r["r_squared"] = 1.0 - r["sigma2"] / white_sig2
+            else:
+                r["r_squared"] = float("nan")
+
         if self.json_output:
             self._print_json_output(results, n, vcv_meta)
         else:
@@ -580,6 +598,7 @@ class FitContinuous(Tree):
             f"{'Sigma2':<10}{'z0':<10}{'LL':<11}"
             f"{'AIC':<9}{'dAIC':<9}{'AICw':<9}"
             f"{'BIC':<9}{'dBIC':<9}"
+            f"{'R2':<7}"
         )
         print(header)
 
@@ -594,6 +613,7 @@ class FitContinuous(Tree):
                 f"{r['sigma2']:<10.4f}{r['z0']:<10.4f}{r['log_likelihood']:<11.3f}"
                 f"{r['aic']:<9.2f}{r['delta_aic']:<9.2f}{r['aic_weight']:<9.3f}"
                 f"{r['bic']:<9.2f}{r['delta_bic']:<9.2f}"
+                f"{r['r_squared']:<7.3f}"
             )
 
         best_aic = results[0]["model"]
@@ -616,6 +636,7 @@ class FitContinuous(Tree):
                 bic=r["bic"],
                 delta_bic=r["delta_bic"],
                 k_params=r["k_params"],
+                r_squared=r["r_squared"],
             )
 
         best_aic = results[0]["model"]

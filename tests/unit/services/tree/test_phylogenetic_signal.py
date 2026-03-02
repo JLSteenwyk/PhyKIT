@@ -227,19 +227,21 @@ class TestRun:
         svc.run()
         out, _ = capsys.readouterr()
         parts = out.strip().split("\t")
-        assert len(parts) == 2
+        assert len(parts) == 3
         float(parts[0])  # K
         float(parts[1])  # p_value
+        float(parts[2])  # r_squared_phylo
 
     def test_lambda_text_output(self, lambda_args, capsys):
         svc = PhylogeneticSignal(lambda_args)
         svc.run()
         out, _ = capsys.readouterr()
         parts = out.strip().split("\t")
-        assert len(parts) == 3
+        assert len(parts) == 4
         float(parts[0])  # lambda
         float(parts[1])  # log_likelihood
         float(parts[2])  # p_value
+        float(parts[3])  # r_squared_phylo
 
     def test_json_output_blombergs_k(self, capsys):
         args = Namespace(
@@ -383,3 +385,133 @@ class TestDiscordanceVCV:
         data = json.loads(out)
         assert "lambda" in data
         assert "vcv_metadata" in data
+
+
+class TestEffectSize:
+    def test_r2_phylo_blombergs_k(self, capsys):
+        """JSON output for blombergs_k contains r_squared_phylo as a finite float."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "r_squared_phylo" in data
+        assert isinstance(data["r_squared_phylo"], float)
+        assert np.isfinite(data["r_squared_phylo"])
+
+    def test_r2_phylo_lambda(self, capsys):
+        """JSON output for lambda contains r_squared_phylo as a finite float."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="lambda",
+            permutations=1000,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "r_squared_phylo" in data
+        assert isinstance(data["r_squared_phylo"], float)
+        assert np.isfinite(data["r_squared_phylo"])
+
+    def test_r2_phylo_positive_for_phylogenetic_trait(self, capsys):
+        """Body mass trait has strong phylogenetic signal, so R2_phylo > 0."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert data["r_squared_phylo"] > 0
+
+    def test_r2_phylo_in_text_output(self, capsys):
+        """Text output includes R2_phylo value."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=False,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        parts = out.strip().split("\t")
+        # Third column is r_squared_phylo
+        assert len(parts) == 3
+        r2 = float(parts[2])
+        assert np.isfinite(r2)
+
+    def test_r2_phylo_matches_r_reference(self, capsys):
+        """R²_phylo must match R phytools/manual GLS reference value.
+
+        R reference (tests/r_validation/validate_signal_r2.R):
+          sigma2_bm_manual  = 0.0384065703
+          sigma2_wn_manual  = 0.7667234375
+          r2_phylo_manual   = 0.9499081827
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert data["r_squared_phylo"] == pytest.approx(0.9499081827, abs=1e-6)
+
+    def test_r2_phylo_negative_for_anti_phylogenetic_trait(self, tmp_path, capsys):
+        """R²_phylo < 0 when closely related species have very different values.
+
+        The design doc states: 'R²_phylo < 0: possible (phylogeny actively
+        misleads), valid. Report as-is.' This test verifies that negative R²
+        values are correctly computed and not clipped to 0 or NaN.
+
+        We use a balanced tree with long internal branches (strong expected
+        phylogenetic signal) but assign opposite trait values to sister taxa,
+        maximally violating the BM assumption.
+        """
+        # Tree with strong phylogenetic structure (long shared paths)
+        tree_file = tmp_path / "balanced.tre"
+        tree_file.write_text("((A:0.1,B:0.1):10,(C:0.1,D:0.1):10);")
+
+        # Anti-phylogenetic: sisters have opposite values
+        trait_file = tmp_path / "anti_phylo_traits.tsv"
+        trait_file.write_text("A\t10.0\nB\t-10.0\nC\t5.0\nD\t-5.0\n")
+
+        args = Namespace(
+            tree=str(tree_file),
+            trait_data=str(trait_file),
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        # R²_phylo should be strongly negative: phylogeny misleads
+        assert data["r_squared_phylo"] < 0, (
+            f"Expected negative R²_phylo for anti-phylogenetic trait, "
+            f"got {data['r_squared_phylo']}"
+        )
+        # Should be a real number, not NaN
+        assert np.isfinite(data["r_squared_phylo"])
+        # Reference: R²_phylo = -9.0 for this exact setup
+        assert data["r_squared_phylo"] == pytest.approx(-9.0, abs=0.1)

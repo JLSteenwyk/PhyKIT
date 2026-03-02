@@ -573,3 +573,145 @@ class TestDiscordanceVCV:
         svc = PhylogeneticGLM(args)
         svc.run()
         assert mocked_print.called
+
+
+class TestEffectSize:
+    def test_pseudo_r2_poisson_json(self, capsys):
+        """JSON output for Poisson should contain pseudo_r_squared_mcfadden and ll_null."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "pseudo_r_squared_mcfadden" in data
+        assert "ll_null" in data
+        assert data["pseudo_r_squared_mcfadden"] >= 0
+
+    def test_pseudo_r2_binomial_json(self, capsys):
+        """JSON output for binomial should contain pseudo_r_squared_mcfadden and ll_null."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="binary_trait",
+            predictors=["body_mass"],
+            family="binomial",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "pseudo_r_squared_mcfadden" in data
+        assert "ll_null" in data
+        assert data["pseudo_r_squared_mcfadden"] >= 0
+
+    def test_pseudo_r2_between_0_and_1(self, capsys):
+        """Pseudo-R² for Poisson should be between 0 and 1."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        r2 = data["pseudo_r_squared_mcfadden"]
+        assert 0 <= r2 <= 1, f"Pseudo-R² should be in [0, 1], got {r2}"
+
+    @patch("builtins.print")
+    def test_pseudo_r2_in_text_output(self, mocked_print):
+        """Text output should include Pseudo-R² line."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=False,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        all_output = " ".join(
+            str(call.args[0]) for call in mocked_print.call_args_list if call.args
+        )
+        assert "Pseudo-R" in all_output
+
+    def test_pseudo_r2_poisson_matches_reference(self, capsys):
+        """Poisson McFadden's pseudo-R² must match reference values.
+
+        Reference (PhyKIT Poisson GEE, cross-checked with formula
+        1 - LL_full/LL_null):
+          ll_full  = -13.4023801615
+          ll_null  = -18.0173819720
+          pseudo_r2 = 1 - (-13.4024 / -18.0174) = 0.2561416424
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert data["pseudo_r_squared_mcfadden"] == pytest.approx(
+            0.2561416424, abs=1e-4
+        )
+        assert data["ll_null"] == pytest.approx(-18.0173819720, abs=1e-2)
+
+    def test_pseudo_r2_binomial_matches_reference(self, capsys):
+        """Binomial McFadden's pseudo-R² must match reference values.
+
+        Reference (PhyKIT logistic MPLE):
+          ll_full  = -1.8326609276
+          ll_null  = -4.7365924439
+          pseudo_r2 = 1 - (-1.8327 / -4.7366) = 0.6130845224
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="binary_trait",
+            predictors=["body_mass"],
+            family="binomial",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert data["pseudo_r_squared_mcfadden"] == pytest.approx(
+            0.6130845224, abs=1e-4
+        )
+        assert data["ll_null"] == pytest.approx(-4.7365924439, abs=1e-2)

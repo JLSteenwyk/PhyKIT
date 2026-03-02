@@ -490,3 +490,71 @@ class TestRun:
         svc.run()
         payload = json.loads(mocked_print.call_args.args[0])
         assert set(payload["models"].keys()) == {"BM1", "OUM"}
+
+
+# ── TestEffectSize ──────────────────────────────────────────────────
+
+class TestEffectSize:
+    @patch("builtins.print")
+    def test_r2_in_json(self, mocked_print):
+        """All models have r_squared in JSON output."""
+        args = Namespace(
+            tree=TREE_SIMPLE, trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE, models=None, json=True,
+        )
+        svc = OUwie(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        for model_name, model_data in payload["models"].items():
+            assert "r_squared" in model_data, (
+                f"r_squared missing from {model_name}"
+            )
+
+    @patch("builtins.print")
+    def test_bm1_r2_zero(self, mocked_print):
+        """BM1 is baseline so its R² should be exactly 0."""
+        args = Namespace(
+            tree=TREE_SIMPLE, trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE, models=None, json=True,
+        )
+        svc = OUwie(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["models"]["BM1"]["r_squared"] == 0.0
+
+    @patch("builtins.print")
+    def test_r2_finite(self, mocked_print):
+        """R² values are finite for BM1 and OU1."""
+        args = Namespace(
+            tree=TREE_SIMPLE, trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE, models="BM1,OU1", json=True,
+        )
+        svc = OUwie(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        for model_name in ["BM1", "OU1"]:
+            r2 = payload["models"][model_name]["r_squared"]
+            assert np.isfinite(r2), (
+                f"R² for {model_name} is not finite: {r2}"
+            )
+
+    @patch("builtins.print")
+    def test_r2_without_bm1_in_models(self, mocked_print):
+        """When BM1 is not in selected models, R² is still computed via silent fit.
+
+        The design doc states: 'BM1 not in selected models (ouwie): Fit
+        silently as baseline.' This verifies that excluding BM1 still
+        produces finite R² values, not NaN.
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE, trait_data=TRAITS_FILE,
+            regime_data=REGIMES_FILE, models="OU1,OUM", json=True,
+        )
+        svc = OUwie(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert "BM1" not in payload["models"]
+        for model_name, model_data in payload["models"].items():
+            assert np.isfinite(model_data["r_squared"]), (
+                f"R² for {model_name} is not finite when BM1 excluded"
+            )

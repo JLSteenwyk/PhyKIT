@@ -95,7 +95,9 @@ class OUwie(Tree):
             )
             results.append(res)
 
-        results = self._compute_model_comparison(results, n)
+        results = self._compute_model_comparison(
+            results, n, x, vcv_total, regime_assignments, ordered_names
+        )
 
         if self.json_output:
             self._print_json_output(results, n, regimes)
@@ -1458,7 +1460,9 @@ class OUwie(Tree):
     # ── Model comparison ─────────────────────────────────────────────
 
     def _compute_model_comparison(
-        self, results: List[Dict], n: int
+        self, results: List[Dict], n: int,
+        x: np.ndarray = None, vcv_total: np.ndarray = None,
+        regime_assignments: Dict = None, ordered_names: List[str] = None,
     ) -> List[Dict]:
         for r in results:
             k = r["k_params"]
@@ -1491,6 +1495,49 @@ class OUwie(Tree):
         for r, w in zip(results, aicc_weights):
             r["aicc_weight"] = float(w)
 
+        # Compute R² = 1 - (σ²_model / σ²_BM1)
+        bm1_sig2 = None
+        for r in results:
+            if r["model"] == "BM1":
+                bm1_sig2 = r["params"]["sigma2"]
+                break
+
+        # If BM1 not in selected models, fit silently as baseline
+        if bm1_sig2 is None and x is not None and vcv_total is not None:
+            bm1_result = self._fit_bm1(x, vcv_total)
+            bm1_sig2 = bm1_result["params"]["sigma2"]
+
+        # Build tip-count-per-regime map for weighted averaging
+        regime_tip_counts = {}
+        if regime_assignments and ordered_names:
+            for name in ordered_names:
+                r_name = regime_assignments.get(name)
+                if r_name is not None:
+                    regime_tip_counts[r_name] = regime_tip_counts.get(r_name, 0) + 1
+
+        for r in results:
+            params = r["params"]
+            sig2 = params.get("sigma2")
+            if isinstance(sig2, dict):
+                # Multi-regime: weighted average by tips per regime
+                if regime_tip_counts:
+                    sig2_model = sum(
+                        (regime_tip_counts.get(rname, 0) / n) * sv
+                        for rname, sv in sig2.items()
+                    )
+                else:
+                    sig2_vals = list(sig2.values())
+                    sig2_model = sum(sig2_vals) / len(sig2_vals) if sig2_vals else 0
+            elif sig2 is not None:
+                sig2_model = sig2
+            else:
+                sig2_model = 0
+
+            if bm1_sig2 is not None and bm1_sig2 > 0:
+                r["r_squared"] = 1.0 - sig2_model / bm1_sig2
+            else:
+                r["r_squared"] = float("nan")
+
         return results
 
     # ── Output ───────────────────────────────────────────────────────
@@ -1505,7 +1552,7 @@ class OUwie(Tree):
         header = (
             f"{'Model':<8}{'k':<5}{'LL':<12}"
             f"{'AIC':<10}{'AICc':<10}{'dAICc':<9}{'AICcW':<9}"
-            f"{'BIC':<10}{'dBIC':<9}"
+            f"{'BIC':<10}{'dBIC':<9}{'R2':<7}"
         )
         print(header)
 
@@ -1515,6 +1562,7 @@ class OUwie(Tree):
                 f"{r['aic']:<10.2f}{r['aicc']:<10.2f}"
                 f"{r['delta_aicc']:<9.2f}{r['aicc_weight']:<9.3f}"
                 f"{r['bic']:<10.2f}{r['delta_bic']:<9.2f}"
+                f"{r['r_squared']:<7.3f}"
             )
 
         print(f"\nBest model (AICc): {results[0]['model']}")
@@ -1564,6 +1612,7 @@ class OUwie(Tree):
                 aicc_weight=r["aicc_weight"],
                 bic=r["bic"],
                 delta_bic=r["delta_bic"],
+                r_squared=r["r_squared"],
                 params=r["params"],
             )
 

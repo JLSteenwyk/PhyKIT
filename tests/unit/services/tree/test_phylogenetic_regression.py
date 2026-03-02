@@ -208,7 +208,7 @@ class TestPGLSBM:
         beta_hat, residuals, sigma2, var_beta = svc._fit_gls(y, X, C_inv)
         fitted = X @ beta_hat
 
-        r2, adj_r2, f_stat, f_p = svc._compute_model_stats(
+        r2, adj_r2, f_stat, f_p, r2_total, r2_phylo = svc._compute_model_stats(
             y, fitted, residuals, C_inv, k=1, n=n
         )
 
@@ -547,3 +547,108 @@ class TestDiscordanceVCV:
         captured = capsys.readouterr()
         assert "PGLS" in captured.out
         assert "body_mass" in captured.out
+
+
+class TestEffectSize:
+    """Tests for the three-way R² variance decomposition."""
+
+    def test_r2_phylo_in_json(self, capsys):
+        """JSON output contains r_squared_phylo, r_squared_total, and r_squared."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+        assert "r_squared" in payload
+        assert "r_squared_phylo" in payload
+        assert "r_squared_total" in payload
+
+    def test_decomposition_sums(self, capsys):
+        """R²_phylo + R²_pred should approximately equal R²_total."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+        r2_pred = payload["r_squared"]
+        r2_total = payload["r_squared_total"]
+        r2_phylo = payload["r_squared_phylo"]
+        assert r2_phylo + r2_pred == pytest.approx(r2_total, abs=1e-10)
+
+    def test_r2_values_finite(self, capsys):
+        """Both new R² values should be finite."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+        assert np.isfinite(payload["r_squared_total"])
+        assert np.isfinite(payload["r_squared_phylo"])
+
+    def test_r2_in_text_output(self, capsys):
+        """Text output includes R²_phylo and R²_total strings."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=False,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        assert "R-squared (total):" in captured.out
+        assert "R-squared (phylo):" in captured.out
+
+    def test_r2_matches_manual_gls_reference(self, capsys):
+        """R² values must match manual GLS computation (BM, no lambda estimation).
+
+        Reference (tests/r_validation/validate_pgls_r2.R, manual GLS section):
+          sigma2_ols = var(y)*n/n (ML)
+          sigma2_gls_full = residuals' C_inv residuals / n
+          r2_total = 1 - sigma2_gls_full / sigma2_ols
+          r2_pred = existing GLS R²
+          r2_phylo = r2_total - r2_pred
+
+        Python computed values (brain_size ~ body_mass, BM):
+          r_squared       = 0.9762780781
+          r_squared_total = 0.9988062139
+          r_squared_phylo = 0.0225281357
+        """
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+        assert payload["r_squared"] == pytest.approx(0.9762780781, abs=1e-6)
+        assert payload["r_squared_total"] == pytest.approx(0.9988062139, abs=1e-6)
+        assert payload["r_squared_phylo"] == pytest.approx(0.0225281357, abs=1e-6)

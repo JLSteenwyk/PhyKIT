@@ -126,7 +126,7 @@ class PhylogeneticRegression(Tree):
         fitted = X @ beta_hat
 
         # Model statistics
-        r_squared, adj_r_squared, f_stat, f_p_value = self._compute_model_stats(
+        r_squared, adj_r_squared, f_stat, f_p_value, r2_total, r2_phylo = self._compute_model_stats(
             y, fitted, residuals, C_inv, k, n
         )
 
@@ -163,6 +163,8 @@ class PhylogeneticRegression(Tree):
             fitted=fitted,
             ordered_names=ordered_names,
             lambda_val=lambda_val,
+            r2_total=r2_total,
+            r2_phylo=r2_phylo,
         )
 
         if vcv_meta is not None:
@@ -189,6 +191,8 @@ class PhylogeneticRegression(Tree):
                 k=k,
                 n=n,
                 lambda_val=lambda_val,
+                r2_total=r2_total,
+                r2_phylo=r2_phylo,
             )
 
     def process_args(self, args) -> Dict[str, str]:
@@ -450,13 +454,18 @@ class PhylogeneticRegression(Tree):
         C_inv: np.ndarray,
         k: int,
         n: int,
-    ) -> Tuple[float, float, float, float]:
-        """Compute R², adjusted R², F-statistic, F p-value.
+    ) -> Tuple[float, float, float, float, float, float]:
+        """Compute R², adjusted R², F-statistic, F p-value, R²_total, R²_phylo.
 
         Uses GLS-weighted sums of squares:
           SS_res = e' C_inv e
           SS_tot = (y - y_bar_gls)' C_inv (y - y_bar_gls)
         where y_bar_gls = (1' C_inv y) / (1' C_inv 1)
+
+        Three-way R² variance decomposition:
+          R²_pred  = standard GLS R² (predictor contribution given phylogeny)
+          R²_total = 1 - σ²_gls_ml / σ²_ols_ml (phylogeny + predictor)
+          R²_phylo = R²_total - R²_pred (phylogeny's unique contribution)
         """
         ones = np.ones(n)
         y_bar_gls = float(ones @ C_inv @ y) / float(ones @ C_inv @ ones)
@@ -487,7 +496,17 @@ class PhylogeneticRegression(Tree):
             f_stat = ms_reg / ms_res
             f_p_value = float(f_dist.sf(f_stat, dfn=k, dfd=df_resid))
 
-        return r_squared, adj_r_squared, f_stat, f_p_value
+        # Three-way R² variance decomposition
+        sig2_gls_ml = float(residuals @ C_inv @ residuals) / n
+        sig2_ols_ml = float(np.var(y))
+        if sig2_ols_ml == 0:
+            r2_total = 0.0
+            r2_phylo = 0.0
+        else:
+            r2_total = 1.0 - sig2_gls_ml / sig2_ols_ml
+            r2_phylo = r2_total - r_squared
+
+        return r_squared, adj_r_squared, f_stat, f_p_value, r2_total, r2_phylo
 
     def _signif_code(self, p: float) -> str:
         if p < 0.001:
@@ -505,6 +524,7 @@ class PhylogeneticRegression(Tree):
         self, *, coef_names, beta_hat, se, t_stats, p_values,
         sigma2, df_resid, r_squared, adj_r_squared,
         f_stat, f_p_value, ll, aic, formula, k, n, lambda_val,
+        r2_total, r2_phylo,
     ) -> None:
         print("Phylogenetic Generalized Least Squares (PGLS)")
         print(f"\nFormula: {formula}")
@@ -537,6 +557,8 @@ class PhylogeneticRegression(Tree):
             f"Multiple R-squared: {r_squared:.4f}    "
             f"Adjusted R-squared: {adj_r_squared:.4f}"
         )
+        print(f"R-squared (total):   {r2_total:.4f}   (phylo + predictor)")
+        print(f"R-squared (phylo):   {r2_phylo:.4f}   (phylogeny contribution)")
         print(
             f"F-statistic: {f_stat:.2f} on {k} and {df_resid} DF    "
             f"p-value: {f_p_value:.6f}"
@@ -548,6 +570,7 @@ class PhylogeneticRegression(Tree):
         sigma2, df_resid, r_squared, adj_r_squared,
         f_stat, f_p_value, ll, aic, formula, k, n,
         residuals, fitted, ordered_names, lambda_val,
+        r2_total, r2_phylo,
     ) -> Dict:
         coefficients = {}
         for i, name in enumerate(coef_names):
@@ -565,6 +588,8 @@ class PhylogeneticRegression(Tree):
             "df_residual": df_resid,
             "r_squared": float(r_squared),
             "adj_r_squared": float(adj_r_squared),
+            "r_squared_total": float(r2_total),
+            "r_squared_phylo": float(r2_phylo),
             "f_statistic": float(f_stat),
             "f_p_value": float(f_p_value),
             "log_likelihood": float(ll),

@@ -45,17 +45,25 @@ class PhylogeneticSignal(Tree):
 
         x = np.array([traits[name] for name in ordered_names])
 
+        r2_phylo = self._compute_r2_phylo(x, vcv)
+
         if self.method == "blombergs_k":
             result = self._blombergs_k(x, vcv, self.permutations)
+            result["r_squared_phylo"] = r2_phylo
             if vcv_meta is not None:
                 result["vcv_metadata"] = vcv_meta
             if self.json_output:
                 print_json(result)
                 return
-            print(f"{round(result['K'], 4)}\t{round(result['p_value'], 4)}")
+            print(
+                f"{round(result['K'], 4)}\t"
+                f"{round(result['p_value'], 4)}\t"
+                f"{round(result['r_squared_phylo'], 4)}"
+            )
         elif self.method == "lambda":
             max_lam = self._max_lambda(tree)
             result = self._pagels_lambda(x, vcv, max_lam)
+            result["r_squared_phylo"] = r2_phylo
             if vcv_meta is not None:
                 result["vcv_metadata"] = vcv_meta
             if self.json_output:
@@ -64,7 +72,8 @@ class PhylogeneticSignal(Tree):
             print(
                 f"{round(result['lambda'], 4)}\t"
                 f"{round(result['log_likelihood'], 4)}\t"
-                f"{round(result['p_value'], 4)}"
+                f"{round(result['p_value'], 4)}\t"
+                f"{round(result['r_squared_phylo'], 4)}"
             )
 
     def process_args(self, args) -> Dict[str, str]:
@@ -196,6 +205,23 @@ class PhylogeneticSignal(Tree):
         ll = -0.5 * (n * np.log(2 * np.pi) + logdet_sig2C + n)
 
         return ll, a_hat
+
+    def _compute_r2_phylo(self, x: np.ndarray, vcv: np.ndarray) -> float:
+        """Compute R²_phylo = 1 - (σ²_BM / σ²_WN).
+
+        σ²_BM is the MLE of trait variance under Brownian Motion.
+        σ²_WN is the MLE of trait variance under White Noise (= sample variance).
+        """
+        n = len(x)
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        a_hat = float((ones @ C_inv @ x) / (ones @ C_inv @ ones))
+        e = x - a_hat
+        sig2_bm = float(e @ C_inv @ e) / n
+        sig2_wn = float(np.var(x))  # numpy uses /n by default
+        if sig2_wn == 0:
+            return float("nan")
+        return 1.0 - sig2_bm / sig2_wn
 
     def _blombergs_k(
         self, x: np.ndarray, vcv: np.ndarray, n_perm: int
