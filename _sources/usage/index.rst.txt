@@ -79,121 +79,121 @@ are grouped by analytical purpose to help you find the right tool for your analy
 Alignment quality & statistics
 ##############################
 
-- :ref:`Alignment entropy <cmd-alignment_entropy>` -- Shannon entropy across alignment sites
-- :ref:`Alignment length <cmd-alignment_length>` -- Length of an input alignment
-- :ref:`Alignment length no gaps <cmd-alignment_length_no_gaps>` -- Alignment length excluding gapped sites
-- :ref:`Alignment outlier taxa <cmd-alignment_outlier_taxa>` -- Identify outlier taxa in alignments
-- :ref:`Column score <cmd-column_score>` -- Column score for alignment quality
-- :ref:`Compositional bias per site <cmd-compositional_bias_per_site>` -- Detect compositional bias across sites
-- :ref:`Composition per taxon <cmd-composition_per_taxon>` -- Nucleotide or amino acid composition per taxon
-- :ref:`Evolutionary Rate per Site <cmd-evolutionary_rate_per_site>` -- Site-specific evolutionary rate estimation
-- :ref:`Guanine-cytosine (GC) content <cmd-gc_content>` -- GC content of an alignment
-- :ref:`Occupancy per taxon <cmd-occupancy_per_taxon>` -- Taxon occupancy in alignment columns
-- :ref:`Pairwise identity <cmd-pairwise_identity>` -- Pairwise sequence identity in an alignment
-- :ref:`Parsimony informative sites <cmd-parsimony_informative_sites>` -- Count parsimony informative sites
-- :ref:`Plot alignment QC <cmd-plot_alignment_qc>` -- Visual quality control plots for alignments
-- :ref:`Relative composition variability <cmd-relative_composition_variability>` -- Composition variability across taxa
-- :ref:`Relative composition variability, taxon <cmd-relative_composition_variability_taxon>` -- Per-taxon relative composition variability
-- :ref:`Sum-of-pairs score <cmd-sum_of_pairs_score>` -- Sum-of-pairs alignment quality score
-- :ref:`Variable sites <cmd-variable_sites>` -- Count variable sites in an alignment
+- :ref:`Alignment entropy <cmd-alignment_entropy>`: Shannon entropy across alignment sites
+- :ref:`Alignment length <cmd-alignment_length>`: Length of an input alignment
+- :ref:`Alignment length no gaps <cmd-alignment_length_no_gaps>`: Alignment length excluding gapped sites
+- :ref:`Alignment outlier taxa <cmd-alignment_outlier_taxa>`: Identify outlier taxa in alignments
+- :ref:`Column score <cmd-column_score>`: Column score for alignment quality
+- :ref:`Compositional bias per site <cmd-compositional_bias_per_site>`: Detect compositional bias across sites
+- :ref:`Composition per taxon <cmd-composition_per_taxon>`: Nucleotide or amino acid composition per taxon
+- :ref:`Evolutionary Rate per Site <cmd-evolutionary_rate_per_site>`: Site-specific evolutionary rate estimation
+- :ref:`Guanine-cytosine (GC) content <cmd-gc_content>`: GC content of an alignment
+- :ref:`Occupancy per taxon <cmd-occupancy_per_taxon>`: Taxon occupancy in alignment columns
+- :ref:`Pairwise identity <cmd-pairwise_identity>`: Pairwise sequence identity in an alignment
+- :ref:`Parsimony informative sites <cmd-parsimony_informative_sites>`: Count parsimony informative sites
+- :ref:`Plot alignment QC <cmd-plot_alignment_qc>`: Visual quality control plots for alignments
+- :ref:`Relative composition variability <cmd-relative_composition_variability>`: Composition variability across taxa
+- :ref:`Relative composition variability, taxon <cmd-relative_composition_variability_taxon>`: Per-taxon relative composition variability
+- :ref:`Sum-of-pairs score <cmd-sum_of_pairs_score>`: Sum-of-pairs alignment quality score
+- :ref:`Variable sites <cmd-variable_sites>`: Count variable sites in an alignment
 
 Alignment manipulation
 ######################
 
-- :ref:`Alignment recoding <cmd-alignment_recoding>` -- Recode alignment into reduced alphabets
-- :ref:`Create concatenation matrix <cmd-create_concatenation_matrix>` -- Concatenate multiple alignments into a supermatrix
-- :ref:`Faidx <cmd-faidx>` -- Extract entries from FASTA files
-- :ref:`Mask alignment <cmd-mask_alignment>` -- Mask sites in an alignment
-- :ref:`Rename FASTA entries <cmd-rename_fasta_entries>` -- Rename entries in a FASTA file
-- :ref:`Protein-to-nucleotide alignment <cmd-thread_dna>` -- Thread nucleotide onto protein alignment
+- :ref:`Alignment recoding <cmd-alignment_recoding>`: Recode alignment into reduced alphabets
+- :ref:`Create concatenation matrix <cmd-create_concatenation_matrix>`: Concatenate multiple alignments into a supermatrix
+- :ref:`Faidx <cmd-faidx>`: Extract entries from FASTA files
+- :ref:`Mask alignment <cmd-mask_alignment>`: Mask sites in an alignment
+- :ref:`Rename FASTA entries <cmd-rename_fasta_entries>`: Rename entries in a FASTA file
+- :ref:`Protein-to-nucleotide alignment <cmd-thread_dna>`: Thread nucleotide onto protein alignment
 
 Tree summary statistics
 #######################
 
-- :ref:`Bipartition support statistics <cmd-bipartition_support_stats>` -- Summary statistics of bipartition support values
-- :ref:`Degree of violation of the molecular clock <cmd-degree_of_violation_of_a_molecular_clock>` -- Measure molecular clock violation
-- :ref:`Evolutionary rate <cmd-evolutionary_rate>` -- Calculate tree-based evolutionary rate
-- :ref:`Internal branch statistics <cmd-internal_branch_stats>` -- Summary statistics of internal branch lengths
-- :ref:`Lineage-through-time plot and gamma statistic <cmd-ltt>` -- Lineage-through-time analysis and gamma statistic
-- :ref:`Long branch score <cmd-long_branch_score>` -- Identify long branches in a tree
-- :ref:`Patristic distances <cmd-patristic_distances>` -- Pairwise patristic distances between taxa
-- :ref:`Terminal branch statistics <cmd-terminal_branch_stats>` -- Summary statistics of terminal branch lengths
-- :ref:`Tip-to-tip distance <cmd-tip_to_tip_distance>` -- Distance between two tips in a tree
-- :ref:`Tip-to-tip node distance <cmd-tip_to_tip_node_distance>` -- Node distance between two tips
-- :ref:`Total tree length <cmd-total_tree_length>` -- Sum of all branch lengths
-- :ref:`Treeness <cmd-treeness>` -- Ratio of internal to total branch lengths
+- :ref:`Bipartition support statistics <cmd-bipartition_support_stats>`: Summary statistics of bipartition support values
+- :ref:`Degree of violation of the molecular clock <cmd-degree_of_violation_of_a_molecular_clock>`: Measure molecular clock violation
+- :ref:`Evolutionary rate <cmd-evolutionary_rate>`: Calculate tree-based evolutionary rate
+- :ref:`Internal branch statistics <cmd-internal_branch_stats>`: Summary statistics of internal branch lengths
+- :ref:`Lineage-through-time plot and gamma statistic <cmd-ltt>`: Lineage-through-time analysis and gamma statistic
+- :ref:`Long branch score <cmd-long_branch_score>`: Identify long branches in a tree
+- :ref:`Patristic distances <cmd-patristic_distances>`: Pairwise patristic distances between taxa
+- :ref:`Terminal branch statistics <cmd-terminal_branch_stats>`: Summary statistics of terminal branch lengths
+- :ref:`Tip-to-tip distance <cmd-tip_to_tip_distance>`: Distance between two tips in a tree
+- :ref:`Tip-to-tip node distance <cmd-tip_to_tip_node_distance>`: Node distance between two tips
+- :ref:`Total tree length <cmd-total_tree_length>`: Sum of all branch lengths
+- :ref:`Treeness <cmd-treeness>`: Ratio of internal to total branch lengths
 
 Tree manipulation & utilities
 #############################
 
-- :ref:`Branch length multiplier <cmd-branch_length_multiplier>` -- Multiply branch lengths by a factor
-- :ref:`Collapse bipartitions <cmd-collapse_branches>` -- Collapse low-support bipartitions
-- :ref:`Internode labeler <cmd-internode_labeler>` -- Label internal nodes of a tree
-- :ref:`Last common ancestor subtree <cmd-last_common_ancestor_subtree>` -- Extract subtree from LCA of specified taxa
-- :ref:`Monophyly check <cmd-monophyly_check>` -- Test monophyly of a group of taxa
-- :ref:`Nearest neighbor interchange <cmd-nearest_neighbor_interchange>` -- Generate NNI tree rearrangements
-- :ref:`Print tree <cmd-print_tree>` -- Print ASCII representation of a tree
-- :ref:`Prune tree <cmd-prune_tree>` -- Prune taxa from a tree
-- :ref:`Rename tree tips <cmd-rename_tree_tips>` -- Rename tip labels in a tree
-- :ref:`Root tree <cmd-root_tree>` -- Root or reroot a tree
-- :ref:`Tip labels <cmd-tip_labels>` -- Print tip labels of a tree
+- :ref:`Branch length multiplier <cmd-branch_length_multiplier>`: Multiply branch lengths by a factor
+- :ref:`Collapse bipartitions <cmd-collapse_branches>`: Collapse low-support bipartitions
+- :ref:`Internode labeler <cmd-internode_labeler>`: Label internal nodes of a tree
+- :ref:`Last common ancestor subtree <cmd-last_common_ancestor_subtree>`: Extract subtree from LCA of specified taxa
+- :ref:`Monophyly check <cmd-monophyly_check>`: Test monophyly of a group of taxa
+- :ref:`Nearest neighbor interchange <cmd-nearest_neighbor_interchange>`: Generate NNI tree rearrangements
+- :ref:`Print tree <cmd-print_tree>`: Print ASCII representation of a tree
+- :ref:`Prune tree <cmd-prune_tree>`: Prune taxa from a tree
+- :ref:`Rename tree tips <cmd-rename_tree_tips>`: Rename tip labels in a tree
+- :ref:`Root tree <cmd-root_tree>`: Root or reroot a tree
+- :ref:`Tip labels <cmd-tip_labels>`: Print tip labels of a tree
 
 Tree comparison & consensus
 ###########################
 
-- :ref:`Consensus network <cmd-consensus_network>` -- Consensus network from multiple trees
-- :ref:`Consensus tree <cmd-consensus_tree>` -- Consensus tree from multiple trees
-- :ref:`Cophylogenetic plot (tanglegram) <cmd-cophylo>` -- Tanglegram for comparing two trees
-- :ref:`Polytomy testing <cmd-polytomy_test>` -- Test for polytomies in a tree
-- :ref:`Quartet network <cmd-quartet_network>` -- Quartet-based network visualization
-- :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>` -- Topological distance between trees
+- :ref:`Consensus network <cmd-consensus_network>`: Consensus network from multiple trees
+- :ref:`Consensus tree <cmd-consensus_tree>`: Consensus tree from multiple trees
+- :ref:`Cophylogenetic plot (tanglegram) <cmd-cophylo>`: Tanglegram for comparing two trees
+- :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
+- :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
+- :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>`: Topological distance between trees
 
 Phylogenetic signal
 ###################
 
-- :ref:`Network signal <cmd-network_signal>` -- Phylogenetic signal on networks
-- :ref:`Phylogenetic signal <cmd-phylogenetic_signal>` -- Test for phylogenetic signal in traits
+- :ref:`Network signal <cmd-network_signal>`: Phylogenetic signal on networks
+- :ref:`Phylogenetic signal <cmd-phylogenetic_signal>`: Test for phylogenetic signal in traits
 
 Trait evolution
 ###############
 
-- :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>` -- Reconstruct ancestral character states
-- :ref:`Concordance-aware ASR <cmd-concordance_asr>` -- ASR incorporating gene tree discordance
-- :ref:`Continuous trait mapping (contMap) <cmd-cont_map>` -- Map continuous traits onto a phylogeny
-- :ref:`Density map <cmd-density_map>` -- Posterior density of stochastic character maps
-- :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>` -- Compare continuous trait evolution models
-- :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>` -- Detect OU regime shifts on a phylogeny
-- :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>` -- Multi-regime Ornstein-Uhlenbeck models
-- :ref:`Phenogram (traitgram) <cmd-phenogram>` -- Phenogram visualizing trait evolution
-- :ref:`Rate heterogeneity test (multi-rate Brownian motion) <cmd-rate_heterogeneity>` -- Test for rate heterogeneity in trait evolution
-- :ref:`Stochastic character mapping (SIMMAP) <cmd-stochastic_character_map>` -- Stochastic character mapping on a phylogeny
-- :ref:`Threshold model <cmd-threshold_model>` -- Felsenstein threshold model for trait correlation
+- :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>`: Reconstruct ancestral character states
+- :ref:`Concordance-aware ASR <cmd-concordance_asr>`: ASR incorporating gene tree discordance
+- :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
+- :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
+- :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>`: Compare continuous trait evolution models
+- :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
+- :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>`: Multi-regime Ornstein-Uhlenbeck models
+- :ref:`Phenogram (traitgram) <cmd-phenogram>`: Phenogram visualizing trait evolution
+- :ref:`Rate heterogeneity test (multi-rate Brownian motion) <cmd-rate_heterogeneity>`: Test for rate heterogeneity in trait evolution
+- :ref:`Stochastic character mapping (SIMMAP) <cmd-stochastic_character_map>`: Stochastic character mapping on a phylogeny
+- :ref:`Threshold model <cmd-threshold_model>`: Felsenstein threshold model for trait correlation
 
 Phylogenetic comparative methods
 ################################
 
-- :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>` -- Phylogenetic generalized linear model
-- :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>` -- Ordination incorporating phylogenetic structure
-- :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>` -- Phylogenetic generalized least squares regression
-- :ref:`Phylomorphospace <cmd-phylomorphospace>` -- Phylomorphospace visualization
+- :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>`: Phylogenetic generalized linear model
+- :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure
+- :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>`: Phylogenetic generalized least squares regression
+- :ref:`Phylomorphospace <cmd-phylomorphospace>`: Phylomorphospace visualization
 
 Evolutionary rate analysis
 ##########################
 
-- :ref:`Covarying evolutionary rates <cmd-covarying_evolutionary_rates>` -- Detect covariation in evolutionary rates
-- :ref:`Relative rate test <cmd-relative_rate_test>` -- Relative rate test between lineages
+- :ref:`Covarying evolutionary rates <cmd-covarying_evolutionary_rates>`: Detect covariation in evolutionary rates
+- :ref:`Relative rate test <cmd-relative_rate_test>`: Relative rate test between lineages
 
 Homology assessment
 ###################
 
-- :ref:`Hidden paralogy check <cmd-hidden_paralogy_check>` -- Check for hidden paralogy in gene trees
-- :ref:`Spurious homolog identification <cmd-spurious_sequence>` -- Identify spurious sequences in alignments
+- :ref:`Hidden paralogy check <cmd-hidden_paralogy_check>`: Check for hidden paralogy in gene trees
+- :ref:`Spurious homolog identification <cmd-spurious_sequence>`: Identify spurious sequences in alignments
 
 Saturation & model adequacy
 ############################
 
-- :ref:`Saturation <cmd-saturation>` -- Test for substitution saturation
-- :ref:`Treeness over RCV <cmd-treeness_over_rcv>` -- Treeness over relative composition variability
+- :ref:`Saturation <cmd-saturation>`: Test for substitution saturation
+- :ref:`Treeness over RCV <cmd-treeness_over_rcv>`: Treeness over relative composition variability
 
 |
 
