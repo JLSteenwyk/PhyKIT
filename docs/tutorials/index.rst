@@ -1212,6 +1212,10 @@ This generates a plot file (``phylomorphospace_plot.png`` by default) showing:
   (coolwarm colormap with colorbar)
 - **Tip labels** identifying each species
 
+.. image:: ../_static/img/tutorial8_morphospace.png
+   :align: center
+   :width: 80%
+
 **Interpretation.** In the resulting plot, species with large body mass and brain size
 (bear, sea_lion, seal) cluster in the upper right, while small-bodied species (weasel, cat)
 appear in the lower left. The tree edges show the evolutionary trajectories: the ancestral
@@ -1756,6 +1760,11 @@ You need three input files:
 We will use the test data included with PhyKIT: an eight-taxon mammal phylogeny,
 log-transformed body mass values, and regime assignments (aquatic vs. terrestrial). |br|
 
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Continuous trait data </data/tree_simple_traits.tsv>`
+
 |
 
 Step 1: Run the rate heterogeneity test
@@ -1765,8 +1774,44 @@ Step 1: Run the rate heterogeneity test
 
    phykit rh -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv
 
-This fits both single-rate and multi-rate BM models and reports the likelihood
-ratio test results.
+Expected output:
+
+.. code-block:: text
+
+   Rate Heterogeneity Test (Multi-rate Brownian Motion)
+
+   Regimes: 2 (aquatic, terrestrial)
+   Number of tips: 8
+
+   Single-rate model (H0):
+     Sigma-squared:      0.0384
+     Ancestral state:    1.6447
+     Log-likelihood:     -11.57
+     AIC:                27.14
+
+   Multi-rate model (H1):
+     Regime               Sigma-squared
+     aquatic                     0.0088
+     terrestrial                 0.0500
+     Ancestral state:    1.8468
+     Log-likelihood:     -11.20
+     AIC:                28.41
+
+   Likelihood ratio test:
+     LRT statistic:      0.7302
+     Degrees of freedom: 1
+     Chi-squared p-value: 0.3928
+
+   Effect size:
+     R2_regime: -0.0341
+
+**Interpretation.** The single-rate model estimates sigma-squared = 0.038 for all
+taxa. The multi-rate model estimates separate rates: aquatic mammals (sigma² = 0.009)
+evolve body mass more slowly than terrestrial mammals (sigma² = 0.050). However, the
+likelihood ratio test p-value of 0.39 is non-significant — we cannot reject the null
+hypothesis that rates are equal. The negative R²_regime (-0.03) confirms that the
+multi-rate model does not improve over the single-rate model. With only 2 aquatic taxa,
+power to detect rate differences is limited.
 
 |
 
@@ -1792,6 +1837,15 @@ Visualize which branches belong to which regime:
 .. code-block:: shell
 
    phykit rh -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv --plot regime_tree.png
+
+.. image:: ../_static/img/tutorial12_regimes.png
+   :align: center
+   :width: 80%
+
+The plot shows the phylogeny with branches colored by regime assignment. Regime
+labels are inferred for internal branches using Fitch parsimony based on tip
+assignments. This visualization helps verify that the regime boundaries make
+biological sense.
 
 |
 
@@ -1870,6 +1924,11 @@ phylogeny. PhyKIT's ``fit_continuous`` command (aliases: ``fitcontinuous``,
 ``fc``) fits up to 7 models and ranks them by AIC, BIC, and AIC weights,
 analogous to R's ``geiger::fitContinuous()``.
 
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Continuous trait data </data/tree_simple_traits.tsv>`
+
 |
 
 **Step 0: Prepare data**
@@ -1890,10 +1949,27 @@ You need a Newick tree file and a tab-delimited trait file
 
 .. code-block:: shell
 
-   phykit fit_continuous -t tree.nwk -d traits.tsv
+   phykit fit_continuous -t tree_simple.tre -d tree_simple_traits.tsv
 
-This fits BM, OU, EB, Lambda, Delta, Kappa, and White models and prints
-a ranked table.
+Expected output:
+
+.. code-block:: text
+
+   Model Comparison (fitContinuous)
+
+   Number of tips: 8
+
+   Model       Param     Value      Sigma2    z0        LL         AIC      dAIC     AICw     BIC      dBIC     R2
+   White       -         -          0.7667    1.2062    -10.289    24.58    0.00     0.304    24.74    0.00     0.000
+   EB          a         -0.0785    0.0854    1.4827    -9.595     25.19    0.61     0.224    25.43    0.69     0.889
+   Kappa       kappa     0.0100     0.3428    1.3230    -9.722     25.44    0.87     0.197    25.68    0.94     0.553
+   OU          alpha     0.7848     1.2035    1.2063    -10.289    26.58    2.00     0.112    26.82    2.08     -0.570
+   BM          -         -          0.0384    1.6447    -11.570    27.14    2.56     0.084    27.30    2.56     0.950
+   Delta       delta     0.5188     0.1968    1.4939    -11.128    28.26    3.68     0.048    28.49    3.76     0.743
+   Lambda      lambda    1.0000     0.0384    1.6447    -11.570    29.14    4.56     0.031    29.38    4.64     0.950
+
+   Best model (AIC): White
+   Best model (BIC): White
 
 |
 
@@ -1903,6 +1979,14 @@ The output table shows each model's parameter estimate, sigma-squared,
 ancestral state (z0), log-likelihood, AIC, delta-AIC, AIC weight, BIC,
 and delta-BIC. Lower AIC/BIC values and higher AIC weights indicate
 better-fitting models.
+
+In this example, the White model (no phylogenetic structure) has the
+lowest AIC and BIC, suggesting that with only 8 taxa the data are too
+sparse to distinguish phylogenetic from non-phylogenetic models. However,
+the R² column shows that BM (0.95) and Lambda (0.95) explain most of the
+trait variance relative to the White model — with more taxa, these models
+would likely be preferred. The EB model (R² = 0.89) also fits well,
+consistent with early rapid evolution of body mass.
 
 |
 
@@ -1932,6 +2016,11 @@ PhyKIT's ``ouwie`` command (aliases: ``fit_ouwie``, ``multi_regime_ou``)
 fits multi-regime Ornstein-Uhlenbeck models, analogous to R's OUwie
 package (Beaulieu et al. 2012). These models allow different clades to
 evolve toward different trait optima with potentially different rates.
+
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Continuous trait data </data/tree_simple_traits.tsv>`
 
 |
 
@@ -1980,10 +2069,35 @@ You need three files:
 
 .. code-block:: shell
 
-   phykit ouwie -t tree.nwk -d traits.tsv -r regimes.tsv
+   phykit ouwie -t tree_simple.tre -d tree_simple_traits.tsv -r tree_simple_regimes.tsv
 
-This fits all 7 models (BM1, BMS, OU1, OUM, OUMV, OUMA, OUMVA) and
-prints a comparison table ranked by AICc.
+Expected output:
+
+.. code-block:: text
+
+   OUwie Model Comparison (Multi-Regime OU)
+
+   Number of tips: 8
+   Regimes: 2 (aquatic, terrestrial)
+
+   Model   k    LL          AIC       AICc      dAICc    AICcW    BIC       dBIC     R2
+   BM1     2    -11.570     27.14     29.54     0.00     0.759    27.30     2.93     0.000
+   OU1     3    -10.289     26.58     32.58     3.04     0.166    26.82     2.45     -30.335
+   BMS     3    -11.205     28.41     34.41     4.87     0.067    28.65     4.28     -0.034
+   OUM     4    -8.630      25.26     38.59     9.05     0.008    25.58     1.21     -19.695
+   OUMA    5    -6.986      23.97     53.97     24.43    0.000    24.37     0.00     -143.555
+   OUMV    5    -6.986      23.97     53.97     24.43    0.000    24.37     0.00     -59.882
+   OUMVA   6    -6.986      25.97     109.97    80.43    0.000    26.45     2.08     -861.136
+
+   Best model (AICc): BM1
+   Best model (BIC):  OUMA
+
+**Interpretation.** By AICc (preferred for small samples), BM1 is the best model
+with an AICc weight of 0.76, meaning a single Brownian motion rate adequately
+explains the data. The more complex OU models are penalized by the AICc correction
+for only 8 taxa. By BIC, OUMA wins — but this should be treated cautiously given
+the small sample size. This illustrates why model selection criteria matter: AICc
+is more conservative with few taxa.
 
 |
 
@@ -2075,6 +2189,11 @@ optimum — for example, identifying which lizard clades adapted to
 different body sizes, or which mammal lineages evolved distinct metabolic
 rates. Unlike OUwie, no regime file is needed.
 
+.. centered::
+   Download test data:
+   :download:`Mammal phylogeny </data/tree_simple.tre>`;
+   :download:`Continuous trait data </data/tree_simple_traits.tsv>`
+
 |
 
 **Step 1: Prepare input files**
@@ -2103,10 +2222,39 @@ You need two files:
 
 .. code-block:: shell
 
-   phykit l1ou -t tree.nwk -d traits.tsv
+   phykit l1ou -t tree_simple.tre -d tree_simple_traits.tsv
 
-By default, pBIC is used for model selection. The algorithm automatically
-identifies which branches experienced adaptive optimum shifts.
+Expected output:
+
+.. code-block:: text
+
+   ============================================================
+   OU Shift Detection (l1ou)
+   ============================================================
+   Number of tips:       8
+   Number of shifts:     1
+   Selection criterion:  pBIC
+   Alpha (OU strength):  0.784768
+   Sigma² (BM rate):     0.407049
+   Root optimum (θ₀):    1.758001
+   Log-likelihood:       -5.9531
+   pBIC:                 26.7533
+   BIC:                  22.3034
+   AICc:                 51.9062
+
+   Detected shifts:
+   ------------------------------------------------------------
+     Shift 1: stem of (cat, monkey, weasel)
+              New optimum: 0.286667
+   ============================================================
+
+**Interpretation.** The algorithm detected one adaptive shift on the stem
+branch leading to the (cat, monkey, weasel) clade, with the trait optimum
+shifting from 1.76 (root) to 0.29. This means these three species are
+evolving toward a much lower body mass optimum than the rest of the tree.
+Alpha = 0.78 indicates moderate pull-back strength toward the optima.
+The pBIC of 26.75 is the most conservative criterion; BIC and AICc give
+lower values, suggesting the shift is well-supported.
 
 |
 
@@ -2352,10 +2500,20 @@ related mammals tend to have similar body sizes.
 
    phykit phylogenetic_signal -t tree_simple.tre -d tree_simple_traits.tsv
 
-This reports Blomberg's K and Pagel's lambda with associated p-values.
-Both K > 1 and lambda close to 1 indicate strong phylogenetic signal,
-meaning comparative methods that account for shared ancestry are
-appropriate.
+Expected output:
+
+.. code-block:: text
+
+   0.5842	0.474	0.9499
+
+col1: Blomberg's K |br|
+col2: p-value (from permutation test) |br|
+col3: Pagel's lambda
+
+Here, K = 0.58 (moderate signal) and lambda = 0.95 (strong signal, close
+to 1). The p-value of 0.474 is non-significant with these 8 taxa, but
+the high lambda suggests phylogenetic structure is present — with more
+taxa, this would likely become significant.
 
 *What if signal is weak?* If lambda ≈ 0 and K ≈ 0 with non-significant
 p-values, ordinary (non-phylogenetic) regression may be adequate. Strong
@@ -2367,6 +2525,14 @@ For JSON output including the effect size (R² phylo):
 .. code-block:: shell
 
    phykit phylogenetic_signal -t tree_simple.tre -d tree_simple_traits.tsv --json
+
+.. code-block:: json
+
+   {"K": 0.5842, "p_value": 0.474, "permutations": 1000, "r_squared_phylo": 0.9499}
+
+The ``r_squared_phylo`` of 0.95 means that 95% of the trait variance is
+attributable to phylogenetic relatedness, confirming that body mass is
+strongly structured by evolutionary history.
 
 |
 
@@ -2382,11 +2548,33 @@ early in the clade's history (Early Burst)?
 
    phykit fit_continuous -t tree_simple.tre -d tree_simple_traits.tsv
 
-The output table ranks BM, OU, EB, Lambda, Delta, Kappa, and White
-models by AIC and BIC. Lower AIC/BIC values and higher AIC weights
-indicate better-fitting models. For mammalian body mass, BM or OU
-typically fit best — if OU wins, it suggests that body mass is
-constrained around a preferred size rather than drifting freely.
+Expected output:
+
+.. code-block:: text
+
+   Model Comparison (fitContinuous)
+
+   Number of tips: 8
+
+   Model       Param     Value      Sigma2    z0        LL         AIC      dAIC     AICw     BIC      dBIC     R2
+   White       -         -          0.7667    1.2062    -10.289    24.58    0.00     0.304    24.74    0.00     0.000
+   EB          a         -0.0785    0.0854    1.4827    -9.595     25.19    0.61     0.224    25.43    0.69     0.889
+   Kappa       kappa     0.0100     0.3428    1.3230    -9.722     25.44    0.87     0.197    25.68    0.94     0.553
+   OU          alpha     0.7848     1.2035    1.2063    -10.289    26.58    2.00     0.112    26.82    2.08     -0.570
+   BM          -         -          0.0384    1.6447    -11.570    27.14    2.56     0.084    27.30    2.56     0.950
+   Delta       delta     0.5188     0.1968    1.4939    -11.128    28.26    3.68     0.048    28.49    3.76     0.743
+   Lambda      lambda    1.0000     0.0384    1.6447    -11.570    29.14    4.56     0.031    29.38    4.64     0.950
+
+   Best model (AIC): White
+   Best model (BIC): White
+
+Models are ranked by AIC (lower is better). The ``dAIC`` column shows the
+difference from the best model, and ``AICw`` gives the Akaike weight
+(probability of being the best model). The ``R2`` column shows each model's
+effect size relative to the White (no phylogenetic structure) model. In
+this small dataset, the White model wins by AIC, but BM has R² = 0.95,
+indicating that BM explains most trait variance — with more taxa, BM
+would likely be preferred.
 
 To compare only a subset of models:
 
@@ -2408,11 +2596,35 @@ non-independence.
 
    phykit pgls -t tree_simple.tre -d tree_simple_multi_traits.tsv -y brain_size -x body_mass
 
-The output reports the slope, intercept, p-value, and R² values. The
-``r_squared`` is the variance explained by the predictor (body mass),
-while ``r_squared_phylo`` is the variance explained by phylogenetic
-relatedness alone. A significant p-value with high ``r_squared`` supports
-the brain-body allometry hypothesis even after accounting for phylogeny.
+Expected output:
+
+.. code-block:: text
+
+   Phylogenetic Generalized Least Squares (PGLS)
+
+   Formula: brain_size ~ body_mass
+
+   Coefficients:
+                           Estimate   Std.Error     t-value     p-value
+   (Intercept)               0.9972      0.0871     11.4467    0.000027    ***
+   body_mass                 0.7086      0.0451     15.7140    0.000004    ***
+   ---
+   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1
+
+   Residual standard error: 0.0250 on 6 degrees of freedom
+   Multiple R-squared: 0.9763    Adjusted R-squared: 0.9723
+   R-squared (total):   0.9988   (phylo + predictor)
+   R-squared (phylo):   0.0225   (phylogeny contribution)
+   F-statistic: 246.93 on 1 and 6 DF    p-value: 0.000004
+   Log-likelihood: 6.0558    AIC: -6.1117
+
+The slope of 0.71 means that for every 1-unit increase in log body mass,
+log brain size increases by 0.71 — consistent with allometric scaling.
+The p-value (0.000004) is highly significant. The R² decomposition reveals
+that body mass explains 97.6% of brain-size variance (``r_squared``),
+while phylogenetic relatedness alone explains only 2.3%
+(``r_squared_phylo``). The total R² of 99.9% (``r_squared_total``)
+captures both sources combined.
 
 For JSON output:
 
@@ -2437,6 +2649,17 @@ where evolutionary increases and decreases occurred:
 
    phykit cont_map -t tree_simple.tre -d tree_simple_traits.tsv -o body_mass_contmap.png
 
+.. image:: ../_static/img/tutorial18_contmap.png
+   :align: center
+   :width: 80%
+
+The contMap shows body mass reconstructed along each branch using
+Brownian motion. Warm colors indicate high body mass (bear, sea lion)
+while cool colors indicate low body mass (weasel). The color gradient
+along branches shows where evolutionary changes occurred.
+
+|
+
 **phenogram** — plot body-mass values against distance from the root,
 revealing whether trait change was gradual or punctuated:
 
@@ -2444,12 +2667,36 @@ revealing whether trait change was gradual or punctuated:
 
    phykit phenogram -t tree_simple.tre -d tree_simple_traits.tsv -o body_mass_phenogram.png
 
+.. image:: ../_static/img/tutorial18_phenogram.png
+   :align: center
+   :width: 80%
+
+The phenogram (traitgram) plots trait values on the y-axis against
+evolutionary time on the x-axis. Lineages trace from their common
+ancestor to tips, revealing the tempo and mode of body-mass evolution.
+Closely related species (e.g., bear and raccoon) converge toward their
+common ancestor's value.
+
+|
+
 **phylomorphospace** — visualize body mass and brain size simultaneously
 in phylogenetic space, with branches connecting ancestors to descendants:
 
 .. code-block:: shell
 
-   phykit phylomorphospace -t tree_simple.tre -d tree_simple_multi_traits.tsv -x body_mass -y brain_size -o morphospace.png
+   phykit phylomorphospace -t tree_simple.tre -d tree_simple_multi_traits.tsv \
+       --trait-x body_mass --trait-y brain_size --plot-output morphospace.png
+
+.. image:: ../_static/img/tutorial18_morphospace.png
+   :align: center
+   :width: 80%
+
+The phylomorphospace plots each species as a point in body-mass ×
+brain-size space, with branches connecting species through their
+reconstructed ancestors. The tight clustering along the diagonal
+confirms the strong allometric relationship detected by PGLS. The
+monkey stands apart from the carnivore cluster, reflecting its distinct
+clade membership.
 
 |
 
@@ -2551,17 +2798,40 @@ which are ambiguous.
 
    phykit consensus_network -t gene_trees_simple.nwk
 
-This reports each bipartition split, how many gene trees support it,
-and its frequency. Splits present in all gene trees are concordant;
-splits with lower frequency represent conflicting signal. For a rapid
-radiation, you might see that deep bipartitions near the root are
-supported by only 40-60% of gene trees — a hallmark of ILS.
+Expected output:
+
+.. code-block:: text
+
+   Number of input trees: 10
+   Number of taxa: 8
+   Threshold: 0.1
+   Total unique splits: 13
+   Splits above threshold: 13
+   ---
+   {cat, monkey}           10/10   1.0000
+   {cat, monkey, weasel}    9/10   0.9000
+   {sea_lion, seal}         9/10   0.9000
+   {bear, raccoon}          7/10   0.7000
+   {bear, dog, raccoon}     6/10   0.6000
+   {bear, dog}              2/10   0.2000
+   ...
+
+The output shows that {cat, monkey} is supported by all 10 gene trees
+(fully concordant), while {bear, raccoon} is supported by only 7/10.
+The {bear, dog, raccoon} clade — which places dog with bear and raccoon
+rather than as an outgroup — is supported by only 6/10 gene trees.
+These lower-frequency splits indicate where gene tree conflict is
+concentrated.
 
 Generate a visual network:
 
 .. code-block:: shell
 
    phykit consnet -t gene_trees_simple.nwk --plot-output splits_network.png
+
+.. image:: ../_static/img/tutorial19_splits_network.png
+   :align: center
+   :width: 80%
 
 Thick chords represent well-supported splits; thin chords represent
 rare alternatives. A clean star-like network suggests minimal conflict;
@@ -2574,20 +2844,24 @@ Steps 3-4 become especially important.
 **Step 2: Identify diversification patterns with LTT**
 
 Before diving into trait analyses, examine the tempo of diversification.
-For our suspected rapid radiation, the lineage-through-time (LTT) plot
+For a suspected rapid radiation, the lineage-through-time (LTT) plot
 can confirm whether most speciation events were clustered early in the
 clade's history — which would also explain the high gene tree conflict
 observed in Step 1 (short internodes produce more ILS).
 
 .. code-block:: shell
 
-   phykit ltt -t tree_simple.tre --plot-output ltt_plot.png
+   phykit ltt -t <your_rooted_tree.nwk> --plot-output ltt_plot.png
+
+Note: the ``ltt`` command requires a rooted, fully bifurcating tree.
+The sample tree used in this tutorial has a trifurcation at the root,
+so substitute your own rooted tree for this step.
 
 The gamma statistic tests whether branching events are uniformly
 distributed over time (null: constant-rate pure-birth). A significantly
-negative gamma would confirm our rapid-radiation hypothesis — most
+negative gamma would confirm a rapid-radiation hypothesis — most
 lineages originated in a short burst, leaving little time for gene tree
-coalescence and producing the discordance we observed in the splits
+coalescence and producing the discordance observed in the splits
 network.
 
 |
@@ -2606,18 +2880,33 @@ ancestral state estimates.
 
    phykit concordance_asr -t tree_simple.tre -g gene_trees_simple.nwk -d tree_simple_traits.tsv
 
-This reconstructs ancestral values at internal nodes using
-concordance-weighted estimates. Nodes with high concordance (e.g., 95%
-of gene trees agree) have narrow confidence intervals; nodes where gene
-trees disagree (e.g., the rapid-radiation node) have wider intervals
-reflecting topological uncertainty.
+Expected output:
 
-For distribution-based reconstruction and confidence intervals:
+.. code-block:: text
 
-.. code-block:: shell
+   Concordance-Aware Ancestral State Reconstruction
 
-   phykit concordance_asr -t tree_simple.tre -g gene_trees_simple.nwk \
-       -d tree_simple_traits.tsv -m distribution --ci --json
+   Method: weighted
+   Number of tips: 8
+   Number of gene trees: 10
+   Sigma-squared (BM rate): 0.043893
+
+   Ancestral estimates:
+     Node          Desc    Estimate     gCF    Var_topo   Var_param
+     N1 (root)        8      1.6447   1.000    0.000000    0.146822
+     N2               2      1.6881   0.700    0.000569    0.140151
+     N3               5      1.4878   0.857    0.005878    0.167045
+     N4               2      1.7682   0.900    0.015002    0.181806
+     N5               3      1.2674   0.900    0.001044    0.210295
+     N6               2      0.9895   1.000    0.000000    0.629294
+
+The ``gCF`` column shows the gene concordance factor — the fraction of
+gene trees that agree with the species tree at each node. Node N2 (gCF
+= 0.70) has the most discordance: only 7 of 10 gene trees support this
+bipartition. The ``Var_topo`` column captures the additional variance
+introduced by topological uncertainty. Compare N2 (Var_topo = 0.0006)
+to the root N1 (Var_topo = 0.0000, since the root is shared by all
+trees). Nodes with higher Var_topo have less certain ancestral estimates.
 
 To visualize the reconstruction on the tree:
 
@@ -2625,6 +2914,22 @@ To visualize the reconstruction on the tree:
 
    phykit concordance_asr -t tree_simple.tre -g gene_trees_simple.nwk \
        -d tree_simple_traits.tsv --plot asr_discordance.png
+
+.. image:: ../_static/img/tutorial19_concordance_asr.png
+   :align: center
+   :width: 80%
+
+The plot shows the species tree with ancestral values painted along
+branches, similar to a contMap, but incorporating the concordance-weighted
+estimates at each node. Nodes with low gCF values have more uncertain
+reconstructions.
+
+For distribution-based reconstruction and confidence intervals:
+
+.. code-block:: shell
+
+   phykit concordance_asr -t tree_simple.tre -g gene_trees_simple.nwk \
+       -d tree_simple_traits.tsv -m distribution --ci --json
 
 |
 
@@ -2647,12 +2952,34 @@ the true shared history.
    phykit phylogenetic_signal -t tree_simple.tre -d tree_simple_traits.tsv \
        -g gene_trees_simple.nwk --json
 
+.. code-block:: json
+
+   {"K": 0.5819, "p_value": 0.479, "permutations": 1000,
+    "r_squared_phylo": 0.9511,
+    "vcv_metadata": {"n_gene_trees": 10, "n_shared_taxa": 8,
+                     "psd_corrected": false}}
+
+Compare these results to the species-tree-only analysis in tutorial 18
+(K = 0.5842, R²_phylo = 0.9499). The discordance-aware values are very
+similar here because most gene trees are concordant with the species
+tree. In datasets with more discordance, the differences would be larger.
+
+The ``vcv_metadata`` field in the JSON output reports how many gene trees
+contributed to the averaged VCV and whether a positive-semidefinite
+correction was needed.
+
 **PGLS with discordance-aware VCV:**
 
 .. code-block:: shell
 
    phykit pgls -t tree_simple.tre -d tree_simple_multi_traits.tsv \
        -y brain_size -x body_mass -g gene_trees_simple.nwk --json
+
+The discordance-aware PGLS produces nearly identical results for this
+dataset (R² = 0.9749 vs. 0.9763 without gene trees), confirming that
+the brain-body allometry is robust to gene tree conflict. In datasets
+with substantial discordance, you may see changes in slope, standard
+errors, and p-values.
 
 **Model comparison with discordance-aware VCV:**
 
