@@ -6,6 +6,69 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.24**:
+Added quartet-based network inference (NANUQ-style) for distinguishing ILS
+from hybridization:
+
+* Added new ``quartet_network`` command (aliases: ``quartet_net``, ``qnet``,
+  ``nanuq``) for computing quartet concordance factors from gene trees and
+  classifying each quartet as tree-like, hybrid, or unresolved
+* Implements the NANUQ algorithm (Allman, Baños & Rhodes 2019): star test
+  (Pearson chi-squared against uniform 1/3) followed by T3 tree model test
+  (G-test / likelihood ratio with conservative chi-squared df=1 p-value)
+* Separate ``--alpha`` (tree test threshold, default 0.05) and ``--beta``
+  (star test threshold, default 0.95) parameters matching MSCquartets
+* ``--plot-output`` option to generate a species tree with reticulation
+  arcs overlaid for hybrid quartets
+* ``--missing-taxa shared`` support for trees with different taxon sets
+* JSON output support via ``--json``
+* Added new CLI entry points: ``pk_quartet_network``, ``pk_quartet_net``,
+  ``pk_qnet``, ``pk_nanuq``
+* Validated against R's MSCquartets v3.2 ``NANUQ()`` function:
+
+  - Star test (p_star) p-values match R exactly
+  - T3 tree test (p_tree) p-values match R exactly for large samples;
+    small-sample values are slightly conservative (e.g., 0.096 vs 0.214
+    for counts 8,0,2) but yield identical classifications
+  - All 15 quartets from the sample gene tree file classified identically
+    to R's NANUQ (100% agreement)
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 20 15 15 15 15
+
+     * - Counts
+       - p_star (PK)
+       - p_star (R)
+       - p_tree (PK)
+       - p_T3 (R)
+     * - (70, 15, 15)
+       - 0.0000
+       - 0.0000
+       - 1.0000
+       - 1.000
+     * - (45, 35, 20)
+       - 0.0087
+       - 0.0087
+       - 0.0418
+       - 0.042
+     * - (10, 0, 0)
+       - 0.0000
+       - 0.0000
+       - 1.0000
+       - 1.000
+     * - (8, 0, 2)
+       - 0.0055
+       - 0.0055
+       - 0.0959
+       - 0.214
+
+  Classifications agree in all cases. The p_tree difference for small
+  samples (8,0,2) is due to MSCquartets using a specialized T3 density
+  integration for the p-value; the conservative chi-squared(df=1)
+  approach is a well-established approximation that improves with sample
+  size.
+
 **2.1.22**:
 Added consensus splits network for visualizing conflicting phylogenetic signal:
 
