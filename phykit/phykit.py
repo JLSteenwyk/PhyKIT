@@ -242,6 +242,9 @@ class Phykit:
                     - prints ascii tree
                 prune_tree (alias: prune)
                     - prune taxa from a phylogeny
+                relative_rate_test (alias: rrt; tajima_rrt)
+                    - Tajima's relative rate test for equal evolutionary
+                      rates between two ingroup lineages
                 rename_tree_tips (alias: rename_tree; rename_tips)
                     - renames tips in a phylogeny according to a file with
                       the desired new tip names
@@ -3797,6 +3800,66 @@ class Phykit:
         _run_service(parser, argv, PruneTree)
 
     @staticmethod
+    def relative_rate_test(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Tajima's relative rate test.
+
+                Tests whether two ingroup lineages evolve at
+                equal rates relative to an outgroup.  The tree
+                must be rooted with a single outgroup taxon.
+                All pairwise ingroup comparisons are performed
+                with Bonferroni and BH-FDR correction.
+
+                Provide either a single alignment (-a) or a
+                file listing multiple alignment paths (-l) for
+                batch (multi-gene) analysis.
+
+                Aliases:
+                  relative_rate_test, rrt, tajima_rrt
+                Command line interfaces:
+                  pk_relative_rate_test, pk_rrt, pk_tajima_rrt
+
+                Usage:
+                phykit relative_rate_test (-a <alignment> | -l <alignment_list>) -t <tree> [-v/--verbose] [--json]
+
+                Options
+                =====================================================
+                -a/--alignment              a single alignment file
+
+                -l/--alignment-list         a file listing alignment
+                                            paths (one per line)
+
+                -t/--tree                   a rooted tree file
+                                            (required)
+
+                -v/--verbose                print detailed output
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        aln_group = parser.add_mutually_exclusive_group()
+        aln_group.add_argument(
+            "-a", "--alignment", type=str, required=False, help=SUPPRESS, metavar=""
+        )
+        aln_group.add_argument(
+            "-l", "--alignment-list", dest="alignment_list", type=str, required=False, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, RelativeRateTest)
+
+    @staticmethod
     def rename_tree_tips(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4771,6 +4834,10 @@ def consensus_tree(argv=None):
 
 def prune_tree(argv=None):
     Phykit.prune_tree(sys.argv[1:])
+
+
+def relative_rate_test(argv=None):
+    Phykit.relative_rate_test(sys.argv[1:])
 
 
 def rename_tree_tips(argv=None):

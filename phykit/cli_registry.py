@@ -112,6 +112,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "quartet_net": "quartet_network",
     "qnet": "quartet_network",
     "nanuq": "quartet_network",
+    "rrt": "relative_rate_test",
+    "tajima_rrt": "relative_rate_test",
     "polyt_test": "polytomy_test",
     "ptt": "polytomy_test",
     "polyt": "polytomy_test",

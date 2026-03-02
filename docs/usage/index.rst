@@ -2528,6 +2528,58 @@ Options: |br|
 Alignment- and tree-based functions
 -----------------------------------
 
+Relative rate test
+##################
+Function names: relative_rate_test; rrt; tajima_rrt |br|
+Command line interface: pk_relative_rate_test; pk_rrt; pk_tajima_rrt
+
+Tajima's relative rate test (Tajima, *Genetics*, 1993).
+
+Tests whether two ingroup lineages have evolved at equal rates
+since diverging from their common ancestor. The outgroup is
+automatically inferred from the rooted tree as the earliest-diverging
+taxon (the single taxon on the smaller side of the root split).
+All pairwise ingroup combinations are tested with Bonferroni
+and Benjamini-Hochberg FDR multiple testing correction.
+
+At each alignment column, the test classifies informative sites:
+
+- **m1**: the first ingroup taxon differs from the outgroup, but the second matches
+- **m2**: the second ingroup taxon differs from the outgroup, but the first matches
+- Sites where both differ or both match the outgroup are uninformative and skipped
+- Sites with gaps or ambiguous characters are skipped
+
+Test statistic: ``chi2 = (m1 - m2)^2 / (m1 + m2)``, with 1 degree of freedom.
+
+**Single alignment mode:**
+
+.. code-block:: shell
+
+   phykit relative_rate_test -a <alignment> -t <rooted_tree> [-v/--verbose] [--json]
+
+**Batch mode (multiple alignments, one shared tree):**
+
+.. code-block:: shell
+
+   phykit relative_rate_test -l <alignment_list> -t <rooted_tree> [-v/--verbose] [--json]
+
+Options: |br|
+*-a/\\-\\-alignment*: a single alignment file |br|
+*-l/\\-\\-alignment-list*: a file with one alignment path per line (batch mode) |br|
+*-t/\\-\\-tree*: a rooted tree file |br|
+*-v/\\-\\-verbose*: print additional detail |br|
+*--json*: optional argument to print results as JSON
+
+Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
+raw p-value, Bonferroni-corrected p-value, FDR-corrected p-value, and a
+significance indicator. Batch mode aggregates across genes, reporting the
+number and percentage of genes rejecting equal rates for each pair.
+
+Validated against R's ``pegas::rr.test()`` — chi-squared and p-values
+match to machine precision.
+
+|
+
 Saturation
 ##########
 Function names: saturation; sat |br|

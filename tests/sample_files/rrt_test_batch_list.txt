@@ -1,0 +1,2 @@
+tests/sample_files/rrt_test_batch_1.fa
+tests/sample_files/rrt_test_batch_2.fa
