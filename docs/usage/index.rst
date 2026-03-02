@@ -158,6 +158,7 @@ Trait evolution
 ###############
 
 - :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>` -- Reconstruct ancestral character states
+- :ref:`Concordance-aware ASR <cmd-concordance_asr>` -- ASR incorporating gene tree discordance
 - :ref:`Continuous trait mapping (contMap) <cmd-cont_map>` -- Map continuous traits onto a phylogeny
 - :ref:`Density map <cmd-density_map>` -- Posterior density of stochastic character maps
 - :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>` -- Compare continuous trait evolution models
@@ -1095,6 +1096,49 @@ Options: |br|
 *-m/\\-\\-method*: method to use: ``fast`` or ``ml`` (default: ``fast``) |br|
 *--ci*: include 95% confidence intervals |br|
 *--plot*: output path for contMap plot (requires matplotlib) |br|
+*--json*: output results as JSON
+
+|
+
+.. _cmd-concordance_asr:
+
+Concordance-aware ancestral state reconstruction
+#################################################
+Function names: concordance_asr; conc_asr; casr |br|
+Command line interface: pk_concordance_asr; pk_conc_asr; pk_casr
+
+Concordance-aware ancestral state reconstruction that incorporates gene
+tree discordance into ancestral estimates. Standard ASR operates on a
+single species tree and ignores gene tree conflict. This command propagates
+topological uncertainty from gene tree discordance into ancestral state
+estimates using gene concordance factors (gCF).
+
+Two strategies are available:
+
+- **weighted** (default): For each internal node, compute gCF (fraction of
+  gene trees supporting the species-tree bipartition) and gDF1, gDF2
+  (fractions for NNI alternatives). Run ASR on the species tree and NNI
+  alternative trees, then combine estimates weighted by concordance. Uses the
+  law of total variance to separate topological vs parameter uncertainty.
+- **distribution**: Run ASR independently on each gene tree, map nodes across
+  trees by descendant-set identity, and report concordance-weighted means with
+  percentile confidence intervals (2.5th--97.5th).
+
+.. code-block:: shell
+
+   phykit concordance_asr -t <species_tree> -g <gene_trees> -d <trait_data>
+       [-c <trait>] [-m weighted|distribution] [--ci]
+       [--plot <output>] [--missing-taxa error|shared] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: species tree file |br|
+*-g/\\-\\-gene-trees*: file with gene trees (multi-Newick, one per line) |br|
+*-d/\\-\\-trait_data*: trait data file (two-column or multi-trait with header) |br|
+*-c/\\-\\-trait*: trait column name (required for multi-trait files) |br|
+*-m/\\-\\-method*: method to use: ``weighted`` or ``distribution`` (default: ``weighted``) |br|
+*--ci*: include 95% confidence intervals |br|
+*--plot*: output path for concordance ASR plot |br|
+*--missing-taxa*: how to handle taxa mismatches: ``shared`` (default, prune to intersection) or ``error`` (reject) |br|
 *--json*: output results as JSON
 
 |

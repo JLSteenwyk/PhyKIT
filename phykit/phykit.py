@@ -163,6 +163,9 @@ class Phykit:
                 ancestral_state_reconstruction (alias: asr; anc_recon)
                     - estimate ancestral states for continuous traits using
                       ML (fast or VCV-based) with optional contMap plot
+                concordance_asr (alias: conc_asr; casr)
+                    - concordance-aware ancestral state reconstruction
+                      incorporating gene tree discordance
                 bipartition_support_stats (alias: bss)
                     - calculates summary statistics for bipartition support
                 branch_length_multiplier (alias: blm)
@@ -1543,6 +1546,98 @@ class Phykit:
         )
         _add_json_argument(parser)
         _run_service(parser, argv, AncestralReconstruction)
+
+    @staticmethod
+    def concordance_asr(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Concordance-aware ancestral state reconstruction (ASR)
+                that incorporates gene tree discordance into ancestral
+                estimates. Standard ASR operates on a single species tree
+                and ignores gene tree conflict. This command propagates
+                topological uncertainty from gene tree discordance into
+                ancestral state estimates using gene concordance factors.
+
+                Two methods are available:
+                - weighted (default): concordance-weighted ASR on the
+                  species tree with NNI alternatives, using law of total
+                  variance to separate topological vs parameter uncertainty
+                - distribution: reconstruct on each gene tree independently,
+                  map nodes by descendant-set identity, report concordance-
+                  weighted means and percentile CIs
+
+                Aliases:
+                  concordance_asr, conc_asr, casr
+                Command line interfaces:
+                  pk_concordance_asr, pk_conc_asr, pk_casr
+
+                Usage:
+                phykit concordance_asr -t <species_tree> -g <gene_trees> -d <trait_data>
+                    [-c <trait>] [-m weighted|distribution] [--ci]
+                    [--plot <output>] [--missing-taxa error|shared] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   species tree file
+
+                -g/--gene-trees             file with gene trees (multi-
+                                            Newick, one per line)
+
+                -d/--trait_data             trait data file (2-column or
+                                            multi-trait with header)
+
+                -c/--trait                  trait column name (required
+                                            for multi-trait files)
+
+                -m/--method                 method: weighted or distribution
+                                            (default: weighted)
+
+                --ci                        include 95%% confidence
+                                            intervals
+
+                --plot                      output path for concordance
+                                            ASR plot
+
+                --missing-taxa              how to handle taxa mismatches:
+                                            shared (default) or error
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-c", "--trait", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-m", "--method", type=str, required=False, default="weighted",
+            choices=["weighted", "distribution"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--ci", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--missing-taxa", type=str, required=False, default="shared",
+            choices=["error", "shared"], help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, ConcordanceAsr)
 
     @staticmethod
     def bipartition_support_stats(argv):
@@ -4947,6 +5042,10 @@ def variable_sites(argv=None):
 # Tree-based functions
 def ancestral_state_reconstruction(argv=None):
     Phykit.ancestral_state_reconstruction(sys.argv[1:])
+
+
+def concordance_asr(argv=None):
+    Phykit.concordance_asr(sys.argv[1:])
 
 
 def bipartition_support_stats(argv=None):

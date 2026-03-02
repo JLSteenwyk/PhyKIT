@@ -38,6 +38,7 @@ _EXPORTS = {
     "Treeness": "treeness",
     "ThresholdModel": "threshold_model",
     "TreenessOverRCV": "treeness_over_rcv",
+    "ConcordanceAsr": "concordance_asr",
 }
 
 __all__ = list(_EXPORTS.keys())

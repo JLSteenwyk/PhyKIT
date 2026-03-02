@@ -88,6 +88,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "pglm": "phylogenetic_glm",
     "asr": "ancestral_state_reconstruction",
     "anc_recon": "ancestral_state_reconstruction",
+    "conc_asr": "concordance_asr",
+    "casr": "concordance_asr",
     "simmap": "stochastic_character_map",
     "scm": "stochastic_character_map",
     "contmap": "cont_map",

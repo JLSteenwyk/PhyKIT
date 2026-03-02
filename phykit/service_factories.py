@@ -43,6 +43,7 @@ SumOfPairsScore = _LazyServiceFactory("phykit.services.alignment.sum_of_pairs_sc
 VariableSites = _LazyServiceFactory("phykit.services.alignment.variable_sites", "VariableSites")
 
 AncestralReconstruction = _LazyServiceFactory("phykit.services.tree.ancestral_reconstruction", "AncestralReconstruction")
+ConcordanceAsr = _LazyServiceFactory("phykit.services.tree.concordance_asr", "ConcordanceAsr")
 
 # Tree service loaders
 BipartitionSupportStats = _LazyServiceFactory("phykit.services.tree.bipartition_support_stats", "BipartitionSupportStats")

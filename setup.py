@@ -103,6 +103,9 @@ setup(
             "pk_ancestral_state_reconstruction = phykit.phykit:ancestral_state_reconstruction", # Tree-based functions
             "pk_asr = phykit.phykit:ancestral_state_reconstruction",
             "pk_anc_recon = phykit.phykit:ancestral_state_reconstruction",
+            "pk_concordance_asr = phykit.phykit:concordance_asr",
+            "pk_conc_asr = phykit.phykit:concordance_asr",
+            "pk_casr = phykit.phykit:concordance_asr",
             "pk_bipartition_support_stats = phykit.phykit:bipartition_support_stats",
             "pk_bss = phykit.phykit:bipartition_support_stats",
             "pk_branch_length_multiplier = phykit.phykit:branch_length_multiplier",
