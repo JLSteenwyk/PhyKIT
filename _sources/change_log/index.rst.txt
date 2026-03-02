@@ -6,6 +6,26 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.31**:
+Added evolutionary tempo mapping command (``evo_tempo_map`` / ``etm``) for
+detecting rate-topology associations in phylogenomic datasets:
+
+* Compares branch length distributions between concordant and discordant
+  gene trees at each species tree branch via bipartition matching
+* Tests for differences using Mann-Whitney U and permutation tests with
+  Benjamini-Hochberg FDR correction across branches
+* Reports global treeness (internal/total branch length ratio) comparison
+  between concordant and discordant gene trees
+* Optional ``--plot`` flag generates a grouped box/strip plot showing
+  concordant vs. discordant branch lengths per species tree branch
+* Supports ``--json`` and ``-v/--verbose`` output modes
+* Cross-validated against existing PhyKIT tools: bipartition matching
+  matches ``concordance_asr`` gCF, treeness matches ``treeness`` command,
+  FDR correction matches ``relative_rate_test``
+* Updated tutorial 19 (gene tree discordance pipeline) with a new
+  evolutionary tempo mapping step including expected output and figures
+* Enhanced command reference documentation with example output and plot
+
 **2.1.30**:
 Added phylogenetic effect size (R² variance decomposition) to all
 phylogenetic comparative method commands:

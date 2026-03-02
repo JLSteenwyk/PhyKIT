@@ -80,6 +80,26 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.31</strong>:
+Added evolutionary tempo mapping command (<code class="docutils literal notranslate"><span class="pre">evo_tempo_map</span></code> / <code class="docutils literal notranslate"><span class="pre">etm</span></code>) for
+detecting rate-topology associations in phylogenomic datasets:</p>
+<ul class="simple">
+<li><p>Compares branch length distributions between concordant and discordant
+gene trees at each species tree branch via bipartition matching</p></li>
+<li><p>Tests for differences using Mann-Whitney U and permutation tests with
+Benjamini-Hochberg FDR correction across branches</p></li>
+<li><p>Reports global treeness (internal/total branch length ratio) comparison
+between concordant and discordant gene trees</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot</span></code> flag generates a grouped box/strip plot showing
+concordant vs. discordant branch lengths per species tree branch</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">--json</span></code> and <code class="docutils literal notranslate"><span class="pre">-v/--verbose</span></code> output modes</p></li>
+<li><p>Cross-validated against existing PhyKIT tools: bipartition matching
+matches <code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code> gCF, treeness matches <code class="docutils literal notranslate"><span class="pre">treeness</span></code> command,
+FDR correction matches <code class="docutils literal notranslate"><span class="pre">relative_rate_test</span></code></p></li>
+<li><p>Updated tutorial 19 (gene tree discordance pipeline) with a new
+evolutionary tempo mapping step including expected output and figures</p></li>
+<li><p>Enhanced command reference documentation with example output and plot</p></li>
+</ul>
 <p><strong>2.1.30</strong>:
 Added phylogenetic effect size (R² variance decomposition) to all
 phylogenetic comparative method commands:</p>
