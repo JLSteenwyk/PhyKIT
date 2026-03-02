@@ -76,6 +76,7 @@ FitContinuous = _LazyServiceFactory("phykit.services.tree.fit_continuous", "FitC
 OUwie = _LazyServiceFactory("phykit.services.tree.ouwie", "OUwie")
 OUShiftDetection = _LazyServiceFactory("phykit.services.tree.ou_shift_detection", "OUShiftDetection")
 QuartetNetwork = _LazyServiceFactory("phykit.services.tree.quartet_network", "QuartetNetwork")
+NetworkSignal = _LazyServiceFactory("phykit.services.tree.network_signal", "NetworkSignal")
 RelativeRateTest = _LazyServiceFactory("phykit.services.tree.relative_rate_test", "RelativeRateTest")
 PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "PolytomyTest")
 PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")

@@ -235,6 +235,8 @@ class Phykit:
                 quartet_network (alias: quartet_net; qnet; nanuq)
                     - quartet-based network inference (NANUQ-style)
                       distinguishing ILS from hybridization
+                network_signal (alias: netsig; net_signal)
+                    - phylogenetic signal on a network
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -3743,6 +3745,96 @@ class Phykit:
         _run_service(parser, argv, QuartetNetwork)
 
     @staticmethod
+    def network_signal(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Phylogenetic signal on a network.
+
+                Measures phylogenetic signal (Bloomberg's K and/or
+                Pagel's lambda) on a phylogenetic network by
+                incorporating hybrid edges inferred from quartet
+                concordance factors.
+
+                Hybrid edges can be specified directly (--hybrid)
+                or loaded from a quartet network JSON file
+                (--quartet-json).
+
+                Aliases:
+                  network_signal, netsig, net_signal
+                Command line interfaces:
+                  pk_network_signal, pk_netsig, pk_net_signal
+
+                Usage:
+                phykit network_signal -t <tree> -d <trait_data>
+                    (--hybrid <P H1 H2 gamma> | --quartet-json <file>)
+                    [--method both|blombergs_k|lambda]
+                    [--permutations 1000] [-v/--verbose] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a phylogeny file
+                                            (required)
+
+                -d/--trait-data             tab-delimited trait data
+                                            file (required)
+
+                --hybrid                    hybrid specification:
+                                            parent hybrid child1
+                                            child2 gamma (nargs +)
+
+                --quartet-json              path to quartet network
+                                            JSON output file
+
+                --method                    which signal measure to
+                                            compute: both, blombergs_k,
+                                            or lambda
+                                            (Default: both)
+
+                --permutations              number of permutations
+                                            for significance testing
+                                            (Default: 1000)
+
+                -v/--verbose                print detailed output
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS)
+        parser.add_argument("-d", "--trait-data", type=str, required=True, help=SUPPRESS)
+        hybrid_group = parser.add_mutually_exclusive_group(required=True)
+        hybrid_group.add_argument(
+            "--hybrid", nargs="+", type=str, help=SUPPRESS
+        )
+        hybrid_group.add_argument(
+            "--quartet-json", type=str, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--method",
+            type=str,
+            choices=["both", "blombergs_k", "lambda"],
+            default="both",
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--permutations",
+            type=int,
+            default=1000,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, NetworkSignal)
+
+    @staticmethod
     def prune_tree(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4832,6 +4924,10 @@ def consensus_network(argv=None):
 
 def quartet_network(argv=None):
     Phykit.quartet_network(sys.argv[1:])
+
+
+def network_signal(argv=None):
+    Phykit.network_signal(sys.argv[1:])
 
 
 def consensus_tree(argv=None):
