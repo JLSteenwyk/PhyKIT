@@ -6,6 +6,20 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.25**:
+Added Tajima's relative rate test:
+
+* Added new ``relative_rate_test`` command (aliases: ``rrt``, ``tajima_rrt``)
+  for testing whether two lineages evolved at equal rates
+* Implements Tajima's (1993) chi-squared test on unique substitution counts
+  (m1/m2) relative to an outgroup
+* Single alignment mode (``-a``) and batch mode (``-l``) for multi-gene analysis
+* Automatic outgroup inference from rooted tree
+* Bonferroni and Benjamini-Hochberg FDR multiple testing correction
+* JSON output support via ``--json``
+* Validated against R's ``pegas::rr.test()``: chi-squared statistics and
+  p-values match to machine precision (< 1e-8 difference)
+
 **2.1.24**:
 Added quartet-based network inference (NANUQ-style) for distinguishing ILS
 from hybridization:

@@ -19,6 +19,7 @@ _EXPORTS = {
     "NearestNeighborInterchange": "nearest_neighbor_interchange",
     "PatristicDistances": "patristic_distances",
     "QuartetNetwork": "quartet_network",
+    "RelativeRateTest": "relative_rate_test",
     "PolytomyTest": "polytomy_test",
     "PrintTree": "print_tree",
     "PruneTree": "prune_tree",
