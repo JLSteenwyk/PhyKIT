@@ -2568,12 +2568,40 @@ Options: |br|
 *-l/\\-\\-alignment-list*: a file with one alignment path per line (batch mode) |br|
 *-t/\\-\\-tree*: a rooted tree file |br|
 *-v/\\-\\-verbose*: print additional detail |br|
+*--plot-output*: save a pairwise p-value heatmap to this path |br|
 *--json*: optional argument to print results as JSON
 
 Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
 raw p-value, Bonferroni-corrected p-value, FDR-corrected p-value, and a
 significance indicator. Batch mode aggregates across genes, reporting the
 number and percentage of genes rejecting equal rates for each pair.
+
+When ``--plot-output`` is provided, a symmetric heatmap of
+-log10(FDR-corrected p-values) is saved. Cells with significant
+pairs (FDR < 0.05) are marked with an asterisk. Darker colors
+indicate stronger evidence for unequal evolutionary rates.
+The dashed line on the colorbar marks the significance threshold
+(-log10(0.05) ≈ 1.3); cells above this line are significant.
+
+**Equal rates** — all taxa evolve at similar rates, so no pairwise
+comparison reaches significance. The heatmap is uniformly pale with no
+asterisks:
+
+.. image:: ../_static/img/rrt_equal_rates.png
+   :align: center
+   :width: 80%
+
+|
+
+**Unequal rates** — taxa B and C have accumulated many more substitutions
+than A and D. Significant pairs (dark red, marked with ``*``) indicate
+lineages evolving at detectably different rates:
+
+.. image:: ../_static/img/rrt_unequal_rates.png
+   :align: center
+   :width: 80%
+
+|
 
 Validated against R's ``pegas::rr.test()`` — chi-squared and p-values
 match to machine precision.

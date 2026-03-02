@@ -2371,11 +2371,34 @@ and Benjamini-Hochberg FDR multiple testing correction.</p>
 <em>-l/\-\-alignment-list</em>: a file with one alignment path per line (batch mode) <br/>
 <em>-t/\-\-tree</em>: a rooted tree file <br/>
 <em>-v/\-\-verbose</em>: print additional detail <br/>
+<em>--plot-output</em>: save a pairwise p-value heatmap to this path <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
 raw p-value, Bonferroni-corrected p-value, FDR-corrected p-value, and a
 significance indicator. Batch mode aggregates across genes, reporting the
 number and percentage of genes rejecting equal rates for each pair.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> is provided, a symmetric heatmap of
+-log10(FDR-corrected p-values) is saved. Cells with significant
+pairs (FDR &lt; 0.05) are marked with an asterisk. Darker colors
+indicate stronger evidence for unequal evolutionary rates.
+The dashed line on the colorbar marks the significance threshold
+(-log10(0.05) ≈ 1.3); cells above this line are significant.</p>
+<p><strong>Equal rates</strong> — all taxa evolve at similar rates, so no pairwise
+comparison reaches significance. The heatmap is uniformly pale with no
+asterisks:</p>
+<a class="reference internal image-reference" href="../_images/rrt_equal_rates.png"><img alt="../_images/rrt_equal_rates.png" class="align-center" src="../_images/rrt_equal_rates.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Unequal rates</strong> — taxa B and C have accumulated many more substitutions
+than A and D. Significant pairs (dark red, marked with <code class="docutils literal notranslate"><span class="pre">*</span></code>) indicate
+lineages evolving at detectably different rates:</p>
+<a class="reference internal image-reference" href="../_images/rrt_unequal_rates.png"><img alt="../_images/rrt_unequal_rates.png" class="align-center" src="../_images/rrt_unequal_rates.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 <p>Validated against R's <code class="docutils literal notranslate"><span class="pre">pegas::rr.test()</span></code> — chi-squared and p-values
 match to machine precision.</p>
 <div class="line-block">
