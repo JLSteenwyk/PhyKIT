@@ -1,0 +1,58 @@
+{
+  "input_tree_count": 10,
+  "taxa": ["A", "B", "C", "D", "E"],
+  "alpha": 0.05,
+  "beta": 0.95,
+  "total_quartets": 5,
+  "tree_count": 4,
+  "hybrid_count": 1,
+  "unresolved_count": 0,
+  "pruned_to_shared_taxa": false,
+  "quartets": [
+    {
+      "taxa": ["A", "B", "C", "D"],
+      "counts": [8, 1, 1],
+      "cfs": [0.8, 0.1, 0.1],
+      "classification": "tree",
+      "p_star": 0.001,
+      "p_tree": 0.5,
+      "dominant_topology": "{A, B} | {C, D}"
+    },
+    {
+      "taxa": ["A", "B", "C", "E"],
+      "counts": [8, 1, 1],
+      "cfs": [0.8, 0.1, 0.1],
+      "classification": "tree",
+      "p_star": 0.001,
+      "p_tree": 0.5,
+      "dominant_topology": "{A, B} | {C, E}"
+    },
+    {
+      "taxa": ["A", "B", "D", "E"],
+      "counts": [6, 3, 1],
+      "cfs": [0.6, 0.3, 0.1],
+      "classification": "hybrid",
+      "p_star": 0.01,
+      "p_tree": 0.02,
+      "dominant_topology": "{A, B} | {D, E}"
+    },
+    {
+      "taxa": ["A", "C", "D", "E"],
+      "counts": [7, 2, 1],
+      "cfs": [0.7, 0.2, 0.1],
+      "classification": "tree",
+      "p_star": 0.001,
+      "p_tree": 0.3,
+      "dominant_topology": "{A, C} | {D, E}"
+    },
+    {
+      "taxa": ["B", "C", "D", "E"],
+      "counts": [7, 2, 1],
+      "cfs": [0.7, 0.2, 0.1],
+      "classification": "tree",
+      "p_star": 0.001,
+      "p_tree": 0.3,
+      "dominant_topology": "{B, C} | {D, E}"
+    }
+  ]
+}
