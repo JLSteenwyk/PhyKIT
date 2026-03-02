@@ -183,81 +183,222 @@ class ConsensusNetwork(Tree):
         return sorted(all_taxa)
 
     # ------------------------------------------------------------------
-    # Visualization
+    # Visualization: Planar Splits Graph
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _is_circular_split(split, ordering):
+        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+        n = len(ordering)
+        gaps = 0
+        for i in range(n):
+            curr = ordering[i]
+            nxt = ordering[(i + 1) % n]
+            if (curr in split) != (nxt in split):
+                gaps += 1
+        return gaps == 2
+
+    @staticmethod
+    def _compute_split_directions(ordering, circular_splits):
+        """Compute 2D direction vectors for each circular split."""
+        n = len(ordering)
+        angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
+        directions = {}
+        for split, count, freq in circular_splits:
+            gap_positions = []
+            for i in range(n):
+                curr = ordering[i]
+                nxt = ordering[(i + 1) % n]
+                if (curr in split) != (nxt in split):
+                    gap_positions.append(i)
+            if len(gap_positions) != 2:
+                continue
+            # Gap midpoint angles on the unit circle
+            g1 = math.pi * (2 * gap_positions[0] + 1) / n
+            g2 = math.pi * (2 * gap_positions[1] + 1) / n
+            # Chord between gap midpoints
+            cx = math.cos(g2) - math.cos(g1)
+            cy = math.sin(g2) - math.sin(g1)
+            # Perpendicular direction (rotated 90 degrees)
+            dx = -cy
+            dy = cx
+            length = math.sqrt(dx * dx + dy * dy)
+            if length > 1e-10:
+                dx /= length
+                dy /= length
+            else:
+                dx, dy = 1.0, 0.0
+            # Orient toward the canonical (positive / smaller) side
+            cx_split = sum(math.cos(angles[t]) for t in split) / len(split)
+            cy_split = sum(math.sin(angles[t]) for t in split) / len(split)
+            if dx * cx_split + dy * cy_split < 0:
+                dx = -dx
+                dy = -dy
+            directions[split] = (dx, dy)
+        return directions
+
+    @staticmethod
+    def _build_splits_graph(circular_splits, all_taxa):
+        """Build the Buneman splits graph: valid sign vectors and edges.
+
+        Returns (taxon_signs, valid_nodes, edges, splits_list, weights).
+        """
+        splits_list = [s[0] for s in circular_splits]
+        weights = [s[2] for s in circular_splits]
+        n_splits = len(splits_list)
+        if n_splits == 0:
+            return {}, set(), [], [], []
+        # Each taxon's sign vector: +1 if in canonical side, -1 otherwise
+        taxon_signs = {}
+        for taxon in all_taxa:
+            signs = tuple(1 if taxon in sp else -1 for sp in splits_list)
+            taxon_signs[taxon] = signs
+        # Pairwise forbidden sign combinations
+        forbidden = {}
+        for i in range(n_splits):
+            for j in range(i + 1, n_splits):
+                si_pos = splits_list[i]
+                si_neg = all_taxa - si_pos
+                sj_pos = splits_list[j]
+                sj_neg = all_taxa - sj_pos
+                fb = set()
+                if not (si_pos & sj_pos):
+                    fb.add((1, 1))
+                if not (si_pos & sj_neg):
+                    fb.add((1, -1))
+                if not (si_neg & sj_pos):
+                    fb.add((-1, 1))
+                if not (si_neg & sj_neg):
+                    fb.add((-1, -1))
+                if fb:
+                    forbidden[(i, j)] = fb
+        # Enumerate valid sign vectors
+        valid_nodes = set()
+        for combo in range(2 ** n_splits):
+            signs = tuple(1 if (combo >> j) & 1 else -1 for j in range(n_splits))
+            valid = True
+            for (i, j), fb_pairs in forbidden.items():
+                if (signs[i], signs[j]) in fb_pairs:
+                    valid = False
+                    break
+            if valid:
+                valid_nodes.add(signs)
+        # Ensure taxon sign vectors are included
+        for signs in taxon_signs.values():
+            valid_nodes.add(signs)
+        # Edges: connect nodes differing in exactly one split
+        edges = []
+        valid_list = list(valid_nodes)
+        for i in range(len(valid_list)):
+            for j in range(i + 1, len(valid_list)):
+                s1 = valid_list[i]
+                s2 = valid_list[j]
+                diff = [k for k in range(n_splits) if s1[k] != s2[k]]
+                if len(diff) == 1:
+                    edges.append((s1, s2, diff[0]))
+        return taxon_signs, valid_nodes, edges, splits_list, weights
+
     def _draw_network(self, ordering: List[str], filtered_splits, all_taxa: frozenset, output_path: str):
+        """Draw a planar splits graph using matplotlib."""
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-        import numpy as np
 
         n = len(ordering)
         angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
 
+        # Filter to circular splits only
+        circular_splits = [
+            (split, count, freq)
+            for split, count, freq in filtered_splits
+            if self._is_circular_split(split, ordering)
+        ]
+
+        # Compute direction vectors
+        directions = self._compute_split_directions(ordering, circular_splits)
+
+        # Keep only splits that have computed directions
+        circular_splits = [
+            (split, count, freq)
+            for split, count, freq in circular_splits
+            if split in directions
+        ]
+
+        # Build splits graph
+        taxon_signs, valid_nodes, edges, splits_list, weights = self._build_splits_graph(
+            circular_splits, all_taxa
+        )
+
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
 
-        # Draw taxa labels on circle
-        radius = 1.0
-        label_radius = 1.15
-        for taxon in ordering:
-            angle = angles[taxon]
-            x = radius * math.cos(angle)
-            y = radius * math.sin(angle)
-            ax.plot(x, y, "o", color="black", markersize=6, zorder=3)
-
-            lx = label_radius * math.cos(angle)
-            ly = label_radius * math.sin(angle)
-            # Rotate label to face outward
-            deg = math.degrees(angle)
-            ha = "left" if -90 < deg < 90 or deg > 270 else "right"
-            rotation = deg if -90 < deg < 90 else deg - 180
-            if deg > 270:
-                rotation = deg - 360
-            ax.text(lx, ly, taxon, ha=ha, va="center", fontsize=10, rotation=rotation)
-
-        # Draw circle outline
-        theta = np.linspace(0, 2 * np.pi, 200)
-        ax.plot(radius * np.cos(theta), radius * np.sin(theta), "-", color="lightgray", linewidth=0.5, zorder=1)
-
-        # Draw split chords
-        if filtered_splits:
-            max_freq = max(fs[2] for fs in filtered_splits)
+        if not splits_list:
+            # No splits: place taxa evenly on a circle
+            for taxon in ordering:
+                angle = angles[taxon]
+                x = math.cos(angle)
+                y = math.sin(angle)
+                deg = math.degrees(angle)
+                ha = "left" if -90 < deg < 90 or deg > 270 else "right"
+                ax.text(x, y, taxon, ha=ha, va="center", fontsize=10)
         else:
-            max_freq = 1.0
+            # Compute node positions: pos = sum(sign_i * weight_i * dir_i) / 2
+            node_positions = {}
+            for node in valid_nodes:
+                x, y = 0.0, 0.0
+                for i, sp in enumerate(splits_list):
+                    dx, dy = directions[sp]
+                    x += node[i] * weights[i] * dx / 2
+                    y += node[i] * weights[i] * dy / 2
+                node_positions[node] = (x, y)
 
-        position_index = {taxon: i for i, taxon in enumerate(ordering)}
+            # Pendant edge length proportional to graph extent
+            all_x = [p[0] for p in node_positions.values()]
+            all_y = [p[1] for p in node_positions.values()]
+            extent = max(
+                max(all_x) - min(all_x) if all_x else 0,
+                max(all_y) - min(all_y) if all_y else 0,
+            )
+            pendant_len = max(0.15, extent * 0.3)
 
-        for split, count, freq in filtered_splits:
-            complement = all_taxa - split
-            # Find boundary points: positions where a split-member and
-            # complement-member are adjacent in the circular ordering.
-            boundary_midpoints = []
-            for i in range(n):
-                curr = ordering[i]
-                nxt = ordering[(i + 1) % n]
-                if (curr in split and nxt in complement) or (curr in complement and nxt in split):
-                    mid_angle = (angles[curr] + angles[nxt]) / 2
-                    # Handle wrap-around
-                    if abs(angles[curr] - angles[nxt]) > math.pi:
-                        mid_angle += math.pi
-                    boundary_midpoints.append(mid_angle)
+            # Draw internal edges
+            for s1, s2, split_idx in edges:
+                x1, y1 = node_positions[s1]
+                x2, y2 = node_positions[s2]
+                ax.plot([x1, x2], [y1, y2], "-", color="black", linewidth=1.5, zorder=2)
 
-            # Draw chords between boundary midpoints
-            alpha = 0.3 + 0.7 * (freq / max_freq)
-            linewidth = 1.0 + 3.0 * (freq / max_freq)
-            for i in range(len(boundary_midpoints)):
-                for j in range(i + 1, len(boundary_midpoints)):
-                    a1, a2 = boundary_midpoints[i], boundary_midpoints[j]
-                    x1 = radius * math.cos(a1)
-                    y1 = radius * math.sin(a1)
-                    x2 = radius * math.cos(a2)
-                    y2 = radius * math.sin(a2)
-                    ax.plot([x1, x2], [y1, y2], "-", color="steelblue", alpha=alpha, linewidth=linewidth, zorder=2)
+            # Draw pendant edges and taxon labels
+            for taxon in ordering:
+                angle = angles[taxon]
+                if taxon in taxon_signs and taxon_signs[taxon] in node_positions:
+                    nx, ny = node_positions[taxon_signs[taxon]]
+                else:
+                    nx, ny = 0.0, 0.0
+                tx = nx + pendant_len * math.cos(angle)
+                ty = ny + pendant_len * math.sin(angle)
+                ax.plot([nx, tx], [ny, ty], "-", color="black", linewidth=1.5, zorder=2)
+                lx = tx + 0.03 * math.cos(angle)
+                ly = ty + 0.03 * math.sin(angle)
+                deg = math.degrees(angle)
+                ha = "left" if -90 < deg < 90 or deg > 270 else "right"
+                ax.text(lx, ly, taxon, ha=ha, va="center", fontsize=10, zorder=4)
 
-        ax.set_xlim(-1.5, 1.5)
-        ax.set_ylim(-1.5, 1.5)
+            # Frequency labels on internal edges (one per split)
+            labeled_splits = set()
+            for s1, s2, split_idx in edges:
+                if split_idx not in labeled_splits:
+                    x1, y1 = node_positions[s1]
+                    x2, y2 = node_positions[s2]
+                    mx = (x1 + x2) / 2
+                    my = (y1 + y2) / 2
+                    freq = weights[split_idx]
+                    ax.text(
+                        mx, my, f"{freq:.2f}",
+                        fontsize=7, ha="center", va="center",
+                        color="gray", zorder=3,
+                    )
+                    labeled_splits.add(split_idx)
+
         ax.axis("off")
         ax.set_title("Consensus Splits Network", fontsize=14, pad=20)
 
