@@ -80,6 +80,22 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.26</strong>:
+Added phylogenetic signal on networks:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">network_signal</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">netsig</span></code>, <code class="docutils literal notranslate"><span class="pre">net_signal</span></code>)
+for computing Blomberg's K and Pagel's lambda on phylogenetic networks
+using the Bastide et al. (2018) variance-covariance algorithm</p></li>
+<li><p>Accounts for hybridization/introgression when estimating how strongly a
+continuous trait tracks evolutionary history</p></li>
+<li><p>Accepts explicit hybrid edge specifications (<code class="docutils literal notranslate"><span class="pre">--hybrid</span> <span class="pre">donor:recipient:gamma</span></code>)
+or auto-infers from <code class="docutils literal notranslate"><span class="pre">quartet_network</span></code> JSON output (<code class="docutils literal notranslate"><span class="pre">--quartet-json</span></code>)</p></li>
+<li><p>Blomberg's K on phylogenetic networks is a novel capability not available
+in any other tool; Pagel's lambda on networks was previously only
+available in Julia (PhyloNetworks.jl)</p></li>
+<li><p>K and lambda formulas are identical to <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>; only the
+VCV matrix differs (network VCV vs tree VCV)</p></li>
+</ul>
 <p><strong>2.1.25</strong>:
 Added Tajima's relative rate test:</p>
 <ul class="simple">

@@ -6,6 +6,22 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.26**:
+Added phylogenetic signal on networks:
+
+* Added new ``network_signal`` command (aliases: ``netsig``, ``net_signal``)
+  for computing Blomberg's K and Pagel's lambda on phylogenetic networks
+  using the Bastide et al. (2018) variance-covariance algorithm
+* Accounts for hybridization/introgression when estimating how strongly a
+  continuous trait tracks evolutionary history
+* Accepts explicit hybrid edge specifications (``--hybrid donor:recipient:gamma``)
+  or auto-infers from ``quartet_network`` JSON output (``--quartet-json``)
+* Blomberg's K on phylogenetic networks is a novel capability not available
+  in any other tool; Pagel's lambda on networks was previously only
+  available in Julia (PhyloNetworks.jl)
+* K and lambda formulas are identical to ``phylogenetic_signal``; only the
+  VCV matrix differs (network VCV vs tree VCV)
+
 **2.1.25**:
 Added Tajima's relative rate test:
 

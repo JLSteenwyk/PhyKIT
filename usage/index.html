@@ -95,6 +95,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#monophyly-check">Monophyly check</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#nearest-neighbor-interchange">Nearest neighbor interchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#network-signal">Network signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
@@ -1277,6 +1278,174 @@ file but with the suffix &quot;.nnis&quot;</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-o/\-\-output</em>: optional argument to specify output file name <br/>
 <em>--json</em>: optional argument to print summary metadata as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="network-signal">
+<h3>Network signal<a class="headerlink" href="#network-signal" title="Link to this heading"></a></h3>
+<p>Function names: network_signal; netsig; net_signal <br/>
+Command line interface: pk_network_signal; pk_netsig; pk_net_signal</p>
+<p>Compute phylogenetic signal (Blomberg's K and/or Pagel's lambda)
+on a <strong>phylogenetic network</strong> rather than a tree. This accounts for
+hybridization and introgression when estimating how strongly a
+continuous trait tracks evolutionary history.</p>
+<p>Standard phylogenetic signal methods assume a strictly bifurcating tree.
+When the true history includes reticulation, the tree-based
+variance-covariance (VCV) matrix is incorrect and signal estimates
+may be biased. <code class="docutils literal notranslate"><span class="pre">network_signal</span></code> replaces the tree VCV with a
+<strong>network VCV</strong> computed using the recursive algorithm of
+Bastide et al. (<em>Systematic Biology</em>, 2018), which properly
+weights shared ancestry through both tree-like and hybrid lineages.</p>
+<p>Two signal metrics are available (same as <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>):</p>
+<ul class="simple">
+<li><p><strong>Blomberg's K</strong> (Blomberg et al. 2003): K = 1 under Brownian motion;
+K &lt; 1 = less signal than expected; K &gt; 1 = more. P-value via
+permutation test. Computing K on a network is a <strong>novel capability</strong>
+not available in any other tool.</p></li>
+<li><p><strong>Pagel's lambda</strong> (Pagel 1999): lambda = 0 = no signal; lambda = 1 =
+full BM signal. P-value via likelihood ratio test.</p></li>
+</ul>
+<p><strong>Network specification</strong> — two options:</p>
+<ol class="arabic simple">
+<li><p><strong>Explicit hybrid edges</strong> (<code class="docutils literal notranslate"><span class="pre">--hybrid</span></code>): specify one or more
+reticulation events as <code class="docutils literal notranslate"><span class="pre">donor:recipient:gamma</span></code> where gamma is
+the inheritance probability from the donor lineage (0 &lt; gamma &lt; 0.5).</p></li>
+<li><p><strong>From quartet_network JSON</strong> (<code class="docutils literal notranslate"><span class="pre">--quartet-json</span></code>): auto-infer
+hybrid edges from the output of <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">quartet_network</span> <span class="pre">--json</span></code>.
+The command identifies taxon pairs that swap across hybrid quartets
+and estimates gamma from concordance factor ratios.</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># With explicit hybrid edges</span>
+phykit<span class="w"> </span>network_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>--hybrid<span class="w"> </span>&lt;donor:recipient:gamma&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>both<span class="p">|</span>blombergs_k<span class="p">|</span>lambda<span class="o">]</span><span class="w"> </span><span class="o">[</span>--permutations<span class="w"> </span><span class="m">1000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+
+<span class="c1"># With quartet_network JSON output</span>
+phykit<span class="w"> </span>network_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>--quartet-json<span class="w"> </span>&lt;quartets.json&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>both<span class="p">|</span>blombergs_k<span class="p">|</span>lambda<span class="o">]</span><span class="w"> </span><span class="o">[</span>--permutations<span class="w"> </span><span class="m">1000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a rooted species tree in Newick format (with branch lengths) <br/>
+<em>-d/\-\-trait-data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
+<em>--hybrid</em>: one or more hybrid edge specifications (donor:recipient:gamma); <br/>
+donor is the source lineage, recipient receives gene flow, gamma is the <br/>
+inheritance proportion from the donor (e.g., <code class="docutils literal notranslate"><span class="pre">B:C:0.3</span></code>) <br/>
+<em>--quartet-json</em>: path to JSON output from <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">quartet_network</span> <span class="pre">--json</span></code> <br/>
+<em>--method</em>: <code class="docutils literal notranslate"><span class="pre">both</span></code> (default), <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code>, or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> <br/>
+<em>--permutations</em>: number of permutations for K p-value (default: 1000) <br/>
+<em>-v/\-\-verbose</em>: print network VCV matrix details <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Output for default (both) mode: <br/>
+<code class="docutils literal notranslate"><span class="pre">Hybrid</span> <span class="pre">edge:</span> <span class="pre">B</span> <span class="pre">-&gt;</span> <span class="pre">C</span> <span class="pre">(gamma=0.3000)</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Network</span> <span class="pre">taxa:</span> <span class="pre">5</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">---</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Blomberg's</span> <span class="pre">K:</span> <span class="pre">0.8234</span>&#160;&#160;&#160; <span class="pre">p-value:</span> <span class="pre">0.0320</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Pagel's</span> <span class="pre">lambda:</span> <span class="pre">0.7651</span>&#160;&#160;&#160; <span class="pre">log-likelihood:</span> <span class="pre">-12.3456</span>&#160;&#160;&#160; <span class="pre">p-value:</span> <span class="pre">0.0012</span></code></p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Tutorial: Wing pattern evolution in</strong> <em>Heliconius</em> <strong>butterflies</strong></p>
+<p>This example shows a realistic workflow for computing phylogenetic
+signal on a network, starting from gene tree discordance analysis
+through to signal estimation. The scenario is motivated by the
+<em>Heliconius</em> butterfly system, where <em>H. melpomene</em> and <em>H. cydno</em>
+are sister species that hybridize with <em>H. heurippa</em>, producing
+introgression of wing pattern genes across species boundaries
+(Mavárez et al., <em>Nature</em>, 2006).</p>
+<p><em>Step 1: Identify hybridization from gene trees.</em></p>
+<p>You have gene trees from 200 loci across 6 <em>Heliconius</em> species.
+First, use <code class="docutils literal notranslate"><span class="pre">quartet_network</span></code> to test whether gene tree discordance
+is due to ILS alone or also involves hybridization:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_network<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--json<span class="w"> </span>&gt;<span class="w"> </span>quartets.json
+</pre></div>
+</div>
+<p>Examine the output to see which quartets are classified as hybrid:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick summary</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">import json</span>
+<span class="s2">data = json.load(open(&#39;quartets.json&#39;))</span>
+<span class="s2">print(f&#39;Tree-like: {data[\&quot;tree_count\&quot;]}&#39;)</span>
+<span class="s2">print(f&#39;Hybrid: {data[\&quot;hybrid_count\&quot;]}&#39;)</span>
+<span class="s2">print(f&#39;Unresolved: {data[\&quot;unresolved_count\&quot;]}&#39;)</span>
+<span class="s2">for q in data[&#39;quartets&#39;]:</span>
+<span class="s2">    if q[&#39;classification&#39;] == &#39;hybrid&#39;:</span>
+<span class="s2">        print(f&#39;  {q[\&quot;dominant_topology\&quot;]}  CFs: {q[\&quot;cfs\&quot;]}&#39;)</span>
+<span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>Suppose the output shows that quartets involving <em>H. melpomene</em>
+and <em>H. heurippa</em> are consistently classified as hybrid, with
+asymmetric minor concordance factors — evidence of gene flow
+between these lineages.</p>
+<p><em>Step 2a: Compute signal using quartet_network output directly.</em></p>
+<p>Feed the quartet JSON into <code class="docutils literal notranslate"><span class="pre">network_signal</span></code> along with a rooted
+species tree and wing pattern measurements (e.g., forewing red band
+area, log-transformed):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>network_signal<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>species_tree.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>wing_pattern.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--quartet-json<span class="w"> </span>quartets.json
+</pre></div>
+</div>
+<p>The command automatically identifies the strongest hybrid signal
+from the quartet classifications and estimates the inheritance
+probability (gamma).</p>
+<p><em>Step 2b: Alternatively, specify hybrid edges explicitly.</em></p>
+<p>If you know the donor and recipient lineages (e.g., from prior
+knowledge or external network inference), you can specify the
+hybrid edge directly. Here, <em>H. melpomene</em> is the donor of wing
+pattern alleles to <em>H. heurippa</em> with an estimated 25% introgression:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>network_signal<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>species_tree.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>wing_pattern.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hybrid<span class="w"> </span>H_melpomene:H_heurippa:0.25
+</pre></div>
+</div>
+<p><em>Step 3: Interpret the results.</em></p>
+<p>Example output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Hybrid edge: H_melpomene -&gt; H_heurippa (gamma=0.2500)
+Network taxa: 6
+---
+Blomberg&#39;s K: 0.6821    p-value: 0.0410
+Pagel&#39;s lambda: 0.5934    log-likelihood: -8.7231    p-value: 0.0085
+</pre></div>
+</div>
+<p>Interpretation:</p>
+<ul class="simple">
+<li><p><strong>K = 0.68</strong> (p = 0.04): significant phylogenetic signal, but less
+than expected under Brownian motion (K &lt; 1). This is consistent with
+the wing pattern being phylogenetically conserved in most lineages but
+displaced in <em>H. heurippa</em> due to introgression from <em>H. melpomene</em>.</p></li>
+<li><p><strong>Lambda = 0.59</strong> (p = 0.009): moderate phylogenetic signal. The
+trait is not evolving independently of the network (lambda &gt; 0), but
+the fit is better with reduced covariance (lambda &lt; 1).</p></li>
+<li><p><strong>Comparison with tree-based signal</strong>: running <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>
+on the species tree alone would likely produce a lower K value because
+the tree VCV does not account for the shared ancestry introduced by
+introgression. The network-based K is a more accurate estimate of how
+much evolutionary history explains trait variation.</p></li>
+</ul>
+<p><em>Why this matters</em>: Without accounting for the network, the tree
+treats <em>H. heurippa</em>'s wing pattern as an independent observation. In
+reality, its wing pattern was partly inherited from <em>H. melpomene</em>
+through hybridization — the network VCV correctly reflects this shared
+ancestry, producing a more accurate phylogenetic signal estimate.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Algorithm — Bastide et al. 2018 network VCV</strong></p>
+<p>For Brownian motion on a network, the trait at a hybrid node <em>h</em>
+with parents <em>p1</em> and <em>p2</em> is:</p>
+<p><code class="docutils literal notranslate"><span class="pre">X_h</span> <span class="pre">=</span> <span class="pre">gamma</span> <span class="pre">*</span> <span class="pre">(X_p1</span> <span class="pre">+</span> <span class="pre">noise_1)</span> <span class="pre">+</span> <span class="pre">(1-gamma)</span> <span class="pre">*</span> <span class="pre">(X_p2</span> <span class="pre">+</span> <span class="pre">noise_2)</span></code></p>
+<p>The network VCV is computed recursively in topological order:</p>
+<ul class="simple">
+<li><p>Tree node <em>c</em> with parent <em>p</em>, edge length <em>l</em>: <br/>
+<code class="docutils literal notranslate"><span class="pre">V[c,c]</span> <span class="pre">=</span> <span class="pre">V[p,p]</span> <span class="pre">+</span> <span class="pre">l</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">V[c,j]</span> <span class="pre">=</span> <span class="pre">V[p,j]</span></code> for all other nodes <em>j</em></p></li>
+<li><p>Hybrid node <em>h</em> with parents <em>p1</em> (weight gamma) and <em>p2</em> (weight 1-gamma): <br/>
+<code class="docutils literal notranslate"><span class="pre">V[h,h]</span> <span class="pre">=</span> <span class="pre">gamma^2</span> <span class="pre">*</span> <span class="pre">(V[p1,p1]</span> <span class="pre">+</span> <span class="pre">l1)</span> <span class="pre">+</span> <span class="pre">(1-gamma)^2</span> <span class="pre">*</span> <span class="pre">(V[p2,p2]</span> <span class="pre">+</span> <span class="pre">l2)</span> <span class="pre">+</span> <span class="pre">2*gamma*(1-gamma)*V[p1,p2]</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">V[h,j]</span> <span class="pre">=</span> <span class="pre">gamma</span> <span class="pre">*</span> <span class="pre">V[p1,j]</span> <span class="pre">+</span> <span class="pre">(1-gamma)</span> <span class="pre">*</span> <span class="pre">V[p2,j]</span></code></p></li>
+</ul>
+<p>The tip-by-tip submatrix is the VCV used for K and lambda.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
