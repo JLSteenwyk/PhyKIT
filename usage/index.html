@@ -95,6 +95,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#monophyly-check">Monophyly check</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#nearest-neighbor-interchange">Nearest neighbor interchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lineage-through-time-plot-and-gamma-statistic">Lineage-through-time plot and gamma statistic</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#network-signal">Network signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
@@ -111,6 +112,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cophylogenetic-plot-tanglegram">Cophylogenetic plot (tanglegram)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#threshold-model">Threshold model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
@@ -1282,6 +1284,120 @@ file but with the suffix &quot;.nnis&quot;</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="lineage-through-time-plot-and-gamma-statistic">
+<h3>Lineage-through-time plot and gamma statistic<a class="headerlink" href="#lineage-through-time-plot-and-gamma-statistic" title="Link to this heading"></a></h3>
+<p>Function names: ltt; gamma_stat; gamma <br/>
+Command line interface: pk_ltt; pk_gamma_stat; pk_gamma</p>
+<p>Compute the Pybus &amp; Harvey (2000) gamma statistic and generate
+lineage-through-time (LTT) plots to test for temporal variation
+in diversification rates.</p>
+<p>Under a constant-rate pure-birth (Yule) process, the gamma statistic
+follows a standard normal distribution: gamma ~ N(0, 1).  Negative
+values indicate early diversification (decelerating rates, consistent
+with an adaptive radiation followed by niche filling), while positive
+values indicate late diversification (accelerating rates, potentially
+reflecting recent ecological opportunity or mass extinction recovery).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
+<em>-v/\-\-verbose</em>: print branching times and full LTT data points <br/>
+<em>--plot-output</em>: output filename for the LTT plot (PNG, PDF, SVG) <br/>
+<em>--json</em>: output results as JSON</p>
+<p><strong>Default output</strong>: tab-separated gamma statistic and two-tailed p-value.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic gamma statistic</span>
+phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>species.tre
+<span class="c1"># -1.4142   0.1573</span>
+
+<span class="c1"># With LTT plot</span>
+phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--plot-output<span class="w"> </span>ltt_plot.png
+
+<span class="c1"># Full JSON output</span>
+phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--json
+</pre></div>
+</div>
+<p><strong>Tutorial: testing diversification tempo in a clade</strong></p>
+<p>Suppose you have a dated phylogeny of 50 gecko species and want to
+test whether speciation rates were constant or whether diversification
+decelerated over time (consistent with ecological limits).</p>
+<p><em>Step 1: Compute the gamma statistic.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>gecko_dated.tre<span class="w"> </span>--plot-output<span class="w"> </span>gecko_ltt.png
+<span class="c1"># -2.8514   0.0043</span>
+</pre></div>
+</div>
+<p>A significantly negative gamma (p = 0.004) rejects the constant-rate
+null, indicating that lineage accumulation was concentrated early in the
+clade's history — consistent with an early burst of diversification
+followed by a slowdown as niches filled.</p>
+<p><em>Step 2: Examine the LTT plot.</em></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> option generates a step-function plot of lineage
+count (log scale) vs. time from root.  Under constant-rate birth,
+lineages accumulate exponentially (straight line on log-scale).  An
+early burst appears as a curve that rises steeply then flattens.</p>
+<p><strong>Example: early burst (decelerating diversification)</strong></p>
+<p>Most branching events occur near the root, then the curve plateaus.
+The significantly negative gamma (p &lt; 0.001) rejects constant-rate birth.</p>
+<a class="reference internal image-reference" href="../_images/ltt_example_early_burst.png"><img alt="../_images/ltt_example_early_burst.png" class="align-center" src="../_images/ltt_example_early_burst.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Example: recent burst (accelerating diversification)</strong></p>
+<p>Lineage accumulation is concentrated near the present.
+The significantly positive gamma (p = 0.022) indicates late diversification.</p>
+<a class="reference internal image-reference" href="../_images/ltt_example_recent_burst.png"><img alt="../_images/ltt_example_recent_burst.png" class="align-center" src="../_images/ltt_example_recent_burst.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><em>Step 3: Verbose output for downstream analysis.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>gecko_dated.tre<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>Verbose mode prints branching times (node ages) and the full LTT data
+table (time_from_root, n_lineages), which can be piped to custom
+plotting or further analysis.</p>
+<p><strong>Validation against R's ape::gammaStat()</strong></p>
+<p>PhyKIT's gamma statistic was validated against R's ape package
+(v5.8.1, R 4.4.0).  Results match to 10 decimal places:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 37.5%" />
+<col style="width: 31.2%" />
+<col style="width: 31.2%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Tree topology</p></th>
+<th class="head"><p>PhyKIT gamma</p></th>
+<th class="head"><p>R ape gamma</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Balanced 8-tip</p></td>
+<td><p>-1.4142135624</p></td>
+<td><p>-1.4142135624</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ladder (caterpillar) 5-tip</p></td>
+<td><p>-0.7142857143</p></td>
+<td><p>-0.7142857143</p></td>
+</tr>
+<tr class="row-even"><td><p>Recent burst 10-tip</p></td>
+<td><p>2.2824790785</p></td>
+<td><p>2.2824790785</p></td>
+</tr>
+<tr class="row-odd"><td><p>Early burst 7-tip</p></td>
+<td><p>-3.5362021857</p></td>
+<td><p>-3.5362021857</p></td>
+</tr>
+</tbody>
+</table>
+<p>The algorithm replicates the exact formula from ape's <code class="docutils literal notranslate"><span class="pre">gammaStat.R</span></code>
+source, including the <code class="docutils literal notranslate"><span class="pre">rev()</span></code> step on internode intervals.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="network-signal">
 <h3>Network signal<a class="headerlink" href="#network-signal" title="Link to this heading"></a></h3>
 <p>Function names: network_signal; netsig; net_signal <br/>
@@ -2085,6 +2201,123 @@ line crossings.</p>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/cophylo_example.png"><img alt="../_images/cophylo_example.png" class="align-center" src="../_images/cophylo_example.png" style="width: 80%;" />
 </a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="threshold-model">
+<h3>Threshold model<a class="headerlink" href="#threshold-model" title="Link to this heading"></a></h3>
+<p>Function names: threshold_model; threshold; thresh; threshbayes; thresh_bayes <br/>
+Command line interface: pk_threshold_model; pk_threshold; pk_thresh; pk_threshbayes; pk_thresh_bayes</p>
+<p>Estimate the evolutionary correlation between two traits using the
+Felsenstein (2012) threshold model via MCMC. Binary discrete characters
+are modelled as arising from continuous latent &quot;liabilities&quot; that evolve
+under Brownian motion and cross a threshold at 0. This lets you estimate
+correlations between binary traits (or between a binary and a continuous
+trait) using BM rather than Mk transition rates.</p>
+<p>This is the Python equivalent of <code class="docutils literal notranslate"><span class="pre">phytools::threshBayes</span></code> in R.</p>
+<p>The sampler uses a Gibbs / Metropolis-Hastings hybrid:</p>
+<ul class="simple">
+<li><p><strong>Gibbs step</strong>: sample each discrete tip's liability from a truncated
+normal conditioned on all other values</p></li>
+<li><p><strong>Metropolis step</strong>: update sigma2_1, sigma2_2 (log-normal proposal),
+ancestral values a1, a2 (normal proposal), and the correlation r
+(normal proposal with reflection on [-1, 1])</p></li>
+<li><p><strong>Adaptive tuning</strong>: during burn-in, proposal variances are adjusted
+to target ~23% acceptance</p></li>
+</ul>
+<p>Trait types:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">discrete</span></code>: binary (0/1). Liabilities &lt; 0 map to state 0,
+liabilities &gt; 0 map to state 1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">continuous</span></code>: observed values used directly (no liability needed).</p></li>
+</ul>
+<p>Any combination of two traits is supported: discrete+continuous,
+discrete+discrete, or continuous+continuous.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>threshold_model<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>--traits<span class="w"> </span>&lt;t1,t2&gt;<span class="w"> </span>--types<span class="w"> </span>&lt;type1,type2&gt;<span class="w"> </span><span class="o">[</span>--ngen<span class="w"> </span><span class="m">100000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--sample<span class="w"> </span><span class="m">100</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--burnin<span class="w"> </span><span class="m">0</span>.2<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
+<em>-d/\-\-trait-data</em>: tab-delimited trait file with header row (required) <br/>
+<em>--traits</em>: comma-separated pair of trait column names (required) <br/>
+<em>--types</em>: comma-separated pair of trait types, each <code class="docutils literal notranslate"><span class="pre">discrete</span></code> or <code class="docutils literal notranslate"><span class="pre">continuous</span></code> (required) <br/>
+<em>--ngen</em>: number of MCMC generations (default: 100000) <br/>
+<em>--sample</em>: sample frequency (default: 100) <br/>
+<em>--burnin</em>: burn-in fraction (default: 0.2) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>--plot</em>: output filename for trace and posterior density plot (3 rows x 2 columns: <br/>
+left = MCMC trace, right = posterior histogram with 95% HPD shading) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Output (text mode): <br/>
+<code class="docutils literal notranslate"><span class="pre">Trait</span> <span class="pre">1:</span> <span class="pre">habitat</span> <span class="pre">(discrete,</span> <span class="pre">2</span> <span class="pre">states:</span> <span class="pre">0,</span> <span class="pre">1)</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Trait</span> <span class="pre">2:</span> <span class="pre">body_mass</span> <span class="pre">(continuous)</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">MCMC:</span> <span class="pre">100000</span> <span class="pre">generations,</span> <span class="pre">sampled</span> <span class="pre">every</span> <span class="pre">100,</span> <span class="pre">burn-in</span> <span class="pre">20%</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">---</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Posterior</span> <span class="pre">correlation</span> <span class="pre">(r):</span> <span class="pre">0.6234</span> <span class="pre">(95%</span> <span class="pre">HPD:</span> <span class="pre">0.312,</span> <span class="pre">0.891)</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Posterior</span> <span class="pre">sigma2_1:</span> <span class="pre">1.234</span> <span class="pre">(95%</span> <span class="pre">HPD:</span> <span class="pre">0.456,</span> <span class="pre">2.345)</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Posterior</span> <span class="pre">sigma2_2:</span> <span class="pre">0.567</span> <span class="pre">(95%</span> <span class="pre">HPD:</span> <span class="pre">0.234,</span> <span class="pre">1.012)</span></code> <br/>
+<code class="docutils literal notranslate"><span class="pre">Acceptance</span> <span class="pre">rates:</span> <span class="pre">r=0.234,</span> <span class="pre">sigma2_1=0.312,</span> <span class="pre">sigma2_2=0.287,</span> <span class="pre">a1=0.241,</span> <span class="pre">a2=0.228</span></code></p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Tutorial: habitat type and body mass in carnivores</strong></p>
+<p>This example uses the classic 8-taxon carnivore tree to test whether
+habitat type (a binary trait: 0 = non-arboreal, 1 = arboreal) is
+correlated with body mass on the latent liability scale.</p>
+<p><em>Step 1: Prepare the trait file.</em></p>
+<p>Create a tab-delimited file with a header row. The first column is
+the taxon name, followed by columns for each trait:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>taxon        habitat body_mass
+raccoon      0       1.04
+bear 0       2.39
+sea_lion     0       2.30
+seal 0       1.88
+monkey       1       0.60
+cat  1       0.56
+weasel       1       -0.30
+dog  0       1.18
+</pre></div>
+</div>
+<p><em>Step 2: Run the threshold model.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>threshold_model<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-t<span class="w"> </span>carnivore.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--traits<span class="w"> </span>habitat,body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--types<span class="w"> </span>discrete,continuous<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ngen<span class="w"> </span><span class="m">100000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--seed<span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+<p><em>Step 3: Examine the trace plots for convergence.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>threshold_model<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-t<span class="w"> </span>carnivore.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--traits<span class="w"> </span>habitat,body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--types<span class="w"> </span>discrete,continuous<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ngen<span class="w"> </span><span class="m">100000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--plot<span class="w"> </span>trace.png
+</pre></div>
+</div>
+<p>This generates a 3-row x 2-column figure. The left column shows
+MCMC trace plots for r, sigma2_1, and sigma2_2 (check for
+stationarity and good mixing). The right column shows posterior
+density histograms with red shading for the 95% HPD interval
+and a dashed line at the posterior mean.</p>
+<p><em>Step 4: Get full posterior samples as JSON for custom analysis.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>threshold_model<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-t<span class="w"> </span>carnivore.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--traits<span class="w"> </span>habitat,body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--types<span class="w"> </span>discrete,continuous<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ngen<span class="w"> </span><span class="m">100000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--json<span class="w"> </span>&gt;<span class="w"> </span>posterior.json
+</pre></div>
+</div>
+<p>The JSON output includes full posterior sample arrays, summary
+statistics (mean, median, 95% HPD), and MCMC metadata.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

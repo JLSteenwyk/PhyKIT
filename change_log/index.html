@@ -80,6 +80,46 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.28</strong>:
+Added Felsenstein (2012) threshold model for trait correlation via MCMC:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">threshold_model</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">threshold</span></code>, <code class="docutils literal notranslate"><span class="pre">thresh</span></code>,
+<code class="docutils literal notranslate"><span class="pre">threshbayes</span></code>, <code class="docutils literal notranslate"><span class="pre">thresh_bayes</span></code>) for estimating evolutionary correlations
+between binary discrete and/or continuous traits using a latent-liability
+Brownian motion model</p></li>
+<li><p>Implements the Gibbs/Metropolis-Hastings MCMC sampler following
+phytools::threshBayes (Revell 2014): binary characters are modelled as
+continuous liabilities crossing a threshold at 0</p></li>
+<li><p>Supports all trait combinations: discrete+continuous, discrete+discrete,
+and continuous+continuous</p></li>
+<li><p>Adaptive proposal tuning during burn-in targeting ~23% acceptance rate</p></li>
+<li><p>Output includes posterior summary (mean, median, 95% HPD) for the
+correlation (r), rate parameters (sigma2), and ancestral values</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot</span></code> generates a 3x2 figure: trace plots (left column)
+and posterior density histograms with 95% HPD shading (right column)
+for convergence diagnostics and posterior visualization</p></li>
+<li><p>JSON output (<code class="docutils literal notranslate"><span class="pre">--json</span></code>) with full posterior samples for custom analysis</p></li>
+<li><p>Reproducible results via <code class="docutils literal notranslate"><span class="pre">--seed</span></code> for random number generation</p></li>
+<li><p>Cross-validated against R's phytools::threshBayes: posterior means and
+95% intervals agree within expected MCMC sampling variation</p></li>
+</ul>
+<p><strong>2.1.27</strong>:
+Added lineage-through-time (LTT) plot and Pybus &amp; Harvey gamma statistic:</p>
+<ul class="simple">
+<li><p>Added new <code class="docutils literal notranslate"><span class="pre">ltt</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">gamma_stat</span></code>, <code class="docutils literal notranslate"><span class="pre">gamma</span></code>)
+for testing temporal variation in diversification rates</p></li>
+<li><p>Implements the Pybus &amp; Harvey (2000) gamma statistic: under
+constant-rate pure-birth, gamma ~ N(0,1); negative = decelerating
+diversification, positive = accelerating</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> generates a step-function LTT plot with
+log-scaled y-axis showing lineage accumulation through time</p></li>
+<li><p>Verbose mode (<code class="docutils literal notranslate"><span class="pre">-v</span></code>) prints branching times and full LTT data</p></li>
+<li><p>JSON output support via <code class="docutils literal notranslate"><span class="pre">--json</span></code></p></li>
+<li><p>Validated against R's <code class="docutils literal notranslate"><span class="pre">ape::gammaStat()</span></code> (ape v5.8.1, R 4.4.0):
+gamma values match to 10 decimal places across 4 test topologies
+(balanced 8-tip: -1.4142135624, ladder 5-tip: -0.7142857143,
+recent burst 10-tip: 2.2824790785, early burst 7-tip: -3.5362021857)</p></li>
+</ul>
 <p><strong>2.1.26</strong>:
 Added phylogenetic signal on networks:</p>
 <ul class="simple">
