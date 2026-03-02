@@ -72,6 +72,43 @@ All possible function names are specified at the top of each function section.
 
 Alignment-based functions
 -------------------------
+Alignment entropy
+#################
+Function names: alignment_entropy; aln_entropy; entropy |br|
+Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy
+
+Calculate alignment entropy.
+
+Site-wise entropy is calculated using Shannon entropy. By default,
+PhyKIT reports the mean entropy across all sites in the alignment.
+With the `-v/--verbose` option, PhyKIT reports entropy for each site.
+
+.. code-block:: shell
+
+	phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
+
+Example output (default):
+
+.. code-block:: shell
+
+	0.657
+
+Example output (`-v`):
+
+.. code-block:: shell
+
+	1	0.0
+	2	1.0
+	3	0.971
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file |br|
+*-v/\\-\\-verbose*: optional argument to print entropy for each site |br|
+*--plot*: save a per-site alignment entropy plot |br|
+*--plot-output*: output path for plot (default: ``alignment_entropy_plot.png``) |br|
+*--json*: optional argument to print results as JSON
+
+|
 
 Alignment length
 ################
@@ -136,40 +173,45 @@ Options: |br|
 
 |
 
-Alignment entropy
-#################
-Function names: alignment_entropy; aln_entropy; entropy |br|
-Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy
+Alignment outlier taxa
+######################
+Function names: alignment_outlier_taxa; outlier_taxa; aot |br|
+Command line interface: pk_alignment_outlier_taxa; pk_outlier_taxa; pk_aot
 
-Calculate alignment entropy.
+Identify potential outlier taxa in an alignment and explicitly report why each taxon was flagged.
 
-Site-wise entropy is calculated using Shannon entropy. By default,
-PhyKIT reports the mean entropy across all sites in the alignment.
-With the `-v/--verbose` option, PhyKIT reports entropy for each site.
+The following features are evaluated per taxon:
+1) ``gap_rate``: fraction of gap/ambiguous symbols |br|
+2) ``occupancy``: fraction of valid symbols |br|
+3) ``composition_distance``: Euclidean distance from the median composition profile |br|
+4) ``long_branch_proxy``: mean pairwise sequence distance to other taxa |br|
+5) ``rcvt``: relative composition variability per taxon |br|
+6) ``entropy_burden``: average site entropy over this taxon's valid positions
 
-.. code-block:: shell
-
-	phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
-
-Example output (default):
-
-.. code-block:: shell
-
-	0.657
-
-Example output (`-v`):
+If a taxon exceeds one or more feature-specific thresholds, PhyKIT reports the exact
+feature(s), observed value(s), threshold(s), and explanation(s) for the flag.
 
 .. code-block:: shell
 
-	1	0.0
-	2	1.0
-	3	0.971
+	phykit alignment_outlier_taxa <alignment> [--gap-z <float>] [--composition-z <float>] [--distance-z <float>] [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>] [--json]
+
+Example output:
+
+.. code-block:: shell
+
+	features_evaluated	gap_rate,occupancy,composition_distance,long_branch_proxy,rcvt,entropy_burden
+	thresholds	gap_rate>0.0;occupancy<0.4;composition_distance>0.1;long_branch_proxy>0.4181;rcvt>0.0095;entropy_burden>0.35
+	taxon_d	composition_distance=1.3454>0.1;long_branch_proxy=1.0>0.4181	Unusual sequence composition profile relative to other taxa. | High mean pairwise sequence distance to other taxa.
+	taxon_e	gap_rate=0.6>0.0;occupancy=0.4<0.4	High fraction of gap/ambiguous symbols compared to other taxa. | Low fraction of valid symbols compared to other taxa.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print entropy for each site |br|
-*--plot*: save a per-site alignment entropy plot |br|
-*--plot-output*: output path for plot (default: ``alignment_entropy_plot.png``) |br|
+*--gap-z*: z-threshold used for high-gap outlier detection (default: 3.0) |br|
+*--composition-z*: z-threshold used for composition-distance outlier detection (default: 3.0) |br|
+*--distance-z*: z-threshold used for long-branch-proxy outlier detection (default: 3.0) |br|
+*--rcvt-z*: z-threshold used for RCVT outlier detection (default: 3.0) |br|
+*--occupancy-z*: z-threshold used for low-occupancy outlier detection (default: 3.0) |br|
+*--entropy-z*: z-threshold used for entropy-burden outlier detection (default: 3.0) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -324,34 +366,6 @@ to |br|
 
 |
 
-Compositional bias per site
-###########################
-
-Function names: compositional_bias_per_site; comp_bias_per_site; cbps |br|
-Command line interface: pk_compositional_bias_per_site; pk_comp_bias_per_site; pk_cbps
-
-Calculates compositional bias per site in an alignment.
-
-Site-wise chi-squared tests are conducted in an alignment to
-detect compositional biases. PhyKIT outputs four columns: |br|
-col 1: index in alignment |br|
-col 2: chi-squared statistic (higher values indicate greater bias) |br|
-col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) |br|
-col 4: uncorrected p-value
-
-.. code-block:: shell
-
-	phykit comp_bias_per_site <alignment> [--plot] [--plot-output <path>] [--json]
-
-Options: |br|
-*<alignment>*: first argument after function name should be a query
-fasta alignment to calculate the site-wise compositional bias of |br|
-*--plot*: save a Manhattan-style plot of site-wise compositional bias |br|
-*--plot-output*: output path for plot (default: ``compositional_bias_per_site_plot.png``) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
 Composition per taxon
 #####################
 Function names: composition_per_taxon; comp_taxon; comp_tax |br|
@@ -376,6 +390,34 @@ Example output:
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Compositional bias per site
+###########################
+
+Function names: compositional_bias_per_site; comp_bias_per_site; cbps |br|
+Command line interface: pk_compositional_bias_per_site; pk_comp_bias_per_site; pk_cbps
+
+Calculates compositional bias per site in an alignment.
+
+Site-wise chi-squared tests are conducted in an alignment to
+detect compositional biases. PhyKIT outputs four columns: |br|
+col 1: index in alignment |br|
+col 2: chi-squared statistic (higher values indicate greater bias) |br|
+col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) |br|
+col 4: uncorrected p-value
+
+.. code-block:: shell
+
+	phykit comp_bias_per_site <alignment> [--plot] [--plot-output <path>] [--json]
+
+Options: |br|
+*<alignment>*: first argument after function name should be a query
+fasta alignment to calculate the site-wise compositional bias of |br|
+*--plot*: save a Manhattan-style plot of site-wise compositional bias |br|
+*--plot-output*: output path for plot (default: ``compositional_bias_per_site_plot.png``) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -533,43 +575,6 @@ Options: |br|
 
 |
 
-Plot alignment QC
-#################
-Function names: plot_alignment_qc; plot_qc; paqc |br|
-Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc
-
-Generate a multi-panel alignment quality-control plot.
-
-The figure includes:
-1) occupancy per taxon |br|
-2) gap rate per taxon |br|
-3) composition distance vs long-branch proxy scatter |br|
-4) count of flagged outliers by feature
-
-Outlier evaluation uses the same features as ``alignment_outlier_taxa``:
-``gap_rate``, ``occupancy``, ``composition_distance``, ``long_branch_proxy``,
-``rcvt``, and ``entropy_burden``.
-
-.. code-block:: shell
-
-	phykit plot_alignment_qc <alignment> [-o/--output <path>] [--width <float>] [--height <float>] [--dpi <int>] [--gap-z <float>] [--composition-z <float>] [--distance-z <float>] [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>] [--json]
-
-Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*-o/\\-\\-output*: output image path (default: ``alignment_qc.png``) |br|
-*--width*: figure width in inches (default: ``14.0``) |br|
-*--height*: figure height in inches (default: ``10.0``) |br|
-*--dpi*: output image DPI (default: ``300``) |br|
-*--gap-z*: z-threshold for gap-rate outliers (default: ``3.0``) |br|
-*--composition-z*: z-threshold for composition-distance outliers (default: ``3.0``) |br|
-*--distance-z*: z-threshold for long-branch-proxy outliers (default: ``3.0``) |br|
-*--rcvt-z*: z-threshold for RCVT outliers (default: ``3.0``) |br|
-*--occupancy-z*: z-threshold for low-occupancy outliers (default: ``3.0``) |br|
-*--entropy-z*: z-threshold for entropy-burden outliers (default: ``3.0``) |br|
-*--json*: optional argument to print plot metadata and outlier summary as JSON
-
-|
-
 Occupancy per taxon
 ###################
 Function names: occupancy_per_taxon; occupancy_taxon; occ_tax |br|
@@ -593,49 +598,6 @@ Example output:
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Alignment outlier taxa
-######################
-Function names: alignment_outlier_taxa; outlier_taxa; aot |br|
-Command line interface: pk_alignment_outlier_taxa; pk_outlier_taxa; pk_aot
-
-Identify potential outlier taxa in an alignment and explicitly report why each taxon was flagged.
-
-The following features are evaluated per taxon:
-1) ``gap_rate``: fraction of gap/ambiguous symbols |br|
-2) ``occupancy``: fraction of valid symbols |br|
-3) ``composition_distance``: Euclidean distance from the median composition profile |br|
-4) ``long_branch_proxy``: mean pairwise sequence distance to other taxa |br|
-5) ``rcvt``: relative composition variability per taxon |br|
-6) ``entropy_burden``: average site entropy over this taxon's valid positions
-
-If a taxon exceeds one or more feature-specific thresholds, PhyKIT reports the exact
-feature(s), observed value(s), threshold(s), and explanation(s) for the flag.
-
-.. code-block:: shell
-
-	phykit alignment_outlier_taxa <alignment> [--gap-z <float>] [--composition-z <float>] [--distance-z <float>] [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>] [--json]
-
-Example output:
-
-.. code-block:: shell
-
-	features_evaluated	gap_rate,occupancy,composition_distance,long_branch_proxy,rcvt,entropy_burden
-	thresholds	gap_rate>0.0;occupancy<0.4;composition_distance>0.1;long_branch_proxy>0.4181;rcvt>0.0095;entropy_burden>0.35
-	taxon_d	composition_distance=1.3454>0.1;long_branch_proxy=1.0>0.4181	Unusual sequence composition profile relative to other taxa. | High mean pairwise sequence distance to other taxa.
-	taxon_e	gap_rate=0.6>0.0;occupancy=0.4<0.4	High fraction of gap/ambiguous symbols compared to other taxa. | Low fraction of valid symbols compared to other taxa.
-
-Options: |br|
-*<alignment>*: first argument after function name should be an alignment file |br|
-*--gap-z*: z-threshold used for high-gap outlier detection (default: 3.0) |br|
-*--composition-z*: z-threshold used for composition-distance outlier detection (default: 3.0) |br|
-*--distance-z*: z-threshold used for long-branch-proxy outlier detection (default: 3.0) |br|
-*--rcvt-z*: z-threshold used for RCVT outlier detection (default: 3.0) |br|
-*--occupancy-z*: z-threshold used for low-occupancy outlier detection (default: 3.0) |br|
-*--entropy-z*: z-threshold used for entropy-burden outlier detection (default: 3.0) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -707,6 +669,43 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+Plot alignment QC
+#################
+Function names: plot_alignment_qc; plot_qc; paqc |br|
+Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc
+
+Generate a multi-panel alignment quality-control plot.
+
+The figure includes:
+1) occupancy per taxon |br|
+2) gap rate per taxon |br|
+3) composition distance vs long-branch proxy scatter |br|
+4) count of flagged outliers by feature
+
+Outlier evaluation uses the same features as ``alignment_outlier_taxa``:
+``gap_rate``, ``occupancy``, ``composition_distance``, ``long_branch_proxy``,
+``rcvt``, and ``entropy_burden``.
+
+.. code-block:: shell
+
+	phykit plot_alignment_qc <alignment> [-o/--output <path>] [--width <float>] [--height <float>] [--dpi <int>] [--gap-z <float>] [--composition-z <float>] [--distance-z <float>] [--rcvt-z <float>] [--occupancy-z <float>] [--entropy-z <float>] [--json]
+
+Options: |br|
+*<alignment>*: first argument after function name should be an alignment file |br|
+*-o/\\-\\-output*: output image path (default: ``alignment_qc.png``) |br|
+*--width*: figure width in inches (default: ``14.0``) |br|
+*--height*: figure height in inches (default: ``10.0``) |br|
+*--dpi*: output image DPI (default: ``300``) |br|
+*--gap-z*: z-threshold for gap-rate outliers (default: ``3.0``) |br|
+*--composition-z*: z-threshold for composition-distance outliers (default: ``3.0``) |br|
+*--distance-z*: z-threshold for long-branch-proxy outliers (default: ``3.0``) |br|
+*--rcvt-z*: z-threshold for RCVT outliers (default: ``3.0``) |br|
+*--occupancy-z*: z-threshold for low-occupancy outliers (default: ``3.0``) |br|
+*--entropy-z*: z-threshold for entropy-burden outliers (default: ``3.0``) |br|
+*--json*: optional argument to print plot metadata and outlier summary as JSON
 
 |
 
@@ -1015,6 +1014,175 @@ output will have the same name as the input file but with the suffix
 
 |
 
+Consensus network
+#################
+Function names: consensus_network; consnet; splitnet; splits_network |br|
+Command line interface: pk_consensus_network; pk_consnet; pk_splitnet; pk_splits_network
+
+Extract bipartition splits from a collection of gene trees and summarize
+conflicting phylogenetic signal. Counts how frequently each non-trivial
+bipartition appears across input trees and filters by a minimum frequency
+threshold. Optionally draws a circular splits network diagram.
+
+Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.
+
+.. code-block:: shell
+
+   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>] [--json]
+
+Options: |br|
+*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*--threshold*: minimum split frequency to include, between 0 and 1 (default: ``0.1``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--plot-output*: output filename for the circular splits network plot (optional) |br|
+*--json*: optional argument to print results as JSON
+
+When ``--plot-output`` is specified, a circular splits network diagram is produced.
+Taxa are arranged at equal angles around a circle. Each split is drawn as a chord
+connecting the boundary points between the two sides of the bipartition. Chord
+thickness and opacity scale with split frequency — thicker, darker lines indicate
+splits supported by more gene trees.
+
+.. image:: ../_static/img/consensus_network_example.png
+   :align: center
+   :width: 80%
+
+|
+
+Consensus tree
+##############
+Function names: consensus_tree; consensus; ctree |br|
+Command line interface: pk_consensus_tree; pk_consensus; pk_ctree
+
+Infer a consensus tree from a collection of trees.
+
+Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.
+
+Consensus methods:
+* ``majority``: majority-rule consensus (default) |br|
+* ``strict``: strict consensus
+
+Missing taxa handling:
+* ``--missing-taxa error`` (default): exits if trees do not share identical tip sets |br|
+* ``--missing-taxa shared``: prunes all trees to the intersection of taxa before inferring consensus
+
+.. code-block:: shell
+
+   phykit consensus_tree -t/--trees <trees> [-m/--method strict|majority] [--missing-taxa error|shared] [--json]
+
+Options: |br|
+*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*-m/\\-\\-method*: consensus method (``strict`` or ``majority``; default: ``majority``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Continuous trait evolution model comparison (fitContinuous)
+##########################################################
+Function names: fit_continuous; fitcontinuous; fc |br|
+Command line interface: pk_fit_continuous; pk_fitcontinuous; pk_fc
+
+Compare models of continuous trait evolution on a phylogeny, analogous to
+R's ``geiger::fitContinuous()``. Fits up to 7 models and ranks them by
+AIC, BIC, and AIC weights.
+
+Models:
+
+- **BM** -- Brownian motion (baseline, 2 params)
+- **OU** -- Ornstein-Uhlenbeck / stabilizing selection (3 params)
+- **EB** -- Early Burst (Harmon et al. 2010) (3 params)
+- **Lambda** -- Pagel's lambda / phylogenetic signal (3 params)
+- **Delta** -- Pagel's delta / tempo of evolution (3 params)
+- **Kappa** -- Pagel's kappa / punctuational vs gradual (3 params)
+- **White** -- White noise / no phylogenetic signal (2 params)
+
+.. code-block:: shell
+
+   phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*--models*: comma-separated list of models to fit (default: all 7) |br|
+*--json*: optional argument to print results as JSON
+
+Example output:
+
+.. code-block:: text
+
+   Model Comparison (fitContinuous)
+
+   Number of tips: 8
+
+   Model       Param     Value      Sigma2    z0        LL         AIC     dAIC    AICw    BIC     dBIC
+   BM          -         -          0.0384    1.6447    -11.570    27.14   0.00    0.453   27.83   0.00
+   OU          alpha     0.0012     0.0385    1.6420    -11.568    29.14   2.00    0.167   30.18   2.35
+   ...
+
+   Best model (AIC): BM
+   Best model (BIC): BM
+
+|
+
+Continuous trait mapping (contMap)
+##################################
+Function names: cont_map; contmap; cmap |br|
+Command line interface: pk_cont_map; pk_contmap; pk_cmap
+
+Plot a phylogram with branches colored by continuous trait values
+(analogous to R's ``phytools::contMap()``). Ancestral states are
+estimated via maximum-likelihood (two-pass Felsenstein algorithm)
+and mapped onto branches using a color gradient (coolwarm colormap).
+
+.. code-block:: shell
+
+   phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/contmap_example.png
+   :align: center
+   :width: 80%
+
+|
+
+Cophylogenetic plot (tanglegram)
+################################
+Function names: cophylo; tanglegram; tangle |br|
+Command line interface: pk_cophylo; pk_tanglegram; pk_tangle
+
+Plot a cophylogenetic tanglegram of two phylogenies (analogous to R's
+``phytools::cophylo()``). Draws two trees facing each other with
+connecting lines between matching taxa. By default, taxa are matched
+by identical tip names. Internal nodes of tree2 are rotated to minimize
+line crossings.
+
+.. code-block:: shell
+
+   phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree1*: first tree file in Newick format |br|
+*-t2/\\-\\-tree2*: second tree file in Newick format |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*-m/\\-\\-mapping*: optional tab-delimited mapping file (taxon1<tab>taxon2) |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/cophylo_example.png
+   :align: center
+   :width: 80%
+
+|
+
 Covarying evolutionary rates
 ############################
 Function names: covarying_evolutionary_rates; cover |br|
@@ -1082,6 +1250,36 @@ Calculate DVMC in a tree following Liu et al., PNAS (2017), doi: 10.1073/pnas.16
 Options: |br|
 *<tree>*: input file tree name |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+Density map
+###########
+Function names: density_map; densitymap; dmap |br|
+Command line interface: pk_density_map; pk_densitymap; pk_dmap
+
+Plot a phylogram with branches colored by posterior probabilities of
+discrete character states from stochastic character mapping (analogous
+to R's ``phytools::densityMap()``). Runs N simulations of stochastic
+character mapping internally and, for each point along each branch,
+computes the fraction of simulations in each state.
+
+.. code-block:: shell
+
+   phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>state) |br|
+*-c/\\-\\-trait*: column name of the trait to map |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*-n/\\-\\-nsim*: number of stochastic mapping simulations (default: 100) |br|
+*--seed*: random seed for reproducibility |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/densitymap_example.png
+   :align: center
+   :width: 80%
 
 |
 
@@ -1223,98 +1421,6 @@ file with the list of taxa to get the last common ancestor subtree for
 
 |
 
-Long branch score
-#################
-Function names: long_branch_score; lb_score; lbs |br|
-Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs
-
-Calculate long branch (LB) scores in a phylogeny.
-
-Lower LB scores are thought to be desirable because
-they are indicative of taxa or trees that likely do
-not have issues with long branch attraction.
-
-LB score is the mean pairwise patristic distance of
-taxon i compared to all other taxa over the average 
-pairwise patristic distance. 
-
-PhyKIT reports summary statistics. To obtain LB scores
-for each taxa, use the -v/--verbose option. 
-
-LB scores are calculated following Struck, Evolutionary 
-Bioinformatics (2014), doi: 10.4137/EBO.S14239.  
-
-.. code-block:: shell
-
-   phykit long_branch_score <tree> [-v/--verbose] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all LB score values |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Monophyly check
-###############
-Function names: monophyly_check; is_monophyletic |br|
-Command line interface: pk_monophyly_check; pk_is_monophyletic
-
-This analysis can be used to determine if a set of 
-taxa are exclusively monophyletic. By exclusively monophyletic,
-if other taxa are in the same clade, the lineage will not be
-considered exclusively monophyletic.
-
-Requires a taxa file, which species which tip names
-are expected to be monophyletic. File format is a
-single column file with tip names. Tip names not
-present in the tree will not be considered when
-examining monophyly.
-
-The output will have six columns.
-col 1: if the clade was or wasn't monophyletic
-col 2: average bipartition support value in the clade of interest
-col 3: maximum bipartition support value in the clade of interest
-col 4: minimum bipartition support value in the clade of interest
-col 5: standard deviation of bipartition support values in the clade of interest
-col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file
-
-.. code-block:: shell
-
-   phykit monophyly_check <tree> <list_of_taxa> [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*<list_of_taxa>*: single column file with list of tip names to 
-examine the monophyly of |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Nearest neighbor interchange
-############################
-Function names: nearest_neighbor_interchange; nni |br|
-Command line interface: pk_nearest_neighbor_interchange; pk_nni
-
-Generate all nearest neighbor interchange moves for a binary
-rooted tree.
-
-By default, the output file will have the same name as the input
-file but with the suffix ".nnis"
-
-The output file will also include the original phylogeny.
-
-.. code-block:: shell
-
-   phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to specify output file name |br|
-*--json*: optional argument to print summary metadata as JSON
-
-|
-
 Lineage-through-time plot and gamma statistic
 ##############################################
 Function names: ltt; gamma_stat; gamma |br|
@@ -1439,6 +1545,180 @@ PhyKIT's gamma statistic was validated against R's ape package
 
 The algorithm replicates the exact formula from ape's ``gammaStat.R``
 source, including the ``rev()`` step on internode intervals.
+
+|
+
+Long branch score
+#################
+Function names: long_branch_score; lb_score; lbs |br|
+Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs
+
+Calculate long branch (LB) scores in a phylogeny.
+
+Lower LB scores are thought to be desirable because
+they are indicative of taxa or trees that likely do
+not have issues with long branch attraction.
+
+LB score is the mean pairwise patristic distance of
+taxon i compared to all other taxa over the average 
+pairwise patristic distance. 
+
+PhyKIT reports summary statistics. To obtain LB scores
+for each taxa, use the -v/--verbose option. 
+
+LB scores are calculated following Struck, Evolutionary 
+Bioinformatics (2014), doi: 10.4137/EBO.S14239.  
+
+.. code-block:: shell
+
+   phykit long_branch_score <tree> [-v/--verbose] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-v/\\-\\-verbose*: optional argument to print all LB score values |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Monophyly check
+###############
+Function names: monophyly_check; is_monophyletic |br|
+Command line interface: pk_monophyly_check; pk_is_monophyletic
+
+This analysis can be used to determine if a set of 
+taxa are exclusively monophyletic. By exclusively monophyletic,
+if other taxa are in the same clade, the lineage will not be
+considered exclusively monophyletic.
+
+Requires a taxa file, which species which tip names
+are expected to be monophyletic. File format is a
+single column file with tip names. Tip names not
+present in the tree will not be considered when
+examining monophyly.
+
+The output will have six columns.
+col 1: if the clade was or wasn't monophyletic
+col 2: average bipartition support value in the clade of interest
+col 3: maximum bipartition support value in the clade of interest
+col 4: minimum bipartition support value in the clade of interest
+col 5: standard deviation of bipartition support values in the clade of interest
+col 6: tip names of taxa monophyletic with the lineage of interest excluding those that are listed in the taxa_of_interest file
+
+.. code-block:: shell
+
+   phykit monophyly_check <tree> <list_of_taxa> [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*<list_of_taxa>*: single column file with list of tip names to 
+examine the monophyly of |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Multi-regime OU models (OUwie)
+##############################
+Function names: ouwie; fit_ouwie; multi_regime_ou |br|
+Command line interface: pk_ouwie; pk_fit_ouwie; pk_multi_regime_ou
+
+Fit multi-regime Ornstein-Uhlenbeck models of continuous trait evolution,
+analogous to R's ``OUwie`` package (Beaulieu et al. 2012). Fits up to 7
+models and ranks them by AICc, BIC, and AICc weights. Regime assignments
+to internal branches are inferred via Fitch parsimony.
+
+Models:
+
+- **BM1** -- single-rate Brownian motion (2 params)
+- **BMS** -- multi-rate Brownian motion with per-regime sigma2 (R+1 params)
+- **OU1** -- single-regime Ornstein-Uhlenbeck (3 params)
+- **OUM** -- multi-regime OU with per-regime trait optima (R+2 params)
+- **OUMV** -- OUM + per-regime sigma2 (2R+1 params)
+- **OUMA** -- OUM + per-regime alpha (2R+1 params)
+- **OUMVA** -- all parameters regime-specific (3R params)
+
+.. code-block:: shell
+
+   phykit ouwie -t <tree> -d <trait_data> -r <regime_data> [--models BM1,OUM,OUMVA] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
+*--models*: comma-separated list of models to fit (default: all 7) |br|
+*--json*: optional argument to print results as JSON
+
+The trait data file is a two-column tab-delimited file mapping taxon names
+to continuous trait values:
+
+.. code-block:: none
+
+   dog	1.1
+   bear	1.9
+   raccoon	1.5
+   seal	1.8
+   sea_lion	1.8
+   cat	0.5
+   weasel	1.7
+   monkey	0.3
+
+The regime data file is a two-column tab-delimited file mapping taxon names
+to discrete regime labels (e.g., habitat, diet category):
+
+.. code-block:: none
+
+   dog	terrestrial
+   bear	terrestrial
+   raccoon	terrestrial
+   seal	aquatic
+   sea_lion	aquatic
+   cat	terrestrial
+   weasel	terrestrial
+   monkey	terrestrial
+
+Example output:
+
+.. code-block:: none
+
+   OUwie Model Comparison
+   ======================
+   Regimes: aquatic, terrestrial
+
+   Model      logLik     AICc      BIC     k  AICc_w  Params
+   -----  ----------  -------  -------  ----  ------  ------
+   OUMVA     -6.9859  27.9717  29.5459     6  0.0040  alpha={aquatic:0.38, terrestrial:0.38}, sigma2={aquatic:0.01, terrestrial:0.05}, theta={aquatic:1.80, terrestrial:1.24}
+   OUMA      -6.9859  27.9717  29.0119     5  0.0040  alpha={aquatic:0.38, terrestrial:0.38}, sigma2=0.0384, theta={aquatic:1.80, terrestrial:1.24}
+   OUMV      -6.9859  27.9717  29.0119     5  0.0040  alpha=0.3849, sigma2={aquatic:0.01, terrestrial:0.05}, theta={aquatic:1.80, terrestrial:1.24}
+   OUM       -8.6297  25.2594  26.3276     4  0.0488  alpha=0.0706, sigma2=0.0329, theta={aquatic:1.80, terrestrial:1.33}
+   OU1      -10.2890  27.2447  28.0459     3  0.0063  alpha=0.0398, sigma2=0.0363, theta=1.64
+   BMS      -11.2046  29.0759  29.8771     3  0.0024  sigma2={aquatic:0.01, terrestrial:0.05}, z0=1.64
+   BM1      -11.5697  27.1393  27.6735     2  0.0073  sigma2=0.0384, z0=1.64
+
+   Best model (AICc): OUM
+   Best model (BIC): OUM
+
+|
+
+Nearest neighbor interchange
+############################
+Function names: nearest_neighbor_interchange; nni |br|
+Command line interface: pk_nearest_neighbor_interchange; pk_nni
+
+Generate all nearest neighbor interchange moves for a binary
+rooted tree.
+
+By default, the output file will have the same name as the input
+file but with the suffix ".nnis"
+
+The output file will also include the original phylogeny.
+
+.. code-block:: shell
+
+   phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-o/\\-\\-output*: optional argument to specify output file name |br|
+*--json*: optional argument to print summary metadata as JSON
 
 |
 
@@ -1635,6 +1915,93 @@ The tip-by-tip submatrix is the VCV used for K and lambda.
 
 |
 
+OU shift detection (l1ou)
+#########################
+Function names: ou_shift_detection; ou_shifts; l1ou; detect_shifts |br|
+Command line interface: pk_ou_shift_detection; pk_ou_shifts; pk_l1ou; pk_detect_shifts
+
+Automatic OU shift detection using the LASSO-based approach from
+Khabbazian et al. (2016). Discovers where on the phylogeny the adaptive
+optimum changed without requiring an a priori regime assignment. Only a
+tree and continuous trait data are needed.
+
+The algorithm:
+
+1. Fits a single-regime OU model to estimate alpha (selection strength)
+2. Builds a design matrix with one column per candidate shift edge
+3. Uses Cholesky transformation to remove phylogenetic correlation
+4. Runs a LASSO path to identify candidate shift configurations
+5. Selects the best model using pBIC, BIC, or AICc
+
+.. code-block:: shell
+
+   phykit l1ou -t <tree> -d <trait_data> [--criterion pBIC] [--max-shifts N] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*--criterion*: model selection criterion: pBIC (default), BIC, or AICc |br|
+*--max-shifts*: maximum number of shifts to consider (default: n/2) |br|
+*--json*: optional argument to print results as JSON
+
+Example output (no shifts detected):
+
+.. code-block:: none
+
+   ============================================================
+   OU Shift Detection (l1ou)
+   ============================================================
+   Number of tips:       8
+   Number of shifts:     0
+   Selection criterion:  pBIC
+   Alpha (OU strength):  0.784803
+   Sigma² (BM rate):     1.203455
+   Root optimum (θ₀):    1.206251
+   Log-likelihood:       -10.2890
+   pBIC:                 26.8163
+   BIC:                  26.8163
+   AICc:                 32.5780
+
+   No shifts detected — single-regime OU is best.
+   ============================================================
+
+Example output (shifts detected):
+
+.. code-block:: none
+
+   ============================================================
+   OU Shift Detection (l1ou)
+   ============================================================
+   Number of tips:       100
+   Number of shifts:     8
+   Selection criterion:  pBIC
+   Alpha (OU strength):  0.606894
+   Sigma² (BM rate):     0.062519
+   Root optimum (θ₀):    0.248810
+   Log-likelihood:       48.6896
+   pBIC:                 17.6266
+   BIC:                  -9.8811
+   AICc:                 -49.8793
+
+   Detected shifts:
+   ------------------------------------------------------------
+     Shift 1: terminal branch to valencienni
+              New optimum: -0.564678
+     Shift 2: terminal branch to insolitus
+              New optimum: -0.876398
+     Shift 3: stem of (barbatus, porcus, ... +2 more)
+              New optimum: -0.635087
+     Shift 4: stem of (altitudinalis, oporinus, ... +13 more)
+              New optimum: -0.462944
+   ============================================================
+
+Results have been validated against R's l1ou package
+(`Khabbazian et al. 2016 <https://doi.org/10.1093/sysbio/syw062>`_).
+On a 100-tip lizard dataset, PhyKIT recovers the same 8 adaptive shifts
+with matching alpha (0.607) and pBIC (17.6 vs R's 16.8).
+
+|
+
 Patristic distances
 ###################
 Function names: patristic_distances; pd |br|
@@ -1660,50 +2027,71 @@ Options: |br|
 
 |
 
-Phylogenetic signal
-####################
-Function names: phylogenetic_signal; phylo_signal; ps |br|
-Command line interface: pk_phylogenetic_signal; pk_phylo_signal; pk_ps
+Phenogram (traitgram)
+#####################
+Function names: phenogram; traitgram; tg |br|
+Command line interface: pk_phenogram; pk_traitgram; pk_tg
 
-Calculate phylogenetic signal for continuous trait data on a phylogeny.
-
-Two methods are available:
-
-- **Blomberg's K** (Blomberg et al. 2003): measures the degree of phylogenetic
-  signal relative to expectation under Brownian motion. K = 1 indicates trait
-  variation consistent with BM; K < 1 indicates less phylogenetic signal than
-  expected; K > 1 indicates more. P-value is computed via permutation test.
-- **Pagel's lambda** (Pagel 1999): a tree-scaling parameter estimated by
-  maximum likelihood. Lambda = 0 indicates no phylogenetic signal; lambda = 1
-  indicates trait evolution consistent with BM. P-value is computed via
-  likelihood ratio test against lambda = 0.
-
-The trait file should be tab-delimited with two columns (taxon_name<tab>trait_value).
-Lines starting with '#' are treated as comments. If the tree and trait file have
-different taxa, the intersection is used and warnings are printed to stderr.
-
-Output for Blomberg's K: K_value<tab>p_value |br|
-Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value
-
-Results have been validated against the R package phytools (``phylosig`` function)
-across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
-(pure-birth, coalescent), trait models (random, Brownian motion, known lambda),
-and branch length scales. All metrics show Pearson r > 0.999 with phytools.
-
-.. image:: ../_static/docs_img/phylogenetic_signal_validation.png
-   :align: center
-
-|
+Plot a phenogram (traitgram) showing trait evolution along a phylogeny
+(analogous to R's ``phytools::phenogram()``). The X-axis represents
+distance from the root and the Y-axis represents trait values.
+Ancestral states are reconstructed via maximum-likelihood.
 
 .. code-block:: shell
 
-   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [--json]
+   phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
-*-m/\\-\\-method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
-*-p/\\-\\-permutations*: number of permutations for Blomberg's K (default: 1000) |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-o/\\-\\-output*: output plot file path (required) |br|
+*--json*: optional argument to print results as JSON
+
+.. image:: ../_static/img/phenogram_example.png
+   :align: center
+   :width: 80%
+
+|
+
+Phylogenetic GLM
+################
+Function names: phylogenetic_glm; phylo_glm; pglm |br|
+Command line interface: pk_phylogenetic_glm; pk_phylo_glm; pk_pglm
+
+Fit a Phylogenetic Generalized Linear Model (GLM) for binary or count
+response data while accounting for phylogenetic non-independence among
+species.
+
+Two families are supported:
+
+- **binomial**: logistic regression via Maximum Penalized Likelihood
+  Estimation (logistic_MPLE; Ives & Garland 2010). Uses Firth's penalty
+  to prevent bias from complete/quasi-complete separation, and jointly
+  estimates the phylogenetic signal parameter alpha via a two-state
+  continuous-time Markov chain on the tree.
+- **poisson**: Poisson regression via Generalized Estimating Equations
+  (poisson_GEE; Paradis & Claude 2002). Uses Fisher scoring with the
+  phylogenetic correlation matrix and reports an overdispersion parameter.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+
+Output includes coefficient estimates, standard errors, z-values,
+p-values, log-likelihood, and AIC.
+
+.. code-block:: shell
+
+   phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*-y/\\-\\-response*: response (dependent) variable column name |br|
+*-x/\\-\\-predictors*: one or more predictor column names |br|
+*--family*: distribution family: binomial or poisson |br|
+*--method*: estimation method: logistic_MPLE or poisson_GEE (auto from family) |br|
+*--btol*: linear predictor bound for logistic model (default: 10) |br|
+*--log-alpha-bound*: bound on log(alpha) for logistic model (default: 4) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1804,50 +2192,6 @@ Options: |br|
 
 |
 
-Phylomorphospace
-################
-Function names: phylomorphospace; phylomorpho; phmo |br|
-Command line interface: pk_phylomorphospace; pk_phylomorpho; pk_phmo
-
-Plot a phylomorphospace: two raw traits in trait space with the phylogeny
-overlaid via ML-reconstructed ancestral states at internal nodes. This differs
-from the ``phylogenetic_ordination --plot-tree`` option, which plots in PC space;
-``phylomorphospace`` plots raw trait values directly on the x and y axes.
-
-Tree edges connect species through ML-reconstructed ancestral states and are
-colored by distance from root (coolwarm colormap with colorbar). Tip points
-default to blue, or can be colored by a continuous or discrete variable using
-the ``--color-by`` option.
-
-The multi-trait input file should be tab-delimited with a header row:
-``taxon<tab>trait1<tab>trait2<tab>...``
-Lines starting with '#' are treated as comments. If the tree and trait file
-have different taxa, the intersection is used and warnings are printed to
-stderr.
-
-If the trait file has exactly 2 trait columns and ``--trait-x`` / ``--trait-y``
-are omitted, the first two columns are selected automatically.
-
-.. image:: ../_static/docs_img/phylomorphospace_plot.png
-   :align: center
-
-|
-
-.. code-block:: shell
-
-   phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
-*--trait-x*: column name for x-axis trait |br|
-*--trait-y*: column name for y-axis trait |br|
-*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
-*--plot-output*: output path for plot (default: phylomorphospace_plot.png) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
 Phylogenetic regression (PGLS)
 ##############################
 Function names: phylogenetic_regression; phylo_regression; pgls |br|
@@ -1897,45 +2241,420 @@ Options: |br|
 
 |
 
-Phylogenetic GLM
-################
-Function names: phylogenetic_glm; phylo_glm; pglm |br|
-Command line interface: pk_phylogenetic_glm; pk_phylo_glm; pk_pglm
+Phylogenetic signal
+####################
+Function names: phylogenetic_signal; phylo_signal; ps |br|
+Command line interface: pk_phylogenetic_signal; pk_phylo_signal; pk_ps
 
-Fit a Phylogenetic Generalized Linear Model (GLM) for binary or count
-response data while accounting for phylogenetic non-independence among
-species.
+Calculate phylogenetic signal for continuous trait data on a phylogeny.
 
-Two families are supported:
+Two methods are available:
 
-- **binomial**: logistic regression via Maximum Penalized Likelihood
-  Estimation (logistic_MPLE; Ives & Garland 2010). Uses Firth's penalty
-  to prevent bias from complete/quasi-complete separation, and jointly
-  estimates the phylogenetic signal parameter alpha via a two-state
-  continuous-time Markov chain on the tree.
-- **poisson**: Poisson regression via Generalized Estimating Equations
-  (poisson_GEE; Paradis & Claude 2002). Uses Fisher scoring with the
-  phylogenetic correlation matrix and reports an overdispersion parameter.
+- **Blomberg's K** (Blomberg et al. 2003): measures the degree of phylogenetic
+  signal relative to expectation under Brownian motion. K = 1 indicates trait
+  variation consistent with BM; K < 1 indicates less phylogenetic signal than
+  expected; K > 1 indicates more. P-value is computed via permutation test.
+- **Pagel's lambda** (Pagel 1999): a tree-scaling parameter estimated by
+  maximum likelihood. Lambda = 0 indicates no phylogenetic signal; lambda = 1
+  indicates trait evolution consistent with BM. P-value is computed via
+  likelihood ratio test against lambda = 0.
 
-The multi-trait input file should be tab-delimited with a header row:
-``taxon<tab>trait1<tab>trait2<tab>...``
+The trait file should be tab-delimited with two columns (taxon_name<tab>trait_value).
+Lines starting with '#' are treated as comments. If the tree and trait file have
+different taxa, the intersection is used and warnings are printed to stderr.
 
-Output includes coefficient estimates, standard errors, z-values,
-p-values, log-likelihood, and AIC.
+Output for Blomberg's K: K_value<tab>p_value |br|
+Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value
+
+Results have been validated against the R package phytools (``phylosig`` function)
+across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
+(pure-birth, coalescent), trait models (random, Brownian motion, known lambda),
+and branch length scales. All metrics show Pearson r > 0.999 with phytools.
+
+.. image:: ../_static/docs_img/phylogenetic_signal_validation.png
+   :align: center
+
+|
 
 .. code-block:: shell
 
-   phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [--json]
+   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
+*-m/\\-\\-method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
+*-p/\\-\\-permutations*: number of permutations for Blomberg's K (default: 1000) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Phylomorphospace
+################
+Function names: phylomorphospace; phylomorpho; phmo |br|
+Command line interface: pk_phylomorphospace; pk_phylomorpho; pk_phmo
+
+Plot a phylomorphospace: two raw traits in trait space with the phylogeny
+overlaid via ML-reconstructed ancestral states at internal nodes. This differs
+from the ``phylogenetic_ordination --plot-tree`` option, which plots in PC space;
+``phylomorphospace`` plots raw trait values directly on the x and y axes.
+
+Tree edges connect species through ML-reconstructed ancestral states and are
+colored by distance from root (coolwarm colormap with colorbar). Tip points
+default to blue, or can be colored by a continuous or discrete variable using
+the ``--color-by`` option.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.
+
+If the trait file has exactly 2 trait columns and ``--trait-x`` / ``--trait-y``
+are omitted, the first two columns are selected automatically.
+
+.. image:: ../_static/docs_img/phylomorphospace_plot.png
+   :align: center
+
+|
+
+.. code-block:: shell
+
+   phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
 *-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
-*-y/\\-\\-response*: response (dependent) variable column name |br|
-*-x/\\-\\-predictors*: one or more predictor column names |br|
-*--family*: distribution family: binomial or poisson |br|
-*--method*: estimation method: logistic_MPLE or poisson_GEE (auto from family) |br|
-*--btol*: linear predictor bound for logistic model (default: 10) |br|
-*--log-alpha-bound*: bound on log(alpha) for logistic model (default: 4) |br|
+*--trait-x*: column name for x-axis trait |br|
+*--trait-y*: column name for y-axis trait |br|
+*--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
+*--plot-output*: output path for plot (default: phylomorphospace_plot.png) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Polytomy testing
+################
+Function names: polytomy_test; polyt_test; polyt; ptt |br|
+Command line interface: pk_polytomy_test; pk_polyt_test; pk_polyt; pk_ptt
+
+Conduct a polytomy test for three clades in a phylogeny.
+
+Polytomy tests can be used to identify putative radiations
+as well as identify well supported alternative topologies.
+
+The polytomy testing function takes as input a file with
+the three groups of taxa to test the relationships for and
+a single column file with the names of the desired tree files
+to use for polytomy testing. Next, the script to examine
+support for the grouping of the three taxa using triplets
+and gene support frequencies. 
+
+This function can account for uncertainty in gene trees - 
+that is, the input phylogenies can have collapsed bipartitions.
+
+Thereafter, a chi-squared test is conducted to determine if there
+is evidence to reject the null hypothesis wherein the null 
+hypothesis is that the three possible topologies among the three
+groups are equally supported. This test is done using gene support
+frequencies.
+
+.. code-block:: shell
+
+   phykit polytomy_test -t/--trees <trees> -g/--groups <groups> [--json]
+
+Options: |br|
+*-t/\\-\\-trees <trees>*: single column file with the names of 
+phylogenies to use for polytomy testing |br|
+*-g/\\-\\-groups*: a tab-delimited file with the grouping designations
+to test. Lines starting with commetns are not considered. Names of
+individual taxa should be separated by a semi-colon ';' |br|
+*--json*: optional argument to print results as JSON
+
+For example, the groups file could look like the following:
+
+.. code-block:: shell
+
+   #label group0  group1  group2
+   name_of_test    tip_name_A;tip_name_B   tip_name_C  tip_name_D;tip_name_E
+
+|
+
+Print tree
+##########
+Function names: print_tree; print; pt |br|
+Command line interface: pk_print_tree; pk_print; pk_pt
+
+Print ascii tree of input phylogeny.
+
+Phylogeny can be printed with or without branch lengths.
+By default, the phylogeny will be printed with branch lengths
+but branch lengths can be removed using the -r/--remove argument.
+
+.. code-block:: shell
+
+   phykit print_tree <tree> [-r/--remove] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-r/\\-\\-remove*: optional argument to print the phylogeny without branch
+lengths |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Prune tree
+##########
+Function names: prune_tree; prune |br|
+Command line interface: pk_prune_tree; pk_prune
+
+Prune tips from a phylogeny.
+
+Provide a single column file with the names of the tips
+in the input phylogeny you would like to prune from the
+tree.
+
+.. code-block:: shell
+
+   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>] [-k/--keep] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*<list_of_taxa>*: single column file with the names of the tips to remove
+from the phylogeny |br|
+*-o/\\-\\-output*: name of output file for the pruned phylogeny. 
+Default output will have the same name as the input file but with the suffix 
+".pruned" |br|
+*-k/\-\-keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
+keep them |br|
+*--json*: optional argument to print results as JSON
+|
+
+Quartet network
+################
+Function names: quartet_network; quartet_net; qnet; nanuq |br|
+Command line interface: pk_quartet_network; pk_quartet_net; pk_qnet; pk_nanuq
+
+Quartet-based network inference (NANUQ-style) for distinguishing incomplete
+lineage sorting (ILS) from hybridization/gene flow using quartet concordance
+factors from gene trees.
+
+For each 4-taxon subset, counts how many gene trees display each of the 3
+possible unrooted topologies and applies two hypothesis tests:
+
+1. **Star test** (Pearson chi-squared): tests whether the three topology
+   counts are consistent with a star tree (equal probabilities 1/3 each).
+   If p_star > beta (default 0.95), the quartet is classified as
+   *unresolved*.
+
+2. **T3 tree model test** (G-test / likelihood ratio): tests whether the
+   counts are consistent with any resolved quartet tree under the
+   multispecies coalescent.  If p_tree > alpha (default 0.05), the quartet
+   is classified as *tree-like* (conflict is due to ILS).
+
+3. If both tests reject their null hypotheses, the quartet is classified as
+   *hybrid* (asymmetric discordance indicating gene flow or hybridization).
+
+This algorithm matches the NANUQ method of Allman, Baños & Rhodes (2019),
+implemented in R's MSCquartets package.
+
+Input can be either:
+1) a file with one Newick tree per line, or
+2) a file with one tree-file path per line.
+
+.. code-block:: shell
+
+   phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>] [--json]
+
+Options: |br|
+*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*--alpha*: significance level for the T3 tree model test (default: ``0.05``) |br|
+*--beta*: threshold for the star tree test; quartets with p_star > beta are called unresolved (default: ``0.95``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--plot-output*: output filename for the quartet network plot (optional) |br|
+*--json*: optional argument to print results as JSON
+
+When ``--plot-output`` is specified, a NANUQ-style splits graph is drawn from
+the quartet distance matrix using Neighbor-Joining and circular split
+decomposition.  Tree-like relationships appear as simple branching, while
+hybridization / reticulation produces characteristic box (parallelogram)
+structures — the same style of output produced by R's MSCquartets +
+NeighborNet pipeline.
+
+**No hybridization signal** — all quartets are tree-like, so the splits graph
+is a clean unrooted tree:
+
+.. image:: ../_static/img/quartet_network_tree.png
+   :align: center
+   :width: 80%
+
+|
+
+**Hybridization signal present** — hybrid quartets introduce conflicting
+splits that appear as boxes in the network, indicating reticulation among
+C, D, E, and F:
+
+.. image:: ../_static/img/quartet_network_hybrid.png
+   :align: center
+   :width: 80%
+
+|
+
+Rate heterogeneity test (multi-rate Brownian motion)
+####################################################
+Function names: rate_heterogeneity; brownie; rh |br|
+Command line interface: pk_rate_heterogeneity; pk_brownie; pk_rh
+
+Test for rate heterogeneity across phylogenetic regimes using multi-rate
+Brownian motion (O'Meara et al. 2006), analogous to R's
+``phytools::brownie.lite()``.
+
+Fits single-rate vs. multi-rate BM models and performs a likelihood ratio
+test. Users specify a tree, continuous trait data, and a regime file
+mapping tips to regimes (tab-delimited, ``taxon<tab>regime_label``).
+
+Regime assignments to internal branches are inferred via Fitch parsimony.
+Per-regime VCV matrices are decomposed and per-regime sigma-squared values
+are estimated via maximum likelihood.
+
+Optionally, a parametric bootstrap can be run to compute a simulated
+p-value (``-n/--nsim``). A horizontal phylogram with branches colored by
+regime can be generated using ``--plot``.
+
+.. code-block:: shell
+
+   phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a tree file in Newick format |br|
+*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
+*-n/\\-\\-nsim*: number of parametric bootstrap simulations (default: 0) |br|
+*--seed*: random seed for reproducibility |br|
+*--plot*: output plot file path for phylogram with colored branches |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Rename tree tips
+################
+Function names: rename_tree_tips; rename_tree; rename_tips |br|
+Command line interface: pk_rename_tree_tips; pk_rename_tree; pk_rename_tips
+
+Renames tips in a phylogeny.
+
+Renaming tip files will follow the scheme of a tab-delimited
+file wherein the first column is the current tip name and the
+second column is the desired tip name in the resulting 
+phylogeny. 
+
+.. code-block:: shell
+
+   phykit rename_tree_tips <tree> -i/--idmap <idmap.txt> [-o/--output <output_file>] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-i/\\-\\-idmap*: identifier map of current tip names (col1) and desired
+tip names (col2) |br|
+*-o/\\-\\-output*: optional argument to write the renamed tree files to. Default
+output will have the same name as the input file but with the suffix ".renamed" |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Robinson-Foulds distance
+########################
+Function names: robinson_foulds_distance; rf_distance; rf_dist; rf |br|
+Command line interface: pk_robinson_foulds_distance; pk_rf_distance; pk_rf_dist; pk_rf
+
+Calculate Robinson-Foulds (RF) distance between two trees.
+
+Low RF distances reflect greater similarity between two phylogenies. 
+This function prints out two values, the plain RF value and the
+normalized RF value, which are separated by a tab. Normalized RF values
+are calculated by taking the plain RF value and dividing it by 2(n-3)
+where n is the number of tips in the phylogeny. Prior to calculating
+an RF value, PhyKIT will first determine the number of shared tips
+between the two input phylogenies and prune them to a common set of
+tips. Thus, users can input trees with different topologies and 
+infer an RF value among subtrees with shared tips.
+
+PhyKIT will print out 
+col 1; the plain RF distance and 
+col 2: the normalized RF distance.
+
+RF distances are calculated following Robinson & Foulds, Mathematical 
+Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
+
+.. code-block:: shell
+
+   phykit robinson_foulds_distance <tree_file_zero> <tree_file_one> [--json]
+
+Options: |br|
+*<tree_file_zero>*: first argument after function name should be a tree file |br|
+*<tree_file_one>*: second argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Root tree
+#########
+Function names: root_tree; root; rt |br|
+Command line interface: pk_root_tree; pk_root; pk_rt
+
+Roots phylogeny using user-specified taxa.
+
+A list of taxa to root the phylogeny on should be specified using the -r
+argument. The root_taxa file should be a single-column file with taxa names.
+The outputted file will have the same name as the inputted tree file but with
+the suffix ".rooted".
+
+.. code-block:: shell
+
+   phykit root_tree <tree> -r/--root <root_taxa> [-o/--output <output_file>] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file to root|br|
+*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on|br|
+*-o/\\-\\-output*: optional argument to specify the name of the output file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+Spurious homolog identification
+###############################
+Function names: spurious_sequence; spurious_seq; ss |br|
+Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss
+
+Determines potentially spurious homologs using branch lengths.
+
+Identifies potentially spurious sequences and reports
+tips in the phylogeny that could possibly be removed
+from the associated multiple sequence alignment. PhyKIT
+does so by identifying and reporting long terminal branches
+defined as branches that are equal to or 20 times the median
+length of all branches.
+
+PhyKIT reports the following information
+col1: name of tip that is a putatively spurious sequence
+col2: length of branch leading to putatively spurious sequence
+col3: threshold used to identify putatively spurious sequences
+col4: median branch length in the phylogeny
+
+If there are no putatively spurious sequences, "None" is reported.
+
+Using this method to identify potentially spurious sequences
+was, to my knowledge, first introduced by Shen et al., (2018)
+Cell doi: 10.1016/j.cell.2018.10.023. 
+
+.. code-block:: shell
+
+   phykit spurious_seq <file> -f/\\-\\-factor [--json]
+
+Options: |br|
+*<file>*: first argument after function name should be a tree file |br|
+*-f/\\-\\-factor*: factor to multiply median branch length by to calculate
+the threshold of long branches. (Default: 20) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1993,365 +2712,25 @@ Options: |br|
 
 |
 
-Rate heterogeneity test (multi-rate Brownian motion)
-####################################################
-Function names: rate_heterogeneity; brownie; rh |br|
-Command line interface: pk_rate_heterogeneity; pk_brownie; pk_rh
+Terminal branch statistics
+##########################
+Function names: terminal_branch_stats; tbs |br|
+Command line interface: pk_terminal_branch_stats; pk_tbs
 
-Test for rate heterogeneity across phylogenetic regimes using multi-rate
-Brownian motion (O'Meara et al. 2006), analogous to R's
-``phytools::brownie.lite()``.
+Calculate summary statistics for terminal branch lengths in a phylogeny.
 
-Fits single-rate vs. multi-rate BM models and performs a likelihood ratio
-test. Users specify a tree, continuous trait data, and a regime file
-mapping tips to regimes (tab-delimited, ``taxon<tab>regime_label``).
+Terminal branch lengths can be useful for phylogeny diagnostics.
 
-Regime assignments to internal branches are inferred via Fitch parsimony.
-Per-regime VCV matrices are decomposed and per-regime sigma-squared values
-are estimated via maximum likelihood.
-
-Optionally, a parametric bootstrap can be run to compute a simulated
-p-value (``-n/--nsim``). A horizontal phylogram with branches colored by
-regime can be generated using ``--plot``.
+To obtain all terminal branch lengths, use the -v/\\-\\-verbose option.   
 
 .. code-block:: shell
 
-   phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+   phykit terminal_branch_stats <tree> [-v/--verbose] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
-*-n/\\-\\-nsim*: number of parametric bootstrap simulations (default: 0) |br|
-*--seed*: random seed for reproducibility |br|
-*--plot*: output plot file path for phylogram with colored branches |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-v/\\-\\-verbose*: optional argument to print all terminal branch lengths |br|
 *--json*: optional argument to print results as JSON
-
-|
-
-Continuous trait evolution model comparison (fitContinuous)
-##########################################################
-Function names: fit_continuous; fitcontinuous; fc |br|
-Command line interface: pk_fit_continuous; pk_fitcontinuous; pk_fc
-
-Compare models of continuous trait evolution on a phylogeny, analogous to
-R's ``geiger::fitContinuous()``. Fits up to 7 models and ranks them by
-AIC, BIC, and AIC weights.
-
-Models:
-
-- **BM** -- Brownian motion (baseline, 2 params)
-- **OU** -- Ornstein-Uhlenbeck / stabilizing selection (3 params)
-- **EB** -- Early Burst (Harmon et al. 2010) (3 params)
-- **Lambda** -- Pagel's lambda / phylogenetic signal (3 params)
-- **Delta** -- Pagel's delta / tempo of evolution (3 params)
-- **Kappa** -- Pagel's kappa / punctuational vs gradual (3 params)
-- **White** -- White noise / no phylogenetic signal (2 params)
-
-.. code-block:: shell
-
-   phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*--models*: comma-separated list of models to fit (default: all 7) |br|
-*--json*: optional argument to print results as JSON
-
-Example output:
-
-.. code-block:: text
-
-   Model Comparison (fitContinuous)
-
-   Number of tips: 8
-
-   Model       Param     Value      Sigma2    z0        LL         AIC     dAIC    AICw    BIC     dBIC
-   BM          -         -          0.0384    1.6447    -11.570    27.14   0.00    0.453   27.83   0.00
-   OU          alpha     0.0012     0.0385    1.6420    -11.568    29.14   2.00    0.167   30.18   2.35
-   ...
-
-   Best model (AIC): BM
-   Best model (BIC): BM
-
-|
-
-Multi-regime OU models (OUwie)
-##############################
-Function names: ouwie; fit_ouwie; multi_regime_ou |br|
-Command line interface: pk_ouwie; pk_fit_ouwie; pk_multi_regime_ou
-
-Fit multi-regime Ornstein-Uhlenbeck models of continuous trait evolution,
-analogous to R's ``OUwie`` package (Beaulieu et al. 2012). Fits up to 7
-models and ranks them by AICc, BIC, and AICc weights. Regime assignments
-to internal branches are inferred via Fitch parsimony.
-
-Models:
-
-- **BM1** -- single-rate Brownian motion (2 params)
-- **BMS** -- multi-rate Brownian motion with per-regime sigma2 (R+1 params)
-- **OU1** -- single-regime Ornstein-Uhlenbeck (3 params)
-- **OUM** -- multi-regime OU with per-regime trait optima (R+2 params)
-- **OUMV** -- OUM + per-regime sigma2 (2R+1 params)
-- **OUMA** -- OUM + per-regime alpha (2R+1 params)
-- **OUMVA** -- all parameters regime-specific (3R params)
-
-.. code-block:: shell
-
-   phykit ouwie -t <tree> -d <trait_data> -r <regime_data> [--models BM1,OUM,OUMVA] [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
-*--models*: comma-separated list of models to fit (default: all 7) |br|
-*--json*: optional argument to print results as JSON
-
-The trait data file is a two-column tab-delimited file mapping taxon names
-to continuous trait values:
-
-.. code-block:: none
-
-   dog	1.1
-   bear	1.9
-   raccoon	1.5
-   seal	1.8
-   sea_lion	1.8
-   cat	0.5
-   weasel	1.7
-   monkey	0.3
-
-The regime data file is a two-column tab-delimited file mapping taxon names
-to discrete regime labels (e.g., habitat, diet category):
-
-.. code-block:: none
-
-   dog	terrestrial
-   bear	terrestrial
-   raccoon	terrestrial
-   seal	aquatic
-   sea_lion	aquatic
-   cat	terrestrial
-   weasel	terrestrial
-   monkey	terrestrial
-
-Example output:
-
-.. code-block:: none
-
-   OUwie Model Comparison
-   ======================
-   Regimes: aquatic, terrestrial
-
-   Model      logLik     AICc      BIC     k  AICc_w  Params
-   -----  ----------  -------  -------  ----  ------  ------
-   OUMVA     -6.9859  27.9717  29.5459     6  0.0040  alpha={aquatic:0.38, terrestrial:0.38}, sigma2={aquatic:0.01, terrestrial:0.05}, theta={aquatic:1.80, terrestrial:1.24}
-   OUMA      -6.9859  27.9717  29.0119     5  0.0040  alpha={aquatic:0.38, terrestrial:0.38}, sigma2=0.0384, theta={aquatic:1.80, terrestrial:1.24}
-   OUMV      -6.9859  27.9717  29.0119     5  0.0040  alpha=0.3849, sigma2={aquatic:0.01, terrestrial:0.05}, theta={aquatic:1.80, terrestrial:1.24}
-   OUM       -8.6297  25.2594  26.3276     4  0.0488  alpha=0.0706, sigma2=0.0329, theta={aquatic:1.80, terrestrial:1.33}
-   OU1      -10.2890  27.2447  28.0459     3  0.0063  alpha=0.0398, sigma2=0.0363, theta=1.64
-   BMS      -11.2046  29.0759  29.8771     3  0.0024  sigma2={aquatic:0.01, terrestrial:0.05}, z0=1.64
-   BM1      -11.5697  27.1393  27.6735     2  0.0073  sigma2=0.0384, z0=1.64
-
-   Best model (AICc): OUM
-   Best model (BIC): OUM
-
-|
-
-OU shift detection (l1ou)
-#########################
-Function names: ou_shift_detection; ou_shifts; l1ou; detect_shifts |br|
-Command line interface: pk_ou_shift_detection; pk_ou_shifts; pk_l1ou; pk_detect_shifts
-
-Automatic OU shift detection using the LASSO-based approach from
-Khabbazian et al. (2016). Discovers where on the phylogeny the adaptive
-optimum changed without requiring an a priori regime assignment. Only a
-tree and continuous trait data are needed.
-
-The algorithm:
-
-1. Fits a single-regime OU model to estimate alpha (selection strength)
-2. Builds a design matrix with one column per candidate shift edge
-3. Uses Cholesky transformation to remove phylogenetic correlation
-4. Runs a LASSO path to identify candidate shift configurations
-5. Selects the best model using pBIC, BIC, or AICc
-
-.. code-block:: shell
-
-   phykit l1ou -t <tree> -d <trait_data> [--criterion pBIC] [--max-shifts N] [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*--criterion*: model selection criterion: pBIC (default), BIC, or AICc |br|
-*--max-shifts*: maximum number of shifts to consider (default: n/2) |br|
-*--json*: optional argument to print results as JSON
-
-Example output (no shifts detected):
-
-.. code-block:: none
-
-   ============================================================
-   OU Shift Detection (l1ou)
-   ============================================================
-   Number of tips:       8
-   Number of shifts:     0
-   Selection criterion:  pBIC
-   Alpha (OU strength):  0.784803
-   Sigma² (BM rate):     1.203455
-   Root optimum (θ₀):    1.206251
-   Log-likelihood:       -10.2890
-   pBIC:                 26.8163
-   BIC:                  26.8163
-   AICc:                 32.5780
-
-   No shifts detected — single-regime OU is best.
-   ============================================================
-
-Example output (shifts detected):
-
-.. code-block:: none
-
-   ============================================================
-   OU Shift Detection (l1ou)
-   ============================================================
-   Number of tips:       100
-   Number of shifts:     8
-   Selection criterion:  pBIC
-   Alpha (OU strength):  0.606894
-   Sigma² (BM rate):     0.062519
-   Root optimum (θ₀):    0.248810
-   Log-likelihood:       48.6896
-   pBIC:                 17.6266
-   BIC:                  -9.8811
-   AICc:                 -49.8793
-
-   Detected shifts:
-   ------------------------------------------------------------
-     Shift 1: terminal branch to valencienni
-              New optimum: -0.564678
-     Shift 2: terminal branch to insolitus
-              New optimum: -0.876398
-     Shift 3: stem of (barbatus, porcus, ... +2 more)
-              New optimum: -0.635087
-     Shift 4: stem of (altitudinalis, oporinus, ... +13 more)
-              New optimum: -0.462944
-   ============================================================
-
-Results have been validated against R's l1ou package
-(`Khabbazian et al. 2016 <https://doi.org/10.1093/sysbio/syw062>`_).
-On a 100-tip lizard dataset, PhyKIT recovers the same 8 adaptive shifts
-with matching alpha (0.607) and pBIC (17.6 vs R's 16.8).
-
-|
-
-Continuous trait mapping (contMap)
-##################################
-Function names: cont_map; contmap; cmap |br|
-Command line interface: pk_cont_map; pk_contmap; pk_cmap
-
-Plot a phylogram with branches colored by continuous trait values
-(analogous to R's ``phytools::contMap()``). Ancestral states are
-estimated via maximum-likelihood (two-pass Felsenstein algorithm)
-and mapped onto branches using a color gradient (coolwarm colormap).
-
-.. code-block:: shell
-
-   phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
-*--json*: optional argument to print results as JSON
-
-.. image:: ../_static/img/contmap_example.png
-   :align: center
-   :width: 80%
-
-|
-
-Density map
-###########
-Function names: density_map; densitymap; dmap |br|
-Command line interface: pk_density_map; pk_densitymap; pk_dmap
-
-Plot a phylogram with branches colored by posterior probabilities of
-discrete character states from stochastic character mapping (analogous
-to R's ``phytools::densityMap()``). Runs N simulations of stochastic
-character mapping internally and, for each point along each branch,
-computes the fraction of simulations in each state.
-
-.. code-block:: shell
-
-   phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>state) |br|
-*-c/\\-\\-trait*: column name of the trait to map |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
-*-n/\\-\\-nsim*: number of stochastic mapping simulations (default: 100) |br|
-*--seed*: random seed for reproducibility |br|
-*--json*: optional argument to print results as JSON
-
-.. image:: ../_static/img/densitymap_example.png
-   :align: center
-   :width: 80%
-
-|
-
-Phenogram (traitgram)
-#####################
-Function names: phenogram; traitgram; tg |br|
-Command line interface: pk_phenogram; pk_traitgram; pk_tg
-
-Plot a phenogram (traitgram) showing trait evolution along a phylogeny
-(analogous to R's ``phytools::phenogram()``). The X-axis represents
-distance from the root and the Y-axis represents trait values.
-Ancestral states are reconstructed via maximum-likelihood.
-
-.. code-block:: shell
-
-   phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
-
-Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
-*--json*: optional argument to print results as JSON
-
-.. image:: ../_static/img/phenogram_example.png
-   :align: center
-   :width: 80%
-
-|
-
-Cophylogenetic plot (tanglegram)
-################################
-Function names: cophylo; tanglegram; tangle |br|
-Command line interface: pk_cophylo; pk_tanglegram; pk_tangle
-
-Plot a cophylogenetic tanglegram of two phylogenies (analogous to R's
-``phytools::cophylo()``). Draws two trees facing each other with
-connecting lines between matching taxa. By default, taxa are matched
-by identical tip names. Internal nodes of tree2 are rotated to minimize
-line crossings.
-
-.. code-block:: shell
-
-   phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
-
-Options: |br|
-*-t/\\-\\-tree1*: first tree file in Newick format |br|
-*-t2/\\-\\-tree2*: second tree file in Newick format |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
-*-m/\\-\\-mapping*: optional tab-delimited mapping file (taxon1<tab>taxon2) |br|
-*--json*: optional argument to print results as JSON
-
-.. image:: ../_static/img/cophylo_example.png
-   :align: center
-   :width: 80%
 
 |
 
@@ -2486,386 +2865,6 @@ and a dashed line at the posterior mean.
 
 The JSON output includes full posterior sample arrays, summary
 statistics (mean, median, 95% HPD), and MCMC metadata.
-
-|
-
-Polytomy testing
-################
-Function names: polytomy_test; polyt_test; polyt; ptt |br|
-Command line interface: pk_polytomy_test; pk_polyt_test; pk_polyt; pk_ptt
-
-Conduct a polytomy test for three clades in a phylogeny.
-
-Polytomy tests can be used to identify putative radiations
-as well as identify well supported alternative topologies.
-
-The polytomy testing function takes as input a file with
-the three groups of taxa to test the relationships for and
-a single column file with the names of the desired tree files
-to use for polytomy testing. Next, the script to examine
-support for the grouping of the three taxa using triplets
-and gene support frequencies. 
-
-This function can account for uncertainty in gene trees - 
-that is, the input phylogenies can have collapsed bipartitions.
-
-Thereafter, a chi-squared test is conducted to determine if there
-is evidence to reject the null hypothesis wherein the null 
-hypothesis is that the three possible topologies among the three
-groups are equally supported. This test is done using gene support
-frequencies.
-
-.. code-block:: shell
-
-   phykit polytomy_test -t/--trees <trees> -g/--groups <groups> [--json]
-
-Options: |br|
-*-t/\\-\\-trees <trees>*: single column file with the names of 
-phylogenies to use for polytomy testing |br|
-*-g/\\-\\-groups*: a tab-delimited file with the grouping designations
-to test. Lines starting with commetns are not considered. Names of
-individual taxa should be separated by a semi-colon ';' |br|
-*--json*: optional argument to print results as JSON
-
-For example, the groups file could look like the following:
-
-.. code-block:: shell
-
-   #label group0  group1  group2
-   name_of_test    tip_name_A;tip_name_B   tip_name_C  tip_name_D;tip_name_E
-
-|
-
-Print tree
-##########
-Function names: print_tree; print; pt |br|
-Command line interface: pk_print_tree; pk_print; pk_pt
-
-Print ascii tree of input phylogeny.
-
-Phylogeny can be printed with or without branch lengths.
-By default, the phylogeny will be printed with branch lengths
-but branch lengths can be removed using the -r/--remove argument.
-
-.. code-block:: shell
-
-   phykit print_tree <tree> [-r/--remove] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-r/\\-\\-remove*: optional argument to print the phylogeny without branch
-lengths |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Consensus network
-#################
-Function names: consensus_network; consnet; splitnet; splits_network |br|
-Command line interface: pk_consensus_network; pk_consnet; pk_splitnet; pk_splits_network
-
-Extract bipartition splits from a collection of gene trees and summarize
-conflicting phylogenetic signal. Counts how frequently each non-trivial
-bipartition appears across input trees and filters by a minimum frequency
-threshold. Optionally draws a circular splits network diagram.
-
-Input can be either:
-1) a file with one Newick tree per line, or
-2) a file with one tree-file path per line.
-
-.. code-block:: shell
-
-   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>] [--json]
-
-Options: |br|
-*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
-*--threshold*: minimum split frequency to include, between 0 and 1 (default: ``0.1``) |br|
-*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
-*--plot-output*: output filename for the circular splits network plot (optional) |br|
-*--json*: optional argument to print results as JSON
-
-When ``--plot-output`` is specified, a circular splits network diagram is produced.
-Taxa are arranged at equal angles around a circle. Each split is drawn as a chord
-connecting the boundary points between the two sides of the bipartition. Chord
-thickness and opacity scale with split frequency — thicker, darker lines indicate
-splits supported by more gene trees.
-
-.. image:: ../_static/img/consensus_network_example.png
-   :align: center
-   :width: 80%
-
-|
-
-Quartet network
-################
-Function names: quartet_network; quartet_net; qnet; nanuq |br|
-Command line interface: pk_quartet_network; pk_quartet_net; pk_qnet; pk_nanuq
-
-Quartet-based network inference (NANUQ-style) for distinguishing incomplete
-lineage sorting (ILS) from hybridization/gene flow using quartet concordance
-factors from gene trees.
-
-For each 4-taxon subset, counts how many gene trees display each of the 3
-possible unrooted topologies and applies two hypothesis tests:
-
-1. **Star test** (Pearson chi-squared): tests whether the three topology
-   counts are consistent with a star tree (equal probabilities 1/3 each).
-   If p_star > beta (default 0.95), the quartet is classified as
-   *unresolved*.
-
-2. **T3 tree model test** (G-test / likelihood ratio): tests whether the
-   counts are consistent with any resolved quartet tree under the
-   multispecies coalescent.  If p_tree > alpha (default 0.05), the quartet
-   is classified as *tree-like* (conflict is due to ILS).
-
-3. If both tests reject their null hypotheses, the quartet is classified as
-   *hybrid* (asymmetric discordance indicating gene flow or hybridization).
-
-This algorithm matches the NANUQ method of Allman, Baños & Rhodes (2019),
-implemented in R's MSCquartets package.
-
-Input can be either:
-1) a file with one Newick tree per line, or
-2) a file with one tree-file path per line.
-
-.. code-block:: shell
-
-   phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>] [--json]
-
-Options: |br|
-*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
-*--alpha*: significance level for the T3 tree model test (default: ``0.05``) |br|
-*--beta*: threshold for the star tree test; quartets with p_star > beta are called unresolved (default: ``0.95``) |br|
-*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
-*--plot-output*: output filename for the quartet network plot (optional) |br|
-*--json*: optional argument to print results as JSON
-
-When ``--plot-output`` is specified, a NANUQ-style splits graph is drawn from
-the quartet distance matrix using Neighbor-Joining and circular split
-decomposition.  Tree-like relationships appear as simple branching, while
-hybridization / reticulation produces characteristic box (parallelogram)
-structures — the same style of output produced by R's MSCquartets +
-NeighborNet pipeline.
-
-**No hybridization signal** — all quartets are tree-like, so the splits graph
-is a clean unrooted tree:
-
-.. image:: ../_static/img/quartet_network_tree.png
-   :align: center
-   :width: 80%
-
-|
-
-**Hybridization signal present** — hybrid quartets introduce conflicting
-splits that appear as boxes in the network, indicating reticulation among
-C, D, E, and F:
-
-.. image:: ../_static/img/quartet_network_hybrid.png
-   :align: center
-   :width: 80%
-
-|
-
-Consensus tree
-##############
-Function names: consensus_tree; consensus; ctree |br|
-Command line interface: pk_consensus_tree; pk_consensus; pk_ctree
-
-Infer a consensus tree from a collection of trees.
-
-Input can be either:
-1) a file with one Newick tree per line, or
-2) a file with one tree-file path per line.
-
-Consensus methods:
-* ``majority``: majority-rule consensus (default) |br|
-* ``strict``: strict consensus
-
-Missing taxa handling:
-* ``--missing-taxa error`` (default): exits if trees do not share identical tip sets |br|
-* ``--missing-taxa shared``: prunes all trees to the intersection of taxa before inferring consensus
-
-.. code-block:: shell
-
-   phykit consensus_tree -t/--trees <trees> [-m/--method strict|majority] [--missing-taxa error|shared] [--json]
-
-Options: |br|
-*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
-*-m/\\-\\-method*: consensus method (``strict`` or ``majority``; default: ``majority``) |br|
-*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Prune tree
-##########
-Function names: prune_tree; prune |br|
-Command line interface: pk_prune_tree; pk_prune
-
-Prune tips from a phylogeny.
-
-Provide a single column file with the names of the tips
-in the input phylogeny you would like to prune from the
-tree.
-
-.. code-block:: shell
-
-   phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>] [-k/--keep] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*<list_of_taxa>*: single column file with the names of the tips to remove
-from the phylogeny |br|
-*-o/\\-\\-output*: name of output file for the pruned phylogeny. 
-Default output will have the same name as the input file but with the suffix 
-".pruned" |br|
-*-k/\-\-keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
-keep them |br|
-*--json*: optional argument to print results as JSON
-|
-
-Rename tree tips
-################
-Function names: rename_tree_tips; rename_tree; rename_tips |br|
-Command line interface: pk_rename_tree_tips; pk_rename_tree; pk_rename_tips
-
-Renames tips in a phylogeny.
-
-Renaming tip files will follow the scheme of a tab-delimited
-file wherein the first column is the current tip name and the
-second column is the desired tip name in the resulting 
-phylogeny. 
-
-.. code-block:: shell
-
-   phykit rename_tree_tips <tree> -i/--idmap <idmap.txt> [-o/--output <output_file>] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-i/\\-\\-idmap*: identifier map of current tip names (col1) and desired
-tip names (col2) |br|
-*-o/\\-\\-output*: optional argument to write the renamed tree files to. Default
-output will have the same name as the input file but with the suffix ".renamed" |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Robinson-Foulds distance
-########################
-Function names: robinson_foulds_distance; rf_distance; rf_dist; rf |br|
-Command line interface: pk_robinson_foulds_distance; pk_rf_distance; pk_rf_dist; pk_rf
-
-Calculate Robinson-Foulds (RF) distance between two trees.
-
-Low RF distances reflect greater similarity between two phylogenies. 
-This function prints out two values, the plain RF value and the
-normalized RF value, which are separated by a tab. Normalized RF values
-are calculated by taking the plain RF value and dividing it by 2(n-3)
-where n is the number of tips in the phylogeny. Prior to calculating
-an RF value, PhyKIT will first determine the number of shared tips
-between the two input phylogenies and prune them to a common set of
-tips. Thus, users can input trees with different topologies and 
-infer an RF value among subtrees with shared tips.
-
-PhyKIT will print out 
-col 1; the plain RF distance and 
-col 2: the normalized RF distance.
-
-RF distances are calculated following Robinson & Foulds, Mathematical 
-Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.
-
-.. code-block:: shell
-
-   phykit robinson_foulds_distance <tree_file_zero> <tree_file_one> [--json]
-
-Options: |br|
-*<tree_file_zero>*: first argument after function name should be a tree file |br|
-*<tree_file_one>*: second argument after function name should be a tree file |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Root tree
-#########
-Function names: root_tree; root; rt |br|
-Command line interface: pk_root_tree; pk_root; pk_rt
-
-Roots phylogeny using user-specified taxa.
-
-A list of taxa to root the phylogeny on should be specified using the -r
-argument. The root_taxa file should be a single-column file with taxa names.
-The outputted file will have the same name as the inputted tree file but with
-the suffix ".rooted".
-
-.. code-block:: shell
-
-   phykit root_tree <tree> -r/--root <root_taxa> [-o/--output <output_file>] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file to root|br|
-*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on|br|
-*-o/\\-\\-output*: optional argument to specify the name of the output file |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Spurious homolog identification
-###############################
-Function names: spurious_sequence; spurious_seq; ss |br|
-Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss
-
-Determines potentially spurious homologs using branch lengths.
-
-Identifies potentially spurious sequences and reports
-tips in the phylogeny that could possibly be removed
-from the associated multiple sequence alignment. PhyKIT
-does so by identifying and reporting long terminal branches
-defined as branches that are equal to or 20 times the median
-length of all branches.
-
-PhyKIT reports the following information
-col1: name of tip that is a putatively spurious sequence
-col2: length of branch leading to putatively spurious sequence
-col3: threshold used to identify putatively spurious sequences
-col4: median branch length in the phylogeny
-
-If there are no putatively spurious sequences, "None" is reported.
-
-Using this method to identify potentially spurious sequences
-was, to my knowledge, first introduced by Shen et al., (2018)
-Cell doi: 10.1016/j.cell.2018.10.023. 
-
-.. code-block:: shell
-
-   phykit spurious_seq <file> -f/\\-\\-factor [--json]
-
-Options: |br|
-*<file>*: first argument after function name should be a tree file |br|
-*-f/\\-\\-factor*: factor to multiply median branch length by to calculate
-the threshold of long branches. (Default: 20) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-Terminal branch statistics
-##########################
-Function names: terminal_branch_stats; tbs |br|
-Command line interface: pk_terminal_branch_stats; pk_tbs
-
-Calculate summary statistics for terminal branch lengths in a phylogeny.
-
-Terminal branch lengths can be useful for phylogeny diagnostics.
-
-To obtain all terminal branch lengths, use the -v/\\-\\-verbose option.   
-
-.. code-block:: shell
-
-   phykit terminal_branch_stats <tree> [-v/--verbose] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all terminal branch lengths |br|
-*--json*: optional argument to print results as JSON
 
 |
 
