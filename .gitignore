@@ -150,3 +150,6 @@ scripts
 # Audit
 audit.sh
 audit_results/
+
+# R plot output
+Rplots.pdf
