@@ -1098,6 +1098,13 @@ Options: |br|
 *--plot*: output path for contMap plot (requires matplotlib) |br|
 *--json*: output results as JSON
 
+Example contMap plot generated with the ``--plot`` option. Branches are colored
+by interpolated ancestral trait values:
+
+.. image:: ../_static/img/asr_example.png
+   :align: center
+   :width: 80%
+
 |
 
 .. _cmd-concordance_asr:
@@ -1140,6 +1147,33 @@ Options: |br|
 *--plot*: output path for concordance ASR plot |br|
 *--missing-taxa*: how to handle taxa mismatches: ``shared`` (default, prune to intersection) or ``error`` (reject) |br|
 *--json*: output results as JSON
+
+Example output:
+
+.. code-block:: none
+
+   Concordance-Aware Ancestral State Reconstruction
+
+   Method: weighted
+   Number of tips: 8
+   Number of gene trees: 10
+   Sigma-squared (BM rate): 0.043893
+
+   Ancestral estimates:
+     Node          Desc    Estimate     gCF                  95% CI    Var_topo   Var_param
+     N1 (root)        8      1.6447   1.000        [0.8937, 2.3957]    0.000000    0.146822
+     N2               2      1.6881   0.700        [0.9529, 2.4234]    0.000569    0.140151
+     N3               5      1.4878   0.857        [0.6727, 2.3028]    0.005878    0.167045
+     N4               2      1.7682   0.900        [0.8987, 2.6378]    0.015002    0.181806
+     N5               3      1.2674   0.900        [0.3663, 2.1684]    0.001044    0.210295
+     N6               2      0.9895   1.000       [-0.5654, 2.5443]    0.000000    0.629294
+
+Example plot generated with the ``--plot`` option. Internal nodes are sized
+and colored by gene concordance factor (gCF):
+
+.. image:: ../_static/img/concordance_asr_example.png
+   :align: center
+   :width: 80%
 
 |
 

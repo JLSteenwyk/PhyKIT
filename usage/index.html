@@ -1098,6 +1098,10 @@ specifies which column to use.</p>
 <em>--ci</em>: include 95% confidence intervals <br/>
 <em>--plot</em>: output path for contMap plot (requires matplotlib) <br/>
 <em>--json</em>: output results as JSON</p>
+<p>Example contMap plot generated with the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option. Branches are colored
+by interpolated ancestral trait values:</p>
+<a class="reference internal image-reference" href="../_images/asr_example.png"><img alt="../_images/asr_example.png" class="align-center" src="../_images/asr_example.png" style="width: 80%;" />
+</a>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -1137,6 +1141,28 @@ percentile confidence intervals (2.5th--97.5th).</p></li>
 <em>--plot</em>: output path for concordance ASR plot <br/>
 <em>--missing-taxa</em>: how to handle taxa mismatches: <code class="docutils literal notranslate"><span class="pre">shared</span></code> (default, prune to intersection) or <code class="docutils literal notranslate"><span class="pre">error</span></code> (reject) <br/>
 <em>--json</em>: output results as JSON</p>
+<p>Example output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Concordance-Aware Ancestral State Reconstruction
+
+Method: weighted
+Number of tips: 8
+Number of gene trees: 10
+Sigma-squared (BM rate): 0.043893
+
+Ancestral estimates:
+  Node          Desc    Estimate     gCF                  95% CI    Var_topo   Var_param
+  N1 (root)        8      1.6447   1.000        [0.8937, 2.3957]    0.000000    0.146822
+  N2               2      1.6881   0.700        [0.9529, 2.4234]    0.000569    0.140151
+  N3               5      1.4878   0.857        [0.6727, 2.3028]    0.005878    0.167045
+  N4               2      1.7682   0.900        [0.8987, 2.6378]    0.015002    0.181806
+  N5               3      1.2674   0.900        [0.3663, 2.1684]    0.001044    0.210295
+  N6               2      0.9895   1.000       [-0.5654, 2.5443]    0.000000    0.629294
+</pre></div>
+</div>
+<p>Example plot generated with the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option. Internal nodes are sized
+and colored by gene concordance factor (gCF):</p>
+<a class="reference internal image-reference" href="../_images/concordance_asr_example.png"><img alt="../_images/concordance_asr_example.png" class="align-center" src="../_images/concordance_asr_example.png" style="width: 80%;" />
+</a>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
