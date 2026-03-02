@@ -147,9 +147,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization-commands">13. Visualization commands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">14. Comparing continuous trait evolution models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">Multi-regime OU models (OUwie)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">15. Automatic detection of adaptive shifts on a phylogeny</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">16. Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">15. Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">16. Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">17. Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#end-to-end-comparative-methods-workflow">18. End-to-end comparative methods workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gene-tree-discordance-analysis-pipeline">19. Gene tree discordance analysis pipeline</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1888,7 +1890,7 @@ BIC, and the number of tips.</p>
 </div>
 </section>
 <section id="multi-regime-ou-models-ouwie">
-<h2>Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h2>
+<h2>15. Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h2>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ouwie</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fit_ouwie</span></code>, <code class="docutils literal notranslate"><span class="pre">multi_regime_ou</span></code>)
 fits multi-regime Ornstein-Uhlenbeck models, analogous to R's OUwie
 package (Beaulieu et al. 2012). These models allow different clades to
@@ -2013,8 +2015,8 @@ datasets.</p>
 </div>
 </section>
 <section id="automatic-detection-of-adaptive-shifts-on-a-phylogeny">
-<h2>15. Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h2>
-<p>OUwie (tutorial 14, above) requires specifying regimes <em>a priori</em>. But
+<h2>16. Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h2>
+<p>OUwie (tutorial 15, above) requires specifying regimes <em>a priori</em>. But
 what if you don't know where on the tree the trait optimum changed?
 PhyKIT's <code class="docutils literal notranslate"><span class="pre">ou_shift_detection</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">l1ou</span></code>, <code class="docutils literal notranslate"><span class="pre">ou_shifts</span></code>,
 <code class="docutils literal notranslate"><span class="pre">detect_shifts</span></code>) answers this question automatically using the
@@ -2136,7 +2138,7 @@ difference arises from optimizer precision, not algorithmic differences.</p>
 </div>
 </section>
 <section id="visualizing-conflicting-phylogenetic-signal-with-splits-networks">
-<h2>16. Visualizing conflicting phylogenetic signal with splits networks<a class="headerlink" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks" title="Link to this heading"></a></h2>
+<h2>17. Visualizing conflicting phylogenetic signal with splits networks<a class="headerlink" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks" title="Link to this heading"></a></h2>
 <p>When analyzing phylogenomic datasets, different genes often support
 conflicting tree topologies. PhyKIT's <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code> command
 (aliases: <code class="docutils literal notranslate"><span class="pre">consnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splitnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splits_network</span></code>) extracts
@@ -2209,6 +2211,357 @@ prune all trees to their intersection before extracting splits:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--missing-taxa<span class="w"> </span>shared
 </pre></div>
 </div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="end-to-end-comparative-methods-workflow">
+<h2>18. End-to-end comparative methods workflow<a class="headerlink" href="#end-to-end-comparative-methods-workflow" title="Link to this heading"></a></h2>
+<p>Phylogenetic comparative methods are most powerful when used together.
+This tutorial demonstrates a complete workflow: testing for phylogenetic
+signal, comparing evolutionary models, fitting a regression, and
+visualizing results — all using PhyKIT.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Scenario</strong></p>
+<p>Imagine you have assembled a phylogeny of eight mammal species and measured
+their body mass and brain size. You want to answer a classic question in
+comparative biology: <em>does body mass predict brain size after controlling
+for shared evolutionary history?</em> Before testing this relationship, you
+need to verify that your traits have phylogenetic signal (justifying the
+use of phylogenetic methods) and determine which evolutionary model best
+describes how body mass has evolved. Finally, you want publication-ready
+figures that show trait evolution on the phylogeny and visualize the
+brain-body relationship in phylogenetic morphospace.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Overview</strong></p>
+<p>We will use an eight-taxon mammal tree and body-mass trait data to:</p>
+<ol class="arabic simple">
+<li><p>Test whether body mass has phylogenetic signal (<code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>)</p></li>
+<li><p>Compare models of trait evolution (<code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>)</p></li>
+<li><p>Ask whether body mass predicts brain size (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>)</p></li>
+<li><p>Visualize results (<code class="docutils literal notranslate"><span class="pre">cont_map</span></code>, <code class="docutils literal notranslate"><span class="pre">phenogram</span></code>, <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code>)</p></li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Data files used in this tutorial:</strong></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span> <span class="pre">(body</span> <span class="pre">mass)</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span> <span class="pre">(body</span> <span class="pre">mass,</span> <span class="pre">brain</span> <span class="pre">size,</span> <span class="pre">longevity)</span></code></a></strong></p><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple.tre</span></code> — an eight-taxon mammal phylogeny in Newick format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_traits.tsv</span></code> — body mass (log-transformed kg), tab-delimited
+with taxon and value columns (no header, lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code> are comments)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_multi_traits.tsv</span></code> — body mass, brain size, and longevity,
+tab-delimited with a header row</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 1: Test for phylogenetic signal</strong></p>
+<p>Before running any comparative analysis, check whether the trait shows
+phylogenetic signal — i.e., whether closely related species have more
+similar trait values than expected by chance. For our mammal dataset, we
+expect body mass to show strong phylogenetic signal because closely
+related mammals tend to have similar body sizes.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>This reports Blomberg's K and Pagel's lambda with associated p-values.
+Both K &gt; 1 and lambda close to 1 indicate strong phylogenetic signal,
+meaning comparative methods that account for shared ancestry are
+appropriate.</p>
+<p><em>What if signal is weak?</em> If lambda ≈ 0 and K ≈ 0 with non-significant
+p-values, ordinary (non-phylogenetic) regression may be adequate. Strong
+signal — as we expect for body mass — means phylogenetic methods like PGLS
+are essential to avoid inflated type I error rates.</p>
+<p>For JSON output including the effect size (R² phylo):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 2: Compare evolutionary models</strong></p>
+<p>Next, determine which model of continuous trait evolution best explains
+the observed body-mass data. This helps interpret <em>how</em> body mass has
+evolved across these mammals — did it drift randomly (Brownian motion),
+was it pulled toward an optimal size (OU), or did most change happen
+early in the clade's history (Early Burst)?</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>The output table ranks BM, OU, EB, Lambda, Delta, Kappa, and White
+models by AIC and BIC. Lower AIC/BIC values and higher AIC weights
+indicate better-fitting models. For mammalian body mass, BM or OU
+typically fit best — if OU wins, it suggests that body mass is
+constrained around a preferred size rather than drifting freely.</p>
+<p>To compare only a subset of models:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span><span class="nb">fc</span><span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--models<span class="w"> </span>BM,OU,Lambda
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Test a trait-trait relationship with PGLS</strong></p>
+<p>Now we arrive at the central question: <em>does body mass predict brain
+size?</em> A naive correlation would be misleading because closely related
+species share both large bodies and large brains simply due to common
+descent. PGLS (phylogenetic generalized least squares) controls for this
+non-independence.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pgls<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-x<span class="w"> </span>body_mass
+</pre></div>
+</div>
+<p>The output reports the slope, intercept, p-value, and R² values. The
+<code class="docutils literal notranslate"><span class="pre">r_squared</span></code> is the variance explained by the predictor (body mass),
+while <code class="docutils literal notranslate"><span class="pre">r_squared_phylo</span></code> is the variance explained by phylogenetic
+relatedness alone. A significant p-value with high <code class="docutils literal notranslate"><span class="pre">r_squared</span></code> supports
+the brain-body allometry hypothesis even after accounting for phylogeny.</p>
+<p>For JSON output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pgls<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-x<span class="w"> </span>body_mass<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 4: Visualize trait evolution</strong></p>
+<p>Finally, generate publication-ready figures. Visualization often reveals
+patterns that summary statistics miss — for example, a contMap might
+show that large body mass evolved independently in two distant clades,
+or a phylomorphospace might reveal an outlier species that departs from
+the brain-body allometry.</p>
+<p><strong>contMap</strong> — paint continuous body-mass values onto the phylogeny, showing
+where evolutionary increases and decreases occurred:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-o<span class="w"> </span>body_mass_contmap.png
+</pre></div>
+</div>
+<p><strong>phenogram</strong> — plot body-mass values against distance from the root,
+revealing whether trait change was gradual or punctuated:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-o<span class="w"> </span>body_mass_phenogram.png
+</pre></div>
+</div>
+<p><strong>phylomorphospace</strong> — visualize body mass and brain size simultaneously
+in phylogenetic space, with branches connecting ancestors to descendants:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylomorphospace<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span>-x<span class="w"> </span>body_mass<span class="w"> </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-o<span class="w"> </span>morphospace.png
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Putting it all together</strong></p>
+<p>Returning to our mammal example, a typical analysis would proceed as:</p>
+<ol class="arabic simple">
+<li><p><strong>Phylogenetic signal?</strong> Body mass shows strong signal (K &gt; 1,
+lambda ≈ 1), confirming that phylogenetic methods are necessary.</p></li>
+<li><p><strong>Which evolutionary model?</strong> If BM fits best, body mass drifted
+randomly; if OU wins, mammals are evolving toward a preferred body
+size. This shapes how we interpret downstream results.</p></li>
+<li><p><strong>Trait-trait association?</strong> PGLS confirms that body mass predicts
+brain size even after accounting for phylogeny. The R² decomposition
+tells us how much of brain-size variation is explained by body mass
+vs. by phylogenetic relatedness alone.</p></li>
+<li><p><strong>Visualization</strong> — the contMap shows where on the tree body mass
+increased, the phenogram reveals the tempo of change, and the
+phylomorphospace shows whether species cluster by clade or by
+ecological niche in brain-body space.</p></li>
+</ol>
+<p>This workflow generalizes to any trait and phylogeny: substitute your
+own tree, trait data, and biological question.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="gene-tree-discordance-analysis-pipeline">
+<h2>19. Gene tree discordance analysis pipeline<a class="headerlink" href="#gene-tree-discordance-analysis-pipeline" title="Link to this heading"></a></h2>
+<p>Gene trees often disagree with the species tree due to incomplete
+lineage sorting (ILS), introgression, or gene duplication and loss.
+This tutorial demonstrates how to quantify and visualize gene tree
+discordance, reconstruct ancestral states that account for it, and
+incorporate it into comparative methods — all using PhyKIT.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Scenario</strong></p>
+<p>Imagine you have sequenced 200 genes across a clade that underwent a
+rapid radiation — for example, a group of closely related yeast species
+or a recent adaptive radiation of cichlid fishes. You have already
+inferred a species tree (e.g., via ASTRAL or concatenation) and
+individual gene trees for each locus. You suspect that the rapid
+radiation produced substantial incomplete lineage sorting, and perhaps
+introgression between some lineages. Before running any downstream
+comparative analysis, you want to know: <em>how much gene tree conflict
+exists, and does it matter for my trait analyses?</em></p>
+<p>Specifically, you want to (1) visualize which bipartitions in the
+species tree are well-supported vs. contested across gene trees,
+(2) reconstruct the ancestral value of a continuous trait (e.g.,
+thermal tolerance) while accounting for the topological uncertainty
+from discordance, and (3) test whether a trait-trait relationship
+(e.g., thermal tolerance vs. metabolic rate) holds up when the
+variance-covariance matrix reflects the full landscape of gene tree
+histories rather than just the species tree.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Overview</strong></p>
+<p>We will:</p>
+<ol class="arabic simple">
+<li><p>Quantify gene tree conflict with a splits network (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>)</p></li>
+<li><p>Reconstruct ancestral states accounting for discordance (<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>)</p></li>
+<li><p>Run comparative methods with discordance-aware variance-covariance
+matrices (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>, <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>)</p></li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Data files used in this tutorial:</strong></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span> <span class="pre">(species</span> <span class="pre">tree)</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/2ad5ce93fa4158c0aa386911f0f004de/gene_trees_simple.nwk"><code class="xref download docutils literal notranslate"><span class="pre">Gene</span> <span class="pre">trees</span> <span class="pre">(10</span> <span class="pre">loci)</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a></strong></p><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple.tre</span></code> — an eight-taxon mammal species tree in Newick format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gene_trees_simple.nwk</span></code> — 10 gene trees (one per line), most concordant
+with the species tree but several with alternative topologies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_traits.tsv</span></code> — body mass (log-transformed kg), tab-delimited</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_multi_traits.tsv</span></code> — body mass, brain size, and longevity,
+tab-delimited with a header row</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 1: Visualize gene tree conflict with a splits network</strong></p>
+<p>Start by understanding the landscape of gene tree disagreement. In our
+rapid-radiation scenario, we expect that some bipartitions in the species
+tree are supported by most gene trees while others are contested — the
+splits network will reveal exactly which relationships are robust and
+which are ambiguous.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consensus_network<span class="w"> </span>-t<span class="w"> </span>gene_trees_simple.nwk
+</pre></div>
+</div>
+<p>This reports each bipartition split, how many gene trees support it,
+and its frequency. Splits present in all gene trees are concordant;
+splits with lower frequency represent conflicting signal. For a rapid
+radiation, you might see that deep bipartitions near the root are
+supported by only 40-60% of gene trees — a hallmark of ILS.</p>
+<p>Generate a visual network:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--plot-output<span class="w"> </span>splits_network.png
+</pre></div>
+</div>
+<p>Thick chords represent well-supported splits; thin chords represent
+rare alternatives. A clean star-like network suggests minimal conflict;
+box-like structures indicate competing topologies. If the network shows
+substantial conflict, the downstream discordance-aware analyses in
+Steps 3-4 become especially important.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 2: Identify diversification patterns with LTT</strong></p>
+<p>Before diving into trait analyses, examine the tempo of diversification.
+For our suspected rapid radiation, the lineage-through-time (LTT) plot
+can confirm whether most speciation events were clustered early in the
+clade's history — which would also explain the high gene tree conflict
+observed in Step 1 (short internodes produce more ILS).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>--plot-output<span class="w"> </span>ltt_plot.png
+</pre></div>
+</div>
+<p>The gamma statistic tests whether branching events are uniformly
+distributed over time (null: constant-rate pure-birth). A significantly
+negative gamma would confirm our rapid-radiation hypothesis — most
+lineages originated in a short burst, leaving little time for gene tree
+coalescence and producing the discordance we observed in the splits
+network.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 3: Concordance-aware ancestral state reconstruction</strong></p>
+<p>Standard ASR operates on a single species tree, ignoring gene tree
+conflict. For our clade, the ancestral thermal tolerance at the base of
+the radiation is of particular interest — but if 40% of gene trees
+disagree about which species are sisters at that node, the standard
+ASR estimate may be overconfident. PhyKIT's <code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>
+propagates topological uncertainty from gene tree discordance into
+ancestral state estimates.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>This reconstructs ancestral values at internal nodes using
+concordance-weighted estimates. Nodes with high concordance (e.g., 95%
+of gene trees agree) have narrow confidence intervals; nodes where gene
+trees disagree (e.g., the rapid-radiation node) have wider intervals
+reflecting topological uncertainty.</p>
+<p>For distribution-based reconstruction and confidence intervals:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-m<span class="w"> </span>distribution<span class="w"> </span>--ci<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>To visualize the reconstruction on the tree:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--plot<span class="w"> </span>asr_discordance.png
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Step 4: Discordance-aware comparative methods</strong></p>
+<p>Now we return to our original question: <em>does thermal tolerance predict
+metabolic rate?</em> In a clade with substantial gene tree conflict, the
+species tree alone may not accurately represent how species are related
+across the genome. Two species that are sisters in the species tree but
+have discordant histories at many loci share less evolutionary history
+than the species tree implies. PhyKIT addresses this by computing a
+variance-covariance (VCV) matrix from each gene tree and averaging
+them, producing a genome-wide covariance structure that better reflects
+the true shared history.</p>
+<p><strong>Phylogenetic signal with discordance-aware VCV:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<p><strong>PGLS with discordance-aware VCV:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pgls<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-x<span class="w"> </span>body_mass<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<p><strong>Model comparison with discordance-aware VCV:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>When the <code class="docutils literal notranslate"><span class="pre">-g/--gene-trees</span></code> flag is omitted, all commands behave
+exactly as before (species-tree-only VCV).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Putting it all together</strong></p>
+<p>Returning to our rapid-radiation scenario, the workflow reveals a
+coherent story:</p>
+<ol class="arabic simple">
+<li><p><strong>Quantify conflict</strong> (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>) — the splits network
+shows that several deep bipartitions are supported by only 40-60%
+of gene trees, confirming substantial discordance.</p></li>
+<li><p><strong>Examine diversification</strong> (<code class="docutils literal notranslate"><span class="pre">ltt</span></code>) — a significantly negative
+gamma statistic confirms that most speciation events were clustered
+in a short burst, explaining the ILS-driven gene tree conflict.</p></li>
+<li><p><strong>Concordance-aware ASR</strong> (<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>) — ancestral thermal
+tolerance estimates at the rapid-radiation node have wide confidence
+intervals, reflecting genuine uncertainty about which species were
+ancestrally sister to each other.</p></li>
+<li><p><strong>Discordance-aware comparative methods</strong> (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>,
+<code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>) — using the genome-wide
+average VCV produces more conservative (and more accurate) p-values
+for the thermal tolerance–metabolic rate relationship.</p></li>
+</ol>
+<p>This workflow generalizes to any phylogenomic dataset where gene tree
+conflict is a concern: substitute your own species tree, gene trees,
+and trait data. When discordance is minimal, the discordance-aware
+results will closely match species-tree-only results, confirming that
+the standard analysis was adequate.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
