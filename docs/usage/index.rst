@@ -70,8 +70,138 @@ All possible function names are specified at the top of each function section.
 
 |
 
+Functions by analytical category
+--------------------------------
+
+The functions above are organized by input type. Below, the same functions
+are grouped by analytical purpose to help you find the right tool for your analysis.
+
+Alignment quality & statistics
+##############################
+
+- :ref:`Alignment entropy <cmd-alignment_entropy>` -- Shannon entropy across alignment sites
+- :ref:`Alignment length <cmd-alignment_length>` -- Length of an input alignment
+- :ref:`Alignment length no gaps <cmd-alignment_length_no_gaps>` -- Alignment length excluding gapped sites
+- :ref:`Alignment outlier taxa <cmd-alignment_outlier_taxa>` -- Identify outlier taxa in alignments
+- :ref:`Column score <cmd-column_score>` -- Column score for alignment quality
+- :ref:`Compositional bias per site <cmd-compositional_bias_per_site>` -- Detect compositional bias across sites
+- :ref:`Composition per taxon <cmd-composition_per_taxon>` -- Nucleotide or amino acid composition per taxon
+- :ref:`Evolutionary Rate per Site <cmd-evolutionary_rate_per_site>` -- Site-specific evolutionary rate estimation
+- :ref:`Guanine-cytosine (GC) content <cmd-gc_content>` -- GC content of an alignment
+- :ref:`Occupancy per taxon <cmd-occupancy_per_taxon>` -- Taxon occupancy in alignment columns
+- :ref:`Pairwise identity <cmd-pairwise_identity>` -- Pairwise sequence identity in an alignment
+- :ref:`Parsimony informative sites <cmd-parsimony_informative_sites>` -- Count parsimony informative sites
+- :ref:`Plot alignment QC <cmd-plot_alignment_qc>` -- Visual quality control plots for alignments
+- :ref:`Relative composition variability <cmd-relative_composition_variability>` -- Composition variability across taxa
+- :ref:`Relative composition variability, taxon <cmd-relative_composition_variability_taxon>` -- Per-taxon relative composition variability
+- :ref:`Sum-of-pairs score <cmd-sum_of_pairs_score>` -- Sum-of-pairs alignment quality score
+- :ref:`Variable sites <cmd-variable_sites>` -- Count variable sites in an alignment
+
+Alignment manipulation
+######################
+
+- :ref:`Alignment recoding <cmd-alignment_recoding>` -- Recode alignment into reduced alphabets
+- :ref:`Create concatenation matrix <cmd-create_concatenation_matrix>` -- Concatenate multiple alignments into a supermatrix
+- :ref:`Faidx <cmd-faidx>` -- Extract entries from FASTA files
+- :ref:`Mask alignment <cmd-mask_alignment>` -- Mask sites in an alignment
+- :ref:`Rename FASTA entries <cmd-rename_fasta_entries>` -- Rename entries in a FASTA file
+- :ref:`Protein-to-nucleotide alignment <cmd-thread_dna>` -- Thread nucleotide onto protein alignment
+
+Tree summary statistics
+#######################
+
+- :ref:`Bipartition support statistics <cmd-bipartition_support_stats>` -- Summary statistics of bipartition support values
+- :ref:`Degree of violation of the molecular clock <cmd-degree_of_violation_of_a_molecular_clock>` -- Measure molecular clock violation
+- :ref:`Evolutionary rate <cmd-evolutionary_rate>` -- Calculate tree-based evolutionary rate
+- :ref:`Internal branch statistics <cmd-internal_branch_stats>` -- Summary statistics of internal branch lengths
+- :ref:`Lineage-through-time plot and gamma statistic <cmd-ltt>` -- Lineage-through-time analysis and gamma statistic
+- :ref:`Long branch score <cmd-long_branch_score>` -- Identify long branches in a tree
+- :ref:`Patristic distances <cmd-patristic_distances>` -- Pairwise patristic distances between taxa
+- :ref:`Terminal branch statistics <cmd-terminal_branch_stats>` -- Summary statistics of terminal branch lengths
+- :ref:`Tip-to-tip distance <cmd-tip_to_tip_distance>` -- Distance between two tips in a tree
+- :ref:`Tip-to-tip node distance <cmd-tip_to_tip_node_distance>` -- Node distance between two tips
+- :ref:`Total tree length <cmd-total_tree_length>` -- Sum of all branch lengths
+- :ref:`Treeness <cmd-treeness>` -- Ratio of internal to total branch lengths
+
+Tree manipulation & utilities
+#############################
+
+- :ref:`Branch length multiplier <cmd-branch_length_multiplier>` -- Multiply branch lengths by a factor
+- :ref:`Collapse bipartitions <cmd-collapse_branches>` -- Collapse low-support bipartitions
+- :ref:`Internode labeler <cmd-internode_labeler>` -- Label internal nodes of a tree
+- :ref:`Last common ancestor subtree <cmd-last_common_ancestor_subtree>` -- Extract subtree from LCA of specified taxa
+- :ref:`Monophyly check <cmd-monophyly_check>` -- Test monophyly of a group of taxa
+- :ref:`Nearest neighbor interchange <cmd-nearest_neighbor_interchange>` -- Generate NNI tree rearrangements
+- :ref:`Print tree <cmd-print_tree>` -- Print ASCII representation of a tree
+- :ref:`Prune tree <cmd-prune_tree>` -- Prune taxa from a tree
+- :ref:`Rename tree tips <cmd-rename_tree_tips>` -- Rename tip labels in a tree
+- :ref:`Root tree <cmd-root_tree>` -- Root or reroot a tree
+- :ref:`Tip labels <cmd-tip_labels>` -- Print tip labels of a tree
+
+Tree comparison & consensus
+###########################
+
+- :ref:`Consensus network <cmd-consensus_network>` -- Consensus network from multiple trees
+- :ref:`Consensus tree <cmd-consensus_tree>` -- Consensus tree from multiple trees
+- :ref:`Cophylogenetic plot (tanglegram) <cmd-cophylo>` -- Tanglegram for comparing two trees
+- :ref:`Polytomy testing <cmd-polytomy_test>` -- Test for polytomies in a tree
+- :ref:`Quartet network <cmd-quartet_network>` -- Quartet-based network visualization
+- :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>` -- Topological distance between trees
+
+Phylogenetic signal
+###################
+
+- :ref:`Network signal <cmd-network_signal>` -- Phylogenetic signal on networks
+- :ref:`Phylogenetic signal <cmd-phylogenetic_signal>` -- Test for phylogenetic signal in traits
+
+Trait evolution
+###############
+
+- :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>` -- Reconstruct ancestral character states
+- :ref:`Continuous trait mapping (contMap) <cmd-cont_map>` -- Map continuous traits onto a phylogeny
+- :ref:`Density map <cmd-density_map>` -- Posterior density of stochastic character maps
+- :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>` -- Compare continuous trait evolution models
+- :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>` -- Detect OU regime shifts on a phylogeny
+- :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>` -- Multi-regime Ornstein-Uhlenbeck models
+- :ref:`Phenogram (traitgram) <cmd-phenogram>` -- Phenogram visualizing trait evolution
+- :ref:`Rate heterogeneity test (multi-rate Brownian motion) <cmd-rate_heterogeneity>` -- Test for rate heterogeneity in trait evolution
+- :ref:`Stochastic character mapping (SIMMAP) <cmd-stochastic_character_map>` -- Stochastic character mapping on a phylogeny
+- :ref:`Threshold model <cmd-threshold_model>` -- Felsenstein threshold model for trait correlation
+
+Phylogenetic comparative methods
+################################
+
+- :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>` -- Phylogenetic generalized linear model
+- :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>` -- Ordination incorporating phylogenetic structure
+- :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>` -- Phylogenetic generalized least squares regression
+- :ref:`Phylomorphospace <cmd-phylomorphospace>` -- Phylomorphospace visualization
+
+Evolutionary rate analysis
+##########################
+
+- :ref:`Covarying evolutionary rates <cmd-covarying_evolutionary_rates>` -- Detect covariation in evolutionary rates
+- :ref:`Relative rate test <cmd-relative_rate_test>` -- Relative rate test between lineages
+
+Homology assessment
+###################
+
+- :ref:`Hidden paralogy check <cmd-hidden_paralogy_check>` -- Check for hidden paralogy in gene trees
+- :ref:`Spurious homolog identification <cmd-spurious_sequence>` -- Identify spurious sequences in alignments
+
+Saturation & model adequacy
+############################
+
+- :ref:`Saturation <cmd-saturation>` -- Test for substitution saturation
+- :ref:`Treeness over RCV <cmd-treeness_over_rcv>` -- Treeness over relative composition variability
+
+|
+
+
 Alignment-based functions
 -------------------------
+
+.. _cmd-alignment_entropy:
+
 Alignment entropy
 #################
 Function names: alignment_entropy; aln_entropy; entropy |br|
@@ -110,6 +240,8 @@ Options: |br|
 
 |
 
+.. _cmd-alignment_length:
+
 Alignment length
 ################
 
@@ -137,6 +269,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-alignment_length_no_gaps:
 
 Alignment length no gaps
 ########################
@@ -172,6 +306,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-alignment_outlier_taxa:
 
 Alignment outlier taxa
 ######################
@@ -215,6 +351,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-alignment_recoding:
 
 Alignment recoding 
 ##################
@@ -333,6 +471,8 @@ Options: |br|
 
 |
 
+.. _cmd-column_score:
+
 Column score
 ############
 
@@ -366,6 +506,8 @@ to |br|
 
 |
 
+.. _cmd-composition_per_taxon:
+
 Composition per taxon
 #####################
 Function names: composition_per_taxon; comp_taxon; comp_tax |br|
@@ -394,6 +536,8 @@ Options: |br|
 
 |
 
+.. _cmd-compositional_bias_per_site:
+
 Compositional bias per site
 ###########################
 
@@ -421,6 +565,8 @@ fasta alignment to calculate the site-wise compositional bias of |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-create_concatenation_matrix:
 
 Create concatenation matrix
 ###########################
@@ -464,6 +610,8 @@ characters in present genes, and fully absent gene blocks. |br|
 
 |
 
+.. _cmd-evolutionary_rate_per_site:
+
 Evolutionary Rate per Site
 ##########################
 
@@ -488,6 +636,8 @@ fasta alignment to calculate the site-wise evolutionary rate of |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-faidx:
 
 Faidx
 #####
@@ -519,6 +669,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-gc_content:
 
 Guanine-cytosine (GC) content
 #############################
@@ -552,6 +704,8 @@ entry |br|
 
 |
 
+.. _cmd-mask_alignment:
+
 Mask alignment
 ##############
 Function names: mask_alignment; mask_aln; mask |br|
@@ -574,6 +728,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-occupancy_per_taxon:
 
 Occupancy per taxon
 ###################
@@ -601,6 +757,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-pairwise_identity:
 
 Pairwise identity
 #################
@@ -640,6 +798,8 @@ Options: |br|
 
 |
 
+.. _cmd-parsimony_informative_sites:
+
 Parsimony informative sites
 ###########################
 Function names: parsimony_informative_sites; pis |br|
@@ -671,6 +831,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-plot_alignment_qc:
 
 Plot alignment QC
 #################
@@ -708,6 +870,8 @@ Options: |br|
 *--json*: optional argument to print plot metadata and outlier summary as JSON
 
 |
+
+.. _cmd-thread_dna:
 
 Protein-to-nucleotide alignment
 ###############################
@@ -747,6 +911,8 @@ If used, stop codons will be removed. |br|
 
 |
 
+.. _cmd-relative_composition_variability:
+
 Relative composition variability
 ################################
 Function names: relative_composition_variability; rel_comp_var; rcv |br|
@@ -775,6 +941,8 @@ Options: |br|
 
 |
 
+.. _cmd-relative_composition_variability_taxon:
+
 Relative composition variability, taxon
 #######################################
 Function names: relative_composition_variability_taxon; rel_comp_var_taxon; rcvt |br|
@@ -802,6 +970,8 @@ Options: |br|
 
 |
 
+.. _cmd-rename_fasta_entries:
+
 Rename FASTA entries
 ####################
 Function names: rename_fasta_entries; rename_fasta |br|
@@ -825,6 +995,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-sum_of_pairs_score:
 
 Sum-of-pairs score
 ##################
@@ -853,6 +1025,8 @@ to |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-variable_sites:
 
 Variable sites
 ##############
@@ -885,6 +1059,8 @@ Options: |br|
 
 Tree-based functions
 --------------------
+
+.. _cmd-ancestral_state_reconstruction:
 
 Ancestral state reconstruction
 ##############################
@@ -922,6 +1098,8 @@ Options: |br|
 *--json*: output results as JSON
 
 |
+
+.. _cmd-bipartition_support_stats:
 
 Bipartition support statistics
 ##############################
@@ -966,6 +1144,8 @@ Example JSON output (verbose mode):
 
 |
 
+.. _cmd-branch_length_multiplier:
+
 Branch length multiplier
 ########################
 Function names: branch_length_multiplier; blm |br|
@@ -988,6 +1168,8 @@ output will have the same name as the input file but with the suffix ".factor_(n
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-collapse_branches:
 
 Collapse bipartitions
 #####################
@@ -1013,6 +1195,8 @@ output will have the same name as the input file but with the suffix
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-consensus_network:
 
 Consensus network
 #################
@@ -1051,6 +1235,8 @@ splits supported by more gene trees.
 
 |
 
+.. _cmd-consensus_tree:
+
 Consensus tree
 ##############
 Function names: consensus_tree; consensus; ctree |br|
@@ -1081,6 +1267,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-fit_continuous:
 
 Continuous trait evolution model comparison (fitContinuous)
 ##########################################################
@@ -1129,6 +1317,8 @@ Example output:
 
 |
 
+.. _cmd-cont_map:
+
 Continuous trait mapping (contMap)
 ##################################
 Function names: cont_map; contmap; cmap |br|
@@ -1154,6 +1344,8 @@ Options: |br|
    :width: 80%
 
 |
+
+.. _cmd-cophylo:
 
 Cophylogenetic plot (tanglegram)
 ################################
@@ -1182,6 +1374,8 @@ Options: |br|
    :width: 80%
 
 |
+
+.. _cmd-covarying_evolutionary_rates:
 
 Covarying evolutionary rates
 ############################
@@ -1226,6 +1420,8 @@ this is a putative species tree. |br|
 
 |
 
+.. _cmd-degree_of_violation_of_a_molecular_clock:
+
 Degree of violation of the molecular clock
 ##########################################
 Function names: degree_of_violation_of_a_molecular_clock, dvmc |br|
@@ -1252,6 +1448,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-density_map:
 
 Density map
 ###########
@@ -1283,6 +1481,8 @@ Options: |br|
 
 |
 
+.. _cmd-evolutionary_rate:
+
 Evolutionary rate
 #################
 Function names: evolutionary_rate, evo_rate |br|
@@ -1305,6 +1505,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-hidden_paralogy_check:
 
 Hidden paralogy check
 #####################
@@ -1358,6 +1560,8 @@ be scanned for |br|
 
 |
 
+.. _cmd-internal_branch_stats:
+
 Internal branch statistics
 ##########################
 Function names: internal_branch_stats; ibs |br|
@@ -1380,6 +1584,8 @@ Options: |br|
 
 |
 
+.. _cmd-internode_labeler:
+
 Internode labeler
 #################
 Function names: internode_labeler; il |br|
@@ -1399,6 +1605,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-last_common_ancestor_subtree:
 
 Last common ancestor subtree
 ############################
@@ -1420,6 +1628,8 @@ file with the list of taxa to get the last common ancestor subtree for
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-ltt:
 
 Lineage-through-time plot and gamma statistic
 ##############################################
@@ -1548,6 +1758,8 @@ source, including the ``rev()`` step on internode intervals.
 
 |
 
+.. _cmd-long_branch_score:
+
 Long branch score
 #################
 Function names: long_branch_score; lb_score; lbs |br|
@@ -1579,6 +1791,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-monophyly_check:
 
 Monophyly check
 ###############
@@ -1615,6 +1829,8 @@ examine the monophyly of |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-ouwie:
 
 Multi-regime OU models (OUwie)
 ##############################
@@ -1698,6 +1914,8 @@ Example output:
 
 |
 
+.. _cmd-nearest_neighbor_interchange:
+
 Nearest neighbor interchange
 ############################
 Function names: nearest_neighbor_interchange; nni |br|
@@ -1721,6 +1939,8 @@ Options: |br|
 *--json*: optional argument to print summary metadata as JSON
 
 |
+
+.. _cmd-network_signal:
 
 Network signal
 ##############
@@ -1915,6 +2135,8 @@ The tip-by-tip submatrix is the VCV used for K and lambda.
 
 |
 
+.. _cmd-ou_shift_detection:
+
 OU shift detection (l1ou)
 #########################
 Function names: ou_shift_detection; ou_shifts; l1ou; detect_shifts |br|
@@ -2002,6 +2224,8 @@ with matching alpha (0.607) and pBIC (17.6 vs R's 16.8).
 
 |
 
+.. _cmd-patristic_distances:
+
 Patristic distances
 ###################
 Function names: patristic_distances; pd |br|
@@ -2026,6 +2250,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-phenogram:
 
 Phenogram (traitgram)
 #####################
@@ -2052,6 +2278,8 @@ Options: |br|
    :width: 80%
 
 |
+
+.. _cmd-phylogenetic_glm:
 
 Phylogenetic GLM
 ################
@@ -2095,6 +2323,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-phylogenetic_ordination:
 
 Phylogenetic Ordination
 #######################
@@ -2192,6 +2422,8 @@ Options: |br|
 
 |
 
+.. _cmd-phylogenetic_regression:
+
 Phylogenetic regression (PGLS)
 ##############################
 Function names: phylogenetic_regression; phylo_regression; pgls |br|
@@ -2241,6 +2473,8 @@ Options: |br|
 
 |
 
+.. _cmd-phylogenetic_signal:
+
 Phylogenetic signal
 ####################
 Function names: phylogenetic_signal; phylo_signal; ps |br|
@@ -2289,6 +2523,8 @@ Options: |br|
 
 |
 
+.. _cmd-phylomorphospace:
+
 Phylomorphospace
 ################
 Function names: phylomorphospace; phylomorpho; phmo |br|
@@ -2332,6 +2568,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-polytomy_test:
 
 Polytomy testing
 ################
@@ -2380,6 +2618,8 @@ For example, the groups file could look like the following:
 
 |
 
+.. _cmd-print_tree:
+
 Print tree
 ##########
 Function names: print_tree; print; pt |br|
@@ -2402,6 +2642,8 @@ lengths |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-prune_tree:
 
 Prune tree
 ##########
@@ -2429,6 +2671,8 @@ Default output will have the same name as the input file but with the suffix
 keep them |br|
 *--json*: optional argument to print results as JSON
 |
+
+.. _cmd-quartet_network:
 
 Quartet network
 ################
@@ -2500,6 +2744,8 @@ C, D, E, and F:
 
 |
 
+.. _cmd-rate_heterogeneity:
+
 Rate heterogeneity test (multi-rate Brownian motion)
 ####################################################
 Function names: rate_heterogeneity; brownie; rh |br|
@@ -2536,6 +2782,8 @@ Options: |br|
 
 |
 
+.. _cmd-rename_tree_tips:
+
 Rename tree tips
 ################
 Function names: rename_tree_tips; rename_tree; rename_tips |br|
@@ -2561,6 +2809,8 @@ output will have the same name as the input file but with the suffix ".renamed" 
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-robinson_foulds_distance:
 
 Robinson-Foulds distance
 ########################
@@ -2597,6 +2847,8 @@ Options: |br|
 
 |
 
+.. _cmd-root_tree:
+
 Root tree
 #########
 Function names: root_tree; root; rt |br|
@@ -2620,6 +2872,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-spurious_sequence:
 
 Spurious homolog identification
 ###############################
@@ -2658,6 +2912,8 @@ the threshold of long branches. (Default: 20) |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-stochastic_character_map:
 
 Stochastic character mapping (SIMMAP)
 #####################################
@@ -2712,6 +2968,8 @@ Options: |br|
 
 |
 
+.. _cmd-terminal_branch_stats:
+
 Terminal branch statistics
 ##########################
 Function names: terminal_branch_stats; tbs |br|
@@ -2733,6 +2991,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-threshold_model:
 
 Threshold model
 ###############
@@ -2868,6 +3128,8 @@ statistics (mean, median, 95% HPD), and MCMC metadata.
 
 |
 
+.. _cmd-tip_labels:
+
 Tip labels
 ##########
 Function names: tip_labels; tree_labels; labels; tl |br|
@@ -2884,6 +3146,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-tip_to_tip_distance:
 
 Tip-to-tip distance
 ###################
@@ -2910,6 +3174,8 @@ Options: |br|
 
 |
 
+.. _cmd-tip_to_tip_node_distance:
+
 Tip-to-tip node distance
 ########################
 Function names: tip_to_tip_node_distance; t2t_node_dist; t2t_nd |br|
@@ -2932,6 +3198,8 @@ Options: |br|
 
 |
 
+.. _cmd-total_tree_length:
+
 Total tree length
 #################
 Function names: total_tree_length; tree_len |br|
@@ -2948,6 +3216,8 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 |
+
+.. _cmd-treeness:
 
 Treeness
 ########
@@ -2980,6 +3250,8 @@ Options: |br|
 
 Alignment- and tree-based functions
 -----------------------------------
+
+.. _cmd-relative_rate_test:
 
 Relative rate test
 ##################
@@ -3061,6 +3333,8 @@ match to machine precision.
 
 |
 
+.. _cmd-saturation:
+
 Saturation
 ##########
 Function names: saturation; sat |br|
@@ -3096,6 +3370,8 @@ distances used to determine saturation |br|
 *--plot*: save a saturation scatter plot with fitted slope through origin |br|
 *--plot-output*: output path for saturation plot (default: ``saturation_plot.png``) |br|
 *--json*: optional argument to print results as JSON
+
+.. _cmd-treeness_over_rcv:
 
 Treeness over RCV
 #################
