@@ -232,6 +232,9 @@ class Phykit:
                 ou_shift_detection (alias: ou_shifts; l1ou; detect_shifts)
                     - automatic OU shift detection using LASSO
                       (Khabbazian et al. 2016)
+                quartet_network (alias: quartet_net; qnet; nanuq)
+                    - quartet-based network inference (NANUQ-style)
+                      distinguishing ILS from hybridization
                 polytomy_test (alias: polyt_test; polyt; ptt)
                     - conducts a polytomy test using gene
                       support frequencies
@@ -3637,6 +3640,106 @@ class Phykit:
         _run_service(parser, argv, ConsensusNetwork)
 
     @staticmethod
+    def quartet_network(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Quartet-based network inference (NANUQ-style).
+
+                Computes quartet concordance factors from gene trees,
+                classifies each quartet as tree-like, hybrid, or
+                unresolved using two chi-squared tests (matching the
+                NANUQ algorithm from MSCquartets), and optionally
+                visualizes the result as a species tree with
+                reticulation edges overlaid.
+
+                Star test: Pearson chi-squared against uniform (1/3
+                each). If p > beta, the quartet is unresolved.
+                Tree test (T3): G-test under the MSC tree model.
+                If p > alpha, the quartet is tree-like.
+                Otherwise the quartet shows hybrid signal.
+
+                Input can be either:
+                1) a file with one Newick tree per line, or
+                2) a file with one tree-file path per line.
+
+                Aliases:
+                  quartet_network, quartet_net, qnet, nanuq
+                Command line interfaces:
+                  pk_quartet_network, pk_quartet_net, pk_qnet,
+                  pk_nanuq
+
+                Usage:
+                phykit quartet_network -t/--trees <trees>
+                    [--alpha 0.05] [--beta 0.95]
+                    [--missing-taxa error|shared]
+                    [--plot-output <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--trees                 file containing trees or
+                                           tree paths
+
+                --alpha                    significance level for the
+                                           T3 tree model test
+                                           (Default: 0.05)
+
+                --beta                     threshold for the star tree
+                                           test; quartets with
+                                           p_star > beta are called
+                                           unresolved
+                                           (Default: 0.95)
+
+                --missing-taxa             how to handle mismatched
+                                           taxa across trees:
+                                           error or shared
+                                           (Default: error)
+
+                --plot-output              output filename for the
+                                           quartet network plot
+                                           (optional)
+
+                --json                     optional argument to output
+                                           results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--trees", type=str, required=True, help=SUPPRESS)
+        parser.add_argument(
+            "--alpha",
+            type=float,
+            default=0.05,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--beta",
+            type=float,
+            default=0.95,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--missing-taxa",
+            type=str,
+            choices=["error", "shared"],
+            default="error",
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, QuartetNetwork)
+
+    @staticmethod
     def prune_tree(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -4656,6 +4759,10 @@ def print_tree(argv=None):
 
 def consensus_network(argv=None):
     Phykit.consensus_network(sys.argv[1:])
+
+
+def quartet_network(argv=None):
+    Phykit.quartet_network(sys.argv[1:])
 
 
 def consensus_tree(argv=None):

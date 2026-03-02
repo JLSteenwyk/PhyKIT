@@ -18,6 +18,7 @@ _EXPORTS = {
     "MonophylyCheck": "monophyly_check",
     "NearestNeighborInterchange": "nearest_neighbor_interchange",
     "PatristicDistances": "patristic_distances",
+    "QuartetNetwork": "quartet_network",
     "PolytomyTest": "polytomy_test",
     "PrintTree": "print_tree",
     "PruneTree": "prune_tree",
