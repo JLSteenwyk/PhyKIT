@@ -153,3 +153,79 @@ class TestCountTopologies:
                 f"got {gcf:.3f} (conc={data['n_concordant']}, "
                 f"alt1={data['n_alt1']}, alt2={data['n_alt2']})"
             )
+
+
+class TestTestAsymmetry:
+    def _make_svc(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        args = Namespace(
+            tree="tests/sample_files/tree_simple.tre",
+            gene_trees="tests/sample_files/gene_trees_simple.nwk",
+            verbose=False, json=False, plot_output=None,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_symmetric_case(self):
+        svc = self._make_svc()
+        result = svc._test_asymmetry(5, 5)
+        assert result["asymmetry_ratio"] == 0.5
+        assert result["p_value"] == pytest.approx(1.0)
+        assert result["favored_alt"] is None
+
+    def test_asymmetric_case(self):
+        svc = self._make_svc()
+        result = svc._test_asymmetry(9, 1)
+        assert result["asymmetry_ratio"] == 0.9
+        assert result["p_value"] < 0.05
+        assert result["favored_alt"] == "alt1"
+
+    def test_zero_discordance(self):
+        svc = self._make_svc()
+        result = svc._test_asymmetry(0, 0)
+        assert result["asymmetry_ratio"] is None
+        assert result["p_value"] is None
+        assert result["favored_alt"] is None
+
+    def test_alt2_favored(self):
+        svc = self._make_svc()
+        result = svc._test_asymmetry(1, 9)
+        assert result["asymmetry_ratio"] == 0.9
+        assert result["favored_alt"] == "alt2"
+
+    def test_single_discordant(self):
+        svc = self._make_svc()
+        result = svc._test_asymmetry(1, 0)
+        assert result["asymmetry_ratio"] == 1.0
+        assert result["p_value"] == pytest.approx(1.0)
+        assert result["favored_alt"] == "alt1"
+
+
+class TestFDR:
+    def test_empty_list(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        assert DiscordanceAsymmetry._fdr([]) == []
+
+    def test_single_pvalue(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        result = DiscordanceAsymmetry._fdr([0.03])
+        assert result == [0.03]
+
+    def test_known_correction(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        # Known input: 3 p-values
+        pvals = [0.01, 0.04, 0.03]
+        result = DiscordanceAsymmetry._fdr(pvals)
+        # FDR correction: rank p-values, adjust
+        # sorted: (0, 0.01), (2, 0.03), (1, 0.04)
+        # rank3 (idx=1, p=0.04): 0.04*3/3 = 0.04, prev=0.04
+        # rank2 (idx=2, p=0.03): 0.03*3/2 = 0.045, min(0.045, 0.04)=0.04, prev=0.04
+        # rank1 (idx=0, p=0.01): 0.01*3/1 = 0.03, min(0.03, 0.04)=0.03, prev=0.03
+        # Result: [0.03, 0.04, 0.04]
+        assert result[0] == pytest.approx(0.03)
+        assert result[1] == pytest.approx(0.04)
+        assert result[2] == pytest.approx(0.04)
+
+    def test_all_ones(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        result = DiscordanceAsymmetry._fdr([1.0, 1.0, 1.0])
+        assert all(p == 1.0 for p in result)

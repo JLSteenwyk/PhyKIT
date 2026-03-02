@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from Bio import Phylo
+from scipy.stats import binomtest
 
 from .base import Tree
 from ...helpers.json_output import print_json
@@ -191,3 +192,55 @@ class DiscordanceAsymmetry(Tree):
                 n_alt2=n_alt2,
             )
         return result
+
+    # ------------------------------------------------------------------
+    # Statistical testing
+    # ------------------------------------------------------------------
+
+    def _test_asymmetry(self, n_alt1: int, n_alt2: int) -> Dict:
+        """Run a two-sided binomial test on the two NNI alternatives.
+
+        Returns a dict with asymmetry_ratio, p_value, and favored_alt.
+        """
+        total = n_alt1 + n_alt2
+        if total == 0:
+            return dict(
+                asymmetry_ratio=None,
+                p_value=None,
+                favored_alt=None,
+            )
+
+        asymmetry_ratio = max(n_alt1, n_alt2) / total
+        result = binomtest(n_alt1, total, p=0.5, alternative='two-sided')
+        p_value = result.pvalue
+
+        if n_alt1 > n_alt2:
+            favored_alt = "alt1"
+        elif n_alt2 > n_alt1:
+            favored_alt = "alt2"
+        else:
+            favored_alt = None
+
+        return dict(
+            asymmetry_ratio=asymmetry_ratio,
+            p_value=p_value,
+            favored_alt=favored_alt,
+        )
+
+    @staticmethod
+    def _fdr(p_values: List[float]) -> List[float]:
+        """Benjamini-Hochberg FDR correction."""
+        n = len(p_values)
+        if n == 0:
+            return []
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        corrected = [0.0] * n
+        prev = 1.0
+        for rank_minus_1 in range(n - 1, -1, -1):
+            orig_idx, p = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p * n / rank, prev)
+            adjusted = min(adjusted, 1.0)
+            corrected[orig_idx] = adjusted
+            prev = adjusted
+        return corrected
