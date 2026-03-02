@@ -144,6 +144,7 @@ Tree comparison & consensus
 - :ref:`Consensus network <cmd-consensus_network>`: Consensus network from multiple trees
 - :ref:`Consensus tree <cmd-consensus_tree>`: Consensus tree from multiple trees
 - :ref:`Cophylogenetic plot (tanglegram) <cmd-cophylo>`: Tanglegram for comparing two trees
+- :ref:`Discordance asymmetry <cmd-discordance_asymmetry>`: Test for asymmetric discordance (gene flow detection)
 - :ref:`Evolutionary tempo mapping <cmd-evo_tempo_map>`: Detect rate-topology associations in gene trees
 - :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
 - :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
@@ -1643,6 +1644,84 @@ The plot shows grouped box plots with jittered data points for each species tree
 branch, comparing branch lengths between concordant (blue) and discordant (orange)
 gene trees. Branches where the FDR-corrected p-value is below 0.05 are marked
 with an asterisk.
+
+|
+
+.. _cmd-discordance_asymmetry:
+
+Discordance asymmetry
+#####################
+Function names: discordance_asymmetry; disc_asym; da |br|
+Command line interface: pk_discordance_asymmetry; pk_disc_asym; pk_da
+
+Test whether the two discordant NNI alternative topologies at each species tree
+branch are equally frequent. Under incomplete lineage sorting (ILS) alone, the
+two minor NNI alternatives (gDF1 and gDF2) should appear at equal frequency.
+When they are significantly asymmetric, it suggests introgression or gene flow
+between specific lineages.
+
+For each internal branch of the species tree, a two-sided binomial test (H0:
+P(alt1) = 0.5) is applied, and p-values are corrected for multiple testing
+using Benjamini-Hochberg FDR.
+
+.. code-block:: shell
+
+   phykit discordance_asymmetry -t <species_tree> -g <gene_trees> [--plot <output>] [-v] [--json]
+
+Options: |br|
+*-t/\\-\\-tree*: a species tree file |br|
+*-g/\\-\\-gene-trees*: multi-Newick file of gene trees (branch lengths not required) |br|
+*--plot*: optional output path for asymmetry phylogram (PNG) |br|
+*-v/\\-\\-verbose*: print per-branch details |br|
+*--json*: optional argument to print results as JSON
+
+Example output:
+
+.. code-block:: text
+
+   branch                          n_conc  n_alt1  n_alt2  asym_ratio     binom_p       fdr_p   gene_flow
+   ------------------------------------------------------------------------------------------------------
+   bear,dog,raccoon                     6       0       1       1.000      1.0000      1.0000           -
+   bear,raccoon                         7       1       2       0.667      1.0000      1.0000           -
+   cat,monkey                          10       0       0          NA          NA          NA           -
+   cat,monkey,weasel                    9       1       0       1.000      1.0000      1.0000           -
+   sea_lion,seal                        9       1       0       1.000      1.0000      1.0000           -
+   ---
+   Summary: 4 branches tested, 0 significant (FDR<0.05)
+
+Each row corresponds to an internal branch of the species tree identified by the
+smaller partition of taxa. The ``n_conc`` column shows concordant gene trees, while
+``n_alt1`` and ``n_alt2`` show the counts for the two NNI alternative topologies.
+The ``asym_ratio`` is max(n_alt1, n_alt2) / (n_alt1 + n_alt2), ranging from 0.5
+(perfectly symmetric) to 1.0 (maximally asymmetric). ``NA`` indicates no discordant
+gene trees were observed. The ``binom_p`` is the two-sided binomial test p-value,
+``fdr_p`` is the Benjamini-Hochberg corrected p-value, and ``gene_flow`` shows
+which NNI alternative is favored when the result is significant (FDR < 0.05).
+
+**Interpretation:**
+
+- **Symmetric discordance** (asym_ratio near 0.5, not significant): Consistent with
+  ILS alone — both NNI alternatives arise with equal frequency from random coalescent
+  sorting.
+- **Asymmetric discordance** (asym_ratio near 1.0, significant): Suggests gene flow
+  or introgression. The favored NNI alternative indicates which lineages are exchanging
+  genetic material. For alt1, gene flow is between the C1 lineage and the S (sibling)
+  lineage; for alt2, gene flow is between C2 and S.
+
+To generate a visualization:
+
+.. code-block:: shell
+
+   phykit discordance_asymmetry -t <species_tree> -g <gene_trees> --plot asymmetry.png
+
+.. image:: ../_static/img/discordance_asymmetry_plot.png
+   :align: center
+   :width: 80%
+
+The plot shows a phylogram with internal branches colored by asymmetry ratio using
+a diverging colormap (blue = symmetric/0.5, red = highly asymmetric/1.0). Significant
+branches (FDR < 0.05) are marked with a red star. Internal nodes are annotated with
+gCF values.
 
 |
 
