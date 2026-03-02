@@ -2763,9 +2763,10 @@ We will:
 
 1. Quantify gene tree conflict with a splits network (``consensus_network``)
 2. Test for rate-topology associations (``evo_tempo_map``)
-3. Identify diversification patterns (``ltt``)
-4. Reconstruct ancestral states accounting for discordance (``concordance_asr``)
-5. Run comparative methods with discordance-aware variance-covariance
+3. Test for asymmetric discordance / gene flow (``discordance_asymmetry``)
+4. Identify diversification patterns (``ltt``)
+5. Reconstruct ancestral states accounting for discordance (``concordance_asr``)
+6. Run comparative methods with discordance-aware variance-covariance
    matrices (``pgls``, ``phylogenetic_signal``, ``fit_continuous``)
 
 |
@@ -2839,7 +2840,7 @@ Thick chords represent well-supported splits; thin chords represent
 rare alternatives. A clean star-like network suggests minimal conflict;
 box-like structures indicate competing topologies. If the network shows
 substantial conflict, the downstream discordance-aware analyses in
-Steps 3-4 become especially important.
+Steps 5-6 become especially important.
 
 |
 
@@ -2902,7 +2903,60 @@ significant in this small dataset.
 
 |
 
-**Step 3: Identify diversification patterns with LTT**
+**Step 3: Test for asymmetric discordance (gene flow detection)**
+
+Step 2 told us whether discordant gene trees differ in branch *lengths*
+from concordant ones. Now we ask a complementary question: are the two
+possible discordant topologies at each branch equally frequent?
+
+Under ILS alone, the two NNI alternative topologies (gDF1 and gDF2)
+should appear with equal probability. If one alternative is significantly
+more common, it suggests gene flow or introgression between specific
+lineages — because introgression biases gene tree topologies toward
+the alternative that groups the donor and recipient.
+
+.. code-block:: shell
+
+   phykit discordance_asymmetry -t tree_simple.tre -g gene_trees_simple.nwk
+
+Expected output:
+
+.. code-block:: text
+
+   branch                          n_conc  n_alt1  n_alt2  asym_ratio     binom_p       fdr_p   gene_flow
+   ------------------------------------------------------------------------------------------------------
+   bear,dog,raccoon                     6       0       1       1.000      1.0000      1.0000           -
+   bear,raccoon                         7       1       2       0.667      1.0000      1.0000           -
+   cat,monkey                          10       0       0          NA          NA          NA           -
+   cat,monkey,weasel                    9       1       0       1.000      1.0000      1.0000           -
+   sea_lion,seal                        9       1       0       1.000      1.0000      1.0000           -
+   ---
+   Summary: 4 branches tested, 0 significant (FDR<0.05)
+
+No branches show significant asymmetry in this small dataset, which is
+consistent with the ILS-only scenario. The {bear,raccoon} branch has
+the most discordant gene trees (3 total: 1 alt1 + 2 alt2), but the
+difference between 1 and 2 is far from significant (binomial p = 1.0).
+
+To visualize asymmetry on the phylogeny:
+
+.. code-block:: shell
+
+   phykit da -t tree_simple.tre -g gene_trees_simple.nwk --plot asymmetry.png
+
+.. image:: ../_static/img/tutorial19_discordance_asymmetry.png
+   :align: center
+   :width: 80%
+
+Branches are colored by asymmetry ratio (blue = symmetric, red =
+asymmetric). All branches are blue here, confirming symmetric
+discordance consistent with ILS. In datasets with introgression,
+branches near hybridization events would appear red with significant
+p-values.
+
+|
+
+**Step 4: Identify diversification patterns with LTT**
 
 Before diving into trait analyses, examine the tempo of diversification.
 For a suspected rapid radiation, the lineage-through-time (LTT) plot
@@ -2927,7 +2981,7 @@ network.
 
 |
 
-**Step 4: Concordance-aware ancestral state reconstruction**
+**Step 5: Concordance-aware ancestral state reconstruction**
 
 Standard ASR operates on a single species tree, ignoring gene tree
 conflict. For our clade, the ancestral thermal tolerance at the base of
@@ -2994,7 +3048,7 @@ For distribution-based reconstruction and confidence intervals:
 
 |
 
-**Step 5: Discordance-aware comparative methods**
+**Step 6: Discordance-aware comparative methods**
 
 Now we return to our original question: *does thermal tolerance predict
 metabolic rate?* In a clade with substantial gene tree conflict, the
@@ -3066,14 +3120,17 @@ coherent story:
    trees have shorter internal branches than concordant ones, consistent
    with the coalescent expectation. No significant rate heterogeneity
    is detected, suggesting neutral sorting rather than adaptive evolution.
-3. **Examine diversification** (``ltt``) — a significantly negative
+3. **Asymmetric discordance** (``discordance_asymmetry``) — no significant
+   asymmetry detected in any branch, consistent with neutral ILS and no
+   gene flow between the sampled lineages.
+4. **Examine diversification** (``ltt``) — a significantly negative
    gamma statistic confirms that most speciation events were clustered
    in a short burst, explaining the ILS-driven gene tree conflict.
-4. **Concordance-aware ASR** (``concordance_asr``) — ancestral thermal
+5. **Concordance-aware ASR** (``concordance_asr``) — ancestral thermal
    tolerance estimates at the rapid-radiation node have wide confidence
    intervals, reflecting genuine uncertainty about which species were
    ancestrally sister to each other.
-5. **Discordance-aware comparative methods** (``pgls``,
+6. **Discordance-aware comparative methods** (``pgls``,
    ``phylogenetic_signal``, ``fit_continuous``) — using the genome-wide
    average VCV produces more conservative (and more accurate) p-values
    for the thermal tolerance–metabolic rate relationship.
