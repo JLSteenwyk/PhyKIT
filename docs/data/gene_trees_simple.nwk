@@ -1,0 +1,10 @@
+((raccoon:18.5,bear:7.2):0.9,((sea_lion:12.1,seal:11.8):7.6,((monkey:99.2,cat:46.5):21.0,weasel:19.1):2.1):3.9,dog:24.8);
+((raccoon:19.8,bear:6.5):0.8,((sea_lion:11.5,seal:12.4):7.3,((monkey:101.2,cat:48.0):20.1,weasel:18.5):2.2):4.0,dog:25.9);
+((raccoon:18.9,bear:7.0):0.85,((sea_lion:12.3,seal:11.6):7.8,((monkey:100.5,cat:47.3):20.8,weasel:19.0):2.0):3.7,dog:25.2);
+((raccoon:19.5,bear:6.9):0.82,((sea_lion:11.8,seal:12.1):7.5,((monkey:100.0,cat:46.8):20.5,weasel:18.8):2.15):3.85,dog:25.5);
+((raccoon:18.7,bear:7.1):0.88,((sea_lion:12.0,seal:11.9):7.4,((monkey:101.0,cat:47.5):20.3,weasel:18.6):2.05):3.95,dog:25.1);
+((raccoon:19.2,bear:6.7):0.91,((sea_lion:11.7,seal:12.2):7.7,((monkey:99.8,cat:47.0):20.6,weasel:19.2):2.12):3.8,dog:25.4);
+((raccoon:18.8,(sea_lion:12.0,seal:11.9):6.5):1.2,((monkey:100.3,cat:47.1):20.4,weasel:18.9):2.3,(bear:7.5,dog:24.5):0.7);
+(raccoon:19.0,((bear:7.3,sea_lion:12.5):1.0,(seal:12.0,((monkey:99.5,cat:46.9):20.7,weasel:18.7):2.0):7.2):3.5,dog:25.6);
+((raccoon:19.1,(monkey:100.1,cat:47.2):15.0):1.5,((sea_lion:11.6,seal:12.3):7.9,weasel:19.3):2.8,(bear:6.8,dog:25.0):0.6);
+(((raccoon:18.6,bear:6.6):0.95,(sea_lion:11.4,seal:12.5):7.1):3.6,((monkey:100.8,cat:47.4):20.2,weasel:18.4):2.18,dog:25.3);
