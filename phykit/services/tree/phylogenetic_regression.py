@@ -20,8 +20,11 @@ class PhylogeneticRegression(Tree):
         self.predictors = parsed["predictors"]
         self.method = parsed["method"]
         self.json_output = parsed["json_output"]
+        self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
+        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+
         tree = self.read_tree_file()
         self._validate_tree(tree)
 
@@ -51,6 +54,18 @@ class PhylogeneticRegression(Tree):
             )
 
         ordered_names = sorted(traits.keys())
+
+        if self.gene_trees_path:
+            gene_trees = parse_gene_trees(self.gene_trees_path)
+            vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+            shared = vcv_meta["shared_taxa"]
+            if set(shared) != set(ordered_names):
+                traits = {k: traits[k] for k in shared}
+                ordered_names = shared
+        else:
+            vcv = build_vcv_matrix(tree, ordered_names)
+            vcv_meta = None
+
         n = len(ordered_names)
         k = len(self.predictors)
 
@@ -73,8 +88,6 @@ class PhylogeneticRegression(Tree):
         )
         # Design matrix: intercept + predictors
         X = np.column_stack([np.ones(n), X_pred])
-
-        vcv = self._build_vcv_matrix(tree, ordered_names)
 
         lambda_val = None
         log_likelihood_lambda = None
@@ -152,6 +165,9 @@ class PhylogeneticRegression(Tree):
             lambda_val=lambda_val,
         )
 
+        if vcv_meta is not None:
+            result["vcv_metadata"] = vcv_meta
+
         if self.json_output:
             print_json(result)
         else:
@@ -183,6 +199,7 @@ class PhylogeneticRegression(Tree):
             predictors=args.predictors,
             method=getattr(args, "method", "BM"),
             json_output=getattr(args, "json", False),
+            gene_trees_path=getattr(args, "gene_trees", None),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -303,28 +320,8 @@ class PhylogeneticRegression(Tree):
     def _build_vcv_matrix(
         self, tree, ordered_names: List[str]
     ) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
-
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
-
-        return vcv
+        from .vcv_utils import build_vcv_matrix
+        return build_vcv_matrix(tree, ordered_names)
 
     def _max_lambda(self, tree) -> float:
         tips = tree.get_terminals()

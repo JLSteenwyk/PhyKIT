@@ -18,8 +18,11 @@ class FitContinuous(Tree):
         self.trait_data_path = parsed["trait_data_path"]
         self.selected_models = parsed["models"]
         self.json_output = parsed["json_output"]
+        self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
+        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+
         tree = self.read_tree_file()
         self._validate_tree(tree)
 
@@ -27,10 +30,20 @@ class FitContinuous(Tree):
         traits = self._parse_trait_file(self.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
+
+        if self.gene_trees_path:
+            gene_trees = parse_gene_trees(self.gene_trees_path)
+            vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+            shared = vcv_meta["shared_taxa"]
+            if set(shared) != set(ordered_names):
+                traits = {k: traits[k] for k in shared}
+                ordered_names = shared
+        else:
+            vcv = build_vcv_matrix(tree, ordered_names)
+            vcv_meta = None
+
         x = np.array([traits[name] for name in ordered_names])
         n = len(x)
-
-        vcv = self._build_vcv_matrix(tree, ordered_names)
 
         # Precompute helpers needed by tree-transformation models
         parent_map = self._build_parent_map(tree)
@@ -49,7 +62,7 @@ class FitContinuous(Tree):
         results = self._compute_model_comparison(results, n)
 
         if self.json_output:
-            self._print_json_output(results, n)
+            self._print_json_output(results, n, vcv_meta)
         else:
             self._print_text_output(results, n)
 
@@ -75,6 +88,7 @@ class FitContinuous(Tree):
             trait_data_path=args.trait_data,
             models=models,
             json_output=getattr(args, "json", False),
+            gene_trees_path=getattr(args, "gene_trees", None),
         )
 
     # ── Tree & trait parsing ─────────────────────────────────────────
@@ -169,28 +183,8 @@ class FitContinuous(Tree):
     def _build_vcv_matrix(
         self, tree, ordered_names: List[str]
     ) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
-
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
-
-        return vcv
+        from .vcv_utils import build_vcv_matrix
+        return build_vcv_matrix(tree, ordered_names)
 
     def _build_parent_map(self, tree) -> Dict:
         parent_map = {}
@@ -607,7 +601,7 @@ class FitContinuous(Tree):
         print(f"\nBest model (AIC): {best_aic}")
         print(f"Best model (BIC): {best_bic}")
 
-    def _print_json_output(self, results: List[Dict], n: int) -> None:
+    def _print_json_output(self, results: List[Dict], n: int, vcv_meta=None) -> None:
         models = {}
         for r in results:
             models[r["model"]] = dict(
@@ -633,4 +627,6 @@ class FitContinuous(Tree):
             best_model_aic=best_aic,
             best_model_bic=best_bic,
         )
+        if vcv_meta is not None:
+            payload["vcv_metadata"] = vcv_meta
         print_json(payload, sort_keys=False)

@@ -30,8 +30,11 @@ class PhylogeneticOrdination(Tree):
         self.plot_tree = parsed["plot_tree"]
         self.color_by = parsed["color_by"]
         self.tree_color_by = parsed["tree_color_by"]
+        self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
+        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+
         tree = self.read_tree_file()
         self._validate_tree(tree)
 
@@ -41,12 +44,22 @@ class PhylogeneticOrdination(Tree):
         )
 
         ordered_names = sorted(traits.keys())
+
+        if self.gene_trees_path:
+            gene_trees = parse_gene_trees(self.gene_trees_path)
+            vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+            shared = vcv_meta["shared_taxa"]
+            if set(shared) != set(ordered_names):
+                traits = {k: traits[k] for k in shared}
+                ordered_names = shared
+        else:
+            vcv = build_vcv_matrix(tree, ordered_names)
+            vcv_meta = None
+
         n = len(ordered_names)
         p = len(trait_names)
 
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
-
-        vcv = self._build_vcv_matrix(tree, ordered_names)
 
         lambda_val = None
         log_likelihood = None
@@ -69,17 +82,17 @@ class PhylogeneticOrdination(Tree):
         if self.method == "pca":
             self._run_pca(
                 Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
-                lambda_val, log_likelihood,
+                lambda_val, log_likelihood, vcv_meta,
             )
         else:  # tsne or umap
             self._run_dimreduce(
                 Z, n, tree, ordered_names, trait_names, Y,
-                lambda_val, log_likelihood,
+                lambda_val, log_likelihood, vcv_meta,
             )
 
     def _run_pca(
         self, Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
-        lambda_val, log_likelihood,
+        lambda_val, log_likelihood, vcv_meta=None,
     ) -> None:
         R = (Z.T @ C_inv @ Z) / (n - 1)
 
@@ -123,6 +136,8 @@ class PhylogeneticOrdination(Tree):
         if self.json_output:
             if self.plot:
                 result["plot_output"] = self.plot_output
+            if vcv_meta is not None:
+                result["vcv_metadata"] = vcv_meta
             print_json(result)
         else:
             self._print_pca_text_output(
@@ -135,7 +150,7 @@ class PhylogeneticOrdination(Tree):
 
     def _run_dimreduce(
         self, Z, n, tree, ordered_names, trait_names, Y,
-        lambda_val, log_likelihood,
+        lambda_val, log_likelihood, vcv_meta=None,
     ) -> None:
         if self.method == "tsne":
             embedding, params = self._embed_tsne(Z, n)
@@ -157,6 +172,8 @@ class PhylogeneticOrdination(Tree):
         if self.json_output:
             if self.plot:
                 result["plot_output"] = self.plot_output
+            if vcv_meta is not None:
+                result["vcv_metadata"] = vcv_meta
             print_json(result)
         else:
             self._print_dimreduce_text_output(
@@ -190,6 +207,7 @@ class PhylogeneticOrdination(Tree):
             plot_tree=plot_tree,
             color_by=getattr(args, "color_by", None),
             tree_color_by=getattr(args, "tree_color_by", None),
+            gene_trees_path=getattr(args, "gene_trees", None),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -308,28 +326,8 @@ class PhylogeneticOrdination(Tree):
     def _build_vcv_matrix(
         self, tree, ordered_names: List[str]
     ) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
-
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
-
-        return vcv
+        from .vcv_utils import build_vcv_matrix
+        return build_vcv_matrix(tree, ordered_names)
 
     def _max_lambda(self, tree) -> float:
         tips = tree.get_terminals()

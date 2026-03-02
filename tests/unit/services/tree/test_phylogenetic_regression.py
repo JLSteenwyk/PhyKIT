@@ -474,3 +474,76 @@ class TestRun:
         assert "body_mass" in captured.out
         assert "longevity" in captured.out
         assert "brain_size ~ body_mass + longevity" in captured.out
+
+
+GENE_TREES_FILE = str(SAMPLE_FILES / "gene_trees_simple.nwk")
+
+
+class TestDiscordanceVCV:
+    def test_run_with_gene_trees_json(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+        assert "vcv_metadata" in payload
+        assert payload["vcv_metadata"]["n_gene_trees"] == 10
+        assert "coefficients" in payload
+
+    def test_discordance_changes_coefficients(self, capsys):
+        """With discordant gene trees, PGLS coefficients should differ."""
+        args_no_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+        )
+        svc = PhylogeneticRegression(args_no_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        coefs_no_gt = json.loads(out)["coefficients"]
+
+        args_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticRegression(args_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        coefs_gt = json.loads(out)["coefficients"]
+
+        # Coefficients should differ (not exactly equal)
+        assert coefs_gt["body_mass"]["estimate"] != pytest.approx(
+            coefs_no_gt["body_mass"]["estimate"], abs=1e-6
+        )
+
+    def test_text_output_with_gene_trees(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            response="brain_size",
+            predictors=["body_mass"],
+            method="BM",
+            json=False,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticRegression(args)
+        svc.run()
+        captured = capsys.readouterr()
+        assert "PGLS" in captured.out
+        assert "body_mass" in captured.out

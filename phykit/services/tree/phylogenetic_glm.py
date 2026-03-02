@@ -22,6 +22,7 @@ class PhylogeneticGLM(Tree):
         self.btol = parsed["btol"]
         self.log_alpha_bound = parsed["log_alpha_bound"]
         self.json_output = parsed["json_output"]
+        self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -53,6 +54,18 @@ class PhylogeneticGLM(Tree):
             )
 
         ordered_names = sorted(traits.keys())
+
+        # Pre-compute discordance VCV if gene trees provided
+        vcv_meta = None
+        if self.gene_trees_path:
+            from .vcv_utils import build_discordance_vcv, parse_gene_trees
+            gene_trees = parse_gene_trees(self.gene_trees_path)
+            _, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+            shared = vcv_meta["shared_taxa"]
+            if set(shared) != set(ordered_names):
+                traits = {k: traits[k] for k in shared}
+                ordered_names = shared
+
         n = len(ordered_names)
         k = len(self.predictors)
 
@@ -105,10 +118,22 @@ class PhylogeneticGLM(Tree):
                     code=2,
                 )
 
+        # Pre-compute VCV for Poisson GEE if gene trees provided
+        self._precomputed_vcv = None
+        if self.gene_trees_path:
+            from .vcv_utils import build_discordance_vcv, parse_gene_trees
+            gene_trees = parse_gene_trees(self.gene_trees_path)
+            self._precomputed_vcv, _ = build_discordance_vcv(
+                tree, gene_trees, ordered_names
+            )
+
         if self.family == "binomial":
             result = self._fit_logistic_mple(tree, y, X, ordered_names)
         else:
             result = self._fit_poisson_gee(tree, y, X, ordered_names)
+
+        if vcv_meta is not None:
+            result["vcv_metadata"] = vcv_meta
 
         if self.json_output:
             print_json(result)
@@ -130,6 +155,7 @@ class PhylogeneticGLM(Tree):
             btol=getattr(args, "btol", 10),
             log_alpha_bound=getattr(args, "log_alpha_bound", 4),
             json_output=getattr(args, "json", False),
+            gene_trees_path=getattr(args, "gene_trees", None),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -249,28 +275,8 @@ class PhylogeneticGLM(Tree):
     def _build_vcv_matrix(
         self, tree, ordered_names: List[str]
     ) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
-
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
-
-        return vcv
+        from .vcv_utils import build_vcv_matrix
+        return build_vcv_matrix(tree, ordered_names)
 
     def _signif_code(self, p: float) -> str:
         if p < 0.001:
@@ -785,7 +791,10 @@ class PhylogeneticGLM(Tree):
         n, p = X.shape
         k = p - 1
 
-        vcv = self._build_vcv_matrix(tree, ordered_names)
+        if getattr(self, "_precomputed_vcv", None) is not None:
+            vcv = self._precomputed_vcv
+        else:
+            vcv = self._build_vcv_matrix(tree, ordered_names)
         d = np.sqrt(np.diag(vcv))
         R = vcv / np.outer(d, d)
 

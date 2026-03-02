@@ -272,3 +272,114 @@ class TestRun:
         assert "lambda" in data
         assert "log_likelihood" in data
         assert "p_value" in data
+
+
+GENE_TREES_FILE = str(SAMPLE_FILES / "gene_trees_simple.nwk")
+
+
+class TestDiscordanceVCV:
+    def test_run_with_gene_trees(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "K" in data
+        assert "p_value" in data
+        assert "vcv_metadata" in data
+        assert data["vcv_metadata"]["n_gene_trees"] == 10
+
+    def test_all_concordant_gene_trees(self, capsys):
+        """When all gene trees are identical to species tree, K should be
+        very close to species-tree-only K."""
+        # Run without gene trees
+        args_no_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args_no_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        k_no_gt = json.loads(out)["K"]
+
+        # Run with species tree as gene trees (all concordant)
+        import tempfile, shutil
+        from Bio import Phylo
+        tree = Phylo.read(TREE_SIMPLE, "newick")
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".nwk", delete=False) as f:
+            for _ in range(3):
+                Phylo.write(tree, f, "newick")
+            concordant_path = f.name
+
+        try:
+            args_gt = Namespace(
+                tree=TREE_SIMPLE,
+                trait_data=TRAITS_FILE,
+                method="blombergs_k",
+                permutations=100,
+                json=True,
+                gene_trees=concordant_path,
+            )
+            svc = PhylogeneticSignal(args_gt)
+            svc.run()
+            out, _ = capsys.readouterr()
+            k_gt = json.loads(out)["K"]
+            assert k_gt == pytest.approx(k_no_gt, rel=0.01)
+        finally:
+            import os
+            os.unlink(concordant_path)
+
+    def test_discordance_vcv_differs_from_species(self, capsys):
+        """With discordant gene trees, K should differ from species-tree-only K."""
+        args_no_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+        )
+        svc = PhylogeneticSignal(args_no_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        k_no_gt = json.loads(out)["K"]
+
+        args_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="blombergs_k",
+            permutations=100,
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticSignal(args_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        k_gt = json.loads(out)["K"]
+        # They should differ (gene trees 7-9 are discordant)
+        assert k_gt != pytest.approx(k_no_gt, abs=1e-6)
+
+    def test_lambda_with_gene_trees(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            method="lambda",
+            permutations=1000,
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticSignal(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "lambda" in data
+        assert "vcv_metadata" in data

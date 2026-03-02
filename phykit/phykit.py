@@ -2389,6 +2389,10 @@ class Phykit:
                 -p/--permutations           number of permutations for
                                             blombergs_k (default: 1000)
 
+                -g/--gene-trees             optional multi-Newick file of
+                                            gene trees for discordance-aware
+                                            VCV computation
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -2418,6 +2422,10 @@ class Phykit:
             default=1000,
             help=SUPPRESS,
             metavar="",
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticSignal)
@@ -2502,6 +2510,10 @@ class Phykit:
 
                 --plot-output               output path for plot
                                             (default: phylo_ordination_plot.png)
+
+                -g/--gene-trees             optional multi-Newick file of
+                                            gene trees for discordance-aware
+                                            VCV computation
 
                 --json                      optional argument to output
                                             results as JSON
@@ -2606,6 +2618,10 @@ class Phykit:
             default="phylo_ordination_plot.png",
             required=False,
             help=SUPPRESS,
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticOrdination)
@@ -2760,6 +2776,10 @@ class Phykit:
                 -m/--method                 method to use: BM or lambda
                                             (default: BM)
 
+                -g/--gene-trees             optional multi-Newick file of
+                                            gene trees for discordance-aware
+                                            VCV computation
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -2792,6 +2812,10 @@ class Phykit:
             choices=["BM", "lambda"],
             help=SUPPRESS,
             metavar="",
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticRegression)
@@ -2856,6 +2880,10 @@ class Phykit:
                 --log-alpha-bound           bound on log(alpha*Tmax) for
                                             logistic model (default: 4)
 
+                -g/--gene-trees             optional multi-Newick file of
+                                            gene trees for discordance-aware
+                                            VCV computation
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -2912,6 +2940,10 @@ class Phykit:
             dest="log_alpha_bound",
             help=SUPPRESS,
             metavar="",
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticGLM)
@@ -3356,6 +3388,10 @@ class Phykit:
                 --models                    comma-separated list of models
                                             to fit (default: all 7)
 
+                -g/--gene-trees             optional multi-Newick file of
+                                            gene trees for discordance-aware
+                                            VCV computation
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -3369,6 +3405,10 @@ class Phykit:
         )
         parser.add_argument(
             "--models", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
         _add_json_argument(parser)

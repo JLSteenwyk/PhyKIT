@@ -18,8 +18,11 @@ class PhylogeneticSignal(Tree):
         self.method = parsed["method"]
         self.permutations = parsed["permutations"]
         self.json_output = parsed["json_output"]
+        self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
+        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+
         tree = self.read_tree_file()
         self._validate_tree(tree)
 
@@ -27,11 +30,25 @@ class PhylogeneticSignal(Tree):
         traits = self._parse_trait_file(self.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
+
+        if self.gene_trees_path:
+            gene_trees = parse_gene_trees(self.gene_trees_path)
+            vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+            # Subset traits to shared taxa if needed
+            shared = vcv_meta["shared_taxa"]
+            if set(shared) != set(ordered_names):
+                traits = {k: traits[k] for k in shared}
+                ordered_names = shared
+        else:
+            vcv = build_vcv_matrix(tree, ordered_names)
+            vcv_meta = None
+
         x = np.array([traits[name] for name in ordered_names])
-        vcv = self._build_vcv_matrix(tree, ordered_names)
 
         if self.method == "blombergs_k":
             result = self._blombergs_k(x, vcv, self.permutations)
+            if vcv_meta is not None:
+                result["vcv_metadata"] = vcv_meta
             if self.json_output:
                 print_json(result)
                 return
@@ -39,6 +56,8 @@ class PhylogeneticSignal(Tree):
         elif self.method == "lambda":
             max_lam = self._max_lambda(tree)
             result = self._pagels_lambda(x, vcv, max_lam)
+            if vcv_meta is not None:
+                result["vcv_metadata"] = vcv_meta
             if self.json_output:
                 print_json(result)
                 return
@@ -55,6 +74,7 @@ class PhylogeneticSignal(Tree):
             method=getattr(args, "method", "blombergs_k"),
             permutations=getattr(args, "permutations", 1000),
             json_output=getattr(args, "json", False),
+            gene_trees_path=getattr(args, "gene_trees", None),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -145,28 +165,8 @@ class PhylogeneticSignal(Tree):
     def _build_vcv_matrix(
         self, tree, ordered_names: List[str]
     ) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
-
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
-
-        return vcv
+        from .vcv_utils import build_vcv_matrix
+        return build_vcv_matrix(tree, ordered_names)
 
     def _log_likelihood(
         self, x: np.ndarray, C: np.ndarray

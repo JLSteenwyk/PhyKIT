@@ -479,3 +479,97 @@ class TestRun:
         assert "body_mass" in all_output
         assert "count_trait" in all_output
         assert "binary_trait ~ body_mass + count_trait" in all_output
+
+
+GENE_TREES_FILE = str(SAMPLE_FILES / "gene_trees_simple.nwk")
+
+
+class TestDiscordanceVCV:
+    def test_poisson_gee_with_gene_trees_json(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "vcv_metadata" in data
+        assert data["vcv_metadata"]["n_gene_trees"] == 10
+        assert "coefficients" in data
+
+    def test_binomial_with_gene_trees_json(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="binary_trait",
+            predictors=["body_mass"],
+            family="binomial",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "vcv_metadata" in data
+        assert "coefficients" in data
+
+    def test_discordance_changes_poisson_coefficients(self, capsys):
+        """With discordant gene trees, Poisson GEE coefficients should differ."""
+        base_kwargs = dict(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=True,
+        )
+        args_no_gt = Namespace(**base_kwargs)
+        svc = PhylogeneticGLM(args_no_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        coefs_no_gt = json.loads(out)["coefficients"]
+
+        args_gt = Namespace(**base_kwargs, gene_trees=GENE_TREES_FILE)
+        svc = PhylogeneticGLM(args_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        coefs_gt = json.loads(out)["coefficients"]
+
+        # Coefficients should differ with discordant gene trees
+        assert coefs_gt["body_mass"]["estimate"] != pytest.approx(
+            coefs_no_gt["body_mass"]["estimate"], abs=1e-6
+        )
+
+    @patch("builtins.print")
+    def test_text_output_with_gene_trees(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=GLM_TRAITS_FILE,
+            response="count_trait",
+            predictors=["body_mass"],
+            family="poisson",
+            method=None,
+            btol=10,
+            log_alpha_bound=4,
+            json=False,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticGLM(args)
+        svc.run()
+        assert mocked_print.called

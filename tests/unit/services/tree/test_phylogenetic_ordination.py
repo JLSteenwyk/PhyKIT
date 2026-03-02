@@ -1263,3 +1263,76 @@ class TestParseColorBy:
             svc._parse_color_by(
                 "nonexistent_column_and_not_a_file", trait_names, Y, ordered_names
             )
+
+
+GENE_TREES_FILE = str(SAMPLE_FILES / "gene_trees_simple.nwk")
+
+
+class TestDiscordanceVCV:
+    def test_run_pca_with_gene_trees_json(self, capsys):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="pca",
+            correction="BM",
+            mode="cov",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=None,
+            json=True,
+            plot=False,
+            plot_output="test_output.png",
+            plot_tree=False,
+            no_plot_tree=False,
+            color_by=None,
+            tree_color_by=None,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = PhylogeneticOrdination(args)
+        svc.run()
+        out, _ = capsys.readouterr()
+        data = json.loads(out)
+        assert "eigenvalues" in data
+        assert "vcv_metadata" in data
+        assert data["vcv_metadata"]["n_gene_trees"] == 10
+
+    def test_discordance_changes_pca_scores(self, capsys):
+        """With discordant gene trees, PCA scores should differ."""
+        base_kwargs = dict(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="pca",
+            correction="BM",
+            mode="cov",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=None,
+            json=True,
+            plot=False,
+            plot_output="test_output.png",
+            plot_tree=False,
+            no_plot_tree=False,
+            color_by=None,
+            tree_color_by=None,
+        )
+        args_no_gt = Namespace(**base_kwargs)
+        svc = PhylogeneticOrdination(args_no_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        scores_no_gt = json.loads(out)["scores"]
+
+        args_gt = Namespace(**base_kwargs, gene_trees=GENE_TREES_FILE)
+        svc = PhylogeneticOrdination(args_gt)
+        svc.run()
+        out, _ = capsys.readouterr()
+        scores_gt = json.loads(out)["scores"]
+
+        # At least one taxon's scores should differ
+        first_taxon = sorted(scores_no_gt.keys())[0]
+        pc1_no_gt = scores_no_gt[first_taxon]["PC1"]
+        pc1_gt = scores_gt[first_taxon]["PC1"]
+        assert pc1_gt != pytest.approx(pc1_no_gt, abs=1e-6)

@@ -313,3 +313,67 @@ class TestRun:
         svc.run()
         payload = json.loads(mocked_print.call_args.args[0])
         assert set(payload["models"].keys()) == {"BM", "OU", "White"}
+
+
+GENE_TREES_FILE = str(SAMPLE_FILES / "gene_trees_simple.nwk")
+
+
+class TestDiscordanceVCV:
+    @patch("builtins.print")
+    def test_run_with_gene_trees_json(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models="BM",
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert "vcv_metadata" in payload
+        assert payload["vcv_metadata"]["n_gene_trees"] == 10
+        assert "BM" in payload["models"]
+
+    @patch("builtins.print")
+    def test_discordance_changes_model_fit(self, mocked_print):
+        """With discordant gene trees, model fits should differ."""
+        args_no_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models="BM",
+            json=True,
+        )
+        svc = FitContinuous(args_no_gt)
+        svc.run()
+        bm_no_gt = json.loads(mocked_print.call_args.args[0])["models"]["BM"]
+
+        args_gt = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models="BM",
+            json=True,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = FitContinuous(args_gt)
+        svc.run()
+        bm_gt = json.loads(mocked_print.call_args.args[0])["models"]["BM"]
+
+        # Log-likelihood should differ with discordant gene trees
+        assert bm_gt["log_likelihood"] != pytest.approx(
+            bm_no_gt["log_likelihood"], abs=1e-6
+        )
+
+    @patch("builtins.print")
+    def test_text_output_with_gene_trees(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            models="BM",
+            json=False,
+            gene_trees=GENE_TREES_FILE,
+        )
+        svc = FitContinuous(args)
+        svc.run()
+        # Should complete without error
+        assert mocked_print.called
