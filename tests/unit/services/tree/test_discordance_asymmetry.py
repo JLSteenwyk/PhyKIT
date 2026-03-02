@@ -229,3 +229,69 @@ class TestFDR:
         from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
         result = DiscordanceAsymmetry._fdr([1.0, 1.0, 1.0])
         assert all(p == 1.0 for p in result)
+
+
+class TestRun:
+    def _make_svc(self, verbose=False, json_output=False, plot_output=None):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        args = Namespace(
+            tree="tests/sample_files/tree_simple.tre",
+            gene_trees="tests/sample_files/gene_trees_simple.nwk",
+            verbose=verbose, json=json_output, plot_output=plot_output,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_text_output_has_header(self, capsys):
+        svc = self._make_svc()
+        svc.run()
+        captured = capsys.readouterr()
+        assert "branch" in captured.out
+        assert "n_conc" in captured.out
+        assert "n_alt1" in captured.out
+        assert "n_alt2" in captured.out
+        assert "asym_ratio" in captured.out
+        assert "binom_p" in captured.out
+        assert "fdr_p" in captured.out
+        assert "gene_flow" in captured.out
+
+    def test_text_output_has_branches(self, capsys):
+        svc = self._make_svc()
+        svc.run()
+        captured = capsys.readouterr()
+        assert "bear,raccoon" in captured.out
+        assert "cat,monkey" in captured.out
+
+    def test_text_output_has_summary(self, capsys):
+        svc = self._make_svc()
+        svc.run()
+        captured = capsys.readouterr()
+        assert "Summary:" in captured.out
+        assert "branches tested" in captured.out
+
+    def test_json_output_structure(self, capsys):
+        import json
+        svc = self._make_svc(json_output=True)
+        svc.run()
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert "branches" in data
+        assert "summary" in data
+        assert isinstance(data["branches"], list)
+        assert len(data["branches"]) > 0
+        # Check branch entry has expected keys
+        branch = data["branches"][0]
+        for key in ["split", "n_concordant", "n_alt1", "n_alt2",
+                     "asymmetry_ratio", "p_value", "fdr_p"]:
+            assert key in branch
+        # Check summary
+        assert "n_gene_trees" in data["summary"]
+        assert "n_branches_tested" in data["summary"]
+        assert "n_significant_fdr05" in data["summary"]
+
+    def test_json_output_n_gene_trees(self, capsys):
+        import json
+        svc = self._make_svc(json_output=True)
+        svc.run()
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data["summary"]["n_gene_trees"] == 10

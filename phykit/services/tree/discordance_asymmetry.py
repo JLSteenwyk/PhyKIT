@@ -29,6 +29,128 @@ class DiscordanceAsymmetry(Tree):
         )
 
     def run(self) -> None:
+        species_tree = self.read_tree_file()
+        gene_trees = self._parse_gene_trees(self.gene_trees_path)
+
+        topology_counts = self._count_topologies(species_tree, gene_trees)
+
+        # Test each branch and collect results
+        branch_results = []
+        for branch_key in sorted(topology_counts.keys()):
+            data = topology_counts[branch_key]
+            test_result = self._test_asymmetry(data["n_alt1"], data["n_alt2"])
+            entry = dict(
+                split=data["split"],
+                n_concordant=data["n_concordant"],
+                n_alt1=data["n_alt1"],
+                n_alt2=data["n_alt2"],
+            )
+            entry.update(test_result)
+            branch_results.append(entry)
+
+        # FDR correction across testable p-values
+        testable_indices = []
+        testable_pvals = []
+        for i, entry in enumerate(branch_results):
+            if entry["p_value"] is not None:
+                testable_indices.append(i)
+                testable_pvals.append(entry["p_value"])
+
+        fdr_corrected = self._fdr(testable_pvals)
+        for idx, fdr_p in zip(testable_indices, fdr_corrected):
+            branch_results[idx]["fdr_p"] = fdr_p
+
+        # Set fdr_p to None for untestable branches
+        for entry in branch_results:
+            if "fdr_p" not in entry:
+                entry["fdr_p"] = None
+
+        # Summary
+        summary = dict(
+            n_gene_trees=len(gene_trees),
+            n_branches_tested=len(testable_indices),
+            n_significant_fdr05=sum(
+                1 for entry in branch_results
+                if entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
+            ),
+        )
+
+        # Output
+        if self.json_output:
+            self._output_json(branch_results, summary)
+        else:
+            self._output_text(branch_results, summary)
+
+        if self.plot_output:
+            self._plot(species_tree, branch_results, self.plot_output)
+
+    # ------------------------------------------------------------------
+    # Output methods
+    # ------------------------------------------------------------------
+
+    def _output_text(self, branch_results, summary) -> None:
+        try:
+            header = (
+                f"{'branch':<30}"
+                f"{'n_conc':>8}"
+                f"{'n_alt1':>8}"
+                f"{'n_alt2':>8}"
+                f"{'asym_ratio':>12}"
+                f"{'binom_p':>12}"
+                f"{'fdr_p':>12}"
+                f"{'gene_flow':>12}"
+            )
+            print(header)
+            print("-" * len(header))
+
+            for entry in branch_results:
+                branch_label = ",".join(entry["split"])
+                asym = (
+                    f"{entry['asymmetry_ratio']:.3f}"
+                    if entry["asymmetry_ratio"] is not None
+                    else "NA"
+                )
+                binom_p = (
+                    f"{entry['p_value']:.4f}"
+                    if entry["p_value"] is not None
+                    else "NA"
+                )
+                fdr_p = (
+                    f"{entry['fdr_p']:.4f}"
+                    if entry["fdr_p"] is not None
+                    else "NA"
+                )
+                gene_flow = "-"
+                if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
+                        and entry["favored_alt"] is not None):
+                    gene_flow = entry["favored_alt"]
+                print(
+                    f"{branch_label:<30}"
+                    f"{entry['n_concordant']:>8}"
+                    f"{entry['n_alt1']:>8}"
+                    f"{entry['n_alt2']:>8}"
+                    f"{asym:>12}"
+                    f"{binom_p:>12}"
+                    f"{fdr_p:>12}"
+                    f"{gene_flow:>12}"
+                )
+
+            print("---")
+            print(
+                f"Summary: {summary['n_branches_tested']} branches tested, "
+                f"{summary['n_significant_fdr05']} significant (FDR<0.05)"
+            )
+        except BrokenPipeError:
+            pass
+
+    def _output_json(self, branch_results, summary) -> None:
+        result = dict(
+            branches=branch_results,
+            summary=summary,
+        )
+        print_json(result)
+
+    def _plot(self, species_tree, branch_results, output_path) -> None:
         pass
 
     # ------------------------------------------------------------------
