@@ -6,6 +6,28 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.29**:
+Added discordance-aware VCV matrix support for phylogenetic comparative methods:
+
+* When gene trees are provided via ``-g/--gene-trees``, all five phylogenetic
+  comparative method commands now compute a genome-wide average VCV matrix from
+  per-gene-tree VCVs instead of using the species tree alone
+* This accounts for incomplete lineage sorting (ILS) and introgression, giving
+  more accurate covariance estimates for downstream analyses
+* Affected commands: ``phylogenetic_signal``, ``phylogenetic_regression`` (PGLS),
+  ``fit_continuous``, ``phylogenetic_ordination``, and ``phylogenetic_glm``
+* Algorithm: parse gene trees from a multi-Newick file, prune to shared taxa,
+  build a VCV matrix from each gene tree, average them, and correct to nearest
+  positive semi-definite matrix via eigenvalue clipping
+* Auto-prunes gene trees to the intersection of taxa shared across the species
+  tree and all gene trees; errors if fewer than 3 shared taxa
+* JSON output includes ``vcv_metadata`` with number of gene trees used, number
+  of shared taxa, and whether PSD correction was applied
+* When no gene trees are provided, behavior is unchanged (full backward
+  compatibility)
+* Consolidated duplicated ``_build_vcv_matrix`` code from 5 service files into
+  a shared ``vcv_utils`` module
+
 **2.1.28**:
 Added Felsenstein (2012) threshold model for trait correlation via MCMC:
 

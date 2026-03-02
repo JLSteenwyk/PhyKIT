@@ -152,7 +152,7 @@ Phylogenetic signal
 ###################
 
 - :ref:`Network signal <cmd-network_signal>`: Phylogenetic signal on networks
-- :ref:`Phylogenetic signal <cmd-phylogenetic_signal>`: Test for phylogenetic signal in traits
+- :ref:`Phylogenetic signal <cmd-phylogenetic_signal>`: Test for phylogenetic signal in traits (supports discordance-aware VCV with ``-g``)
 
 Trait evolution
 ###############
@@ -161,7 +161,7 @@ Trait evolution
 - :ref:`Concordance-aware ASR <cmd-concordance_asr>`: ASR incorporating gene tree discordance
 - :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
 - :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
-- :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>`: Compare continuous trait evolution models
+- :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>`: Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)
 - :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
 - :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>`: Multi-regime Ornstein-Uhlenbeck models
 - :ref:`Phenogram (traitgram) <cmd-phenogram>`: Phenogram visualizing trait evolution
@@ -172,9 +172,9 @@ Trait evolution
 Phylogenetic comparative methods
 ################################
 
-- :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>`: Phylogenetic generalized linear model
-- :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure
-- :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>`: Phylogenetic generalized least squares regression
+- :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>`: Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)
+- :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)
+- :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>`: Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)
 - :ref:`Phylomorphospace <cmd-phylomorphospace>`: Phylomorphospace visualization
 
 Evolutionary rate analysis
@@ -1369,12 +1369,13 @@ Models:
 
 .. code-block:: shell
 
-   phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [--json]
+   phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [-g <gene_trees>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
 *-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
 *--models*: comma-separated list of models to fit (default: all 7) |br|
+*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -2387,7 +2388,7 @@ p-values, log-likelihood, and AIC.
 
 .. code-block:: shell
 
-   phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [--json]
+   phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [-g <gene_trees>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
@@ -2398,6 +2399,7 @@ Options: |br|
 *--method*: estimation method: logistic_MPLE or poisson_GEE (auto from family) |br|
 *--btol*: linear predictor bound for logistic model (default: 10) |br|
 *--log-alpha-bound*: bound on log(alpha) for logistic model (default: 4) |br|
+*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2477,7 +2479,7 @@ lambda+corr) within numerical tolerance (1e-4).
 
 .. code-block:: shell
 
-   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [--json]
+   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [-g <gene_trees>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
@@ -2496,6 +2498,7 @@ Options: |br|
 *--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
 *--tree-color-by*: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) |br|
 *--plot-output*: output path for plot (default: phylo_ordination_plot.png) |br|
+*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2539,7 +2542,7 @@ decimal places for both simple and multiple regression.
 
 .. code-block:: shell
 
-   phykit phylogenetic_regression -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] [-m <method>] [--json]
+   phykit phylogenetic_regression -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] [-m <method>] [-g <gene_trees>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
@@ -2547,6 +2550,7 @@ Options: |br|
 *-y/\\-\\-response*: response (dependent) variable column name |br|
 *-x/\\-\\-predictors*: one or more predictor column names |br|
 *-m/\\-\\-method*: method to use: BM or lambda (default: BM) |br|
+*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2590,13 +2594,14 @@ and branch length scales. All metrics show Pearson r > 0.999 with phytools.
 
 .. code-block:: shell
 
-   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [--json]
+   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [-g <gene_trees>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a tree file in Newick format |br|
 *-d/\\-\\-trait_data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
 *-m/\\-\\-method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
 *-p/\\-\\-permutations*: number of permutations for Blomberg's K (default: 1000) |br|
+*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |

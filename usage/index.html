@@ -329,7 +329,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <h3>Phylogenetic signal<a class="headerlink" href="#phylogenetic-signal" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-network-signal"><span class="std std-ref">Network signal</span></a>: Phylogenetic signal on networks</p></li>
-<li><p><a class="reference internal" href="#cmd-phylogenetic-signal"><span class="std std-ref">Phylogenetic signal</span></a>: Test for phylogenetic signal in traits</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-signal"><span class="std std-ref">Phylogenetic signal</span></a>: Test for phylogenetic signal in traits (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 </ul>
 </section>
 <section id="trait-evolution">
@@ -339,7 +339,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-concordance-asr"><span class="std std-ref">Concordance-aware ASR</span></a>: ASR incorporating gene tree discordance</p></li>
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
-<li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a>: Compare continuous trait evolution models</p></li>
+<li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a>: Compare continuous trait evolution models (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a>: Detect OU regime shifts on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a>: Multi-regime Ornstein-Uhlenbeck models</p></li>
 <li><p><a class="reference internal" href="#cmd-phenogram"><span class="std std-ref">Phenogram (traitgram)</span></a>: Phenogram visualizing trait evolution</p></li>
@@ -351,9 +351,9 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <section id="phylogenetic-comparative-methods">
 <h3>Phylogenetic comparative methods<a class="headerlink" href="#phylogenetic-comparative-methods" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a>: Phylogenetic generalized linear model</p></li>
-<li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic Ordination</span></a>: Ordination incorporating phylogenetic structure</p></li>
-<li><p><a class="reference internal" href="#cmd-phylogenetic-regression"><span class="std std-ref">Phylogenetic regression (PGLS)</span></a>: Phylogenetic generalized least squares regression</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a>: Phylogenetic generalized linear model (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic Ordination</span></a>: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-regression"><span class="std std-ref">Phylogenetic regression (PGLS)</span></a>: Phylogenetic generalized least squares regression (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylomorphospace"><span class="std std-ref">Phylomorphospace</span></a>: Phylomorphospace visualization</p></li>
 </ul>
 </section>
@@ -1318,13 +1318,14 @@ AIC, BIC, and AIC weights.</p>
 <li><p><strong>Kappa</strong> -- Pagel's kappa / punctuational vs gradual (3 params)</p></li>
 <li><p><strong>White</strong> -- White noise / no phylogenetic signal (2 params)</p></li>
 </ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--models<span class="w"> </span>BM,OU,Lambda<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--models<span class="w"> </span>BM,OU,Lambda<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-t/\-\-tree</em>: a tree file in Newick format <br/>
 <em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
 <em>--models</em>: comma-separated list of models to fit (default: all 7) <br/>
+<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Model Comparison (fitContinuous)
@@ -2175,7 +2176,7 @@ phylogenetic correlation matrix and reports an overdispersion parameter.</p></li
 <code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code></p>
 <p>Output includes coefficient estimates, standard errors, z-values,
 p-values, log-likelihood, and AIC.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span>--family<span class="w"> </span>&lt;binomial<span class="p">|</span>poisson&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_glm<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span>--family<span class="w"> </span>&lt;binomial<span class="p">|</span>poisson&gt;<span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2187,6 +2188,7 @@ p-values, log-likelihood, and AIC.</p>
 <em>--method</em>: estimation method: logistic_MPLE or poisson_GEE (auto from family) <br/>
 <em>--btol</em>: linear predictor bound for logistic model (default: 10) <br/>
 <em>--log-alpha-bound</em>: bound on log(alpha) for logistic model (default: 4) <br/>
+<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2254,7 +2256,7 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_ordination<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>&lt;pca<span class="p">|</span>tsne<span class="p">|</span>umap&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--correction<span class="w"> </span>&lt;BM<span class="p">|</span>lambda&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--mode<span class="w"> </span>&lt;cov<span class="p">|</span>corr&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-components<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--perplexity<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-neighbors<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--min-dist<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--tree-color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_ordination<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>&lt;pca<span class="p">|</span>tsne<span class="p">|</span>umap&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--correction<span class="w"> </span>&lt;BM<span class="p">|</span>lambda&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--mode<span class="w"> </span>&lt;cov<span class="p">|</span>corr&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-components<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--perplexity<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-neighbors<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--min-dist<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--tree-color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2274,6 +2276,7 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 <em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
 <em>--tree-color-by</em>: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) <br/>
 <em>--plot-output</em>: output path for plot (default: phylo_ordination_plot.png) <br/>
+<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2308,7 +2311,7 @@ PhyKIT follows the <code class="docutils literal notranslate"><span class="pre">
 <code class="docutils literal notranslate"><span class="pre">ape::vcv()</span></code> (raw VCV). Coefficients, standard errors, t-values, p-values,
 R-squared, F-statistic, log-likelihood, and AIC match R to at least four
 decimal places for both simple and multiple regression.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_regression<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_regression<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-y<span class="w"> </span>&lt;response&gt;<span class="w"> </span>-x<span class="w"> </span>&lt;predictor1&gt;<span class="w"> </span><span class="o">[</span>predictor2<span class="w"> </span>...<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2317,6 +2320,7 @@ decimal places for both simple and multiple regression.</p>
 <em>-y/\-\-response</em>: response (dependent) variable column name <br/>
 <em>-x/\-\-predictors</em>: one or more predictor column names <br/>
 <em>-m/\-\-method</em>: method to use: BM or lambda (default: BM) <br/>
+<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2351,7 +2355,7 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>&lt;permutations&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>&lt;permutations&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2359,6 +2363,7 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 <em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
 <em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: blombergs_k) <br/>
 <em>-p/\-\-permutations</em>: number of permutations for Blomberg's K (default: 1000) <br/>
+<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

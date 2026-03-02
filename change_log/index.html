@@ -80,6 +80,28 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.29</strong>:
+Added discordance-aware VCV matrix support for phylogenetic comparative methods:</p>
+<ul class="simple">
+<li><p>When gene trees are provided via <code class="docutils literal notranslate"><span class="pre">-g/--gene-trees</span></code>, all five phylogenetic
+comparative method commands now compute a genome-wide average VCV matrix from
+per-gene-tree VCVs instead of using the species tree alone</p></li>
+<li><p>This accounts for incomplete lineage sorting (ILS) and introgression, giving
+more accurate covariance estimates for downstream analyses</p></li>
+<li><p>Affected commands: <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">phylogenetic_regression</span></code> (PGLS),
+<code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>, <code class="docutils literal notranslate"><span class="pre">phylogenetic_ordination</span></code>, and <code class="docutils literal notranslate"><span class="pre">phylogenetic_glm</span></code></p></li>
+<li><p>Algorithm: parse gene trees from a multi-Newick file, prune to shared taxa,
+build a VCV matrix from each gene tree, average them, and correct to nearest
+positive semi-definite matrix via eigenvalue clipping</p></li>
+<li><p>Auto-prunes gene trees to the intersection of taxa shared across the species
+tree and all gene trees; errors if fewer than 3 shared taxa</p></li>
+<li><p>JSON output includes <code class="docutils literal notranslate"><span class="pre">vcv_metadata</span></code> with number of gene trees used, number
+of shared taxa, and whether PSD correction was applied</p></li>
+<li><p>When no gene trees are provided, behavior is unchanged (full backward
+compatibility)</p></li>
+<li><p>Consolidated duplicated <code class="docutils literal notranslate"><span class="pre">_build_vcv_matrix</span></code> code from 5 service files into
+a shared <code class="docutils literal notranslate"><span class="pre">vcv_utils</span></code> module</p></li>
+</ul>
 <p><strong>2.1.28</strong>:
 Added Felsenstein (2012) threshold model for trait correlation via MCMC:</p>
 <ul class="simple">
