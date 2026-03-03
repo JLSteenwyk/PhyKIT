@@ -153,3 +153,24 @@ audit_results/
 
 # R plot output
 Rplots.pdf
+
+# macOS
+.DS_Store
+
+# Ruff linter cache
+.ruff_cache/
+
+# Coverage XML reports
+*.coverage.xml
+
+# Benchmarking artifacts
+speed_test_results.json
+
+# Stray test files in root
+test.fa
+test.occupancy
+test.partition
+
+# Generated images in root
+alignment_qc_example.png
+phylomorphospace_plot.png
