@@ -109,6 +109,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-tempo-mapping">Evolutionary tempo mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#discordance-asymmetry">Discordance asymmetry</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#hidden-paralogy-check">Hidden paralogy check</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
@@ -321,6 +322,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-consensus-network"><span class="std std-ref">Consensus network</span></a>: Consensus network from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-consensus-tree"><span class="std std-ref">Consensus tree</span></a>: Consensus tree from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-cophylo"><span class="std std-ref">Cophylogenetic plot (tanglegram)</span></a>: Tanglegram for comparing two trees</p></li>
+<li><p><a class="reference internal" href="#cmd-discordance-asymmetry"><span class="std std-ref">Discordance asymmetry</span></a>: Test for asymmetric discordance (gene flow detection)</p></li>
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
@@ -1543,6 +1545,71 @@ systematically different ratios of internal to total branch lengths.</p>
 branch, comparing branch lengths between concordant (blue) and discordant (orange)
 gene trees. Branches where the FDR-corrected p-value is below 0.05 are marked
 with an asterisk.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="discordance-asymmetry">
+<span id="cmd-discordance-asymmetry"></span><h3>Discordance asymmetry<a class="headerlink" href="#discordance-asymmetry" title="Link to this heading"></a></h3>
+<p>Function names: discordance_asymmetry; disc_asym; da <br/>
+Command line interface: pk_discordance_asymmetry; pk_disc_asym; pk_da</p>
+<p>Test whether the two discordant NNI alternative topologies at each species tree
+branch are equally frequent. Under incomplete lineage sorting (ILS) alone, the
+two minor NNI alternatives (gDF1 and gDF2) should appear at equal frequency.
+When they are significantly asymmetric, it suggests introgression or gene flow
+between specific lineages.</p>
+<p>For each internal branch of the species tree, a two-sided binomial test (H0:
+P(alt1) = 0.5) is applied, and p-values are corrected for multiple testing
+using Benjamini-Hochberg FDR.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>discordance_asymmetry<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/\-\-tree</em>: a species tree file <br/>
+<em>-g/\-\-gene-trees</em>: multi-Newick file of gene trees (branch lengths not required) <br/>
+<em>--plot</em>: optional output path for asymmetry phylogram (PNG) <br/>
+<em>-v/\-\-verbose</em>: print per-branch details <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Example output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_alt1  n_alt2  asym_ratio     binom_p       fdr_p   gene_flow
+------------------------------------------------------------------------------------------------------
+bear,dog,raccoon                     6       0       1       1.000      1.0000      1.0000           -
+bear,raccoon                         7       1       2       0.667      1.0000      1.0000           -
+cat,monkey                          10       0       0          NA          NA          NA           -
+cat,monkey,weasel                    9       1       0       1.000      1.0000      1.0000           -
+sea_lion,seal                        9       1       0       1.000      1.0000      1.0000           -
+---
+Summary: 4 branches tested, 0 significant (FDR&lt;0.05)
+</pre></div>
+</div>
+<p>Each row corresponds to an internal branch of the species tree identified by the
+smaller partition of taxa. The <code class="docutils literal notranslate"><span class="pre">n_conc</span></code> column shows concordant gene trees, while
+<code class="docutils literal notranslate"><span class="pre">n_alt1</span></code> and <code class="docutils literal notranslate"><span class="pre">n_alt2</span></code> show the counts for the two NNI alternative topologies.
+The <code class="docutils literal notranslate"><span class="pre">asym_ratio</span></code> is max(n_alt1, n_alt2) / (n_alt1 + n_alt2), ranging from 0.5
+(perfectly symmetric) to 1.0 (maximally asymmetric). <code class="docutils literal notranslate"><span class="pre">NA</span></code> indicates no discordant
+gene trees were observed. The <code class="docutils literal notranslate"><span class="pre">binom_p</span></code> is the two-sided binomial test p-value,
+<code class="docutils literal notranslate"><span class="pre">fdr_p</span></code> is the Benjamini-Hochberg corrected p-value, and <code class="docutils literal notranslate"><span class="pre">gene_flow</span></code> shows
+which NNI alternative is favored when the result is significant (FDR &lt; 0.05).</p>
+<p><strong>Interpretation:</strong></p>
+<ul class="simple">
+<li><p><strong>Symmetric discordance</strong> (asym_ratio near 0.5, not significant): Consistent with
+ILS alone — both NNI alternatives arise with equal frequency from random coalescent
+sorting.</p></li>
+<li><p><strong>Asymmetric discordance</strong> (asym_ratio near 1.0, significant): Suggests gene flow
+or introgression. The favored NNI alternative indicates which lineages are exchanging
+genetic material. For alt1, gene flow is between the C1 lineage and the S (sibling)
+lineage; for alt2, gene flow is between C2 and S.</p></li>
+</ul>
+<p>To generate a visualization:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>discordance_asymmetry<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>--plot<span class="w"> </span>asymmetry.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/discordance_asymmetry_plot.png"><img alt="../_images/discordance_asymmetry_plot.png" class="align-center" src="../_images/discordance_asymmetry_plot.png" style="width: 80%;" />
+</a>
+<p>The plot shows a phylogram with internal branches colored by asymmetry ratio using
+a diverging colormap (blue = symmetric/0.5, red = highly asymmetric/1.0). Significant
+branches (FDR &lt; 0.05) are marked with a red star. Internal nodes are annotated with
+gCF values.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
