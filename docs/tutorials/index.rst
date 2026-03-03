@@ -1546,22 +1546,31 @@ for Poisson GEE. The R equivalent is ``phylolm::phyloglm()``.
 A common question in comparative biology is: what were the trait values of
 ancestral species? Ancestral state reconstruction (ASR) uses the trait values
 observed at the tips of a phylogeny together with a model of trait evolution
-(Brownian motion) to estimate what trait values were at each internal node.
-
-**Hypothetical study question.** Given body mass data for 8 mammal species,
-what were the estimated body masses of their ancestors, and how do trait
-values change along branches of the phylogeny?
+to estimate what trait values were at each internal node.
 
 PhyKIT's ``ancestral_state_reconstruction`` command (aliases: ``asr``,
-``anc_recon``) implements two ML methods: ``fast`` (Felsenstein's pruning
-algorithm, analogous to ``phytools::fastAnc()``) and ``ml`` (full VCV-based
-ML with exact conditional CIs, analogous to ``ape::ace()``). |br|
+``anc_recon``) supports both **continuous** and **discrete** traits:
+
+- **Continuous** (``--type continuous``, default): Brownian Motion model with
+  two ML methods — ``fast`` (Felsenstein's pruning, analogous to
+  ``phytools::fastAnc()``) and ``ml`` (full VCV-based ML with exact CIs,
+  analogous to ``ape::ace(type="ML")``).
+- **Discrete** (``--type discrete``): Mk model with marginal posterior
+  probabilities at each internal node, analogous to
+  ``ape::ace(type="discrete")``. Three models are available: ``ER`` (equal
+  rates), ``SYM`` (symmetric), and ``ARD`` (all rates different).
+
+**Hypothetical study question.** Given body mass data for 8 mammal species,
+what were the estimated body masses of their ancestors? And given dietary
+categories (carnivore, herbivore, omnivore), what were the most likely diets
+of ancestral species? |br|
 
 .. centered::
    Download test data:
    :download:`Mammal phylogeny </data/tree_simple.tre>`;
    :download:`Trait data </data/tree_simple_traits.tsv>`;
-   :download:`Multi-trait data </data/tree_simple_multi_traits.tsv>`
+   :download:`Multi-trait data </data/tree_simple_multi_traits.tsv>`;
+   :download:`Discrete trait data </data/tree_simple_discrete_traits.tsv>`
 
 |
 
@@ -1712,25 +1721,120 @@ optional CIs, and observed tip values.
 
 |
 
+Step 6: Reconstruct discrete traits
+*************************************
+
+For discrete (categorical) traits, use ``--type discrete``. This fits an
+Mk model and computes marginal posterior probabilities at each internal
+node using upward-downward belief propagation:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet --type discrete
+
+.. code-block:: text
+
+   Ancestral State Reconstruction (Discrete)
+
+   Model: Mk (ER)
+   Trait: diet
+   Number of tips: 8
+   Number of states: 3
+   States: carnivore, herbivore, omnivore
+
+   Log-likelihood: -8.7874
+
+   Rate matrix (Q):
+                    carnivore   herbivore    omnivore
+        carnivore   -0.113825    0.056912    0.056912
+        herbivore    0.056912   -0.113825    0.056912
+         omnivore    0.056912    0.056912   -0.113825
+
+   Ancestral state posteriors:
+     Node          Desc        MAP  carnivore  herbivore   omnivore
+     N1 (root)        8  carnivore     0.5338     0.2294     0.2368
+     N2               2  carnivore     0.5662     0.2140     0.2199
+     N3               5  carnivore     0.4381     0.2806     0.2813
+     N4               2  carnivore     0.3988     0.3516     0.2496
+     N5               3  carnivore     0.3994     0.2906     0.3100
+     N6               2  carnivore     0.3352     0.3320     0.3329
+
+**Interpretation.** The output shows the fitted rate matrix (Q) and marginal
+posterior probabilities for each state at every internal node. The MAP
+(maximum a posteriori) column gives the most likely state. Under the
+equal-rates model, the root (N1) is most likely carnivore (posterior 0.53).
+Node N6 (cat + monkey ancestor) shows nearly uniform posteriors across all
+three states, reflecting uncertainty.
+
+|
+
+Step 7: Choose a discrete model
+*********************************
+
+The ``--model`` flag selects the Mk model variant:
+
+- ``ER`` (default): all transition rates equal
+- ``SYM``: forward and reverse rates between each pair of states are equal
+- ``ARD``: all rates differ (most parameter-rich)
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet --type discrete --model ARD
+
+Compare log-likelihoods across models to assess fit. With only 8 tips and
+3 states, the simpler ``ER`` model is often preferred to avoid overfitting.
+
+|
+
+Step 8: Plot discrete ancestral states
+****************************************
+
+The ``--plot`` option for discrete traits produces a phylogeny with pie
+charts at internal nodes showing the posterior probabilities for each state:
+
+.. code-block:: shell
+
+   phykit asr \
+       -t tests/sample_files/tree_simple.tre \
+       -d tests/sample_files/tree_simple_discrete_traits.tsv \
+       -c diet --type discrete --plot discrete_asr.png
+
+Tip labels are colored by their observed state, and a legend maps colors to
+state names. This is analogous to the pie-chart plots commonly used in R
+with ``ape::plot.phylo()`` and ``ape::nodelabels(pie=...)``.
+
+|
+
 Summary
 *******
 
-In this tutorial, we used ancestral state reconstruction to estimate
-ancestral body mass values for 8 mammal species. The key steps were:
-(1) running the fast method with confidence intervals to see which
-ancestors had the highest or lowest estimated trait values, (2) using
-the full ML method for exact conditional CIs, (3) generating contMap
-plots to visualize how trait values change across the phylogeny, (4)
-using multi-trait files, and (5) exporting to JSON.
+In this tutorial, we used ancestral state reconstruction for both continuous
+and discrete traits. For **continuous traits**, the key steps were:
+(1) running the fast method with confidence intervals, (2) using the full
+ML method for exact conditional CIs, (3) generating contMap plots, (4)
+using multi-trait files, and (5) exporting to JSON. For **discrete traits**,
+we (6) reconstructed ancestral dietary categories with posterior
+probabilities, (7) compared different Mk model variants, and (8) generated
+pie-chart phylogeny plots.
 
-The ``fast`` method is recommended for large trees due to its O(n) time
-complexity, while the ``ml`` method provides exact conditional confidence
-intervals at O(n^3) cost. Both methods produce identical point estimates
-that match R's ``phytools::fastAnc()`` to machine precision.
+For continuous traits, the ``fast`` method is recommended for large trees
+due to its O(n) time complexity, while ``ml`` provides exact conditional
+confidence intervals at O(n^3) cost. Both produce identical point estimates
+matching R's ``phytools::fastAnc()`` to machine precision.
 
-The R equivalents are ``phytools::fastAnc()`` for the fast method,
-``ape::ace(type="ML")`` for the ML method, and ``phytools::contMap()``
-for the contMap visualization.
+For discrete traits, the ``ER`` model is a good default; use ``SYM`` or
+``ARD`` when you have reason to expect asymmetric transition rates and
+sufficient tip data to estimate extra parameters.
+
+The R equivalents are ``phytools::fastAnc()`` for continuous fast,
+``ape::ace(type="ML")`` for continuous ML, ``phytools::contMap()`` for
+contMap plots, and ``ape::ace(type="discrete")`` for discrete ASR.
 
 |
 
