@@ -133,6 +133,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#step-3-generate-a-contmap-plot">Step 3: Generate a contMap plot</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-4-use-a-multi-trait-file">Step 4: Use a multi-trait file</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-5-export-results-as-json">Step 5: Export results as JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-6-reconstruct-discrete-traits">Step 6: Reconstruct discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-7-choose-a-discrete-model">Step 7: Choose a discrete model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-8-plot-discrete-ancestral-states">Step 8: Plot discrete ancestral states</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id39">Summary</a></li>
 </ul>
 </li>
@@ -1550,19 +1553,29 @@ for Poisson GEE. The R equivalent is <code class="docutils literal notranslate">
 <p>A common question in comparative biology is: what were the trait values of
 ancestral species? Ancestral state reconstruction (ASR) uses the trait values
 observed at the tips of a phylogeny together with a model of trait evolution
-(Brownian motion) to estimate what trait values were at each internal node.</p>
-<p><strong>Hypothetical study question.</strong> Given body mass data for 8 mammal species,
-what were the estimated body masses of their ancestors, and how do trait
-values change along branches of the phylogeny?</p>
+to estimate what trait values were at each internal node.</p>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">asr</span></code>,
-<code class="docutils literal notranslate"><span class="pre">anc_recon</span></code>) implements two ML methods: <code class="docutils literal notranslate"><span class="pre">fast</span></code> (Felsenstein's pruning
-algorithm, analogous to <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code>) and <code class="docutils literal notranslate"><span class="pre">ml</span></code> (full VCV-based
-ML with exact conditional CIs, analogous to <code class="docutils literal notranslate"><span class="pre">ape::ace()</span></code>). <br/></p>
+<code class="docutils literal notranslate"><span class="pre">anc_recon</span></code>) supports both <strong>continuous</strong> and <strong>discrete</strong> traits:</p>
+<ul class="simple">
+<li><p><strong>Continuous</strong> (<code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">continuous</span></code>, default): Brownian Motion model with
+two ML methods — <code class="docutils literal notranslate"><span class="pre">fast</span></code> (Felsenstein's pruning, analogous to
+<code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code>) and <code class="docutils literal notranslate"><span class="pre">ml</span></code> (full VCV-based ML with exact CIs,
+analogous to <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code>).</p></li>
+<li><p><strong>Discrete</strong> (<code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">discrete</span></code>): Mk model with marginal posterior
+probabilities at each internal node, analogous to
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;discrete&quot;)</span></code>. Three models are available: <code class="docutils literal notranslate"><span class="pre">ER</span></code> (equal
+rates), <code class="docutils literal notranslate"><span class="pre">SYM</span></code> (symmetric), and <code class="docutils literal notranslate"><span class="pre">ARD</span></code> (all rates different).</p></li>
+</ul>
+<p><strong>Hypothetical study question.</strong> Given body mass data for 8 mammal species,
+what were the estimated body masses of their ancestors? And given dietary
+categories (carnivore, herbivore, omnivore), what were the most likely diets
+of ancestral species? <br/></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
 <a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Trait</span> <span class="pre">data</span></code></a>;
-<a class="reference download internal" download="" href="../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
+<a class="reference download internal" download="" href="../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../_downloads/eb1e1a4c08691d20c03a9f1889e028a3/tree_simple_discrete_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Discrete</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
 <section id="id38">
@@ -1699,22 +1712,110 @@ optional CIs, and observed tip values.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="step-6-reconstruct-discrete-traits">
+<h3>Step 6: Reconstruct discrete traits<a class="headerlink" href="#step-6-reconstruct-discrete-traits" title="Link to this heading"></a></h3>
+<p>For discrete (categorical) traits, use <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">discrete</span></code>. This fits an
+Mk model and computes marginal posterior probabilities at each internal
+node using upward-downward belief propagation:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>--type<span class="w"> </span>discrete
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Ancestral State Reconstruction (Discrete)
+
+Model: Mk (ER)
+Trait: diet
+Number of tips: 8
+Number of states: 3
+States: carnivore, herbivore, omnivore
+
+Log-likelihood: -8.7874
+
+Rate matrix (Q):
+                 carnivore   herbivore    omnivore
+     carnivore   -0.113825    0.056912    0.056912
+     herbivore    0.056912   -0.113825    0.056912
+      omnivore    0.056912    0.056912   -0.113825
+
+Ancestral state posteriors:
+  Node          Desc        MAP  carnivore  herbivore   omnivore
+  N1 (root)        8  carnivore     0.5338     0.2294     0.2368
+  N2               2  carnivore     0.5662     0.2140     0.2199
+  N3               5  carnivore     0.4381     0.2806     0.2813
+  N4               2  carnivore     0.3988     0.3516     0.2496
+  N5               3  carnivore     0.3994     0.2906     0.3100
+  N6               2  carnivore     0.3352     0.3320     0.3329
+</pre></div>
+</div>
+<p><strong>Interpretation.</strong> The output shows the fitted rate matrix (Q) and marginal
+posterior probabilities for each state at every internal node. The MAP
+(maximum a posteriori) column gives the most likely state. Under the
+equal-rates model, the root (N1) is most likely carnivore (posterior 0.53).
+Node N6 (cat + monkey ancestor) shows nearly uniform posteriors across all
+three states, reflecting uncertainty.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-7-choose-a-discrete-model">
+<h3>Step 7: Choose a discrete model<a class="headerlink" href="#step-7-choose-a-discrete-model" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--model</span></code> flag selects the Mk model variant:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ER</span></code> (default): all transition rates equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SYM</span></code>: forward and reverse rates between each pair of states are equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ARD</span></code>: all rates differ (most parameter-rich)</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>--type<span class="w"> </span>discrete<span class="w"> </span>--model<span class="w"> </span>ARD
+</pre></div>
+</div>
+<p>Compare log-likelihoods across models to assess fit. With only 8 tips and
+3 states, the simpler <code class="docutils literal notranslate"><span class="pre">ER</span></code> model is often preferred to avoid overfitting.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-8-plot-discrete-ancestral-states">
+<h3>Step 8: Plot discrete ancestral states<a class="headerlink" href="#step-8-plot-discrete-ancestral-states" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option for discrete traits produces a phylogeny with pie
+charts at internal nodes showing the posterior probabilities for each state:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tests/sample_files/tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tests/sample_files/tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>--type<span class="w"> </span>discrete<span class="w"> </span>--plot<span class="w"> </span>discrete_asr.png
+</pre></div>
+</div>
+<p>Tip labels are colored by their observed state, and a legend maps colors to
+state names. This is analogous to the pie-chart plots commonly used in R
+with <code class="docutils literal notranslate"><span class="pre">ape::plot.phylo()</span></code> and <code class="docutils literal notranslate"><span class="pre">ape::nodelabels(pie=...)</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="id39">
 <h3>Summary<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
-<p>In this tutorial, we used ancestral state reconstruction to estimate
-ancestral body mass values for 8 mammal species. The key steps were:
-(1) running the fast method with confidence intervals to see which
-ancestors had the highest or lowest estimated trait values, (2) using
-the full ML method for exact conditional CIs, (3) generating contMap
-plots to visualize how trait values change across the phylogeny, (4)
-using multi-trait files, and (5) exporting to JSON.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">fast</span></code> method is recommended for large trees due to its O(n) time
-complexity, while the <code class="docutils literal notranslate"><span class="pre">ml</span></code> method provides exact conditional confidence
-intervals at O(n^3) cost. Both methods produce identical point estimates
-that match R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> to machine precision.</p>
-<p>The R equivalents are <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> for the fast method,
-<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code> for the ML method, and <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>
-for the contMap visualization.</p>
+<p>In this tutorial, we used ancestral state reconstruction for both continuous
+and discrete traits. For <strong>continuous traits</strong>, the key steps were:
+(1) running the fast method with confidence intervals, (2) using the full
+ML method for exact conditional CIs, (3) generating contMap plots, (4)
+using multi-trait files, and (5) exporting to JSON. For <strong>discrete traits</strong>,
+we (6) reconstructed ancestral dietary categories with posterior
+probabilities, (7) compared different Mk model variants, and (8) generated
+pie-chart phylogeny plots.</p>
+<p>For continuous traits, the <code class="docutils literal notranslate"><span class="pre">fast</span></code> method is recommended for large trees
+due to its O(n) time complexity, while <code class="docutils literal notranslate"><span class="pre">ml</span></code> provides exact conditional
+confidence intervals at O(n^3) cost. Both produce identical point estimates
+matching R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> to machine precision.</p>
+<p>For discrete traits, the <code class="docutils literal notranslate"><span class="pre">ER</span></code> model is a good default; use <code class="docutils literal notranslate"><span class="pre">SYM</span></code> or
+<code class="docutils literal notranslate"><span class="pre">ARD</span></code> when you have reason to expect asymmetric transition rates and
+sufficient tip data to estimate extra parameters.</p>
+<p>The R equivalents are <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> for continuous fast,
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code> for continuous ML, <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code> for
+contMap plots, and <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;discrete&quot;)</span></code> for discrete ASR.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

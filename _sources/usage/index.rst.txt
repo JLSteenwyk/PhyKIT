@@ -1070,12 +1070,14 @@ Ancestral state reconstruction
 Function names: ancestral_state_reconstruction; asr; anc_recon |br|
 Command line interface: pk_ancestral_state_reconstruction; pk_asr; pk_anc_recon
 
-Estimate ancestral states for continuous traits using maximum likelihood,
-analogous to R's ``phytools::fastAnc()`` and ``ape::ace(type="ML")``.
-Optionally produce a contMap plot showing continuous trait values mapped
-onto the phylogeny.
+Estimate ancestral states using maximum likelihood. Supports both
+continuous and discrete traits.
 
-Two methods are available:
+**Continuous traits** (``--type continuous``, default): Brownian Motion
+model, analogous to R's ``phytools::fastAnc()`` and
+``ape::ace(type="ML")``. Optionally produce a contMap plot.
+
+Two methods are available for continuous traits:
 
 - **fast** (default): Felsenstein's pruning/contrasts shortcut, O(n) time
 - **ml**: full VCV-based ML with exact conditional CIs, O(n^3)
@@ -1083,21 +1085,34 @@ Two methods are available:
 Both methods produce identical point estimates; ``ml`` gives exact
 conditional confidence intervals.
 
+**Discrete traits** (``--type discrete``): Mk model with marginal
+posterior probabilities at each internal node, analogous to
+``ape::ace(type="discrete")``. Optionally produce a pie-chart phylogeny
+plot.
+
+Three models are available for discrete traits:
+
+- **ER** (default): equal rates
+- **SYM**: symmetric rates
+- **ARD**: all rates different
+
 Input trait data can be either a two-column file (``taxon<tab>value``)
 when ``-c`` is omitted, or a multi-trait file with header row when ``-c``
 specifies which column to use.
 
 .. code-block:: shell
 
-   phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [-m <method>] [--ci] [--plot <output>] [--json]
+   phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>] [--json]
 
 Options: |br|
 *-t/\\-\\-tree*: a phylogenetic tree file |br|
 *-d/\\-\\-trait_data*: trait data file (two-column or multi-trait with header) |br|
 *-c/\\-\\-trait*: trait column name (required for multi-trait files) |br|
-*-m/\\-\\-method*: method to use: ``fast`` or ``ml`` (default: ``fast``) |br|
-*--ci*: include 95% confidence intervals |br|
-*--plot*: output path for contMap plot (requires matplotlib) |br|
+*--type*: trait type: ``continuous`` or ``discrete`` (default: ``continuous``) |br|
+*-m/\\-\\-method*: method to use: ``fast`` or ``ml`` (continuous only; default: ``fast``) |br|
+*--model*: Mk model: ``ER``, ``SYM``, or ``ARD`` (discrete only; default: ``ER``) |br|
+*--ci*: include 95% confidence intervals (continuous only) |br|
+*--plot*: output path for plot (requires matplotlib) |br|
 *--json*: output results as JSON
 
 Example contMap plot generated with the ``--plot`` option. Branches are colored

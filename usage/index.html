@@ -1077,30 +1077,43 @@ doi: 10.1093/gbe/evw179.</p>
 <span id="cmd-ancestral-state-reconstruction"></span><h3>Ancestral state reconstruction<a class="headerlink" href="#ancestral-state-reconstruction" title="Link to this heading"></a></h3>
 <p>Function names: ancestral_state_reconstruction; asr; anc_recon <br/>
 Command line interface: pk_ancestral_state_reconstruction; pk_asr; pk_anc_recon</p>
-<p>Estimate ancestral states for continuous traits using maximum likelihood,
-analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> and <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code>.
-Optionally produce a contMap plot showing continuous trait values mapped
-onto the phylogeny.</p>
-<p>Two methods are available:</p>
+<p>Estimate ancestral states using maximum likelihood. Supports both
+continuous and discrete traits.</p>
+<p><strong>Continuous traits</strong> (<code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">continuous</span></code>, default): Brownian Motion
+model, analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code>. Optionally produce a contMap plot.</p>
+<p>Two methods are available for continuous traits:</p>
 <ul class="simple">
 <li><p><strong>fast</strong> (default): Felsenstein's pruning/contrasts shortcut, O(n) time</p></li>
 <li><p><strong>ml</strong>: full VCV-based ML with exact conditional CIs, O(n^3)</p></li>
 </ul>
 <p>Both methods produce identical point estimates; <code class="docutils literal notranslate"><span class="pre">ml</span></code> gives exact
 conditional confidence intervals.</p>
+<p><strong>Discrete traits</strong> (<code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">discrete</span></code>): Mk model with marginal
+posterior probabilities at each internal node, analogous to
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;discrete&quot;)</span></code>. Optionally produce a pie-chart phylogeny
+plot.</p>
+<p>Three models are available for discrete traits:</p>
+<ul class="simple">
+<li><p><strong>ER</strong> (default): equal rates</p></li>
+<li><p><strong>SYM</strong>: symmetric rates</p></li>
+<li><p><strong>ARD</strong>: all rates different</p></li>
+</ul>
 <p>Input trait data can be either a two-column file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>)
 when <code class="docutils literal notranslate"><span class="pre">-c</span></code> is omitted, or a multi-trait file with header row when <code class="docutils literal notranslate"><span class="pre">-c</span></code>
 specifies which column to use.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--type<span class="w"> </span>&lt;type&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--model<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-t/\-\-tree</em>: a phylogenetic tree file <br/>
 <em>-d/\-\-trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
 <em>-c/\-\-trait</em>: trait column name (required for multi-trait files) <br/>
-<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">ml</span></code> (default: <code class="docutils literal notranslate"><span class="pre">fast</span></code>) <br/>
-<em>--ci</em>: include 95% confidence intervals <br/>
-<em>--plot</em>: output path for contMap plot (requires matplotlib) <br/>
+<em>--type</em>: trait type: <code class="docutils literal notranslate"><span class="pre">continuous</span></code> or <code class="docutils literal notranslate"><span class="pre">discrete</span></code> (default: <code class="docutils literal notranslate"><span class="pre">continuous</span></code>) <br/>
+<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">ml</span></code> (continuous only; default: <code class="docutils literal notranslate"><span class="pre">fast</span></code>) <br/>
+<em>--model</em>: Mk model: <code class="docutils literal notranslate"><span class="pre">ER</span></code>, <code class="docutils literal notranslate"><span class="pre">SYM</span></code>, or <code class="docutils literal notranslate"><span class="pre">ARD</span></code> (discrete only; default: <code class="docutils literal notranslate"><span class="pre">ER</span></code>) <br/>
+<em>--ci</em>: include 95% confidence intervals (continuous only) <br/>
+<em>--plot</em>: output path for plot (requires matplotlib) <br/>
 <em>--json</em>: output results as JSON</p>
 <p>Example contMap plot generated with the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option. Branches are colored
 by interpolated ancestral trait values:</p>
