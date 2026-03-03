@@ -4,6 +4,8 @@ import sys
 from typing import Dict, List, Tuple
 
 import numpy as np
+from scipy.linalg import expm
+from scipy.optimize import minimize
 
 from .base import Tree
 from ...helpers.json_output import print_json
@@ -20,13 +22,19 @@ class AncestralReconstruction(Tree):
         self.ci = parsed["ci"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
+        self.trait_type = parsed["trait_type"]
+        self.model = parsed["model"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
         self._validate_tree(tree)
-
         tree_tips = self.get_tip_names_from_tree(tree)
+        if self.trait_type == "discrete":
+            self._run_discrete(tree, tree_tips)
+        else:
+            self._run_continuous(tree, tree_tips)
 
+    def _run_continuous(self, tree, tree_tips) -> None:
         if self.trait_column is not None:
             trait_values = self._parse_multi_trait_data(
                 self.trait_data_path, tree_tips, self.trait_column
@@ -106,6 +114,8 @@ class AncestralReconstruction(Tree):
             ci=getattr(args, "ci", False),
             plot_output=getattr(args, "plot", None),
             json_output=getattr(args, "json", False),
+            trait_type=getattr(args, "type", "continuous"),
+            model=getattr(args, "model", "ER"),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -904,3 +914,693 @@ class AncestralReconstruction(Tree):
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved contMap plot: {output_path}")
+
+    # ------------------------------------------------------------------
+    # Discrete trait parsers
+    # ------------------------------------------------------------------
+
+    def _parse_discrete_trait_data_single(
+        self, path: str, tree_tips: List[str]
+    ) -> Dict[str, str]:
+        try:
+            with open(path) as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            raise PhykitUserError(
+                [
+                    f"{path} corresponds to no such file or directory.",
+                    "Please check filename and pathing",
+                ],
+                code=2,
+            )
+
+        traits: Dict[str, str] = {}
+        for line_num, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) != 2:
+                raise PhykitUserError(
+                    [
+                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
+                        "Each line should be: taxon_name<tab>trait_value",
+                    ],
+                    code=2,
+                )
+            taxon, value = parts
+            traits[taxon] = value
+
+        tree_tip_set = set(tree_tips)
+        trait_taxa_set = set(traits.keys())
+        shared = tree_tip_set & trait_taxa_set
+
+        tree_only = tree_tip_set - trait_taxa_set
+        trait_only = trait_taxa_set - tree_tip_set
+
+        if tree_only:
+            print(
+                f"Warning: {len(tree_only)} taxa in tree but not in trait file: "
+                f"{', '.join(sorted(tree_only))}",
+                file=sys.stderr,
+            )
+        if trait_only:
+            print(
+                f"Warning: {len(trait_only)} taxa in trait file but not in tree: "
+                f"{', '.join(sorted(trait_only))}",
+                file=sys.stderr,
+            )
+
+        if len(shared) < 3:
+            raise PhykitUserError(
+                [
+                    f"Only {len(shared)} shared taxa between tree and trait file.",
+                    "At least 3 shared taxa are required.",
+                ],
+                code=2,
+            )
+
+        return {taxon: traits[taxon] for taxon in shared}
+
+    def _parse_discrete_trait_data_multi(
+        self, path: str, tree_tips: List[str], trait_column: str
+    ) -> Dict[str, str]:
+        try:
+            with open(path) as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            raise PhykitUserError(
+                [
+                    f"{path} corresponds to no such file or directory.",
+                    "Please check filename and pathing",
+                ],
+                code=2,
+            )
+
+        data_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            data_lines.append(stripped)
+
+        if len(data_lines) < 2:
+            raise PhykitUserError(
+                [
+                    "Multi-trait file must have a header row and at least one data row.",
+                ],
+                code=2,
+            )
+
+        header_parts = data_lines[0].split("\t")
+        if len(header_parts) < 2:
+            raise PhykitUserError(
+                [
+                    "Header must have at least 2 columns (taxon + at least 1 trait).",
+                ],
+                code=2,
+            )
+        trait_names = header_parts[1:]
+
+        if trait_column not in trait_names:
+            raise PhykitUserError(
+                [
+                    f"Column '{trait_column}' not found in trait file.",
+                    f"Available columns: {', '.join(trait_names)}",
+                ],
+                code=2,
+            )
+
+        col_idx = trait_names.index(trait_column)
+
+        traits: Dict[str, str] = {}
+        for line_idx, line in enumerate(data_lines[1:], 2):
+            parts = line.split("\t")
+            if len(parts) != len(header_parts):
+                raise PhykitUserError(
+                    [
+                        f"Line {line_idx} has {len(parts)} columns; expected {len(header_parts)}.",
+                    ],
+                    code=2,
+                )
+            taxon = parts[0]
+            traits[taxon] = parts[1 + col_idx]
+
+        tree_tip_set = set(tree_tips)
+        trait_taxa_set = set(traits.keys())
+        shared = tree_tip_set & trait_taxa_set
+
+        tree_only = tree_tip_set - trait_taxa_set
+        trait_only = trait_taxa_set - tree_tip_set
+
+        if tree_only:
+            print(
+                f"Warning: {len(tree_only)} taxa in tree but not in trait file: "
+                f"{', '.join(sorted(tree_only))}",
+                file=sys.stderr,
+            )
+        if trait_only:
+            print(
+                f"Warning: {len(trait_only)} taxa in trait file but not in tree: "
+                f"{', '.join(sorted(trait_only))}",
+                file=sys.stderr,
+            )
+
+        if len(shared) < 3:
+            raise PhykitUserError(
+                [
+                    f"Only {len(shared)} shared taxa between tree and trait file.",
+                    "At least 3 shared taxa are required.",
+                ],
+                code=2,
+            )
+
+        return {taxon: traits[taxon] for taxon in shared}
+
+    # ------------------------------------------------------------------
+    # Mk model primitives (shared with StochasticCharacterMap)
+    # ------------------------------------------------------------------
+
+    def _build_q_matrix(
+        self, params: np.ndarray, k: int, model: str
+    ) -> np.ndarray:
+        Q = np.zeros((k, k))
+        if model == "ER":
+            rate = params[0]
+            Q[:] = rate
+            np.fill_diagonal(Q, 0.0)
+        elif model == "SYM":
+            idx = 0
+            for i in range(k):
+                for j in range(i + 1, k):
+                    Q[i, j] = params[idx]
+                    Q[j, i] = params[idx]
+                    idx += 1
+        elif model == "ARD":
+            idx = 0
+            for i in range(k):
+                for j in range(k):
+                    if i != j:
+                        Q[i, j] = params[idx]
+                        idx += 1
+        # Set diagonal
+        for i in range(k):
+            Q[i, i] = -np.sum(Q[i, :])
+        return Q
+
+    def _matrix_exp(self, Q: np.ndarray, t: float) -> np.ndarray:
+        return expm(Q * t)
+
+    def _felsenstein_pruning(
+        self, tree, tip_states: Dict[str, str], Q: np.ndarray,
+        pi: np.ndarray, states: List[str]
+    ) -> Tuple[Dict, float]:
+        k = len(states)
+        state_idx = {s: i for i, s in enumerate(states)}
+        cond_liks: Dict[int, np.ndarray] = {}
+
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                lik = np.zeros(k)
+                if clade.name in tip_states:
+                    lik[state_idx[tip_states[clade.name]]] = 1.0
+                cond_liks[id(clade)] = lik
+            else:
+                lik = np.ones(k)
+                for child in clade.clades:
+                    t = child.branch_length if child.branch_length else 1e-8
+                    P = self._matrix_exp(Q, t)
+                    child_lik = cond_liks[id(child)]
+                    lik *= P @ child_lik
+                cond_liks[id(clade)] = lik
+
+        root_lik = cond_liks[id(tree.root)]
+        total_lik = np.sum(pi * root_lik)
+        if total_lik <= 0:
+            loglik = -1e20
+        else:
+            loglik = np.log(total_lik)
+
+        return cond_liks, loglik
+
+    def _fit_q_matrix(
+        self, tree, tip_states: Dict[str, str],
+        states: List[str], model: str
+    ) -> Tuple[np.ndarray, float]:
+        k = len(states)
+
+        if model == "ER":
+            n_params = 1
+        elif model == "SYM":
+            n_params = k * (k - 1) // 2
+        elif model == "ARD":
+            n_params = k * (k - 1)
+        else:
+            raise PhykitUserError(
+                [f"Unknown model '{model}'. Use ER, SYM, or ARD."],
+                code=2,
+            )
+
+        pi = np.ones(k) / k
+
+        def neg_loglik(params):
+            Q = self._build_q_matrix(np.abs(params), k, model)
+            _, ll = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
+            return -ll
+
+        bounds = [(1e-8, 100.0)] * n_params
+
+        # Multi-start optimization for robustness
+        starting_values = [0.001, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]
+        best_negll = np.inf
+        best_params = np.ones(n_params) * 0.1
+
+        for sv in starting_values:
+            x0 = np.ones(n_params) * sv
+            for opt_method in ["L-BFGS-B", "Nelder-Mead"]:
+                try:
+                    kwargs = {"method": opt_method}
+                    if opt_method == "L-BFGS-B":
+                        kwargs["bounds"] = bounds
+                    result = minimize(neg_loglik, x0, **kwargs)
+                    if result.fun < best_negll:
+                        best_negll = result.fun
+                        best_params = np.abs(result.x)
+                except (ValueError, np.linalg.LinAlgError):
+                    continue
+
+        # Refine best result with Nelder-Mead
+        try:
+            result = minimize(
+                neg_loglik, best_params, method="Nelder-Mead",
+                options={"maxiter": 10000, "xatol": 1e-10, "fatol": 1e-10},
+            )
+            if result.fun < best_negll:
+                best_params = np.abs(result.x)
+        except (ValueError, np.linalg.LinAlgError):
+            pass
+
+        Q = self._build_q_matrix(best_params, k, model)
+        _, loglik = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
+
+        return Q, loglik
+
+    # ------------------------------------------------------------------
+    # Discrete marginal posteriors (upward-downward belief propagation)
+    # ------------------------------------------------------------------
+
+    def _discrete_marginal_posteriors(
+        self, tree, tip_states: Dict[str, str], Q: np.ndarray,
+        states: List[str],
+    ) -> Dict[int, np.ndarray]:
+        """Compute marginal posterior probabilities for all internal nodes.
+
+        Uses upward-downward (inside-outside) belief propagation:
+        1. Downward pass (postorder): Felsenstein pruning for conditional likelihoods
+        2. Upward pass (preorder): propagate information from rest of tree
+        3. Combine: posterior_v[s] proportional to L_v[s] * U_v[s]
+        """
+        k = len(states)
+        pi = np.ones(k) / k
+
+        # Downward pass
+        cond_liks, _ = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
+
+        # Build parent map
+        parent_map = self._build_parent_map(tree)
+
+        # Upward pass (preorder)
+        upward = {}
+        root = tree.root
+        upward[id(root)] = pi.copy()
+
+        for clade in tree.find_clades(order="preorder"):
+            if clade == root:
+                continue
+            if id(clade) not in parent_map:
+                continue
+
+            parent = parent_map[id(clade)]
+            U_parent = upward[id(parent)]
+
+            # Product of sibling messages
+            sibling_product = np.ones(k)
+            for sibling in parent.clades:
+                if id(sibling) == id(clade):
+                    continue
+                t_sib = sibling.branch_length if sibling.branch_length else 1e-8
+                P_sib = self._matrix_exp(Q, t_sib)
+                sibling_product *= P_sib @ cond_liks[id(sibling)]
+
+            # Upward message for this node
+            t_v = clade.branch_length if clade.branch_length else 1e-8
+            P_v = self._matrix_exp(Q, t_v)
+            upward[id(clade)] = P_v.T @ (U_parent * sibling_product)
+
+            # Normalize to prevent underflow
+            s = np.sum(upward[id(clade)])
+            if s > 0:
+                upward[id(clade)] /= s
+
+        # Combine downward and upward for posteriors
+        posteriors: Dict[int, np.ndarray] = {}
+        for clade in tree.find_clades(order="preorder"):
+            if clade.is_terminal():
+                continue
+            L = cond_liks[id(clade)]
+            U = upward.get(id(clade), pi)
+            raw = L * U
+            total = np.sum(raw)
+            if total > 0:
+                posteriors[id(clade)] = raw / total
+            else:
+                posteriors[id(clade)] = np.ones(k) / k
+
+        return posteriors
+
+    # ------------------------------------------------------------------
+    # Discrete ASR orchestration
+    # ------------------------------------------------------------------
+
+    def _run_discrete(self, tree, tree_tips) -> None:
+        # Parse discrete traits
+        if self.trait_column is not None:
+            tip_states = self._parse_discrete_trait_data_multi(
+                self.trait_data_path, tree_tips, self.trait_column
+            )
+            trait_name = self.trait_column
+        else:
+            tip_states = self._parse_discrete_trait_data_single(
+                self.trait_data_path, tree_tips
+            )
+            trait_name = "trait"
+
+        # Prune tree to shared taxa
+        tree_copy = copy.deepcopy(tree)
+        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
+        tips_to_prune = [t for t in tip_names_in_tree if t not in tip_states]
+        if tips_to_prune:
+            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+
+        # Label internal nodes
+        node_labels = self._label_internal_nodes(tree_copy)
+
+        # Get sorted unique states
+        states = sorted(set(tip_states.values()))
+
+        # Fit Q matrix
+        Q, log_likelihood = self._fit_q_matrix(
+            tree_copy, tip_states, states, self.model
+        )
+
+        # Compute marginal posteriors
+        node_posteriors = self._discrete_marginal_posteriors(
+            tree_copy, tip_states, Q, states
+        )
+
+        n_tips = len(tip_states)
+
+        # Build result
+        result = self._format_discrete_result(
+            model=self.model,
+            trait_name=trait_name,
+            n_tips=n_tips,
+            log_likelihood=log_likelihood,
+            states=states,
+            Q=Q,
+            node_posteriors=node_posteriors,
+            node_labels=node_labels,
+            tree=tree_copy,
+            tip_states=tip_states,
+        )
+
+        if self.plot_output:
+            self._plot_discrete_asr(
+                tree_copy, node_posteriors, node_labels,
+                states, tip_states, self.plot_output
+            )
+            result["plot_output"] = self.plot_output
+
+        if self.json_output:
+            print_json(result)
+        else:
+            self._print_discrete_text_output(
+                model=self.model,
+                trait_name=trait_name,
+                n_tips=n_tips,
+                log_likelihood=log_likelihood,
+                states=states,
+                Q=Q,
+                node_posteriors=node_posteriors,
+                node_labels=node_labels,
+                tree=tree_copy,
+            )
+
+    # ------------------------------------------------------------------
+    # Discrete output formatting
+    # ------------------------------------------------------------------
+
+    def _format_discrete_result(
+        self, *, model, trait_name, n_tips, log_likelihood,
+        states, Q, node_posteriors, node_labels, tree, tip_states,
+    ) -> Dict:
+        k = len(states)
+        q_matrix = {}
+        for i in range(k):
+            row = {}
+            for j in range(k):
+                row[states[j]] = float(Q[i, j])
+            q_matrix[states[i]] = row
+
+        ancestral_states = {}
+        root_id = id(tree.root)
+
+        for clade in tree.find_clades(order="preorder"):
+            if clade.is_terminal():
+                continue
+            if id(clade) not in node_labels:
+                continue
+            label = node_labels[id(clade)]
+            if id(clade) not in node_posteriors:
+                continue
+
+            posterior = node_posteriors[id(clade)]
+            map_idx = int(np.argmax(posterior))
+            state_probs = {
+                states[i]: float(posterior[i]) for i in range(k)
+            }
+
+            ancestral_states[label] = {
+                "map_state": states[map_idx],
+                "posteriors": state_probs,
+                "descendants": self._get_descendant_tips(tree, clade),
+                "is_root": id(clade) == root_id,
+            }
+
+        return {
+            "method": "discrete",
+            "model": model,
+            "trait": trait_name,
+            "n_tips": n_tips,
+            "log_likelihood": float(log_likelihood),
+            "states": states,
+            "q_matrix": q_matrix,
+            "ancestral_states": ancestral_states,
+            "tip_states": {k: v for k, v in sorted(tip_states.items())},
+        }
+
+    def _print_discrete_text_output(
+        self, *, model, trait_name, n_tips, log_likelihood,
+        states, Q, node_posteriors, node_labels, tree,
+    ) -> None:
+        k = len(states)
+        print("Ancestral State Reconstruction (Discrete)")
+        print(f"\nModel: Mk ({model})")
+        print(f"Trait: {trait_name}")
+        print(f"Number of tips: {n_tips}")
+        print(f"Number of states: {k}")
+        print(f"States: {', '.join(states)}")
+        print(f"\nLog-likelihood: {log_likelihood:.4f}")
+
+        # Q matrix table
+        print("\nRate matrix (Q):")
+        col_w = max(12, max(len(s) for s in states) + 2)
+        header = f"  {'':>{col_w}}" + "".join(f"{s:>{col_w}}" for s in states)
+        print(header)
+        for i, si in enumerate(states):
+            row = f"  {si:>{col_w}}"
+            for j in range(k):
+                row += f"{Q[i, j]:>{col_w}.6f}"
+            print(row)
+
+        # Per-node table
+        print("\nAncestral state posteriors:")
+        root_id = id(tree.root)
+        col_w_state = max(10, max(len(s) for s in states) + 2)
+        header = f"  {'Node':<12s}{'Desc':>6s}{'MAP':>{col_w_state}}"
+        for s in states:
+            header += f"{s:>{col_w_state}}"
+        print(header)
+
+        for clade in tree.find_clades(order="preorder"):
+            if clade.is_terminal():
+                continue
+            if id(clade) not in node_labels:
+                continue
+            label = node_labels[id(clade)]
+            if id(clade) not in node_posteriors:
+                continue
+
+            posterior = node_posteriors[id(clade)]
+            map_idx = int(np.argmax(posterior))
+            n_desc = len(self._get_descendant_tips(tree, clade))
+            root_tag = " (root)" if id(clade) == root_id else ""
+
+            row = f"  {label + root_tag:<12s}{n_desc:>6d}{states[map_idx]:>{col_w_state}}"
+            for i in range(k):
+                row += f"{posterior[i]:>{col_w_state}.4f}"
+            print(row)
+
+    # ------------------------------------------------------------------
+    # Discrete ASR plot
+    # ------------------------------------------------------------------
+
+    def _plot_discrete_asr(
+        self, tree, node_posteriors, node_labels, states,
+        tip_states, output_path,
+    ) -> None:
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            from matplotlib.patches import Wedge
+        except ImportError:
+            print(
+                "matplotlib is required for discrete ASR plotting. "
+                "Install matplotlib and retry."
+            )
+            raise SystemExit(2)
+
+        parent_map = self._build_parent_map(tree)
+        tips = list(tree.get_terminals())
+        k = len(states)
+
+        # Color palette for states
+        if k <= 10:
+            cmap = plt.get_cmap("tab10")
+            colors = [cmap(i) for i in range(k)]
+        else:
+            cmap = plt.get_cmap("tab20")
+            colors = [cmap(i) for i in range(k)]
+        state_colors = {states[i]: colors[i] for i in range(k)}
+
+        node_x = {}
+        node_y = {}
+
+        # Assign tip y-positions
+        for i, tip in enumerate(tips):
+            node_y[id(tip)] = i
+
+        # Assign x-positions via preorder traversal
+        root = tree.root
+        for clade in tree.find_clades(order="preorder"):
+            if clade == root:
+                node_x[id(clade)] = 0.0
+            else:
+                if id(clade) in parent_map:
+                    parent = parent_map[id(clade)]
+                    t = clade.branch_length if clade.branch_length else 0.0
+                    node_x[id(clade)] = node_x[id(parent)] + t
+
+        # Internal y-positions (mean of children)
+        for clade in tree.find_clades(order="postorder"):
+            if not clade.is_terminal() and id(clade) not in node_y:
+                child_ys = [
+                    node_y[id(c)] for c in clade.clades if id(c) in node_y
+                ]
+                if child_ys:
+                    node_y[id(clade)] = np.mean(child_ys)
+                else:
+                    node_y[id(clade)] = 0.0
+
+        fig, ax = plt.subplots(figsize=(10, max(4, len(tips) * 0.4)))
+
+        # Draw branches (gray)
+        for clade in tree.find_clades(order="preorder"):
+            if clade == root:
+                continue
+            if id(clade) not in parent_map:
+                continue
+            parent = parent_map[id(clade)]
+            if id(parent) not in node_x or id(clade) not in node_x:
+                continue
+
+            x0 = node_x[id(parent)]
+            x1 = node_x[id(clade)]
+            y0 = node_y[id(parent)]
+            y1 = node_y[id(clade)]
+
+            # Horizontal segment
+            ax.plot([x0, x1], [y1, y1], color="gray", lw=2, solid_capstyle="butt")
+            # Vertical connector
+            ax.plot([x0, x0], [y0, y1], color="gray", lw=2, solid_capstyle="butt")
+
+        # Pie charts at internal nodes
+        max_x = max(node_x.values()) if node_x else 1.0
+        pie_radius = max_x * 0.015
+
+        for clade in tree.find_clades(order="preorder"):
+            if clade.is_terminal():
+                continue
+            if id(clade) not in node_posteriors:
+                continue
+
+            cx = node_x[id(clade)]
+            cy = node_y[id(clade)]
+            posterior = node_posteriors[id(clade)]
+
+            # Draw pie chart using Wedge patches
+            start_angle = 90.0
+            for i in range(k):
+                if posterior[i] < 1e-6:
+                    continue
+                sweep = posterior[i] * 360.0
+                wedge = Wedge(
+                    (cx, cy), pie_radius, start_angle, start_angle + sweep,
+                    facecolor=state_colors[states[i]], edgecolor="black",
+                    linewidth=0.5,
+                )
+                ax.add_patch(wedge)
+                start_angle += sweep
+
+        # Tip labels with state color
+        max_x_val = max(node_x.values()) if node_x else 0
+        offset = max_x_val * 0.02
+        for tip in tips:
+            color = state_colors.get(tip_states.get(tip.name, ""), "black")
+            ax.text(
+                node_x[id(tip)] + offset, node_y[id(tip)],
+                tip.name, va="center", fontsize=9, color=color,
+            )
+
+        # Legend
+        legend_handles = []
+        for i, s in enumerate(states):
+            legend_handles.append(
+                plt.Line2D([0], [0], marker="o", color="w",
+                           markerfacecolor=state_colors[s], markersize=10,
+                           label=s)
+            )
+        ax.legend(handles=legend_handles, loc="upper left", framealpha=0.9)
+
+        ax.set_xlabel("Branch length")
+        ax.set_yticks([])
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.set_title("Discrete Ancestral State Reconstruction")
+        ax.set_aspect("auto")
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved discrete ASR plot: {output_path}")

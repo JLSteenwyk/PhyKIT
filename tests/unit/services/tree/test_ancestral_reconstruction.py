@@ -18,6 +18,7 @@ SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_traits.tsv")
 MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
+DISCRETE_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_discrete_traits.tsv")
 
 
 @pytest.fixture
@@ -532,6 +533,349 @@ class TestPlot:
                 ci=False,
                 plot=plot_path,
                 json=False,
+            )
+            svc = AncestralReconstruction(args)
+            svc.run()
+            assert os.path.exists(plot_path)
+            assert os.path.getsize(plot_path) > 0
+        finally:
+            if os.path.exists(plot_path):
+                os.unlink(plot_path)
+
+
+# ------------------------------------------------------------------
+# Discrete ASR tests
+# ------------------------------------------------------------------
+
+@pytest.fixture
+def discrete_args():
+    return Namespace(
+        tree=TREE_SIMPLE,
+        trait_data=DISCRETE_TRAITS_FILE,
+        trait="diet",
+        method="fast",
+        ci=False,
+        plot=None,
+        json=False,
+        type="discrete",
+        model="ER",
+    )
+
+
+@pytest.fixture
+def discrete_ard_args():
+    return Namespace(
+        tree=TREE_SIMPLE,
+        trait_data=DISCRETE_TRAITS_FILE,
+        trait="diet",
+        method="fast",
+        ci=False,
+        plot=None,
+        json=False,
+        type="discrete",
+        model="ARD",
+    )
+
+
+class TestProcessArgsDiscrete:
+    def test_discrete_type_and_model(self):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="d.tsv",
+            trait=None,
+            method="fast",
+            ci=False,
+            plot=None,
+            json=False,
+            type="discrete",
+            model="SYM",
+        )
+        svc = AncestralReconstruction(args)
+        assert svc.trait_type == "discrete"
+        assert svc.model == "SYM"
+
+    def test_continuous_defaults_unchanged(self):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="d.tsv",
+            trait=None,
+            method="fast",
+            ci=False,
+            plot=None,
+            json=False,
+        )
+        svc = AncestralReconstruction(args)
+        assert svc.trait_type == "continuous"
+        assert svc.model == "ER"
+
+
+class TestDiscreteTraitParsing:
+    def test_multi_col_parsing(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+        traits = svc._parse_discrete_trait_data_multi(
+            DISCRETE_TRAITS_FILE, tree_tips, "diet"
+        )
+        assert len(traits) == 8
+        assert traits["raccoon"] == "carnivore"
+        assert traits["cat"] == "omnivore"
+
+    def test_single_col_parsing(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        # Create a temp 2-col file
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".tsv", delete=False
+        ) as f:
+            f.write("raccoon\tcarnivore\n")
+            f.write("bear\tcarnivore\n")
+            f.write("sea_lion\tcarnivore\n")
+            f.write("seal\therbivore\n")
+            f.write("monkey\therbivore\n")
+            f.write("cat\tomnivore\n")
+            f.write("weasel\tomnivore\n")
+            f.write("dog\tomnivore\n")
+            tmp_path = f.name
+
+        try:
+            traits = svc._parse_discrete_trait_data_single(tmp_path, tree_tips)
+            assert len(traits) == 8
+            assert traits["bear"] == "carnivore"
+        finally:
+            os.unlink(tmp_path)
+
+    def test_missing_column_error(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+        with pytest.raises(PhykitUserError):
+            svc._parse_discrete_trait_data_multi(
+                DISCRETE_TRAITS_FILE, tree_tips, "nonexistent"
+            )
+
+    def test_file_not_found(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        with pytest.raises(PhykitUserError):
+            svc._parse_discrete_trait_data_single("no_such_file.tsv", [])
+
+
+class TestMkPrimitives:
+    def test_q_matrix_er(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        params = np.array([0.5])
+        Q = svc._build_q_matrix(params, 3, "ER")
+        assert Q.shape == (3, 3)
+        # Rows should sum to zero
+        for i in range(3):
+            assert pytest.approx(np.sum(Q[i, :]), abs=1e-10) == 0.0
+        # Off-diagonals should all be 0.5
+        for i in range(3):
+            for j in range(3):
+                if i != j:
+                    assert Q[i, j] == pytest.approx(0.5)
+
+    def test_q_matrix_ard(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        k = 3
+        n_params = k * (k - 1)  # 6
+        params = np.arange(1, n_params + 1, dtype=float) * 0.1
+        Q = svc._build_q_matrix(params, k, "ARD")
+        assert Q.shape == (k, k)
+        for i in range(k):
+            assert pytest.approx(np.sum(Q[i, :]), abs=1e-10) == 0.0
+
+    def test_felsenstein_pruning_loglik_finite(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        tree = svc.read_tree_file()
+        import copy
+        tree_copy = copy.deepcopy(tree)
+        tree_tips = svc.get_tip_names_from_tree(tree_copy)
+        tip_states = svc._parse_discrete_trait_data_multi(
+            DISCRETE_TRAITS_FILE, tree_tips, "diet"
+        )
+        states = sorted(set(tip_states.values()))
+        k = len(states)
+        pi = np.ones(k) / k
+        Q = svc._build_q_matrix(np.array([0.01]), k, "ER")
+        _, loglik = svc._felsenstein_pruning(tree_copy, tip_states, Q, pi, states)
+        assert np.isfinite(loglik)
+        assert loglik < 0
+
+    def test_fit_er_loglik(self, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        tree = svc.read_tree_file()
+        import copy
+        tree_copy = copy.deepcopy(tree)
+        tree_tips = svc.get_tip_names_from_tree(tree_copy)
+        tip_states = svc._parse_discrete_trait_data_multi(
+            DISCRETE_TRAITS_FILE, tree_tips, "diet"
+        )
+        states = sorted(set(tip_states.values()))
+        Q, loglik = svc._fit_q_matrix(tree_copy, tip_states, states, "ER")
+        assert np.isfinite(loglik)
+        assert loglik == pytest.approx(-8.789, abs=0.5)
+
+
+class TestDiscreteMarginalPosteriors:
+    def _get_posteriors(self, args_fixture):
+        import copy
+        svc = AncestralReconstruction(args_fixture)
+        tree = svc.read_tree_file()
+        tree_copy = copy.deepcopy(tree)
+        tree_tips = svc.get_tip_names_from_tree(tree_copy)
+        tip_states = svc._parse_discrete_trait_data_multi(
+            DISCRETE_TRAITS_FILE, tree_tips, "diet"
+        )
+        states = sorted(set(tip_states.values()))
+        Q, loglik = svc._fit_q_matrix(tree_copy, tip_states, states, args_fixture.model)
+        posteriors = svc._discrete_marginal_posteriors(
+            tree_copy, tip_states, Q, states
+        )
+        node_labels = svc._label_internal_nodes(tree_copy)
+        return posteriors, states, tree_copy, node_labels
+
+    def test_posteriors_sum_to_one(self, discrete_args):
+        posteriors, states, tree, _ = self._get_posteriors(discrete_args)
+        for node_id, post in posteriors.items():
+            assert pytest.approx(np.sum(post), abs=1e-6) == 1.0
+
+    def test_posteriors_non_negative(self, discrete_args):
+        posteriors, _, _, _ = self._get_posteriors(discrete_args)
+        for node_id, post in posteriors.items():
+            assert np.all(post >= 0.0)
+
+    def test_posteriors_correct_shape(self, discrete_args):
+        posteriors, states, _, _ = self._get_posteriors(discrete_args)
+        k = len(states)
+        for node_id, post in posteriors.items():
+            assert post.shape == (k,)
+
+    def test_all_internal_nodes_covered(self, discrete_args):
+        posteriors, states, tree, node_labels = self._get_posteriors(discrete_args)
+        for clade in tree.find_clades(order="preorder"):
+            if not clade.is_terminal():
+                assert id(clade) in posteriors
+
+    def test_ard_model_valid(self, discrete_ard_args):
+        posteriors, states, _, _ = self._get_posteriors(discrete_ard_args)
+        for node_id, post in posteriors.items():
+            assert pytest.approx(np.sum(post), abs=1e-6) == 1.0
+            assert np.all(post >= 0.0)
+
+    def test_map_state_valid(self, discrete_args):
+        posteriors, states, _, _ = self._get_posteriors(discrete_args)
+        for node_id, post in posteriors.items():
+            map_idx = int(np.argmax(post))
+            assert 0 <= map_idx < len(states)
+
+    def test_root_posterior_reasonable(self, discrete_args):
+        posteriors, states, tree, _ = self._get_posteriors(discrete_args)
+        root_post = posteriors[id(tree.root)]
+        # Root posterior should have some spread (not all in one state)
+        assert np.max(root_post) < 1.0
+        assert np.min(root_post) >= 0.0
+
+
+class TestDiscreteRun:
+    @patch("builtins.print")
+    def test_text_output(self, mocked_print, discrete_args):
+        svc = AncestralReconstruction(discrete_args)
+        svc.run()
+
+        all_output = " ".join(
+            str(call.args[0]) for call in mocked_print.call_args_list if call.args
+        )
+        assert "Discrete" in all_output
+        assert "Mk" in all_output
+        assert "Rate matrix" in all_output
+        assert "N1 (root)" in all_output
+
+    @patch("builtins.print")
+    def test_json_output_schema(self, mocked_print):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=DISCRETE_TRAITS_FILE,
+            trait="diet",
+            method="fast",
+            ci=False,
+            plot=None,
+            json=True,
+            type="discrete",
+            model="ER",
+        )
+        svc = AncestralReconstruction(args)
+        svc.run()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["method"] == "discrete"
+        assert payload["model"] == "ER"
+        assert "states" in payload
+        assert "q_matrix" in payload
+        assert "ancestral_states" in payload
+        assert "tip_states" in payload
+        assert "N1" in payload["ancestral_states"]
+        n1 = payload["ancestral_states"]["N1"]
+        assert n1["is_root"] is True
+        assert "map_state" in n1
+        assert "posteriors" in n1
+
+    @patch("builtins.print")
+    def test_continuous_regression(self, mocked_print):
+        """Ensure continuous mode still works after refactor."""
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            trait=None,
+            method="fast",
+            ci=False,
+            plot=None,
+            json=False,
+        )
+        svc = AncestralReconstruction(args)
+        svc.run()
+
+        all_output = " ".join(
+            str(call.args[0]) for call in mocked_print.call_args_list if call.args
+        )
+        assert "Ancestral State Reconstruction" in all_output
+        assert "Sigma-squared" in all_output
+
+    @patch("builtins.print")
+    def test_ard_smoke(self, mocked_print, discrete_ard_args):
+        svc = AncestralReconstruction(discrete_ard_args)
+        svc.run()
+
+        all_output = " ".join(
+            str(call.args[0]) for call in mocked_print.call_args_list if call.args
+        )
+        assert "ARD" in all_output
+
+
+class TestDiscretePlot:
+    @patch("builtins.print")
+    def test_plot_created(self, mocked_print):
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            plot_path = f.name
+
+        try:
+            args = Namespace(
+                tree=TREE_SIMPLE,
+                trait_data=DISCRETE_TRAITS_FILE,
+                trait="diet",
+                method="fast",
+                ci=False,
+                plot=plot_path,
+                json=False,
+                type="discrete",
+                model="ER",
             )
             svc = AncestralReconstruction(args)
             svc.run()

@@ -1474,19 +1474,24 @@ class Phykit:
                 f"""\
                 {help_header}
 
-                Estimate ancestral states for continuous traits using
-                maximum likelihood, analogous to R's phytools::fastAnc()
-                and ape::ace(type="ML"). Optionally produce a contMap
-                plot showing continuous trait values mapped onto the
-                phylogeny.
+                Estimate ancestral states using maximum likelihood.
 
-                Two methods are available:
-                - fast (default): Felsenstein's pruning/contrasts shortcut,
-                  O(n) time
+                Supports two trait types:
+                - continuous (default): Brownian Motion model, analogous
+                  to R's phytools::fastAnc() and ape::ace(type="ML").
+                  Optionally produce a contMap plot.
+                - discrete: Mk model with marginal posterior probabilities
+                  at each internal node, analogous to ape::ace(type="discrete").
+                  Optionally produce a pie-chart phylogeny plot.
+
+                Continuous methods (--type continuous):
+                - fast (default): Felsenstein's pruning/contrasts, O(n)
                 - ml: full VCV-based ML with exact conditional CIs, O(n^3)
 
-                Both methods produce identical point estimates; ml gives
-                exact conditional confidence intervals.
+                Discrete models (--type discrete):
+                - ER (default): equal rates
+                - SYM: symmetric rates
+                - ARD: all rates different
 
                 Input trait data can be either:
                 (1) A two-column file (taxon<tab>value) when -c is omitted
@@ -1499,7 +1504,7 @@ class Phykit:
                   pk_ancestral_state_reconstruction, pk_asr, pk_anc_recon
 
                 Usage:
-                phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [-m <method>] [--ci] [--plot <output>] [--json]
+                phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>] [--json]
 
                 Options
                 =====================================================
@@ -1511,13 +1516,19 @@ class Phykit:
                 -c/--trait                  trait column name (required
                                             for multi-trait files)
 
+                --type                      trait type: continuous or
+                                            discrete (default: continuous)
+
                 -m/--method                 method to use: fast or ml
-                                            (default: fast)
+                                            (continuous only; default: fast)
+
+                --model                     Mk model: ER, SYM, or ARD
+                                            (discrete only; default: ER)
 
                 --ci                        include 95% confidence
-                                            intervals
+                                            intervals (continuous only)
 
-                --plot                      output path for contMap plot
+                --plot                      output path for plot
 
                 --json                      output results as JSON
                 """
@@ -1534,8 +1545,16 @@ class Phykit:
             help=SUPPRESS, metavar=""
         )
         parser.add_argument(
+            "--type", type=str, required=False, default="continuous",
+            choices=["continuous", "discrete"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
             "-m", "--method", type=str, required=False, default="fast",
             choices=["fast", "ml"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--model", type=str, required=False, default="ER",
+            choices=["ER", "SYM", "ARD"], help=SUPPRESS, metavar=""
         )
         parser.add_argument(
             "--ci", action="store_true", required=False, help=SUPPRESS
