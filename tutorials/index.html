@@ -139,7 +139,13 @@
 <li class="toctree-l3"><a class="reference internal" href="#id39">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">12. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#spectral-discordance-decomposition">12. Spectral discordance decomposition</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-run-basic-analysis">Step 1: Run basic analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-generate-plots-and-json-output">Step 2: Generate plots and JSON output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-customize-analysis">Step 3: Customize analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes">13. Testing for rate heterogeneity across phylogenetic regimes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#id40">Step 0: Prepare data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-run-the-rate-heterogeneity-test">Step 1: Run the rate heterogeneity test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-add-a-parametric-bootstrap">Step 2: Add a parametric bootstrap</a></li>
@@ -148,13 +154,13 @@
 <li class="toctree-l3"><a class="reference internal" href="#id41">Summary</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#visualization-commands">13. Visualization commands</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">14. Comparing continuous trait evolution models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">15. Multi-regime OU models (OUwie)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">16. Automatic detection of adaptive shifts on a phylogeny</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">17. Visualizing conflicting phylogenetic signal with splits networks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#end-to-end-comparative-methods-workflow">18. End-to-end comparative methods workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#gene-tree-discordance-analysis-pipeline">19. Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualization-commands">14. Visualization commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">15. Comparing continuous trait evolution models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">16. Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">17. Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">18. Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#end-to-end-comparative-methods-workflow">19. End-to-end comparative methods workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gene-tree-discordance-analysis-pipeline">20. Gene tree discordance analysis pipeline</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -1821,8 +1827,76 @@ contMap plots, and <code class="docutils literal notranslate"><span class="pre">
 </div>
 </section>
 </section>
+<section id="spectral-discordance-decomposition">
+<h2>12. Spectral discordance decomposition<a class="headerlink" href="#spectral-discordance-decomposition" title="Link to this heading"></a></h2>
+<p>Gene tree discordance is commonly summarized per-branch (e.g., gCF/gDF),
+but this loses the global structure of tree-space variation. Spectral
+discordance decomposition uses PCA on a bipartition presence/absence
+matrix to ordinate gene trees and spectral clustering to identify groups of
+genes that share alternative topologies.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-1-run-basic-analysis">
+<h3>Step 1: Run basic analysis<a class="headerlink" href="#step-1-run-basic-analysis" title="Link to this heading"></a></h3>
+<p>Run the spectral discordance command with a set of gene trees and an
+optional species tree:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>species_tree.tre
+</pre></div>
+</div>
+<p>This prints a summary including variance explained per PC, top bipartition
+loadings, and cluster assignments. Species-tree bipartitions are marked
+with <code class="docutils literal notranslate"><span class="pre">*</span></code> in the loadings output.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-generate-plots-and-json-output">
+<h3>Step 2: Generate plots and JSON output<a class="headerlink" href="#step-2-generate-plots-and-json-output" title="Link to this heading"></a></h3>
+<p>Add <code class="docutils literal notranslate"><span class="pre">--plot</span></code> for scatter and eigengap plots, and <code class="docutils literal notranslate"><span class="pre">--json</span></code> for
+machine-readable output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>species_tree.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot<span class="w"> </span>sd_output<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--json<span class="w"> </span>&gt;<span class="w"> </span>sd_results.json
+</pre></div>
+</div>
+<p>This produces <code class="docutils literal notranslate"><span class="pre">sd_output_scatter.png</span></code> (PC1 vs PC2 colored by cluster) and
+<code class="docutils literal notranslate"><span class="pre">sd_output_eigengap.png</span></code> (eigengap bar chart showing the chosen K).</p>
+<a class="reference internal image-reference" href="../_images/spectral_discordance_example_scatter.png"><img alt="../_images/spectral_discordance_example_scatter.png" class="align-center" src="../_images/spectral_discordance_example_scatter.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<a class="reference internal image-reference" href="../_images/spectral_discordance_example_eigengap.png"><img alt="../_images/spectral_discordance_example_eigengap.png" class="align-center" src="../_images/spectral_discordance_example_eigengap.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-customize-analysis">
+<h3>Step 3: Customize analysis<a class="headerlink" href="#step-3-customize-analysis" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">--metric</span> <span class="pre">wrf</span></code> for branch-length weighted analysis, <code class="docutils literal notranslate"><span class="pre">--clusters</span> <span class="pre">K</span></code> to
+override auto-detected cluster count, or <code class="docutils literal notranslate"><span class="pre">--n-pcs</span></code> and <code class="docutils literal notranslate"><span class="pre">--top-loadings</span></code>
+to control output detail:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--metric<span class="w"> </span>wrf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--clusters<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--n-pcs<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--top-loadings<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
 <section id="testing-for-rate-heterogeneity-across-phylogenetic-regimes">
-<h2>12. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
+<h2>13. Testing for rate heterogeneity across phylogenetic regimes<a class="headerlink" href="#testing-for-rate-heterogeneity-across-phylogenetic-regimes" title="Link to this heading"></a></h2>
 <p>A key question in comparative biology is whether the rate of trait evolution differs
 across lineages — for example, whether aquatic mammals evolve body size at a different
 rate than terrestrial mammals. Rate heterogeneity tests address this by fitting
@@ -1949,7 +2023,7 @@ The R equivalent is <code class="docutils literal notranslate"><span class="pre"
 </section>
 </section>
 <section id="visualization-commands">
-<h2>13. Visualization commands<a class="headerlink" href="#visualization-commands" title="Link to this heading"></a></h2>
+<h2>14. Visualization commands<a class="headerlink" href="#visualization-commands" title="Link to this heading"></a></h2>
 <p>PhyKIT provides several phylogenetic visualization commands analogous to
 R's <code class="docutils literal notranslate"><span class="pre">phytools</span></code> plotting functions. All produce publication-quality plots
 saved at 300 DPI.</p>
@@ -1980,7 +2054,7 @@ for a tab-delimited file matching taxa between trees with different tip names.</
 </div>
 </section>
 <section id="comparing-continuous-trait-evolution-models">
-<h2>14. Comparing continuous trait evolution models<a class="headerlink" href="#comparing-continuous-trait-evolution-models" title="Link to this heading"></a></h2>
+<h2>15. Comparing continuous trait evolution models<a class="headerlink" href="#comparing-continuous-trait-evolution-models" title="Link to this heading"></a></h2>
 <p>A common analysis in comparative methods is determining which model of
 continuous trait evolution best explains observed trait variation on a
 phylogeny. PhyKIT's <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fitcontinuous</span></code>,
@@ -2062,7 +2136,7 @@ BIC, and the number of tips.</p>
 </div>
 </section>
 <section id="multi-regime-ou-models-ouwie">
-<h2>15. Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h2>
+<h2>16. Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h2>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ouwie</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fit_ouwie</span></code>, <code class="docutils literal notranslate"><span class="pre">multi_regime_ou</span></code>)
 fits multi-regime Ornstein-Uhlenbeck models, analogous to R's OUwie
 package (Beaulieu et al. 2012). These models allow different clades to
@@ -2213,7 +2287,7 @@ datasets.</p>
 </div>
 </section>
 <section id="automatic-detection-of-adaptive-shifts-on-a-phylogeny">
-<h2>16. Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h2>
+<h2>17. Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h2>
 <p>OUwie (tutorial 15, above) requires specifying regimes <em>a priori</em>. But
 what if you don't know where on the tree the trait optimum changed?
 PhyKIT's <code class="docutils literal notranslate"><span class="pre">ou_shift_detection</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">l1ou</span></code>, <code class="docutils literal notranslate"><span class="pre">ou_shifts</span></code>,
@@ -2366,7 +2440,7 @@ difference arises from optimizer precision, not algorithmic differences.</p>
 </div>
 </section>
 <section id="visualizing-conflicting-phylogenetic-signal-with-splits-networks">
-<h2>17. Visualizing conflicting phylogenetic signal with splits networks<a class="headerlink" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks" title="Link to this heading"></a></h2>
+<h2>18. Visualizing conflicting phylogenetic signal with splits networks<a class="headerlink" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks" title="Link to this heading"></a></h2>
 <p>When analyzing phylogenomic datasets, different genes often support
 conflicting tree topologies. PhyKIT's <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code> command
 (aliases: <code class="docutils literal notranslate"><span class="pre">consnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splitnet</span></code>, <code class="docutils literal notranslate"><span class="pre">splits_network</span></code>) extracts
@@ -2444,7 +2518,7 @@ prune all trees to their intersection before extracting splits:</p>
 </div>
 </section>
 <section id="end-to-end-comparative-methods-workflow">
-<h2>18. End-to-end comparative methods workflow<a class="headerlink" href="#end-to-end-comparative-methods-workflow" title="Link to this heading"></a></h2>
+<h2>19. End-to-end comparative methods workflow<a class="headerlink" href="#end-to-end-comparative-methods-workflow" title="Link to this heading"></a></h2>
 <p>Phylogenetic comparative methods are most powerful when used together.
 This tutorial demonstrates a complete workflow: testing for phylogenetic
 signal, comparing evolutionary models, fitting a regression, and
@@ -2688,7 +2762,7 @@ own tree, trait data, and biological question.</p>
 </div>
 </section>
 <section id="gene-tree-discordance-analysis-pipeline">
-<h2>19. Gene tree discordance analysis pipeline<a class="headerlink" href="#gene-tree-discordance-analysis-pipeline" title="Link to this heading"></a></h2>
+<h2>20. Gene tree discordance analysis pipeline<a class="headerlink" href="#gene-tree-discordance-analysis-pipeline" title="Link to this heading"></a></h2>
 <p>Gene trees often disagree with the species tree due to incomplete
 lineage sorting (ILS), introgression, or gene duplication and loss.
 This tutorial demonstrates how to quantify and visualize gene tree

@@ -96,6 +96,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spectral-discordance-decomposition">Spectral discordance decomposition</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#concordance-aware-ancestral-state-reconstruction">Concordance-aware ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#branch-length-multiplier">Branch length multiplier</a></li>
@@ -325,6 +326,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-discordance-asymmetry"><span class="std std-ref">Discordance asymmetry</span></a>: Test for asymmetric discordance (gene flow detection)</p></li>
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
 <li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a>: Topological distance between trees</p></li>
 </ul>
@@ -1118,6 +1120,46 @@ specifies which column to use.</p>
 <p>Example contMap plot generated with the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option. Branches are colored
 by interpolated ancestral trait values:</p>
 <a class="reference internal image-reference" href="../_images/asr_example.png"><img alt="../_images/asr_example.png" class="align-center" src="../_images/asr_example.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="spectral-discordance-decomposition">
+<span id="cmd-spectral-discordance"></span><h3>Spectral discordance decomposition<a class="headerlink" href="#spectral-discordance-decomposition" title="Link to this heading"></a></h3>
+<p>Function names: spectral_discordance; spec_disc; sd <br/>
+Command line interface: pk_spectral_discordance; pk_spec_disc; pk_sd</p>
+<p>Decompose gene tree space via PCA on a bipartition presence/absence (or
+branch-length) matrix, with spectral clustering and automatic cluster
+detection via the eigengap heuristic.</p>
+<p>Each gene tree is encoded as a vector over the union of all observed
+bipartitions. PCA reveals the axes of topological variation, with loading
+vectors directly identifying which bipartitions drive each PC. Spectral
+clustering groups genes sharing similar topologies; the number of clusters
+is auto-detected from the eigengap of the graph Laplacian.</p>
+<p>Two metrics are available:</p>
+<ul class="simple">
+<li><p><strong>nrf</strong> (default): binary presence/absence, consistent with normalized Robinson-Foulds distance</p></li>
+<li><p><strong>wrf</strong>: branch-length weighted</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>&lt;tree&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--metric<span class="w"> </span>nrf<span class="p">|</span>wrf<span class="o">]</span><span class="w"> </span><span class="o">[</span>--clusters<span class="w"> </span>K<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-pcs<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--top-loadings<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;prefix&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-g/\-\-gene-trees</em>: file of gene trees (one Newick per line, or file of filenames) <br/>
+<em>-t/\-\-tree</em>: species tree (optional; flags species-tree bipartitions in loadings) <br/>
+<em>--metric</em>: distance metric: <code class="docutils literal notranslate"><span class="pre">nrf</span></code> or <code class="docutils literal notranslate"><span class="pre">wrf</span></code> (default: <code class="docutils literal notranslate"><span class="pre">nrf</span></code>) <br/>
+<em>--clusters</em>: override auto-detected number of clusters <br/>
+<em>--n-pcs</em>: number of PCs to report (default: min(10, G-1)) <br/>
+<em>--top-loadings</em>: top bipartitions per PC to display (default: 5) <br/>
+<em>--plot</em>: output prefix for plots (generates <code class="docutils literal notranslate"><span class="pre">_scatter.png</span></code> and <code class="docutils literal notranslate"><span class="pre">_eigengap.png</span></code>) <br/>
+<em>--json</em>: output results as JSON</p>
+<a class="reference internal image-reference" href="../_images/spectral_discordance_example_scatter.png"><img alt="../_images/spectral_discordance_example_scatter.png" class="align-center" src="../_images/spectral_discordance_example_scatter.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<a class="reference internal image-reference" href="../_images/spectral_discordance_example_eigengap.png"><img alt="../_images/spectral_discordance_example_eigengap.png" class="align-center" src="../_images/spectral_discordance_example_eigengap.png" style="width: 80%;" />
 </a>
 <div class="line-block">
 <div class="line"><br /></div>
