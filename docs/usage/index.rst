@@ -147,6 +147,7 @@ Tree comparison & consensus
 - :ref:`Discordance asymmetry <cmd-discordance_asymmetry>`: Test for asymmetric discordance (gene flow detection)
 - :ref:`Evolutionary tempo mapping <cmd-evo_tempo_map>`: Detect rate-topology associations in gene trees
 - :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
+- :ref:`Spectral discordance decomposition <cmd-spectral_discordance>`: PCA ordination and clustering of gene tree topologies
 - :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
 - :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>`: Topological distance between trees
 
@@ -1119,6 +1120,54 @@ Example contMap plot generated with the ``--plot`` option. Branches are colored
 by interpolated ancestral trait values:
 
 .. image:: ../_static/img/asr_example.png
+   :align: center
+   :width: 80%
+
+|
+
+.. _cmd-spectral_discordance:
+
+Spectral discordance decomposition
+###################################
+Function names: spectral_discordance; spec_disc; sd |br|
+Command line interface: pk_spectral_discordance; pk_spec_disc; pk_sd
+
+Decompose gene tree space via PCA on a bipartition presence/absence (or
+branch-length) matrix, with spectral clustering and automatic cluster
+detection via the eigengap heuristic.
+
+Each gene tree is encoded as a vector over the union of all observed
+bipartitions. PCA reveals the axes of topological variation, with loading
+vectors directly identifying which bipartitions drive each PC. Spectral
+clustering groups genes sharing similar topologies; the number of clusters
+is auto-detected from the eigengap of the graph Laplacian.
+
+Two metrics are available:
+
+- **nrf** (default): binary presence/absence, consistent with normalized Robinson-Foulds distance
+- **wrf**: branch-length weighted
+
+.. code-block:: shell
+
+   phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>] [--json]
+
+Options: |br|
+*-g/\\-\\-gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
+*-t/\\-\\-tree*: species tree (optional; flags species-tree bipartitions in loadings) |br|
+*--metric*: distance metric: ``nrf`` or ``wrf`` (default: ``nrf``) |br|
+*--clusters*: override auto-detected number of clusters |br|
+*--n-pcs*: number of PCs to report (default: min(10, G-1)) |br|
+*--top-loadings*: top bipartitions per PC to display (default: 5) |br|
+*--plot*: output prefix for plots (generates ``_scatter.png`` and ``_eigengap.png``) |br|
+*--json*: output results as JSON
+
+.. image:: ../_static/img/spectral_discordance_example_scatter.png
+   :align: center
+   :width: 80%
+
+|
+
+.. image:: ../_static/img/spectral_discordance_example_eigengap.png
    :align: center
    :width: 80%
 

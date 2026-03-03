@@ -277,7 +277,10 @@ class Phykit:
                 treeness (alias: tness)
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
-             
+                spectral_discordance (alias: spec_disc; sd)
+                    - PCA + spectral clustering of gene tree space via
+                      bipartition decomposition
+
                 Alignment- and tree-based commands
                 ==================================
                 saturation (alias: sat)
@@ -5000,6 +5003,95 @@ class Phykit:
         _add_json_argument(parser)
         _run_service(parser, argv, DiscordanceAsymmetry)
 
+    @staticmethod
+    def spectral_discordance(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Spectral discordance decomposition — decompose gene tree
+                space via PCA on a bipartition presence/absence (or
+                branch-length) matrix, with spectral clustering and
+                automatic cluster detection via the eigengap heuristic.
+
+                Each gene tree is encoded as a vector over the union of
+                all bipartitions observed across gene trees. PCA reveals
+                the axes of topological variation, with loading vectors
+                identifying which bipartitions drive each PC. Spectral
+                clustering groups genes sharing similar topologies.
+
+                Two metrics are available:
+                - nrf (default): binary presence/absence (normalized RF)
+                - wrf: branch-length weighted
+
+                Aliases:
+                  spectral_discordance, spec_disc, sd
+                Command line interfaces:
+                  pk_spectral_discordance, pk_spec_disc, pk_sd
+
+                Usage:
+                phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>] [--json]
+
+                Options
+                =====================================================
+                -g/--gene-trees             file of gene trees (one
+                                            Newick per line, or file
+                                            of filenames)
+
+                -t/--tree                   species tree (optional; flags
+                                            species-tree bipartitions in
+                                            loading output)
+
+                --metric                    distance metric: nrf or wrf
+                                            (default: nrf)
+
+                --clusters                  override auto-detected K
+
+                --n-pcs                     number of PCs to report
+                                            (default: min(10, G-1))
+
+                --top-loadings              top bipartitions per PC
+                                            (default: 5)
+
+                --plot                      output prefix for plots
+                                            (generates _scatter.png and
+                                            _eigengap.png)
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--metric", type=str, required=False, default="nrf",
+            choices=["nrf", "wrf"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--clusters", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--n-pcs", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--top-loadings", type=int, required=False, default=5,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, SpectralDiscordance)
+
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
@@ -5453,3 +5545,15 @@ def create_concatenation_matrix(argv=None):
 
 def thread_dna(argv=None):
     Phykit.thread_dna(sys.argv[1:])
+
+
+def evo_tempo_map(argv=None):
+    Phykit.evo_tempo_map(sys.argv[1:])
+
+
+def discordance_asymmetry(argv=None):
+    Phykit.discordance_asymmetry(sys.argv[1:])
+
+
+def spectral_discordance(argv=None):
+    Phykit.spectral_discordance(sys.argv[1:])

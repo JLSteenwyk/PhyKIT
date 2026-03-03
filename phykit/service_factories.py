@@ -98,6 +98,7 @@ Treeness = _LazyServiceFactory("phykit.services.tree.treeness", "Treeness")
 TreenessOverRCV = _LazyServiceFactory("phykit.services.tree.treeness_over_rcv", "TreenessOverRCV")
 EvoTempoMap = _LazyServiceFactory("phykit.services.tree.evo_tempo_map", "EvoTempoMap")
 DiscordanceAsymmetry = _LazyServiceFactory("phykit.services.tree.discordance_asymmetry", "DiscordanceAsymmetry")
+SpectralDiscordance = _LazyServiceFactory("phykit.services.tree.spectral_discordance", "SpectralDiscordance")
 
 SERVICE_FACTORIES: Dict[str, _LazyServiceFactory] = {
     name: value

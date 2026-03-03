@@ -1838,7 +1838,83 @@ contMap plots, and ``ape::ace(type="discrete")`` for discrete ASR.
 
 |
 
-12. Testing for rate heterogeneity across phylogenetic regimes
+12. Spectral discordance decomposition
+#######################################
+
+Gene tree discordance is commonly summarized per-branch (e.g., gCF/gDF),
+but this loses the global structure of tree-space variation. Spectral
+discordance decomposition uses PCA on a bipartition presence/absence
+matrix to ordinate gene trees and spectral clustering to identify groups of
+genes that share alternative topologies.
+
+|
+
+Step 1: Run basic analysis
+**************************
+
+Run the spectral discordance command with a set of gene trees and an
+optional species tree:
+
+.. code-block:: shell
+
+   phykit spectral_discordance \
+       -g gene_trees.nwk \
+       -t species_tree.tre
+
+This prints a summary including variance explained per PC, top bipartition
+loadings, and cluster assignments. Species-tree bipartitions are marked
+with ``*`` in the loadings output.
+
+|
+
+Step 2: Generate plots and JSON output
+***************************************
+
+Add ``--plot`` for scatter and eigengap plots, and ``--json`` for
+machine-readable output:
+
+.. code-block:: shell
+
+   phykit spectral_discordance \
+       -g gene_trees.nwk \
+       -t species_tree.tre \
+       --plot sd_output \
+       --json > sd_results.json
+
+This produces ``sd_output_scatter.png`` (PC1 vs PC2 colored by cluster) and
+``sd_output_eigengap.png`` (eigengap bar chart showing the chosen K).
+
+.. image:: ../_static/img/spectral_discordance_example_scatter.png
+   :align: center
+   :width: 80%
+
+|
+
+.. image:: ../_static/img/spectral_discordance_example_eigengap.png
+   :align: center
+   :width: 80%
+
+|
+
+Step 3: Customize analysis
+**************************
+
+Use ``--metric wrf`` for branch-length weighted analysis, ``--clusters K`` to
+override auto-detected cluster count, or ``--n-pcs`` and ``--top-loadings``
+to control output detail:
+
+.. code-block:: shell
+
+   phykit spectral_discordance \
+       -g gene_trees.nwk \
+       --metric wrf \
+       --clusters 4 \
+       --n-pcs 5 \
+       --top-loadings 10
+
+|
+
+13. Testing for rate heterogeneity across phylogenetic regimes
 ###############################################################
 
 A key question in comparative biology is whether the rate of trait evolution differs
@@ -1978,7 +2054,7 @@ The R equivalent is ``phytools::brownie.lite()``
 
 |
 
-13. Visualization commands
+14. Visualization commands
 ###########################
 
 PhyKIT provides several phylogenetic visualization commands analogous to
@@ -2019,7 +2095,7 @@ For methodological details, see
 
 |
 
-14. Comparing continuous trait evolution models
+15. Comparing continuous trait evolution models
 ################################################
 
 A common analysis in comparative methods is determining which model of
@@ -2113,7 +2189,7 @@ BIC, and the number of tips.
 
 |
 
-15. Multi-regime OU models (OUwie)
+16. Multi-regime OU models (OUwie)
 ###################################
 
 PhyKIT's ``ouwie`` command (aliases: ``fit_ouwie``, ``multi_regime_ou``)
@@ -2277,7 +2353,7 @@ datasets.
 
 |
 
-16. Automatic detection of adaptive shifts on a phylogeny
+17. Automatic detection of adaptive shifts on a phylogeny
 ###########################################################
 
 OUwie (tutorial 15, above) requires specifying regimes *a priori*. But
@@ -2448,7 +2524,7 @@ difference arises from optimizer precision, not algorithmic differences.
 
 |
 
-17. Visualizing conflicting phylogenetic signal with splits networks
+18. Visualizing conflicting phylogenetic signal with splits networks
 ######################################################################
 
 When analyzing phylogenomic datasets, different genes often support
@@ -2541,7 +2617,7 @@ prune all trees to their intersection before extracting splits:
 
 |
 
-18. End-to-end comparative methods workflow
+19. End-to-end comparative methods workflow
 #############################################
 
 Phylogenetic comparative methods are most powerful when used together.
@@ -2827,7 +2903,7 @@ own tree, trait data, and biological question.
 
 |
 
-19. Gene tree discordance analysis pipeline
+20. Gene tree discordance analysis pipeline
 #############################################
 
 Gene trees often disagree with the species tree due to incomplete

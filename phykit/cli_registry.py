@@ -157,6 +157,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "etm": "evo_tempo_map",
     "disc_asym": "discordance_asymmetry",
     "da": "discordance_asymmetry",
+    "spec_disc": "spectral_discordance",
+    "sd": "spectral_discordance",
     # Helper aliases
     "create_concat": "create_concatenation_matrix",
     "cc": "create_concatenation_matrix",
