@@ -366,6 +366,51 @@ class DiscordanceAsymmetry(Tree):
                 parent_map[id(child)] = clade
         return parent_map
 
+    @staticmethod
+    def _collect_taxa(trees) -> set:
+        """Collect the union of all tip names across a list of trees.
+
+        Uses a direct stack walk over .clades to avoid the overhead of
+        Bio.Phylo's find_clades / match_attrs dispatch layer.
+        """
+        taxa = set()
+        for tree in trees:
+            stack = [tree.root]
+            while stack:
+                node = stack.pop()
+                if not node.clades:
+                    taxa.add(node.name)
+                else:
+                    stack.extend(node.clades)
+        return taxa
+
+    def _extract_splits(self, tree, all_taxa_fs) -> set:
+        """Extract canonical bipartitions from a single tree.
+
+        Performs a single postorder traversal, building tip sets
+        bottom-up via .clades, and canonicalises each non-trivial split.
+        """
+        splits = set()
+        tip_sets = {}
+        stack = [(tree.root, False)]
+        while stack:
+            node, children_done = stack[-1]
+            if not node.clades:
+                stack.pop()
+                name = node.name
+                tip_sets[id(node)] = frozenset((name,)) if name in all_taxa_fs else frozenset()
+            elif children_done:
+                stack.pop()
+                merged = frozenset().union(*(tip_sets[id(c)] for c in node.clades))
+                tip_sets[id(node)] = merged
+                if len(merged) > 1 and merged != all_taxa_fs:
+                    splits.add(self._canonical_split(merged, all_taxa_fs))
+            else:
+                stack[-1] = (node, True)
+                for child in reversed(node.clades):
+                    stack.append((child, False))
+        return splits
+
     def _get_four_groups(self, tree, node, parent_map, all_taxa_fs):
         """Identify the four subtree groups around an internal branch.
 
@@ -442,28 +487,17 @@ class DiscordanceAsymmetry(Tree):
           n_alt1: int
           n_alt2: int
         """
-        all_taxa = sorted(
-            set(t.name for t in species_tree.get_terminals())
-            & set().union(*(
-                set(t.name for t in gt.get_terminals()) for gt in gene_trees
-            ))
-        )
-        all_taxa_fs = frozenset(all_taxa)
+        species_taxa = set(t.name for t in species_tree.get_terminals())
+        gene_taxa = self._collect_taxa(gene_trees)
+        all_taxa_fs = frozenset(sorted(species_taxa & gene_taxa))
         parent_map = self._build_parent_map(species_tree)
 
         # Extract bipartitions from all gene trees (topology only, no lengths).
-        # Restrict bipartitions to shared taxa without mutating gene tree objects.
+        # Builds tip sets bottom-up in a single postorder pass per gene tree,
+        # avoiding repeated get_terminals() calls (O(n) vs O(n²) per tree).
         gene_tree_splits = []
         for gt in gene_trees:
-            splits = set()
-            for clade in gt.get_nonterminals():
-                tips = frozenset(
-                    t.name for t in clade.get_terminals()
-                    if t.name in all_taxa_fs
-                )
-                if len(tips) <= 1 or tips == all_taxa_fs:
-                    continue
-                splits.add(self._canonical_split(tips, all_taxa_fs))
+            splits = self._extract_splits(gt, all_taxa_fs)
             gene_tree_splits.append(splits)
 
         result = {}

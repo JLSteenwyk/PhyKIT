@@ -615,6 +615,93 @@ class TestPlotWithExtraTaxa:
         assert os.path.getsize(output) > 0
 
 
+class TestTraversalEquivalence:
+    """Verify that _collect_taxa and _extract_splits produce identical
+    results to the Bio.Phylo get_terminals / get_nonterminals equivalents."""
+
+    @pytest.fixture
+    def svc(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=GENE_TREES,
+            verbose=False, json=False, plot_output=None,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_collect_taxa_matches_get_terminals(self, svc):
+        """_collect_taxa must return the same taxon names as
+        Bio.Phylo get_terminals() across all gene trees."""
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+
+        # Reference: Bio.Phylo get_terminals()
+        reference = set()
+        for gt in gene_trees:
+            for t in gt.get_terminals():
+                reference.add(t.name)
+
+        result = svc._collect_taxa(gene_trees)
+        assert result == reference
+
+    def test_extract_splits_matches_biopython(self, svc):
+        """_extract_splits must produce the same canonical bipartitions as
+        the Bio.Phylo get_nonterminals + get_terminals approach."""
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        species_tree = svc.read_tree_file()
+
+        all_taxa_fs = frozenset(
+            set(t.name for t in species_tree.get_terminals())
+            & set().union(*(
+                set(t.name for t in gt.get_terminals()) for gt in gene_trees
+            ))
+        )
+
+        for gt in gene_trees:
+            # Reference: original Bio.Phylo approach
+            ref_splits = set()
+            for clade in gt.get_nonterminals():
+                tips = frozenset(
+                    t.name for t in clade.get_terminals()
+                    if t.name in all_taxa_fs
+                )
+                if len(tips) <= 1 or tips == all_taxa_fs:
+                    continue
+                ref_splits.add(svc._canonical_split(tips, all_taxa_fs))
+
+            # Optimized version
+            opt_splits = svc._extract_splits(gt, all_taxa_fs)
+
+            assert opt_splits == ref_splits
+
+    def test_collect_taxa_with_extra_taxa(self, svc, tmp_path):
+        """_collect_taxa works correctly when gene trees have taxa
+        not present in the species tree."""
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_file.write_text("((a,x),(b,(c,d)));\n(a,(b,(c,(d,y))));\n")
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result = svc._collect_taxa(gene_trees)
+        assert result == {"a", "b", "c", "d", "x", "y"}
+
+    def test_extract_splits_with_filtered_taxa(self, svc, tmp_path):
+        """_extract_splits correctly filters to shared taxa only."""
+        from Bio import Phylo
+        from io import StringIO
+
+        gt = Phylo.read(StringIO("((a,x),(b,(c,d)));"), "newick")
+        all_taxa_fs = frozenset(["a", "b", "c", "d"])
+
+        splits = svc._extract_splits(gt, all_taxa_fs)
+
+        # x is filtered out, so (a,x) clade becomes just {a} (size 1, skipped).
+        # Remaining non-trivial clades:
+        #   (c,d): tips {c,d}, complement {a,b}, both size 2 -> tiebreak -> canonical {a,b}
+        #   (b,(c,d)): tips {b,c,d}, complement {a}, size 1 < 3 -> canonical {a}
+        assert frozenset(["a", "b"]) in splits
+        assert frozenset(["a"]) in splits
+        assert len(splits) == 2
+
+
 class TestCLI:
     def test_disc_asym_alias(self, capsys):
         from phykit.phykit import Phykit
