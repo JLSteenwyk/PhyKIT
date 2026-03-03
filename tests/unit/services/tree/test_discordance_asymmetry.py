@@ -110,7 +110,7 @@ class TestCountTopologies:
     def test_counts_with_sample_data(self, svc):
         species_tree = svc.read_tree_file()
         gene_trees = svc._parse_gene_trees(GENE_TREES)
-        result = svc._count_topologies(species_tree, gene_trees)
+        result, _ = svc._count_topologies(species_tree, gene_trees)
         assert isinstance(result, dict)
         assert len(result) > 0
         for branch_key, data in result.items():
@@ -124,7 +124,7 @@ class TestCountTopologies:
     def test_all_branches_present(self, svc):
         species_tree = svc.read_tree_file()
         gene_trees = svc._parse_gene_trees(GENE_TREES)
-        result = svc._count_topologies(species_tree, gene_trees)
+        result, _ = svc._count_topologies(species_tree, gene_trees)
         # Expected branches for the 8-taxon tree:
         # ((raccoon,bear),((sea_lion,seal),((monkey,cat),weasel)),dog)
         # Internal branches produce these canonical splits:
@@ -142,7 +142,7 @@ class TestCountTopologies:
         should be > 0.5 for all branches (majority are concordant in sample data)."""
         species_tree = svc.read_tree_file()
         gene_trees = svc._parse_gene_trees(GENE_TREES)
-        result = svc._count_topologies(species_tree, gene_trees)
+        result, _ = svc._count_topologies(species_tree, gene_trees)
         for branch_key, data in result.items():
             total = data["n_concordant"] + data["n_alt1"] + data["n_alt2"]
             if total == 0:
@@ -336,6 +336,283 @@ class TestPlot:
         svc.run()
         # If we get here without error, the test passes
         assert os.path.exists(output)
+
+
+class TestMissingTaxa:
+    """Test that taxa present in the species tree but absent from gene trees
+    (or vice versa) are handled correctly."""
+
+    @pytest.fixture
+    def svc(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=GENE_TREES,
+            verbose=False, json=False, plot_output=None,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_species_tree_has_extra_taxon(self, svc, tmp_path):
+        """Species tree has taxon 'e' absent from all gene trees.
+
+        Species tree: ((a,e),(b,(c,d)));
+        Gene trees use only {a,b,c,d}.
+
+        The (a,e) branch should be skipped (C1 or C2 empty after filtering).
+        The (c,d) and (b,(c,d)) branches should still produce correct counts.
+        """
+        from Bio import Phylo
+        from io import StringIO
+
+        species_tree = Phylo.read(StringIO("((a,e),(b,(c,d)));"), "newick")
+
+        # Write gene trees: all concordant with ((a),(b,(c,d)))
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = [
+            "(a,(b,(c,d)));",
+            "(a,(b,(c,d)));",
+            "(a,(b,(c,d)));",
+        ]
+        gt_file.write_text("\n".join(gt_lines))
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        # The branch grouping (a,e) should be skipped because 'e' is not in
+        # gene trees, making C2 empty after filtering
+        # We should still see branches for (c,d) and (b,(c,d)) -> complement is (a)
+        assert len(result) > 0
+
+        # (c,d) branch should be present and concordant
+        assert "c,d" in result
+        assert result["c,d"]["n_concordant"] == 3
+
+        # The branch for (a) vs (b,c,d) should NOT appear because the
+        # species-tree node grouping (a,e) becomes degenerate after filtering
+        # (e is removed, making C2 empty)
+
+    def test_gene_tree_has_extra_taxon(self, svc, tmp_path):
+        """Gene trees have taxon 'x' absent from species tree.
+
+        Species tree: (a,(b,(c,d)));
+        Gene trees include {a,b,c,d,x}.
+
+        The extra taxon 'x' should be ignored; results should match as if
+        gene trees only had {a,b,c,d}.
+        """
+        from Bio import Phylo
+        from io import StringIO
+
+        species_tree = Phylo.read(StringIO("(a,(b,(c,d)));"), "newick")
+
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = [
+            "((a,x),(b,(c,d)));",
+            "((a,x),(b,(c,d)));",
+            "((a,x),(b,(c,d)));",
+        ]
+        gt_file.write_text("\n".join(gt_lines))
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        # Extra taxon 'x' in gene trees should be ignored
+        assert "c,d" in result
+        assert result["c,d"]["n_concordant"] == 3
+
+    def test_degenerate_branch_filtered_out(self, svc, tmp_path):
+        """When filtering leaves a group empty, that branch is skipped entirely."""
+        from Bio import Phylo
+        from io import StringIO
+
+        # Species tree where one child of root has only taxa missing from gene trees
+        species_tree = Phylo.read(StringIO("((e,f),(a,(b,(c,d))));"), "newick")
+
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = [
+            "(a,(b,(c,d)));",
+            "(a,(b,(c,d)));",
+        ]
+        gt_file.write_text("\n".join(gt_lines))
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        # (e,f) branch should be entirely skipped (both taxa missing)
+        # (a,(b,(c,d))) subtree branches should still work
+        assert "c,d" in result
+        assert result["c,d"]["n_concordant"] == 2
+
+        # No branch key should reference e or f
+        for key in result:
+            assert "e" not in key
+            assert "f" not in key
+
+
+class TestBifurcatingRoot:
+    """Test that bifurcating root branches get correct NNI decomposition."""
+
+    @pytest.fixture
+    def svc(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=GENE_TREES,
+            verbose=False, json=False, plot_output=None,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_bifurcating_root_nni_alternatives(self, svc, tmp_path):
+        """Bifurcating root ((a,b),(c,(d,e))) with known NNI alternatives.
+
+        The root branch separates {a,b} from {c,d,e}.
+        Four subtrees: {a}, {b}, {c}, {d,e}.
+        Concordant: {a,b} | {c,d,e}
+        NNI alt 1: {a,c} | {b,d,e}   (swap b <-> c)
+        NNI alt 2: {a,d,e} | {b,c}   (swap b <-> d,e)
+        """
+        from Bio import Phylo
+        from io import StringIO
+
+        species_tree = Phylo.read(StringIO("((a,b),(c,(d,e)));"), "newick")
+
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = [
+            "((a,b),(c,(d,e)));",   # concordant
+            "((a,b),(c,(d,e)));",   # concordant
+            "((a,c),(b,(d,e)));",   # NNI alt: {a,c} | {b,d,e}
+            "((a,(d,e)),(b,c));",   # NNI alt: {b,c} | {a,d,e}
+        ]
+        gt_file.write_text("\n".join(gt_lines))
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        assert "a,b" in result
+        r = result["a,b"]
+        assert r["n_concordant"] == 2
+        # Both NNI alternatives should be detected (1 each)
+        assert r["n_alt1"] + r["n_alt2"] == 2
+        assert r["n_alt1"] == 1
+        assert r["n_alt2"] == 1
+
+    def test_bifurcating_root_leaf_sibling_skipped(self, svc, tmp_path):
+        """When root is bifurcating and sibling is a leaf, the root branch
+        should be skipped (only 3 subtrees, NNI not possible)."""
+        from Bio import Phylo
+        from io import StringIO
+
+        species_tree = Phylo.read(StringIO("(a,(b,(c,d)));"), "newick")
+
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = ["(a,(b,(c,d)));", "(a,(b,(c,d)));"]
+        gt_file.write_text("\n".join(gt_lines))
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        # The root branch (a | b,c,d) should be skipped because
+        # sibling 'a' is a leaf — can't form 4 subtrees for NNI.
+        # Only the (c,d) branch should remain.
+        assert "c,d" in result
+        # The branch_key "a" (root branch from bifurcating root with leaf)
+        # should not appear
+        assert "a" not in result
+
+
+class TestSiblingSelection:
+    """Test that sibling selection skips siblings with all-filtered taxa."""
+
+    @pytest.fixture
+    def svc(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=GENE_TREES,
+            verbose=False, json=False, plot_output=None,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_first_sibling_filtered_uses_second(self, svc, tmp_path):
+        """When siblings[0] taxa are all absent from gene trees, the code
+        should use the next sibling with valid taxa."""
+        from Bio import Phylo
+        from io import StringIO
+
+        # Trifurcating root: (e,f) has no shared taxa, (a,b) and (c,d) do
+        species_tree = Phylo.read(StringIO("((e,f),(a,b),(c,d));"), "newick")
+
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = [
+            "((a,b),(c,d));",
+            "((a,c),(b,d));",
+        ]
+        gt_file.write_text("\n".join(gt_lines))
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        # Branches for (a,b) and (c,d) should NOT be skipped — the code
+        # should find a valid sibling past the filtered-out (e,f)
+        assert len(result) > 0
+        assert "a,b" in result
+        assert result["a,b"]["n_concordant"] == 1
+
+
+class TestPlotWithExtraTaxa:
+    """Test that _plot correctly matches branch results when species tree
+    has extra taxa not in gene trees."""
+
+    def test_plot_with_extra_species_taxa(self, tmp_path):
+        """Plot should color branches correctly even when species tree has
+        taxa absent from gene trees."""
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        from Bio import Phylo
+        from io import StringIO
+
+        # Create species tree with extra taxon 'e'
+        sp_file = tmp_path / "species.tre"
+        sp_file.write_text("((a,e),(b,(c,d)));")
+
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_lines = [
+            "(a,(b,(c,d)));",
+            "(a,(b,(c,d)));",
+            "(a,(b,(c,d)));",
+        ]
+        gt_file.write_text("\n".join(gt_lines))
+
+        args = Namespace(
+            tree=str(sp_file), gene_trees=str(gt_file),
+            verbose=False, json=False, plot_output=None,
+        )
+        svc = DiscordanceAsymmetry(args)
+
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(str(gt_file))
+        result, shared_taxa = svc._count_topologies(species_tree, gene_trees)
+
+        # Build branch_results the same way run() does
+        branch_results = []
+        for branch_key in sorted(result.keys()):
+            data = result[branch_key]
+            test_result = svc._test_asymmetry(data["n_alt1"], data["n_alt2"])
+            entry = dict(
+                split=data["split"],
+                n_concordant=data["n_concordant"],
+                n_alt1=data["n_alt1"],
+                n_alt2=data["n_alt2"],
+            )
+            entry.update(test_result)
+            entry["fdr_p"] = None
+            branch_results.append(entry)
+
+        # Call _plot with shared_taxa — should not error and should create file
+        output = str(tmp_path / "test_plot.png")
+        svc._plot(species_tree, branch_results, output,
+                  shared_taxa=shared_taxa)
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
 
 
 class TestCLI:

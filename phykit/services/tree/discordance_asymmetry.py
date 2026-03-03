@@ -32,7 +32,7 @@ class DiscordanceAsymmetry(Tree):
         species_tree = self.read_tree_file()
         gene_trees = self._parse_gene_trees(self.gene_trees_path)
 
-        topology_counts = self._count_topologies(species_tree, gene_trees)
+        topology_counts, shared_taxa = self._count_topologies(species_tree, gene_trees)
 
         # Test each branch and collect results
         branch_results = []
@@ -82,7 +82,8 @@ class DiscordanceAsymmetry(Tree):
             self._output_text(branch_results, summary)
 
         if self.plot_output:
-            self._plot(species_tree, branch_results, self.plot_output)
+            self._plot(species_tree, branch_results, self.plot_output,
+                       shared_taxa=shared_taxa)
 
     # ------------------------------------------------------------------
     # Output methods
@@ -162,7 +163,8 @@ class DiscordanceAsymmetry(Tree):
         )
         print_json(result)
 
-    def _plot(self, species_tree, branch_results, output_path) -> None:
+    def _plot(self, species_tree, branch_results, output_path,
+              shared_taxa=None) -> None:
         """Phylogram colored by asymmetry ratio at each branch."""
         import matplotlib
         matplotlib.use("Agg")
@@ -178,7 +180,10 @@ class DiscordanceAsymmetry(Tree):
 
         parent_map = self._build_parent_map(species_tree)
         tips = list(species_tree.get_terminals())
-        all_taxa_fs = frozenset(t.name for t in tips)
+        # Use shared taxa (intersection with gene trees) for split label
+        # matching so labels are consistent with _count_topologies.
+        all_taxa_fs = (shared_taxa if shared_taxa is not None
+                       else frozenset(t.name for t in tips))
 
         # Compute node positions
         node_x = {}
@@ -212,7 +217,7 @@ class DiscordanceAsymmetry(Tree):
         for clade in species_tree.find_clades(order="preorder"):
             if clade.is_terminal():
                 continue
-            node_tips = frozenset(t.name for t in clade.get_terminals())
+            node_tips = frozenset(t.name for t in clade.get_terminals()) & all_taxa_fs
             split_label = (
                 sorted(node_tips)
                 if len(node_tips) <= len(all_taxa_fs) - len(node_tips)
@@ -376,25 +381,53 @@ class DiscordanceAsymmetry(Tree):
         if node.is_terminal() or len(node.clades) < 2:
             return None
 
-        C1 = frozenset(t.name for t in node.clades[0].get_terminals())
-        C2 = frozenset(t.name for t in node.clades[1].get_terminals())
+        C1 = frozenset(t.name for t in node.clades[0].get_terminals()) & all_taxa_fs
+        C2 = frozenset(t.name for t in node.clades[1].get_terminals()) & all_taxa_fs
         # If node has >2 children (polytomy), merge extras into C2
         for extra_child in node.clades[2:]:
-            C2 = C2 | frozenset(t.name for t in extra_child.get_terminals())
+            C2 = C2 | (frozenset(t.name for t in extra_child.get_terminals()) & all_taxa_fs)
 
         parent = parent_map.get(id(node))
         if parent is None:
             # node is root — no branch above it
             return None
 
-        # Get siblings of node under parent
+        # Get siblings of node under parent; pick the first sibling
+        # whose shared taxa are non-empty (avoids skipping valid branches
+        # when the first sibling's taxa are all absent from gene trees).
         siblings = [c for c in parent.clades if id(c) != id(node)]
         if not siblings:
             return None
 
-        S = frozenset(t.name for t in siblings[0].get_terminals())
+        chosen_sib = None
+        S = frozenset()
+        for sib in siblings:
+            candidate = frozenset(t.name for t in sib.get_terminals()) & all_taxa_fs
+            if candidate:
+                S = candidate
+                chosen_sib = sib
+                break
+
+        if not S:
+            return None
+
         # D = everything else (other siblings + above parent)
         D = all_taxa_fs - C1 - C2 - S
+
+        # For the root branch (D empty), the sibling encompasses the
+        # entire other side of the tree.  Decompose the sibling into its
+        # children to obtain proper 4-subtree NNI groups.
+        if not D:
+            if chosen_sib.is_terminal() or len(chosen_sib.clades) < 2:
+                return None
+            S = frozenset(t.name for t in chosen_sib.clades[0].get_terminals()) & all_taxa_fs
+            D = frozenset(t.name for t in chosen_sib.clades[1].get_terminals()) & all_taxa_fs
+            for extra in chosen_sib.clades[2:]:
+                D = D | (frozenset(t.name for t in extra.get_terminals()) & all_taxa_fs)
+
+        # Skip if any group is empty (branch is degenerate after taxon filtering)
+        if not C1 or not C2 or not S:
+            return None
 
         return C1, C2, S, D
 
@@ -452,7 +485,7 @@ class DiscordanceAsymmetry(Tree):
             n_alt1 = sum(1 for splits in gene_tree_splits if nni_alt1_bp in splits)
             n_alt2 = sum(1 for splits in gene_tree_splits if nni_alt2_bp in splits)
 
-            node_tips = frozenset(t.name for t in clade.get_terminals())
+            node_tips = frozenset(t.name for t in clade.get_terminals()) & all_taxa_fs
             split_label = (
                 sorted(node_tips)
                 if len(node_tips) <= len(all_taxa_fs) - len(node_tips)
@@ -465,7 +498,7 @@ class DiscordanceAsymmetry(Tree):
                 n_alt1=n_alt1,
                 n_alt2=n_alt2,
             )
-        return result
+        return result, all_taxa_fs
 
     # ------------------------------------------------------------------
     # Statistical testing
