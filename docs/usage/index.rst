@@ -28,7 +28,7 @@ Calling functions
    phykit <command> [optional command arguments]
 
 Command specific help messages can be viewed by adding a 
--h/\\-\\-help argument after the command. For example, to see the help message
+-h/--help argument after the command. For example, to see the help message
 for the command 'treeness', execute:
 
 .. code-block:: shell
@@ -237,7 +237,7 @@ Example output (`-v`):
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print entropy for each site |br|
+*-v/--verbose*: optional argument to print entropy for each site |br|
 *--plot*: save a per-site alignment entropy plot |br|
 *--plot-output*: output path for plot (default: ``alignment_entropy_plot.png``) |br|
 *--json*: optional argument to print results as JSON
@@ -470,7 +470,7 @@ H = C |br|
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-c/\-\-code*: argument to specify the recoding scheme to use |br|
+*-c/--code*: argument to specify the recoding scheme to use |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -504,7 +504,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment
+*-r/--reference*: reference alignment to compare the query alignment
 to |br|
 *--json*: optional argument to print results as JSON
 
@@ -587,7 +587,7 @@ used to help in the construction of multi-locus data
 matrices.
 
 PhyKIT will output three files:
-1) A fasta file with '.fa' appended to the prefix specified with the -p/\\-\\-prefix parameter.
+1) A fasta file with '.fa' appended to the prefix specified with the -p/--prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.
 
@@ -596,10 +596,10 @@ PhyKIT will output three files:
 	phykit create_concat -a <file> -p <string> [--threshold <float>] [--plot-occupancy] [--plot-output <path>] [--json]
 
 Options: |br|
-*-a/\\-\\-alignment*: alignment list file. File should contain a single column list of alignment
+*-a/--alignment*: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
-*-p/\\-\\-prefix*: prefix of output files |br|
+*-p/--prefix*: prefix of output files |br|
 *--threshold*: minimum fraction of informative (non-gap, non-ambiguous) sites across the
 concatenated alignment for a taxon to be included. Taxa whose effective occupancy falls
 below this value are excluded from the output. Set to 0 to disable filtering
@@ -669,7 +669,7 @@ should be associated with the -e argument.
 
 Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
-*-e/\\-\\-entry*: entry name to be extracted from the inputted fasta file |br|
+*-e/--entry*: entry name to be extracted from the inputted fasta file |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -690,7 +690,7 @@ Calculate GC content of a fasta file.
 
 GC content is negatively correlated with phylogenetic signal.
 
-If there are multiple entries, use the -v/\\-\\-verbose option
+If there are multiple entries, use the -v/--verbose option
 to determine the GC content of each fasta entry separately.
 Association between GC content and phylogenetic signal was
 determined by Shen et al., Genome Biology and Evolution (2016), 
@@ -702,7 +702,7 @@ doi: 10.1093/gbe/evw179.
 
 Options: |br|
 *<fasta>*: first argument after function name should be a fasta file |br|
-*-v/\\-\\-verbose*: optional argument to print the GC content of each fasta
+*-v/--verbose*: optional argument to print the GC content of each fasta
 entry |br|
 *--json*: optional argument to print results as JSON
 
@@ -726,9 +726,9 @@ maximum gap fraction, minimum occupancy, and maximum site entropy.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-g/\\-\\-max_gap*: maximum allowed fraction of missing/invalid characters at a site (default: 1.0) |br|
-*-o/\\-\\-min_occupancy*: minimum required occupancy at a site (default: 0.0) |br|
-*-e/\\-\\-max_entropy*: maximum allowed site entropy (default: no filter) |br|
+*-g/--max_gap*: maximum allowed fraction of missing/invalid characters at a site (default: 1.0) |br|
+*-o/--min_occupancy*: minimum required occupancy at a site (default: 0.0) |br|
+*-e/--max_entropy*: maximum allowed site entropy (default: no filter) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -794,8 +794,8 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-v/\\-\\-verbose*: optional argument to print identity per pair|br|
-*-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
+*-v/--verbose*: optional argument to print identity per pair|br|
+*-e/--exclude_gaps*: if a site has a gap, ignore it |br|
 *--plot*: save a clustered pairwise-identity heatmap |br|
 *--plot-output*: output path for heatmap (default: pairwise_identity_heatmap.png) |br|
 *--json*: optional argument to print results as JSON
@@ -861,7 +861,7 @@ Outlier evaluation uses the same features as ``alignment_outlier_taxa``:
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
-*-o/\\-\\-output*: output image path (default: ``alignment_qc.png``) |br|
+*-o/--output*: output image path (default: ``alignment_qc.png``) |br|
 *--width*: figure width in inches (default: ``14.0``) |br|
 *--height*: figure height in inches (default: ``10.0``) |br|
 *--dpi*: output image DPI (default: ``300``) |br|
@@ -906,10 +906,10 @@ should be provided in the -p/--protein argument.
    phykit thread_dna -p <file> -n <file> [-s] [--json]
 
 Options: |br|
-*-p/\\-\\-protein*: protein alignment file |br|
-*-n/\\-\\-nucleotide*: nucleotide sequence file |br|
-*-c/\\-\\-clipkit_log*: clipkit outputted log file |br|
-*-s/\\-\\-stop*: boolean for whether or not stop codons should be kept. 
+*-p/--protein*: protein alignment file |br|
+*-n/--nucleotide*: nucleotide sequence file |br|
+*-c/--clipkit_log*: clipkit outputted log file |br|
+*-s/--stop*: boolean for whether or not stop codons should be kept. 
 If used, stop codons will be removed. |br|
 *--json*: optional argument to print results as JSON
 
@@ -995,7 +995,7 @@ an alignment file.
 
 Options: |br|
 *<fasta>*: first argument after function name should be a FASTA file |br|
-*-i/\\-\\-idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2) |br|
+*-i/--idmap*: identifier map of current FASTA names (col1) and desired FASTA names (col2) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1024,7 +1024,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment file to be scored for accuracy |br|
-*-r/\\-\\-reference*: reference alignment to compare the query alignment
+*-r/--reference*: reference alignment to compare the query alignment
 to |br|
 *--json*: optional argument to print results as JSON
 
@@ -1106,11 +1106,11 @@ specifies which column to use.
    phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a phylogenetic tree file |br|
-*-d/\\-\\-trait_data*: trait data file (two-column or multi-trait with header) |br|
-*-c/\\-\\-trait*: trait column name (required for multi-trait files) |br|
+*-t/--tree*: a phylogenetic tree file |br|
+*-d/--trait_data*: trait data file (two-column or multi-trait with header) |br|
+*-c/--trait*: trait column name (required for multi-trait files) |br|
 *--type*: trait type: ``continuous`` or ``discrete`` (default: ``continuous``) |br|
-*-m/\\-\\-method*: method to use: ``fast`` or ``ml`` (continuous only; default: ``fast``) |br|
+*-m/--method*: method to use: ``fast`` or ``ml`` (continuous only; default: ``fast``) |br|
 *--model*: Mk model: ``ER``, ``SYM``, or ``ARD`` (discrete only; default: ``ER``) |br|
 *--ci*: include 95% confidence intervals (continuous only) |br|
 *--plot*: output path for plot (requires matplotlib) |br|
@@ -1152,8 +1152,8 @@ Two metrics are available:
    phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>] [--json]
 
 Options: |br|
-*-g/\\-\\-gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
-*-t/\\-\\-tree*: species tree (optional; flags species-tree bipartitions in loadings) |br|
+*-g/--gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
+*-t/--tree*: species tree (optional; flags species-tree bipartitions in loadings) |br|
 *--metric*: distance metric: ``nrf`` or ``wrf`` (default: ``nrf``) |br|
 *--clusters*: override auto-detected number of clusters |br|
 *--n-pcs*: number of PCs to report (default: min(10, G-1)) |br|
@@ -1204,11 +1204,11 @@ Two strategies are available:
        [--plot <output>] [--missing-taxa error|shared] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: species tree file |br|
-*-g/\\-\\-gene-trees*: file with gene trees (multi-Newick, one per line) |br|
-*-d/\\-\\-trait_data*: trait data file (two-column or multi-trait with header) |br|
-*-c/\\-\\-trait*: trait column name (required for multi-trait files) |br|
-*-m/\\-\\-method*: method to use: ``weighted`` or ``distribution`` (default: ``weighted``) |br|
+*-t/--tree*: species tree file |br|
+*-g/--gene-trees*: file with gene trees (multi-Newick, one per line) |br|
+*-d/--trait_data*: trait data file (two-column or multi-trait with header) |br|
+*-c/--trait*: trait column name (required for multi-trait files) |br|
+*-m/--method*: method to use: ``weighted`` or ``distribution`` (default: ``weighted``) |br|
 *--ci*: include 95% confidence intervals |br|
 *--plot*: output path for concordance ASR plot |br|
 *--missing-taxa*: how to handle taxa mismatches: ``shared`` (default, prune to intersection) or ``error`` (reject) |br|
@@ -1255,7 +1255,7 @@ Calculate summary statistics for bipartition support.
 High bipartition support values are thought to be desirable because
 they are indicative of greater certainty in tree topology.
 
-To obtain all bipartition support values, use the -v/\\-\\-verbose option.
+To obtain all bipartition support values, use the -v/--verbose option.
 In addition to support values for each node, the names of all terminal
 branches tips are also included. Each terminal branch name is separated
 with a semi-colon (;).
@@ -1267,7 +1267,7 @@ with a semi-colon (;).
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all bipartition support values |br|
+*-v/--verbose*: optional argument to print all bipartition support values |br|
 *--thresholds*: optional comma-separated support cutoffs; prints count and
 fraction of bipartitions below each cutoff |br|
 *--json*: optional argument to print results as JSON
@@ -1306,8 +1306,8 @@ or other analyses.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-f/\\-\\-factor*: factor to multiply branch lengths by |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
+*-f/--factor*: factor to multiply branch lengths by |br|
+*-o/--output*: optional argument to name the outputted tree file. Default 
 output will have the same name as the input file but with the suffix ".factor_(n).tre" |br|
 *--json*: optional argument to print results as JSON
 
@@ -1331,9 +1331,9 @@ value.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-s/\\-\\-support*: bipartitions with support less than this value will be 
+*-s/--support*: bipartitions with support less than this value will be 
 collapsed |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file. Default 
+*-o/--output*: optional argument to name the outputted tree file. Default 
 output will have the same name as the input file but with the suffix 
 ".collapsed_(support).tre" |br|
 *--json*: optional argument to print results as JSON
@@ -1361,7 +1361,7 @@ Input can be either:
    phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>] [--json]
 
 Options: |br|
-*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
 *--threshold*: minimum split frequency to include, between 0 and 1 (default: ``0.1``) |br|
 *--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
 *--plot-output*: output filename for the circular splits network plot (optional) |br|
@@ -1405,8 +1405,8 @@ Missing taxa handling:
    phykit consensus_tree -t/--trees <trees> [-m/--method strict|majority] [--missing-taxa error|shared] [--json]
 
 Options: |br|
-*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
-*-m/\\-\\-method*: consensus method (``strict`` or ``majority``; default: ``majority``) |br|
+*-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*-m/--method*: consensus method (``strict`` or ``majority``; default: ``majority``) |br|
 *--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
 *--json*: optional argument to print results as JSON
 
@@ -1442,10 +1442,10 @@ as the reference (R² = 0).
    phykit fit_continuous -t <tree> -d <trait_data> [--models BM,OU,Lambda] [-g <gene_trees>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
 *--models*: comma-separated list of models to fit (default: all 7) |br|
-*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -1483,9 +1483,9 @@ and mapped onto branches using a color gradient (coolwarm colormap).
    phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-o/--output*: output plot file path (required) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/contmap_example.png
@@ -1512,10 +1512,10 @@ line crossings.
    phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree1*: first tree file in Newick format |br|
-*-t2/\\-\\-tree2*: second tree file in Newick format |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
-*-m/\\-\\-mapping*: optional tab-delimited mapping file (taxon1<tab>taxon2) |br|
+*-t/--tree1*: first tree file in Newick format |br|
+*-t2/--tree2*: second tree file in Newick format |br|
+*-o/--output*: output plot file path (required) |br|
+*-m/--mapping*: optional tab-delimited mapping file (taxon1<tab>taxon2) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/cophylo_example.png
@@ -1560,9 +1560,9 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be an alignment file |br|
 *<tree_file_one>*: first argument after function name should be an alignment file |br| 
-*-r/\\-\\-reference*: a tree to correct branch lengths by in the two input trees. Typically, 
+*-r/--reference*: a tree to correct branch lengths by in the two input trees. Typically, 
 this is a putative species tree. |br|
-*-v/\\-\\-verbose*: print out corrected branch lengths shared between tree 0 and tree 1 |br|
+*-v/--verbose*: print out corrected branch lengths shared between tree 0 and tree 1 |br|
 *--plot*: save a covarying-rates scatter plot |br|
 *--plot-output*: output path for plot (default: ``covarying_rates_plot.png``) |br|
 *--json*: optional argument to print results as JSON
@@ -1616,11 +1616,11 @@ computes the fraction of simulations in each state.
    phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>state) |br|
-*-c/\\-\\-trait*: column name of the trait to map |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
-*-n/\\-\\-nsim*: number of stochastic mapping simulations (default: 100) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>state) |br|
+*-c/--trait*: column name of the trait to map |br|
+*-o/--output*: output plot file path (required) |br|
+*-n/--nsim*: number of stochastic mapping simulations (default: 100) |br|
 *--seed*: random seed for reproducibility |br|
 *--json*: optional argument to print results as JSON
 
@@ -1661,10 +1661,10 @@ concordant and discordant gene trees is also reported.
    phykit evo_tempo_map -t <species_tree> -g <gene_trees> [--plot <output>] [-v] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a species tree file |br|
-*-g/\\-\\-gene-trees*: multi-Newick file of gene trees with branch lengths |br|
+*-t/--tree*: a species tree file |br|
+*-g/--gene-trees*: multi-Newick file of gene trees with branch lengths |br|
 *--plot*: optional output path for box/strip plot (PNG) |br|
-*-v/\\-\\-verbose*: print per-gene-tree classification details |br|
+*-v/--verbose*: print per-gene-tree classification details |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -1733,10 +1733,10 @@ using Benjamini-Hochberg FDR.
    phykit discordance_asymmetry -t <species_tree> -g <gene_trees> [--plot <output>] [-v] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a species tree file |br|
-*-g/\\-\\-gene-trees*: multi-Newick file of gene trees (branch lengths not required) |br|
+*-t/--tree*: a species tree file |br|
+*-g/--gene-trees*: multi-Newick file of gene trees (branch lengths not required) |br|
 *--plot*: optional output path for asymmetry phylogram (PNG) |br|
-*-v/\\-\\-verbose*: print per-branch details |br|
+*-v/--verbose*: print per-branch details |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -1861,8 +1861,8 @@ doi: 10.1093/molbev/msz067.
    phykit hidden_paralogy_check <tree> -c/--clade <clade_file> [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: input file tree name |br|
-*-c/\\-\\-clade*: clade file detailing which monophyletic lineages should
+*-t/--tree*: input file tree name |br|
+*-c/--clade*: clade file detailing which monophyletic lineages should
 be scanned for |br|
 *--json*: optional argument to print results as JSON
 
@@ -1879,7 +1879,7 @@ Calculate summary statistics for internal branch lengths in a phylogeny.
 
 Internal branch lengths can be useful for phylogeny diagnostics.
 
-To obtain all internal branch lengths, use the -v/\\-\\-verbose option.   
+To obtain all internal branch lengths, use the -v/--verbose option.   
 
 .. code-block:: shell
 
@@ -1887,7 +1887,7 @@ To obtain all internal branch lengths, use the -v/\\-\\-verbose option.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all internal branch lengths |br|
+*-v/--verbose*: optional argument to print all internal branch lengths |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1909,7 +1909,7 @@ or otherwise.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to name the outputted tree file |br|
+*-o/--output*: optional argument to name the outputted tree file |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1932,7 +1932,7 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-*-o/\\-\\-output*: optional argument to name the outputted tree file |br|
+*-o/--output*: optional argument to name the outputted tree file |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1960,8 +1960,8 @@ reflecting recent ecological opportunity or mass extinction recovery).
    phykit ltt -t <tree> [-v/--verbose] [--plot-output <file>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a rooted phylogeny file with branch lengths (required) |br|
-*-v/\\-\\-verbose*: print branching times and full LTT data points |br|
+*-t/--tree*: a rooted phylogeny file with branch lengths (required) |br|
+*-v/--verbose*: print branching times and full LTT data points |br|
 *--plot-output*: output filename for the LTT plot (PNG, PDF, SVG) |br|
 *--json*: output results as JSON
 
@@ -2095,7 +2095,7 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all LB score values |br|
+*-v/--verbose*: optional argument to print all LB score values |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2169,9 +2169,9 @@ per-regime σ² values, the average is used.
    phykit ouwie -t <tree> -d <trait_data> -r <regime_data> [--models BM1,OUM,OUMVA] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-r/--regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
 *--models*: comma-separated list of models to fit (default: all 7) |br|
 *--json*: optional argument to print results as JSON
 
@@ -2247,7 +2247,7 @@ The output file will also include the original phylogeny.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-o/\\-\\-output*: optional argument to specify output file name |br|
+*-o/--output*: optional argument to specify output file name |br|
 *--json*: optional argument to print summary metadata as JSON
 
 |
@@ -2300,15 +2300,15 @@ Two signal metrics are available (same as ``phylogenetic_signal``):
    phykit network_signal -t <tree> -d <trait_data> --quartet-json <quartets.json> [--method both|blombergs_k|lambda] [--permutations 1000] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a rooted species tree in Newick format (with branch lengths) |br|
-*-d/\\-\\-trait-data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
+*-t/--tree*: a rooted species tree in Newick format (with branch lengths) |br|
+*-d/--trait-data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
 *--hybrid*: one or more hybrid edge specifications (donor:recipient:gamma); |br|
 donor is the source lineage, recipient receives gene flow, gamma is the |br|
 inheritance proportion from the donor (e.g., ``B:C:0.3``) |br|
 *--quartet-json*: path to JSON output from ``phykit quartet_network --json`` |br|
 *--method*: ``both`` (default), ``blombergs_k``, or ``lambda`` |br|
 *--permutations*: number of permutations for K p-value (default: 1000) |br|
-*-v/\\-\\-verbose*: print network VCV matrix details |br|
+*-v/--verbose*: print network VCV matrix details |br|
 *--json*: optional argument to print results as JSON
 
 Output for default (both) mode: |br|
@@ -2472,8 +2472,8 @@ The algorithm:
    phykit l1ou -t <tree> -d <trait_data> [--criterion pBIC] [--max-shifts N] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
 *--criterion*: model selection criterion: pBIC (default), BIC, or AICc |br|
 *--max-shifts*: maximum number of shifts to consider (default: n/2) |br|
 *--json*: optional argument to print results as JSON
@@ -2558,7 +2558,7 @@ will be tab separated.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all tip-to-tip distances |br|
+*-v/--verbose*: optional argument to print all tip-to-tip distances |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2580,9 +2580,9 @@ Ancestral states are reconstructed via maximum-likelihood.
    phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-o/\\-\\-output*: output plot file path (required) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-o/--output*: output plot file path (required) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/phenogram_example.png
@@ -2625,15 +2625,15 @@ full vs. intercept-only model log-likelihoods).
    phykit phylogenetic_glm -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] --family <binomial|poisson> [-g <gene_trees>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
-*-y/\\-\\-response*: response (dependent) variable column name |br|
-*-x/\\-\\-predictors*: one or more predictor column names |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited multi-trait file with header row |br|
+*-y/--response*: response (dependent) variable column name |br|
+*-x/--predictors*: one or more predictor column names |br|
 *--family*: distribution family: binomial or poisson |br|
 *--method*: estimation method: logistic_MPLE or poisson_GEE (auto from family) |br|
 *--btol*: linear predictor bound for logistic model (default: 10) |br|
 *--log-alpha-bound*: bound on log(alpha) for logistic model (default: 4) |br|
-*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2716,8 +2716,8 @@ lambda+corr) within numerical tolerance (1e-4).
    phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [-g <gene_trees>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited multi-trait file with header row |br|
 *--method*: ordination method: ``pca``, ``tsne``, or ``umap`` (default: pca) |br|
 *--correction*: phylogenetic correction: ``BM`` or ``lambda`` (default: BM) |br|
 *--mode*: PCA mode: ``cov`` or ``corr`` (default: cov; PCA only) |br|
@@ -2732,7 +2732,7 @@ Options: |br|
 *--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
 *--tree-color-by*: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) |br|
 *--plot-output*: output path for plot (default: phylo_ordination_plot.png) |br|
-*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2784,12 +2784,12 @@ decimal places for both simple and multiple regression.
    phykit phylogenetic_regression -t <tree> -d <trait_data> -y <response> -x <predictor1> [predictor2 ...] [-m <method>] [-g <gene_trees>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
-*-y/\\-\\-response*: response (dependent) variable column name |br|
-*-x/\\-\\-predictors*: one or more predictor column names |br|
-*-m/\\-\\-method*: method to use: BM or lambda (default: BM) |br|
-*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited multi-trait file with header row |br|
+*-y/--response*: response (dependent) variable column name |br|
+*-x/--predictors*: one or more predictor column names |br|
+*-m/--method*: method to use: BM or lambda (default: BM) |br|
+*-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2840,11 +2840,11 @@ and branch length scales. All metrics show Pearson r > 0.999 with phytools.
    phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [-g <gene_trees>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
-*-m/\\-\\-method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
-*-p/\\-\\-permutations*: number of permutations for Blomberg's K (default: 1000) |br|
-*-g/\\-\\-gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon_name<tab>trait_value) |br|
+*-m/--method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
+*-p/--permutations*: number of permutations for Blomberg's K (default: 1000) |br|
+*-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2885,8 +2885,8 @@ are omitted, the first two columns are selected automatically.
    phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited multi-trait file with header row |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited multi-trait file with header row |br|
 *--trait-x*: column name for x-axis trait |br|
 *--trait-y*: column name for y-axis trait |br|
 *--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
@@ -2928,9 +2928,9 @@ frequencies.
    phykit polytomy_test -t/--trees <trees> -g/--groups <groups> [--json]
 
 Options: |br|
-*-t/\\-\\-trees <trees>*: single column file with the names of 
+*-t/--trees <trees>*: single column file with the names of 
 phylogenies to use for polytomy testing |br|
-*-g/\\-\\-groups*: a tab-delimited file with the grouping designations
+*-g/--groups*: a tab-delimited file with the grouping designations
 to test. Lines starting with commetns are not considered. Names of
 individual taxa should be separated by a semi-colon ';' |br|
 *--json*: optional argument to print results as JSON
@@ -2963,7 +2963,7 @@ but branch lengths can be removed using the -r/--remove argument.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-r/\\-\\-remove*: optional argument to print the phylogeny without branch
+*-r/--remove*: optional argument to print the phylogeny without branch
 lengths |br|
 *--json*: optional argument to print results as JSON
 
@@ -2990,10 +2990,10 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *<list_of_taxa>*: single column file with the names of the tips to remove
 from the phylogeny |br|
-*-o/\\-\\-output*: name of output file for the pruned phylogeny. 
+*-o/--output*: name of output file for the pruned phylogeny. 
 Default output will have the same name as the input file but with the suffix 
 ".pruned" |br|
-*-k/\-\-keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
+*-k/--keep*: optional argument. If used instead of pruning taxa in <list_of_taxa>,
 keep them |br|
 *--json*: optional argument to print results as JSON
 |
@@ -3037,7 +3037,7 @@ Input can be either:
    phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>] [--json]
 
 Options: |br|
-*-t/\\-\\-trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
+*-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
 *--alpha*: significance level for the T3 tree model test (default: ``0.05``) |br|
 *--beta*: threshold for the star tree test; quartets with p_star > beta are called unresolved (default: ``0.95``) |br|
 *--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
@@ -3102,10 +3102,10 @@ number of tips per regime.
    phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file (taxon<tab>value) |br|
-*-r/\\-\\-regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
-*-n/\\-\\-nsim*: number of parametric bootstrap simulations (default: 0) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
+*-r/--regime_data*: tab-delimited regime file (taxon<tab>regime_label) |br|
+*-n/--nsim*: number of parametric bootstrap simulations (default: 0) |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: output plot file path for phylogram with colored branches |br|
 *--json*: optional argument to print results as JSON
@@ -3132,9 +3132,9 @@ phylogeny.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-i/\\-\\-idmap*: identifier map of current tip names (col1) and desired
+*-i/--idmap*: identifier map of current tip names (col1) and desired
 tip names (col2) |br|
-*-o/\\-\\-output*: optional argument to write the renamed tree files to. Default
+*-o/--output*: optional argument to write the renamed tree files to. Default
 output will have the same name as the input file but with the suffix ".renamed" |br|
 *--json*: optional argument to print results as JSON
 
@@ -3197,8 +3197,8 @@ the suffix ".rooted".
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file to root|br|
-*-r/\\-\\-root*: single column file with taxa names to root the phylogeny on|br|
-*-o/\\-\\-output*: optional argument to specify the name of the output file |br|
+*-r/--root*: single column file with taxa names to root the phylogeny on|br|
+*-o/--output*: optional argument to specify the name of the output file |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3233,11 +3233,11 @@ Cell doi: 10.1016/j.cell.2018.10.023.
 
 .. code-block:: shell
 
-   phykit spurious_seq <file> -f/\\-\\-factor [--json]
+   phykit spurious_seq <file> -f/--factor [--json]
 
 Options: |br|
 *<file>*: first argument after function name should be a tree file |br|
-*-f/\\-\\-factor*: factor to multiply median branch length by to calculate
+*-f/--factor*: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20) |br|
 *--json*: optional argument to print results as JSON
 
@@ -3287,11 +3287,11 @@ nesting) are verified.
    phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a tree file in Newick format |br|
-*-d/\\-\\-trait_data*: tab-delimited trait file with header row |br|
-*-c/\\-\\-trait*: column name for discrete character trait |br|
-*-m/\\-\\-model*: substitution model: ER, SYM, or ARD (default: ER) |br|
-*-n/\\-\\-nsim*: number of stochastic mapping simulations (default: 100) |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file with header row |br|
+*-c/--trait*: column name for discrete character trait |br|
+*-m/--model*: substitution model: ER, SYM, or ARD (default: ER) |br|
+*-n/--nsim*: number of stochastic mapping simulations (default: 100) |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: output plot file path for phylogram with colored branches |br|
 *--json*: optional argument to print results as JSON
@@ -3309,7 +3309,7 @@ Calculate summary statistics for terminal branch lengths in a phylogeny.
 
 Terminal branch lengths can be useful for phylogeny diagnostics.
 
-To obtain all terminal branch lengths, use the -v/\\-\\-verbose option.   
+To obtain all terminal branch lengths, use the -v/--verbose option.   
 
 .. code-block:: shell
 
@@ -3317,7 +3317,7 @@ To obtain all terminal branch lengths, use the -v/\\-\\-verbose option.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
-*-v/\\-\\-verbose*: optional argument to print all terminal branch lengths |br|
+*-v/--verbose*: optional argument to print all terminal branch lengths |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3362,8 +3362,8 @@ discrete+discrete, or continuous+continuous.
    phykit threshold_model -t <tree> -d <trait_data> --traits <t1,t2> --types <type1,type2> [--ngen 100000] [--sample 100] [--burnin 0.2] [--seed <int>] [--plot <file>] [--json]
 
 Options: |br|
-*-t/\\-\\-tree*: a rooted phylogeny file with branch lengths (required) |br|
-*-d/\\-\\-trait-data*: tab-delimited trait file with header row (required) |br|
+*-t/--tree*: a rooted phylogeny file with branch lengths (required) |br|
+*-d/--trait-data*: tab-delimited trait file with header row (required) |br|
 *--traits*: comma-separated pair of trait column names (required) |br|
 *--types*: comma-separated pair of trait types, each ``discrete`` or ``continuous`` (required) |br|
 *--ngen*: number of MCMC generations (default: 100000) |br|
@@ -3619,10 +3619,10 @@ Test statistic: ``chi2 = (m1 - m2)^2 / (m1 + m2)``, with 1 degree of freedom.
    phykit relative_rate_test -l <alignment_list> -t <rooted_tree> [-v/--verbose] [--json]
 
 Options: |br|
-*-a/\\-\\-alignment*: a single alignment file |br|
-*-l/\\-\\-alignment-list*: a file with one alignment path per line (batch mode) |br|
-*-t/\\-\\-tree*: a rooted tree file |br|
-*-v/\\-\\-verbose*: print additional detail |br|
+*-a/--alignment*: a single alignment file |br|
+*-l/--alignment-list*: a file with one alignment path per line (batch mode) |br|
+*-t/--tree*: a rooted tree file |br|
+*-v/--verbose*: print additional detail |br|
 *--plot-output*: save a pairwise p-value heatmap to this path |br|
 *--json*: optional argument to print results as JSON
 
@@ -3692,10 +3692,10 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
    phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>] [--json]
 
 Options: |br|
-*-a/\\-\\-alignment*: an alignment file |br|
-*-t/\\-\\-tree*: a tree file |br|
-*-e/\-\-exclude_gaps*: if a site has a gap, ignore it |br|
-*-v/\\-\\-verbose*: print out patristic distances and uncorrected |br|
+*-a/--alignment*: an alignment file |br|
+*-t/--tree*: a tree file |br|
+*-e/--exclude_gaps*: if a site has a gap, ignore it |br|
+*-v/--verbose*: print out patristic distances and uncorrected |br|
 distances used to determine saturation |br|
 *--plot*: save a saturation scatter plot with fitted slope through origin |br|
 *--plot-output*: output path for saturation plot (default: ``saturation_plot.png``) |br|
@@ -3727,8 +3727,8 @@ Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.
    phykit treeness_over_rcv -a/--alignment <alignment> -t/--tree <tree> [--json]
 
 Options: |br|
-*-a/\\-\\-alignment*: an alignment file |br|
-*-t/\\-\\-tree*: a tree file |br|
+*-a/--alignment*: an alignment file |br|
+*-t/--tree*: a tree file |br|
 *--json*: optional argument to print results as JSON
 
 .. |br| raw:: html
