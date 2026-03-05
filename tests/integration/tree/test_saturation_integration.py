@@ -48,7 +48,7 @@ class TestSaturation(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_saturation_incorrect_alignment_path(self, mocked_print):
@@ -57,7 +57,7 @@ class TestSaturation(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_saturation_verbose(self, mocked_print):

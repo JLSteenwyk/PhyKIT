@@ -126,7 +126,7 @@ class TestTBS(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_terminal_branch_stats_json_summary(self, mocked_print):

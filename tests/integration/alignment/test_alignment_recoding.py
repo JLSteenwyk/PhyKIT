@@ -19,7 +19,7 @@ class TestAlignmentRecoding(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_alignment_recoding_ry_nucleotide(self, mocked_print):

@@ -96,7 +96,7 @@ class TestRF(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_rf_distance_incorrect_tree1_path(self, mocked_print):
@@ -104,7 +104,7 @@ class TestRF(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_rf_distance_json(self, mocked_print):

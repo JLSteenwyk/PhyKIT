@@ -72,12 +72,12 @@ class TestInternodeLabeler(object):
 
     @patch("builtins.print")
     def test_internode_labeler_incorrect_path(self, mocked_print):
-        
+
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_internode_labeler_json(self, mocked_print):

@@ -60,7 +60,7 @@ class TestPruneTree(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_prune_wrong_path_list(self, mocked_print):
@@ -69,7 +69,7 @@ class TestPruneTree(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_prune_alias(self, mocked_print):

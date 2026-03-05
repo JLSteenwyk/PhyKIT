@@ -40,7 +40,7 @@ class TestPrintTree(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_alias0(self, mocked_print):
@@ -50,38 +50,38 @@ class TestPrintTree(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
-        
+        assert pytest_wrapped_e.value.code == 2
+
 
     @patch("builtins.print")
     def test_print_tree_alias1(self, mocked_print):
-        
+
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_remove_branch_lengths_short(self, mocked_print):
-        
+
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_remove_branch_lengths_long(self, mocked_print):
-        
+
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 1
+        assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_json(self, mocked_print):
