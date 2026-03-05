@@ -40,7 +40,7 @@ software dependency issues. To do so, execute the following commands:
 	# install phykit
 	pip install phykit
 
-**Note, the virtual environment must be activated to use phykit.**
+**Note, the virtual environment must be activated to use PhyKIT.**
 
 After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:
 
@@ -73,7 +73,7 @@ To deactivate your virtual environment, use the following command:
 	# deactivate virtual environment
 	deactivate
 
-**Note, the virtual environment must be activated to use phykit.**
+**Note, the virtual environment must be activated to use PhyKIT.**
 
 |
 

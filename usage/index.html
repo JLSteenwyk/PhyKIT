@@ -428,8 +428,8 @@ With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.
 <p>Function names: alignment_length; aln_len; al <br/>
 Command line interface: pk_alignment_length; pk_aln_len; pk_al</p>
 <p>Length of an input alignment is calculated using this function.</p>
-<p>Longer alignments are associated with strong phylogenetic signal.</p>
-<p>Association between alignment length and phylogenetic signal
+<p>Longer alignments are associated with a strong phylogenetic signal.</p>
+<p>The association between alignment length and phylogenetic signal
 was determined by Shen et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
@@ -449,13 +449,13 @@ doi: 10.1093/gbe/evw179.</p>
 <p>Function names: alignment_length_no_gaps; aln_len_no_gaps; alng <br/>
 Command line interface: pk_alignment_length_no_gaps; pk_aln_len_no_gaps; pk_alng</p>
 <p>Calculate alignment length excluding sites with gaps.</p>
-<p>Longer alignments when excluding sites with gaps is
-associated with strong phylogenetic signal.</p>
+<p>Longer alignments when excluding sites with gaps are
+associated with a strong phylogenetic signal.</p>
 <p>PhyKIT reports three tab delimited values:
 col1: number of sites without gaps
 col2: total number of sites
 col3: percentage of sites without gaps</p>
-<p>Association between alignment length when excluding sites
+<p>The association between alignment length when excluding sites
 with gaps and phylogenetic signal was determined by Shen
 et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
@@ -619,7 +619,7 @@ H = C <br/></p>
 <p>Function names: column_score; cs <br/>
 Command line interface: pk_column_score; pk_cs</p>
 <p>Calculates column score.</p>
-<p>Column is an accuracy metric for a multiple alignment relative
+<p>Column score is an accuracy metric for a multiple alignment relative
 to a reference alignment. It is calculated by summing the correctly
 aligned columns over all columns in an alignment. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
@@ -689,8 +689,8 @@ fasta alignment to calculate the site-wise compositional bias of <br/>
 <span id="cmd-create-concatenation-matrix"></span><h3>Create concatenation matrix<a class="headerlink" href="#create-concatenation-matrix" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/create_concat_matrix.png"><img alt="../_images/create_concat_matrix.png" class="align-center" src="../_images/create_concat_matrix.png" style="width: 75%;" />
 </a>
-<p>Function names: create_concatenation_matrix, create_concat, cc <br/>
-Command line interface: pk_create_concatenation_matrix, pk_create_concat, pk_cc</p>
+<p>Function names: create_concatenation_matrix; create_concat; cc <br/>
+Command line interface: pk_create_concatenation_matrix; pk_create_concat; pk_cc</p>
 <p>Create a concatenated alignment file. This function is
 used to help in the construction of multi-locus data
 matrices.</p>
@@ -748,9 +748,9 @@ fasta alignment to calculate the site-wise evolutionary rate of <br/>
 </a>
 <p>Function names: faidx; get_entry; ge <br/>
 Command line interface: pk_faidx; pk_get_entry; pk_ge</p>
-<p>Extracts sequence entry from fasta file.</p>
+<p>Extracts a sequence entry from a fasta file.</p>
 <p>This function works similarly to the faidx function
-in samtools, but does not requiring an indexing step.</p>
+in samtools, but does not require an indexing step.</p>
 <p>To obtain multiple entries, input multiple entries separated
 by a comma (,). For example, if you want entries
 named &quot;seq_0&quot; and &quot;seq_1&quot;, the string &quot;seq_0,seq_1&quot;
@@ -776,7 +776,7 @@ Command line interface: pk_gc_content; pk_gc</p>
 <p>GC content is negatively correlated with phylogenetic signal.</p>
 <p>If there are multiple entries, use the -v/--verbose option
 to determine the GC content of each fasta entry separately.
-Association between GC content and phylogenetic signal was
+The association between GC content and phylogenetic signal was
 determined by Shen et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>gc_content<span class="w"> </span>&lt;fasta&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
@@ -837,8 +837,8 @@ for each taxon.</p>
 <span id="cmd-pairwise-identity"></span><h3>Pairwise identity<a class="headerlink" href="#pairwise-identity" title="Link to this heading"></a></h3>
 <a class="reference internal image-reference" href="../_images/pairwise_identity.png"><img alt="../_images/pairwise_identity.png" class="align-center" src="../_images/pairwise_identity.png" style="width: 75%;" />
 </a>
-<p>Function names: pairwise_identity; pairwise_id, pi <br/>
-Command line interface: pk_pairwise_identity; pk_pairwise_id, pk_pi</p>
+<p>Function names: pairwise_identity; pairwise_id; pi <br/>
+Command line interface: pk_pairwise_identity; pk_pairwise_id; pk_pi</p>
 <p>Calculate the average pairwise identity among sequences.</p>
 <p>Pairwise identities can be used as proxies for the evolutionary rate of sequences.</p>
 <p>Pairwise identity is defined as the number of identical
@@ -854,7 +854,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-v/--verbose</em>: optional argument to print identity per pair|br|
+<em>-v/--verbose</em>: optional argument to print identity per pair <br/>
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
 <em>--plot</em>: save a clustered pairwise-identity heatmap <br/>
 <em>--plot-output</em>: output path for heatmap (default: pairwise_identity_heatmap.png) <br/>
@@ -870,12 +870,12 @@ Command line interface: pk_parsimony_informative_sites; pk_pis</p>
 <p>Calculate the number and percentage of parsimony
 informative sites in an alignment.</p>
 <p>The number of parsimony informative sites in an alignment
-is associated with strong phylogenetic signal.</p>
+is associated with a strong phylogenetic signal.</p>
 <p>PhyKIT reports three tab delimited values:
 col1: number of parsimony informative sites
 col2: total number of sites
 col3: percentage of parsimony informative sites</p>
-<p>Association between the number of parsimony informative
+<p>The association between the number of parsimony informative
 sites and phylogenetic signal was determined by Shen
 et al., Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
@@ -925,11 +925,11 @@ Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc</p>
 </section>
 <section id="protein-to-nucleotide-alignment">
 <span id="cmd-thread-dna"></span><h3>Protein-to-nucleotide alignment<a class="headerlink" href="#protein-to-nucleotide-alignment" title="Link to this heading"></a></h3>
-<p>Function names: thread_dna; pal2nal, p2n <br/>
-Command line interface: pk_thread_dna; pk_pal2nal, pk_p2n</p>
+<p>Function names: thread_dna; pal2nal; p2n <br/>
+Command line interface: pk_thread_dna; pk_pal2nal; pk_p2n</p>
 <p>Thread DNA sequence onto a protein alignment to create a
 codon-based alignment.</p>
-<p>This function requires input alignments are in fasta format.
+<p>This function requires that input alignments be in fasta format.
 Codon alignments are then printed to stdout. Note, paired
 sequences are assumed to have the same name between the
 protein and nucleotide file. The order does not matter.</p>
@@ -949,8 +949,7 @@ should be provided in the -p/--protein argument.</p>
 <em>-p/--protein</em>: protein alignment file <br/>
 <em>-n/--nucleotide</em>: nucleotide sequence file <br/>
 <em>-c/--clipkit_log</em>: clipkit outputted log file <br/>
-<em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
-If used, stop codons will be removed. <br/>
+<em>-s/--stop</em>: if used, stop codons will be removed from the output <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1032,7 +1031,7 @@ Command line interface: pk_sum_of_pairs_score; pk_sops; pk_sop</p>
 to a reference alignment. It is calculated by summing the correctly
 aligned residue pairs over all pairs of sequences. Thus, values range
 from 0 to 1 and higher values indicate more accurate alignments.</p>
-<p>Column score is calculated following Thompson et al., Nucleic
+<p>Sum-of-pairs score is calculated following Thompson et al., Nucleic
 Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--reference<span class="w"> </span>&lt;reference_alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
@@ -1053,12 +1052,12 @@ to <br/>
 Command line interface: pk_variable_sites; pk_vs</p>
 <p>Calculate the number of variable sites in an alignment.</p>
 <p>The number of variable sites in an alignment is
-associated with strong phylogenetic signal.
-PhyKIT reports three tab delimited values:
+associated with a strong phylogenetic signal.</p>
+<p>PhyKIT reports three tab delimited values:
 col1: number of variable sites
 col2: total number of sites
 col3: percentage of variable sites</p>
-<p>Association between the number of variable sites and
+<p>The association between the number of variable sites and
 phylogenetic signal was determined by Shen et al.,
 Genome Biology and Evolution (2016),
 doi: 10.1093/gbe/evw179.</p>
@@ -1235,7 +1234,7 @@ Command line interface: pk_bipartition_support_stats; pk_bss</p>
 they are indicative of greater certainty in tree topology.</p>
 <p>To obtain all bipartition support values, use the -v/--verbose option.
 In addition to support values for each node, the names of all terminal
-branches tips are also included. Each terminal branch name is separated
+branch tips are also included. Each terminal branch name is separated
 with a semi-colon (;).</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bipartition_support_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--thresholds<span class="w"> </span>&lt;comma-separated-floats&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
@@ -1283,8 +1282,8 @@ output will have the same name as the input file but with the suffix &quot;.fact
 </section>
 <section id="collapse-bipartitions">
 <span id="cmd-collapse-branches"></span><h3>Collapse bipartitions<a class="headerlink" href="#collapse-bipartitions" title="Link to this heading"></a></h3>
-<p>Function names: collapse_branches, collapse, cb <br/>
-Command line interface: pk_collapse_branches, pk_collapse, pk_cb</p>
+<p>Function names: collapse_branches; collapse; cb <br/>
+Command line interface: pk_collapse_branches; pk_collapse; pk_cb</p>
 <p>Collapse branches on a phylogeny according to bipartition support.</p>
 <p>Bipartitions will be collapsed if they are less than the user specified
 value.</p>
@@ -1465,8 +1464,8 @@ evolutionary rates between the two phylogenies. The two input trees
 do not have to have the same taxa. This function will first prune both
 trees to have the same tips. To transform branch lengths into relative
 rates, PhyKIT uses the putative species tree's branch lengths, which is
-inputted by the user. As recommended by the original method developers,
-outlier branche lengths are removed. Outlier branches have a relative
+input by the user. As recommended by the original method developers,
+outlier branch lengths are removed. Outlier branches have a relative
 evolutionary rate greater than five.</p>
 <p>PhyKIT reports two tab delimited values:
 col1: correlation coefficient
@@ -1479,8 +1478,8 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>&lt;tree_file_one&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file <br/>
+<em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file <br/>
 <em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
 this is a putative species tree. <br/>
 <em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br/>
@@ -1493,8 +1492,8 @@ this is a putative species tree. <br/>
 </section>
 <section id="degree-of-violation-of-the-molecular-clock">
 <span id="cmd-degree-of-violation-of-a-molecular-clock"></span><h3>Degree of violation of the molecular clock<a class="headerlink" href="#degree-of-violation-of-the-molecular-clock" title="Link to this heading"></a></h3>
-<p>Function names: degree_of_violation_of_a_molecular_clock, dvmc <br/>
-Command line interface: pk_degree_of_violation_of_a_molecular_clock, pk_dvmc</p>
+<p>Function names: degree_of_violation_of_a_molecular_clock; dvmc <br/>
+Command line interface: pk_degree_of_violation_of_a_molecular_clock; pk_dvmc</p>
 <p>Calculate degree of violation of a molecular clock (or DVMC) in a phylogeny.</p>
 <p>Lower DVMC values are thought to be desirable because they are indicative
 of a lower degree of violation in the molecular clock assumption.</p>
@@ -1671,8 +1670,8 @@ gCF values.</p>
 </section>
 <section id="evolutionary-rate">
 <span id="cmd-evolutionary-rate"></span><h3>Evolutionary rate<a class="headerlink" href="#evolutionary-rate" title="Link to this heading"></a></h3>
-<p>Function names: evolutionary_rate, evo_rate <br/>
-Command line interface: pk_evolutionary_rate, pk_evo_rate</p>
+<p>Function names: evolutionary_rate; evo_rate <br/>
+Command line interface: pk_evolutionary_rate; pk_evo_rate</p>
 <p>Calculate a tree-based estimation of the evolutionary rate of a gene.</p>
 <p>Evolutionary rate is the total tree length divided by the number
 of terminals.</p>
@@ -1690,8 +1689,8 @@ of the Royal Society B (2014).</p>
 </section>
 <section id="hidden-paralogy-check">
 <span id="cmd-hidden-paralogy-check"></span><h3>Hidden paralogy check<a class="headerlink" href="#hidden-paralogy-check" title="Link to this heading"></a></h3>
-<p>Function names: hidden_paralogy_check, clan_check <br/>
-Command line interface: pk_hidden_paralogy_check, pk_clan_check</p>
+<p>Function names: hidden_paralogy_check; clan_check <br/>
+Command line interface: pk_hidden_paralogy_check; pk_clan_check</p>
 <p>Scan tree for evidence of hidden paralogy.</p>
 <p>This analysis can be used to identify hidden paralogy.
 Specifically, this method will examine if a set of
@@ -1699,7 +1698,7 @@ well known monophyletic taxa are, in fact, monophyletic.
 If they are not, the evolutionary history of the gene may
 be subject to hidden paralogy. This analysis is typically
 done with single-copy orthologous genes.</p>
-<p>Requires a clade file, which species which monophyletic
+<p>Requires a clade file, which specifies which monophyletic
 lineages to check for. Multiple monophyletic
 lineages can be specified. Each lineage should
 be specified on a single line and each tip name
@@ -1776,13 +1775,13 @@ or otherwise.</p>
 Command line interface: pk_last_common_ancestor_subtree; pk_lca_subtree</p>
 <p>Obtains subtree from a phylogeny by getting the last common ancestor
 from a list of taxa.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>last_common_ancestor_subtree<span class="w"> </span>&lt;file&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>last_common_ancestor_subtree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: second argument after function name should be a single column
-file with the list of taxa to get the last common ancestor subtree for
+file with the list of taxa to get the last common ancestor subtree for <br/>
 <em>-o/--output</em>: optional argument to name the outputted tree file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -1912,10 +1911,10 @@ Command line interface: pk_long_branch_score; pk_lb_score; pk_lbs</p>
 they are indicative of taxa or trees that likely do
 not have issues with long branch attraction.</p>
 <p>LB score is the mean pairwise patristic distance of
-taxon i compared to all other taxa over the average
+taxon i compared to all other taxa divided by the average
 pairwise patristic distance.</p>
 <p>PhyKIT reports summary statistics. To obtain LB scores
-for each taxa, use the -v/--verbose option.</p>
+for each taxon, use the -v/--verbose option.</p>
 <p>LB scores are calculated following Struck, Evolutionary
 Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>long_branch_score<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
@@ -1937,7 +1936,7 @@ Command line interface: pk_monophyly_check; pk_is_monophyletic</p>
 taxa are exclusively monophyletic. By exclusively monophyletic,
 if other taxa are in the same clade, the lineage will not be
 considered exclusively monophyletic.</p>
-<p>Requires a taxa file, which species which tip names
+<p>Requires a taxa file, which specifies which tip names
 are expected to be monophyletic. File format is a
 single column file with tip names. Tip names not
 present in the tree will not be considered when
@@ -2620,7 +2619,7 @@ as well as identify well supported alternative topologies.</p>
 <p>The polytomy testing function takes as input a file with
 the three groups of taxa to test the relationships for and
 a single column file with the names of the desired tree files
-to use for polytomy testing. Next, the script to examine
+to use for polytomy testing. Next, the script examines
 support for the grouping of the three taxa using triplets
 and gene support frequencies.</p>
 <p>This function can account for uncertainty in gene trees -
@@ -2637,7 +2636,7 @@ frequencies.</p>
 <em>-t/--trees &lt;trees&gt;</em>: single column file with the names of
 phylogenies to use for polytomy testing <br/>
 <em>-g/--groups</em>: a tab-delimited file with the grouping designations
-to test. Lines starting with commetns are not considered. Names of
+to test. Lines starting with comments are not considered. Names of
 individual taxa should be separated by a semi-colon ';' <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>For example, the groups file could look like the following:</p>
@@ -2789,7 +2788,7 @@ number of tips per regime.</p>
 <p>Function names: rename_tree_tips; rename_tree; rename_tips <br/>
 Command line interface: pk_rename_tree_tips; pk_rename_tree; pk_rename_tips</p>
 <p>Renames tips in a phylogeny.</p>
-<p>Renaming tip files will follow the scheme of a tab-delimited
+<p>Renaming tips will follow the scheme of a tab-delimited
 file wherein the first column is the current tip name and the
 second column is the desired tip name in the resulting
 phylogeny.</p>
@@ -2822,7 +2821,7 @@ between the two input phylogenies and prune them to a common set of
 tips. Thus, users can input trees with different topologies and
 infer an RF value among subtrees with shared tips.</p>
 <p>PhyKIT will print out
-col 1; the plain RF distance and
+col 1: the plain RF distance and
 col 2: the normalized RF distance.</p>
 <p>RF distances are calculated following Robinson &amp; Foulds, Mathematical
 Biosciences (1981), doi: 10.1016/0025-5564(81)90043-2.</p>
@@ -2844,14 +2843,14 @@ Command line interface: pk_root_tree; pk_root; pk_rt</p>
 <p>Roots phylogeny using user-specified taxa.</p>
 <p>A list of taxa to root the phylogeny on should be specified using the -r
 argument. The root_taxa file should be a single-column file with taxa names.
-The outputted file will have the same name as the inputted tree file but with
+The output file will have the same name as the input tree file but with
 the suffix &quot;.rooted&quot;.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>root_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-r/--root<span class="w"> </span>&lt;root_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>&lt;tree&gt;</em>: first argument after function name should be a tree file to root|br|
-<em>-r/--root</em>: single column file with taxa names to root the phylogeny on|br|
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file to root <br/>
+<em>-r/--root</em>: single column file with taxa names to root the phylogeny on <br/>
 <em>-o/--output</em>: optional argument to specify the name of the output file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -2867,7 +2866,7 @@ Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss</p>
 tips in the phylogeny that could possibly be removed
 from the associated multiple sequence alignment. PhyKIT
 does so by identifying and reporting long terminal branches
-defined as branches that are equal to or 20 times the median
+defined as branches that are equal to or greater than 20 times the median
 length of all branches.</p>
 <p>PhyKIT reports the following information
 col1: name of tip that is a putatively spurious sequence
@@ -3076,7 +3075,7 @@ statistics (mean, median, 95% HPD), and MCMC metadata.</p>
 <span id="cmd-tip-labels"></span><h3>Tip labels<a class="headerlink" href="#tip-labels" title="Link to this heading"></a></h3>
 <p>Function names: tip_labels; tree_labels; labels; tl <br/>
 Command line interface: pk_tip_labels; pk_tree_labels; pk_labels; pk_tl</p>
-<p>Prints the tip labels (or names) a phylogeny.</p>
+<p>Prints the tip labels (or names) of a phylogeny.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_labels<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
@@ -3271,7 +3270,7 @@ distances used to determine saturation <br/>
 Command line interface: pk_treeness_over_rcv; pk_toverr; pk_tor</p>
 <p>Calculate treeness/RCV for a given alignment and tree.</p>
 <p>Higher treeness/RCV values are thought to be desirable because
-they harbor a high signal-to-noise ratio and are least susceptible
+they indicate a high signal-to-noise ratio and suggest the data are least susceptible
 to composition bias.</p>
 <p>PhyKIT reports three tab delimited values:
 col1: treeness/RCV
