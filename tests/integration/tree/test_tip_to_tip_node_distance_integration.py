@@ -73,7 +73,7 @@ class TestTipToTipNodeDistance(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_tip_to_tip_node_distance_bad_file_path(self, mocked_print):
@@ -81,7 +81,7 @@ class TestTipToTipNodeDistance(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_tip_to_tip_node_distance_json(self, mocked_print):

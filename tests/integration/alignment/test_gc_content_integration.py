@@ -78,7 +78,7 @@ class TestGCContent(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_gc_content_verbose(self, mocked_print):

@@ -291,8 +291,12 @@ class Phykit:
                 """
             ),
         )
-        parser.add_argument("command", help=SUPPRESS)
+        parser.add_argument("command", nargs="?", default=None, help=SUPPRESS)
         args = parser.parse_args(sys.argv[1:2])
+
+        if args.command is None:
+            parser.print_help()
+            sys.exit(0)
 
         # if command is part of the possible commands (i.e., the long form
         # commands, run). Otherwise, assume it is an alias and look to the
@@ -305,7 +309,8 @@ class Phykit:
         except SystemExit:
             # Re-raise SystemExit as-is to preserve exit code
             raise
-        except NameError:
+        except NameError as e:
+            print(f"Error: {e}", file=sys.stderr)
             sys.exit(2)
 
     ## Aliases
@@ -494,7 +499,7 @@ class Phykit:
                 Aliases:
                   alignment_recoding, aln_recoding, recode
                 Command line interfaces: 
-                  bk_alignment_recoding, bk_aln_recoding, bk_recode
+                  pk_alignment_recoding, pk_aln_recoding, pk_recode
 
                 Usage:
                 phykit alignment_recoding <fasta> -c/--code <code> [--json]
@@ -1206,7 +1211,7 @@ class Phykit:
                 f"""\
                 {help_header}
 
-                Calculate the number and percentage of parismony
+                Calculate the number and percentage of parsimony
                 informative sites in an alignment.
 
                 The number of parsimony informative sites in an alignment
@@ -1853,13 +1858,13 @@ class Phykit:
 
                 Options
                 =====================================================
-                <tree_file_zero>            first argument after 
+                <tree_file_zero>            first argument after
                                             function name should be
-                                            an alignment file
+                                            a tree file
 
-                <tree_file_one>             first argument after 
+                <tree_file_one>             second argument after
                                             function name should be
-                                            an alignment file 
+                                            a tree file
 
                 -r/--reference              a tree to correct branch
                                             lengths by in the two input
@@ -4514,7 +4519,7 @@ class Phykit:
                                             a tree file
 
                 -v/--verbose                optional argument to print
-                                            all internal branch lengths
+                                            all terminal branch lengths
 
                 --json                      optional argument to output
                                             results as JSON

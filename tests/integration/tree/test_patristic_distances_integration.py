@@ -102,7 +102,7 @@ class TestPatristicDistances(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_patristic_distances_json_summary(self, mocked_print):

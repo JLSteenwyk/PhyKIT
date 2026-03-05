@@ -76,7 +76,7 @@ class TestCovaryingEvolutionaryRates(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree1(self, mocked_print):
@@ -84,7 +84,7 @@ class TestCovaryingEvolutionaryRates(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_reference(self, mocked_print):
@@ -92,7 +92,7 @@ class TestCovaryingEvolutionaryRates(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree_topology(self, mocked_print):
@@ -100,7 +100,7 @@ class TestCovaryingEvolutionaryRates(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_no_common_tips(self, mocked_print):
@@ -108,7 +108,7 @@ class TestCovaryingEvolutionaryRates(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_tree_topologies_do_not_match(self, mocked_print):
@@ -116,7 +116,7 @@ class TestCovaryingEvolutionaryRates(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_outlier(self, mocked_print):

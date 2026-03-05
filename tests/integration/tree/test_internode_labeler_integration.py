@@ -77,7 +77,7 @@ class TestInternodeLabeler(object):
             Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
-        assert pytest_wrapped_e.value.code == 2
+        assert pytest_wrapped_e.value.code == 1
 
     @patch("builtins.print")
     def test_internode_labeler_json(self, mocked_print):
