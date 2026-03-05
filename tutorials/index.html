@@ -619,7 +619,7 @@ using the <em>sum_of_pairs_score</em> and <em>column_score</em> functions.</p>
 </section>
 <section id="step-1-score-each-alignment">
 <h3>Step 1: Score each alignment<a class="headerlink" href="#step-1-score-each-alignment" title="Link to this heading"></a></h3>
-<p>For both functions, the first argument is the query alignment and the <em>-r/\-\-reference</em> argument specifies the reference alignment.
+<p>For both functions, the first argument is the query alignment and the <em>-r/--reference</em> argument specifies the reference alignment.
 We will programmatically score each alignment using the same for loop that was used to calculate alignment length.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;BAliBASE_id_and_aln_strategy\tsop\tcs&quot;</span>
 <span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ls<span class="w"> </span>*pair.faa<span class="k">)</span>

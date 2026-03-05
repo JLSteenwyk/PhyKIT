@@ -208,7 +208,7 @@ used to calculate summary statistics.</p>
 </pre></div>
 </div>
 <p>Command specific help messages can be viewed by adding a
--h/\-\-help argument after the command. For example, to see the help message
+-h/--help argument after the command. For example, to see the help message
 for the command 'treeness', execute:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>treeness<span class="w"> </span>-h
 <span class="c1"># or</span>
@@ -413,7 +413,7 @@ With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print entropy for each site <br/>
+<em>-v/--verbose</em>: optional argument to print entropy for each site <br/>
 <em>--plot</em>: save a per-site alignment entropy plot <br/>
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">alignment_entropy_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -631,7 +631,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/\-\-reference</em>: reference alignment to compare the query alignment
+<em>-r/--reference</em>: reference alignment to compare the query alignment
 to <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -695,17 +695,17 @@ Command line interface: pk_create_concatenation_matrix, pk_create_concat, pk_cc<
 used to help in the construction of multi-locus data
 matrices.</p>
 <p>PhyKIT will output three files:
-1) A fasta file with '.fa' appended to the prefix specified with the -p/\-\-prefix parameter.
+1) A fasta file with '.fa' appended to the prefix specified with the -p/--prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-occupancy<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/\-\-alignment</em>: alignment list file. File should contain a single column list of alignment
+<em>-a/--alignment</em>: alignment list file. File should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. <br/>
-<em>-p/\-\-prefix</em>: prefix of output files <br/>
+<em>-p/--prefix</em>: prefix of output files <br/>
 <em>--threshold</em>: minimum fraction of informative (non-gap, non-ambiguous) sites across the
 concatenated alignment for a taxon to be included. Taxa whose effective occupancy falls
 below this value are excluded from the output. Set to 0 to disable filtering
@@ -760,7 +760,7 @@ should be associated with the -e argument.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
-<em>-e/\-\-entry</em>: entry name to be extracted from the inputted fasta file <br/>
+<em>-e/--entry</em>: entry name to be extracted from the inputted fasta file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -774,7 +774,7 @@ should be associated with the -e argument.</p>
 Command line interface: pk_gc_content; pk_gc</p>
 <p>Calculate GC content of a fasta file.</p>
 <p>GC content is negatively correlated with phylogenetic signal.</p>
-<p>If there are multiple entries, use the -v/\-\-verbose option
+<p>If there are multiple entries, use the -v/--verbose option
 to determine the GC content of each fasta entry separately.
 Association between GC content and phylogenetic signal was
 determined by Shen et al., Genome Biology and Evolution (2016),
@@ -784,7 +784,7 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a fasta file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print the GC content of each fasta
+<em>-v/--verbose</em>: optional argument to print the GC content of each fasta
 entry <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -803,9 +803,9 @@ maximum gap fraction, minimum occupancy, and maximum site entropy.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-g/\-\-max_gap</em>: maximum allowed fraction of missing/invalid characters at a site (default: 1.0) <br/>
-<em>-o/\-\-min_occupancy</em>: minimum required occupancy at a site (default: 0.0) <br/>
-<em>-e/\-\-max_entropy</em>: maximum allowed site entropy (default: no filter) <br/>
+<em>-g/--max_gap</em>: maximum allowed fraction of missing/invalid characters at a site (default: 1.0) <br/>
+<em>-o/--min_occupancy</em>: minimum required occupancy at a site (default: 0.0) <br/>
+<em>-e/--max_entropy</em>: maximum allowed site entropy (default: no filter) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -854,7 +854,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print identity per pair|br|
+<em>-v/--verbose</em>: optional argument to print identity per pair|br|
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
 <em>--plot</em>: save a clustered pairwise-identity heatmap <br/>
 <em>--plot-output</em>: output path for heatmap (default: pairwise_identity_heatmap.png) <br/>
@@ -908,7 +908,7 @@ Command line interface: pk_plot_alignment_qc; pk_plot_qc; pk_paqc</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-o/\-\-output</em>: output image path (default: <code class="docutils literal notranslate"><span class="pre">alignment_qc.png</span></code>) <br/>
+<em>-o/--output</em>: output image path (default: <code class="docutils literal notranslate"><span class="pre">alignment_qc.png</span></code>) <br/>
 <em>--width</em>: figure width in inches (default: <code class="docutils literal notranslate"><span class="pre">14.0</span></code>) <br/>
 <em>--height</em>: figure height in inches (default: <code class="docutils literal notranslate"><span class="pre">10.0</span></code>) <br/>
 <em>--dpi</em>: output image DPI (default: <code class="docutils literal notranslate"><span class="pre">300</span></code>) <br/>
@@ -946,10 +946,10 @@ should be provided in the -p/--protein argument.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-p/\-\-protein</em>: protein alignment file <br/>
-<em>-n/\-\-nucleotide</em>: nucleotide sequence file <br/>
-<em>-c/\-\-clipkit_log</em>: clipkit outputted log file <br/>
-<em>-s/\-\-stop</em>: boolean for whether or not stop codons should be kept.
+<em>-p/--protein</em>: protein alignment file <br/>
+<em>-n/--nucleotide</em>: nucleotide sequence file <br/>
+<em>-c/--clipkit_log</em>: clipkit outputted log file <br/>
+<em>-s/--stop</em>: boolean for whether or not stop codons should be kept.
 If used, stop codons will be removed. <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -1017,7 +1017,7 @@ an alignment file.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;fasta&gt;</em>: first argument after function name should be a FASTA file <br/>
-<em>-i/\-\-idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2) <br/>
+<em>-i/--idmap</em>: identifier map of current FASTA names (col1) and desired FASTA names (col2) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1040,7 +1040,7 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be a query
 fasta alignment file to be scored for accuracy <br/>
-<em>-r/\-\-reference</em>: reference alignment to compare the query alignment
+<em>-r/--reference</em>: reference alignment to compare the query alignment
 to <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -1108,11 +1108,11 @@ specifies which column to use.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a phylogenetic tree file <br/>
-<em>-d/\-\-trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
-<em>-c/\-\-trait</em>: trait column name (required for multi-trait files) <br/>
+<em>-t/--tree</em>: a phylogenetic tree file <br/>
+<em>-d/--trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
+<em>-c/--trait</em>: trait column name (required for multi-trait files) <br/>
 <em>--type</em>: trait type: <code class="docutils literal notranslate"><span class="pre">continuous</span></code> or <code class="docutils literal notranslate"><span class="pre">discrete</span></code> (default: <code class="docutils literal notranslate"><span class="pre">continuous</span></code>) <br/>
-<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">ml</span></code> (continuous only; default: <code class="docutils literal notranslate"><span class="pre">fast</span></code>) <br/>
+<em>-m/--method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">ml</span></code> (continuous only; default: <code class="docutils literal notranslate"><span class="pre">fast</span></code>) <br/>
 <em>--model</em>: Mk model: <code class="docutils literal notranslate"><span class="pre">ER</span></code>, <code class="docutils literal notranslate"><span class="pre">SYM</span></code>, or <code class="docutils literal notranslate"><span class="pre">ARD</span></code> (discrete only; default: <code class="docutils literal notranslate"><span class="pre">ER</span></code>) <br/>
 <em>--ci</em>: include 95% confidence intervals (continuous only) <br/>
 <em>--plot</em>: output path for plot (requires matplotlib) <br/>
@@ -1146,8 +1146,8 @@ is auto-detected from the eigengap of the graph Laplacian.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-g/\-\-gene-trees</em>: file of gene trees (one Newick per line, or file of filenames) <br/>
-<em>-t/\-\-tree</em>: species tree (optional; flags species-tree bipartitions in loadings) <br/>
+<em>-g/--gene-trees</em>: file of gene trees (one Newick per line, or file of filenames) <br/>
+<em>-t/--tree</em>: species tree (optional; flags species-tree bipartitions in loadings) <br/>
 <em>--metric</em>: distance metric: <code class="docutils literal notranslate"><span class="pre">nrf</span></code> or <code class="docutils literal notranslate"><span class="pre">wrf</span></code> (default: <code class="docutils literal notranslate"><span class="pre">nrf</span></code>) <br/>
 <em>--clusters</em>: override auto-detected number of clusters <br/>
 <em>--n-pcs</em>: number of PCs to report (default: min(10, G-1)) <br/>
@@ -1191,11 +1191,11 @@ percentile confidence intervals (2.5th--97.5th).</p></li>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: species tree file <br/>
-<em>-g/\-\-gene-trees</em>: file with gene trees (multi-Newick, one per line) <br/>
-<em>-d/\-\-trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
-<em>-c/\-\-trait</em>: trait column name (required for multi-trait files) <br/>
-<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">weighted</span></code> or <code class="docutils literal notranslate"><span class="pre">distribution</span></code> (default: <code class="docutils literal notranslate"><span class="pre">weighted</span></code>) <br/>
+<em>-t/--tree</em>: species tree file <br/>
+<em>-g/--gene-trees</em>: file with gene trees (multi-Newick, one per line) <br/>
+<em>-d/--trait_data</em>: trait data file (two-column or multi-trait with header) <br/>
+<em>-c/--trait</em>: trait column name (required for multi-trait files) <br/>
+<em>-m/--method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">weighted</span></code> or <code class="docutils literal notranslate"><span class="pre">distribution</span></code> (default: <code class="docutils literal notranslate"><span class="pre">weighted</span></code>) <br/>
 <em>--ci</em>: include 95% confidence intervals <br/>
 <em>--plot</em>: output path for concordance ASR plot <br/>
 <em>--missing-taxa</em>: how to handle taxa mismatches: <code class="docutils literal notranslate"><span class="pre">shared</span></code> (default, prune to intersection) or <code class="docutils literal notranslate"><span class="pre">error</span></code> (reject) <br/>
@@ -1233,7 +1233,7 @@ Command line interface: pk_bipartition_support_stats; pk_bss</p>
 <p>Calculate summary statistics for bipartition support.</p>
 <p>High bipartition support values are thought to be desirable because
 they are indicative of greater certainty in tree topology.</p>
-<p>To obtain all bipartition support values, use the -v/\-\-verbose option.
+<p>To obtain all bipartition support values, use the -v/--verbose option.
 In addition to support values for each node, the names of all terminal
 branches tips are also included. Each terminal branch name is separated
 with a semi-colon (;).</p>
@@ -1243,7 +1243,7 @@ with a semi-colon (;).</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all bipartition support values <br/>
+<em>-v/--verbose</em>: optional argument to print all bipartition support values <br/>
 <em>--thresholds</em>: optional comma-separated support cutoffs; prints count and
 fraction of bipartitions below each cutoff <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -1273,8 +1273,8 @@ or other analyses.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-f/\-\-factor</em>: factor to multiply branch lengths by <br/>
-<em>-o/\-\-output</em>: optional argument to name the outputted tree file. Default
+<em>-f/--factor</em>: factor to multiply branch lengths by <br/>
+<em>-o/--output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix &quot;.factor_(n).tre&quot; <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -1293,9 +1293,9 @@ value.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-s/\-\-support</em>: bipartitions with support less than this value will be
+<em>-s/--support</em>: bipartitions with support less than this value will be
 collapsed <br/>
-<em>-o/\-\-output</em>: optional argument to name the outputted tree file. Default
+<em>-o/--output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix
 &quot;.collapsed_(support).tre&quot; <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -1318,7 +1318,7 @@ threshold. Optionally draws a circular splits network diagram.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
+<em>-t/--trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
 <em>--threshold</em>: minimum split frequency to include, between 0 and 1 (default: <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
 <em>--plot-output</em>: output filename for the circular splits network plot (optional) <br/>
@@ -1352,8 +1352,8 @@ Command line interface: pk_consensus_tree; pk_consensus; pk_ctree</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
-<em>-m/\-\-method</em>: consensus method (<code class="docutils literal notranslate"><span class="pre">strict</span></code> or <code class="docutils literal notranslate"><span class="pre">majority</span></code>; default: <code class="docutils literal notranslate"><span class="pre">majority</span></code>) <br/>
+<em>-t/--trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
+<em>-m/--method</em>: consensus method (<code class="docutils literal notranslate"><span class="pre">strict</span></code> or <code class="docutils literal notranslate"><span class="pre">majority</span></code>; default: <code class="docutils literal notranslate"><span class="pre">majority</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -1384,10 +1384,10 @@ as the reference (R² = 0).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
 <em>--models</em>: comma-separated list of models to fit (default: all 7) <br/>
-<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Model Comparison (fitContinuous)
@@ -1419,9 +1419,9 @@ and mapped onto branches using a color gradient (coolwarm colormap).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
-<em>-o/\-\-output</em>: output plot file path (required) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-o/--output</em>: output plot file path (required) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/contmap_example.png"><img alt="../_images/contmap_example.png" class="align-center" src="../_images/contmap_example.png" style="width: 80%;" />
 </a>
@@ -1442,10 +1442,10 @@ line crossings.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree1</em>: first tree file in Newick format <br/>
-<em>-t2/\-\-tree2</em>: second tree file in Newick format <br/>
-<em>-o/\-\-output</em>: output plot file path (required) <br/>
-<em>-m/\-\-mapping</em>: optional tab-delimited mapping file (taxon1&lt;tab&gt;taxon2) <br/>
+<em>-t/--tree1</em>: first tree file in Newick format <br/>
+<em>-t2/--tree2</em>: second tree file in Newick format <br/>
+<em>-o/--output</em>: output plot file path (required) <br/>
+<em>-m/--mapping</em>: optional tab-delimited mapping file (taxon1&lt;tab&gt;taxon2) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/cophylo_example.png"><img alt="../_images/cophylo_example.png" class="align-center" src="../_images/cophylo_example.png" style="width: 80%;" />
 </a>
@@ -1481,9 +1481,9 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 <p>Options: <br/>
 <em>&lt;tree_file_zero&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>&lt;tree_file_one&gt;</em>: first argument after function name should be an alignment file <br/>
-<em>-r/\-\-reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
+<em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
 this is a putative species tree. <br/>
-<em>-v/\-\-verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br/>
+<em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br/>
 <em>--plot</em>: save a covarying-rates scatter plot <br/>
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">covarying_rates_plot.png</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -1526,11 +1526,11 @@ computes the fraction of simulations in each state.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;state) <br/>
-<em>-c/\-\-trait</em>: column name of the trait to map <br/>
-<em>-o/\-\-output</em>: output plot file path (required) <br/>
-<em>-n/\-\-nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;state) <br/>
+<em>-c/--trait</em>: column name of the trait to map <br/>
+<em>-o/--output</em>: output plot file path (required) <br/>
+<em>-n/--nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/densitymap_example.png"><img alt="../_images/densitymap_example.png" class="align-center" src="../_images/densitymap_example.png" style="width: 80%;" />
@@ -1562,10 +1562,10 @@ concordant and discordant gene trees is also reported.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a species tree file <br/>
-<em>-g/\-\-gene-trees</em>: multi-Newick file of gene trees with branch lengths <br/>
+<em>-t/--tree</em>: a species tree file <br/>
+<em>-g/--gene-trees</em>: multi-Newick file of gene trees with branch lengths <br/>
 <em>--plot</em>: optional output path for box/strip plot (PNG) <br/>
-<em>-v/\-\-verbose</em>: print per-gene-tree classification details <br/>
+<em>-v/--verbose</em>: print per-gene-tree classification details <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
@@ -1620,10 +1620,10 @@ using Benjamini-Hochberg FDR.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a species tree file <br/>
-<em>-g/\-\-gene-trees</em>: multi-Newick file of gene trees (branch lengths not required) <br/>
+<em>-t/--tree</em>: a species tree file <br/>
+<em>-g/--gene-trees</em>: multi-Newick file of gene trees (branch lengths not required) <br/>
 <em>--plot</em>: optional output path for asymmetry phylogram (PNG) <br/>
-<em>-v/\-\-verbose</em>: print per-branch details <br/>
+<em>-v/--verbose</em>: print per-branch details <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_alt1  n_alt2  asym_ratio     binom_p       fdr_p   gene_flow
@@ -1726,8 +1726,8 @@ doi: 10.1093/molbev/msz067.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: input file tree name <br/>
-<em>-c/\-\-clade</em>: clade file detailing which monophyletic lineages should
+<em>-t/--tree</em>: input file tree name <br/>
+<em>-c/--clade</em>: clade file detailing which monophyletic lineages should
 be scanned for <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -1740,13 +1740,13 @@ be scanned for <br/>
 Command line interface: pk_internal_branch_stats; pk_ibs</p>
 <p>Calculate summary statistics for internal branch lengths in a phylogeny.</p>
 <p>Internal branch lengths can be useful for phylogeny diagnostics.</p>
-<p>To obtain all internal branch lengths, use the -v/\-\-verbose option.</p>
+<p>To obtain all internal branch lengths, use the -v/--verbose option.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>internal_branch_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all internal branch lengths <br/>
+<em>-v/--verbose</em>: optional argument to print all internal branch lengths <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1764,7 +1764,7 @@ or otherwise.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/\-\-output</em>: optional argument to name the outputted tree file <br/>
+<em>-o/--output</em>: optional argument to name the outputted tree file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1783,7 +1783,7 @@ from a list of taxa.</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: second argument after function name should be a single column
 file with the list of taxa to get the last common ancestor subtree for
-<em>-o/\-\-output</em>: optional argument to name the outputted tree file <br/>
+<em>-o/--output</em>: optional argument to name the outputted tree file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1806,8 +1806,8 @@ reflecting recent ecological opportunity or mass extinction recovery).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
-<em>-v/\-\-verbose</em>: print branching times and full LTT data points <br/>
+<em>-t/--tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
+<em>-v/--verbose</em>: print branching times and full LTT data points <br/>
 <em>--plot-output</em>: output filename for the LTT plot (PNG, PDF, SVG) <br/>
 <em>--json</em>: output results as JSON</p>
 <p><strong>Default output</strong>: tab-separated gamma statistic and two-tailed p-value.</p>
@@ -1923,7 +1923,7 @@ Bioinformatics (2014), doi: 10.4137/EBO.S14239.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all LB score values <br/>
+<em>-v/--verbose</em>: optional argument to print all LB score values <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1986,9 +1986,9 @@ per-regime σ² values, the average is used.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
-<em>-r/\-\-regime_data</em>: tab-delimited regime file (taxon&lt;tab&gt;regime_label) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-r/--regime_data</em>: tab-delimited regime file (taxon&lt;tab&gt;regime_label) <br/>
 <em>--models</em>: comma-separated list of models to fit (default: all 7) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>The trait data file is a two-column tab-delimited file mapping taxon names
@@ -2052,7 +2052,7 @@ file but with the suffix &quot;.nnis&quot;</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-o/\-\-output</em>: optional argument to specify output file name <br/>
+<em>-o/--output</em>: optional argument to specify output file name <br/>
 <em>--json</em>: optional argument to print summary metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2100,15 +2100,15 @@ phykit<span class="w"> </span>network_signal<span class="w"> </span>-t<span clas
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a rooted species tree in Newick format (with branch lengths) <br/>
-<em>-d/\-\-trait-data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
+<em>-t/--tree</em>: a rooted species tree in Newick format (with branch lengths) <br/>
+<em>-d/--trait-data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
 <em>--hybrid</em>: one or more hybrid edge specifications (donor:recipient:gamma); <br/>
 donor is the source lineage, recipient receives gene flow, gamma is the <br/>
 inheritance proportion from the donor (e.g., <code class="docutils literal notranslate"><span class="pre">B:C:0.3</span></code>) <br/>
 <em>--quartet-json</em>: path to JSON output from <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">quartet_network</span> <span class="pre">--json</span></code> <br/>
 <em>--method</em>: <code class="docutils literal notranslate"><span class="pre">both</span></code> (default), <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code>, or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> <br/>
 <em>--permutations</em>: number of permutations for K p-value (default: 1000) <br/>
-<em>-v/\-\-verbose</em>: print network VCV matrix details <br/>
+<em>-v/--verbose</em>: print network VCV matrix details <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Output for default (both) mode: <br/>
 <code class="docutils literal notranslate"><span class="pre">Hybrid</span> <span class="pre">edge:</span> <span class="pre">B</span> <span class="pre">-&gt;</span> <span class="pre">C</span> <span class="pre">(gamma=0.3000)</span></code> <br/>
@@ -2246,8 +2246,8 @@ tree and continuous trait data are needed.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
 <em>--criterion</em>: model selection criterion: pBIC (default), BIC, or AICc <br/>
 <em>--max-shifts</em>: maximum number of shifts to consider (default: n/2) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -2321,7 +2321,7 @@ will be tab separated.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all tip-to-tip distances <br/>
+<em>-v/--verbose</em>: optional argument to print all tip-to-tip distances <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2339,9 +2339,9 @@ Ancestral states are reconstructed via maximum-likelihood.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
-<em>-o/\-\-output</em>: output plot file path (required) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-o/--output</em>: output plot file path (required) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/phenogram_example.png"><img alt="../_images/phenogram_example.png" class="align-center" src="../_images/phenogram_example.png" style="width: 80%;" />
 </a>
@@ -2376,15 +2376,15 @@ full vs. intercept-only model log-likelihoods).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
-<em>-y/\-\-response</em>: response (dependent) variable column name <br/>
-<em>-x/\-\-predictors</em>: one or more predictor column names <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited multi-trait file with header row <br/>
+<em>-y/--response</em>: response (dependent) variable column name <br/>
+<em>-x/--predictors</em>: one or more predictor column names <br/>
 <em>--family</em>: distribution family: binomial or poisson <br/>
 <em>--method</em>: estimation method: logistic_MPLE or poisson_GEE (auto from family) <br/>
 <em>--btol</em>: linear predictor bound for logistic model (default: 10) <br/>
 <em>--log-alpha-bound</em>: bound on log(alpha) for logistic model (default: 4) <br/>
-<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2456,8 +2456,8 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited multi-trait file with header row <br/>
 <em>--method</em>: ordination method: <code class="docutils literal notranslate"><span class="pre">pca</span></code>, <code class="docutils literal notranslate"><span class="pre">tsne</span></code>, or <code class="docutils literal notranslate"><span class="pre">umap</span></code> (default: pca) <br/>
 <em>--correction</em>: phylogenetic correction: <code class="docutils literal notranslate"><span class="pre">BM</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: BM) <br/>
 <em>--mode</em>: PCA mode: <code class="docutils literal notranslate"><span class="pre">cov</span></code> or <code class="docutils literal notranslate"><span class="pre">corr</span></code> (default: cov; PCA only) <br/>
@@ -2472,7 +2472,7 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 <em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
 <em>--tree-color-by</em>: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) <br/>
 <em>--plot-output</em>: output path for plot (default: phylo_ordination_plot.png) <br/>
-<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2515,12 +2515,12 @@ decimal places for both simple and multiple regression.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
-<em>-y/\-\-response</em>: response (dependent) variable column name <br/>
-<em>-x/\-\-predictors</em>: one or more predictor column names <br/>
-<em>-m/\-\-method</em>: method to use: BM or lambda (default: BM) <br/>
-<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited multi-trait file with header row <br/>
+<em>-y/--response</em>: response (dependent) variable column name <br/>
+<em>-x/--predictors</em>: one or more predictor column names <br/>
+<em>-m/--method</em>: method to use: BM or lambda (default: BM) <br/>
+<em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2562,11 +2562,11 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
-<em>-m/\-\-method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: blombergs_k) <br/>
-<em>-p/\-\-permutations</em>: number of permutations for Blomberg's K (default: 1000) <br/>
-<em>-g/\-\-gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon_name&lt;tab&gt;trait_value) <br/>
+<em>-m/--method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: blombergs_k) <br/>
+<em>-p/--permutations</em>: number of permutations for Blomberg's K (default: 1000) <br/>
+<em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2599,8 +2599,8 @@ are omitted, the first two columns are selected automatically.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited multi-trait file with header row <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited multi-trait file with header row <br/>
 <em>--trait-x</em>: column name for x-axis trait <br/>
 <em>--trait-y</em>: column name for y-axis trait <br/>
 <em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
@@ -2634,9 +2634,9 @@ frequencies.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-trees &lt;trees&gt;</em>: single column file with the names of
+<em>-t/--trees &lt;trees&gt;</em>: single column file with the names of
 phylogenies to use for polytomy testing <br/>
-<em>-g/\-\-groups</em>: a tab-delimited file with the grouping designations
+<em>-g/--groups</em>: a tab-delimited file with the grouping designations
 to test. Lines starting with commetns are not considered. Names of
 individual taxa should be separated by a semi-colon ';' <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -2662,7 +2662,7 @@ but branch lengths can be removed using the -r/--remove argument.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-r/\-\-remove</em>: optional argument to print the phylogeny without branch
+<em>-r/--remove</em>: optional argument to print the phylogeny without branch
 lengths <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -2684,7 +2684,7 @@ tree.</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;list_of_taxa&gt;</em>: single column file with the names of the tips to remove
 from the phylogeny <br/>
-<em>-o/\-\-output</em>: name of output file for the pruned phylogeny.
+<em>-o/--output</em>: name of output file for the pruned phylogeny.
 Default output will have the same name as the input file but with the suffix
 &quot;.pruned&quot; <br/>
 <em>-k/--keep</em>: optional argument. If used instead of pruning taxa in &lt;list_of_taxa&gt;,
@@ -2722,7 +2722,7 @@ implemented in R's MSCquartets package.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
+<em>-t/--trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
 <em>--alpha</em>: significance level for the T3 tree model test (default: <code class="docutils literal notranslate"><span class="pre">0.05</span></code>) <br/>
 <em>--beta</em>: threshold for the star tree test; quartets with p_star &gt; beta are called unresolved (default: <code class="docutils literal notranslate"><span class="pre">0.95</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
@@ -2773,10 +2773,10 @@ number of tips per regime.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
-<em>-r/\-\-regime_data</em>: tab-delimited regime file (taxon&lt;tab&gt;regime_label) <br/>
-<em>-n/\-\-nsim</em>: number of parametric bootstrap simulations (default: 0) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
+<em>-r/--regime_data</em>: tab-delimited regime file (taxon&lt;tab&gt;regime_label) <br/>
+<em>-n/--nsim</em>: number of parametric bootstrap simulations (default: 0) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -2798,9 +2798,9 @@ phylogeny.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-i/\-\-idmap</em>: identifier map of current tip names (col1) and desired
+<em>-i/--idmap</em>: identifier map of current tip names (col1) and desired
 tip names (col2) <br/>
-<em>-o/\-\-output</em>: optional argument to write the renamed tree files to. Default
+<em>-o/--output</em>: optional argument to write the renamed tree files to. Default
 output will have the same name as the input file but with the suffix &quot;.renamed&quot; <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -2851,8 +2851,8 @@ the suffix &quot;.rooted&quot;.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file to root|br|
-<em>-r/\-\-root</em>: single column file with taxa names to root the phylogeny on|br|
-<em>-o/\-\-output</em>: optional argument to specify the name of the output file <br/>
+<em>-r/--root</em>: single column file with taxa names to root the phylogeny on|br|
+<em>-o/--output</em>: optional argument to specify the name of the output file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2878,12 +2878,12 @@ col4: median branch length in the phylogeny</p>
 <p>Using this method to identify potentially spurious sequences
 was, to my knowledge, first introduced by Shen et al., (2018)
 Cell doi: 10.1016/j.cell.2018.10.023.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_seq<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-f/<span class="se">\\</span>-<span class="se">\\</span>-factor<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_seq<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-f/--factor<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;file&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-f/\-\-factor</em>: factor to multiply median branch length by to calculate
+<em>-f/--factor</em>: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
@@ -2925,11 +2925,11 @@ nesting) are verified.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a tree file in Newick format <br/>
-<em>-d/\-\-trait_data</em>: tab-delimited trait file with header row <br/>
-<em>-c/\-\-trait</em>: column name for discrete character trait <br/>
-<em>-m/\-\-model</em>: substitution model: ER, SYM, or ARD (default: ER) <br/>
-<em>-n/\-\-nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file with header row <br/>
+<em>-c/--trait</em>: column name for discrete character trait <br/>
+<em>-m/--model</em>: substitution model: ER, SYM, or ARD (default: ER) <br/>
+<em>-n/--nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
@@ -2943,13 +2943,13 @@ nesting) are verified.</p>
 Command line interface: pk_terminal_branch_stats; pk_tbs</p>
 <p>Calculate summary statistics for terminal branch lengths in a phylogeny.</p>
 <p>Terminal branch lengths can be useful for phylogeny diagnostics.</p>
-<p>To obtain all terminal branch lengths, use the -v/\-\-verbose option.</p>
+<p>To obtain all terminal branch lengths, use the -v/--verbose option.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>terminal_branch_stats<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
-<em>-v/\-\-verbose</em>: optional argument to print all terminal branch lengths <br/>
+<em>-v/--verbose</em>: optional argument to print all terminal branch lengths <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2988,8 +2988,8 @@ discrete+discrete, or continuous+continuous.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-t/\-\-tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
-<em>-d/\-\-trait-data</em>: tab-delimited trait file with header row (required) <br/>
+<em>-t/--tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
+<em>-d/--trait-data</em>: tab-delimited trait file with header row (required) <br/>
 <em>--traits</em>: comma-separated pair of trait column names (required) <br/>
 <em>--types</em>: comma-separated pair of trait types, each <code class="docutils literal notranslate"><span class="pre">discrete</span></code> or <code class="docutils literal notranslate"><span class="pre">continuous</span></code> (required) <br/>
 <em>--ngen</em>: number of MCMC generations (default: 100000) <br/>
@@ -3198,10 +3198,10 @@ and Benjamini-Hochberg FDR multiple testing correction.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/\-\-alignment</em>: a single alignment file <br/>
-<em>-l/\-\-alignment-list</em>: a file with one alignment path per line (batch mode) <br/>
-<em>-t/\-\-tree</em>: a rooted tree file <br/>
-<em>-v/\-\-verbose</em>: print additional detail <br/>
+<em>-a/--alignment</em>: a single alignment file <br/>
+<em>-l/--alignment-list</em>: a file with one alignment path per line (batch mode) <br/>
+<em>-t/--tree</em>: a rooted tree file <br/>
+<em>-v/--verbose</em>: print additional detail <br/>
 <em>--plot-output</em>: save a pairwise p-value heatmap to this path <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
@@ -3256,10 +3256,10 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/\-\-alignment</em>: an alignment file <br/>
-<em>-t/\-\-tree</em>: a tree file <br/>
+<em>-a/--alignment</em>: an alignment file <br/>
+<em>-t/--tree</em>: a tree file <br/>
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
-<em>-v/\-\-verbose</em>: print out patristic distances and uncorrected <br/>
+<em>-v/--verbose</em>: print out patristic distances and uncorrected <br/>
 distances used to determine saturation <br/>
 <em>--plot</em>: save a saturation scatter plot with fitted slope through origin <br/>
 <em>--plot-output</em>: output path for saturation plot (default: <code class="docutils literal notranslate"><span class="pre">saturation_plot.png</span></code>) <br/>
@@ -3283,8 +3283,8 @@ Phylogenetics and Evolution (2003), doi: 10.1016/S1055-7903(03)00057-5.</p>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/\-\-alignment</em>: an alignment file <br/>
-<em>-t/\-\-tree</em>: a tree file <br/>
+<em>-a/--alignment</em>: an alignment file <br/>
+<em>-t/--tree</em>: a tree file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 </section>
 </section>

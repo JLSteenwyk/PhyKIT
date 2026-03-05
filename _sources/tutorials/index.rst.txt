@@ -492,7 +492,7 @@ using the *sum_of_pairs_score* and *column_score* functions.
 
 Step 1: Score each alignment
 ****************************
-For both functions, the first argument is the query alignment and the *-r/\\-\\-reference* argument specifies the reference alignment.
+For both functions, the first argument is the query alignment and the *-r/--reference* argument specifies the reference alignment.
 We will programmatically score each alignment using the same for loop that was used to calculate alignment length.
 
 
