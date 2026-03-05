@@ -26,7 +26,7 @@ data matrices to further explore tree space during species-level tree inference 
 `Li et al. 2020 <https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1>`_)
 
 
-The information content summarized in the remainder of this section are associated with strong phylogenetic signal
+The information content summarized in the remainder of this section is associated with strong phylogenetic signal
 (or robust and accurate tree inference). When subsampling genes, a researcher could take a fraction of the best
 scoring phylogenies to reinfer species-level relationships or divergence times (e.g., robustly supported phylogenies
 and genes that do not violate clock-like patterns of evolution).
@@ -54,7 +54,7 @@ from `Steenwyk et al. 2019 <https://mbio.asm.org/content/10/4/e00925-19>`_. |br|
 Alignment length
 ****************
 
-Alignment length and the length of an alignment excluding sites with gaps is associated with
+Alignment length and the length of an alignment excluding sites with gaps are associated with
 robust and accurate tree inferences
 (`Shen et al. 2016 <https://academic.oup.com/gbe/article/8/8/2565/2198327>`_).
 Calculate alignment length with the following command:
@@ -64,7 +64,7 @@ Calculate alignment length with the following command:
    phykit aln_len Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa 
    624
 
-to exclude alignment gaps, use the following option
+To exclude alignment gaps, use the following option:
 
 .. code-block:: shell
 
@@ -80,7 +80,7 @@ col3: percentage of sites without gaps
 Bipartition support statistics
 ******************************
 
-High average bipartition in a phylogeny is associated with robust bipartition support
+High average bipartition support in a phylogeny is associated with robust phylogenetic inference
 (`Salichos and Rokas 2013 <https://www.nature.com/articles/nature12130>`_;
 `Shen et al. 2016 <https://academic.oup.com/gbe/article/8/8/2565/2198327>`_). Thus,
 genes with high bipartition support values have greater certainty among bipartitions.
@@ -105,7 +105,7 @@ Long branch score
 
 Long branch scores (or LB scores) help determine taxa that may be contributing to long-branch
 problems
-(`Struck 2014 <https://journals.sagepub.com/doi/10.4137/EBO.S14239>`_;). 
+(`Struck 2014 <https://journals.sagepub.com/doi/10.4137/EBO.S14239>`_). 
 Similarly, the standard deviation of LB scores among taxa can be used as a measure of heterogeneity.
 To calculate summary statistics of LB scores for all taxa in a given phylogeny, use the following command:
 
@@ -121,9 +121,9 @@ To calculate summary statistics of LB scores for all taxa in a given phylogeny, 
    standard deviation: 39.1931
    variance: 1536.0987
 
-LB scores of individual taxa are also information to diagnose taxa driving long-branch problems. 
+LB scores of individual taxa are also informative for diagnosing taxa driving long-branch problems. 
 The lower the values, the less susceptible the taxon is to long-branch problems. To get 
-the LB score of each taxa, use the verbose option: 
+the LB score of each taxon, use the verbose option: 
 
 .. code-block:: shell
 
@@ -161,7 +161,7 @@ col3: percentage of parsimony informative sites
 Saturation
 **********
 
-Saturation in a multiple sequence alignments is driven by sites with multiple substitutions and results in 
+Saturation in a multiple sequence alignment is driven by sites with multiple substitutions and results in 
 the alignment underestimating real genetic distances among taxa. Values of 1 have no saturation and values 
 of 0 are completely saturated by multiple substitutions
 (`Philippe et al. 2011 <https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1000602>`_).
@@ -235,7 +235,7 @@ col3: percentage of variable sites
 ###################################
 
 Identifying genes that significantly covary (or coevolve) with one another is known to accurately and sensitively 
-identify genes with shared functions, are coexpressed, and/or are part of the same multimeric complexes 
+identify genes that have shared functions, are coexpressed, and/or are part of the same multimeric complexes 
 (`Sato et al. 2005 <https://academic.oup.com/bioinformatics/article/21/17/3482/212654>`_; 
 `Clark et al. 2012 <https://genome.cshlp.org/content/22/4/714.full>`_).
 Furthermore, gene-gene covariation serves as a powerful evolution-based genetic screen for predicting gene function
@@ -275,12 +275,12 @@ Estimate the gene tree branch lengths using the following commands:
 
 .. code-block:: shell
 
-   # infer constrain trees
+   # infer constrained trees
    iqtree2 -s Shen_etal_SciAdv_2020_NDC80.fa -te Shen_etal_SciAdv_2020_NDC80.constrained.tre -pre Shen_etal_SciAdv_2020_NDC80 -m JTT+G4+F -keep-ident
    iqtree2 -s Shen_etal_SciAdv_2020_NUF2.fa -te Shen_etal_SciAdv_2020_NUF2.constrained.tre -pre Shen_etal_SciAdv_2020_NUF2 -m LG+G4 -keep-ident
    iqtree2 -s Shen_etal_SciAdv_2020_SEC7.fa -te Shen_etal_SciAdv_2020_SEC7.constrained.tre -pre Shen_etal_SciAdv_2020_SEC7 -m LG+G4 -keep-ident
 
-Step 2: Root constrain trees
+Step 2: Root constrained trees
 ****************************
 To ensure PhyKIT traverses each tree the same, root each tree using the outgroup taxa. PhyKIT has
 a function for rooting and takes as input a single column file with the names of the outgroup taxa.
@@ -325,7 +325,7 @@ Given our thresholds, neither *NUF2* nor *NDC80* significantly covary with *SEC7
 These two genes significantly covary with one another. This raises the hypothesis that these two genes have shared function. A literature-
 based examination of these genes reveals the encoded proteins are part of the same kinetochore-associated complex termed the 
 `NDC80 complex <https://www.yeastgenome.org/complex/CPX-548>`_. Thus, PhyKIT is useful for determining gene-gene covariation, which can be 
-driven by shared function, coexpression, and/or are part of the same multimeric complexes.
+driven by shared function, coexpression, and/or membership in the same multimeric complexes.
 
 |
 
@@ -341,7 +341,7 @@ PhyKIT uses a gene-based approach to evaluate polytomies. In other words, PhyKIT
 Thereafter, PhyKIT will conduct a chi-squared test to determine if there is equal support among gene trees for the various topologies.
 In the chi-squared test, the null hypothesis is that there is equal support among gene trees for the various topologies and the
 alternative hypothesis is that there is unequal support for the various topologies. Thus, failing to reject the null hypothesis
-would indicate that there is a polytomy where as rejecting the null hypothesis would indicate there is no polytomy.
+would indicate that there is a polytomy whereas rejecting the null hypothesis would indicate there is no polytomy.
 The various topologies examined by PhyKIT are determined by the groups file. Formatting this file will be explained later. 
 
 To demonstrate how to identify polytomies, we will use a subset of 250 gene phylogenies from 
@@ -364,7 +364,7 @@ For this tutorial, the data has already been formatted for the user. There are t
 Thus, this tutorial assumes that gene phylogenies have already been inferred and the area of the phylogeny that the user wishes to
 test for a polytomy has already been identified.
 
-Examination of the first file reveals that that it is a single column file that specifies the pathing of gene phylogenies to use
+Examination of the first file reveals that it is a single column file that specifies the pathing of gene phylogenies to use
 during polytomy testing. Examination of the second file reveals that groups are specified using a tab-separated five column file.
 
 *column 1:* an identifier for the test, which is not used by PhyKIT. Instead, this column is intended to be for the user to write any
@@ -404,7 +404,7 @@ by the support of sister relationships examined. Here, the *chi-squared* value i
 that the null hypothesis was rejected and that there is no evidence of a polytomy. The total number of genes used during the polytomy
 test was 240. However, you may have noticed that there were 250 genes used as input. This discrepancy is not an error but may be caused by 
 two different reasons. (1) 10 genes were unable to be used due to incomplete taxon representation in the groups and (2) PhyKIT can account
-for gene phylogenies uncertainty (i.e., gene phylogenies with collapsed bipartitions), which may render the support of a given gene tree
+for gene tree uncertainty (i.e., gene phylogenies with collapsed bipartitions), which may render the support of a given gene tree
 to be uncertain and therefore not be used during polytomy testing.
 
 Next, the section *0-1, 0-2,* and *1-2* refers to the sister relationships between the groups. Group 0 is specified in column 2 of the 

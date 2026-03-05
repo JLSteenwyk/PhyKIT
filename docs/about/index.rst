@@ -138,9 +138,9 @@ limpets, clams, and lizards! For more information visit her `LaBella website <ht
 
 |GoogleScholarShen| |GitHubShen| |TwitterShen| 
 
-`Xing-Xing Shen <https://xingxingshen.github.io/>`_ is an Assistant Professor of Institute of
+`Xing-Xing Shen <https://xingxingshen.github.io/>`_ is an Assistant Professor at the Institute of
 Insect Sciences at Zhejiang University. His lab is broadly interested in evolutionary biology,
-phylogenetics, comparative genomics, and bioinformatics. His current research mainly focus on:
+phylogenetics, comparative genomics, and bioinformatics. His current research mainly focuses on:
 1) investigating phylogenetic relationships in animals and fungi using genome-scale data;
 2) identifying the factors that lead to phylogenetic incongruence;
 and 3) exploring insect species and ecological diversity. Find out more information at his

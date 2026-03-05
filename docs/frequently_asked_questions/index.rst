@@ -13,7 +13,7 @@ Please contact the main software developer via `email <https://jlsteenwyk.com/co
 
 |
 
-**I am having trouble install PhyKIT, what should I do?**
+**I am having trouble installing PhyKIT, what should I do?**
 
 Please try installing PhyKIT using a virtual environment as directed in the installation instructions.
 If you are still running into issues after installing in a virtual environment, please contact
