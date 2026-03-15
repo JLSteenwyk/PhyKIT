@@ -398,7 +398,10 @@ Command line interface: pk_alignment_entropy; pk_aln_entropy; pk_entropy</p>
 <p>Site-wise entropy is calculated using Shannon entropy. By default,
 PhyKIT reports the mean entropy across all sites in the alignment.
 With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_entropy<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Example output (default):</p>
@@ -416,6 +419,17 @@ With the <cite>-v/--verbose</cite> option, PhyKIT reports entropy for each site.
 <em>-v/--verbose</em>: optional argument to print entropy for each site <br/>
 <em>--plot</em>: save a per-site alignment entropy plot <br/>
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">alignment_entropy_plot.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -672,7 +686,10 @@ col 1: index in alignment <br/>
 col 2: chi-squared statistic (higher values indicate greater bias) <br/>
 col 3: multi-test corrected p-value (Benjamini-Hochberg false discovery rate procedure) <br/>
 col 4: uncorrected p-value</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>comp_bias_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -680,6 +697,17 @@ col 4: uncorrected p-value</p>
 fasta alignment to calculate the site-wise compositional bias of <br/>
 <em>--plot</em>: save a Manhattan-style plot of site-wise compositional bias <br/>
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">compositional_bias_per_site_plot.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -698,7 +726,10 @@ matrices.</p>
 1) A fasta file with '.fa' appended to the prefix specified with the -p/--prefix parameter.
 2) A partition file ready for input into RAxML or IQ-tree.
 3) An occupancy file that summarizes the taxon occupancy per sequence.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-occupancy<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>create_concat<span class="w"> </span>-a<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;string&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-occupancy<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -716,6 +747,17 @@ sorted by total occupancy. Colors denote represented characters, gap/ambiguous
 characters in present genes, and fully absent gene blocks. <br/>
 <em>--plot-output</em>: optional custom output path for occupancy map figure
 (default: <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;.occupancy.png</span></code>). <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print summary metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -729,7 +771,10 @@ Command line interface: pk_evolutionary_rate_per_site; pk_evo_rate_per_site; pk_
 <p>Evolutionary rate per site is one minus the sum of squared frequency of different
 characters at a given site. Values may range from 0 (slow evolving; no diversity
 at the given site) to 1 (fast evolving; all characters appear only once).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_rate_per_site<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -737,6 +782,17 @@ at the given site) to 1 (fast evolving; all characters appear only once).</p>
 fasta alignment to calculate the site-wise evolutionary rate of <br/>
 <em>--plot</em>: save a per-site evolutionary-rate plot <br/>
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">evolutionary_rate_per_site_plot.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -849,7 +905,10 @@ all pairwise identities will be reported.</p>
 <p>An example of pairwise identities being used as a proxy
 for evolutionary rate can be found here: Chen et al.
 Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--exclude_gaps<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pairwise_identity<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--exclude_gaps<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -858,6 +917,17 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 <em>-e/--exclude_gaps</em>: if a site has a gap, ignore it <br/>
 <em>--plot</em>: save a clustered pairwise-identity heatmap <br/>
 <em>--plot-output</em>: output path for heatmap (default: pairwise_identity_heatmap.png) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -989,13 +1059,27 @@ biases. Lower RCVT values are more desirable because they indicate
 a lower composition bias for a given taxon in an alignment.</p>
 <p>RCVT calculations are case-insensitive and exclude gap/ambiguous symbols
 from composition counts and normalization.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_composition_variability_taxon<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>--plot</em>: optional argument to generate an RCVT per-taxon barplot <br/>
 <em>--plot-output</em>: output path for the RCVT plot (default: <code class="docutils literal notranslate"><span class="pre">rcvt_plot.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1103,7 +1187,10 @@ plot.</p>
 <p>Input trait data can be either a two-column file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>)
 when <code class="docutils literal notranslate"><span class="pre">-c</span></code> is omitted, or a multi-trait file with header row when <code class="docutils literal notranslate"><span class="pre">-c</span></code>
 specifies which column to use.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--type<span class="w"> </span>&lt;type&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--model<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--type<span class="w"> </span>&lt;type&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--model<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1115,6 +1202,17 @@ specifies which column to use.</p>
 <em>--model</em>: Mk model: <code class="docutils literal notranslate"><span class="pre">ER</span></code>, <code class="docutils literal notranslate"><span class="pre">SYM</span></code>, or <code class="docutils literal notranslate"><span class="pre">ARD</span></code> (discrete only; default: <code class="docutils literal notranslate"><span class="pre">ER</span></code>) <br/>
 <em>--ci</em>: include 95% confidence intervals (continuous only) <br/>
 <em>--plot</em>: output path for plot (requires matplotlib) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: output results as JSON</p>
 <p>Example contMap plot generated with the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option. Branches are colored
 by interpolated ancestral trait values:</p>
@@ -1141,7 +1239,10 @@ is auto-detected from the eigengap of the graph Laplacian.</p>
 <li><p><strong>nrf</strong> (default): binary presence/absence, consistent with normalized Robinson-Foulds distance</p></li>
 <li><p><strong>wrf</strong>: branch-length weighted</p></li>
 </ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>&lt;tree&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--metric<span class="w"> </span>nrf<span class="p">|</span>wrf<span class="o">]</span><span class="w"> </span><span class="o">[</span>--clusters<span class="w"> </span>K<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-pcs<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--top-loadings<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;prefix&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>&lt;tree&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--metric<span class="w"> </span>nrf<span class="p">|</span>wrf<span class="o">]</span><span class="w"> </span><span class="o">[</span>--clusters<span class="w"> </span>K<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-pcs<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--top-loadings<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;prefix&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1152,6 +1253,17 @@ is auto-detected from the eigengap of the graph Laplacian.</p>
 <em>--n-pcs</em>: number of PCs to report (default: min(10, G-1)) <br/>
 <em>--top-loadings</em>: top bipartitions per PC to display (default: 5) <br/>
 <em>--plot</em>: output prefix for plots (generates <code class="docutils literal notranslate"><span class="pre">_scatter.png</span></code> and <code class="docutils literal notranslate"><span class="pre">_eigengap.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: output results as JSON</p>
 <a class="reference internal image-reference" href="../_images/spectral_discordance_example_scatter.png"><img alt="../_images/spectral_discordance_example_scatter.png" class="align-center" src="../_images/spectral_discordance_example_scatter.png" style="width: 80%;" />
 </a>
@@ -1186,7 +1298,10 @@ percentile confidence intervals (2.5th--97.5th).</p></li>
 </ul>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;
 <span class="w">    </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>weighted<span class="p">|</span>distribution<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span>
-<span class="w">    </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1198,6 +1313,17 @@ percentile confidence intervals (2.5th--97.5th).</p></li>
 <em>--ci</em>: include 95% confidence intervals <br/>
 <em>--plot</em>: output path for concordance ASR plot <br/>
 <em>--missing-taxa</em>: how to handle taxa mismatches: <code class="docutils literal notranslate"><span class="pre">shared</span></code> (default, prune to intersection) or <code class="docutils literal notranslate"><span class="pre">error</span></code> (reject) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: output results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Concordance-Aware Ancestral State Reconstruction
@@ -1313,7 +1439,10 @@ threshold. Optionally draws a circular splits network diagram.</p>
 <p>Input can be either:
 1) a file with one Newick tree per line, or
 2) a file with one tree-file path per line.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consensus_network<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span><span class="m">0</span>.1<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consensus_network<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>--threshold<span class="w"> </span><span class="m">0</span>.1<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1321,6 +1450,17 @@ threshold. Optionally draws a circular splits network diagram.</p>
 <em>--threshold</em>: minimum split frequency to include, between 0 and 1 (default: <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
 <em>--plot-output</em>: output filename for the circular splits network plot (optional) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> is specified, a circular splits network diagram is produced.
 Taxa are arranged at equal angles around a circle. Each split is drawn as a chord
@@ -1414,13 +1554,27 @@ Command line interface: pk_cont_map; pk_contmap; pk_cmap</p>
 (analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>). Ancestral states are
 estimated via maximum-likelihood (two-pass Felsenstein algorithm)
 and mapped onto branches using a color gradient (coolwarm colormap).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-t/--tree</em>: a tree file in Newick format <br/>
 <em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
 <em>-o/--output</em>: output plot file path (required) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/contmap_example.png"><img alt="../_images/contmap_example.png" class="align-center" src="../_images/contmap_example.png" style="width: 80%;" />
 </a>
@@ -1437,7 +1591,10 @@ Command line interface: pk_cophylo; pk_tanglegram; pk_tangle</p>
 connecting lines between matching taxa. By default, taxa are matched
 by identical tip names. Internal nodes of tree2 are rotated to minimize
 line crossings.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cophylo<span class="w"> </span>-t<span class="w"> </span>&lt;tree1&gt;<span class="w"> </span>-t2<span class="w"> </span>&lt;tree2&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;mapping&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cophylo<span class="w"> </span>-t<span class="w"> </span>&lt;tree1&gt;<span class="w"> </span>-t2<span class="w"> </span>&lt;tree2&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;mapping&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1445,6 +1602,17 @@ line crossings.</p>
 <em>-t2/--tree2</em>: second tree file in Newick format <br/>
 <em>-o/--output</em>: output plot file path (required) <br/>
 <em>-m/--mapping</em>: optional tab-delimited mapping file (taxon1&lt;tab&gt;taxon2) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/cophylo_example.png"><img alt="../_images/cophylo_example.png" class="align-center" src="../_images/cophylo_example.png" style="width: 80%;" />
 </a>
@@ -1474,7 +1642,10 @@ col2: p-value</p>
 (2012), doi: 10.1101/gr.132647.111. Normalization method using a
 species tree follows Sato et al., Bioinformatics (2005), doi:
 10.1093/bioinformatics/bti564.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1485,6 +1656,17 @@ this is a putative species tree. <br/>
 <em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br/>
 <em>--plot</em>: save a covarying-rates scatter plot <br/>
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">covarying_rates_plot.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -1521,7 +1703,10 @@ discrete character states from stochastic character mapping (analogous
 to R's <code class="docutils literal notranslate"><span class="pre">phytools::densityMap()</span></code>). Runs N simulations of stochastic
 character mapping internally and, for each point along each branch,
 computes the fraction of simulations in each state.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>density_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>density_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1531,6 +1716,17 @@ computes the fraction of simulations in each state.</p>
 <em>-o/--output</em>: output plot file path (required) <br/>
 <em>-n/--nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/densitymap_example.png"><img alt="../_images/densitymap_example.png" class="align-center" src="../_images/densitymap_example.png" style="width: 80%;" />
 </a>
@@ -1557,7 +1753,10 @@ using a Mann-Whitney U test and a permutation test (1000 permutations). P-values
 are corrected for multiple testing using Benjamini-Hochberg FDR.</p>
 <p>A global treeness (internal/total branch length ratio) comparison between
 concordant and discordant gene trees is also reported.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_tempo_map<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_tempo_map<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1565,6 +1764,17 @@ concordant and discordant gene trees is also reported.</p>
 <em>-g/--gene-trees</em>: multi-Newick file of gene trees with branch lengths <br/>
 <em>--plot</em>: optional output path for box/strip plot (PNG) <br/>
 <em>-v/--verbose</em>: print per-gene-tree classification details <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
@@ -1615,7 +1825,10 @@ between specific lineages.</p>
 <p>For each internal branch of the species tree, a two-sided binomial test (H0:
 P(alt1) = 0.5) is applied, and p-values are corrected for multiple testing
 using Benjamini-Hochberg FDR.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>discordance_asymmetry<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>discordance_asymmetry<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -1623,6 +1836,17 @@ using Benjamini-Hochberg FDR.</p>
 <em>-g/--gene-trees</em>: multi-Newick file of gene trees (branch lengths not required) <br/>
 <em>--plot</em>: optional output path for asymmetry phylogram (PNG) <br/>
 <em>-v/--verbose</em>: print per-branch details <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Example output:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_alt1  n_alt2  asym_ratio     binom_p       fdr_p   gene_flow
@@ -1801,13 +2025,27 @@ values indicate early diversification (decelerating rates, consistent
 with an adaptive radiation followed by niche filling), while positive
 values indicate late diversification (accelerating rates, potentially
 reflecting recent ecological opportunity or mass extinction recovery).</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-t/--tree</em>: a rooted phylogeny file with branch lengths (required) <br/>
 <em>-v/--verbose</em>: print branching times and full LTT data points <br/>
 <em>--plot-output</em>: output filename for the LTT plot (PNG, PDF, SVG) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: output results as JSON</p>
 <p><strong>Default output</strong>: tab-separated gamma statistic and two-tailed p-value.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic gamma statistic</span>
@@ -2334,13 +2572,27 @@ Command line interface: pk_phenogram; pk_traitgram; pk_tg</p>
 (analogous to R's <code class="docutils literal notranslate"><span class="pre">phytools::phenogram()</span></code>). The X-axis represents
 distance from the root and the Y-axis represents trait values.
 Ancestral states are reconstructed via maximum-likelihood.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output.png&gt;
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>-t/--tree</em>: a tree file in Newick format <br/>
 <em>-d/--trait_data</em>: tab-delimited trait file (taxon&lt;tab&gt;value) <br/>
 <em>-o/--output</em>: output plot file path (required) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/phenogram_example.png"><img alt="../_images/phenogram_example.png" class="align-center" src="../_images/phenogram_example.png" style="width: 80%;" />
 </a>
@@ -2451,7 +2703,10 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_ordination<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>&lt;pca<span class="p">|</span>tsne<span class="p">|</span>umap&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--correction<span class="w"> </span>&lt;BM<span class="p">|</span>lambda&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--mode<span class="w"> </span>&lt;cov<span class="p">|</span>corr&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-components<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--perplexity<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-neighbors<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--min-dist<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--tree-color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_ordination<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>&lt;pca<span class="p">|</span>tsne<span class="p">|</span>umap&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--correction<span class="w"> </span>&lt;BM<span class="p">|</span>lambda&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--mode<span class="w"> </span>&lt;cov<span class="p">|</span>corr&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-components<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--perplexity<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-neighbors<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--min-dist<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-plot-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--tree-color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2472,6 +2727,17 @@ lambda+corr) within numerical tolerance (1e-4).</p>
 <em>--tree-color-by</em>: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) <br/>
 <em>--plot-output</em>: output path for plot (default: phylo_ordination_plot.png) <br/>
 <em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2594,7 +2860,10 @@ are omitted, the first two columns are selected automatically.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylomorphospace<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--trait-x<span class="w"> </span>&lt;name&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--trait-y<span class="w"> </span>&lt;name&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylomorphospace<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--trait-x<span class="w"> </span>&lt;name&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--trait-y<span class="w"> </span>&lt;name&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-by<span class="w"> </span>&lt;col_or_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2604,6 +2873,17 @@ are omitted, the first two columns are selected automatically.</p>
 <em>--trait-y</em>: column name for y-axis trait <br/>
 <em>--color-by</em>: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon&lt;tab&gt;value) for continuous or discrete coloring <br/>
 <em>--plot-output</em>: output path for plot (default: phylomorphospace_plot.png) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2717,7 +2997,10 @@ implemented in R's MSCquartets package.</p>
 <p>Input can be either:
 1) a file with one Newick tree per line, or
 2) a file with one tree-file path per line.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_network<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>--alpha<span class="w"> </span><span class="m">0</span>.05<span class="o">]</span><span class="w"> </span><span class="o">[</span>--beta<span class="w"> </span><span class="m">0</span>.95<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_network<span class="w"> </span>-t/--trees<span class="w"> </span>&lt;trees&gt;<span class="w"> </span><span class="o">[</span>--alpha<span class="w"> </span><span class="m">0</span>.05<span class="o">]</span><span class="w"> </span><span class="o">[</span>--beta<span class="w"> </span><span class="m">0</span>.95<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2726,6 +3009,17 @@ implemented in R's MSCquartets package.</p>
 <em>--beta</em>: threshold for the star tree test; quartets with p_star &gt; beta are called unresolved (default: <code class="docutils literal notranslate"><span class="pre">0.95</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
 <em>--plot-output</em>: output filename for the quartet network plot (optional) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> is specified, a NANUQ-style splits graph is drawn from
 the quartet distance matrix using Neighbor-Joining and circular split
@@ -2768,7 +3062,10 @@ regime can be generated using <code class="docutils literal notranslate"><span c
 <p>An effect size metric R²_regime is also reported, measuring the variance
 reduction from regime-specific rates vs. a single rate, weighted by the
 number of tips per regime.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rate_heterogeneity<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-r<span class="w"> </span>&lt;regime_data&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>rate_heterogeneity<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-r<span class="w"> </span>&lt;regime_data&gt;<span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2778,6 +3075,17 @@ number of tips per regime.</p>
 <em>-n/--nsim</em>: number of parametric bootstrap simulations (default: 0) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2920,7 +3228,10 @@ PhyKIT's multi-start optimizer finds a slightly better local optimum
 than R (loglik -8.38 vs -8.43). Dwelling times sum to total tree length
 exactly, and Q matrix structural properties (rows sum to zero, model
 nesting) are verified.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>stochastic_character_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>stochastic_character_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2931,6 +3242,17 @@ nesting) are verified.</p>
 <em>-n/--nsim</em>: number of stochastic mapping simulations (default: 100) <br/>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output plot file path for phylogram with colored branches <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -2983,7 +3305,10 @@ liabilities &gt; 0 map to state 1.</p></li>
 </ul>
 <p>Any combination of two traits is supported: discrete+continuous,
 discrete+discrete, or continuous+continuous.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>threshold_model<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>--traits<span class="w"> </span>&lt;t1,t2&gt;<span class="w"> </span>--types<span class="w"> </span>&lt;type1,type2&gt;<span class="w"> </span><span class="o">[</span>--ngen<span class="w"> </span><span class="m">100000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--sample<span class="w"> </span><span class="m">100</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--burnin<span class="w"> </span><span class="m">0</span>.2<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>threshold_model<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>--traits<span class="w"> </span>&lt;t1,t2&gt;<span class="w"> </span>--types<span class="w"> </span>&lt;type1,type2&gt;<span class="w"> </span><span class="o">[</span>--ngen<span class="w"> </span><span class="m">100000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--sample<span class="w"> </span><span class="m">100</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--burnin<span class="w"> </span><span class="m">0</span>.2<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2997,6 +3322,17 @@ discrete+discrete, or continuous+continuous.</p>
 <em>--seed</em>: random seed for reproducibility <br/>
 <em>--plot</em>: output filename for trace and posterior density plot (3 rows x 2 columns: <br/>
 left = MCMC trace, right = posterior histogram with 95% HPD shading) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Output (text mode): <br/>
 <code class="docutils literal notranslate"><span class="pre">Trait</span> <span class="pre">1:</span> <span class="pre">habitat</span> <span class="pre">(discrete,</span> <span class="pre">2</span> <span class="pre">states:</span> <span class="pre">0,</span> <span class="pre">1)</span></code> <br/>
@@ -3093,7 +3429,10 @@ Command line interface: pk_tip_to_tip_distance; pk_t2t_dist; pk_t2t</p>
 <p>Calculate distance between two tips (or leaves) in a phylogeny.</p>
 <p>Distances are in substitutions per site.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>&lt;tip_1&gt;<span class="w"> </span>&lt;tip_2&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
-phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>--all-pairs<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tree_file&gt;<span class="w"> </span>--all-pairs<span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -3103,6 +3442,17 @@ phykit<span class="w"> </span>tip_to_tip_distance<span class="w"> </span>&lt;tre
 <em>--all-pairs</em>: optional argument to report all pairwise tip distances <br/>
 <em>--plot</em>: optional argument to save a clustered distance heatmap (requires <code class="docutils literal notranslate"><span class="pre">--all-pairs</span></code>) <br/>
 <em>--plot-output</em>: output path for heatmap (default: <code class="docutils literal notranslate"><span class="pre">tip_to_tip_distance_heatmap.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -3189,11 +3539,19 @@ and Benjamini-Hochberg FDR multiple testing correction.</p>
 </ul>
 <p>Test statistic: <code class="docutils literal notranslate"><span class="pre">chi2</span> <span class="pre">=</span> <span class="pre">(m1</span> <span class="pre">-</span> <span class="pre">m2)^2</span> <span class="pre">/</span> <span class="pre">(m1</span> <span class="pre">+</span> <span class="pre">m2)</span></code>, with 1 degree of freedom.</p>
 <p><strong>Single alignment mode:</strong></p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_rate_test<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;rooted_tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_rate_test<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;rooted_tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p><strong>Batch mode (multiple alignments, one shared tree):</strong></p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_rate_test<span class="w"> </span>-l<span class="w"> </span>&lt;alignment_list&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;rooted_tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>relative_rate_test<span class="w"> </span>-l<span class="w"> </span>&lt;alignment_list&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;rooted_tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -3202,6 +3560,17 @@ and Benjamini-Hochberg FDR multiple testing correction.</p>
 <em>-t/--tree</em>: a rooted tree file <br/>
 <em>-v/--verbose</em>: print additional detail <br/>
 <em>--plot-output</em>: save a pairwise p-value heatmap to this path <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <p>Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
 raw p-value, Bonferroni-corrected p-value, FDR-corrected p-value, and a
@@ -3251,7 +3620,10 @@ value of saturation minus 1. Thus, lower values in the second column
 are indicative of values closer to one and, thus, less saturation.</p>
 <p>Saturation is calculated following Philippe et al., PLoS
 Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--exclude_gaps<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>-e/--exclude_gaps<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -3262,6 +3634,17 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.</p>
 distances used to determine saturation <br/>
 <em>--plot</em>: save a saturation scatter plot with fitted slope through origin <br/>
 <em>--plot-output</em>: output path for saturation plot (default: <code class="docutils literal notranslate"><span class="pre">saturation_plot.png</span></code>) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 </section>
 <section id="treeness-over-rcv">
