@@ -166,6 +166,7 @@ Trait evolution
 - :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
 - :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
 - :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>`: Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)
+- :ref:`Discrete trait evolution model comparison (fitDiscrete) <cmd-fit_discrete>`: Compare ER, SYM, ARD Mk models
 - :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
 - :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>`: Multi-regime Ornstein-Uhlenbeck models
 - :ref:`Phenogram (traitgram) <cmd-phenogram>`: Phenogram visualizing trait evolution
@@ -1549,6 +1550,35 @@ Options: |br|
 *-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
 *-m/--method*: consensus method (``strict`` or ``majority``; default: ``majority``) |br|
 *--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-fit_discrete:
+
+Discrete trait evolution model comparison (fitDiscrete)
+#######################################################
+Function names: fit_discrete; fitdiscrete; fd |br|
+Command line interface: pk_fit_discrete; pk_fitdiscrete; pk_fd
+
+Compare models of discrete trait evolution on a phylogeny. Fits ER
+(Equal Rates), SYM (Symmetric), and ARD (All Rates Different) Mk
+models of discrete character evolution via maximum likelihood.
+Compares models using AIC and BIC.
+
+Analogous to R's geiger::fitDiscrete(). Cross-validated against R's
+geiger package.
+
+.. code-block:: shell
+
+	phykit fit_discrete -t <tree> -d <trait_data> -c <trait>
+		[--models ER,SYM,ARD] [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-d/--trait_data*: trait data file in TSV format (required) |br|
+*-c/--trait*: column name for the discrete trait in the data file (required) |br|
+*--models*: comma-separated list of models to fit (default: ``ER,SYM,ARD``) |br|
 *--json*: optional argument to print results as JSON
 
 |

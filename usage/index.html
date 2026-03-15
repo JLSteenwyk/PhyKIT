@@ -103,6 +103,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#discrete-trait-evolution-model-comparison-fitdiscrete">Discrete trait evolution model comparison (fitDiscrete)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cophylogenetic-plot-tanglegram">Cophylogenetic plot (tanglegram)</a></li>
@@ -348,6 +349,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a>: Compare continuous trait evolution models (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-fit-discrete"><span class="std std-ref">Discrete trait evolution model comparison (fitDiscrete)</span></a>: Compare ER, SYM, ARD Mk models</p></li>
 <li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a>: Detect OU regime shifts on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a>: Multi-regime Ornstein-Uhlenbeck models</p></li>
 <li><p><a class="reference internal" href="#cmd-phenogram"><span class="std std-ref">Phenogram (traitgram)</span></a>: Phenogram visualizing trait evolution</p></li>
@@ -1496,6 +1498,30 @@ Command line interface: pk_consensus_tree; pk_consensus; pk_ctree</p>
 <em>-t/--trees</em>: file containing trees (one Newick per line) or tree-file paths (one per line) <br/>
 <em>-m/--method</em>: consensus method (<code class="docutils literal notranslate"><span class="pre">strict</span></code> or <code class="docutils literal notranslate"><span class="pre">majority</span></code>; default: <code class="docutils literal notranslate"><span class="pre">majority</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="discrete-trait-evolution-model-comparison-fitdiscrete">
+<span id="cmd-fit-discrete"></span><h3>Discrete trait evolution model comparison (fitDiscrete)<a class="headerlink" href="#discrete-trait-evolution-model-comparison-fitdiscrete" title="Link to this heading"></a></h3>
+<p>Function names: fit_discrete; fitdiscrete; fd <br/>
+Command line interface: pk_fit_discrete; pk_fitdiscrete; pk_fd</p>
+<p>Compare models of discrete trait evolution on a phylogeny. Fits ER
+(Equal Rates), SYM (Symmetric), and ARD (All Rates Different) Mk
+models of discrete character evolution via maximum likelihood.
+Compares models using AIC and BIC.</p>
+<p>Analogous to R's geiger::fitDiscrete(). Cross-validated against R's
+geiger package.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_discrete<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait&gt;
+<span class="w">        </span><span class="o">[</span>--models<span class="w"> </span>ER,SYM,ARD<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: tree file (required) <br/>
+<em>-d/--trait_data</em>: trait data file in TSV format (required) <br/>
+<em>-c/--trait</em>: column name for the discrete trait in the data file (required) <br/>
+<em>--models</em>: comma-separated list of models to fit (default: <code class="docutils literal notranslate"><span class="pre">ER,SYM,ARD</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

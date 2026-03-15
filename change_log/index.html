@@ -80,6 +80,24 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.41</strong>:
+Added discrete trait model comparison command (<code class="docutils literal notranslate"><span class="pre">fit_discrete</span></code> / <code class="docutils literal notranslate"><span class="pre">fd</span></code>):</p>
+<ul class="simple">
+<li><p>Compares ER (Equal Rates), SYM (Symmetric), and ARD (All Rates
+Different) Mk models of discrete character evolution via maximum
+likelihood</p></li>
+<li><p>Reports log-likelihood, AIC, delta-AIC, Akaike weights, BIC, and
+number of parameters for each model</p></li>
+<li><p>Extracts shared Q-matrix fitting, Felsenstein pruning, and trait
+parsing code from <code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ancestral_reconstruction</span></code> into <code class="docutils literal notranslate"><span class="pre">phykit/helpers/discrete_models.py</span></code>,
+eliminating code duplication</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">--models</span></code> flag to select a subset of models (e.g.,
+<code class="docutils literal notranslate"><span class="pre">--models</span> <span class="pre">ER,ARD</span></code>)</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">--json</span></code> output with full Q-matrix and rate parameters</p></li>
+<li><p>Cross-validated against R's geiger::fitDiscrete(); R validation
+script provided in <code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_fit_discrete.R</span></code></p></li>
+</ul>
 <p><strong>2.1.40</strong>:
 Added Kuhner-Felsenstein (branch score) distance command
 (<code class="docutils literal notranslate"><span class="pre">kf_distance</span></code> / <code class="docutils literal notranslate"><span class="pre">kf</span></code>):</p>
