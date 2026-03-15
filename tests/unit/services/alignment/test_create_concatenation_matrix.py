@@ -246,6 +246,56 @@ class TestCreateConcatenationMatrix:
         )
         assert output_file.exists()
 
+    def test_plot_concatenation_occupancy_pdf_output(self, tmp_path, args):
+        pytest.importorskip("matplotlib")
+        ccm = CreateConcatenationMatrix(args)
+        output_file = tmp_path / "occ.pdf"
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B"],
+            alignment_paths=["g1.fa", "g2.fa"],
+            concatenated_seqs={"A": ["AC", "GT"], "B": ["A-", "G?"]},
+            present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+            gene_lengths=[2, 2],
+            output_file=str(output_file),
+        )
+        assert output_file.exists()
+
+    def test_plot_concatenation_occupancy_custom_config(self, tmp_path):
+        pytest.importorskip("matplotlib")
+        custom_args = Namespace(
+            alignment_list="/x", prefix="x",
+            fig_width=10.0, fig_height=6.0, dpi=72, no_title=True,
+            title=None, legend_position="lower left",
+            ylabel_fontsize=5.0, xlabel_fontsize=4.0,
+            title_fontsize=10.0, axis_fontsize=8.0,
+            colors="#000000,#ffffff,#ff0000",
+        )
+        ccm = CreateConcatenationMatrix(custom_args)
+        output_file = tmp_path / "custom.png"
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B", "C"],
+            alignment_paths=["g1.fa", "g2.fa"],
+            concatenated_seqs={"A": ["AC", "GT"], "B": ["A-", "G?"], "C": ["TT", "AA"]},
+            present_taxa_by_gene=[{"A", "B"}, {"A", "C"}],
+            gene_lengths=[2, 2],
+            output_file=str(output_file),
+        )
+        assert output_file.exists()
+
+    def test_plot_concatenation_occupancy_svg_output(self, tmp_path, args):
+        pytest.importorskip("matplotlib")
+        ccm = CreateConcatenationMatrix(args)
+        output_file = tmp_path / "occ.svg"
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B"],
+            alignment_paths=["g1.fa", "g2.fa"],
+            concatenated_seqs={"A": ["AC", "GT"], "B": ["A-", "G?"]},
+            present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+            gene_lengths=[2, 2],
+            output_file=str(output_file),
+        )
+        assert output_file.exists()
+
     def test_create_concatenation_matrix_json_and_plot(self, tmp_path, monkeypatch):
         gene1 = tmp_path / "g1.fa"
         gene2 = tmp_path / "g2.fa"

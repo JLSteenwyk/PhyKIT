@@ -65,6 +65,9 @@ class CreateConcatenationMatrix(Alignment):
             print("matplotlib is required for --plot-occupancy. Install matplotlib and retry.")
             sys.exit(2)
 
+        config = self.plot_config
+        config.resolve(n_rows=len(taxa), n_cols=len(alignment_paths))
+
         # 0: absent gene block, 1: present but gap/ambiguous character, 2: represented character
         total_len = int(sum(gene_lengths))
         state_matrix = np.zeros((len(taxa), total_len), dtype=np.uint8)
@@ -96,39 +99,57 @@ class CreateConcatenationMatrix(Alignment):
         state_matrix = state_matrix[order, :]
         taxa_sorted = [taxa[idx] for idx in order]
 
-        fig_height = max(5.0, min(18.0, 3.0 + len(taxa_sorted) * 0.18))
-        fig, ax = plt.subplots(figsize=(14, fig_height))
-        cmap = ListedColormap(["#525252", "#d9d9d9", "#2b8cbe"])
+        default_colors = ["#525252", "#d9d9d9", "#2b8cbe"]
+        colors = config.merge_colors(default_colors)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+        cmap = ListedColormap(colors)
         ax.imshow(state_matrix, aspect="auto", interpolation="nearest", cmap=cmap, vmin=0, vmax=2)
 
         for boundary in gene_boundaries[:-1]:
             ax.axvline(boundary - 0.5, color="black", linewidth=0.6, alpha=0.8)
 
-        # Label genes at centers when feasible
-        if len(alignment_paths) <= 40:
+        # Label genes at centers when feasible (controlled by xlabel_fontsize)
+        if config.xlabel_fontsize and config.xlabel_fontsize > 0:
             starts = [0] + gene_boundaries[:-1]
             centers = [((s + e) / 2) - 0.5 for s, e in zip(starts, gene_boundaries)]
             labels = [os.path.basename(path) for path in alignment_paths]
             ax.set_xticks(centers)
-            ax.set_xticklabels(labels, rotation=90, fontsize=7)
+            ax.set_xticklabels(labels, rotation=90, fontsize=config.xlabel_fontsize)
         else:
             ax.set_xticks([])
             ax.set_xlabel("Concatenated alignment positions (gene boundaries shown)")
 
-        ax.set_yticks(np.arange(len(taxa_sorted)))
-        ax.set_yticklabels(taxa_sorted, fontsize=7)
+        # Y-axis tick labels (controlled by ylabel_fontsize)
+        if config.ylabel_fontsize and config.ylabel_fontsize > 0:
+            ax.set_yticks(np.arange(len(taxa_sorted)))
+            ax.set_yticklabels(taxa_sorted, fontsize=config.ylabel_fontsize)
+        else:
+            ax.set_yticks([])
+
         ax.set_ylabel("Taxa (sorted by represented occupancy)")
-        ax.set_title("Concatenation Occupancy Map")
 
         legend_handles = [
-            Patch(facecolor="#2b8cbe", label="Represented character"),
-            Patch(facecolor="#d9d9d9", label="Gap/Ambiguous in present gene"),
-            Patch(facecolor="#525252", label="Gene absent (placeholder block)"),
+            Patch(facecolor=colors[2], label="Represented character"),
+            Patch(facecolor=colors[1], label="Gap/Ambiguous in present gene"),
+            Patch(facecolor=colors[0], label="Gene absent (placeholder block)"),
         ]
-        ax.legend(handles=legend_handles, loc="upper right", fontsize=8, frameon=True)
+
+        legend_loc = config.legend_position or "upper right"
+        if legend_loc != "none":
+            ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
+
+        # Apply title via config
+        if config.show_title:
+            title_text = config.title if config.title is not None else "Concatenation Occupancy Map"
+            ax.set_title(title_text, fontsize=config.title_fontsize)
+
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
 
         fig.tight_layout()
-        fig.savefig(output_file, dpi=300, bbox_inches="tight")
+        fig.savefig(output_file, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def read_alignment_paths(self, alignment_list_path: str) -> List[str]:
