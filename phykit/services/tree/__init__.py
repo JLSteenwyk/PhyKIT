@@ -28,6 +28,7 @@ _EXPORTS = {
     "PrintTree": "print_tree",
     "PruneTree": "prune_tree",
     "RenameTreeTips": "rename_tree_tips",
+    "KuhnerFelsensteinDistance": "kf_distance",
     "RobinsonFouldsDistance": "rf_distance",
     "RootTree": "root_tree",
     "Saturation": "saturation",
