@@ -1,6 +1,8 @@
+import argparse
+
 import pytest
 
-from phykit.helpers.plot_config import PlotConfig
+from phykit.helpers.plot_config import PlotConfig, add_plot_arguments
 
 
 class TestPlotConfigDefaults:
@@ -153,3 +155,89 @@ class TestResolve:
         first_height = config.fig_height
         config.resolve(n_rows=500, n_cols=500)
         assert config.fig_height == first_height  # not overwritten
+
+
+class TestAddPlotArguments:
+    def _make_parser(self):
+        parser = argparse.ArgumentParser()
+        add_plot_arguments(parser)
+        return parser
+
+    def test_defaults_all_none(self):
+        parser = self._make_parser()
+        args = parser.parse_args([])
+        config = PlotConfig.from_args(args)
+        assert config.fig_width is None
+        assert config.fig_height is None
+        assert config.dpi == 300
+        assert config.show_title is True
+        assert config.title is None
+        assert config.legend_position is None
+        assert config.ylabel_fontsize is None
+        assert config.xlabel_fontsize is None
+        assert config.colors is None
+
+    def test_all_args_provided(self):
+        parser = self._make_parser()
+        args = parser.parse_args([
+            "--fig-width", "12",
+            "--fig-height", "8",
+            "--dpi", "150",
+            "--no-title",
+            "--title", "My Title",
+            "--legend-position", "lower left",
+            "--ylabel-fontsize", "5",
+            "--xlabel-fontsize", "4",
+            "--title-fontsize", "14",
+            "--axis-fontsize", "11",
+            "--colors", "#ff0000, #00ff00, #0000ff",
+        ])
+        config = PlotConfig.from_args(args)
+        assert config.fig_width == 12.0
+        assert config.fig_height == 8.0
+        assert config.dpi == 150
+        assert config.show_title is False  # --no-title wins
+        assert config.title == "My Title"
+        assert config.legend_position == "lower left"
+        assert config.ylabel_fontsize == 5.0
+        assert config.xlabel_fontsize == 4.0
+        assert config.title_fontsize == 14.0
+        assert config.axis_fontsize == 11.0
+        assert config.colors == ["#ff0000", "#00ff00", "#0000ff"]
+
+    def test_colors_empty_entries_preserved(self):
+        parser = self._make_parser()
+        args = parser.parse_args(["--colors", ",,#e41a1c"])
+        config = PlotConfig.from_args(args)
+        assert config.colors == ["", "", "#e41a1c"]
+
+    def test_zero_fontsize_accepted(self):
+        parser = self._make_parser()
+        args = parser.parse_args(["--ylabel-fontsize", "0", "--xlabel-fontsize", "0"])
+        config = PlotConfig.from_args(args)
+        assert config.ylabel_fontsize == 0.0
+        assert config.xlabel_fontsize == 0.0
+
+    def test_from_args_missing_plot_attrs_uses_defaults(self):
+        args = argparse.Namespace(alignment_list="x", prefix="y")
+        config = PlotConfig.from_args(args)
+        assert config.fig_width is None
+        assert config.dpi == 300
+
+    def test_from_args_rejects_negative_fig_width(self):
+        parser = self._make_parser()
+        args = parser.parse_args(["--fig-width", "-5"])
+        with pytest.raises(SystemExit):
+            PlotConfig.from_args(args)
+
+    def test_from_args_rejects_negative_fontsize(self):
+        parser = self._make_parser()
+        args = parser.parse_args(["--ylabel-fontsize", "-1"])
+        with pytest.raises(SystemExit):
+            PlotConfig.from_args(args)
+
+    def test_from_args_rejects_invalid_legend_position(self):
+        parser = self._make_parser()
+        args = parser.parse_args(["--legend-position", "top middle"])
+        with pytest.raises(SystemExit):
+            PlotConfig.from_args(args)

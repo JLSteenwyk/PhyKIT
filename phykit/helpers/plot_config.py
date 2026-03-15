@@ -110,3 +110,43 @@ class PlotConfig:
             if getattr(self, fld) is None:
                 setattr(self, fld, getattr(defaults, fld))
         return self
+
+    @classmethod
+    def from_args(cls, args) -> "PlotConfig":
+        colors_str = getattr(args, "colors", None)
+        colors = None
+        if colors_str is not None:
+            colors = [c.strip() for c in colors_str.split(",")]
+
+        no_title = getattr(args, "no_title", False)
+
+        config = cls(
+            fig_width=getattr(args, "fig_width", None),
+            fig_height=getattr(args, "fig_height", None),
+            dpi=getattr(args, "dpi", 300),
+            show_title=not no_title,
+            title=getattr(args, "title", None),
+            legend_position=getattr(args, "legend_position", None),
+            ylabel_fontsize=getattr(args, "ylabel_fontsize", None),
+            xlabel_fontsize=getattr(args, "xlabel_fontsize", None),
+            title_fontsize=getattr(args, "title_fontsize", None),
+            axis_fontsize=getattr(args, "axis_fontsize", None),
+            colors=colors,
+        )
+        config.validate()
+        return config
+
+
+def add_plot_arguments(parser) -> None:
+    group = parser.add_argument_group("plot options")
+    group.add_argument("--fig-width", type=float, default=None, help="Figure width in inches (auto-scaled if omitted)")
+    group.add_argument("--fig-height", type=float, default=None, help="Figure height in inches (auto-scaled if omitted)")
+    group.add_argument("--dpi", type=int, default=300, help="Resolution in DPI (default: 300)")
+    group.add_argument("--no-title", action="store_true", default=False, help="Hide the plot title")
+    group.add_argument("--title", type=str, default=None, help="Custom title text")
+    group.add_argument("--legend-position", type=str, default=None, help="Legend location (e.g., 'upper right', 'none' to hide)")
+    group.add_argument("--ylabel-fontsize", type=float, default=None, help="Font size for y-axis labels; 0 to hide")
+    group.add_argument("--xlabel-fontsize", type=float, default=None, help="Font size for x-axis labels; 0 to hide")
+    group.add_argument("--title-fontsize", type=float, default=None, help="Font size for the title")
+    group.add_argument("--axis-fontsize", type=float, default=None, help="Font size for axis labels")
+    group.add_argument("--colors", type=str, default=None, help="Comma-separated colors (hex or named)")
