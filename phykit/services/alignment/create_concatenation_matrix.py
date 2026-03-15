@@ -13,6 +13,7 @@ import numpy as np
 from .base import Alignment
 from ...helpers.files import read_single_column_file_to_list
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class CreateConcatenationMatrix(Alignment):
@@ -26,6 +27,7 @@ class CreateConcatenationMatrix(Alignment):
         self.plot_occupancy = parsed["plot_occupancy"]
         self.plot_output = parsed["plot_output"]
         self.threshold = parsed["threshold"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         self.create_concatenation_matrix(
@@ -41,6 +43,7 @@ class CreateConcatenationMatrix(Alignment):
             plot_occupancy=getattr(args, "plot_occupancy", False),
             plot_output=getattr(args, "plot_output", None),
             threshold=getattr(args, "threshold", 0),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _plot_concatenation_occupancy(

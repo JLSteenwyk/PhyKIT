@@ -33,6 +33,7 @@ class TestCreateConcatenationMatrix:
         assert ccm.plot_occupancy is False
         assert ccm.plot_output is None
         assert ccm.threshold == 0
+        assert ccm.plot_config is not None
 
     def test_process_args_reads_optional_flags(self):
         parsed = CreateConcatenationMatrix(
