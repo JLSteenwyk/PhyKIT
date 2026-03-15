@@ -57,19 +57,28 @@ phykit fit_discrete -t <tree> -d <trait_data> -c <trait_column>
 **Output (text):** Model comparison table (following `fit_continuous` format):
 
 ```
-Model   lnL        AIC      ΔAIC    AIC_w   n_params  k
-ER      -12.3456   26.6912  0.0000  0.7234  1         3
-SYM     -11.8901   29.7802  3.0890  0.1533  3         3
-ARD     -10.5678   33.1356  6.4444  0.0293  6         3
+Model   lnL        AIC      ΔAIC    AIC_w   BIC      ΔBIC    n_params  n_states
+ER      -12.3456   26.6912  0.0000  0.7234  27.3844  0.0000  1         3
+SYM     -11.8901   29.7802  3.0890  0.1533  31.8598  4.4754  3         3
+ARD     -10.5678   33.1356  6.4444  0.0293  37.2948  9.9104  6         3
 ```
 
 Where:
 - `lnL`: log-likelihood
 - `AIC`: Akaike Information Criterion = -2*lnL + 2*n_params
 - `ΔAIC`: difference from best model's AIC
-- `AIC_w`: Akaike weights (relative model probability)
-- `n_params`: number of free parameters in the Q-matrix
-- `k`: number of discrete states
+- `AIC_w`: Akaike weights = exp(-ΔAIC/2) / sum(exp(-ΔAIC_j/2))
+- `BIC`: Bayesian Information Criterion = -2*lnL + n_params*ln(n_obs)
+- `ΔBIC`: difference from best model's BIC
+- `n_params`: number of free rate parameters in the Q-matrix
+- `n_states`: number of discrete states
+
+`n_obs` for BIC is the number of tips that have trait data AND are present in the tree (the intersection count), matching `fit_continuous` convention.
+
+Parameter counts assume a fixed equal root prior (pi = 1/k). Only Q-matrix rate parameters are counted:
+- ER: 1 parameter
+- SYM: k(k-1)/2 parameters
+- ARD: k(k-1) parameters
 
 **Output (--json):**
 ```json
@@ -84,6 +93,8 @@ Where:
       "aic": 26.6912,
       "delta_aic": 0.0,
       "aic_weight": 0.7234,
+      "bic": 27.3844,
+      "delta_bic": 0.0,
       "n_params": 1,
       "q_matrix": [[...], [...], [...]],
       "rates": {"all": 0.1234}
@@ -94,6 +105,8 @@ Where:
 ```
 
 **Default models:** `ER,SYM,ARD` (all three). User can select a subset with `--models ER,ARD`.
+
+**Model validation:** Invalid model names in `--models` produce a clear error at argument parsing time (not deep in optimization).
 
 ### Algorithm
 
@@ -148,7 +161,27 @@ class FitDiscrete(Tree):
 
 ### Trait parsing
 
-Reuse the existing trait data parser from `ancestral_reconstruction.py`. The same `_parse_discrete_trait_data_multi` method handles multi-column TSV files with a `-c/--trait` column selector. This code will also be extracted to `discrete_models.py` as a utility function `parse_discrete_traits(path, tree_tips, trait_column)`.
+There are three discrete trait parsers across the codebase:
+1. `StochasticCharacterMap._parse_discrete_trait_file(path, column, tree_tips)` — multi-column TSV with header
+2. `AncestralReconstruction._parse_discrete_trait_data_single(path, tree_tips)` — two-column TSV, no header
+3. `AncestralReconstruction._parse_discrete_trait_data_multi(path, tree_tips, trait_column)` — multi-column TSV with header
+
+Extract a single unified function into `discrete_models.py`:
+```python
+def parse_discrete_traits(path, tree_tips, trait_column=None):
+    """Parse discrete trait data from a TSV file.
+
+    If trait_column is None: expects 2-column format (taxon, state).
+    If trait_column is given: expects multi-column with header, extracts named column.
+    Returns {taxon: state} dict for shared taxa (intersection with tree_tips).
+    """
+```
+
+`StochasticCharacterMap`, `AncestralReconstruction`, and `DensityMap` will all import from this shared function. `DensityMap` currently reaches into SCM internals (`scm._parse_discrete_trait_file`), so it must also be updated.
+
+### Tree validation
+
+`FitDiscrete.run()` must validate the tree before fitting: at least 3 tips, all branches must have lengths. This follows the pattern in `StochasticCharacterMap._validate_tree` and `FitContinuous._validate_tree`.
 
 ### Registration
 
@@ -174,12 +207,18 @@ tree <- read.tree("../sample_files/tree_simple.tre")
 traits <- read.delim("../sample_files/tree_simple_discrete_traits.tsv")
 trait_vec <- setNames(traits$diet, traits$taxon)
 
+# Use equal root prior to match PhyKIT's fixed flat prior
+cat("=== KEY VALUES FOR PYTHON TESTS ===\n")
 for (model in c("ER", "SYM", "ARD")) {
-  fit <- fitDiscrete(tree, trait_vec, model = model)
-  cat(sprintf("Model: %s  lnL: %.4f  AIC: %.4f  k: %d\n",
-              model, fit$opt$lnL, fit$opt$aic, fit$opt$k))
+  fit <- fitDiscrete(tree, trait_vec, model = model, type = "equal")
+  n <- length(trait_vec)
+  bic <- -2 * fit$opt$lnL + fit$opt$k * log(n)
+  cat(sprintf("Model: %s  lnL: %.4f  AIC: %.4f  BIC: %.4f  k: %d\n",
+              model, fit$opt$lnL, fit$opt$aic, bic, fit$opt$k))
 }
 ```
+
+**Tolerance:** Log-likelihood values should agree within 0.1 of R's values, since multi-start optimization in PhyKIT and geiger may converge to slightly different local optima. AIC/BIC are deterministic given lnL and n_params.
 
 ### Changelog entry
 
@@ -226,8 +265,9 @@ Added discrete trait model comparison command
 | `phykit/services/tree/fit_discrete.py` | **New** — FitDiscrete service |
 | `phykit/services/tree/stochastic_character_map.py` | Replace duplicated methods with imports |
 | `phykit/services/tree/ancestral_reconstruction.py` | Replace duplicated methods with imports |
+| `phykit/services/tree/density_map.py` | Update to import trait parser from shared module |
 | `phykit/service_factories.py` | Add factory |
-| `phykit/services/tree/__init__.py` | Add to exports |
+| `phykit/services/tree/__init__.py` | Add to exports (only if other newer services like FitContinuous are also listed; otherwise skip for consistency) |
 | `phykit/cli_registry.py` | Add aliases |
 | `phykit/phykit.py` | Add CLI method, help text, help banner, module-level function |
 | `setup.py` | Add entry points |
