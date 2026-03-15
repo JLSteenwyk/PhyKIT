@@ -219,7 +219,10 @@ With the `-v/--verbose` option, PhyKIT reports entropy for each site.
 
 .. code-block:: shell
 
-	phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
+	phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Example output (default):
 
@@ -240,6 +243,17 @@ Options: |br|
 *-v/--verbose*: optional argument to print entropy for each site |br|
 *--plot*: save a per-site alignment entropy plot |br|
 *--plot-output*: output path for plot (default: ``alignment_entropy_plot.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -559,13 +573,27 @@ col 4: uncorrected p-value
 
 .. code-block:: shell
 
-	phykit comp_bias_per_site <alignment> [--plot] [--plot-output <path>] [--json]
+	phykit comp_bias_per_site <alignment> [--plot] [--plot-output <path>]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment to calculate the site-wise compositional bias of |br|
 *--plot*: save a Manhattan-style plot of site-wise compositional bias |br|
 *--plot-output*: output path for plot (default: ``compositional_bias_per_site_plot.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -593,7 +621,10 @@ PhyKIT will output three files:
 
 .. code-block:: shell
 
-	phykit create_concat -a <file> -p <string> [--threshold <float>] [--plot-occupancy] [--plot-output <path>] [--json]
+	phykit create_concat -a <file> -p <string> [--threshold <float>] [--plot-occupancy] [--plot-output <path>]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-a/--alignment*: alignment list file. File should contain a single column list of alignment
@@ -610,6 +641,17 @@ sorted by total occupancy. Colors denote represented characters, gap/ambiguous
 characters in present genes, and fully absent gene blocks. |br|
 *--plot-output*: optional custom output path for occupancy map figure
 (default: ``<prefix>.occupancy.png``). |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print summary metadata as JSON
 
 |
@@ -630,13 +672,27 @@ at the given site) to 1 (fast evolving; all characters appear only once).
 
 .. code-block:: shell
 
-	phykit evo_rate_per_site <alignment> [--plot] [--plot-output <path>] [--json]
+	phykit evo_rate_per_site <alignment> [--plot] [--plot-output <path>]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
 fasta alignment to calculate the site-wise evolutionary rate of |br|
 *--plot*: save a per-site evolutionary-rate plot |br|
 *--plot-output*: output path for plot (default: ``evolutionary_rate_per_site_plot.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -790,7 +846,10 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 
 .. code-block:: shell
 
-	phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>] [--json]
+	phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
@@ -798,6 +857,17 @@ Options: |br|
 *-e/--exclude_gaps*: if a site has a gap, ignore it |br|
 *--plot*: save a clustered pairwise-identity heatmap |br|
 *--plot-output*: output path for heatmap (default: pairwise_identity_heatmap.png) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -963,12 +1033,26 @@ from composition counts and normalization.
 
 .. code-block:: shell
 
-	phykit relative_composition_variability_taxon <alignment> [--plot] [--plot-output <path>] [--json]
+	phykit relative_composition_variability_taxon <alignment> [--plot] [--plot-output <path>]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *--plot*: optional argument to generate an RCVT per-taxon barplot |br|
 *--plot-output*: output path for the RCVT plot (default: ``rcvt_plot.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1103,7 +1187,10 @@ specifies which column to use.
 
 .. code-block:: shell
 
-   phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>] [--json]
+   phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a phylogenetic tree file |br|
@@ -1114,6 +1201,17 @@ Options: |br|
 *--model*: Mk model: ``ER``, ``SYM``, or ``ARD`` (discrete only; default: ``ER``) |br|
 *--ci*: include 95% confidence intervals (continuous only) |br|
 *--plot*: output path for plot (requires matplotlib) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: output results as JSON
 
 Example contMap plot generated with the ``--plot`` option. Branches are colored
@@ -1149,7 +1247,10 @@ Two metrics are available:
 
 .. code-block:: shell
 
-   phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>] [--json]
+   phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-g/--gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
@@ -1159,6 +1260,17 @@ Options: |br|
 *--n-pcs*: number of PCs to report (default: min(10, G-1)) |br|
 *--top-loadings*: top bipartitions per PC to display (default: 5) |br|
 *--plot*: output prefix for plots (generates ``_scatter.png`` and ``_eigengap.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: output results as JSON
 
 .. image:: ../_static/img/spectral_discordance_example_scatter.png
@@ -1201,7 +1313,10 @@ Two strategies are available:
 
    phykit concordance_asr -t <species_tree> -g <gene_trees> -d <trait_data>
        [-c <trait>] [-m weighted|distribution] [--ci]
-       [--plot <output>] [--missing-taxa error|shared] [--json]
+       [--plot <output>] [--missing-taxa error|shared]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: species tree file |br|
@@ -1212,6 +1327,17 @@ Options: |br|
 *--ci*: include 95% confidence intervals |br|
 *--plot*: output path for concordance ASR plot |br|
 *--missing-taxa*: how to handle taxa mismatches: ``shared`` (default, prune to intersection) or ``error`` (reject) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: output results as JSON
 
 Example output:
@@ -1358,13 +1484,27 @@ Input can be either:
 
 .. code-block:: shell
 
-   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>] [--json]
+   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
 *--threshold*: minimum split frequency to include, between 0 and 1 (default: ``0.1``) |br|
 *--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
 *--plot-output*: output filename for the circular splits network plot (optional) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 When ``--plot-output`` is specified, a circular splits network diagram is produced.
@@ -1480,12 +1620,26 @@ and mapped onto branches using a color gradient (coolwarm colormap).
 
 .. code-block:: shell
 
-   phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
+   phykit cont_map -t <tree> -d <trait_data> -o <output.png>
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
 *-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
 *-o/--output*: output plot file path (required) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/contmap_example.png
@@ -1509,13 +1663,27 @@ line crossings.
 
 .. code-block:: shell
 
-   phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
+   phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree1*: first tree file in Newick format |br|
 *-t2/--tree2*: second tree file in Newick format |br|
 *-o/--output*: output plot file path (required) |br|
 *-m/--mapping*: optional tab-delimited mapping file (taxon1<tab>taxon2) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/cophylo_example.png
@@ -1555,7 +1723,10 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 
 .. code-block:: shell
 
-   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
+   phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be a tree file |br|
@@ -1565,6 +1736,17 @@ this is a putative species tree. |br|
 *-v/--verbose*: print out corrected branch lengths shared between tree 0 and tree 1 |br|
 *--plot*: save a covarying-rates scatter plot |br|
 *--plot-output*: output path for plot (default: ``covarying_rates_plot.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1613,7 +1795,10 @@ computes the fraction of simulations in each state.
 
 .. code-block:: shell
 
-   phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
+   phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -1622,6 +1807,17 @@ Options: |br|
 *-o/--output*: output plot file path (required) |br|
 *-n/--nsim*: number of stochastic mapping simulations (default: 100) |br|
 *--seed*: random seed for reproducibility |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/densitymap_example.png
@@ -1658,13 +1854,27 @@ concordant and discordant gene trees is also reported.
 
 .. code-block:: shell
 
-   phykit evo_tempo_map -t <species_tree> -g <gene_trees> [--plot <output>] [-v] [--json]
+   phykit evo_tempo_map -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a species tree file |br|
 *-g/--gene-trees*: multi-Newick file of gene trees with branch lengths |br|
 *--plot*: optional output path for box/strip plot (PNG) |br|
 *-v/--verbose*: print per-gene-tree classification details |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -1730,13 +1940,27 @@ using Benjamini-Hochberg FDR.
 
 .. code-block:: shell
 
-   phykit discordance_asymmetry -t <species_tree> -g <gene_trees> [--plot <output>] [-v] [--json]
+   phykit discordance_asymmetry -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a species tree file |br|
 *-g/--gene-trees*: multi-Newick file of gene trees (branch lengths not required) |br|
 *--plot*: optional output path for asymmetry phylogram (PNG) |br|
 *-v/--verbose*: print per-branch details |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -1957,12 +2181,26 @@ reflecting recent ecological opportunity or mass extinction recovery).
 
 .. code-block:: shell
 
-   phykit ltt -t <tree> [-v/--verbose] [--plot-output <file>] [--json]
+   phykit ltt -t <tree> [-v/--verbose] [--plot-output <file>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a rooted phylogeny file with branch lengths (required) |br|
 *-v/--verbose*: print branching times and full LTT data points |br|
 *--plot-output*: output filename for the LTT plot (PNG, PDF, SVG) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: output results as JSON
 
 **Default output**: tab-separated gamma statistic and two-tailed p-value.
@@ -2577,12 +2815,26 @@ Ancestral states are reconstructed via maximum-likelihood.
 
 .. code-block:: shell
 
-   phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
+   phykit phenogram -t <tree> -d <trait_data> -o <output.png>
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
 *-d/--trait_data*: tab-delimited trait file (taxon<tab>value) |br|
 *-o/--output*: output plot file path (required) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/phenogram_example.png
@@ -2713,7 +2965,10 @@ lambda+corr) within numerical tolerance (1e-4).
 
 .. code-block:: shell
 
-   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [-g <gene_trees>] [--json]
+   phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [-g <gene_trees>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -2733,6 +2988,17 @@ Options: |br|
 *--tree-color-by*: color phylogeny edges by a trait; specify a column name or a tab-delimited file (default: distance from root) |br|
 *--plot-output*: output path for plot (default: phylo_ordination_plot.png) |br|
 *-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2882,7 +3148,10 @@ are omitted, the first two columns are selected automatically.
 
 .. code-block:: shell
 
-   phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+   phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -2891,6 +3160,17 @@ Options: |br|
 *--trait-y*: column name for y-axis trait |br|
 *--color-by*: color tip points by a trait; specify a column name from the multi-trait file or a separate tab-delimited file (taxon<tab>value) for continuous or discrete coloring |br|
 *--plot-output*: output path for plot (default: phylomorphospace_plot.png) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3034,7 +3314,10 @@ Input can be either:
 
 .. code-block:: shell
 
-   phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>] [--json]
+   phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
@@ -3042,6 +3325,17 @@ Options: |br|
 *--beta*: threshold for the star tree test; quartets with p_star > beta are called unresolved (default: ``0.95``) |br|
 *--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
 *--plot-output*: output filename for the quartet network plot (optional) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 When ``--plot-output`` is specified, a NANUQ-style splits graph is drawn from
@@ -3099,7 +3393,10 @@ number of tips per regime.
 
 .. code-block:: shell
 
-   phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+   phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3108,6 +3405,17 @@ Options: |br|
 *-n/--nsim*: number of parametric bootstrap simulations (default: 0) |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: output plot file path for phylogram with colored branches |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3284,7 +3592,10 @@ nesting) are verified.
 
 .. code-block:: shell
 
-   phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+   phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3294,6 +3605,17 @@ Options: |br|
 *-n/--nsim*: number of stochastic mapping simulations (default: 100) |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: output plot file path for phylogram with colored branches |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3359,7 +3681,10 @@ discrete+discrete, or continuous+continuous.
 
 .. code-block:: shell
 
-   phykit threshold_model -t <tree> -d <trait_data> --traits <t1,t2> --types <type1,type2> [--ngen 100000] [--sample 100] [--burnin 0.2] [--seed <int>] [--plot <file>] [--json]
+   phykit threshold_model -t <tree> -d <trait_data> --traits <t1,t2> --types <type1,type2> [--ngen 100000] [--sample 100] [--burnin 0.2] [--seed <int>] [--plot <file>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-t/--tree*: a rooted phylogeny file with branch lengths (required) |br|
@@ -3372,6 +3697,17 @@ Options: |br|
 *--seed*: random seed for reproducibility |br|
 *--plot*: output filename for trace and posterior density plot (3 rows x 2 columns: |br|
 left = MCMC trace, right = posterior histogram with 95% HPD shading) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 Output (text mode): |br|
@@ -3491,7 +3827,10 @@ Distances are in substitutions per site.
 .. code-block:: shell
 
    phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2> [--json]
-   phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>] [--json]
+   phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *<tree_file>*: first argument after function name should be a tree file |br|
@@ -3500,6 +3839,17 @@ Options: |br|
 *--all-pairs*: optional argument to report all pairwise tip distances |br|
 *--plot*: optional argument to save a clustered distance heatmap (requires ``--all-pairs``) |br|
 *--plot-output*: output path for heatmap (default: ``tip_to_tip_distance_heatmap.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3610,13 +3960,21 @@ Test statistic: ``chi2 = (m1 - m2)^2 / (m1 + m2)``, with 1 degree of freedom.
 
 .. code-block:: shell
 
-   phykit relative_rate_test -a <alignment> -t <rooted_tree> [-v/--verbose] [--json]
+   phykit relative_rate_test -a <alignment> -t <rooted_tree> [-v/--verbose]
+       [--plot-output <path>] [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
+       [--no-title] [--title <str>] [--legend-position <str>] [--ylabel-fontsize <float>]
+       [--xlabel-fontsize <float>] [--title-fontsize <float>] [--axis-fontsize <float>]
+       [--colors <str>] [--json]
 
 **Batch mode (multiple alignments, one shared tree):**
 
 .. code-block:: shell
 
-   phykit relative_rate_test -l <alignment_list> -t <rooted_tree> [-v/--verbose] [--json]
+   phykit relative_rate_test -l <alignment_list> -t <rooted_tree> [-v/--verbose]
+       [--plot-output <path>] [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
+       [--no-title] [--title <str>] [--legend-position <str>] [--ylabel-fontsize <float>]
+       [--xlabel-fontsize <float>] [--title-fontsize <float>] [--axis-fontsize <float>]
+       [--colors <str>] [--json]
 
 Options: |br|
 *-a/--alignment*: a single alignment file |br|
@@ -3624,6 +3982,17 @@ Options: |br|
 *-t/--tree*: a rooted tree file |br|
 *-v/--verbose*: print additional detail |br|
 *--plot-output*: save a pairwise p-value heatmap to this path |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
@@ -3689,7 +4058,10 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
 
 .. code-block:: shell
 
-   phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>] [--json]
+   phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--json]
 
 Options: |br|
 *-a/--alignment*: an alignment file |br|
@@ -3699,6 +4071,17 @@ Options: |br|
 distances used to determine saturation |br|
 *--plot*: save a saturation scatter plot with fitted slope through origin |br|
 *--plot-output*: output path for saturation plot (default: ``saturation_plot.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 .. _cmd-treeness_over_rcv:
