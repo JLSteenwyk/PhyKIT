@@ -80,6 +80,21 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.46</strong>:
+Added phylogenetically independent contrasts command
+(<code class="docutils literal notranslate"><span class="pre">independent_contrasts</span></code> / <code class="docutils literal notranslate"><span class="pre">pic</span></code>):</p>
+<ul class="simple">
+<li><p>Computes Felsenstein's (1985) phylogenetically independent contrasts
+for continuous traits on a phylogeny</p></li>
+<li><p>Produces n-1 standardized contrasts for n tips via postorder traversal</p></li>
+<li><p>Automatically resolves multifurcations by adding zero-length branches</p></li>
+<li><p>Reports individual contrasts with associated tip groups, mean absolute
+contrast, and variance of contrasts</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">--json</span></code> output with per-node contrast values</p></li>
+<li><p>Cross-validated against R's ape::pic(); sum of squared contrasts
+matches R exactly (0.307253). R validation script provided in
+<code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_pic.R</span></code></p></li>
+</ul>
 <p><strong>2.1.45</strong>:
 Added phylogenetic heatmap command (<code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code> / <code class="docutils literal notranslate"><span class="pre">pheatmap</span></code> /
 <code class="docutils literal notranslate"><span class="pre">ph</span></code>):</p>

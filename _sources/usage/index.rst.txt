@@ -163,6 +163,7 @@ Trait evolution
 ###############
 
 - :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>`: Reconstruct ancestral character states
+- :ref:`Independent contrasts (PIC) <cmd-independent_contrasts>`: Felsenstein's phylogenetically independent contrasts
 - :ref:`Concordance-aware ASR <cmd-concordance_asr>`: ASR incorporating gene tree discordance
 - :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
 - :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
@@ -1151,6 +1152,32 @@ Options: |br|
 
 Tree-based functions
 --------------------
+
+.. _cmd-independent_contrasts:
+
+Independent contrasts (PIC)
+###########################
+Function names: independent_contrasts; pic; phylo_contrasts |br|
+Command line interface: pk_independent_contrasts; pk_pic; pk_phylo_contrasts
+
+Compute Felsenstein's (1985) phylogenetically independent contrasts for a
+continuous trait on a phylogeny. Each internal node yields one standardized
+contrast, producing n-1 contrasts for n tips. Multifurcations are
+automatically resolved.
+
+Cross-validated against R's ape::pic(). The sum of squared contrasts
+matches R exactly.
+
+.. code-block:: shell
+
+	phykit independent_contrasts -t <tree> -d <trait_data> [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-d/--trait_data*: trait data file, two columns: taxon<tab>value (required) |br|
+*--json*: optional argument to print results as JSON
+
+|
 
 .. _cmd-ancestral_state_reconstruction:
 

@@ -95,6 +95,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#independent-contrasts-pic">Independent contrasts (PIC)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spectral-discordance-decomposition">Spectral discordance decomposition</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#concordance-aware-ancestral-state-reconstruction">Concordance-aware ancestral state reconstruction</a></li>
@@ -348,6 +349,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <h3>Trait evolution<a class="headerlink" href="#trait-evolution" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-ancestral-state-reconstruction"><span class="std std-ref">Ancestral state reconstruction</span></a>: Reconstruct ancestral character states</p></li>
+<li><p><a class="reference internal" href="#cmd-independent-contrasts"><span class="std std-ref">Independent contrasts (PIC)</span></a>: Felsenstein's phylogenetically independent contrasts</p></li>
 <li><p><a class="reference internal" href="#cmd-concordance-asr"><span class="std std-ref">Concordance-aware ASR</span></a>: ASR incorporating gene tree discordance</p></li>
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
@@ -1166,6 +1168,27 @@ doi: 10.1093/gbe/evw179.</p>
 </section>
 <section id="tree-based-functions">
 <h2>Tree-based functions<a class="headerlink" href="#tree-based-functions" title="Link to this heading"></a></h2>
+<section id="independent-contrasts-pic">
+<span id="cmd-independent-contrasts"></span><h3>Independent contrasts (PIC)<a class="headerlink" href="#independent-contrasts-pic" title="Link to this heading"></a></h3>
+<p>Function names: independent_contrasts; pic; phylo_contrasts <br/>
+Command line interface: pk_independent_contrasts; pk_pic; pk_phylo_contrasts</p>
+<p>Compute Felsenstein's (1985) phylogenetically independent contrasts for a
+continuous trait on a phylogeny. Each internal node yields one standardized
+contrast, producing n-1 contrasts for n tips. Multifurcations are
+automatically resolved.</p>
+<p>Cross-validated against R's ape::pic(). The sum of squared contrasts
+matches R exactly.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>independent_contrasts<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: tree file (required) <br/>
+<em>-d/--trait_data</em>: trait data file, two columns: taxon&lt;tab&gt;value (required) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="ancestral-state-reconstruction">
 <span id="cmd-ancestral-state-reconstruction"></span><h3>Ancestral state reconstruction<a class="headerlink" href="#ancestral-state-reconstruction" title="Link to this heading"></a></h3>
 <p>Function names: ancestral_state_reconstruction; asr; anc_recon <br/>
