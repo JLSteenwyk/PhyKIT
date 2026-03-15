@@ -116,6 +116,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "quartet_net": "quartet_network",
     "qnet": "quartet_network",
     "nanuq": "quartet_network",
+    "qpie": "quartet_pie",
+    "quartet_pie_chart": "quartet_pie",
     "ltt": "ltt",
     "gamma_stat": "ltt",
     "gamma": "ltt",
