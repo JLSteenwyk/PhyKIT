@@ -8,6 +8,13 @@ from scipy.optimize import minimize
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig
+from ...helpers.discrete_models import (
+    build_q_matrix,
+    matrix_exp,
+    felsenstein_pruning,
+    fit_q_matrix,
+    parse_discrete_traits,
+)
 from ...errors import PhykitUserError
 
 
@@ -118,224 +125,19 @@ class StochasticCharacterMap(Tree):
     def _parse_discrete_trait_file(
         self, path: str, column: str, tree_tips: List[str]
     ) -> Dict[str, str]:
-        try:
-            with open(path) as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            raise PhykitUserError(
-                [
-                    f"{path} corresponds to no such file or directory.",
-                    "Please check filename and pathing",
-                ],
-                code=2,
-            )
+        return parse_discrete_traits(path, tree_tips, trait_column=column)
 
-        data_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            data_lines.append(stripped)
+    def _build_q_matrix(self, params, k, model):
+        return build_q_matrix(params, k, model)
 
-        if len(data_lines) < 2:
-            raise PhykitUserError(
-                ["Trait file must have a header row and at least one data row."],
-                code=2,
-            )
+    def _matrix_exp(self, Q, t):
+        return matrix_exp(Q, t)
 
-        header_parts = data_lines[0].split("\t")
-        if len(header_parts) < 2:
-            raise PhykitUserError(
-                ["Header must have at least 2 columns (taxon + at least 1 trait)."],
-                code=2,
-            )
+    def _felsenstein_pruning(self, tree, tip_states, Q, pi, states):
+        return felsenstein_pruning(tree, tip_states, Q, pi, states)
 
-        trait_names = header_parts[1:]
-        if column not in trait_names:
-            raise PhykitUserError(
-                [
-                    f"Column '{column}' not found in trait file.",
-                    f"Available columns: {', '.join(trait_names)}",
-                ],
-                code=2,
-            )
-
-        col_idx = trait_names.index(column)
-        n_cols = len(header_parts)
-
-        traits = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != n_cols:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_idx} has {len(parts)} columns; expected {n_cols}.",
-                    ],
-                    code=2,
-                )
-            taxon = parts[0]
-            value = parts[1 + col_idx].strip()
-            if not value:
-                raise PhykitUserError(
-                    [f"Missing trait value for taxon '{taxon}' on line {line_idx}."],
-                    code=2,
-                )
-            traits[taxon] = value
-
-        tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
-        shared = tree_tip_set & trait_taxa_set
-
-        tree_only = tree_tip_set - trait_taxa_set
-        trait_only = trait_taxa_set - tree_tip_set
-
-        if tree_only:
-            print(
-                f"Warning: {len(tree_only)} taxa in tree but not in trait file: "
-                f"{', '.join(sorted(tree_only))}",
-                file=sys.stderr,
-            )
-        if trait_only:
-            print(
-                f"Warning: {len(trait_only)} taxa in trait file but not in tree: "
-                f"{', '.join(sorted(trait_only))}",
-                file=sys.stderr,
-            )
-
-        if len(shared) < 3:
-            raise PhykitUserError(
-                [
-                    f"Only {len(shared)} shared taxa between tree and trait file.",
-                    "At least 3 shared taxa are required.",
-                ],
-                code=2,
-            )
-
-        return {taxon: traits[taxon] for taxon in shared}
-
-    def _build_q_matrix(
-        self, params: np.ndarray, k: int, model: str
-    ) -> np.ndarray:
-        Q = np.zeros((k, k))
-        if model == "ER":
-            rate = params[0]
-            Q[:] = rate
-            np.fill_diagonal(Q, 0.0)
-        elif model == "SYM":
-            idx = 0
-            for i in range(k):
-                for j in range(i + 1, k):
-                    Q[i, j] = params[idx]
-                    Q[j, i] = params[idx]
-                    idx += 1
-        elif model == "ARD":
-            idx = 0
-            for i in range(k):
-                for j in range(k):
-                    if i != j:
-                        Q[i, j] = params[idx]
-                        idx += 1
-        # Set diagonal
-        for i in range(k):
-            Q[i, i] = -np.sum(Q[i, :])
-        return Q
-
-    def _matrix_exp(self, Q: np.ndarray, t: float) -> np.ndarray:
-        return expm(Q * t)
-
-    def _felsenstein_pruning(
-        self, tree, tip_states: Dict[str, str], Q: np.ndarray,
-        pi: np.ndarray, states: List[str]
-    ) -> Tuple[Dict, float]:
-        k = len(states)
-        state_idx = {s: i for i, s in enumerate(states)}
-        cond_liks = {}
-
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
-                lik = np.zeros(k)
-                if clade.name in tip_states:
-                    lik[state_idx[tip_states[clade.name]]] = 1.0
-                cond_liks[id(clade)] = lik
-            else:
-                lik = np.ones(k)
-                for child in clade.clades:
-                    t = child.branch_length if child.branch_length else 1e-8
-                    P = self._matrix_exp(Q, t)
-                    child_lik = cond_liks[id(child)]
-                    lik *= P @ child_lik
-                cond_liks[id(clade)] = lik
-
-        root_lik = cond_liks[id(tree.root)]
-        total_lik = np.sum(pi * root_lik)
-        if total_lik <= 0:
-            loglik = -1e20
-        else:
-            loglik = np.log(total_lik)
-
-        return cond_liks, loglik
-
-    def _fit_q_matrix(
-        self, tree, tip_states: Dict[str, str],
-        states: List[str], model: str
-    ) -> Tuple[np.ndarray, float]:
-        k = len(states)
-
-        if model == "ER":
-            n_params = 1
-        elif model == "SYM":
-            n_params = k * (k - 1) // 2
-        elif model == "ARD":
-            n_params = k * (k - 1)
-        else:
-            raise PhykitUserError(
-                [f"Unknown model '{model}'. Use ER, SYM, or ARD."],
-                code=2,
-            )
-
-        pi = np.ones(k) / k
-
-        def neg_loglik(params):
-            Q = self._build_q_matrix(np.abs(params), k, model)
-            _, ll = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
-            return -ll
-
-        bounds = [(1e-8, 100.0)] * n_params
-
-        # Multi-start optimization for robustness
-        starting_values = [0.001, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]
-        best_negll = np.inf
-        best_params = np.ones(n_params) * 0.1
-
-        for sv in starting_values:
-            x0 = np.ones(n_params) * sv
-            for method in ["L-BFGS-B", "Nelder-Mead"]:
-                try:
-                    kwargs = {"method": method}
-                    if method == "L-BFGS-B":
-                        kwargs["bounds"] = bounds
-                    result = minimize(neg_loglik, x0, **kwargs)
-                    if result.fun < best_negll:
-                        best_negll = result.fun
-                        best_params = np.abs(result.x)
-                except (ValueError, np.linalg.LinAlgError):
-                    continue
-
-        # Refine best result with Nelder-Mead
-        try:
-            result = minimize(
-                neg_loglik, best_params, method="Nelder-Mead",
-                options={"maxiter": 10000, "xatol": 1e-10, "fatol": 1e-10},
-            )
-            if result.fun < best_negll:
-                best_params = np.abs(result.x)
-        except (ValueError, np.linalg.LinAlgError):
-            pass
-
-        Q = self._build_q_matrix(best_params, k, model)
-        _, loglik = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
-
-        return Q, loglik
+    def _fit_q_matrix(self, tree, tip_states, states, model):
+        return fit_q_matrix(tree, tip_states, states, model)
 
     def _sample_ancestral_states(
         self, tree, tip_states: Dict[str, str],

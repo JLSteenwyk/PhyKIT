@@ -230,6 +230,9 @@ class Phykit:
                 fit_continuous (alias: fitcontinuous; fc)
                     - compare continuous trait evolution models
                       (BM, OU, EB, Lambda, Delta, Kappa, White)
+                fit_discrete (alias: fitdiscrete; fd)
+                    - compare discrete trait evolution models
+                      (ER, SYM, ARD)
                 ouwie (alias: fit_ouwie; multi_regime_ou)
                     - fit multi-regime OU models (BM1, BMS, OU1,
                       OUM, OUMV, OUMA, OUMVA; Beaulieu et al. 2012)
@@ -3988,6 +3991,65 @@ class Phykit:
         _run_service(parser, argv, RateHeterogeneity)
 
     @staticmethod
+    def fit_discrete(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compare models of discrete trait evolution on a phylogeny.
+
+                Fits ER (Equal Rates), SYM (Symmetric), and ARD (All Rates
+                Different) Mk models of discrete character evolution via
+                maximum likelihood. Compares models using AIC and BIC.
+
+                Analogous to R's geiger::fitDiscrete().
+
+                Aliases:
+                  fit_discrete, fitdiscrete, fd
+                Command line interfaces:
+                  pk_fit_discrete, pk_fitdiscrete, pk_fd
+
+                Usage:
+                phykit fit_discrete -t <tree> -d <trait_data> -c <trait>
+                  [--models ER,SYM,ARD] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -d/--trait_data             trait data file in TSV format
+                                            (required)
+
+                -c/--trait                  column name for the discrete
+                                            trait in the data file
+                                            (required)
+
+                --models                    comma-separated list of models
+                                            to fit (default: ER,SYM,ARD)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-c", "--trait", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--models", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, FitDiscrete)
+
+    @staticmethod
     def fit_continuous(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -6528,6 +6590,10 @@ def rate_heterogeneity(argv=None):
 
 def fit_continuous(argv=None):
     Phykit.fit_continuous(sys.argv[1:])
+
+
+def fit_discrete(argv=None):
+    Phykit.fit_discrete(sys.argv[1:])
 
 
 def ouwie(argv=None):
