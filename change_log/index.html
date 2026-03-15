@@ -80,6 +80,24 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.39</strong>:
+Added shared plot configuration system with user-customizable CLI
+arguments for all 27 plotting commands:</p>
+<ul class="simple">
+<li><p>New <code class="docutils literal notranslate"><span class="pre">PlotConfig</span></code> system (<code class="docutils literal notranslate"><span class="pre">phykit/helpers/plot_config.py</span></code>) provides
+auto-scaling figure dimensions and font sizes based on dataset size</p></li>
+<li><p>All plotting commands now accept <code class="docutils literal notranslate"><span class="pre">--fig-width</span></code>, <code class="docutils literal notranslate"><span class="pre">--fig-height</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--dpi</span></code>, <code class="docutils literal notranslate"><span class="pre">--no-title</span></code>, <code class="docutils literal notranslate"><span class="pre">--title</span></code>, <code class="docutils literal notranslate"><span class="pre">--legend-position</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span></code>, <code class="docutils literal notranslate"><span class="pre">--xlabel-fontsize</span></code>, <code class="docutils literal notranslate"><span class="pre">--title-fontsize</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--axis-fontsize</span></code>, and <code class="docutils literal notranslate"><span class="pre">--colors</span></code> arguments</p></li>
+<li><p>Figure height and font sizes auto-scale for large datasets — labels
+shrink for 50-550 taxa and auto-hide beyond 800 taxa</p></li>
+<li><p>Output format determined by file extension: <code class="docutils literal notranslate"><span class="pre">.png</span></code>, <code class="docutils literal notranslate"><span class="pre">.pdf</span></code>,
+<code class="docutils literal notranslate"><span class="pre">.svg</span></code>, and <code class="docutils literal notranslate"><span class="pre">.jpg</span></code> are all supported via <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code></p></li>
+<li><p>Custom colors can partially override defaults using comma-separated
+values (e.g., <code class="docutils literal notranslate"><span class="pre">--colors</span> <span class="pre">&quot;,,#e41a1c&quot;</span></code> to change only the third color)</p></li>
+<li><p>Updated CLI help text and Sphinx documentation for all commands</p></li>
+</ul>
 <p><strong>2.1.31</strong>:
 Added evolutionary tempo mapping command (<code class="docutils literal notranslate"><span class="pre">evo_tempo_map</span></code> / <code class="docutils literal notranslate"><span class="pre">etm</span></code>) for
 detecting rate-topology associations in phylogenomic datasets:</p>

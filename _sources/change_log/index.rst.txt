@@ -6,6 +6,24 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.39**:
+Added shared plot configuration system with user-customizable CLI
+arguments for all 27 plotting commands:
+
+* New ``PlotConfig`` system (``phykit/helpers/plot_config.py``) provides
+  auto-scaling figure dimensions and font sizes based on dataset size
+* All plotting commands now accept ``--fig-width``, ``--fig-height``,
+  ``--dpi``, ``--no-title``, ``--title``, ``--legend-position``,
+  ``--ylabel-fontsize``, ``--xlabel-fontsize``, ``--title-fontsize``,
+  ``--axis-fontsize``, and ``--colors`` arguments
+* Figure height and font sizes auto-scale for large datasets — labels
+  shrink for 50-550 taxa and auto-hide beyond 800 taxa
+* Output format determined by file extension: ``.png``, ``.pdf``,
+  ``.svg``, and ``.jpg`` are all supported via ``--plot-output``
+* Custom colors can partially override defaults using comma-separated
+  values (e.g., ``--colors ",,#e41a1c"`` to change only the third color)
+* Updated CLI help text and Sphinx documentation for all commands
+
 **2.1.31**:
 Added evolutionary tempo mapping command (``evo_tempo_map`` / ``etm``) for
 detecting rate-topology associations in phylogenomic datasets:
