@@ -4065,6 +4065,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, LTT)
 
@@ -5103,6 +5104,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, SpectralDiscordance)
 

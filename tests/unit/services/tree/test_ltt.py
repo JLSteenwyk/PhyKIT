@@ -137,9 +137,10 @@ class TestLTTPlot:
         tree = Phylo.read(
             StringIO("(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"), "newick"
         )
-        ltt = LTT._compute_ltt(tree)
+        ltt_data = LTT._compute_ltt(tree)
         plot_path = str(tmp_path / "ltt.png")
-        LTT._plot_ltt(ltt, plot_path, gamma=-0.5, p_value=0.6)
+        instance = LTT(Namespace(tree="dummy.tre"))
+        instance._plot_ltt(ltt_data, plot_path, gamma=-0.5, p_value=0.6)
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
