@@ -6,6 +6,24 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.42**:
+Added quartet pie chart visualization command (``quartet_pie`` / ``qpie``):
+
+* Draws a phylogram with pie charts at internal nodes showing gene
+  concordance (gCF) and discordance (gDF1, gDF2) proportions
+* Native mode: computes quartet proportions from species tree +
+  gene trees via bipartition matching (four-group decomposition)
+* ASTRAL mode: parses q1/q2/q3 annotations from ASTRAL ``-t 2``
+  output, supporting multiple annotation formats
+* Optional ``--annotate`` flag adds numeric values near each pie
+* Default colors: blue (concordant), red (discordant alt 1),
+  gray (discordant alt 2); overridable via ``--colors``
+* Supports all shared plot options (``--fig-width``, ``--dpi``,
+  ``--no-title``, etc.) and ``--json`` output with per-node
+  concordance counts
+* gCF/gDF values validated against manual bipartition matching
+  computation on sample data
+
 **2.1.41**:
 Added discrete trait model comparison command (``fit_discrete`` / ``fd``):
 

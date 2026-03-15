@@ -117,6 +117,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#internal-branch-statistics">Internal branch statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#internode-labeler">Internode labeler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#last-common-ancestor-subtree">Last common ancestor subtree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quartet-pie-chart">Quartet pie chart</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#lineage-through-time-plot-and-gamma-statistic">Lineage-through-time plot and gamma statistic</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#long-branch-score">Long branch score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#monophyly-check">Monophyly check</a></li>
@@ -330,6 +331,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
+<li><p><a class="reference internal" href="#cmd-quartet-pie"><span class="std std-ref">Quartet pie chart</span></a>: Phylogram with quartet concordance pie charts at internal nodes</p></li>
 <li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
 <li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a>: Topological distance between trees</p></li>
 </ul>
@@ -2036,6 +2038,33 @@ from a list of taxa.</p>
 file with the list of taxa to get the last common ancestor subtree for <br/>
 <em>-o/--output</em>: optional argument to name the outputted tree file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="quartet-pie-chart">
+<span id="cmd-quartet-pie"></span><h3>Quartet pie chart<a class="headerlink" href="#quartet-pie-chart" title="Link to this heading"></a></h3>
+<p>Function names: quartet_pie; qpie; quartet_pie_chart <br/>
+Command line interface: pk_quartet_pie; pk_qpie; pk_quartet_pie_chart</p>
+<p>Draw a phylogram with pie charts at internal nodes showing quartet
+concordance proportions. In native mode (-g provided), computes gene
+concordance factors (gCF, gDF1, gDF2) from a species tree and gene trees
+via bipartition matching. In ASTRAL mode (no -g), parses q1/q2/q3
+annotations from ASTRAL -t 2 output.</p>
+<p>Pie slices show concordant (blue), discordant alt 1 (red), and
+discordant alt 2 (gray) proportions. Use <code class="docutils literal notranslate"><span class="pre">--annotate</span></code> to add numeric
+values near each pie.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">        </span><span class="o">[</span>--annotate<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: species tree file (required) <br/>
+<em>-g/--gene-trees</em>: gene trees file, one Newick tree per line (optional; if omitted, ASTRAL annotations are parsed) <br/>
+<em>-o/--output</em>: output figure path (required; supports .png, .pdf, .svg) <br/>
+<em>--annotate</em>: show gCF/gDF values as text near each pie chart <br/>
+<em>--colors</em>: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) <br/>
+<em>--json</em>: optional argument to output per-node concordance values as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

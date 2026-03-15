@@ -80,6 +80,24 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.42</strong>:
+Added quartet pie chart visualization command (<code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> / <code class="docutils literal notranslate"><span class="pre">qpie</span></code>):</p>
+<ul class="simple">
+<li><p>Draws a phylogram with pie charts at internal nodes showing gene
+concordance (gCF) and discordance (gDF1, gDF2) proportions</p></li>
+<li><p>Native mode: computes quartet proportions from species tree +
+gene trees via bipartition matching (four-group decomposition)</p></li>
+<li><p>ASTRAL mode: parses q1/q2/q3 annotations from ASTRAL <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">2</span></code>
+output, supporting multiple annotation formats</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--annotate</span></code> flag adds numeric values near each pie</p></li>
+<li><p>Default colors: blue (concordant), red (discordant alt 1),
+gray (discordant alt 2); overridable via <code class="docutils literal notranslate"><span class="pre">--colors</span></code></p></li>
+<li><p>Supports all shared plot options (<code class="docutils literal notranslate"><span class="pre">--fig-width</span></code>, <code class="docutils literal notranslate"><span class="pre">--dpi</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--no-title</span></code>, etc.) and <code class="docutils literal notranslate"><span class="pre">--json</span></code> output with per-node
+concordance counts</p></li>
+<li><p>gCF/gDF values validated against manual bipartition matching
+computation on sample data</p></li>
+</ul>
 <p><strong>2.1.41</strong>:
 Added discrete trait model comparison command (<code class="docutils literal notranslate"><span class="pre">fit_discrete</span></code> / <code class="docutils literal notranslate"><span class="pre">fd</span></code>):</p>
 <ul class="simple">
