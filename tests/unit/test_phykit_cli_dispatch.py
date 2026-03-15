@@ -264,6 +264,9 @@ class TestPhykitCliDispatch:
             def add_argument(self, *args, **kwargs):
                 return None
 
+            def add_argument_group(self, *args, **kwargs):
+                return self
+
             def parse_args(self, argv):
                 return object()
 
