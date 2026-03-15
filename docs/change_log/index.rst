@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.46**:
+Added phylogenetically independent contrasts command
+(``independent_contrasts`` / ``pic``):
+
+* Computes Felsenstein's (1985) phylogenetically independent contrasts
+  for continuous traits on a phylogeny
+* Produces n-1 standardized contrasts for n tips via postorder traversal
+* Automatically resolves multifurcations by adding zero-length branches
+* Reports individual contrasts with associated tip groups, mean absolute
+  contrast, and variance of contrasts
+* Supports ``--json`` output with per-node contrast values
+* Cross-validated against R's ape::pic(); sum of squared contrasts
+  matches R exactly (0.307253). R validation script provided in
+  ``tests/r_validation/validate_pic.R``
+
 **2.1.45**:
 Added phylogenetic heatmap command (``phylo_heatmap`` / ``pheatmap`` /
 ``ph``):
