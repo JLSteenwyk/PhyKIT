@@ -179,7 +179,9 @@ class QuartetPie(Tree):
 
         # Pie charts at internal nodes
         max_x = max(node_x.values()) if node_x else 1.0
-        pie_radius = max_x * 0.02
+        n_tips = len(tips)
+        # Scale pie radius relative to y-spacing (1 unit per tip) to avoid overlap
+        pie_radius = min(max_x * 0.015, 0.35 * (n_tips / max(n_tips, 1)))
 
         for clade in tree.find_clades(order="preorder"):
             if clade.is_terminal() or clade == root:
