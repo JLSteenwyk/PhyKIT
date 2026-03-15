@@ -11,6 +11,7 @@ from Bio.Phylo import Newick
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class TipToTipDistance(Tree):
@@ -25,6 +26,7 @@ class TipToTipDistance(Tree):
         self.all_pairs = parsed["all_pairs"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self):
         tree_zero = self.read_tree_file()
@@ -92,6 +94,7 @@ class TipToTipDistance(Tree):
             all_pairs=getattr(args, "all_pairs", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "tip_to_tip_distance_heatmap.png"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def calculate_all_pairwise_distances(self, tree_zero: Newick.Tree) -> List[Dict[str, object]]:
@@ -147,18 +150,34 @@ class TipToTipDistance(Tree):
         ordered_matrix = matrix[np.ix_(order, order)]
         ordered_taxa = [taxa[idx] for idx in order]
 
-        fig_size = max(6, min(20, n_taxa * 0.35))
-        fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+        config = self.plot_config
+        config.resolve(n_rows=n_taxa, n_cols=n_taxa)
+
+        fig_w = config.fig_width or max(6, min(20, n_taxa * 0.35))
+        fig_h = config.fig_height or fig_w
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
         image = ax.imshow(ordered_matrix, cmap="viridis", interpolation="nearest")
-        ax.set_title("Tip-to-Tip Distance Heatmap")
-        ax.set_xticks(np.arange(n_taxa))
-        ax.set_yticks(np.arange(n_taxa))
-        ax.set_xticklabels(ordered_taxa, rotation=90, fontsize=7)
-        ax.set_yticklabels(ordered_taxa, fontsize=7)
+
+        if config.ylabel_fontsize and config.ylabel_fontsize > 0:
+            ax.set_xticks(np.arange(n_taxa))
+            ax.set_yticks(np.arange(n_taxa))
+            ax.set_xticklabels(ordered_taxa, rotation=90, fontsize=config.xlabel_fontsize or config.ylabel_fontsize)
+            ax.set_yticklabels(ordered_taxa, fontsize=config.ylabel_fontsize)
+        else:
+            ax.set_xticks([])
+            ax.set_yticks([])
+
         ax.set_xlabel("Taxa (clustered)")
         ax.set_ylabel("Taxa (clustered)")
         colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
         colorbar.set_label("Distance")
+
+        if config.show_title:
+            ax.set_title(config.title or "Tip-to-Tip Distance Heatmap", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
+
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

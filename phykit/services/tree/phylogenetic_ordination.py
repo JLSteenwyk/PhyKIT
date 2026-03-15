@@ -8,6 +8,7 @@ from scipy.optimize import minimize_scalar
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -31,6 +32,7 @@ class PhylogeneticOrdination(Tree):
         self.color_by = parsed["color_by"]
         self.tree_color_by = parsed["tree_color_by"]
         self.gene_trees_path = parsed["gene_trees_path"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
@@ -208,6 +210,7 @@ class PhylogeneticOrdination(Tree):
             color_by=getattr(args, "color_by", None),
             tree_color_by=getattr(args, "tree_color_by", None),
             gene_trees_path=getattr(args, "gene_trees", None),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -730,7 +733,9 @@ class PhylogeneticOrdination(Tree):
             print("matplotlib is required for --plot. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        fig, ax = plt.subplots(figsize=(7, 5))
+        config = self.plot_config
+        config.resolve(n_rows=None, n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         if self.plot_tree and tree is not None and eigenvectors is not None:
             data_for_anc = Z_std if Z_std is not None else Z
@@ -751,7 +756,7 @@ class PhylogeneticOrdination(Tree):
             f"{pc_labels[1]} ({proportions[1]*100:.1f}% variance explained)"
         )
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _plot_dimreduce(
@@ -771,7 +776,9 @@ class PhylogeneticOrdination(Tree):
             print("matplotlib is required for --plot. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        fig, ax = plt.subplots(figsize=(7, 5))
+        config = self.plot_config
+        config.resolve(n_rows=None, n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         if self.plot_tree and tree is not None and Z is not None:
             self._draw_tree_overlay(ax, fig, tree, embedding, taxon_names, trait_names, Y)
@@ -788,7 +795,7 @@ class PhylogeneticOrdination(Tree):
             ax.set_xlabel(dim_labels[0])
             ax.set_ylabel(dim_labels[1])
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _draw_tree_overlay(

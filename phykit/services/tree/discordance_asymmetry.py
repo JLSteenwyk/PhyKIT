@@ -7,6 +7,7 @@ from scipy.stats import binomtest
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -18,6 +19,7 @@ class DiscordanceAsymmetry(Tree):
         self.verbose = parsed["verbose"]
         self.json_output = parsed["json_output"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -26,6 +28,7 @@ class DiscordanceAsymmetry(Tree):
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_output=getattr(args, "plot_output", None),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -231,7 +234,9 @@ class DiscordanceAsymmetry(Tree):
         cmap = plt.cm.RdYlBu_r
         norm = Normalize(vmin=0.5, vmax=1.0)
 
-        fig, ax = plt.subplots(figsize=(10, max(4, len(tips) * 0.4)))
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         # Draw branches
         for clade in species_tree.find_clades(order="preorder"):
@@ -306,9 +311,12 @@ class DiscordanceAsymmetry(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.set_title("Discordance Asymmetry")
+        if config.show_title:
+            ax.set_title(config.title or "Discordance Asymmetry", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     # ------------------------------------------------------------------

@@ -9,6 +9,7 @@ from scipy.optimize import minimize
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -24,6 +25,7 @@ class AncestralReconstruction(Tree):
         self.json_output = parsed["json_output"]
         self.trait_type = parsed["trait_type"]
         self.model = parsed["model"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -116,6 +118,7 @@ class AncestralReconstruction(Tree):
             json_output=getattr(args, "json", False),
             trait_type=getattr(args, "type", "continuous"),
             model=getattr(args, "model", "ER"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -848,7 +851,9 @@ class AncestralReconstruction(Tree):
         norm = Normalize(vmin=vmin, vmax=vmax)
         cmap = plt.get_cmap("coolwarm")
 
-        fig, ax = plt.subplots(figsize=(10, max(4, len(tips) * 0.4)))
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         n_seg = 50
 
@@ -909,9 +914,13 @@ class AncestralReconstruction(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.set_title("Continuous Trait Map (contMap)")
+        if config.show_title:
+            ax.set_title(
+                config.title or "Continuous Trait Map (contMap)",
+                fontsize=config.title_fontsize,
+            )
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved contMap plot: {output_path}")
 
@@ -1523,7 +1532,9 @@ class AncestralReconstruction(Tree):
                 else:
                     node_y[id(clade)] = 0.0
 
-        fig, ax = plt.subplots(figsize=(10, max(4, len(tips) * 0.4)))
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         # Draw branches (gray)
         for clade in tree.find_clades(order="preorder"):
@@ -1598,9 +1609,13 @@ class AncestralReconstruction(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.set_title("Discrete Ancestral State Reconstruction")
+        if config.show_title:
+            ax.set_title(
+                config.title or "Discrete Ancestral State Reconstruction",
+                fontsize=config.title_fontsize,
+            )
         ax.set_aspect("auto")
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved discrete ASR plot: {output_path}")

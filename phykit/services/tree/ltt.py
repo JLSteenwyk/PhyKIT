@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -13,6 +14,7 @@ class LTT(Tree):
         self.verbose = parsed["verbose"]
         self.json_output = parsed["json_output"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -36,6 +38,7 @@ class LTT(Tree):
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_output=getattr(args, "plot_output", None),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -154,21 +157,25 @@ class LTT(Tree):
 
         return ltt
 
-    @staticmethod
-    def _plot_ltt(ltt_data, output_path, gamma=None, p_value=None):
+    def _plot_ltt(self, ltt_data, output_path, gamma=None, p_value=None):
         """Plot lineage-through-time as a step function."""
         import matplotlib
 
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
+        config = self.plot_config
+        config.resolve(n_rows=len(ltt_data), n_cols=None)
+        default_colors = ["black"]
+        colors = config.merge_colors(default_colors)
+
         times = [pt[0] for pt in ltt_data]
         lineages = [pt[1] for pt in ltt_data]
 
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.step(times, lineages, where="post", linewidth=2, color="black")
-        ax.set_xlabel("Time from root", fontsize=12)
-        ax.set_ylabel("Number of lineages", fontsize=12)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+        ax.step(times, lineages, where="post", linewidth=2, color=colors[0])
+        ax.set_xlabel("Time from root", fontsize=config.axis_fontsize or 12)
+        ax.set_ylabel("Number of lineages", fontsize=config.axis_fontsize or 12)
         ax.set_yscale("log")
 
         if gamma is not None:
@@ -185,8 +192,11 @@ class LTT(Tree):
                 bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.8),
             )
 
+        if config.show_title and config.title:
+            ax.set_title(config.title, fontsize=config.title_fontsize)
+
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _output_text(self, gamma, p_value, ltt_data, bt, g):

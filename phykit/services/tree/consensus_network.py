@@ -10,6 +10,7 @@ from Bio.Phylo import Consensus
 from .base import Tree
 from ...errors import PhykitUserError
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class ConsensusNetwork(Tree):
@@ -20,6 +21,7 @@ class ConsensusNetwork(Tree):
         self.missing_taxa = parsed["missing_taxa"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(
@@ -28,6 +30,7 @@ class ConsensusNetwork(Tree):
             missing_taxa=args.missing_taxa,
             plot_output=getattr(args, "plot_output", None),
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     # ------------------------------------------------------------------
@@ -329,7 +332,9 @@ class ConsensusNetwork(Tree):
             circular_splits, all_taxa
         )
 
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        config = self.plot_config
+        config.resolve(n_rows=len(all_taxa), n_cols=None)
+        fig, ax = plt.subplots(1, 1, figsize=(config.fig_width, config.fig_height))
         ax.set_aspect("equal")
 
         if not splits_list:
@@ -400,10 +405,11 @@ class ConsensusNetwork(Tree):
                     labeled_splits.add(split_idx)
 
         ax.axis("off")
-        ax.set_title("Consensus Splits Network", fontsize=14, pad=20)
+        if config.show_title:
+            ax.set_title(config.title or "Consensus Splits Network", fontsize=config.title_fontsize or 14, pad=20)
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close()
 
     # ------------------------------------------------------------------

@@ -9,6 +9,7 @@ from Bio import Phylo
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -27,6 +28,7 @@ class SpectralDiscordance(Tree):
         self.top_loadings = parsed["top_loadings"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -38,6 +40,7 @@ class SpectralDiscordance(Tree):
             top_loadings=getattr(args, "top_loadings", 5),
             plot_output=getattr(args, "plot", None),
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -183,7 +186,10 @@ class SpectralDiscordance(Tree):
             print("matplotlib is required for plotting. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        config = self.plot_config
+        config.resolve(n_rows=len(scores), n_cols=None)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         cmap = plt.get_cmap("tab10")
         for k in range(K):
             mask = labels == k
@@ -201,10 +207,14 @@ class SpectralDiscordance(Tree):
                 )
         ax.set_xlabel("PC1")
         ax.set_ylabel("PC2")
-        ax.set_title("Gene Tree Space — Spectral Discordance")
+        if config.show_title:
+            ax.set_title(config.title or "Gene Tree Space — Spectral Discordance", fontsize=config.title_fontsize)
         ax.legend()
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved scatter plot: {output_path}")
 
@@ -217,18 +227,25 @@ class SpectralDiscordance(Tree):
             print("matplotlib is required for plotting. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        fig, ax = plt.subplots(figsize=(8, 4))
+        config = self.plot_config
+        config.resolve(n_rows=len(eigengaps), n_cols=None)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         n = len(eigengaps)
         x = np.arange(1, n + 1)
         colors = ["tab:red" if i == K - 1 else "tab:blue" for i in range(n)]
         ax.bar(x, eigengaps, color=colors, edgecolor="black", linewidth=0.5)
         ax.set_xlabel("Eigenvalue index (i)")
         ax.set_ylabel(r"Eigengap ($\lambda_{i+1} - \lambda_i$)")
-        ax.set_title(f"Eigengap Heuristic — K = {K} clusters")
+        if config.show_title:
+            ax.set_title(config.title or f"Eigengap Heuristic — K = {K} clusters", fontsize=config.title_fontsize)
         ax.axvline(K, color="tab:red", linestyle="--", alpha=0.7, label=f"K = {K}")
         ax.legend()
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved eigengap plot: {output_path}")
 

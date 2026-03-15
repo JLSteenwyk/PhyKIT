@@ -783,10 +783,19 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
     def test_plot_covarying_rates_scatter_success(self):
         fake_pyplot = types.ModuleType("matplotlib.pyplot")
 
+        class DummyLabel:
+            def set_fontsize(self, *args, **kwargs):
+                pass
+
+        class DummyAxis:
+            label = DummyLabel()
+
         class DummyAx:
             def __init__(self):
                 self.scatter_called = False
                 self.plot_called = False
+                self.xaxis = DummyAxis()
+                self.yaxis = DummyAxis()
 
             def scatter(self, *args, **kwargs):
                 self.scatter_called = True

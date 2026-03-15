@@ -7,6 +7,7 @@ import numpy as np
 from .base import Alignment
 from .alignment_outlier_taxa import AlignmentOutlierTaxa
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class PlotAlignmentQC(Alignment):
@@ -24,6 +25,7 @@ class PlotAlignmentQC(Alignment):
         self.occupancy_z = parsed["occupancy_z"]
         self.entropy_z = parsed["entropy_z"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict[str, object]:
         return dict(
@@ -39,6 +41,7 @@ class PlotAlignmentQC(Alignment):
             occupancy_z=args.occupancy_z,
             entropy_z=args.entropy_z,
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _get_outlier_result(self, alignment, is_protein: bool) -> Dict[str, object]:

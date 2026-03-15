@@ -13,6 +13,7 @@ from argparse import (
 )
 
 from .helpers.boolean_argument_parsing import str2bool
+from .helpers.plot_config import add_plot_arguments
 from .cli_registry import ALIAS_TO_HANDLER
 from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
@@ -442,7 +443,14 @@ class Phykit:
                   pk_alignment_entropy, pk_aln_entropy, pk_entropy
 
                 Usage:
-                phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
+                phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -458,6 +466,36 @@ class Phykit:
 
                 --plot-output               output path for plot
                                             (default: alignment_entropy_plot.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -476,6 +514,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, AlignmentEntropy)
 
@@ -756,7 +795,14 @@ class Phykit:
                   pk_compositional_bias_per_site; pk_compositional_bias_per_site; pk_cbps
 
                 Usage:
-                phykit compositional_bias_per_site <alignment> [--plot] [--plot-output <path>] [--json]
+                phykit compositional_bias_per_site <alignment> [--plot] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -770,6 +816,36 @@ class Phykit:
 
                 --plot-output               output path for plot
                                             (default: compositional_bias_per_site_plot.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -785,6 +861,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CompositionalBiasPerSite)
 
@@ -849,7 +926,14 @@ class Phykit:
         
 
                 Usage:
-                phykit evo_rate_per_site <fasta> [--plot] [--plot-output <path>] [--json]
+                phykit evo_rate_per_site <fasta> [--plot] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -862,6 +946,36 @@ class Phykit:
 
                 --plot-output               output path for plot
                                             (default: evolutionary_rate_per_site_plot.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -877,6 +991,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, EvolutionaryRatePerSite)
 
@@ -1162,7 +1277,14 @@ class Phykit:
                   pk_pairwise_identity, pk_pairwise_id, pk_pi
 
                 Usage:
-                phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>] [--json]
+                phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -1180,6 +1302,36 @@ class Phykit:
 
                 --plot-output               output path for heatmap
                                             (default: pairwise_identity_heatmap.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1201,6 +1353,7 @@ class Phykit:
             default="pairwise_identity_heatmap.png",
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PairwiseIdentity)
 
@@ -1311,7 +1464,14 @@ class Phykit:
 
                 Usage:
                 phykit relative_composition_variability_taxon <alignment>
-                  [--plot] [--plot-output <path>] [--json]
+                  [--plot] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -1325,6 +1485,36 @@ class Phykit:
                 --plot-output               output path for plot
                                             (default: rcvt_plot.png)
 
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -1333,6 +1523,7 @@ class Phykit:
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, default="rcvt_plot.png", required=False, help=SUPPRESS)
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, RelativeCompositionVariabilityTaxon)
 
@@ -1512,7 +1703,14 @@ class Phykit:
                   pk_ancestral_state_reconstruction, pk_asr, pk_anc_recon
 
                 Usage:
-                phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>] [--json]
+                phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -1537,6 +1735,36 @@ class Phykit:
                                             intervals (continuous only)
 
                 --plot                      output path for plot
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      output results as JSON
                 """
@@ -1571,6 +1799,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, AncestralReconstruction)
 
@@ -1604,7 +1833,14 @@ class Phykit:
                 Usage:
                 phykit concordance_asr -t <species_tree> -g <gene_trees> -d <trait_data>
                     [-c <trait>] [-m weighted|distribution] [--ci]
-                    [--plot <output>] [--missing-taxa error|shared] [--json]
+                    [--plot <output>] [--missing-taxa error|shared]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -1630,6 +1866,36 @@ class Phykit:
 
                 --missing-taxa              how to handle taxa mismatches:
                                             shared (default) or error
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      output results as JSON
                 """
@@ -1663,6 +1929,7 @@ class Phykit:
             "--missing-taxa", type=str, required=False, default="shared",
             choices=["error", "shared"], help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ConcordanceAsr)
 
@@ -1854,7 +2121,14 @@ class Phykit:
 
                 Usage:
                 phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one>
-                    -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>] [--json]
+                    -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -1881,6 +2155,36 @@ class Phykit:
                 --plot-output               output path for plot
                                             (default: covarying_rates_plot.png)
 
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -1902,6 +2206,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CovaryingEvolutionaryRates)
 
@@ -2487,7 +2792,14 @@ class Phykit:
                   pk_phylo_dimreduce, pk_dimreduce, pk_pdr
 
                 Usage:
-                phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [--json]
+                phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -2541,6 +2853,36 @@ class Phykit:
                 -g/--gene-trees             optional multi-Newick file of
                                             gene trees for discordance-aware
                                             VCV computation
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -2650,6 +2992,7 @@ class Phykit:
             "-g", "--gene-trees", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticOrdination)
 
@@ -2690,7 +3033,14 @@ class Phykit:
                   pk_phylomorphospace, pk_phylomorpho, pk_phmo
 
                 Usage:
-                phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>] [--json]
+                phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -2710,6 +3060,36 @@ class Phykit:
 
                 --plot-output               output path for plot
                                             (default: phylomorphospace_plot.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -2753,6 +3133,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Phylomorphospace)
 
@@ -3003,7 +3384,14 @@ class Phykit:
                   pk_stochastic_character_map, pk_simmap, pk_scm
 
                 Usage:
-                phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+                phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -3026,6 +3414,36 @@ class Phykit:
                                             reproducibility
 
                 --plot                      output plot file path
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3063,6 +3481,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, StochasticCharacterMap)
 
@@ -3090,7 +3509,14 @@ class Phykit:
                   pk_cont_map, pk_contmap, pk_cmap
 
                 Usage:
-                phykit cont_map -t <tree> -d <trait_data> -o <output.png> [--json]
+                phykit cont_map -t <tree> -d <trait_data> -o <output.png>
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -3101,6 +3527,36 @@ class Phykit:
 
                 -o/--output                 output plot file path
                                             (required)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to also
                                             output results as JSON
@@ -3116,6 +3572,7 @@ class Phykit:
         parser.add_argument(
             "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ContMap)
 
@@ -3144,7 +3601,14 @@ class Phykit:
                   pk_density_map, pk_densitymap, pk_dmap
 
                 Usage:
-                phykit density_map -t <tree> -d <trait_data> -c <trait> -o <output.png> [-n <nsim>] [--seed <seed>] [--json]
+                phykit density_map -t <tree> -d <trait_data> -c <trait> -o <output.png> [-n <nsim>] [--seed <seed>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -3165,6 +3629,36 @@ class Phykit:
 
                 -o/--output                 output plot file path
                                             (required)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to also
                                             output results as JSON
@@ -3191,6 +3685,7 @@ class Phykit:
         parser.add_argument(
             "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, DensityMap)
 
@@ -3213,7 +3708,14 @@ class Phykit:
                   pk_phenogram, pk_traitgram, pk_tg
 
                 Usage:
-                phykit phenogram -t <tree> -d <trait_data> -o <output.png> [--json]
+                phykit phenogram -t <tree> -d <trait_data> -o <output.png>
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -3224,6 +3726,36 @@ class Phykit:
 
                 -o/--output                 output plot file path
                                             (required)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3239,6 +3771,7 @@ class Phykit:
         parser.add_argument(
             "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Phenogram)
 
@@ -3264,7 +3797,14 @@ class Phykit:
                   pk_cophylo, pk_tanglegram, pk_tangle
 
                 Usage:
-                phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>] [--json]
+                phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -3278,6 +3818,36 @@ class Phykit:
                 -m/--mapping                optional tab-delimited
                                             mapping file
                                             (taxon1<tab>taxon2)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3297,6 +3867,7 @@ class Phykit:
             "-m", "--mapping", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Cophylo)
 
@@ -3325,7 +3896,14 @@ class Phykit:
                   pk_rate_heterogeneity, pk_brownie, pk_rh
 
                 Usage:
-                phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>] [--json]
+                phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -3345,6 +3923,36 @@ class Phykit:
                                             reproducibility
 
                 --plot                      output plot file path
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3372,6 +3980,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, RateHeterogeneity)
 
@@ -3761,7 +4370,14 @@ class Phykit:
                 phykit consensus_network -t/--trees <trees>
                     [--threshold 0.1]
                     [--missing-taxa error|shared]
-                    [--plot-output <file>] [--json]
+                    [--plot-output <file>]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -3780,6 +4396,36 @@ class Phykit:
                 --plot-output              output filename for the
                                            circular splits network
                                            plot (optional)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                     optional argument to output
                                            results as JSON
@@ -3809,6 +4455,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ConsensusNetwork)
 
@@ -3848,7 +4495,14 @@ class Phykit:
                 phykit quartet_network -t/--trees <trees>
                     [--alpha 0.05] [--beta 0.95]
                     [--missing-taxa error|shared]
-                    [--plot-output <file>] [--json]
+                    [--plot-output <file>]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -3873,6 +4527,36 @@ class Phykit:
                 --plot-output              output filename for the
                                            quartet network plot
                                            (optional)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                     optional argument to output
                                            results as JSON
@@ -3909,6 +4593,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, QuartetNetwork)
 
@@ -4027,7 +4712,14 @@ class Phykit:
 
                 Usage:
                 phykit ltt -t <tree> [-v/--verbose]
-                    [--plot-output <file>] [--json]
+                    [--plot-output <file>]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -4041,6 +4733,36 @@ class Phykit:
                 --plot-output               output filename for the
                                             lineage-through-time
                                             plot (optional)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4058,6 +4780,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, LTT)
 
@@ -4143,7 +4866,14 @@ class Phykit:
                   pk_relative_rate_test, pk_rrt, pk_tajima_rrt
 
                 Usage:
-                phykit relative_rate_test (-a <alignment> | -l <alignment_list>) -t <tree> [-v/--verbose] [--json]
+                phykit relative_rate_test (-a <alignment> | -l <alignment_list>) -t <tree> [-v/--verbose]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -4159,6 +4889,36 @@ class Phykit:
 
                 --plot-output               save pairwise p-value
                                             heatmap to this path
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4181,6 +4941,7 @@ class Phykit:
         parser.add_argument(
             "--plot-output", type=str, required=False, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, RelativeRateTest)
 
@@ -4212,7 +4973,14 @@ class Phykit:
                 phykit threshold_model -t <tree> -d <trait_data>
                     --traits <trait1,trait2> --types <type1,type2>
                     [--ngen 100000] [--sample 100] [--burnin 0.2]
-                    [--seed <int>] [--plot <file>] [--json]
+                    [--seed <int>] [--plot <file>]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -4245,6 +5013,36 @@ class Phykit:
                 --plot                      output filename for
                                             trace plots (optional)
 
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -4275,6 +5073,7 @@ class Phykit:
         parser.add_argument(
             "--plot", dest="plot_output", type=str, default=None, required=False, help=SUPPRESS
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ThresholdModel)
 
@@ -4583,7 +5382,14 @@ class Phykit:
 
                 Usage:
                 phykit tip_to_tip_distance <tree_file> <tip_1> <tip_2> [--json]
-                phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>] [--json]
+                phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -4609,6 +5415,36 @@ class Phykit:
                 --plot-output               output path for heatmap
                                             (default: tip_to_tip_distance_heatmap.png)
 
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -4626,6 +5462,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, TipToTipDistance)
 
@@ -4781,7 +5618,14 @@ class Phykit:
                   pk_saturation, pk_sat
 
                 Usage:
-                phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>] [--json]
+                phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -4800,6 +5644,36 @@ class Phykit:
 
                 --plot-output               output path for saturation plot
                                             (default: saturation_plot.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4826,6 +5700,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Saturation)
 
@@ -4912,7 +5787,14 @@ class Phykit:
 
                 Usage:
                 phykit evo_tempo_map -t/--tree <tree> -g/--gene-trees <gene_trees>
-                    [--plot <output>] [-v/--verbose] [--json]
+                    [--plot <output>] [-v/--verbose]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -4925,6 +5807,36 @@ class Phykit:
                                             box/strip plot (PNG)
 
                 -v/--verbose                print per-gene-tree details
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4944,6 +5856,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, EvoTempoMap)
 
@@ -4974,7 +5887,14 @@ class Phykit:
 
                 Usage:
                 phykit discordance_asymmetry -t/--tree <tree> -g/--gene-trees <gene_trees>
-                    [--plot <output>] [-v/--verbose] [--json]
+                    [--plot <output>] [-v/--verbose]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>]
+                    [--json]
 
                 Options
                 =====================================================
@@ -4986,6 +5906,36 @@ class Phykit:
                                             asymmetry phylogram (PNG)
 
                 -v/--verbose                print per-branch details
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5005,6 +5955,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, DiscordanceAsymmetry)
 
@@ -5036,7 +5987,14 @@ class Phykit:
                   pk_spectral_discordance, pk_spec_disc, pk_sd
 
                 Usage:
-                phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>] [--json]
+                phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+                  [--json]
 
                 Options
                 =====================================================
@@ -5062,6 +6020,36 @@ class Phykit:
                 --plot                      output prefix for plots
                                             (generates _scatter.png and
                                             _eigengap.png)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      output results as JSON
                 """
@@ -5094,6 +6082,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, SpectralDiscordance)
 
@@ -5130,6 +6119,12 @@ class Phykit:
                 phykit create_concatenation_matrix -a <file> -p <string>
                   [--threshold <float>] [--plot-occupancy]
                   [--plot-output <path>] [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
 
                 Options
                 =====================================================
@@ -5155,8 +6150,39 @@ class Phykit:
                                             occupancy map figure
 
                 --plot-output               output path for occupancy
-                                            figure. default:
+                                            figure (supports .png, .pdf,
+                                            .svg, .jpg). default:
                                             <prefix>.occupancy.png
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5168,6 +6194,7 @@ class Phykit:
         parser.add_argument("--threshold", type=float, required=False, default=0, help=SUPPRESS)
         parser.add_argument("--plot-occupancy", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, required=False, default=None, help=SUPPRESS)
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CreateConcatenationMatrix)
 

@@ -8,6 +8,7 @@ from ...helpers.files import (
     get_alignment_and_format as get_alignment_and_format_helper
 )
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -28,6 +29,7 @@ class RelativeRateTest(Tree):
         self.alignment_list = parsed.get("alignment_list")
         self.json_output = parsed["json_output"]
         self.plot_output = parsed.get("plot_output")
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -37,6 +39,7 @@ class RelativeRateTest(Tree):
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_output=getattr(args, "plot_output", None),
+            plot_config=PlotConfig.from_args(args),
         )
 
     # ------------------------------------------------------------------
@@ -238,8 +241,7 @@ class RelativeRateTest(Tree):
     # Plotting
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _plot_heatmap(results: List[Dict], output_path: str) -> None:
+    def _plot_heatmap(self, results: List[Dict], output_path: str) -> None:
         """Plot a symmetric heatmap of -log10(p_fdr) for all pairwise tests."""
         try:
             import matplotlib
@@ -250,6 +252,9 @@ class RelativeRateTest(Tree):
             print("matplotlib and numpy are required for --plot-output. "
                   "Install them and retry.")
             raise SystemExit(2)
+
+        config = self.plot_config
+        config.resolve(n_rows=len(results), n_cols=None)
 
         taxa = sorted(
             set(r["taxon1"] for r in results) | set(r["taxon2"] for r in results)
@@ -264,7 +269,7 @@ class RelativeRateTest(Tree):
             matrix[i, j] = val
             matrix[j, i] = val
 
-        fig, ax = plt.subplots(figsize=(max(4, n * 0.8 + 1), max(4, n * 0.8 + 1)))
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         cmap = plt.cm.YlOrRd.copy()
         cmap.set_bad(color="white")
 
@@ -302,8 +307,14 @@ class RelativeRateTest(Tree):
 
         cbar.ax.axhline(y=sig_threshold, color="black", linewidth=1.5, linestyle="--")
 
+        if config.show_title:
+            ax.set_title(config.title or "Relative Rate Test", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
+
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     # ------------------------------------------------------------------

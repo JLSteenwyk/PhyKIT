@@ -7,6 +7,7 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -17,6 +18,7 @@ class Phenogram(Tree):
         self.trait_data_path = parsed["trait_data_path"]
         self.output_path = parsed["output_path"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -77,6 +79,7 @@ class Phenogram(Tree):
             trait_data_path=args.trait_data,
             output_path=args.output,
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -433,7 +436,9 @@ class Phenogram(Tree):
         cmap = plt.get_cmap("coolwarm")
 
         n_tips = len(tips)
-        fig, ax = plt.subplots(figsize=(10, max(4, n_tips * 0.3)))
+        config = self.plot_config
+        config.resolve(n_rows=n_tips, n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         n_seg = 50
 
@@ -491,9 +496,10 @@ class Phenogram(Tree):
 
         ax.set_xlabel("Distance from root")
         ax.set_ylabel("Trait value")
-        ax.set_title("Phenogram (Traitgram)")
+        if config.show_title:
+            ax.set_title(config.title or "Phenogram (Traitgram)", fontsize=config.title_fontsize)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
