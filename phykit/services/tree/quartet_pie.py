@@ -177,16 +177,52 @@ class QuartetPie(Tree):
             ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
             ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
 
+        # Tip labels
+        max_x = max(node_x.values()) if node_x else 1.0
+        offset = max_x * 0.03
+        label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
+        for tip in tips:
+            ax.text(
+                node_x[id(tip)] + offset, node_y[id(tip)],
+                tip.name, va="center", fontsize=label_fontsize,
+            )
+
+        # Legend
+        legend_handles = [
+            Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
+                  label="Concordant (gCF / q1)"),
+            Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
+                  label="Discordant alt 1 (gDF1 / q2)"),
+            Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
+                  label="Discordant alt 2 (gDF2 / q3)"),
+        ]
+        legend_loc = config.legend_position or "upper right"
+        if legend_loc != "none":
+            ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
+
+        ax.set_xlabel("Branch length (subs/site)")
+        ax.set_yticks([])
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+
+        if config.show_title:
+            ax.set_title(
+                config.title or "Quartet Concordance Pie Chart",
+                fontsize=config.title_fontsize,
+            )
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+
+        # Finalize layout BEFORE placing pie insets, so transData is stable
+        fig.subplots_adjust(left=0.05, right=0.85, top=0.92, bottom=0.12)
+        fig.canvas.draw()
+
         # Pie charts at internal nodes — rendered as inset axes so they
         # appear as perfect circles regardless of axis scaling, and are
         # drawn above the phylogeny branches.
-        max_x = max(node_x.values()) if node_x else 1.0
         n_tips = len(tips)
-        # Pie size in figure-fraction units (scales with figure, not data)
         pie_size = min(0.06, 0.8 / max(n_tips, 1))
-
-        # Force a draw so transData is populated
-        fig.canvas.draw()
 
         for clade in tree.find_clades(order="preorder"):
             if clade.is_terminal() or clade == root:
@@ -233,46 +269,8 @@ class QuartetPie(Tree):
                     zorder=11,
                 )
 
-        # Tip labels
-        offset = max_x * 0.03
-        label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=label_fontsize,
-            )
-
-        # Legend
-        legend_handles = [
-            Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
-                  label="Concordant (gCF / q1)"),
-            Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
-                  label="Discordant alt 1 (gDF1 / q2)"),
-            Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
-                  label="Discordant alt 2 (gDF2 / q3)"),
-        ]
-        legend_loc = config.legend_position or "upper right"
-        if legend_loc != "none":
-            ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
-
-        ax.set_xlabel("Branch length (subs/site)")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-
-        if config.show_title:
-            ax.set_title(
-                config.title or "Quartet Concordance Pie Chart",
-                fontsize=config.title_fontsize,
-            )
-        if config.axis_fontsize:
-            ax.xaxis.label.set_fontsize(config.axis_fontsize)
-
-        # Use constrained_layout=False since inset pie axes are incompatible
-        # with tight_layout; manual padding via subplots_adjust instead
-        fig.subplots_adjust(left=0.05, right=0.85, top=0.92, bottom=0.12)
-        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+        # Save without bbox_inches="tight" to preserve inset positions
+        fig.savefig(output_path, dpi=config.dpi)
         plt.close(fig)
 
     def _print_json(self, tree, proportions, input_mode, n_gene_trees):
