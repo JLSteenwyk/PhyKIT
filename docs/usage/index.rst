@@ -149,6 +149,7 @@ Tree comparison & consensus
 - :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
 - :ref:`Spectral discordance decomposition <cmd-spectral_discordance>`: PCA ordination and clustering of gene tree topologies
 - :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
+- :ref:`Quartet pie chart <cmd-quartet_pie>`: Phylogram with quartet concordance pie charts at internal nodes
 - :ref:`Kuhner-Felsenstein distance <cmd-kf_distance>`: Branch score distance between trees (topology + branch lengths)
 - :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>`: Topological distance between trees
 
@@ -2189,6 +2190,38 @@ Options: |br|
 file with the list of taxa to get the last common ancestor subtree for |br|
 *-o/--output*: optional argument to name the outputted tree file |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-quartet_pie:
+
+Quartet pie chart
+#################
+Function names: quartet_pie; qpie; quartet_pie_chart |br|
+Command line interface: pk_quartet_pie; pk_qpie; pk_quartet_pie_chart
+
+Draw a phylogram with pie charts at internal nodes showing quartet
+concordance proportions. In native mode (-g provided), computes gene
+concordance factors (gCF, gDF1, gDF2) from a species tree and gene trees
+via bipartition matching. In ASTRAL mode (no -g), parses q1/q2/q3
+annotations from ASTRAL -t 2 output.
+
+Pie slices show concordant (blue), discordant alt 1 (red), and
+discordant alt 2 (gray) proportions. Use ``--annotate`` to add numeric
+values near each pie.
+
+.. code-block:: shell
+
+	phykit quartet_pie -t <species_tree> [-g <gene_trees>] -o <output>
+		[--annotate] [--json]
+
+Options: |br|
+*-t/--tree*: species tree file (required) |br|
+*-g/--gene-trees*: gene trees file, one Newick tree per line (optional; if omitted, ASTRAL annotations are parsed) |br|
+*-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
+*--annotate*: show gCF/gDF values as text near each pie chart |br|
+*--colors*: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) |br|
+*--json*: optional argument to output per-node concordance values as JSON
 
 |
 

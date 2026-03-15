@@ -28,6 +28,7 @@ _EXPORTS = {
     "PolytomyTest": "polytomy_test",
     "PrintTree": "print_tree",
     "PruneTree": "prune_tree",
+    "QuartetPie": "quartet_pie",
     "RenameTreeTips": "rename_tree_tips",
     "KuhnerFelsensteinDistance": "kf_distance",
     "RobinsonFouldsDistance": "rf_distance",

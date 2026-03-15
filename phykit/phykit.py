@@ -242,6 +242,9 @@ class Phykit:
                 quartet_network (alias: quartet_net; qnet; nanuq)
                     - quartet-based network inference (NANUQ-style)
                       distinguishing ILS from hybridization
+                quartet_pie (alias: qpie; quartet_pie_chart)
+                    - phylogram with quartet concordance pie charts
+                      at internal nodes
                 ltt (alias: gamma_stat; gamma)
                     - lineage-through-time plot and Pybus & Harvey
                       gamma statistic for diversification rate testing
@@ -4525,6 +4528,107 @@ class Phykit:
         _run_service(parser, argv, ConsensusNetwork)
 
     @staticmethod
+    def quartet_pie(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Draw a phylogram with pie charts at internal nodes showing
+                quartet concordance proportions.
+
+                In native mode (-g provided), computes gene concordance
+                factors (gCF, gDF1, gDF2) from a species tree and gene
+                trees via bipartition matching. In ASTRAL mode (no -g),
+                parses q1/q2/q3 annotations from ASTRAL -t 2 output.
+
+                Pie slices show: concordant (blue), discordant alt 1
+                (red), discordant alt 2 (gray).
+
+                Aliases:
+                  quartet_pie, qpie, quartet_pie_chart
+                Command line interfaces:
+                  pk_quartet_pie, pk_qpie
+
+                Usage:
+                phykit quartet_pie -t <tree> [-g <gene_trees>] -o <output>
+                  [--annotate] [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+
+                Options
+                =====================================================
+                -t/--tree                   species tree file (required)
+
+                -g/--gene-trees             gene trees file, one Newick
+                                            tree per line (optional;
+                                            if omitted, ASTRAL -t 2
+                                            annotations are parsed)
+
+                -o/--output                 output figure path (required;
+                                            supports .png, .pdf, .svg)
+
+                --annotate                  show gCF/gDF values as text
+                                            near each pie chart
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for tip labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors for
+                                            concordant, disc1, disc2
+                                            (default: "#2b8cbe,#d62728,
+                                            #969696")
+
+                --json                      optional argument to output
+                                            per-node concordance as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--annotate", action="store_true", required=False, help=SUPPRESS
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, QuartetPie)
+
+    @staticmethod
     def quartet_network(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -6618,6 +6722,10 @@ def consensus_network(argv=None):
 
 def quartet_network(argv=None):
     Phykit.quartet_network(sys.argv[1:])
+
+
+def quartet_pie(argv=None):
+    Phykit.quartet_pie(sys.argv[1:])
 
 
 def ltt(argv=None):
