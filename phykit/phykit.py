@@ -260,6 +260,9 @@ class Phykit:
                 rename_tree_tips (alias: rename_tree; rename_tips)
                     - renames tips in a phylogeny according to a file with
                       the desired new tip names
+                kuhner_felsenstein_distance (alias: kf_distance; kf_dist; kf)
+                    - calculates Kuhner-Felsenstein (branch score) distance
+                      between two trees
                 robinson_foulds_distance (alias: rf_distance; rf_dist; rf)
                     - calculates Robinson-Foulds distance between two trees
                 root_tree (alias: root; rt)
@@ -5129,6 +5132,60 @@ class Phykit:
         _run_service(parser, argv, RenameTreeTips)
 
     @staticmethod
+    def kf_distance(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate Kuhner-Felsenstein (KF) branch score distance
+                between two trees.
+
+                Unlike Robinson-Foulds distance which only considers topology,
+                KF distance incorporates both topology and branch length
+                differences. The KF distance is calculated as:
+                KF = sqrt( sum_over_all_splits( (b1_i - b2_i)^2 ) )
+                where b1_i and b2_i are branch lengths for split i in each
+                tree. Splits absent from one tree use branch length 0.
+
+                PhyKIT will print out
+                col 1: the plain KF distance and
+                col 2: the normalized KF distance.
+
+                KF distances are calculated following Kuhner & Felsenstein,
+                Journal of Computational Biology (1994),
+                doi: 10.1089/cmb.1994.1.183.
+
+                Aliases:
+                  kuhner_felsenstein_distance, kf_distance, kf_dist, kf
+                Command line interfaces:
+                  pk_kuhner_felsenstein_distance, pk_kf_distance, pk_kf_dist,
+                  pk_kf
+
+                Usage:
+                phykit kf_distance <tree_file_zero> <tree_file_one> [--json]
+
+                Options
+                =====================================================
+                <tree_file_zero>            first argument after
+                                            function name should be
+                                            a tree file
+
+                <tree_file_one>             second argument after
+                                            function name should be
+                                            a tree file
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tree_one", type=str, help=SUPPRESS)
+        _add_json_argument(parser)
+        _run_service(parser, argv, KuhnerFelsensteinDistance)
+
+    @staticmethod
     def rf_distance(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -6523,6 +6580,10 @@ def threshold_model(argv=None):
 
 def rename_tree_tips(argv=None):
     Phykit.rename_tree_tips(sys.argv[1:])
+
+
+def kf_distance(argv=None):
+    Phykit.kf_distance(sys.argv[1:])
 
 
 def rf_distance(argv=None):
