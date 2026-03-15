@@ -12,6 +12,7 @@ _EXPORTS = {
     "DiscordanceAsymmetry": "discordance_asymmetry",
     "EvolutionaryRate": "evolutionary_rate",
     "EvoTempoMap": "evo_tempo_map",
+    "FitDiscrete": "fit_discrete",
     "HiddenParalogyCheck": "hidden_paralogy_check",
     "InternalBranchStats": "internal_branch_stats",
     "InternodeLabeler": "internode_labeler",

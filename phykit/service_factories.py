@@ -85,6 +85,7 @@ PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "Polyto
 PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")
 PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")
 RenameTreeTips = _LazyServiceFactory("phykit.services.tree.rename_tree_tips", "RenameTreeTips")
+FitDiscrete = _LazyServiceFactory("phykit.services.tree.fit_discrete", "FitDiscrete")
 KuhnerFelsensteinDistance = _LazyServiceFactory("phykit.services.tree.kf_distance", "KuhnerFelsensteinDistance")
 RobinsonFouldsDistance = _LazyServiceFactory("phykit.services.tree.rf_distance", "RobinsonFouldsDistance")
 RootTree = _LazyServiceFactory("phykit.services.tree.root_tree", "RootTree")

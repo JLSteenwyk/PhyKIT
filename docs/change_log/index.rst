@@ -6,6 +6,24 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.41**:
+Added discrete trait model comparison command (``fit_discrete`` / ``fd``):
+
+* Compares ER (Equal Rates), SYM (Symmetric), and ARD (All Rates
+  Different) Mk models of discrete character evolution via maximum
+  likelihood
+* Reports log-likelihood, AIC, delta-AIC, Akaike weights, BIC, and
+  number of parameters for each model
+* Extracts shared Q-matrix fitting, Felsenstein pruning, and trait
+  parsing code from ``stochastic_character_map`` and
+  ``ancestral_reconstruction`` into ``phykit/helpers/discrete_models.py``,
+  eliminating code duplication
+* Supports ``--models`` flag to select a subset of models (e.g.,
+  ``--models ER,ARD``)
+* Supports ``--json`` output with full Q-matrix and rate parameters
+* Cross-validated against R's geiger::fitDiscrete(); R validation
+  script provided in ``tests/r_validation/validate_fit_discrete.R``
+
 **2.1.40**:
 Added Kuhner-Felsenstein (branch score) distance command
 (``kf_distance`` / ``kf``):

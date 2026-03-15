@@ -10,6 +10,13 @@ from scipy.optimize import minimize
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig
+from ...helpers.discrete_models import (
+    build_q_matrix,
+    matrix_exp,
+    felsenstein_pruning,
+    fit_q_matrix,
+    parse_discrete_traits,
+)
 from ...errors import PhykitUserError
 
 
@@ -1087,132 +1094,20 @@ class AncestralReconstruction(Tree):
         return {taxon: traits[taxon] for taxon in shared}
 
     # ------------------------------------------------------------------
-    # Mk model primitives (shared with StochasticCharacterMap)
+    # Mk model primitives (delegated to phykit.helpers.discrete_models)
     # ------------------------------------------------------------------
 
-    def _build_q_matrix(
-        self, params: np.ndarray, k: int, model: str
-    ) -> np.ndarray:
-        Q = np.zeros((k, k))
-        if model == "ER":
-            rate = params[0]
-            Q[:] = rate
-            np.fill_diagonal(Q, 0.0)
-        elif model == "SYM":
-            idx = 0
-            for i in range(k):
-                for j in range(i + 1, k):
-                    Q[i, j] = params[idx]
-                    Q[j, i] = params[idx]
-                    idx += 1
-        elif model == "ARD":
-            idx = 0
-            for i in range(k):
-                for j in range(k):
-                    if i != j:
-                        Q[i, j] = params[idx]
-                        idx += 1
-        # Set diagonal
-        for i in range(k):
-            Q[i, i] = -np.sum(Q[i, :])
-        return Q
+    def _build_q_matrix(self, params, k, model):
+        return build_q_matrix(params, k, model)
 
-    def _matrix_exp(self, Q: np.ndarray, t: float) -> np.ndarray:
-        return expm(Q * t)
+    def _matrix_exp(self, Q, t):
+        return matrix_exp(Q, t)
 
-    def _felsenstein_pruning(
-        self, tree, tip_states: Dict[str, str], Q: np.ndarray,
-        pi: np.ndarray, states: List[str]
-    ) -> Tuple[Dict, float]:
-        k = len(states)
-        state_idx = {s: i for i, s in enumerate(states)}
-        cond_liks: Dict[int, np.ndarray] = {}
+    def _felsenstein_pruning(self, tree, tip_states, Q, pi, states):
+        return felsenstein_pruning(tree, tip_states, Q, pi, states)
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
-                lik = np.zeros(k)
-                if clade.name in tip_states:
-                    lik[state_idx[tip_states[clade.name]]] = 1.0
-                cond_liks[id(clade)] = lik
-            else:
-                lik = np.ones(k)
-                for child in clade.clades:
-                    t = child.branch_length if child.branch_length else 1e-8
-                    P = self._matrix_exp(Q, t)
-                    child_lik = cond_liks[id(child)]
-                    lik *= P @ child_lik
-                cond_liks[id(clade)] = lik
-
-        root_lik = cond_liks[id(tree.root)]
-        total_lik = np.sum(pi * root_lik)
-        if total_lik <= 0:
-            loglik = -1e20
-        else:
-            loglik = np.log(total_lik)
-
-        return cond_liks, loglik
-
-    def _fit_q_matrix(
-        self, tree, tip_states: Dict[str, str],
-        states: List[str], model: str
-    ) -> Tuple[np.ndarray, float]:
-        k = len(states)
-
-        if model == "ER":
-            n_params = 1
-        elif model == "SYM":
-            n_params = k * (k - 1) // 2
-        elif model == "ARD":
-            n_params = k * (k - 1)
-        else:
-            raise PhykitUserError(
-                [f"Unknown model '{model}'. Use ER, SYM, or ARD."],
-                code=2,
-            )
-
-        pi = np.ones(k) / k
-
-        def neg_loglik(params):
-            Q = self._build_q_matrix(np.abs(params), k, model)
-            _, ll = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
-            return -ll
-
-        bounds = [(1e-8, 100.0)] * n_params
-
-        # Multi-start optimization for robustness
-        starting_values = [0.001, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]
-        best_negll = np.inf
-        best_params = np.ones(n_params) * 0.1
-
-        for sv in starting_values:
-            x0 = np.ones(n_params) * sv
-            for opt_method in ["L-BFGS-B", "Nelder-Mead"]:
-                try:
-                    kwargs = {"method": opt_method}
-                    if opt_method == "L-BFGS-B":
-                        kwargs["bounds"] = bounds
-                    result = minimize(neg_loglik, x0, **kwargs)
-                    if result.fun < best_negll:
-                        best_negll = result.fun
-                        best_params = np.abs(result.x)
-                except (ValueError, np.linalg.LinAlgError):
-                    continue
-
-        # Refine best result with Nelder-Mead
-        try:
-            result = minimize(
-                neg_loglik, best_params, method="Nelder-Mead",
-                options={"maxiter": 10000, "xatol": 1e-10, "fatol": 1e-10},
-            )
-            if result.fun < best_negll:
-                best_params = np.abs(result.x)
-        except (ValueError, np.linalg.LinAlgError):
-            pass
-
-        Q = self._build_q_matrix(best_params, k, model)
-        _, loglik = self._felsenstein_pruning(tree, tip_states, Q, pi, states)
-
-        return Q, loglik
+    def _fit_q_matrix(self, tree, tip_states, states, model):
+        return fit_q_matrix(tree, tip_states, states, model)
 
     # ------------------------------------------------------------------
     # Discrete marginal posteriors (upward-downward belief propagation)

@@ -104,6 +104,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "rh": "rate_heterogeneity",
     "fitcontinuous": "fit_continuous",
     "fc": "fit_continuous",
+    "fitdiscrete": "fit_discrete",
+    "fd": "fit_discrete",
     "ouwie": "ouwie",
     "fit_ouwie": "ouwie",
     "multi_regime_ou": "ouwie",
