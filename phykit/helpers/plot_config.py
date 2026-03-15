@@ -52,3 +52,51 @@ class PlotConfig:
                 f"Choose from: {', '.join(sorted(VALID_LEGEND_POSITIONS))}"
             )
             sys.exit(2)
+
+    @classmethod
+    def auto_scale(cls, n_rows=None, n_cols=None) -> "PlotConfig":
+        # fig_height
+        if n_rows is not None:
+            raw_height = 3.0 + n_rows * 0.18
+            fig_height = max(5.0, min(200.0, raw_height))
+            if raw_height > 200.0:
+                print(
+                    f"Warning: computed figure height ({raw_height:.0f} in) "
+                    f"exceeds 200 in; capping at 200. Use --fig-height to override.",
+                    file=sys.stderr,
+                )
+        else:
+            fig_height = 8.0
+
+        # fig_width
+        if n_cols is not None:
+            fig_width = max(10.0, min(20.0, 8.0 + n_cols * 0.15))
+        else:
+            fig_width = 14.0
+
+        # ylabel_fontsize
+        if n_rows is not None:
+            if n_rows > 800:
+                ylabel_fontsize = 0.0
+            else:
+                ylabel_fontsize = max(3.0, min(7.0, 7.0 - (n_rows - 50) * 0.008))
+        else:
+            ylabel_fontsize = 7.0
+
+        # xlabel_fontsize
+        if n_cols is not None:
+            if n_cols > 60:
+                xlabel_fontsize = 0.0
+            else:
+                xlabel_fontsize = max(3.0, min(7.0, 7.0 - (n_cols - 20) * 0.1))
+        else:
+            xlabel_fontsize = 7.0
+
+        return cls(
+            fig_width=fig_width,
+            fig_height=fig_height,
+            ylabel_fontsize=ylabel_fontsize,
+            xlabel_fontsize=xlabel_fontsize,
+            title_fontsize=12.0,
+            axis_fontsize=10.0,
+        )

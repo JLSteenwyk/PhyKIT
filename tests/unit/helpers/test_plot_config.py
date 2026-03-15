@@ -76,3 +76,50 @@ class TestPlotConfigValidation:
     def test_validate_none_fields_pass(self):
         config = PlotConfig()
         config.validate()  # should not raise
+
+
+class TestAutoScale:
+    def test_none_dimensions_returns_static_defaults(self):
+        config = PlotConfig.auto_scale(n_rows=None, n_cols=None)
+        assert config.fig_height == 8.0
+        assert config.fig_width == 14.0
+        assert config.ylabel_fontsize == 7.0
+        assert config.xlabel_fontsize == 7.0
+        assert config.title_fontsize == 12.0
+        assert config.axis_fontsize == 10.0
+
+    def test_small_dataset(self):
+        config = PlotConfig.auto_scale(n_rows=20, n_cols=10)
+        assert config.fig_height == pytest.approx(max(5.0, min(200.0, 3.0 + 20 * 0.18)))
+        assert config.ylabel_fontsize == 7.0  # <=50 rows stays at 7
+        assert config.xlabel_fontsize == 7.0  # <=20 cols stays at 7
+
+    def test_medium_dataset_scales_fonts(self):
+        config = PlotConfig.auto_scale(n_rows=300, n_cols=40)
+        assert config.ylabel_fontsize < 7.0
+        assert config.ylabel_fontsize >= 3.0
+        assert config.xlabel_fontsize < 7.0
+        assert config.xlabel_fontsize >= 3.0
+
+    def test_large_dataset_hides_ylabel(self):
+        config = PlotConfig.auto_scale(n_rows=900, n_cols=10)
+        assert config.ylabel_fontsize == 0.0
+
+    def test_many_cols_hides_xlabel(self):
+        config = PlotConfig.auto_scale(n_rows=10, n_cols=70)
+        assert config.xlabel_fontsize == 0.0
+
+    def test_fig_height_soft_cap(self, capsys):
+        config = PlotConfig.auto_scale(n_rows=2000, n_cols=None)
+        assert config.fig_height == 200.0
+        captured = capsys.readouterr()
+        assert "exceeds" in captured.err.lower() or "warning" in captured.err.lower()
+
+    def test_fig_width_scales_with_cols(self):
+        config = PlotConfig.auto_scale(n_rows=10, n_cols=50)
+        expected = max(10.0, min(20.0, 8.0 + 50 * 0.15))
+        assert config.fig_width == pytest.approx(expected)
+
+    def test_fig_width_none_cols_uses_default(self):
+        config = PlotConfig.auto_scale(n_rows=10, n_cols=None)
+        assert config.fig_width == 14.0
