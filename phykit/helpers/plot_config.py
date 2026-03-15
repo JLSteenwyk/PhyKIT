@@ -100,3 +100,13 @@ class PlotConfig:
             title_fontsize=12.0,
             axis_fontsize=10.0,
         )
+
+    def resolve(self, n_rows=None, n_cols=None) -> "PlotConfig":
+        defaults = PlotConfig.auto_scale(n_rows, n_cols)
+        for fld in [
+            "fig_width", "fig_height", "ylabel_fontsize", "xlabel_fontsize",
+            "title_fontsize", "axis_fontsize",
+        ]:
+            if getattr(self, fld) is None:
+                setattr(self, fld, getattr(defaults, fld))
+        return self

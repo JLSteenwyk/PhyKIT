@@ -123,3 +123,33 @@ class TestAutoScale:
     def test_fig_width_none_cols_uses_default(self):
         config = PlotConfig.auto_scale(n_rows=10, n_cols=None)
         assert config.fig_width == 14.0
+
+
+class TestResolve:
+    def test_resolve_fills_none_fields(self):
+        config = PlotConfig()
+        config.resolve(n_rows=50, n_cols=20)
+        assert config.fig_width is not None
+        assert config.fig_height is not None
+        assert config.ylabel_fontsize is not None
+        assert config.xlabel_fontsize is not None
+        assert config.title_fontsize is not None
+        assert config.axis_fontsize is not None
+
+    def test_resolve_preserves_user_overrides(self):
+        config = PlotConfig(fig_width=20.0, ylabel_fontsize=5.0)
+        config.resolve(n_rows=900, n_cols=100)
+        assert config.fig_width == 20.0  # user override preserved
+        assert config.ylabel_fontsize == 5.0  # user override preserved, not set to 0.0
+
+    def test_resolve_returns_self(self):
+        config = PlotConfig()
+        result = config.resolve(n_rows=10, n_cols=10)
+        assert result is config
+
+    def test_resolve_does_not_overwrite_prior_resolve(self):
+        config = PlotConfig()
+        config.resolve(n_rows=10, n_cols=10)
+        first_height = config.fig_height
+        config.resolve(n_rows=500, n_cols=500)
+        assert config.fig_height == first_height  # not overwritten
