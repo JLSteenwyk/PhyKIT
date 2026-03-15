@@ -22,6 +22,7 @@ from ...helpers.stats_summary import (
     print_summary_statistics,
 )
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class PairwiseIdentity(Alignment):
@@ -38,6 +39,7 @@ class PairwiseIdentity(Alignment):
         self.json_output = parsed["json_output"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def _should_use_multiprocessing(self, n_pairs: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -84,6 +86,7 @@ class PairwiseIdentity(Alignment):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "pairwise_identity_heatmap.png"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _print_json_output(
@@ -148,20 +151,36 @@ class PairwiseIdentity(Alignment):
         ordered_matrix = matrix[np.ix_(order, order)]
         ordered_taxa = [taxa[idx] for idx in order]
 
-        fig_size = max(6, min(20, n_taxa * 0.35))
-        fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+        config = self.plot_config
+        config.resolve(n_rows=n_taxa, n_cols=n_taxa)
+
+        fig_w = config.fig_width or max(6, min(20, n_taxa * 0.35))
+        fig_h = config.fig_height or fig_w
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
         image = ax.imshow(ordered_matrix, cmap="viridis", vmin=0, vmax=1, interpolation="nearest")
-        ax.set_title("Pairwise Identity Heatmap")
-        ax.set_xticks(np.arange(n_taxa))
-        ax.set_yticks(np.arange(n_taxa))
-        ax.set_xticklabels(ordered_taxa, rotation=90, fontsize=7)
-        ax.set_yticklabels(ordered_taxa, fontsize=7)
+
+        if config.ylabel_fontsize and config.ylabel_fontsize > 0:
+            ax.set_xticks(np.arange(n_taxa))
+            ax.set_yticks(np.arange(n_taxa))
+            ax.set_xticklabels(ordered_taxa, rotation=90, fontsize=config.xlabel_fontsize or config.ylabel_fontsize)
+            ax.set_yticklabels(ordered_taxa, fontsize=config.ylabel_fontsize)
+        else:
+            ax.set_xticks([])
+            ax.set_yticks([])
+
         ax.set_xlabel("Taxa (clustered)")
         ax.set_ylabel("Taxa (clustered)")
         colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
         colorbar.set_label("Identity")
+
+        if config.show_title:
+            ax.set_title(config.title or "Pairwise Identity Heatmap", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
+
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _calculate_identity_vectorized(self, seq_arr1, seq_arr2, gap_mask=None, exclude_gaps=False):

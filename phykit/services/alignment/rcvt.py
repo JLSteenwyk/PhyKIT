@@ -2,6 +2,7 @@ import numpy as np
 
 from .base import Alignment
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class RelativeCompositionVariabilityTaxon(Alignment):
@@ -11,6 +12,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         self.json_output = parsed["json_output"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -44,14 +46,27 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         taxa = [row["taxon"] for row in sorted_rows]
         rcvt_values = [row["rcvt"] for row in sorted_rows]
 
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.bar(np.arange(len(taxa)), rcvt_values, color="#2b8cbe")
-        ax.set_title("RCVT Per Taxon")
+        config = self.plot_config
+        config.resolve(n_rows=len(taxa), n_cols=None)
+        default_colors = ["#2b8cbe"]
+        colors = config.merge_colors(default_colors)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+        ax.bar(np.arange(len(taxa)), rcvt_values, color=colors[0])
         ax.set_ylabel("RCVT")
         ax.set_xticks(np.arange(len(taxa)))
-        ax.set_xticklabels(taxa, rotation=90, fontsize=8)
+        if config.xlabel_fontsize and config.xlabel_fontsize > 0:
+            ax.set_xticklabels(taxa, rotation=90, fontsize=config.xlabel_fontsize)
+        else:
+            ax.set_xticklabels([])
+
+        if config.show_title:
+            ax.set_title(config.title or "RCVT Per Taxon", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
+
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def calculate_rows(self, alignment, is_protein: bool):
@@ -103,4 +118,5 @@ class RelativeCompositionVariabilityTaxon(Alignment):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "rcvt_plot.png"),
+            plot_config=PlotConfig.from_args(args),
         )

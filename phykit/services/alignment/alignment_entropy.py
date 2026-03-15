@@ -4,6 +4,7 @@ import numpy as np
 
 from .base import Alignment
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class AlignmentEntropy(Alignment):
@@ -13,6 +14,7 @@ class AlignmentEntropy(Alignment):
         self.json_output = parsed["json_output"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -61,6 +63,7 @@ class AlignmentEntropy(Alignment):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "alignment_entropy_plot.png"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _plot_alignment_entropy(self, rows: List[Dict[str, float]]) -> None:
@@ -78,17 +81,28 @@ class AlignmentEntropy(Alignment):
         sites = np.array([int(row["site"]) for row in rows], dtype=np.int32)
         entropies = np.array([float(row["entropy"]) for row in rows], dtype=np.float64)
 
-        fig, ax = plt.subplots(figsize=(10, 4.5))
-        ax.plot(sites, entropies, color="#2b8cbe", linewidth=1.2, alpha=0.9)
-        ax.scatter(sites, entropies, s=8, color="#2b8cbe", alpha=0.75, edgecolors="none")
-        ax.set_title("Alignment Entropy Per Site")
+        config = self.plot_config
+        config.resolve(n_rows=len(sites), n_cols=None)
+        default_colors = ["#2b8cbe"]
+        colors = config.merge_colors(default_colors)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+        ax.plot(sites, entropies, color=colors[0], linewidth=1.2, alpha=0.9)
+        ax.scatter(sites, entropies, s=8, color=colors[0], alpha=0.75, edgecolors="none")
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("Shannon entropy")
         ax.set_xlim(1, int(np.max(sites)))
         max_entropy = float(np.max(entropies)) if entropies.size else 0.0
         ax.set_ylim(0, max(1.0, max_entropy * 1.1))
+
+        if config.show_title:
+            ax.set_title(config.title or "Alignment Entropy Per Site", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
+
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def calculate_site_entropies(self, alignment, is_protein: bool) -> List[float]:

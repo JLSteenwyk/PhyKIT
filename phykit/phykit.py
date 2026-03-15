@@ -477,6 +477,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, AlignmentEntropy)
 
@@ -786,6 +787,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CompositionalBiasPerSite)
 
@@ -878,6 +880,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, EvolutionaryRatePerSite)
 
@@ -1202,6 +1205,7 @@ class Phykit:
             default="pairwise_identity_heatmap.png",
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PairwiseIdentity)
 
@@ -1334,6 +1338,7 @@ class Phykit:
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         parser.add_argument("--plot", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, default="rcvt_plot.png", required=False, help=SUPPRESS)
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, RelativeCompositionVariabilityTaxon)
 

@@ -8,6 +8,7 @@ from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class CompositionalBiasPerSite(Alignment):
@@ -17,6 +18,7 @@ class CompositionalBiasPerSite(Alignment):
         self.json_output = parsed["json_output"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
@@ -50,6 +52,7 @@ class CompositionalBiasPerSite(Alignment):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "compositional_bias_per_site_plot.png"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _build_rows(
@@ -107,14 +110,19 @@ class CompositionalBiasPerSite(Alignment):
         sig_mask = finite_mask & (corrected_pvals < alpha)
         nonsig_mask = finite_mask & ~sig_mask
 
-        fig, ax = plt.subplots(figsize=(10, 4.5))
+        config = self.plot_config
+        config.resolve(n_rows=len(sites), n_cols=None)
+        default_colors = ["#2b8cbe", "#d62728", "#000000"]
+        colors = config.merge_colors(default_colors)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         if np.any(nonsig_mask):
             ax.scatter(
                 sites[nonsig_mask],
                 y_vals[nonsig_mask],
                 s=10,
                 alpha=0.75,
-                color="#2b8cbe",
+                color=colors[0],
                 edgecolors="none",
                 label="Not significant",
             )
@@ -124,22 +132,31 @@ class CompositionalBiasPerSite(Alignment):
                 y_vals[sig_mask],
                 s=14,
                 alpha=0.9,
-                color="#d62728",
+                color=colors[1],
                 edgecolors="none",
                 label=f"FDR < {alpha}",
             )
 
-        ax.axhline(sig_threshold, color="#000000", linestyle="--", linewidth=1.5, label=f"-log10({alpha})")
-        ax.set_title("Compositional Bias Per Site (Manhattan)")
+        ax.axhline(sig_threshold, color=colors[2], linestyle="--", linewidth=1.5, label=f"-log10({alpha})")
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("-log10(corrected p-value)")
         ax.set_xlim(1, int(np.max(sites)))
         if np.any(finite_mask):
             max_y = float(np.nanmax(y_vals))
             ax.set_ylim(0, max(sig_threshold * 1.1, max_y * 1.1))
-        ax.legend(loc="upper right", frameon=False, fontsize=8)
+
+        legend_loc = config.legend_position or "upper right"
+        if legend_loc != "none":
+            ax.legend(loc=legend_loc, frameon=False, fontsize=8)
+
+        if config.show_title:
+            ax.set_title(config.title or "Compositional Bias Per Site (Manhattan)", fontsize=config.title_fontsize)
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
+
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def get_number_of_occurrences_per_character(
