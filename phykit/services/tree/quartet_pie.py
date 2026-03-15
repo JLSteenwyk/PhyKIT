@@ -113,7 +113,7 @@ class QuartetPie(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
-            from matplotlib.patches import Wedge, Patch
+            from matplotlib.patches import Patch
         except ImportError:
             print("matplotlib is required for quartet_pie. Install matplotlib and retry.")
             raise SystemExit(2)
@@ -177,11 +177,16 @@ class QuartetPie(Tree):
             ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
             ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
 
-        # Pie charts at internal nodes
+        # Pie charts at internal nodes — rendered as inset axes so they
+        # appear as perfect circles regardless of axis scaling, and are
+        # drawn above the phylogeny branches.
         max_x = max(node_x.values()) if node_x else 1.0
         n_tips = len(tips)
-        # Scale pie radius relative to y-spacing (1 unit per tip) to avoid overlap
-        pie_radius = min(max_x * 0.015, 0.35 * (n_tips / max(n_tips, 1)))
+        # Pie size in figure-fraction units (scales with figure, not data)
+        pie_size = min(0.06, 0.8 / max(n_tips, 1))
+
+        # Force a draw so transData is populated
+        fig.canvas.draw()
 
         for clade in tree.find_clades(order="preorder"):
             if clade.is_terminal() or clade == root:
@@ -195,19 +200,26 @@ class QuartetPie(Tree):
             cx = node_x.get(cid, 0)
             cy = node_y.get(cid, 0)
 
-            # Draw pie using Wedge patches
-            start_angle = 90.0
-            for proportion, color in zip([gcf, gdf1, gdf2], colors):
-                if proportion < 1e-6:
-                    start_angle += proportion * 360.0
-                    continue
-                sweep = proportion * 360.0
-                wedge = Wedge(
-                    (cx, cy), pie_radius, start_angle, start_angle + sweep,
-                    facecolor=color, edgecolor="black", linewidth=0.5,
+            # Convert data coords to figure-fraction coords for the inset
+            disp = ax.transData.transform((cx, cy))
+            fig_coord = fig.transFigure.inverted().transform(disp)
+            fx, fy = fig_coord
+
+            # Create a small inset axes centered on the node
+            inset = fig.add_axes(
+                [fx - pie_size / 2, fy - pie_size / 2, pie_size, pie_size],
+                zorder=10,
+            )
+            wedge_vals = [gcf, gdf1, gdf2]
+            wedge_colors = [c for v, c in zip(wedge_vals, colors) if v > 1e-6]
+            wedge_vals = [v for v in wedge_vals if v > 1e-6]
+            if wedge_vals:
+                inset.pie(
+                    wedge_vals, colors=wedge_colors, startangle=90,
+                    wedgeprops={"edgecolor": "black", "linewidth": 0.5},
                 )
-                ax.add_patch(wedge)
-                start_angle += sweep
+            inset.set_aspect("equal")
+            inset.axis("off")
 
             # Annotate with values if requested
             if self.annotate:
@@ -215,9 +227,10 @@ class QuartetPie(Tree):
                     f"{gcf:.2f}/{gdf1:.2f}/{gdf2:.2f}",
                     (cx, cy),
                     textcoords="offset points",
-                    xytext=(5, 5),
+                    xytext=(8, 8),
                     fontsize=6,
                     color="black",
+                    zorder=11,
                 )
 
         # Tip labels
@@ -256,7 +269,9 @@ class QuartetPie(Tree):
         if config.axis_fontsize:
             ax.xaxis.label.set_fontsize(config.axis_fontsize)
 
-        fig.tight_layout()
+        # Use constrained_layout=False since inset pie axes are incompatible
+        # with tight_layout; manual padding via subplots_adjust instead
+        fig.subplots_adjust(left=0.05, right=0.85, top=0.92, bottom=0.12)
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
