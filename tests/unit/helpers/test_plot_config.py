@@ -241,3 +241,35 @@ class TestAddPlotArguments:
         args = parser.parse_args(["--legend-position", "top middle"])
         with pytest.raises(SystemExit):
             PlotConfig.from_args(args)
+
+
+class TestMergeColors:
+    def test_no_user_colors_returns_defaults(self):
+        config = PlotConfig()
+        result = config.merge_colors(["A", "B", "C"])
+        assert result == ["A", "B", "C"]
+
+    def test_full_override(self):
+        config = PlotConfig(colors=["X", "Y", "Z"])
+        result = config.merge_colors(["A", "B", "C"])
+        assert result == ["X", "Y", "Z"]
+
+    def test_partial_override(self):
+        config = PlotConfig(colors=["X", "Y"])
+        result = config.merge_colors(["A", "B", "C"])
+        assert result == ["X", "Y", "C"]
+
+    def test_extra_user_colors_ignored(self):
+        config = PlotConfig(colors=["X", "Y", "Z", "W"])
+        result = config.merge_colors(["A", "B", "C"])
+        assert result == ["X", "Y", "Z"]
+
+    def test_empty_entries_preserve_defaults(self):
+        config = PlotConfig(colors=["", "", "#e41a1c"])
+        result = config.merge_colors(["#525252", "#d9d9d9", "#2b8cbe"])
+        assert result == ["#525252", "#d9d9d9", "#e41a1c"]
+
+    def test_single_color_plot(self):
+        config = PlotConfig(colors=["red"])
+        result = config.merge_colors(["#2b8cbe"])
+        assert result == ["red"]

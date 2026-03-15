@@ -111,6 +111,15 @@ class PlotConfig:
                 setattr(self, fld, getattr(defaults, fld))
         return self
 
+    def merge_colors(self, defaults: List[str]) -> List[str]:
+        if self.colors is None:
+            return list(defaults)
+        result = list(defaults)
+        for i, user_color in enumerate(self.colors[:len(defaults)]):
+            if user_color:  # non-empty string overrides
+                result[i] = user_color
+        return result
+
     @classmethod
     def from_args(cls, args) -> "PlotConfig":
         colors_str = getattr(args, "colors", None)
