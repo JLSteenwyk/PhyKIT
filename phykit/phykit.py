@@ -161,6 +161,8 @@ class Phykit:
 
                 Tree-based commands
                 ===================
+                independent_contrasts (alias: pic; phylo_contrasts)
+                    - Felsenstein's phylogenetically independent contrasts
                 ancestral_state_reconstruction (alias: asr; anc_recon)
                     - estimate ancestral states for continuous traits using
                       ML (fast or VCV-based) with optional contMap plot
@@ -1677,6 +1679,57 @@ class Phykit:
         _run_service(parser, argv, VariableSites)
 
     ## Tree functions
+    @staticmethod
+    def independent_contrasts(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compute Felsenstein's (1985) phylogenetically independent
+                contrasts (PIC) for a continuous trait on a phylogeny.
+
+                Each internal node yields one standardized contrast,
+                producing n-1 contrasts for n tips. Contrasts are
+                computed by postorder traversal, dividing the trait
+                difference between sister clades by the square root of
+                the sum of their branch lengths.
+
+                Multifurcations are automatically resolved by adding
+                zero-length branches.
+
+                Cross-validated against R's ape::pic().
+
+                Aliases:
+                  independent_contrasts, pic, phylo_contrasts
+                Command line interfaces:
+                  pk_independent_contrasts, pk_pic
+
+                Usage:
+                phykit independent_contrasts -t <tree> -d <trait_data>
+                  [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -d/--trait_data             trait data file, two columns:
+                                            taxon<tab>value (required)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, IndependentContrasts)
+
     @staticmethod
     def ancestral_state_reconstruction(argv):
         parser = _new_parser(
@@ -6672,6 +6725,10 @@ def variable_sites(argv=None):
 
 
 # Tree-based functions
+def independent_contrasts(argv=None):
+    Phykit.independent_contrasts(sys.argv[1:])
+
+
 def ancestral_state_reconstruction(argv=None):
     Phykit.ancestral_state_reconstruction(sys.argv[1:])
 

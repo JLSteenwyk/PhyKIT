@@ -31,6 +31,7 @@ _EXPORTS = {
     "PruneTree": "prune_tree",
     "QuartetPie": "quartet_pie",
     "RenameTreeTips": "rename_tree_tips",
+    "IndependentContrasts": "independent_contrasts",
     "KuhnerFelsensteinDistance": "kf_distance",
     "RobinsonFouldsDistance": "rf_distance",
     "RootTree": "root_tree",
