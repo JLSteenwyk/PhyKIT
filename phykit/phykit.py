@@ -13,6 +13,7 @@ from argparse import (
 )
 
 from .helpers.boolean_argument_parsing import str2bool
+from .helpers.plot_config import add_plot_arguments
 from .cli_registry import ALIAS_TO_HANDLER
 from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
@@ -5130,6 +5131,12 @@ class Phykit:
                 phykit create_concatenation_matrix -a <file> -p <string>
                   [--threshold <float>] [--plot-occupancy]
                   [--plot-output <path>] [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
 
                 Options
                 =====================================================
@@ -5155,8 +5162,39 @@ class Phykit:
                                             occupancy map figure
 
                 --plot-output               output path for occupancy
-                                            figure. default:
+                                            figure (supports .png, .pdf,
+                                            .svg, .jpg). default:
                                             <prefix>.occupancy.png
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5168,6 +5206,7 @@ class Phykit:
         parser.add_argument("--threshold", type=float, required=False, default=0, help=SUPPRESS)
         parser.add_argument("--plot-occupancy", action="store_true", required=False, help=SUPPRESS)
         parser.add_argument("--plot-output", type=str, required=False, default=None, help=SUPPRESS)
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CreateConcatenationMatrix)
 
