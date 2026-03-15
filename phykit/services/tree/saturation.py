@@ -13,6 +13,7 @@ from ...helpers.files import (
     get_alignment_and_format as get_alignment_and_format_helper
 )
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class Saturation(Tree):
@@ -30,6 +31,7 @@ class Saturation(Tree):
         self.json_output = parsed["json_output"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def _should_use_multiprocessing(self, n_combos: int) -> bool:
         if os.environ.get("PHYKIT_DISABLE_MP", "0") == "1":
@@ -83,6 +85,7 @@ class Saturation(Tree):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "saturation_plot.png"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _plot_saturation_scatter(
@@ -99,13 +102,18 @@ class Saturation(Tree):
             print("matplotlib is required for --plot in saturation. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        fig, ax = plt.subplots(figsize=(7, 5))
+        config = self.plot_config
+        config.resolve(n_rows=len(patristic_distances), n_cols=None)
+        default_colors = ["#2b8cbe", "#000000"]
+        colors = config.merge_colors(default_colors)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         ax.scatter(
             patristic_distances,
             uncorrected_distances,
             s=14,
             alpha=0.6,
-            color="#2b8cbe",
+            color=colors[0],
             edgecolors="none",
         )
 
@@ -115,18 +123,24 @@ class Saturation(Tree):
             ax.plot(
                 x_line,
                 y_line,
-                color="#000000",
+                color=colors[1],
                 linestyle="--",
                 linewidth=2.0,
                 label=f"Fit through origin (slope={slope:.4f})",
             )
-            ax.legend(loc="best", frameon=False)
+            legend_loc = config.legend_position or "best"
+            if legend_loc != "none":
+                ax.legend(loc=legend_loc, frameon=False)
 
-        ax.set_title("Saturation: Patristic vs Uncorrected Distance")
+        if config.show_title:
+            ax.set_title(config.title or "Saturation: Patristic vs Uncorrected Distance", fontsize=config.title_fontsize)
         ax.set_xlabel("Patristic distance")
         ax.set_ylabel("Uncorrected distance")
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _process_combo_batch(self, tree, seq_arrays, gap_mask, exclude_gaps, combo_batch):

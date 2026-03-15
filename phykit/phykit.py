@@ -1908,6 +1908,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CovaryingEvolutionaryRates)
 
@@ -4632,6 +4633,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, TipToTipDistance)
 
@@ -4832,6 +4834,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Saturation)
 

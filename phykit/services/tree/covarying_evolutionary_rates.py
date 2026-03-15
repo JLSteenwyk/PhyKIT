@@ -6,6 +6,7 @@ from scipy.stats import pearsonr, zscore
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 class CovaryingEvolutionaryRates(Tree):
@@ -20,6 +21,7 @@ class CovaryingEvolutionaryRates(Tree):
         self.json_output = parsed["json_output"]
         self.plot = parsed["plot"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self):
         tree_zero = self.read_tree_file()
@@ -146,6 +148,7 @@ class CovaryingEvolutionaryRates(Tree):
             json_output=getattr(args, "json", False),
             plot=getattr(args, "plot", False),
             plot_output=getattr(args, "plot_output", "covarying_rates_plot.png"),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _plot_covarying_rates_scatter(self, x_vals, y_vals, corr):
@@ -165,13 +168,18 @@ class CovaryingEvolutionaryRates(Tree):
         x = x[finite_mask]
         y = y[finite_mask]
 
-        fig, ax = plt.subplots(figsize=(7, 5))
+        config = self.plot_config
+        config.resolve(n_rows=len(x), n_cols=None)
+        default_colors = ["#2b8cbe", "#000000"]
+        colors = config.merge_colors(default_colors)
+
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         ax.scatter(
             x,
             y,
             s=14,
             alpha=0.6,
-            color="#2b8cbe",
+            color=colors[0],
             edgecolors="none",
         )
 
@@ -182,14 +190,17 @@ class CovaryingEvolutionaryRates(Tree):
             ax.plot(
                 x_line,
                 y_line,
-                color="#000000",
+                color=colors[1],
                 linestyle="--",
                 linewidth=2.0,
                 label=f"Best fit (slope={slope:.4f})",
             )
-            ax.legend(loc="best", frameon=False)
+            legend_loc = config.legend_position or "best"
+            if legend_loc != "none":
+                ax.legend(loc=legend_loc, frameon=False)
 
-        ax.set_title("Covarying Evolutionary Rates")
+        if config.show_title:
+            ax.set_title(config.title or "Covarying Evolutionary Rates", fontsize=config.title_fontsize)
         ax.set_xlabel("Tree zero relative rate (z-score)")
         ax.set_ylabel("Tree one relative rate (z-score)")
         ax.text(
@@ -202,8 +213,11 @@ class CovaryingEvolutionaryRates(Tree):
             fontsize=9,
             bbox=dict(boxstyle="round,pad=0.25", facecolor="white", alpha=0.8, edgecolor="none"),
         )
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def get_indices_of_outlier_branch_lengths(
