@@ -111,6 +111,52 @@ class PlotConfig:
                 setattr(self, fld, getattr(defaults, fld))
         return self
 
+    def apply_to_figure(self, fig, ax, default_title, default_colors):
+        # Title
+        if self.show_title:
+            title_text = self.title if self.title is not None else default_title
+            ax.set_title(title_text, fontsize=self.title_fontsize)
+        else:
+            ax.set_title("")
+
+        # Legend
+        if self.legend_position is not None:
+            if self.legend_position == "none":
+                legend = ax.get_legend()
+                if legend is not None:
+                    legend.set_visible(False)
+            else:
+                legend = ax.get_legend()
+                if legend is not None:
+                    handles = legend.legend_handles
+                    labels = [t.get_text() for t in legend.get_texts()]
+                    legend.remove()
+                    ax.legend(handles=handles, labels=labels, loc=self.legend_position)
+
+        # Axis label font sizes
+        if self.axis_fontsize is not None:
+            ax.xaxis.label.set_fontsize(self.axis_fontsize)
+            ax.yaxis.label.set_fontsize(self.axis_fontsize)
+
+        # Y-axis tick labels
+        if self.ylabel_fontsize is not None:
+            if self.ylabel_fontsize == 0.0:
+                ax.set_yticklabels([])
+            else:
+                for label in ax.get_yticklabels():
+                    label.set_fontsize(self.ylabel_fontsize)
+
+        # X-axis tick labels
+        if self.xlabel_fontsize is not None:
+            if self.xlabel_fontsize == 0.0:
+                ax.set_xticklabels([])
+            else:
+                for label in ax.get_xticklabels():
+                    label.set_fontsize(self.xlabel_fontsize)
+
+        # Colors
+        return self.merge_colors(default_colors)
+
     def merge_colors(self, defaults: List[str]) -> List[str]:
         if self.colors is None:
             return list(defaults)

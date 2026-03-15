@@ -273,3 +273,87 @@ class TestMergeColors:
         config = PlotConfig(colors=["red"])
         result = config.merge_colors(["#2b8cbe"])
         assert result == ["red"]
+
+
+class TestApplyToFigure:
+    @pytest.fixture(autouse=True)
+    def _skip_no_matplotlib(self):
+        pytest.importorskip("matplotlib")
+
+    def _make_fig_ax(self):
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        ax.plot([0, 1], [0, 1])
+        return fig, ax
+
+    def test_sets_title(self):
+        import matplotlib.pyplot as plt
+        fig, ax = self._make_fig_ax()
+        config = PlotConfig(show_title=True, title_fontsize=14.0, axis_fontsize=10.0,
+                            ylabel_fontsize=7.0, xlabel_fontsize=7.0)
+        config.apply_to_figure(fig, ax, default_title="Test Title", default_colors=["red"])
+        assert ax.get_title() == "Test Title"
+        plt.close(fig)
+
+    def test_custom_title(self):
+        import matplotlib.pyplot as plt
+        fig, ax = self._make_fig_ax()
+        config = PlotConfig(show_title=True, title="Custom", title_fontsize=14.0,
+                            axis_fontsize=10.0, ylabel_fontsize=7.0, xlabel_fontsize=7.0)
+        config.apply_to_figure(fig, ax, default_title="Default", default_colors=["red"])
+        assert ax.get_title() == "Custom"
+        plt.close(fig)
+
+    def test_no_title(self):
+        import matplotlib.pyplot as plt
+        fig, ax = self._make_fig_ax()
+        config = PlotConfig(show_title=False, title_fontsize=14.0, axis_fontsize=10.0,
+                            ylabel_fontsize=7.0, xlabel_fontsize=7.0)
+        config.apply_to_figure(fig, ax, default_title="Title", default_colors=["red"])
+        assert ax.get_title() == ""
+        plt.close(fig)
+
+    def test_hides_legend_when_none(self):
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Patch
+        fig, ax = self._make_fig_ax()
+        ax.legend(handles=[Patch(facecolor="red", label="A")])
+        config = PlotConfig(legend_position="none", title_fontsize=14.0, axis_fontsize=10.0,
+                            ylabel_fontsize=7.0, xlabel_fontsize=7.0, show_title=True)
+        config.apply_to_figure(fig, ax, default_title="T", default_colors=["red"])
+        legend = ax.get_legend()
+        assert legend is None or not legend.get_visible()
+        plt.close(fig)
+
+    def test_returns_merged_colors(self):
+        import matplotlib.pyplot as plt
+        fig, ax = self._make_fig_ax()
+        config = PlotConfig(colors=["blue"], title_fontsize=14.0, axis_fontsize=10.0,
+                            ylabel_fontsize=7.0, xlabel_fontsize=7.0, show_title=True)
+        result = config.apply_to_figure(fig, ax, default_title="T", default_colors=["red", "green"])
+        assert result == ["blue", "green"]
+        plt.close(fig)
+
+    def test_hides_ylabel_when_zero(self):
+        import matplotlib.pyplot as plt
+        fig, ax = self._make_fig_ax()
+        ax.set_yticks([0, 1])
+        ax.set_yticklabels(["A", "B"])
+        config = PlotConfig(ylabel_fontsize=0.0, xlabel_fontsize=7.0, title_fontsize=14.0,
+                            axis_fontsize=10.0, show_title=True)
+        config.apply_to_figure(fig, ax, default_title="T", default_colors=["red"])
+        assert all(t.get_text() == "" for t in ax.get_yticklabels())
+        plt.close(fig)
+
+    def test_hides_xlabel_when_zero(self):
+        import matplotlib.pyplot as plt
+        fig, ax = self._make_fig_ax()
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(["G1", "G2"])
+        config = PlotConfig(xlabel_fontsize=0.0, ylabel_fontsize=7.0, title_fontsize=14.0,
+                            axis_fontsize=10.0, show_title=True)
+        config.apply_to_figure(fig, ax, default_title="T", default_colors=["red"])
+        assert all(t.get_text() == "" for t in ax.get_xticklabels())
+        plt.close(fig)
