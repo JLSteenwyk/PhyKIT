@@ -136,6 +136,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#quartet-network">Quartet network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kuhner-felsenstein-distance">Kuhner-Felsenstein distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#robinson-foulds-distance">Robinson-Foulds distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#root-tree">Root tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spurious-homolog-identification">Spurious homolog identification</a></li>
@@ -328,6 +329,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
+<li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
 <li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a>: Topological distance between trees</p></li>
 </ul>
 </section>
@@ -3109,6 +3111,34 @@ phylogeny.</p>
 tip names (col2) <br/>
 <em>-o/--output</em>: optional argument to write the renamed tree files to. Default
 output will have the same name as the input file but with the suffix &quot;.renamed&quot; <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="kuhner-felsenstein-distance">
+<span id="cmd-kf-distance"></span><h3>Kuhner-Felsenstein distance<a class="headerlink" href="#kuhner-felsenstein-distance" title="Link to this heading"></a></h3>
+<p>Function names: kuhner_felsenstein_distance; kf_distance; kf_dist; kf <br/>
+Command line interface: pk_kuhner_felsenstein_distance; pk_kf_distance; pk_kf_dist; pk_kf</p>
+<p>Calculate the Kuhner-Felsenstein (KF) branch score distance between two trees.</p>
+<p>Unlike Robinson-Foulds distance which only considers topology, KF distance
+incorporates both topology and branch length differences. The KF distance
+is calculated as KF = sqrt(sum over all splits of (b1_i - b2_i)^2), where
+b1_i and b2_i are branch lengths for split i in each tree. Splits absent
+from one tree use branch length 0. Both internal and terminal branches are
+included.</p>
+<p>PhyKIT will print out
+col 1: the plain KF distance and
+col 2: the normalized KF distance.</p>
+<p>KF distances are calculated following Kuhner &amp; Felsenstein, Journal of
+Computational Biology (1994), doi: 10.1089/cmb.1994.1.183.</p>
+<p>Cross-validated against R's phangorn::KF.dist().</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>kf_distance<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file <br/>
+<em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

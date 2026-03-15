@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.40**:
+Added Kuhner-Felsenstein (branch score) distance command
+(``kf_distance`` / ``kf``):
+
+* Computes the KF distance between two phylogenies, incorporating
+  both topology and branch length differences (Kuhner & Felsenstein
+  1994)
+* Reports plain and normalized KF distance
+* Includes both internal and terminal branch lengths in the
+  computation, matching the standard definition
+* Prunes to shared taxa when input trees have different tip sets
+* Supports ``--json`` output
+* Cross-validated against R's phangorn::KF.dist(); R validation
+  script provided in ``tests/r_validation/validate_kf_distance.R``
+
 **2.1.39**:
 Added shared plot configuration system with user-customizable CLI
 arguments for all 27 plotting commands:
