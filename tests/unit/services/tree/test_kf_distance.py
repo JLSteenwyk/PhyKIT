@@ -1,3 +1,14 @@
+"""
+Unit tests for Kuhner-Felsenstein (branch score) distance.
+
+The KF distance (Kuhner & Felsenstein 1994) is:
+    KF = sqrt( sum_over_all_splits( (b1_i - b2_i)^2 ) )
+where b1_i and b2_i are branch lengths for split i in each tree.
+Both internal and terminal branches are included.
+
+Expected values cross-validated against R's phangorn::KF.dist().
+See tests/r_validation/validate_kf_distance.R for the R script.
+"""
 import copy
 import math
 import pytest

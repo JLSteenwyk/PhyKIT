@@ -1,3 +1,15 @@
+"""
+Integration tests for Kuhner-Felsenstein (branch score) distance.
+
+Expected values cross-validated against R's phangorn::KF.dist().
+R validation script: tests/r_validation/validate_kf_distance.R
+
+To reproduce the expected value in R:
+    library(phangorn)
+    t0 <- read.tree("tests/sample_files/tree_simple.tre")
+    t1 <- read.tree("tests/sample_files/tree_simple_other_topology.tre")
+    KF.dist(t0, t1)  # 51.9041
+"""
 from mock import patch, call
 from pathlib import Path
 import pytest
@@ -99,7 +111,9 @@ class TestKFDistance(object):
 
     @patch("builtins.print")
     def test_kf_distance_different_taxa(self, mocked_print):
-        # Trees with different tip sets — should prune to shared taxa
+        # Trees with different tip sets — should prune to shared taxa.
+        # Cross-validated against R's phangorn::KF.dist() after pruning
+        # to shared taxa: KF = 51.5134
         testargs = [
             "phykit",
             "kf_distance",
@@ -110,4 +124,4 @@ class TestKFDistance(object):
             Phykit()
         output = mocked_print.call_args.args[0]
         plain_kf = float(output.split("\t")[0])
-        assert plain_kf > 0.0
+        assert plain_kf == 51.5134
