@@ -207,6 +207,8 @@ class Phykit:
                     phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr)
                     - phylogenetic ordination (PCA, t-SNE, or UMAP) on
                       continuous multi-trait data
+                phylo_heatmap (alias: pheatmap; ph)
+                    - phylogeny alongside a heatmap of numeric trait values
                 phylomorphospace (alias: phylomorpho; phmo)
                     - plot raw traits with phylogeny overlaid via ancestral
                       reconstruction
@@ -3012,6 +3014,100 @@ class Phykit:
     @staticmethod
     def phylogenetic_dimreduce(argv):
         Phykit.phylogenetic_ordination(argv)
+
+    @staticmethod
+    def phylo_heatmap(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Draw a phylogenetic heatmap: a phylogeny alongside a
+                color-coded matrix of numeric trait values. Rows are
+                aligned to tree tips.
+
+                Analogous to R's phytools::phylo.heatmap().
+
+                Aliases:
+                  phylo_heatmap, pheatmap, ph
+                Command line interfaces:
+                  pk_phylo_heatmap, pk_pheatmap, pk_ph
+
+                Usage:
+                phykit phylo_heatmap -t <tree> -d <data> -o <output>
+                  [--split 0.3] [--standardize] [--cmap viridis]
+                  [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -d/--data                   numeric data matrix in TSV
+                                            format with header row
+                                            (required)
+
+                -o/--output                 output figure path (required;
+                                            supports .png, .pdf, .svg)
+
+                --split                     fraction of figure width for
+                                            the tree panel (default: 0.3)
+
+                --standardize               z-score each column before
+                                            coloring
+
+                --cmap                      matplotlib colormap name
+                                            (default: viridis)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --ylabel-fontsize           font size for taxon labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for trait column
+                                            labels; 0 to hide
+
+                --json                      optional argument to output
+                                            metadata as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--split", type=float, required=False, default=0.3,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--standardize", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--cmap", type=str, required=False, default="viridis",
+            help=SUPPRESS, metavar=""
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhyloHeatmap)
 
     @staticmethod
     def phylomorphospace(argv):
@@ -6654,6 +6750,10 @@ def phylogenetic_pca(argv=None):
 
 def phylogenetic_dimreduce(argv=None):
     Phykit.phylogenetic_ordination(sys.argv[1:])
+
+
+def phylo_heatmap(argv=None):
+    Phykit.phylo_heatmap(sys.argv[1:])
 
 
 def phylomorphospace(argv=None):
