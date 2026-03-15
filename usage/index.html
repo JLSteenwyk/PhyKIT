@@ -126,6 +126,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#network-signal">Network signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ou-shift-detection-l1ou">OU shift detection (l1ou)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-heatmap">Phylogenetic heatmap</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-glm">Phylogenetic GLM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
@@ -355,6 +356,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a>: Detect OU regime shifts on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a>: Multi-regime Ornstein-Uhlenbeck models</p></li>
 <li><p><a class="reference internal" href="#cmd-phenogram"><span class="std std-ref">Phenogram (traitgram)</span></a>: Phenogram visualizing trait evolution</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-heatmap"><span class="std std-ref">Phylogenetic heatmap</span></a>: Phylogeny alongside a heatmap of numeric trait values</p></li>
 <li><p><a class="reference internal" href="#cmd-rate-heterogeneity"><span class="std std-ref">Rate heterogeneity test (multi-rate Brownian motion)</span></a>: Test for rate heterogeneity in trait evolution</p></li>
 <li><p><a class="reference internal" href="#cmd-stochastic-character-map"><span class="std std-ref">Stochastic character mapping (SIMMAP)</span></a>: Stochastic character mapping on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-threshold-model"><span class="std std-ref">Threshold model</span></a>: Felsenstein threshold model for trait correlation</p></li>
@@ -2619,6 +2621,31 @@ will be tab separated.</p>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-v/--verbose</em>: optional argument to print all tip-to-tip distances <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phylogenetic-heatmap">
+<span id="cmd-phylo-heatmap"></span><h3>Phylogenetic heatmap<a class="headerlink" href="#phylogenetic-heatmap" title="Link to this heading"></a></h3>
+<p>Function names: phylo_heatmap; pheatmap; ph <br/>
+Command line interface: pk_phylo_heatmap; pk_pheatmap; pk_ph</p>
+<p>Draw a phylogenetic heatmap: a phylogeny alongside a color-coded matrix
+of numeric trait values, with rows aligned to tree tips. Analogous to
+R's phytools::phylo.heatmap().</p>
+<a class="reference internal image-reference" href="../_images/phylo_heatmap_example.png"><img alt="../_images/phylo_heatmap_example.png" class="align-center" src="../_images/phylo_heatmap_example.png" style="width: 90%;" />
+</a>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_heatmap<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">        </span><span class="o">[</span>--split<span class="w"> </span><span class="m">0</span>.3<span class="o">]</span><span class="w"> </span><span class="o">[</span>--standardize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cmap<span class="w"> </span>viridis<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: tree file (required) <br/>
+<em>-d/--data</em>: numeric data matrix in TSV format with header row (required) <br/>
+<em>-o/--output</em>: output figure path (required; supports .png, .pdf, .svg) <br/>
+<em>--split</em>: fraction of figure width for the tree panel (default: 0.3) <br/>
+<em>--standardize</em>: z-score each column before coloring <br/>
+<em>--cmap</em>: matplotlib colormap name (default: <code class="docutils literal notranslate"><span class="pre">viridis</span></code>) <br/>
+<em>--json</em>: optional argument to output metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

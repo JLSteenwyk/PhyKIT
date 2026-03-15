@@ -171,6 +171,7 @@ Trait evolution
 - :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
 - :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>`: Multi-regime Ornstein-Uhlenbeck models
 - :ref:`Phenogram (traitgram) <cmd-phenogram>`: Phenogram visualizing trait evolution
+- :ref:`Phylogenetic heatmap <cmd-phylo_heatmap>`: Phylogeny alongside a heatmap of numeric trait values
 - :ref:`Rate heterogeneity test (multi-rate Brownian motion) <cmd-rate_heterogeneity>`: Test for rate heterogeneity in trait evolution
 - :ref:`Stochastic character mapping (SIMMAP) <cmd-stochastic_character_map>`: Stochastic character mapping on a phylogeny
 - :ref:`Threshold model <cmd-threshold_model>`: Felsenstein threshold model for trait correlation
@@ -2866,6 +2867,37 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-v/--verbose*: optional argument to print all tip-to-tip distances |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-phylo_heatmap:
+
+Phylogenetic heatmap
+####################
+Function names: phylo_heatmap; pheatmap; ph |br|
+Command line interface: pk_phylo_heatmap; pk_pheatmap; pk_ph
+
+Draw a phylogenetic heatmap: a phylogeny alongside a color-coded matrix
+of numeric trait values, with rows aligned to tree tips. Analogous to
+R's phytools::phylo.heatmap().
+
+.. image:: ../_static/phylo_heatmap_example.png
+   :align: center
+   :width: 90%
+
+.. code-block:: shell
+
+	phykit phylo_heatmap -t <tree> -d <data> -o <output>
+		[--split 0.3] [--standardize] [--cmap viridis] [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-d/--data*: numeric data matrix in TSV format with header row (required) |br|
+*-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
+*--split*: fraction of figure width for the tree panel (default: 0.3) |br|
+*--standardize*: z-score each column before coloring |br|
+*--cmap*: matplotlib colormap name (default: ``viridis``) |br|
+*--json*: optional argument to output metadata as JSON
 
 |
 

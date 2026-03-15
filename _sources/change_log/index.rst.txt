@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.45**:
+Added phylogenetic heatmap command (``phylo_heatmap`` / ``pheatmap`` /
+``ph``):
+
+* Draws a phylogeny alongside a color-coded heatmap of numeric trait
+  values, with rows aligned to tree tips
+* Analogous to R's phytools::phylo.heatmap()
+* Input: species tree + multi-column numeric TSV (header with trait
+  names, one row per taxon)
+* ``--split`` controls tree vs heatmap width ratio (default: 0.3)
+* ``--standardize`` z-scores each column before coloring
+* ``--cmap`` selects any matplotlib colormap (default: viridis)
+* Supports all shared plot options and ``--json`` output
+* Supports ``.png``, ``.pdf``, ``.svg`` output
+
 **2.1.42**:
 Added quartet pie chart visualization command (``quartet_pie`` / ``qpie``):
 

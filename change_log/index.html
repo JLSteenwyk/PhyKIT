@@ -80,6 +80,21 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.45</strong>:
+Added phylogenetic heatmap command (<code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code> / <code class="docutils literal notranslate"><span class="pre">pheatmap</span></code> /
+<code class="docutils literal notranslate"><span class="pre">ph</span></code>):</p>
+<ul class="simple">
+<li><p>Draws a phylogeny alongside a color-coded heatmap of numeric trait
+values, with rows aligned to tree tips</p></li>
+<li><p>Analogous to R's phytools::phylo.heatmap()</p></li>
+<li><p>Input: species tree + multi-column numeric TSV (header with trait
+names, one row per taxon)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--split</span></code> controls tree vs heatmap width ratio (default: 0.3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--standardize</span></code> z-scores each column before coloring</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--cmap</span></code> selects any matplotlib colormap (default: viridis)</p></li>
+<li><p>Supports all shared plot options and <code class="docutils literal notranslate"><span class="pre">--json</span></code> output</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">.png</span></code>, <code class="docutils literal notranslate"><span class="pre">.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">.svg</span></code> output</p></li>
+</ul>
 <p><strong>2.1.42</strong>:
 Added quartet pie chart visualization command (<code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> / <code class="docutils literal notranslate"><span class="pre">qpie</span></code>):</p>
 <ul class="simple">
