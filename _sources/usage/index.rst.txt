@@ -2210,6 +2210,10 @@ Pie slices show concordant (blue), discordant alt 1 (red), and
 discordant alt 2 (gray) proportions. Use ``--annotate`` to add numeric
 values near each pie.
 
+.. image:: ../_static/quartet_pie_example.png
+   :align: center
+   :width: 90%
+
 .. code-block:: shell
 
 	phykit quartet_pie -t <species_tree> [-g <gene_trees>] -o <output>
