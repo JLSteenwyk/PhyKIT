@@ -27,6 +27,7 @@ _EXPORTS = {
     "RelativeRateTest": "relative_rate_test",
     "PolytomyTest": "polytomy_test",
     "PrintTree": "print_tree",
+    "PhyloHeatmap": "phylo_heatmap",
     "PruneTree": "prune_tree",
     "QuartetPie": "quartet_pie",
     "RenameTreeTips": "rename_tree_tips",

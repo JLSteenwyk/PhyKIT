@@ -80,6 +80,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "phylo_dimreduce": "phylogenetic_ordination",
     "dimreduce": "phylogenetic_ordination",
     "pdr": "phylogenetic_ordination",
+    "pheatmap": "phylo_heatmap",
+    "ph": "phylo_heatmap",
     "phylomorpho": "phylomorphospace",
     "phmo": "phylomorphospace",
     "phylo_regression": "phylogenetic_regression",
