@@ -8,6 +8,7 @@ from scipy.stats import mannwhitneyu
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -19,6 +20,7 @@ class EvoTempoMap(Tree):
         self.verbose = parsed["verbose"]
         self.json_output = parsed["json_output"]
         self.plot_output = parsed["plot_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -27,6 +29,7 @@ class EvoTempoMap(Tree):
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_output=getattr(args, "plot_output", None),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -188,8 +191,7 @@ class EvoTempoMap(Tree):
         )
         print_json(result)
 
-    @staticmethod
-    def _plot(branch_results, output_path):
+    def _plot(self, branch_results, output_path):
         """Grouped box/strip plot of concordant vs discordant branch lengths."""
         import matplotlib
         matplotlib.use("Agg")
@@ -218,7 +220,9 @@ class EvoTempoMap(Tree):
             return
 
         n = len(labels)
-        fig, ax = plt.subplots(figsize=(max(8, n * 1.5), 5))
+        config = self.plot_config
+        config.resolve(n_rows=n, n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         positions = np.arange(n)
         width = 0.35
@@ -264,14 +268,19 @@ class EvoTempoMap(Tree):
         ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
         ax.set_ylabel("Branch length (subs/site)", fontsize=12)
         ax.set_xlabel("Species tree branch", fontsize=12)
+        if config.show_title:
+            ax.set_title(config.title or "Evolutionary Tempo Map", fontsize=config.title_fontsize)
         ax.legend(
             [bp_conc["boxes"][0], bp_disc["boxes"][0]],
             ["Concordant", "Discordant"],
             loc="upper right",
         )
+        if config.axis_fontsize:
+            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            ax.yaxis.label.set_fontsize(config.axis_fontsize)
 
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     # ------------------------------------------------------------------

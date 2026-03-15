@@ -5,6 +5,7 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -22,6 +23,7 @@ class Cophylo(Tree):
         self.mapping_file_path = parsed["mapping_file_path"]
         self.output_path = parsed["output_path"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         tree1 = self.read_tree_file()
@@ -116,6 +118,7 @@ class Cophylo(Tree):
             mapping_file_path=getattr(args, "mapping", None),
             output_path=args.output,
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _validate_tree(self, tree, label: str) -> None:
@@ -249,10 +252,12 @@ class Cophylo(Tree):
         tips1 = list(tree1.get_terminals())
         tips2 = list(tree2.get_terminals())
         n_max = max(len(tips1), len(tips2))
+        config = self.plot_config
+        config.resolve(n_rows=n_max, n_cols=None)
 
         fig, (ax1, ax_mid, ax2) = plt.subplots(
             1, 3,
-            figsize=(14, max(4, n_max * 0.4)),
+            figsize=(config.fig_width, config.fig_height),
             gridspec_kw={"width_ratios": [4, 2, 4]},
         )
 
@@ -283,12 +288,13 @@ class Cophylo(Tree):
                     zorder=1,
                 )
 
-        ax1.set_title("Tree 1", fontsize=11, fontweight="bold")
-        ax2.set_title("Tree 2", fontsize=11, fontweight="bold")
+        if config.show_title:
+            ax1.set_title("Tree 1", fontsize=config.title_fontsize or 11, fontweight="bold")
+            ax2.set_title("Tree 2", fontsize=config.title_fontsize or 11, fontweight="bold")
 
         fig.suptitle("Cophylogenetic Plot (Tanglegram)", fontsize=13)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved cophylo plot: {output_path}")
 

@@ -6,6 +6,7 @@ from scipy.stats import truncnorm
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -22,6 +23,7 @@ class ThresholdModel(Tree):
         self.seed = parsed["seed"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict[str, str]:
         traits_str = getattr(args, "traits", None)
@@ -80,6 +82,7 @@ class ThresholdModel(Tree):
             seed=getattr(args, "seed", None),
             plot_output=getattr(args, "plot_output", None),
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -795,8 +798,7 @@ class ThresholdModel(Tree):
         }
         print_json(result)
 
-    @staticmethod
-    def _plot_trace(mcmc_result, output_path):
+    def _plot_trace(self, mcmc_result, output_path):
         """Generate a 3-row x 2-column figure.
 
         Left column: MCMC trace plots (sample index vs value).
@@ -817,7 +819,9 @@ class ThresholdModel(Tree):
             ("sigma2_2", r"$\sigma^2_2$"),
         ]
 
-        fig, axes = plt.subplots(3, 2, figsize=(12, 8))
+        config = self.plot_config
+        config.resolve(n_rows=None, n_cols=None)
+        fig, axes = plt.subplots(3, 2, figsize=(config.fig_width, config.fig_height))
 
         for row, (param, label) in enumerate(params):
             samples = mcmc_result[param]
@@ -868,9 +872,10 @@ class ThresholdModel(Tree):
             if row == 0:
                 ax_hist.legend(fontsize=9, loc="upper right")
 
-        axes[0, 0].set_title("Trace", fontsize=13)
-        axes[0, 1].set_title("Posterior", fontsize=13)
+        if config.show_title:
+            axes[0, 0].set_title(config.title or "Trace", fontsize=config.title_fontsize)
+            axes[0, 1].set_title(config.title or "Posterior", fontsize=config.title_fontsize)
 
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

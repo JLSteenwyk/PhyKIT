@@ -11,6 +11,7 @@ from Bio import Phylo
 from .base import Tree
 from .ancestral_reconstruction import AncestralReconstruction
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -26,6 +27,7 @@ class ConcordanceAsr(Tree):
         self.plot_output = parsed["plot_output"]
         self.missing_taxa = parsed["missing_taxa"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -38,6 +40,7 @@ class ConcordanceAsr(Tree):
             plot_output=getattr(args, "plot", None),
             missing_taxa=getattr(args, "missing_taxa", "shared"),
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -786,7 +789,9 @@ class ConcordanceAsr(Tree):
                 else:
                     node_y[id(clade)] = 0.0
 
-        fig, ax = plt.subplots(figsize=(10, max(4, len(tips) * 0.4)))
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         # Draw branches
         for clade in tree.find_clades(order="preorder"):
@@ -848,8 +853,9 @@ class ConcordanceAsr(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.set_title("Concordance-Aware ASR")
+        if config.show_title:
+            ax.set_title(config.title or "Concordance-Aware ASR", fontsize=config.title_fontsize)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved concordance ASR plot: {output_path}")

@@ -10,6 +10,7 @@ from Bio import Phylo
 from .base import Tree
 from ...errors import PhykitUserError
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 
 
 def _chi2_cdf(x, df):
@@ -32,6 +33,7 @@ class QuartetNetwork(Tree):
         self.missing_taxa = parsed["missing_taxa"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(
@@ -41,6 +43,7 @@ class QuartetNetwork(Tree):
             missing_taxa=args.missing_taxa,
             plot_output=getattr(args, "plot_output", None),
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     # ------------------------------------------------------------------
@@ -601,7 +604,9 @@ class QuartetNetwork(Tree):
             self._build_splits_graph(circular_splits, all_taxa)
         )
 
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        config = self.plot_config
+        config.resolve(n_rows=len(all_taxa), n_cols=None)
+        fig, ax = plt.subplots(1, 1, figsize=(config.fig_width, config.fig_height))
         ax.set_aspect("equal")
 
         if not splits_list:
@@ -658,7 +663,9 @@ class QuartetNetwork(Tree):
         ax.axis("off")
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        if config.show_title and config.title:
+            ax.set_title(config.title, fontsize=config.title_fontsize)
+        plt.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close()
 
     # ------------------------------------------------------------------

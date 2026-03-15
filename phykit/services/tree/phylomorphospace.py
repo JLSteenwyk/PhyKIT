@@ -7,6 +7,7 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -20,6 +21,7 @@ class Phylomorphospace(Tree):
         self.color_by = parsed["color_by"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict[str, str]:
         return dict(
@@ -30,6 +32,7 @@ class Phylomorphospace(Tree):
             color_by=getattr(args, "color_by", None),
             plot_output=getattr(args, "plot_output", "phylomorphospace_plot.png"),
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -377,7 +380,9 @@ class Phylomorphospace(Tree):
             print("matplotlib is required for phylomorphospace. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        fig, ax = plt.subplots(figsize=(7, 5))
+        config = self.plot_config
+        config.resolve(n_rows=None, n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         # Collect all distances for normalization
         all_dists = [d for d in node_distances.values()]
@@ -505,5 +510,5 @@ class Phylomorphospace(Tree):
         ax.set_xlabel(trait_x_name)
         ax.set_ylabel(trait_y_name)
         fig.tight_layout()
-        fig.savefig(self.plot_output, dpi=300, bbox_inches="tight")
+        fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

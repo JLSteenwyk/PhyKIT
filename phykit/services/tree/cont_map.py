@@ -7,6 +7,7 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -17,6 +18,7 @@ class ContMap(Tree):
         self.trait_data_path = parsed["trait_data_path"]
         self.output_path = parsed["output_path"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -77,6 +79,7 @@ class ContMap(Tree):
             trait_data_path=args.trait_data,
             output_path=args.output,
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def _validate_tree(self, tree) -> None:
@@ -448,7 +451,9 @@ class ContMap(Tree):
         norm = Normalize(vmin=vmin, vmax=vmax)
         cmap = plt.get_cmap("coolwarm")
 
-        fig, ax = plt.subplots(figsize=(10, max(4, len(tips) * 0.4)))
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         n_seg = 50
 
@@ -509,7 +514,8 @@ class ContMap(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.set_title("Continuous Trait Map (contMap)")
+        if config.show_title:
+            ax.set_title(config.title or "Continuous Trait Map (contMap)", fontsize=config.title_fontsize)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

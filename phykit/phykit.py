@@ -1577,6 +1577,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, AncestralReconstruction)
 
@@ -1669,6 +1670,7 @@ class Phykit:
             "--missing-taxa", type=str, required=False, default="shared",
             choices=["error", "shared"], help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ConcordanceAsr)
 
@@ -2657,6 +2659,7 @@ class Phykit:
             "-g", "--gene-trees", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticOrdination)
 
@@ -2760,6 +2763,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Phylomorphospace)
 
@@ -3070,6 +3074,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, StochasticCharacterMap)
 
@@ -3123,6 +3128,7 @@ class Phykit:
         parser.add_argument(
             "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ContMap)
 
@@ -3198,6 +3204,7 @@ class Phykit:
         parser.add_argument(
             "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, DensityMap)
 
@@ -3246,6 +3253,7 @@ class Phykit:
         parser.add_argument(
             "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Phenogram)
 
@@ -3304,6 +3312,7 @@ class Phykit:
             "-m", "--mapping", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Cophylo)
 
@@ -3379,6 +3388,7 @@ class Phykit:
             "--plot", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, RateHeterogeneity)
 
@@ -3816,6 +3826,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ConsensusNetwork)
 
@@ -3916,6 +3927,7 @@ class Phykit:
             required=False,
             help=SUPPRESS,
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, QuartetNetwork)
 
@@ -4189,6 +4201,7 @@ class Phykit:
         parser.add_argument(
             "--plot-output", type=str, required=False, help=SUPPRESS, metavar=""
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, RelativeRateTest)
 
@@ -4283,6 +4296,7 @@ class Phykit:
         parser.add_argument(
             "--plot", dest="plot_output", type=str, default=None, required=False, help=SUPPRESS
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ThresholdModel)
 
@@ -4954,6 +4968,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, EvoTempoMap)
 
@@ -5015,6 +5030,7 @@ class Phykit:
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
         )
+        add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, DiscordanceAsymmetry)
 

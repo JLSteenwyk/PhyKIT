@@ -6,6 +6,7 @@ import numpy as np
 from .base import Tree
 from .stochastic_character_map import StochasticCharacterMap
 from ...helpers.json_output import print_json
+from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
@@ -19,6 +20,7 @@ class DensityMap(Tree):
         self.seed = parsed["seed"]
         self.output_path = parsed["output_path"]
         self.json_output = parsed["json_output"]
+        self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -29,6 +31,7 @@ class DensityMap(Tree):
             seed=getattr(args, "seed", None),
             output_path=args.output,
             json_output=getattr(args, "json", False),
+            plot_config=PlotConfig.from_args(args),
         )
 
     def run(self) -> None:
@@ -236,9 +239,9 @@ class DensityMap(Tree):
                 else:
                     node_y[id(clade)] = 0.0
 
-        fig, ax = plt.subplots(
-            figsize=(10, max(4, len(tips) * 0.4))
-        )
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         for clade in tree.find_clades(order="preorder"):
             if clade == root:
@@ -346,7 +349,8 @@ class DensityMap(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.set_title("Density Map")
+        if config.show_title:
+            ax.set_title(config.title or "Density Map", fontsize=config.title_fontsize)
         fig.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
