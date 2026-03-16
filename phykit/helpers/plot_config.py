@@ -25,6 +25,7 @@ class PlotConfig:
     colors: Optional[List[str]] = None
     ladderize: bool = False
     cladogram: bool = False
+    circular: bool = False
 
     def validate(self) -> None:
         if self.fig_width is not None and self.fig_width <= 0:
@@ -104,6 +105,10 @@ class PlotConfig:
         )
 
     def resolve(self, n_rows=None, n_cols=None) -> "PlotConfig":
+        if self.circular and self.fig_width is None and self.fig_height is None:
+            size = max(8.0, min(14.0, 3.0 + (n_rows or 0) * 0.08))
+            self.fig_width = size
+            self.fig_height = size
         defaults = PlotConfig.auto_scale(n_rows, n_cols)
         for fld in [
             "fig_width", "fig_height", "ylabel_fontsize", "xlabel_fontsize",
@@ -191,6 +196,7 @@ class PlotConfig:
             colors=colors,
             ladderize=getattr(args, "ladderize", False),
             cladogram=getattr(args, "cladogram", False),
+            circular=getattr(args, "circular", False),
         )
         config.validate()
         return config
@@ -211,6 +217,7 @@ def add_plot_arguments(parser) -> None:
     group.add_argument("--colors", type=str, default=None, help="Comma-separated colors (hex or named)")
     group.add_argument("--ladderize", action="store_true", default=False, help="Ladderize (sort) the tree before plotting")
     group.add_argument("--cladogram", action="store_true", default=False, help="Draw cladogram (equal branch lengths, tips aligned) instead of phylogram")
+    group.add_argument("--circular", action="store_true", default=False, help="Draw circular (radial/fan) phylogram instead of rectangular")
 
 
 def compute_node_x_cladogram(tree, parent_map):
