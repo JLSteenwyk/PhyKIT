@@ -163,6 +163,7 @@ Trait evolution
 ###############
 
 - :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>`: Reconstruct ancestral character states
+- :ref:`Character map <cmd-character_map>`: Map synapomorphies and homoplasies onto a phylogeny
 - :ref:`Independent contrasts (PIC) <cmd-independent_contrasts>`: Felsenstein's phylogenetically independent contrasts
 - :ref:`Parsimony score <cmd-parsimony_score>`: Fitch parsimony score of a tree given an alignment
 - :ref:`Concordance-aware ASR <cmd-concordance_asr>`: ASR incorporating gene tree discordance
