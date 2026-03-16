@@ -80,6 +80,20 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.47</strong>:
+Added Fitch parsimony score command (<code class="docutils literal notranslate"><span class="pre">parsimony_score</span></code> / <code class="docutils literal notranslate"><span class="pre">pars</span></code>):</p>
+<ul class="simple">
+<li><p>Computes the minimum number of character state changes required to
+explain an alignment on a given tree topology (Fitch 1971)</p></li>
+<li><p>Uses the Fitch downpass algorithm, scoring each site independently</p></li>
+<li><p>Gap characters (-, N, X, ?) treated as wildcards</p></li>
+<li><p>Automatically resolves multifurcations</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">-v/--verbose</span></code> flag prints per-site parsimony scores</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">--json</span></code> output</p></li>
+<li><p>Cross-validated against R's phangorn::parsimony(method=&quot;fitch&quot;);
+exact match (score=4). R validation script provided in
+<code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_parsimony.R</span></code></p></li>
+</ul>
 <p><strong>2.1.46</strong>:
 Added phylogenetically independent contrasts command
 (<code class="docutils literal notranslate"><span class="pre">independent_contrasts</span></code> / <code class="docutils literal notranslate"><span class="pre">pic</span></code>):</p>

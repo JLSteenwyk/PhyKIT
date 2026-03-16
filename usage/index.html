@@ -95,6 +95,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#parsimony-score">Parsimony score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#independent-contrasts-pic">Independent contrasts (PIC)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spectral-discordance-decomposition">Spectral discordance decomposition</a></li>
@@ -350,6 +351,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-ancestral-state-reconstruction"><span class="std std-ref">Ancestral state reconstruction</span></a>: Reconstruct ancestral character states</p></li>
 <li><p><a class="reference internal" href="#cmd-independent-contrasts"><span class="std std-ref">Independent contrasts (PIC)</span></a>: Felsenstein's phylogenetically independent contrasts</p></li>
+<li><p><a class="reference internal" href="#cmd-parsimony-score"><span class="std std-ref">Parsimony score</span></a>: Fitch parsimony score of a tree given an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-concordance-asr"><span class="std std-ref">Concordance-aware ASR</span></a>: ASR incorporating gene tree discordance</p></li>
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
@@ -1168,6 +1170,27 @@ doi: 10.1093/gbe/evw179.</p>
 </section>
 <section id="tree-based-functions">
 <h2>Tree-based functions<a class="headerlink" href="#tree-based-functions" title="Link to this heading"></a></h2>
+<section id="parsimony-score">
+<span id="cmd-parsimony-score"></span><h3>Parsimony score<a class="headerlink" href="#parsimony-score" title="Link to this heading"></a></h3>
+<p>Function names: parsimony_score; parsimony; pars <br/>
+Command line interface: pk_parsimony_score; pk_parsimony; pk_pars</p>
+<p>Compute the Fitch (1971) maximum parsimony score of a tree given an
+alignment. The parsimony score is the minimum number of character state
+changes required to explain the alignment on the given tree topology.
+Gap characters (-, N, X, ?) are treated as wildcards.</p>
+<p>Cross-validated against R's phangorn::parsimony(method=&quot;fitch&quot;).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>parsimony_score<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: tree file (required) <br/>
+<em>-a/--alignment</em>: alignment file in FASTA format (required) <br/>
+<em>-v/--verbose</em>: print per-site parsimony scores <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="independent-contrasts-pic">
 <span id="cmd-independent-contrasts"></span><h3>Independent contrasts (PIC)<a class="headerlink" href="#independent-contrasts-pic" title="Link to this heading"></a></h3>
 <p>Function names: independent_contrasts; pic; phylo_contrasts <br/>
