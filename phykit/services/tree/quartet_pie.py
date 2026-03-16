@@ -5,7 +5,7 @@ Draws a phylogram with pie charts at internal nodes showing the
 proportion of gene trees supporting the species tree topology (gCF)
 versus the two NNI alternative topologies (gDF1, gDF2). Supports
 both native computation from gene trees and parsing of ASTRAL -t 2
-annotations.
+or wASTRAL --support 3 annotations.
 """
 import sys
 from typing import Dict, List, Tuple
@@ -50,7 +50,8 @@ class QuartetPie(Tree):
                     [
                         "No ASTRAL q1/q2/q3 annotations found in the tree.",
                         "Either provide gene trees with -g, or use an ASTRAL",
-                        "-t 2 output tree with quartet annotations.",
+                        "-t 2 or wASTRAL --support 3 output tree with quartet",
+                        "annotations.",
                     ],
                     code=2,
                 )

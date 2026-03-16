@@ -106,3 +106,46 @@ class TestQuartetPie:
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert Path(output).exists()
+
+    @patch("builtins.print")
+    def test_quartet_pie_wastral_support3(self, mocked_print, tmp_path):
+        """wASTRAL --support 3 output is parsed in ASTRAL mode."""
+        output = str(tmp_path / "qpie_wastral.png")
+        testargs = [
+            "phykit",
+            "quartet_pie",
+            "-t", f"{here.parent.parent.parent}/sample_files/wastral_support3.tre",
+            "-o", output,
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert Path(output).exists()
+
+    @patch("builtins.print")
+    def test_quartet_pie_wastral_json(self, mocked_print, tmp_path):
+        """wASTRAL --support 3 JSON output has correct q-values."""
+        output = str(tmp_path / "qpie_wastral.png")
+        testargs = [
+            "phykit",
+            "quartet_pie",
+            "-t", f"{here.parent.parent.parent}/sample_files/wastral_support3.tre",
+            "-o", output,
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["input_mode"] == "astral"
+        assert payload["n_taxa"] == 7
+        assert len(payload["nodes"]) == 6
+
+        # Verify the node with most discordance (Vallesia + Haplophyton)
+        vh = next(
+            n for n in payload["nodes"]
+            if len(n["node_tips"]) == 2
+            and any("Vallesia" in t for t in n["node_tips"])
+        )
+        assert vh["gCF"] == pytest.approx(0.6449, abs=0.01)
+        assert vh["gDF1"] == pytest.approx(0.2190, abs=0.01)
+        assert vh["gDF2"] == pytest.approx(0.1361, abs=0.01)

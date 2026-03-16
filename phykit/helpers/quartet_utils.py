@@ -2,8 +2,8 @@
 Shared utilities for quartet concordance factor computation and ASTRAL parsing.
 
 Provides gene concordance factor (gCF/gDF1/gDF2) computation via the
-four-group bipartition decomposition, and parsing of ASTRAL -t 2
-q1/q2/q3 annotations from Newick node labels.
+four-group bipartition decomposition, and parsing of ASTRAL -t 2 or
+wASTRAL --support 3 q1/q2/q3 annotations from Newick node labels.
 """
 from typing import Dict, List, Optional, Tuple
 
@@ -93,10 +93,11 @@ def compute_gcf_per_node(
 def parse_astral_annotations(
     tree,
 ) -> Dict[int, Tuple[float, float, float]]:
-    """Parse q1/q2/q3 annotations from ASTRAL -t 2 Newick node labels.
+    """Parse q1/q2/q3 annotations from ASTRAL/wASTRAL Newick node labels.
 
-    ASTRAL annotates internal nodes with formats like:
+    Supports ASTRAL -t 2 and wASTRAL --support 3 output formats:
       '[q1=0.5;q2=0.3;q3=0.2;f1=50;...]'
+      '[CULength=2.6;f1=108;...;q1=0.96;q2=0.03;q3=0.01]'
       'q1=0.5;q2=0.3;q3=0.2'
 
     Returns dict mapping clade id -> (q1, q2, q3).

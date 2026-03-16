@@ -90,6 +90,28 @@ class TestParseAstralAnnotations:
         result = parse_astral_annotations(tree)
         assert len(result) == 0
 
+    def test_wastral_support3_tree(self):
+        """Parse q1/q2/q3 from a real wASTRAL --support 3 output tree."""
+        tree = Phylo.read(
+            "tests/sample_files/wastral_support3.tre", "newick"
+        )
+        result = parse_astral_annotations(tree)
+        # Tree has 6 internal nodes (excluding root), all annotated
+        assert len(result) == 6
+
+        # Verify specific q-values by collecting via tip count
+        by_ntips = {}
+        for clade in tree.find_clades(order="preorder"):
+            cid = id(clade)
+            if cid in result:
+                ntips = len(list(clade.get_terminals()))
+                by_ntips[ntips] = result[cid]
+
+        # Root's immediate child (7 tips): q1=0.979317
+        q1, q2, q3 = by_ntips[7]
+        assert q1 == pytest.approx(0.979317, abs=1e-5)
+        assert q1 + q2 + q3 == pytest.approx(1.0, abs=1e-4)
+
 
 class TestParseQsFromLabel:
     def test_bracket_format(self):
@@ -109,3 +131,31 @@ class TestParseQsFromLabel:
 
     def test_garbage(self):
         assert _parse_qs_from_label("support=95") is None
+
+    def test_wastral_support3_format(self):
+        """wASTRAL --support 3 includes CULength, f1-f3, localPP, pp1-pp3."""
+        label = (
+            "'[CULength=2.612;f1=108.574;f2=2.94013;f3=1.64516;"
+            "localPP=1;pp1=1;pp2=0;pp3=0;"
+            "q1=0.95948;q2=0.0259821;q3=0.0145384]'"
+        )
+        result = _parse_qs_from_label(label)
+        assert result is not None
+        q1, q2, q3 = result
+        assert q1 == pytest.approx(0.95948)
+        assert q2 == pytest.approx(0.0259821)
+        assert q3 == pytest.approx(0.0145384)
+
+    def test_wastral_scientific_notation(self):
+        """wASTRAL pp values may use scientific notation (e.g. 9.95e-09)."""
+        label = (
+            "'[CULength=0.608294;f1=52.9714;f2=17.9906;f3=11.1763;"
+            "localPP=1;pp1=1;pp2=9.95267e-09;pp3=6.26124e-09;"
+            "q1=0.644905;q2=0.219028;q3=0.136067]'"
+        )
+        result = _parse_qs_from_label(label)
+        assert result is not None
+        q1, q2, q3 = result
+        assert q1 == pytest.approx(0.644905)
+        assert q2 == pytest.approx(0.219028)
+        assert q3 == pytest.approx(0.136067)

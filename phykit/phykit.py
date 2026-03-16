@@ -4747,7 +4747,8 @@ class Phykit:
                 In native mode (-g provided), computes gene concordance
                 factors (gCF, gDF1, gDF2) from a species tree and gene
                 trees via bipartition matching. In ASTRAL mode (no -g),
-                parses q1/q2/q3 annotations from ASTRAL -t 2 output.
+                parses q1/q2/q3 annotations from ASTRAL -t 2 output or
+                wASTRAL --support 3 output.
 
                 Pie slices show: concordant (blue), discordant alt 1
                 (red), discordant alt 2 (gray).
@@ -4773,7 +4774,8 @@ class Phykit:
 
                 -g/--gene-trees             gene trees file, one Newick
                                             tree per line (optional;
-                                            if omitted, ASTRAL -t 2
+                                            if omitted, ASTRAL -t 2 or
+                                            wASTRAL --support 3
                                             annotations are parsed)
 
                 -o/--output                 output figure path (required;
