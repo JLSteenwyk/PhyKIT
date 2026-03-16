@@ -84,6 +84,10 @@ class Cophylo(Tree):
         n_tips1 = len(tips1)
         n_tips2 = len(tips2)
 
+        if self.plot_config.ladderize:
+            tree1.ladderize()
+            tree2.ladderize()
+
         # Optimize tip ordering to reduce line crossings
         tree1_order, tree2_order = self._optimize_tip_order(
             tree1, tree2, mapping_valid

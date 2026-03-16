@@ -23,6 +23,7 @@ class PlotConfig:
     title_fontsize: Optional[float] = None
     axis_fontsize: Optional[float] = None
     colors: Optional[List[str]] = None
+    ladderize: bool = False
 
     def validate(self) -> None:
         if self.fig_width is not None and self.fig_width <= 0:
@@ -187,6 +188,7 @@ class PlotConfig:
             title_fontsize=getattr(args, "title_fontsize", None),
             axis_fontsize=getattr(args, "axis_fontsize", None),
             colors=colors,
+            ladderize=getattr(args, "ladderize", False),
         )
         config.validate()
         return config
@@ -205,3 +207,4 @@ def add_plot_arguments(parser) -> None:
     group.add_argument("--title-fontsize", type=float, default=None, help="Font size for the title")
     group.add_argument("--axis-fontsize", type=float, default=None, help="Font size for axis labels")
     group.add_argument("--colors", type=str, default=None, help="Comma-separated colors (hex or named)")
+    group.add_argument("--ladderize", action="store_true", default=False, help="Ladderize (sort) the tree before plotting")

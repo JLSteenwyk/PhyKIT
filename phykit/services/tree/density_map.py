@@ -64,6 +64,9 @@ class DensityMap(Tree):
             for tip_name in tips_to_prune:
                 tree.prune(tip_name)
 
+        if self.plot_config.ladderize:
+            tree.ladderize()
+
         # Fit Q matrix using ER model
         Q, loglik = scm._fit_q_matrix(tree, tip_states, states, "ER")
         k = len(states)

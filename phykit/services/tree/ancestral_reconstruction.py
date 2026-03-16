@@ -66,6 +66,9 @@ class AncestralReconstruction(Tree):
         if tips_to_prune:
             tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
 
+        if self.plot_config.ladderize:
+            tree_copy.ladderize()
+
         # Label internal nodes
         node_labels = self._label_internal_nodes(tree_copy)
 
@@ -1205,6 +1208,9 @@ class AncestralReconstruction(Tree):
         tips_to_prune = [t for t in tip_names_in_tree if t not in tip_states]
         if tips_to_prune:
             tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+
+        if self.plot_config.ladderize:
+            tree_copy.ladderize()
 
         # Label internal nodes
         node_labels = self._label_internal_nodes(tree_copy)

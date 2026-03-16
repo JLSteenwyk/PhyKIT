@@ -63,6 +63,9 @@ class QuartetPie(Tree):
             input_mode = "astral"
             n_gene_trees = 0
 
+        if self.plot_config.ladderize:
+            tree.ladderize()
+
         self._plot_quartet_pie(tree, proportions, self.output_path)
 
         if self.json_output:

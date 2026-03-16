@@ -108,6 +108,9 @@ class RateHeterogeneity(Tree):
 
         # Plot
         if self.plot_output:
+            if self.plot_config.ladderize:
+                tree_copy.ladderize()
+                parent_map = self._build_parent_map(tree_copy)
             self._plot_regime_tree(
                 tree_copy, branch_regimes, regimes, parent_map, self.plot_output
             )

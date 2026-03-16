@@ -67,6 +67,9 @@ class StochasticCharacterMap(Tree):
             for tip_name in tips_to_prune:
                 tree.prune(tip_name)
 
+        if self.plot_config.ladderize:
+            tree.ladderize()
+
         # Fit Q matrix
         Q, loglik = self._fit_q_matrix(tree, tip_states, states, self.model)
         k = len(states)

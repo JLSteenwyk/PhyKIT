@@ -43,6 +43,9 @@ class PhyloHeatmap(Tree):
         if tips_to_prune:
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
 
+        if self.plot_config.ladderize:
+            tree.ladderize()
+
         # Get tip order from tree traversal
         tip_order = [t.name for t in tree.get_terminals()]
 

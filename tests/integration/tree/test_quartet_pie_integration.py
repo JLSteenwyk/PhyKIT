@@ -122,6 +122,22 @@ class TestQuartetPie:
         assert Path(output).exists()
 
     @patch("builtins.print")
+    def test_quartet_pie_ladderize(self, mocked_print, tmp_path):
+        """--ladderize flag produces output without error."""
+        output = str(tmp_path / "qpie_ladder.png")
+        testargs = [
+            "phykit",
+            "quartet_pie",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-g", f"{here.parent.parent.parent}/sample_files/gene_trees_simple.nwk",
+            "-o", output,
+            "--ladderize",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert Path(output).exists()
+
+    @patch("builtins.print")
     def test_quartet_pie_wastral_json(self, mocked_print, tmp_path):
         """wASTRAL --support 3 JSON output has correct q-values."""
         output = str(tmp_path / "qpie_wastral.png")

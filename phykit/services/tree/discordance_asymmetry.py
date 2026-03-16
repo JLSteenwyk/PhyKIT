@@ -85,6 +85,8 @@ class DiscordanceAsymmetry(Tree):
             self._output_text(branch_results, summary)
 
         if self.plot_output:
+            if self.plot_config.ladderize:
+                species_tree.ladderize()
             self._plot(species_tree, branch_results, self.plot_output,
                        shared_taxa=shared_taxa)
 

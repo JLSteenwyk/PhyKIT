@@ -101,6 +101,9 @@ class ConcordanceAsr(Tree):
                 species_copy, tips_to_prune
             )
 
+        if self.plot_config.ladderize:
+            species_copy.ladderize()
+
         if self.method == "distribution":
             result = self._run_distribution(
                 species_copy, gene_trees, trait_values, all_taxa

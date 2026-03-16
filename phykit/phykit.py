@@ -464,7 +464,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -511,6 +511,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -816,7 +819,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -861,6 +864,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -947,7 +953,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -991,6 +997,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1298,7 +1307,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -1347,6 +1356,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1485,7 +1497,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -1529,6 +1541,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1831,7 +1846,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -1887,6 +1902,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      output results as JSON
                 """
@@ -1961,7 +1979,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -2018,6 +2036,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      output results as JSON
                 """
@@ -2249,7 +2270,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -2306,6 +2327,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -2920,7 +2944,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -3005,6 +3029,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3255,7 +3282,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -3306,6 +3333,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3606,7 +3636,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -3660,6 +3690,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3731,7 +3764,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -3773,6 +3806,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to also
                                             output results as JSON
@@ -3823,7 +3859,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -3875,6 +3911,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to also
                                             output results as JSON
@@ -3930,7 +3969,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -3972,6 +4011,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4019,7 +4061,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -4064,6 +4106,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4118,7 +4163,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -4169,6 +4214,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4651,7 +4699,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -4701,6 +4749,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                     optional argument to output
                                            results as JSON
@@ -4766,7 +4817,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
 
                 Options
                 =====================================================
@@ -4814,6 +4865,9 @@ class Phykit:
                                             concordant, disc1, disc2
                                             (default: "#2b8cbe,#d62728,
                                             #969696")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             per-node concordance as JSON
@@ -4879,7 +4933,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -4935,6 +4989,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                     optional argument to output
                                            results as JSON
@@ -5096,7 +5153,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -5141,6 +5198,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5250,7 +5310,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -5297,6 +5357,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5357,7 +5420,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -5420,6 +5483,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5820,7 +5886,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -5876,6 +5942,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6056,7 +6125,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -6106,6 +6175,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6225,7 +6297,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -6269,6 +6341,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6325,7 +6400,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>]
+                    [--colors <str>] [--ladderize]
                     [--json]
 
                 Options
@@ -6368,6 +6443,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6425,7 +6503,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
                   [--json]
 
                 Options
@@ -6482,6 +6560,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      output results as JSON
                 """
@@ -6556,7 +6637,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>]
+                  [--colors <str>] [--ladderize]
 
                 Options
                 =====================================================
@@ -6615,6 +6696,9 @@ class Phykit:
                 --colors                    comma-separated colors
                                             (hex or named, e.g.,
                                             "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
 
                 --json                      optional argument to output
                                             results as JSON
