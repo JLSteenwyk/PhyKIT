@@ -165,6 +165,8 @@ class Phykit:
                     - Felsenstein's phylogenetically independent contrasts
                 parsimony_score (alias: parsimony; pars)
                     - Fitch parsimony score of a tree given an alignment
+                character_map (alias: charmap; synapomorphy_map)
+                    - map discrete character changes on a tree (Fitch parsimony)
                 ancestral_state_reconstruction (alias: asr; anc_recon)
                     - estimate ancestral states for continuous traits using
                       ML (fast or VCV-based) with optional contMap plot
@@ -1751,6 +1753,105 @@ class Phykit:
         )
         _add_json_argument(parser)
         _run_service(parser, argv, ParsimonyScore)
+
+    @staticmethod
+    def character_map(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Map discrete character changes onto a phylogenetic tree
+                using Fitch parsimony, classifying each change as a
+                synapomorphy, convergence, or reversal.
+
+                Two optimization strategies are supported:
+                  ACCTRAN (accelerated transformation) — assigns changes
+                  as close to the root as possible.
+                  DELTRAN (delayed transformation) — assigns changes as
+                  close to the tips as possible.
+
+                Output is a cladogram (default) or phylogram (with
+                --phylogram) annotated with colored circles indicating
+                character state changes on each branch. Polytomies are
+                automatically resolved by adding zero-length branches.
+
+                Summary statistics include tree length (total parsimony
+                steps), consistency index (CI), and retention index (RI).
+
+                Aliases:
+                  character_map, charmap, synapomorphy_map
+                Command line interfaces:
+                  pk_character_map, pk_charmap, pk_synapomorphy_map
+
+                Usage:
+                phykit character_map -t <tree> -d <data> -o <output>
+                  [--optimization acctran|deltran] [--phylogram]
+                  [--characters 0,1,3] [--verbose] [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>] [--ladderize]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -d/--data                   character matrix file in TSV
+                                            format: taxon<tab>char0<tab>
+                                            char1<tab>... (required)
+
+                -o/--output                 output figure path (required;
+                                            supports .png, .pdf, .svg)
+
+                --optimization              optimization strategy:
+                                            acctran or deltran
+                                            (default: acctran)
+
+                --phylogram                 draw a phylogram instead of
+                                            a cladogram
+
+                --characters                comma-separated character
+                                            indices to display on the
+                                            plot (e.g., 0,1,3); all
+                                            characters shown by default
+
+                --verbose                   print per-character details
+                                            including CI/RI and changes
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--optimization", type=str, default="acctran",
+            required=False, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--phylogram", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--characters", type=str, default=None,
+            required=False, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, CharacterMap)
 
     @staticmethod
     def independent_contrasts(argv):
@@ -6895,6 +6996,10 @@ def variable_sites(argv=None):
 # Tree-based functions
 def parsimony_score(argv=None):
     Phykit.parsimony_score(sys.argv[1:])
+
+
+def character_map(argv=None):
+    Phykit.character_map(sys.argv[1:])
 
 
 def independent_contrasts(argv=None):

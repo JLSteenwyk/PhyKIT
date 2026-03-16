@@ -84,6 +84,7 @@ ThresholdModel = _LazyServiceFactory("phykit.services.tree.threshold_model", "Th
 PolytomyTest = _LazyServiceFactory("phykit.services.tree.polytomy_test", "PolytomyTest")
 PrintTree = _LazyServiceFactory("phykit.services.tree.print_tree", "PrintTree")
 ParsimonyScore = _LazyServiceFactory("phykit.services.tree.parsimony_score", "ParsimonyScore")
+CharacterMap = _LazyServiceFactory("phykit.services.tree.character_map", "CharacterMap")
 PhyloHeatmap = _LazyServiceFactory("phykit.services.tree.phylo_heatmap", "PhyloHeatmap")
 PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")
 QuartetPie = _LazyServiceFactory("phykit.services.tree.quartet_pie", "QuartetPie")

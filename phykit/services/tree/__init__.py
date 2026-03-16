@@ -28,6 +28,7 @@ _EXPORTS = {
     "PolytomyTest": "polytomy_test",
     "PrintTree": "print_tree",
     "ParsimonyScore": "parsimony_score",
+    "CharacterMap": "character_map",
     "PhyloHeatmap": "phylo_heatmap",
     "PruneTree": "prune_tree",
     "QuartetPie": "quartet_pie",
