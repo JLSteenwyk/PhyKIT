@@ -1,0 +1,7 @@
+taxon	char0	char1	char2	char3	char4	char5	char6	char7
+A	0	1	0	0	0	1	1	0
+B	0	1	0	0	1	1	1	0
+C	1	0	1	0	0	0	2	0
+D	1	0	1	1	0	0	0	0
+E	1	0	0	0	0	0	1	0
+F	0	0	0	0	0	0	0	0
