@@ -466,7 +466,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -516,6 +516,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -821,7 +825,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -869,6 +873,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -955,7 +963,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -1002,6 +1010,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1309,7 +1321,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -1361,6 +1373,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1499,7 +1515,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -1546,6 +1562,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1793,7 +1813,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
 
                 Options
                 =====================================================
@@ -1947,7 +1967,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -2006,6 +2026,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      output results as JSON
                 """
@@ -2080,7 +2104,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -2140,6 +2164,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      output results as JSON
                 """
@@ -2371,7 +2399,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -2431,6 +2459,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3045,7 +3077,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -3133,6 +3165,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3383,7 +3419,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -3437,6 +3473,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3737,7 +3777,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -3794,6 +3834,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3865,7 +3909,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -3910,6 +3954,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to also
                                             output results as JSON
@@ -3960,7 +4008,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -4016,6 +4064,10 @@ class Phykit:
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
 
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
+
                 --json                      optional argument to also
                                             output results as JSON
                 """
@@ -4070,7 +4122,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -4115,6 +4167,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4162,7 +4218,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -4210,6 +4266,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4264,7 +4324,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -4318,6 +4378,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4806,7 +4870,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -4859,6 +4923,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                     optional argument to output
                                            results as JSON
@@ -4924,7 +4992,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
 
                 Options
                 =====================================================
@@ -4975,6 +5043,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             per-node concordance as JSON
@@ -5047,7 +5119,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -5106,6 +5178,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                     optional argument to output
                                            results as JSON
@@ -5272,7 +5348,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -5320,6 +5396,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5429,7 +5509,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -5479,6 +5559,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5539,7 +5623,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -5605,6 +5689,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6005,7 +6093,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -6064,6 +6152,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6244,7 +6336,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -6297,6 +6389,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6416,7 +6512,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -6463,6 +6559,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6519,7 +6619,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize]
+                    [--colors <str>] [--ladderize] [--cladogram]
                     [--json]
 
                 Options
@@ -6565,6 +6665,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6628,7 +6732,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
                   [--json]
 
                 Options
@@ -6688,6 +6792,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      output results as JSON
                 """
@@ -6762,7 +6870,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize]
+                  [--colors <str>] [--ladderize] [--cladogram]
 
                 Options
                 =====================================================
@@ -6824,6 +6932,10 @@ class Phykit:
 
                 --ladderize                 ladderize (sort) the tree
                                             before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
 
                 --json                      optional argument to output
                                             results as JSON

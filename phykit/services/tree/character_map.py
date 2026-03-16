@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from .base import Tree
 from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
 from ...helpers.parsimony_utils import (
     build_parent_map,
     resolve_polytomies,
@@ -387,7 +387,7 @@ class CharacterMap(Tree):
 
         root = tree.root
 
-        if self.phylogram:
+        if self.phylogram and not self.plot_config.cladogram:
             # Phylogram mode: node_x = parent_x + branch_length
             for clade in tree.find_clades(order="preorder"):
                 if clade == root:
@@ -397,25 +397,8 @@ class CharacterMap(Tree):
                     bl = clade.branch_length if clade.branch_length else 0.0
                     node_x[id(clade)] = node_x.get(id(parent), 0.0) + bl
         else:
-            # Cladogram mode: all tips at max_x, internal at depth * step_size
-            # Compute depth (number of edges from root) for each node
-            node_depth: Dict[int, int] = {}
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_depth[id(clade)] = 0
-                elif id(clade) in parent_map:
-                    parent = parent_map[id(clade)]
-                    node_depth[id(clade)] = node_depth.get(id(parent), 0) + 1
-
-            max_depth = max(node_depth.values()) if node_depth else 1
-            step_size = 1.0 / max(max_depth, 1)
-
-            for clade in tree.find_clades(order="preorder"):
-                cid = id(clade)
-                if clade.is_terminal():
-                    node_x[cid] = float(max_depth) * step_size
-                else:
-                    node_x[cid] = float(node_depth.get(cid, 0)) * step_size
+            # Cladogram mode: use shared utility
+            node_x = compute_node_x_cladogram(tree, parent_map)
 
         # Assign y-positions for internal nodes (average of children)
         for clade in tree.find_clades(order="postorder"):

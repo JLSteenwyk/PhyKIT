@@ -5,7 +5,7 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
 from ...errors import PhykitUserError
 
 
@@ -324,14 +324,17 @@ class Cophylo(Tree):
 
         # Assign x-positions (cumulative branch length from root)
         root = tree.root
-        node_x[id(root)] = 0.0
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) in parent_map:
-                parent = parent_map[id(clade)]
-                bl = clade.branch_length if clade.branch_length else 0.0
-                node_x[id(clade)] = node_x[id(parent)] + bl
+        if self.plot_config.cladogram:
+            node_x = compute_node_x_cladogram(tree, parent_map)
+        else:
+            node_x[id(root)] = 0.0
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) in parent_map:
+                    parent = parent_map[id(clade)]
+                    bl = clade.branch_length if clade.branch_length else 0.0
+                    node_x[id(clade)] = node_x[id(parent)] + bl
 
         # Internal node y-positions (mean of children)
         for clade in tree.find_clades(order="postorder"):

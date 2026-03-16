@@ -7,7 +7,7 @@ from scipy.stats import binomtest
 
 from .base import Tree
 from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
 from ...errors import PhykitUserError
 
 
@@ -198,14 +198,17 @@ class DiscordanceAsymmetry(Tree):
             node_y[id(tip)] = i
 
         root = species_tree.root
-        for clade in species_tree.find_clades(order="preorder"):
-            if clade == root:
-                node_x[id(clade)] = 0.0
-            else:
-                if id(clade) in parent_map:
-                    parent = parent_map[id(clade)]
-                    t = clade.branch_length if clade.branch_length else 0.0
-                    node_x[id(clade)] = node_x.get(id(parent), 0.0) + t
+        if self.plot_config.cladogram:
+            node_x = compute_node_x_cladogram(species_tree, parent_map)
+        else:
+            for clade in species_tree.find_clades(order="preorder"):
+                if clade == root:
+                    node_x[id(clade)] = 0.0
+                else:
+                    if id(clade) in parent_map:
+                        parent = parent_map[id(clade)]
+                        t = clade.branch_length if clade.branch_length else 0.0
+                        node_x[id(clade)] = node_x.get(id(parent), 0.0) + t
 
         for clade in species_tree.find_clades(order="postorder"):
             if not clade.is_terminal() and id(clade) not in node_y:

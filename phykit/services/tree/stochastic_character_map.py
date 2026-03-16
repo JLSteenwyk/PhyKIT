@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 
 from .base import Tree
 from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
 from ...helpers.discrete_models import (
     build_q_matrix,
     matrix_exp,
@@ -479,14 +479,17 @@ class StochasticCharacterMap(Tree):
 
         # Compute x positions (distance from root)
         root = tree.root
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                node_x[id(clade)] = 0.0
-            else:
-                parent = self._get_parent(tree, clade, parent_map)
-                if parent is not None:
-                    t = clade.branch_length if clade.branch_length else 0.0
-                    node_x[id(clade)] = node_x[id(parent)] + t
+        if self.plot_config.cladogram:
+            node_x = compute_node_x_cladogram(tree, parent_map)
+        else:
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    node_x[id(clade)] = 0.0
+                else:
+                    parent = self._get_parent(tree, clade, parent_map)
+                    if parent is not None:
+                        t = clade.branch_length if clade.branch_length else 0.0
+                        node_x[id(clade)] = node_x[id(parent)] + t
 
         # Compute y positions for internal nodes (average of children)
         for clade in tree.find_clades(order="postorder"):

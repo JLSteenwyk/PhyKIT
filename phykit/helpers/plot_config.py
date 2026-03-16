@@ -24,6 +24,7 @@ class PlotConfig:
     axis_fontsize: Optional[float] = None
     colors: Optional[List[str]] = None
     ladderize: bool = False
+    cladogram: bool = False
 
     def validate(self) -> None:
         if self.fig_width is not None and self.fig_width <= 0:
@@ -189,6 +190,7 @@ class PlotConfig:
             axis_fontsize=getattr(args, "axis_fontsize", None),
             colors=colors,
             ladderize=getattr(args, "ladderize", False),
+            cladogram=getattr(args, "cladogram", False),
         )
         config.validate()
         return config
@@ -208,3 +210,31 @@ def add_plot_arguments(parser) -> None:
     group.add_argument("--axis-fontsize", type=float, default=None, help="Font size for axis labels")
     group.add_argument("--colors", type=str, default=None, help="Comma-separated colors (hex or named)")
     group.add_argument("--ladderize", action="store_true", default=False, help="Ladderize (sort) the tree before plotting")
+    group.add_argument("--cladogram", action="store_true", default=False, help="Draw cladogram (equal branch lengths, tips aligned) instead of phylogram")
+
+
+def compute_node_x_cladogram(tree, parent_map):
+    """Compute cladogram x-coordinates: tips aligned at right, internal nodes at depth.
+
+    Returns dict mapping node id -> x-coordinate (0.0 to 1.0 range).
+    """
+    root = tree.root
+    node_depth = {}
+    for clade in tree.find_clades(order="preorder"):
+        if clade == root:
+            node_depth[id(clade)] = 0
+        elif id(clade) in parent_map:
+            parent = parent_map[id(clade)]
+            node_depth[id(clade)] = node_depth.get(id(parent), 0) + 1
+
+    max_depth = max(node_depth.values()) if node_depth else 1
+    step_size = 1.0 / max(max_depth, 1)
+
+    node_x = {}
+    for clade in tree.find_clades(order="preorder"):
+        cid = id(clade)
+        if clade.is_terminal():
+            node_x[cid] = float(max_depth) * step_size
+        else:
+            node_x[cid] = float(node_depth.get(cid, 0)) * step_size
+    return node_x
