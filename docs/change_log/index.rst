@@ -6,6 +6,20 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.47**:
+Added Fitch parsimony score command (``parsimony_score`` / ``pars``):
+
+* Computes the minimum number of character state changes required to
+  explain an alignment on a given tree topology (Fitch 1971)
+* Uses the Fitch downpass algorithm, scoring each site independently
+* Gap characters (-, N, X, ?) treated as wildcards
+* Automatically resolves multifurcations
+* Optional ``-v/--verbose`` flag prints per-site parsimony scores
+* Supports ``--json`` output
+* Cross-validated against R's phangorn::parsimony(method="fitch");
+  exact match (score=4). R validation script provided in
+  ``tests/r_validation/validate_parsimony.R``
+
 **2.1.46**:
 Added phylogenetically independent contrasts command
 (``independent_contrasts`` / ``pic``):

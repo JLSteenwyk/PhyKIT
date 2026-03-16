@@ -163,6 +163,8 @@ class Phykit:
                 ===================
                 independent_contrasts (alias: pic; phylo_contrasts)
                     - Felsenstein's phylogenetically independent contrasts
+                parsimony_score (alias: parsimony; pars)
+                    - Fitch parsimony score of a tree given an alignment
                 ancestral_state_reconstruction (alias: asr; anc_recon)
                     - estimate ancestral states for continuous traits using
                       ML (fast or VCV-based) with optional contMap plot
@@ -1679,6 +1681,62 @@ class Phykit:
         _run_service(parser, argv, VariableSites)
 
     ## Tree functions
+    @staticmethod
+    def parsimony_score(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compute the Fitch (1971) maximum parsimony score of a
+                tree given an alignment.
+
+                The parsimony score is the minimum number of character
+                state changes required to explain the alignment on the
+                given tree topology. Each site is scored independently
+                using the Fitch downpass algorithm.
+
+                Gap characters (-, N, X, ?) are treated as wildcards.
+                Multifurcations are automatically resolved.
+
+                Cross-validated against R's phangorn::parsimony().
+
+                Aliases:
+                  parsimony_score, parsimony, pars
+                Command line interfaces:
+                  pk_parsimony_score, pk_parsimony, pk_pars
+
+                Usage:
+                phykit parsimony_score -t <tree> -a <alignment>
+                  [-v/--verbose] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -a/--alignment              alignment file in FASTA
+                                            format (required)
+
+                -v/--verbose                print per-site parsimony
+                                            scores
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, ParsimonyScore)
+
     @staticmethod
     def independent_contrasts(argv):
         parser = _new_parser(
@@ -6725,6 +6783,10 @@ def variable_sites(argv=None):
 
 
 # Tree-based functions
+def parsimony_score(argv=None):
+    Phykit.parsimony_score(sys.argv[1:])
+
+
 def independent_contrasts(argv=None):
     Phykit.independent_contrasts(sys.argv[1:])
 

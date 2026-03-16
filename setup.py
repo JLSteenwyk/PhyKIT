@@ -101,6 +101,9 @@ setup(
             "pk_variable_sites = phykit.phykit:variable_sites",
             "pk_vs = phykit.phykit:variable_sites",
             "pk_ancestral_state_reconstruction = phykit.phykit:ancestral_state_reconstruction", # Tree-based functions
+            "pk_parsimony_score = phykit.phykit:parsimony_score",
+            "pk_parsimony = phykit.phykit:parsimony_score",
+            "pk_pars = phykit.phykit:parsimony_score",
             "pk_independent_contrasts = phykit.phykit:independent_contrasts",
             "pk_pic = phykit.phykit:independent_contrasts",
             "pk_phylo_contrasts = phykit.phykit:independent_contrasts",

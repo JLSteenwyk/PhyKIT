@@ -88,6 +88,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "pgls": "phylogenetic_regression",
     "phylo_glm": "phylogenetic_glm",
     "pglm": "phylogenetic_glm",
+    "parsimony": "parsimony_score",
+    "pars": "parsimony_score",
     "pic": "independent_contrasts",
     "phylo_contrasts": "independent_contrasts",
     "asr": "ancestral_state_reconstruction",
