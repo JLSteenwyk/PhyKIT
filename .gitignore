@@ -174,3 +174,6 @@ test.partition
 # Generated images in root
 alignment_qc_example.png
 phylomorphospace_plot.png
+
+# Superpowers brainstorming artifacts
+.superpowers/
