@@ -6,6 +6,23 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.49**:
+Added wASTRAL ``--support 3`` compatibility and ``--ladderize`` plot option:
+
+* ``quartet_pie`` (``qpie``) now explicitly supports wASTRAL
+  ``--mode 1 -R --support 3`` output trees in addition to standard
+  ASTRAL ``-t 2`` output; the q1/q2/q3 annotations are parsed
+  automatically from the extended wASTRAL node label format
+  (CULength, f1–f3, localPP, pp1–pp3, q1, q2, q3)
+* Added ``--ladderize`` flag to all plot-generating commands; when
+  set, the tree is ladderized (sorted by number of descendant tips)
+  before rendering, producing a cleaner visual layout
+* Supported in all 10 phylogram-drawing commands: ``phylo_heatmap``,
+  ``cont_map``, ``density_map``, ``stochastic_character_map``,
+  ``quartet_pie``, ``ancestral_state_reconstruction``,
+  ``concordance_asr``, ``discordance_asymmetry``,
+  ``rate_heterogeneity``, and ``cophylo``
+
 **2.1.47**:
 Added Fitch parsimony score command (``parsimony_score`` / ``pars``):
 

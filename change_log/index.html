@@ -80,6 +80,23 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.49</strong>:
+Added wASTRAL <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> compatibility and <code class="docutils literal notranslate"><span class="pre">--ladderize</span></code> plot option:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> (<code class="docutils literal notranslate"><span class="pre">qpie</span></code>) now explicitly supports wASTRAL
+<code class="docutils literal notranslate"><span class="pre">--mode</span> <span class="pre">1</span> <span class="pre">-R</span> <span class="pre">--support</span> <span class="pre">3</span></code> output trees in addition to standard
+ASTRAL <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">2</span></code> output; the q1/q2/q3 annotations are parsed
+automatically from the extended wASTRAL node label format
+(CULength, f1–f3, localPP, pp1–pp3, q1, q2, q3)</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--ladderize</span></code> flag to all plot-generating commands; when
+set, the tree is ladderized (sorted by number of descendant tips)
+before rendering, producing a cleaner visual layout</p></li>
+<li><p>Supported in all 10 phylogram-drawing commands: <code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code>,
+<code class="docutils literal notranslate"><span class="pre">cont_map</span></code>, <code class="docutils literal notranslate"><span class="pre">density_map</span></code>, <code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code>,
+<code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>, <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code>,
+<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>, <code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code>,
+<code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code>, and <code class="docutils literal notranslate"><span class="pre">cophylo</span></code></p></li>
+</ul>
 <p><strong>2.1.47</strong>:
 Added Fitch parsimony score command (<code class="docutils literal notranslate"><span class="pre">parsimony_score</span></code> / <code class="docutils literal notranslate"><span class="pre">pars</span></code>):</p>
 <ul class="simple">
