@@ -356,7 +356,7 @@ class CharacterMap(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
-            from matplotlib.patches import Circle, Patch
+            from matplotlib.patches import Patch
         except ImportError:
             print("matplotlib is required for character_map. Install matplotlib and retry.")
             raise SystemExit(2)
@@ -463,7 +463,9 @@ class CharacterMap(Tree):
             )
 
         # Character change circles on branches
-        circle_radius = max(0.008, min(0.04, 0.5 / max(n_tips, 1)))
+        # Use scatter (marker size in points²) so circles stay round
+        # regardless of axis aspect ratio.
+        marker_size = max(15, min(80, 600 / max(n_tips, 1)))
         change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
 
         # Filter characters if requested
@@ -500,22 +502,23 @@ class CharacterMap(Tree):
 
                 color = color_map.get(cls_type, "#999999")
 
-                circle = plt.Circle(
-                    (cx, cy), circle_radius * max_x,
-                    color=color, ec="black", lw=0.5, zorder=5,
+                ax.scatter(
+                    cx, cy, s=marker_size, c=color,
+                    edgecolors="black", linewidths=0.5, zorder=5,
                 )
-                ax.add_patch(circle)
 
-                # Character index above
-                ax.text(
-                    cx, cy + circle_radius * max_x * 1.8,
-                    str(char_idx), ha="center", va="bottom",
+                # Character index above (offset in points via annotate)
+                ax.annotate(
+                    str(char_idx), (cx, cy),
+                    textcoords="offset points", xytext=(0, 6),
+                    ha="center", va="bottom",
                     fontsize=change_fontsize, zorder=6,
                 )
                 # State transition below
-                ax.text(
-                    cx, cy - circle_radius * max_x * 1.8,
-                    f"{old}\u2192{new}", ha="center", va="top",
+                ax.annotate(
+                    f"{old}\u2192{new}", (cx, cy),
+                    textcoords="offset points", xytext=(0, -6),
+                    ha="center", va="top",
                     fontsize=change_fontsize, zorder=6,
                 )
 

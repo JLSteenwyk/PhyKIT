@@ -33,6 +33,17 @@ Added wASTRAL ``--support 3`` compatibility and ``--ladderize`` plot option:
   - ``network_signal``: polytomies are represented as star topologies
     in the network VCV, correctly modeling unresolved relationships
   - Trifurcating roots (standard unrooted Newick) are not affected
+* Added character map command (``character_map`` / ``charmap`` /
+  ``synapomorphy_map``): maps synapomorphies and homoplasies onto a
+  phylogeny using Fitch parsimony with ACCTRAN or DELTRAN optimization
+
+  - Color-coded circles on branches: blue (synapomorphy), red
+    (convergence), gray (reversal)
+  - Supports cladogram (default) and phylogram layouts
+  - Reports consistency index (CI) and retention index (RI)
+  - Optional ``--characters`` filter to display specific characters
+  - Cross-validated against R's phangorn package (CI, RI, tree length
+    match exactly)
 
 **2.1.47**:
 Added Fitch parsimony score command (``parsimony_score`` / ``pars``):
