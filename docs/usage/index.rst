@@ -164,6 +164,7 @@ Trait evolution
 
 - :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>`: Reconstruct ancestral character states
 - :ref:`Independent contrasts (PIC) <cmd-independent_contrasts>`: Felsenstein's phylogenetically independent contrasts
+- :ref:`Parsimony score <cmd-parsimony_score>`: Fitch parsimony score of a tree given an alignment
 - :ref:`Concordance-aware ASR <cmd-concordance_asr>`: ASR incorporating gene tree discordance
 - :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
 - :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
@@ -1152,6 +1153,32 @@ Options: |br|
 
 Tree-based functions
 --------------------
+
+.. _cmd-parsimony_score:
+
+Parsimony score
+###############
+Function names: parsimony_score; parsimony; pars |br|
+Command line interface: pk_parsimony_score; pk_parsimony; pk_pars
+
+Compute the Fitch (1971) maximum parsimony score of a tree given an
+alignment. The parsimony score is the minimum number of character state
+changes required to explain the alignment on the given tree topology.
+Gap characters (-, N, X, ?) are treated as wildcards.
+
+Cross-validated against R's phangorn::parsimony(method="fitch").
+
+.. code-block:: shell
+
+	phykit parsimony_score -t <tree> -a <alignment> [-v/--verbose] [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-a/--alignment*: alignment file in FASTA format (required) |br|
+*-v/--verbose*: print per-site parsimony scores |br|
+*--json*: optional argument to print results as JSON
+
+|
 
 .. _cmd-independent_contrasts:
 
