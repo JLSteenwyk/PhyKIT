@@ -141,6 +141,13 @@ class QuartetNetwork(Tree):
     def _extract_bipartitions(tree, all_taxa: frozenset) -> List[Tuple[frozenset, frozenset]]:
         bipartitions = []
         for clade in tree.get_nonterminals():
+            # Skip polytomous nodes (>2 children = unresolved branching),
+            # but allow trifurcating roots (standard unrooted Newick).
+            n_children = len(clade.clades)
+            if n_children > 2:
+                is_root = (clade == tree.root)
+                if not (is_root and n_children == 3):
+                    continue
             tips = frozenset(tip.name for tip in clade.get_terminals())
             if len(tips) <= 1 or len(tips) >= len(all_taxa) - 1:
                 continue

@@ -42,6 +42,12 @@ class NetworkSignal(Tree):
     def _tree_to_dag(tree):
         """Convert a Biopython tree to an internal DAG representation.
 
+        Polytomous nodes (>2 children) are faithfully represented as star
+        topologies in the DAG where all children share the same parent node.
+        The VCV matrix will show equal covariance among all children of a
+        polytomy, which is the correct representation of an unresolved
+        relationship.
+
         Returns:
             nodes: list of integer node IDs in topological order (root first,
                    from level-order traversal)
@@ -557,6 +563,20 @@ class NetworkSignal(Tree):
                     ["All branches in the tree must have lengths."],
                     code=2,
                 )
+        # Warn about polytomies (treated as star topologies in the network)
+        polytomy_count = sum(
+            1 for clade in tree.find_clades()
+            if not clade.is_terminal()
+            and len(clade.clades) > 2
+            and not (clade == tree.root and len(clade.clades) == 3)
+        )
+        if polytomy_count > 0:
+            import sys
+            print(
+                f"Warning: tree contains {polytomy_count} polytomous node(s). "
+                "These are treated as star topologies in the network VCV.",
+                file=sys.stderr,
+            )
 
     def run(self):
         tree = self.read_tree_file()

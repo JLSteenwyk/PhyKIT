@@ -246,3 +246,38 @@ class TestConsensusNetworkRun:
         )
         svc.run()
         assert (tmp_path / "network.png").exists()
+
+
+class TestPolytomyHandling:
+    """Polytomous nodes should be skipped in split extraction."""
+
+    def test_star_tree_no_splits(self):
+        """A 4-way star (A,B,C,D) produces no non-trivial splits."""
+        tree = _make_tree("(A:1,B:1,C:1,D:1);")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        splits = ConsensusNetwork._extract_splits_from_tree(tree, all_taxa)
+        assert len(splits) == 0
+
+    def test_trifurcating_root_allowed(self):
+        """A trifurcating root (standard unrooted) is not skipped."""
+        tree = _make_tree("((A:1,B:1):1,C:1,D:1);")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        splits = ConsensusNetwork._extract_splits_from_tree(tree, all_taxa)
+        assert len(splits) >= 1
+
+    def test_internal_polytomy_skipped(self):
+        """An internal polytomy produces no splits from that node."""
+        tree = _make_tree("((A:1,B:1,C:1,D:1):1,E:1,F:1);")
+        all_taxa = frozenset(["A", "B", "C", "D", "E", "F"])
+        splits = ConsensusNetwork._extract_splits_from_tree(tree, all_taxa)
+        # The 4-way polytomy (A,B,C,D) is skipped; only resolved subclades
+        # contribute. No resolved subclades here, so no splits.
+        assert len(splits) == 0
+
+    def test_partial_polytomy_preserves_resolved(self):
+        """Resolved subclades within a polytomy still produce splits."""
+        tree = _make_tree("(((A:1,B:1):1,C:1,D:1):1,E:1,F:1);")
+        all_taxa = frozenset(["A", "B", "C", "D", "E", "F"])
+        splits = ConsensusNetwork._extract_splits_from_tree(tree, all_taxa)
+        # (A,B) is resolved and should produce a split
+        assert len(splits) >= 1

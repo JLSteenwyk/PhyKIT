@@ -475,3 +475,66 @@ class TestQuartetNetworkRun:
         assert "Tree-like: 15 (100.0%)" in captured.out
         assert "Hybrid: 0 (0.0%)" in captured.out
         assert "Unresolved: 0 (0.0%)" in captured.out
+
+
+class TestPolytomyHandling:
+    """Polytomous nodes (collapsed branches) should be skipped in bipartition
+    extraction, so quartets spanning a polytomy are treated as unresolved."""
+
+    def test_star_tree_no_bipartitions(self):
+        """A 4-way star tree (A,B,C,D) has no informative bipartitions."""
+        tree = _make_tree("(A:1,B:1,C:1,D:1);")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        bips = QuartetNetwork._extract_bipartitions(tree, all_taxa)
+        assert len(bips) == 0
+
+    def test_trifurcating_root_allowed(self):
+        """A trifurcating root (standard unrooted) should NOT be skipped."""
+        tree = _make_tree("((A:1,B:1):1,C:1,D:1);")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        bips = QuartetNetwork._extract_bipartitions(tree, all_taxa)
+        # The resolved subclade (A,B) produces one bipartition
+        assert len(bips) >= 1
+
+    def test_internal_polytomy_skipped(self):
+        """An internal 4-way polytomy should produce no bipartitions."""
+        tree = _make_tree("((A:1,B:1,C:1,D:1):1,E:1);")
+        all_taxa = frozenset(["A", "B", "C", "D", "E"])
+        bips = QuartetNetwork._extract_bipartitions(tree, all_taxa)
+        # The polytomous node (A,B,C,D) is skipped; only the root edge remains
+        # but it's trivial (4 vs 1), so no bipartitions
+        assert len(bips) == 0
+
+    def test_partial_polytomy_preserves_resolved(self):
+        """Resolved subclades of a polytomy still produce bipartitions."""
+        tree = _make_tree("((A:1,B:1):1,C:1,D:1,E:1);")
+        all_taxa = frozenset(["A", "B", "C", "D", "E"])
+        bips = QuartetNetwork._extract_bipartitions(tree, all_taxa)
+        # (A,B) is resolved and produces {A,B}|{C,D,E}
+        ab = frozenset(["A", "B"])
+        cde = frozenset(["C", "D", "E"])
+        assert (ab, cde) in bips or (cde, ab) in bips
+
+    def test_polytomy_quartet_returns_none(self):
+        """A quartet spanning an unresolved polytomy returns None."""
+        tree = _make_tree("(A:1,B:1,C:1,D:1);")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        bips = QuartetNetwork._extract_bipartitions(tree, all_taxa)
+        topo = QuartetNetwork._determine_quartet_topology(
+            ("A", "B", "C", "D"), bips
+        )
+        assert topo is None
+
+    def test_polytomy_trees_not_counted(self):
+        """Polytomous gene trees should not contribute to quartet counts."""
+        resolved = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        polytomy = _make_tree("(A:1,B:1,C:1,D:1);")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        cfs = QuartetNetwork._compute_quartet_cfs(
+            [resolved, polytomy], all_taxa
+        )
+        quartet = ("A", "B", "C", "D")
+        counts = cfs[quartet]
+        # Only the resolved tree contributes (topology 0: ab|cd)
+        assert sum(counts) == 1
+        assert counts[0] == 1

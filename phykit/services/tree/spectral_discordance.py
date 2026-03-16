@@ -380,6 +380,14 @@ class SpectralDiscordance(Tree):
                     taxa = taxa | clade_taxa.get(id(child), frozenset())
                 clade_taxa[id(clade)] = taxa
 
+                # Skip polytomous nodes (>2 children = unresolved branching),
+                # but allow trifurcating roots (standard unrooted Newick).
+                n_children = len(clade.clades)
+                if n_children > 2:
+                    is_root = (clade == tree.root)
+                    if not (is_root and n_children == 3):
+                        continue
+
                 # Skip trivial and full-taxa splits
                 if len(taxa) <= 1:
                     continue
@@ -427,6 +435,14 @@ class SpectralDiscordance(Tree):
                 for child in clade.clades:
                     taxa = taxa | clade_taxa.get(id(child), frozenset())
                 clade_taxa[id(clade)] = taxa
+
+                # Skip polytomous nodes (>2 children = unresolved branching),
+                # but allow trifurcating roots (standard unrooted Newick).
+                n_children = len(clade.clades)
+                if n_children > 2:
+                    is_root = (clade == tree.root)
+                    if not (is_root and n_children == 3):
+                        continue
 
                 if len(taxa) <= 1:
                     continue

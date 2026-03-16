@@ -22,6 +22,17 @@ Added wASTRAL ``--support 3`` compatibility and ``--ladderize`` plot option:
   ``quartet_pie``, ``ancestral_state_reconstruction``,
   ``concordance_asr``, ``discordance_asymmetry``,
   ``rate_heterogeneity``, and ``cophylo``
+* Added polytomy (collapsed branch) handling to hybridization and
+  network analysis commands; gene trees with collapsed low-support
+  branches can now be used directly as input:
+
+  - ``quartet_network``, ``consensus_network``, ``spectral_discordance``:
+    bipartitions from polytomous nodes are excluded (treated as
+    uninformative), so quartets spanning a polytomy are classified as
+    unresolved rather than misclassified
+  - ``network_signal``: polytomies are represented as star topologies
+    in the network VCV, correctly modeling unresolved relationships
+  - Trifurcating roots (standard unrooted Newick) are not affected
 
 **2.1.47**:
 Added Fitch parsimony score command (``parsimony_score`` / ``pars``):

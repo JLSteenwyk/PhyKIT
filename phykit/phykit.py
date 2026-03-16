@@ -4679,6 +4679,12 @@ class Phykit:
                 threshold.  Optionally draws a circular splits network
                 diagram.
 
+                Polytomies (collapsed branches) in input trees are
+                handled conservatively: splits from polytomous nodes
+                are excluded since they represent unresolved
+                relationships. Trifurcating roots (standard unrooted
+                Newick) are not affected.
+
                 Input can be either:
                 1) a file with one Newick tree per line, or
                 2) a file with one tree-file path per line.
@@ -4913,6 +4919,13 @@ class Phykit:
                 If p > alpha, the quartet is tree-like.
                 Otherwise the quartet shows hybrid signal.
 
+                Polytomies (collapsed branches) in gene trees are
+                handled conservatively: bipartitions from polytomous
+                nodes are excluded, so quartets spanning a polytomy
+                are treated as unresolved rather than misclassified.
+                Trifurcating roots (standard unrooted Newick) are
+                not affected.
+
                 Input can be either:
                 1) a file with one Newick tree per line, or
                 2) a file with one tree-file path per line.
@@ -5049,6 +5062,11 @@ class Phykit:
                 Hybrid edges can be specified directly (--hybrid)
                 or loaded from a quartet network JSON file
                 (--quartet-json).
+
+                Polytomies (collapsed branches) in the input tree
+                are represented as star topologies in the network
+                VCV, which correctly models unresolved relationships
+                as equal covariance among all children.
 
                 Aliases:
                   network_signal, netsig, net_signal
@@ -6490,6 +6508,12 @@ class Phykit:
                 Two metrics are available:
                 - nrf (default): binary presence/absence (normalized RF)
                 - wrf: branch-length weighted
+
+                Polytomies (collapsed branches) in gene trees are
+                handled conservatively: splits from polytomous nodes
+                are excluded from the bipartition matrix since they
+                represent unresolved relationships. Trifurcating
+                roots (standard unrooted Newick) are not affected.
 
                 Aliases:
                   spectral_discordance, spec_disc, sd

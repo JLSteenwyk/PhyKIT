@@ -399,3 +399,60 @@ class TestRValidation:
         # Off-diagonal should be ~0
         mask = ~np.eye(cov.shape[0], dtype=bool)
         assert np.allclose(cov[mask], 0, atol=1e-10)
+
+
+class TestPolytomyHandling:
+    """Polytomous nodes should be skipped in split extraction."""
+
+    def _make_svc(self):
+        return SpectralDiscordance.__new__(SpectralDiscordance)
+
+    def test_star_tree_no_splits(self):
+        """A 4-way star (A,B,C,D) produces no splits."""
+        from Bio import Phylo
+        from io import StringIO
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        svc = self._make_svc()
+        splits = svc._extract_splits(tree, all_taxa)
+        assert len(splits) == 0
+
+    def test_trifurcating_root_allowed(self):
+        """A trifurcating root (standard unrooted) is not skipped."""
+        from Bio import Phylo
+        from io import StringIO
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1,D:1);"), "newick")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        svc = self._make_svc()
+        splits = svc._extract_splits(tree, all_taxa)
+        assert len(splits) >= 1
+
+    def test_internal_polytomy_skipped(self):
+        """An internal polytomy node is excluded from split extraction."""
+        from Bio import Phylo
+        from io import StringIO
+        tree = Phylo.read(StringIO("((A:1,B:1,C:1,D:1):1,E:1,F:1);"), "newick")
+        all_taxa = frozenset(["A", "B", "C", "D", "E", "F"])
+        svc = self._make_svc()
+        splits = svc._extract_splits(tree, all_taxa)
+        assert len(splits) == 0
+
+    def test_extract_splits_with_lengths_skips_polytomy(self):
+        """_extract_splits_with_lengths also skips polytomous nodes."""
+        from Bio import Phylo
+        from io import StringIO
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        svc = self._make_svc()
+        split_lengths = svc._extract_splits_with_lengths(tree, all_taxa)
+        assert len(split_lengths) == 0
+
+    def test_resolved_subtree_preserved(self):
+        """Resolved subclades still produce splits even with polytomy above."""
+        from Bio import Phylo
+        from io import StringIO
+        tree = Phylo.read(StringIO("(((A:1,B:1):1,C:1,D:1):1,E:1,F:1);"), "newick")
+        all_taxa = frozenset(["A", "B", "C", "D", "E", "F"])
+        svc = self._make_svc()
+        splits = svc._extract_splits(tree, all_taxa)
+        assert len(splits) >= 1

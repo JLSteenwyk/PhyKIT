@@ -324,3 +324,32 @@ class TestPagelsLambdaNetwork:
             or lam_tree["log_likelihood"]
             != pytest.approx(lam_net["log_likelihood"], abs=1e-6)
         )
+
+
+class TestPolytomyHandling:
+    """Polytomous nodes are represented as star topologies in the DAG."""
+
+    def test_star_tree_creates_valid_dag(self):
+        """A 4-way star tree produces a valid DAG."""
+        tree = _make_tree("(A:1,B:1,C:1,D:1);")
+        nodes, parents, tip_map = NetworkSignal._tree_to_dag(tree)
+        assert len(tip_map) == 4
+        assert set(tip_map.values()) == {"A", "B", "C", "D"}
+        # All tips should have exactly one parent (the root)
+        for tip_id in tip_map:
+            assert len(parents[tip_id]) == 1
+
+    def test_polytomy_vcv_equal_covariance(self):
+        """Tips in a star polytomy should have equal off-diagonal covariance."""
+        tree = _make_tree("(A:1,B:1,C:1);")
+        nodes, parents, tip_map = NetworkSignal._tree_to_dag(tree)
+        ordered_tips = sorted(tip_map.values())
+        vcv = NetworkSignal._compute_network_vcv(
+            nodes, parents, tip_map, ordered_tips
+        )
+        # All diagonal elements should be equal (same branch length)
+        assert vcv[0, 0] == pytest.approx(vcv[1, 1])
+        assert vcv[1, 1] == pytest.approx(vcv[2, 2])
+        # All off-diagonal elements should be equal (same shared ancestry)
+        assert vcv[0, 1] == pytest.approx(vcv[0, 2])
+        assert vcv[0, 1] == pytest.approx(vcv[1, 2])
