@@ -96,6 +96,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-score">Parsimony score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#character-map-synapomorphy-homoplasy-mapping">Character map (synapomorphy/homoplasy mapping)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#independent-contrasts-pic">Independent contrasts (PIC)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spectral-discordance-decomposition">Spectral discordance decomposition</a></li>
@@ -1192,6 +1193,91 @@ Gap characters (-, N, X, ?) are treated as wildcards.</p>
 <em>-t/--tree</em>: tree file (required) <br/>
 <em>-a/--alignment</em>: alignment file in FASTA format (required) <br/>
 <em>-v/--verbose</em>: print per-site parsimony scores <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="character-map-synapomorphy-homoplasy-mapping">
+<span id="cmd-character-map"></span><h3>Character map (synapomorphy/homoplasy mapping)<a class="headerlink" href="#character-map-synapomorphy-homoplasy-mapping" title="Link to this heading"></a></h3>
+<p>Function names: character_map; charmap; synapomorphy_map <br/>
+Command line interface: pk_character_map; pk_charmap; pk_synapomorphy_map</p>
+<p>Map character state changes onto a phylogeny using Fitch parsimony with
+ACCTRAN (default) or DELTRAN optimization. Produces a cladogram (default)
+or phylogram with color-coded circles on each branch showing where
+character state changes occur. This is useful for visualizing
+synapomorphies and homoplasies in morphological datasets, similar to
+the classic Winclada software.</p>
+<p>Each circle on a branch represents a character state change. The
+<strong>number above</strong> the circle is the character index (matching the column
+in the input matrix). The <strong>transition below</strong> shows the old and new
+state (e.g., <code class="docutils literal notranslate"><span class="pre">0→1</span></code>). Circle color indicates the type of change:</p>
+<ul class="simple">
+<li><p><strong>Blue</strong> circles: synapomorphies — this character changed to this
+state only once on the entire tree, uniquely supporting the clade</p></li>
+<li><p><strong>Red</strong> circles: convergences — this character independently gained
+the same state on two or more branches</p></li>
+<li><p><strong>Gray</strong> circles: reversals — the character returned to a state
+previously seen at an ancestor</p></li>
+</ul>
+<p>Note that the same state transition (e.g., <code class="docutils literal notranslate"><span class="pre">0→1</span></code>) may appear in
+different colors because the color reflects how many times <em>that
+particular character</em> underwent that transition across the tree, not the
+state values themselves.</p>
+<a class="reference internal image-reference" href="../_images/character_map_example.png"><img alt="../_images/character_map_example.png" class="align-center" src="../_images/character_map_example.png" style="width: 90%;" />
+</a>
+<p>Input: a Newick tree file and a TSV character matrix (header row with
+character names, one row per taxon with discrete states). Missing data
+(<code class="docutils literal notranslate"><span class="pre">?</span></code> or <code class="docutils literal notranslate"><span class="pre">-</span></code>) is treated as a wildcard.</p>
+<p>Reports the consistency index (CI), retention index (RI), and total tree
+length (parsimony steps). CI and RI cross-validated against R's phangorn.</p>
+<p>Polytomies are automatically resolved by inserting zero-length branches.</p>
+<p><strong>Example usage:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic usage with default ACCTRAN optimization and cladogram layout</span>
+phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>-d<span class="w"> </span>morphology.tsv<span class="w"> </span>-o<span class="w"> </span>charmap.png
+
+<span class="c1"># Use DELTRAN optimization and ladderize the tree</span>
+phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>-d<span class="w"> </span>morphology.tsv<span class="w"> </span>-o<span class="w"> </span>charmap.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--optimization<span class="w"> </span>deltran<span class="w"> </span>--ladderize
+
+<span class="c1"># Show only specific characters of interest</span>
+phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>-d<span class="w"> </span>morphology.tsv<span class="w"> </span>-o<span class="w"> </span>charmap.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--characters<span class="w"> </span><span class="m">0</span>,3,7,12
+
+<span class="c1"># Phylogram layout with JSON output</span>
+phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>-d<span class="w"> </span>morphology.tsv<span class="w"> </span>-o<span class="w"> </span>charmap.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--phylogram<span class="w"> </span>--json
+</pre></div>
+</div>
+<p><strong>Input format</strong> — the character matrix is a tab-separated file where
+the first row is a header with character names, and each subsequent row
+has a taxon name followed by the character states:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>taxon        char0   char1   char2   char3
+Taxon_A      0       1       0       2
+Taxon_B      0       1       1       0
+Taxon_C      1       0       0       2
+Taxon_D      1       0       1       1
+</pre></div>
+</div>
+<p><strong>Full usage:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">    </span><span class="o">[</span>--optimization<span class="w"> </span>acctran<span class="p">|</span>deltran<span class="o">]</span><span class="w"> </span><span class="o">[</span>--phylogram<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--characters<span class="w"> </span><span class="m">0</span>,1,3<span class="o">]</span><span class="w"> </span><span class="o">[</span>--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: tree file in Newick format (required) <br/>
+<em>-d/--data</em>: TSV character matrix with header row (required) <br/>
+<em>-o/--output</em>: output figure path (.png, .pdf, .svg) (required) <br/>
+<em>--optimization</em>: ancestral state optimization: acctran (default) or deltran <br/>
+<em>--phylogram</em>: draw phylogram instead of cladogram <br/>
+<em>--characters</em>: comma-separated character indices to display (0-based; all characters are still used for CI/RI) <br/>
+<em>--verbose</em>: print per-character detail <br/>
+<em>--colors</em>: comma-separated colors for synapomorphy, convergence, reversal (default: blue, red, gray) <br/>
+<em>--ladderize</em>: ladderize (sort) the tree before plotting <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

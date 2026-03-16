@@ -109,6 +109,19 @@ in the network VCV, correctly modeling unresolved relationships</p></li>
 <li><p>Trifurcating roots (standard unrooted Newick) are not affected</p></li>
 </ul>
 </li>
+<li><p>Added character map command (<code class="docutils literal notranslate"><span class="pre">character_map</span></code> / <code class="docutils literal notranslate"><span class="pre">charmap</span></code> /
+<code class="docutils literal notranslate"><span class="pre">synapomorphy_map</span></code>): maps synapomorphies and homoplasies onto a
+phylogeny using Fitch parsimony with ACCTRAN or DELTRAN optimization</p>
+<ul>
+<li><p>Color-coded circles on branches: blue (synapomorphy), red
+(convergence), gray (reversal)</p></li>
+<li><p>Supports cladogram (default) and phylogram layouts</p></li>
+<li><p>Reports consistency index (CI) and retention index (RI)</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">--characters</span></code> filter to display specific characters</p></li>
+<li><p>Cross-validated against R's phangorn package (CI, RI, tree length
+match exactly)</p></li>
+</ul>
+</li>
 </ul>
 <p><strong>2.1.47</strong>:
 Added Fitch parsimony score command (<code class="docutils literal notranslate"><span class="pre">parsimony_score</span></code> / <code class="docutils literal notranslate"><span class="pre">pars</span></code>):</p>
