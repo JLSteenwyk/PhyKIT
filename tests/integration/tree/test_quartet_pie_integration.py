@@ -138,6 +138,23 @@ class TestQuartetPie:
         assert Path(output).exists()
 
     @patch("builtins.print")
+    def test_quartet_pie_circular(self, mocked_print, tmp_path):
+        """--circular flag produces a circular layout plot without error."""
+        output = str(tmp_path / "qpie_circular.png")
+        testargs = [
+            "phykit",
+            "quartet_pie",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-g", f"{here.parent.parent.parent}/sample_files/gene_trees_simple.nwk",
+            "-o", output,
+            "--circular",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert Path(output).exists()
+        assert Path(output).stat().st_size > 0
+
+    @patch("builtins.print")
     def test_quartet_pie_wastral_json(self, mocked_print, tmp_path):
         """wASTRAL --support 3 JSON output has correct q-values."""
         output = str(tmp_path / "qpie_wastral.png")

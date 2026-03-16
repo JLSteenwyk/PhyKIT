@@ -19,6 +19,15 @@ from ...helpers.quartet_utils import (
     compute_gcf_per_node,
     parse_astral_annotations,
 )
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_branches,
+    draw_circular_tip_labels,
+    draw_circular_colored_branch,
+    draw_circular_colored_arc,
+    circular_branch_points,
+    radial_offset,
+)
 from ...errors import PhykitUserError
 
 
@@ -166,119 +175,208 @@ class QuartetPie(Tree):
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        # Draw branches
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) not in parent_map:
-                continue
-            parent = parent_map[id(clade)]
-            if id(parent) not in node_x or id(clade) not in node_x:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            x0 = node_x[id(parent)]
-            x1 = node_x[id(clade)]
-            y0 = node_y.get(id(parent), 0)
-            y1 = node_y.get(id(clade), 0)
+            draw_circular_branches(ax, tree, coords, parent_map)
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
-            ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
-            ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
+            # Legend
+            legend_handles = [
+                Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
+                      label="Concordant (gCF / q1)"),
+                Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
+                      label="Discordant alt 1 (gDF1 / q2)"),
+                Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
+                      label="Discordant alt 2 (gDF2 / q3)"),
+            ]
+            legend_loc = config.legend_position or "upper right"
+            if legend_loc != "none":
+                ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 1.0
-        offset = max_x * 0.03
-        label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=label_fontsize,
-            )
-
-        # Legend
-        legend_handles = [
-            Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
-                  label="Concordant (gCF / q1)"),
-            Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
-                  label="Discordant alt 1 (gDF1 / q2)"),
-            Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
-                  label="Discordant alt 2 (gDF2 / q3)"),
-        ]
-        legend_loc = config.legend_position or "upper right"
-        if legend_loc != "none":
-            ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
-
-        ax.set_xlabel("Branch length (subs/site)")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-
-        if config.show_title:
-            ax.set_title(
-                config.title or "Quartet Concordance Pie Chart",
-                fontsize=config.title_fontsize,
-            )
-        if config.axis_fontsize:
-            ax.xaxis.label.set_fontsize(config.axis_fontsize)
-
-        # Finalize layout BEFORE placing pie insets, so transData is stable
-        fig.subplots_adjust(left=0.05, right=0.85, top=0.92, bottom=0.12)
-        fig.canvas.draw()
-
-        # Pie charts at internal nodes — rendered as inset axes so they
-        # appear as perfect circles regardless of axis scaling, and are
-        # drawn above the phylogeny branches.
-        n_tips = len(tips)
-        pie_size = min(0.06, 0.8 / max(n_tips, 1))
-
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal() or clade == root:
-                continue
-            cid = id(clade)
-            if cid not in proportions:
-                continue
-
-            props = proportions[cid]
-            gcf, gdf1, gdf2 = props[0], props[1], props[2]
-            cx = node_x.get(cid, 0)
-            cy = node_y.get(cid, 0)
-
-            # Convert data coords to figure-fraction coords for the inset
-            disp = ax.transData.transform((cx, cy))
-            fig_coord = fig.transFigure.inverted().transform(disp)
-            fx, fy = fig_coord
-
-            # Create a small inset axes centered on the node
-            inset = fig.add_axes(
-                [fx - pie_size / 2, fy - pie_size / 2, pie_size, pie_size],
-                zorder=10,
-            )
-            wedge_vals = [gcf, gdf1, gdf2]
-            wedge_colors = [c for v, c in zip(wedge_vals, colors) if v > 1e-6]
-            wedge_vals = [v for v in wedge_vals if v > 1e-6]
-            if wedge_vals:
-                inset.pie(
-                    wedge_vals, colors=wedge_colors, startangle=90,
-                    wedgeprops={"edgecolor": "black", "linewidth": 0.5},
-                )
-            inset.set_aspect("equal")
-            inset.axis("off")
-
-            # Annotate with values if requested
-            if self.annotate:
-                ax.annotate(
-                    f"{gcf:.2f}/{gdf1:.2f}/{gdf2:.2f}",
-                    (cx, cy),
-                    textcoords="offset points",
-                    xytext=(8, 8),
-                    fontsize=6,
-                    color="black",
-                    zorder=11,
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Quartet Concordance Pie Chart",
+                    fontsize=config.title_fontsize,
                 )
 
-        # Save without bbox_inches="tight" to preserve inset positions
-        fig.savefig(output_path, dpi=config.dpi)
-        plt.close(fig)
+            # Finalize layout BEFORE placing pie insets, so transData is stable
+            fig.subplots_adjust(left=0.05, right=0.85, top=0.92, bottom=0.12)
+            fig.canvas.draw()
+
+            # Pie charts at internal nodes
+            n_tips = len(tips)
+            pie_size = min(0.06, 0.8 / max(n_tips, 1))
+
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal() or clade == root:
+                    continue
+                cid = id(clade)
+                if cid not in proportions:
+                    continue
+
+                props = proportions[cid]
+                gcf, gdf1, gdf2 = props[0], props[1], props[2]
+                cx = coords[cid]["x"]
+                cy = coords[cid]["y"]
+
+                # Convert data coords to figure-fraction coords for the inset
+                disp = ax.transData.transform((cx, cy))
+                fig_coord = fig.transFigure.inverted().transform(disp)
+                fx, fy = fig_coord
+
+                # Create a small inset axes centered on the node
+                inset = fig.add_axes(
+                    [fx - pie_size / 2, fy - pie_size / 2, pie_size, pie_size],
+                    zorder=10,
+                )
+                wedge_vals = [gcf, gdf1, gdf2]
+                wedge_colors = [c for v, c in zip(wedge_vals, colors) if v > 1e-6]
+                wedge_vals = [v for v in wedge_vals if v > 1e-6]
+                if wedge_vals:
+                    inset.pie(
+                        wedge_vals, colors=wedge_colors, startangle=90,
+                        wedgeprops={"edgecolor": "black", "linewidth": 0.5},
+                    )
+                inset.set_aspect("equal")
+                inset.axis("off")
+
+                # Annotate with values if requested
+                if self.annotate:
+                    ax.annotate(
+                        f"{gcf:.2f}/{gdf1:.2f}/{gdf2:.2f}",
+                        (cx, cy),
+                        textcoords="offset points",
+                        xytext=(8, 8),
+                        fontsize=6,
+                        color="black",
+                        zorder=11,
+                    )
+
+            # Save without bbox_inches="tight" to preserve inset positions
+            fig.savefig(output_path, dpi=config.dpi)
+            plt.close(fig)
+
+        else:
+            # --- Rectangular mode ---
+            # Draw branches
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+                parent = parent_map[id(clade)]
+                if id(parent) not in node_x or id(clade) not in node_x:
+                    continue
+
+                x0 = node_x[id(parent)]
+                x1 = node_x[id(clade)]
+                y0 = node_y.get(id(parent), 0)
+                y1 = node_y.get(id(clade), 0)
+
+                ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
+                ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            offset = max_x * 0.03
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=label_fontsize,
+                )
+
+            # Legend
+            legend_handles = [
+                Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
+                      label="Concordant (gCF / q1)"),
+                Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
+                      label="Discordant alt 1 (gDF1 / q2)"),
+                Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
+                      label="Discordant alt 2 (gDF2 / q3)"),
+            ]
+            legend_loc = config.legend_position or "upper right"
+            if legend_loc != "none":
+                ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
+
+            ax.set_xlabel("Branch length (subs/site)")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Quartet Concordance Pie Chart",
+                    fontsize=config.title_fontsize,
+                )
+            if config.axis_fontsize:
+                ax.xaxis.label.set_fontsize(config.axis_fontsize)
+
+            # Finalize layout BEFORE placing pie insets, so transData is stable
+            fig.subplots_adjust(left=0.05, right=0.85, top=0.92, bottom=0.12)
+            fig.canvas.draw()
+
+            # Pie charts at internal nodes — rendered as inset axes so they
+            # appear as perfect circles regardless of axis scaling, and are
+            # drawn above the phylogeny branches.
+            n_tips = len(tips)
+            pie_size = min(0.06, 0.8 / max(n_tips, 1))
+
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal() or clade == root:
+                    continue
+                cid = id(clade)
+                if cid not in proportions:
+                    continue
+
+                props = proportions[cid]
+                gcf, gdf1, gdf2 = props[0], props[1], props[2]
+                cx = node_x.get(cid, 0)
+                cy = node_y.get(cid, 0)
+
+                # Convert data coords to figure-fraction coords for the inset
+                disp = ax.transData.transform((cx, cy))
+                fig_coord = fig.transFigure.inverted().transform(disp)
+                fx, fy = fig_coord
+
+                # Create a small inset axes centered on the node
+                inset = fig.add_axes(
+                    [fx - pie_size / 2, fy - pie_size / 2, pie_size, pie_size],
+                    zorder=10,
+                )
+                wedge_vals = [gcf, gdf1, gdf2]
+                wedge_colors = [c for v, c in zip(wedge_vals, colors) if v > 1e-6]
+                wedge_vals = [v for v in wedge_vals if v > 1e-6]
+                if wedge_vals:
+                    inset.pie(
+                        wedge_vals, colors=wedge_colors, startangle=90,
+                        wedgeprops={"edgecolor": "black", "linewidth": 0.5},
+                    )
+                inset.set_aspect("equal")
+                inset.axis("off")
+
+                # Annotate with values if requested
+                if self.annotate:
+                    ax.annotate(
+                        f"{gcf:.2f}/{gdf1:.2f}/{gdf2:.2f}",
+                        (cx, cy),
+                        textcoords="offset points",
+                        xytext=(8, 8),
+                        fontsize=6,
+                        color="black",
+                        zorder=11,
+                    )
+
+            # Save without bbox_inches="tight" to preserve inset positions
+            fig.savefig(output_path, dpi=config.dpi)
+            plt.close(fig)
 
     def _print_json(self, tree, proportions, input_mode, n_gene_trees):
         nodes = []

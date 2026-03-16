@@ -338,6 +338,25 @@ class TestPlot:
         assert os.path.exists(output)
 
 
+class TestPlotCircular:
+    def _make_svc(self, plot_output):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        args = Namespace(
+            tree="tests/sample_files/tree_simple.tre",
+            gene_trees="tests/sample_files/gene_trees_simple.nwk",
+            verbose=False, json=False, plot_output=plot_output,
+            circular=True,
+        )
+        return DiscordanceAsymmetry(args)
+
+    def test_circular_plot_creates_file(self, tmp_path):
+        output = str(tmp_path / "test_asym_circular.png")
+        svc = self._make_svc(output)
+        svc.run()
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+
 class TestMissingTaxa:
     """Test that taxa present in the species tree but absent from gene trees
     (or vice versa) are handled correctly."""

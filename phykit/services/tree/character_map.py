@@ -14,6 +14,15 @@ from typing import Dict, List, Optional, Set, Tuple
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_branches,
+    draw_circular_tip_labels,
+    draw_circular_colored_branch,
+    draw_circular_colored_arc,
+    circular_branch_points,
+    radial_offset,
+)
 from ...helpers.parsimony_utils import (
     build_parent_map,
     resolve_polytomies,
@@ -413,134 +422,228 @@ class CharacterMap(Tree):
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        # Draw branches (horizontal + vertical connectors)
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            cid = id(clade)
-            if cid not in parent_map:
-                continue
-            parent = parent_map[cid]
-            pid = id(parent)
-            if pid not in node_x or cid not in node_x:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            x0 = node_x[pid]
-            x1 = node_x[cid]
-            y0 = node_y.get(pid, 0)
-            y1 = node_y.get(cid, 0)
+            draw_circular_branches(ax, tree, coords, parent_map)
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
-            # Horizontal branch
-            ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
-            # Vertical connector
-            ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
+            # Character change circles on branches
+            marker_size = max(15, min(80, 600 / max(n_tips, 1)))
+            change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 1.0
-        offset = max_x * 0.03
-        label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=label_fontsize,
-            )
+            filter_set = set(self.characters_filter) if self.characters_filter else None
 
-        # Character change circles on branches
-        # Use scatter (marker size in points²) so circles stay round
-        # regardless of axis aspect ratio.
-        marker_size = max(15, min(80, 600 / max(n_tips, 1)))
-        change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
-
-        # Filter characters if requested
-        filter_set = set(self.characters_filter) if self.characters_filter else None
-
-        for cid, changes in classified.items():
-            if cid not in parent_map:
-                continue
-            parent = parent_map[cid]
-            pid = id(parent)
-            if pid not in node_x or cid not in node_x:
-                continue
-
-            # Filter changes to draw
-            changes_to_draw = []
-            for char_idx, old, new, cls_type in changes:
-                if filter_set is not None and char_idx not in filter_set:
+            for cid, changes in classified.items():
+                if cid not in parent_map:
                     continue
-                changes_to_draw.append((char_idx, old, new, cls_type))
+                parent_obj = parent_map[cid]
+                pid = id(parent_obj)
+                if pid not in coords or cid not in coords:
+                    continue
 
-            if not changes_to_draw:
-                continue
+                # Filter changes to draw
+                changes_to_draw = []
+                for char_idx, old, new, cls_type in changes:
+                    if filter_set is not None and char_idx not in filter_set:
+                        continue
+                    changes_to_draw.append((char_idx, old, new, cls_type))
 
-            x0 = node_x[pid]
-            x1 = node_x[cid]
-            y_branch = node_y.get(cid, 0)
+                if not changes_to_draw:
+                    continue
 
-            n_changes = len(changes_to_draw)
-            for j, (char_idx, old, new, cls_type) in enumerate(changes_to_draw):
-                # Position along branch
-                frac = (j + 1) / (n_changes + 1)
-                cx = x0 + (x1 - x0) * frac
-                cy = y_branch
+                n_changes = len(changes_to_draw)
+                # Get evenly spaced points along the radial branch
+                branch_pts = circular_branch_points(
+                    coords[pid], coords[cid], n_changes + 2
+                )
+                # Use positions 1..n_changes (skip endpoints)
+                for j, (char_idx, old, new, cls_type) in enumerate(changes_to_draw):
+                    pt_x, pt_y, pt_angle = branch_pts[j + 1]
 
-                color = color_map.get(cls_type, "#999999")
+                    color = color_map.get(cls_type, "#999999")
 
-                ax.scatter(
-                    cx, cy, s=marker_size, c=color,
-                    edgecolors="black", linewidths=0.5, zorder=5,
+                    ax.scatter(
+                        pt_x, pt_y, s=marker_size, c=color,
+                        edgecolors="black", linewidths=0.5, zorder=5,
+                    )
+
+                    # Character index: offset radially outward
+                    dx_out, dy_out = radial_offset(pt_angle, 8)
+                    ax.annotate(
+                        str(char_idx), (pt_x, pt_y),
+                        textcoords="offset points", xytext=(dx_out, dy_out),
+                        ha="center", va="center",
+                        fontsize=change_fontsize, zorder=6,
+                    )
+                    # State transition: offset radially inward
+                    dx_in, dy_in = radial_offset(pt_angle, -8)
+                    ax.annotate(
+                        f"{old}\u2192{new}", (pt_x, pt_y),
+                        textcoords="offset points", xytext=(dx_in, dy_in),
+                        ha="center", va="center",
+                        fontsize=change_fontsize, zorder=6,
+                    )
+
+            # Legend
+            legend_handles = [
+                Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
+                      label="Synapomorphy"),
+                Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
+                      label="Convergence"),
+                Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
+                      label="Reversal"),
+            ]
+            legend_loc = config.legend_position or "upper right"
+            if legend_loc != "none":
+                ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
+
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Character Map",
+                    fontsize=config.title_fontsize,
                 )
 
-                # Character index above (offset in points via annotate)
-                ax.annotate(
-                    str(char_idx), (cx, cy),
-                    textcoords="offset points", xytext=(0, 6),
-                    ha="center", va="bottom",
-                    fontsize=change_fontsize, zorder=6,
-                )
-                # State transition below
-                ax.annotate(
-                    f"{old}\u2192{new}", (cx, cy),
-                    textcoords="offset points", xytext=(0, -6),
-                    ha="center", va="top",
-                    fontsize=change_fontsize, zorder=6,
-                )
+            fig.subplots_adjust(left=0.05, right=0.80, top=0.92, bottom=0.08)
 
-        # Legend
-        legend_handles = [
-            Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
-                  label="Synapomorphy"),
-            Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
-                  label="Convergence"),
-            Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
-                  label="Reversal"),
-        ]
-        legend_loc = config.legend_position or "upper right"
-        if legend_loc != "none":
-            ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
+            fig.savefig(self.output_path, dpi=config.dpi)
+            plt.close(fig)
 
-        # Axes formatting
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-
-        if self.phylogram:
-            ax.set_xlabel("Branch length (subs/site)")
         else:
-            ax.set_xlabel("")
-            ax.set_xticks([])
-            ax.spines["bottom"].set_visible(False)
+            # --- Rectangular mode ---
+            # Draw branches (horizontal + vertical connectors)
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                cid = id(clade)
+                if cid not in parent_map:
+                    continue
+                parent = parent_map[cid]
+                pid = id(parent)
+                if pid not in node_x or cid not in node_x:
+                    continue
 
-        if config.show_title:
-            ax.set_title(
-                config.title or "Character Map",
-                fontsize=config.title_fontsize,
-            )
-        if config.axis_fontsize:
-            ax.xaxis.label.set_fontsize(config.axis_fontsize)
+                x0 = node_x[pid]
+                x1 = node_x[cid]
+                y0 = node_y.get(pid, 0)
+                y1 = node_y.get(cid, 0)
 
-        # Adjust margins to leave room for labels
-        fig.subplots_adjust(left=0.05, right=0.80, top=0.92, bottom=0.08)
+                # Horizontal branch
+                ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
+                # Vertical connector
+                ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
 
-        fig.savefig(self.output_path, dpi=config.dpi)
-        plt.close(fig)
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            offset = max_x * 0.03
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=label_fontsize,
+                )
+
+            # Character change circles on branches
+            # Use scatter (marker size in points²) so circles stay round
+            # regardless of axis aspect ratio.
+            marker_size = max(15, min(80, 600 / max(n_tips, 1)))
+            change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
+
+            # Filter characters if requested
+            filter_set = set(self.characters_filter) if self.characters_filter else None
+
+            for cid, changes in classified.items():
+                if cid not in parent_map:
+                    continue
+                parent = parent_map[cid]
+                pid = id(parent)
+                if pid not in node_x or cid not in node_x:
+                    continue
+
+                # Filter changes to draw
+                changes_to_draw = []
+                for char_idx, old, new, cls_type in changes:
+                    if filter_set is not None and char_idx not in filter_set:
+                        continue
+                    changes_to_draw.append((char_idx, old, new, cls_type))
+
+                if not changes_to_draw:
+                    continue
+
+                x0 = node_x[pid]
+                x1 = node_x[cid]
+                y_branch = node_y.get(cid, 0)
+
+                n_changes = len(changes_to_draw)
+                for j, (char_idx, old, new, cls_type) in enumerate(changes_to_draw):
+                    # Position along branch
+                    frac = (j + 1) / (n_changes + 1)
+                    cx = x0 + (x1 - x0) * frac
+                    cy = y_branch
+
+                    color = color_map.get(cls_type, "#999999")
+
+                    ax.scatter(
+                        cx, cy, s=marker_size, c=color,
+                        edgecolors="black", linewidths=0.5, zorder=5,
+                    )
+
+                    # Character index above (offset in points via annotate)
+                    ax.annotate(
+                        str(char_idx), (cx, cy),
+                        textcoords="offset points", xytext=(0, 6),
+                        ha="center", va="bottom",
+                        fontsize=change_fontsize, zorder=6,
+                    )
+                    # State transition below
+                    ax.annotate(
+                        f"{old}\u2192{new}", (cx, cy),
+                        textcoords="offset points", xytext=(0, -6),
+                        ha="center", va="top",
+                        fontsize=change_fontsize, zorder=6,
+                    )
+
+            # Legend
+            legend_handles = [
+                Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
+                      label="Synapomorphy"),
+                Patch(facecolor=colors[1], edgecolor="black", linewidth=0.5,
+                      label="Convergence"),
+                Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
+                      label="Reversal"),
+            ]
+            legend_loc = config.legend_position or "upper right"
+            if legend_loc != "none":
+                ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
+
+            # Axes formatting
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+
+            if self.phylogram:
+                ax.set_xlabel("Branch length (subs/site)")
+            else:
+                ax.set_xlabel("")
+                ax.set_xticks([])
+                ax.spines["bottom"].set_visible(False)
+
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Character Map",
+                    fontsize=config.title_fontsize,
+                )
+            if config.axis_fontsize:
+                ax.xaxis.label.set_fontsize(config.axis_fontsize)
+
+            # Adjust margins to leave room for labels
+            fig.subplots_adjust(left=0.05, right=0.80, top=0.92, bottom=0.08)
+
+            fig.savefig(self.output_path, dpi=config.dpi)
+            plt.close(fig)

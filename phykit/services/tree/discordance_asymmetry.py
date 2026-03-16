@@ -8,6 +8,15 @@ from scipy.stats import binomtest
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_branches,
+    draw_circular_tip_labels,
+    draw_circular_colored_branch,
+    draw_circular_colored_arc,
+    circular_branch_points,
+    radial_offset,
+)
 from ...errors import PhykitUserError
 
 
@@ -243,86 +252,183 @@ class DiscordanceAsymmetry(Tree):
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        # Draw branches
-        for clade in species_tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) not in parent_map:
-                continue
-            parent = parent_map[id(clade)]
-            if id(parent) not in node_x or id(clade) not in node_x:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(species_tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            x0 = node_x[id(parent)]
-            x1 = node_x[id(clade)]
-            y0 = node_y.get(id(parent), 0)
-            y1 = node_y.get(id(clade), 0)
+            # Draw each branch individually with its asymmetry color
+            for clade in species_tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                cid = id(clade)
+                if cid not in parent_map:
+                    continue
+                parent = parent_map[cid]
+                if id(parent) not in coords or cid not in coords:
+                    continue
 
-            # Color the horizontal branch by asymmetry ratio if this is an internal node
-            color = "gray"
-            lw = 2
-            if id(clade) in node_to_result:
+                # Determine color
+                color = "gray"
+                lw = 2
+                if cid in node_to_result:
+                    entry = node_to_result[cid]
+                    if entry["asymmetry_ratio"] is not None:
+                        color = cmap(norm(entry["asymmetry_ratio"]))
+                        lw = 3
+
+                # Draw radial segment
+                draw_circular_colored_branch(ax, coords[id(parent)], coords[cid], color, lw=lw)
+
+            # Draw arcs at internal nodes
+            for clade in species_tree.find_clades(order="preorder"):
+                if clade.is_terminal() or not clade.clades:
+                    continue
+                cid = id(clade)
+                pc = coords[cid]
+                child_angles = [coords[id(ch)]["angle"] for ch in clade.clades]
+                if len(child_angles) < 2:
+                    continue
+                start_a = min(child_angles)
+                end_a = max(child_angles)
+                import math
+                span = (end_a - start_a) % (2.0 * math.pi)
+                if span > math.pi:
+                    start_a, end_a = end_a, start_a
+
+                # Color arc by the node's own asymmetry if available
+                arc_color = "gray"
+                if cid in node_to_result:
+                    entry = node_to_result[cid]
+                    if entry["asymmetry_ratio"] is not None:
+                        arc_color = cmap(norm(entry["asymmetry_ratio"]))
+                draw_circular_colored_arc(ax, 0.0, 0.0, pc["radius"], start_a, end_a, arc_color, lw=1.5)
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, species_tree, coords, fontsize=9, offset=max_x * 0.02)
+
+            # Annotate internal nodes
+            for clade in species_tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                cid = id(clade)
+                if cid not in node_to_result:
+                    continue
+                entry = node_to_result[cid]
+                cx = coords[cid]["x"]
+                cy = coords[cid]["y"]
+
+                total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
+                gcf = entry["n_concordant"] / total if total > 0 else 1.0
+                ax.annotate(
+                    f"gCF={gcf:.2f}",
+                    (cx, cy),
+                    textcoords="offset points",
+                    xytext=(5, 5),
+                    fontsize=7,
+                )
+
+                if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
+                        and entry["favored_alt"] is not None):
+                    ax.scatter(cx, cy, s=100, c="red", marker="*", zorder=5)
+
+            # Colorbar
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+            cbar.set_label("Asymmetry ratio")
+
+            if config.show_title:
+                ax.set_title(config.title or "Discordance Asymmetry", fontsize=config.title_fontsize)
+
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+            plt.close(fig)
+
+        else:
+            # --- Rectangular mode ---
+            # Draw branches
+            for clade in species_tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+                parent = parent_map[id(clade)]
+                if id(parent) not in node_x or id(clade) not in node_x:
+                    continue
+
+                x0 = node_x[id(parent)]
+                x1 = node_x[id(clade)]
+                y0 = node_y.get(id(parent), 0)
+                y1 = node_y.get(id(clade), 0)
+
+                # Color the horizontal branch by asymmetry ratio if this is an internal node
+                color = "gray"
+                lw = 2
+                if id(clade) in node_to_result:
+                    entry = node_to_result[id(clade)]
+                    if entry["asymmetry_ratio"] is not None:
+                        color = cmap(norm(entry["asymmetry_ratio"]))
+                        lw = 3
+
+                ax.plot([x0, x1], [y1, y1], color=color, lw=lw)
+                ax.plot([x0, x0], [y0, y1], color="gray", lw=1.5)
+
+            # Annotate internal nodes
+            for clade in species_tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                if id(clade) not in node_to_result:
+                    continue
                 entry = node_to_result[id(clade)]
-                if entry["asymmetry_ratio"] is not None:
-                    color = cmap(norm(entry["asymmetry_ratio"]))
-                    lw = 3
+                x = node_x.get(id(clade), 0)
+                y = node_y.get(id(clade), 0)
 
-            ax.plot([x0, x1], [y1, y1], color=color, lw=lw)
-            ax.plot([x0, x0], [y0, y1], color="gray", lw=1.5)
+                # Show gCF value
+                total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
+                gcf = entry["n_concordant"] / total if total > 0 else 1.0
+                ax.annotate(
+                    f"gCF={gcf:.2f}",
+                    (x, y),
+                    textcoords="offset points",
+                    xytext=(5, 5),
+                    fontsize=7,
+                )
 
-        # Annotate internal nodes
-        for clade in species_tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                continue
-            if id(clade) not in node_to_result:
-                continue
-            entry = node_to_result[id(clade)]
-            x = node_x.get(id(clade), 0)
-            y = node_y.get(id(clade), 0)
+                # Mark significant branches (FDR < 0.05)
+                if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
+                        and entry["favored_alt"] is not None):
+                    ax.scatter(x, y, s=100, c="red", marker="*", zorder=5)
 
-            # Show gCF value
-            total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
-            gcf = entry["n_concordant"] / total if total > 0 else 1.0
-            ax.annotate(
-                f"gCF={gcf:.2f}",
-                (x, y),
-                textcoords="offset points",
-                xytext=(5, 5),
-                fontsize=7,
-            )
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 0
+            offset = max_x * 0.02
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9,
+                )
 
-            # Mark significant branches (FDR < 0.05)
-            if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
-                    and entry["favored_alt"] is not None):
-                ax.scatter(x, y, s=100, c="red", marker="*", zorder=5)
+            # Colorbar
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+            cbar.set_label("Asymmetry ratio")
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 0
-        offset = max_x * 0.02
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9,
-            )
-
-        # Colorbar
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])
-        cbar = fig.colorbar(sm, ax=ax, pad=0.15)
-        cbar.set_label("Asymmetry ratio")
-
-        ax.set_xlabel("Branch length (subs/site)")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(config.title or "Discordance Asymmetry", fontsize=config.title_fontsize)
-        if config.axis_fontsize:
-            ax.xaxis.label.set_fontsize(config.axis_fontsize)
-        fig.tight_layout()
-        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
-        plt.close(fig)
+            ax.set_xlabel("Branch length (subs/site)")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(config.title or "Discordance Asymmetry", fontsize=config.title_fontsize)
+            if config.axis_fontsize:
+                ax.xaxis.label.set_fontsize(config.axis_fontsize)
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+            plt.close(fig)
 
     # ------------------------------------------------------------------
     # Gene tree parsing

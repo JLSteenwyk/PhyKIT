@@ -579,3 +579,31 @@ class TestPlot:
         finally:
             if os.path.exists(tmppath):
                 os.unlink(tmppath)
+
+    def test_plot_circular(self):
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            tmppath = f.name
+
+        try:
+            args = Namespace(
+                tree=TREE_SIMPLE,
+                trait_data=TRAITS_FILE,
+                regime_data=REGIMES_FILE,
+                nsim=0,
+                seed=None,
+                plot=tmppath,
+                json=False,
+                circular=True,
+            )
+            svc = RateHeterogeneity(args)
+            svc.run()
+            assert os.path.exists(tmppath)
+            assert os.path.getsize(tmppath) > 0
+        finally:
+            if os.path.exists(tmppath):
+                os.unlink(tmppath)

@@ -9,6 +9,15 @@ from scipy.stats import chi2
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_branches,
+    draw_circular_tip_labels,
+    draw_circular_colored_branch,
+    draw_circular_colored_arc,
+    circular_branch_points,
+    radial_offset,
+)
 from ...errors import PhykitUserError
 
 
@@ -697,61 +706,128 @@ class RateHeterogeneity(Tree):
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) not in parent_map:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            import math
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            parent = parent_map[id(clade)]
-            parent_x = node_x[id(parent)]
-            parent_y = node_y[id(parent)]
-            child_y = node_y[id(clade)]
-            child_x = node_x[id(clade)]
+            # Draw each branch individually with its regime color
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                cid = id(clade)
+                if cid not in parent_map:
+                    continue
+                parent = parent_map[cid]
+                if id(parent) not in coords or cid not in coords:
+                    continue
 
-            regime = branch_regimes.get(id(clade), regimes[0])
-            color = regime_colors[regime]
+                regime = branch_regimes.get(cid, regimes[0])
+                color = regime_colors[regime]
 
-            # Vertical connector
-            ax.plot(
-                [parent_x, parent_x], [parent_y, child_y],
-                color="gray", linewidth=0.8, zorder=1,
+                # Draw radial segment
+                draw_circular_colored_branch(ax, coords[id(parent)], coords[cid], color, lw=2.5)
+
+            # Draw arcs at internal nodes colored by regime
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal() or not clade.clades:
+                    continue
+                cid = id(clade)
+                pc = coords[cid]
+                child_angles = [coords[id(ch)]["angle"] for ch in clade.clades]
+                if len(child_angles) < 2:
+                    continue
+                start_a = min(child_angles)
+                end_a = max(child_angles)
+                span = (end_a - start_a) % (2.0 * math.pi)
+                if span > math.pi:
+                    start_a, end_a = end_a, start_a
+
+                arc_color = "gray"
+                if cid in branch_regimes:
+                    arc_color = regime_colors.get(branch_regimes[cid], "gray")
+                draw_circular_colored_arc(ax, 0.0, 0.0, pc["radius"], start_a, end_a, arc_color, lw=1.5)
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.02)
+
+            # Legend
+            handles = [
+                Line2D([0], [0], color=regime_colors[r], linewidth=3, label=r)
+                for r in regimes
+            ]
+            ax.legend(
+                handles=handles, title="Regimes", loc="upper left",
+                fontsize=8, title_fontsize=9,
             )
 
-            # Horizontal branch
-            ax.plot(
-                [parent_x, child_x], [child_y, child_y],
-                color=color, linewidth=2.5, solid_capstyle="butt", zorder=2,
+            if config.show_title:
+                ax.set_title(config.title or "Regime Tree (Rate Heterogeneity)", fontsize=config.title_fontsize)
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+            plt.close(fig)
+            print(f"Saved regime tree plot: {output_path}")
+
+        else:
+            # --- Rectangular mode ---
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+
+                parent = parent_map[id(clade)]
+                parent_x = node_x[id(parent)]
+                parent_y = node_y[id(parent)]
+                child_y = node_y[id(clade)]
+                child_x = node_x[id(clade)]
+
+                regime = branch_regimes.get(id(clade), regimes[0])
+                color = regime_colors[regime]
+
+                # Vertical connector
+                ax.plot(
+                    [parent_x, parent_x], [parent_y, child_y],
+                    color="gray", linewidth=0.8, zorder=1,
+                )
+
+                # Horizontal branch
+                ax.plot(
+                    [parent_x, child_x], [child_y, child_y],
+                    color=color, linewidth=2.5, solid_capstyle="butt", zorder=2,
+                )
+
+            max_x = max(node_x.values()) if node_x else 0
+            offset = max_x * 0.02
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9,
+                )
+
+            handles = [
+                Line2D([0], [0], color=regime_colors[r], linewidth=3, label=r)
+                for r in regimes
+            ]
+            ax.legend(
+                handles=handles, title="Regimes", loc="upper left",
+                fontsize=8, title_fontsize=9,
             )
 
-        max_x = max(node_x.values()) if node_x else 0
-        offset = max_x * 0.02
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9,
-            )
-
-        handles = [
-            Line2D([0], [0], color=regime_colors[r], linewidth=3, label=r)
-            for r in regimes
-        ]
-        ax.legend(
-            handles=handles, title="Regimes", loc="upper left",
-            fontsize=8, title_fontsize=9,
-        )
-
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(config.title or "Regime Tree (Rate Heterogeneity)", fontsize=config.title_fontsize)
-        fig.tight_layout()
-        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
-        plt.close(fig)
-        print(f"Saved regime tree plot: {output_path}")
+            ax.set_xlabel("Branch length")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(config.title or "Regime Tree (Rate Heterogeneity)", fontsize=config.title_fontsize)
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+            plt.close(fig)
+            print(f"Saved regime tree plot: {output_path}")
 
     def _print_text_output(
         self, *, n_tips, regimes, sigma2_single, anc_single, ll_single,

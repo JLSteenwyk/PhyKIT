@@ -172,6 +172,23 @@ class TestCharacterMap:
         assert Path(output).exists()
 
     @patch("builtins.print")
+    def test_character_map_circular(self, mocked_print, tmp_path):
+        """--circular flag produces a circular layout plot without error."""
+        output = str(tmp_path / "charmap_circular.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+            "-d", f"{here.parent.parent.parent}/sample_files/character_matrix_simple.tsv",
+            "-o", output,
+            "--circular",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert Path(output).exists()
+        assert Path(output).stat().st_size > 0
+
+    @patch("builtins.print")
     def test_character_filter_preserves_ci_ri(self, mocked_print, tmp_path):
         """CI and RI should be the same with or without --characters filter,
         since the filter only affects the plot, not the computation."""
