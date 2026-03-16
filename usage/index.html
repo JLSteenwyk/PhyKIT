@@ -1300,6 +1300,11 @@ is auto-detected from the eigengap of the graph Laplacian.</p>
 <li><p><strong>nrf</strong> (default): binary presence/absence, consistent with normalized Robinson-Foulds distance</p></li>
 <li><p><strong>wrf</strong>: branch-length weighted</p></li>
 </ul>
+<p>Polytomies (collapsed branches) in gene trees are handled conservatively:
+splits from polytomous nodes are excluded from the bipartition matrix since
+they represent unresolved relationships. Trifurcating roots (standard
+unrooted Newick) are not affected. This allows gene trees with collapsed
+low-support branches to be used directly as input.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spectral_discordance<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>&lt;tree&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--metric<span class="w"> </span>nrf<span class="p">|</span>wrf<span class="o">]</span><span class="w"> </span><span class="o">[</span>--clusters<span class="w"> </span>K<span class="o">]</span><span class="w"> </span><span class="o">[</span>--n-pcs<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--top-loadings<span class="w"> </span>N<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;prefix&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
@@ -1499,6 +1504,11 @@ Command line interface: pk_consensus_network; pk_consnet; pk_splitnet; pk_splits
 conflicting phylogenetic signal. Counts how frequently each non-trivial
 bipartition appears across input trees and filters by a minimum frequency
 threshold. Optionally draws a circular splits network diagram.</p>
+<p>Polytomies (collapsed branches) in input trees are handled conservatively:
+splits from polytomous nodes are excluded since they represent unresolved
+relationships. Trifurcating roots (standard unrooted Newick) are not
+affected. This allows gene trees with collapsed low-support branches to be
+used directly as input.</p>
 <p>Input can be either:
 1) a file with one Newick tree per line, or
 2) a file with one tree-file path per line.</p>
@@ -2435,6 +2445,9 @@ may be biased. <code class="docutils literal notranslate"><span class="pre">netw
 <strong>network VCV</strong> computed using the recursive algorithm of
 Bastide et al. (<em>Systematic Biology</em>, 2018), which properly
 weights shared ancestry through both tree-like and hybrid lineages.</p>
+<p>Polytomies (collapsed branches) in the input tree are represented as star
+topologies in the network VCV, which correctly models unresolved
+relationships as equal covariance among all children.</p>
 <p>Two signal metrics are available (same as <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>):</p>
 <ul class="simple">
 <li><p><strong>Blomberg's K</strong> (Blomberg et al. 2003): K = 1 under Brownian motion;
@@ -3147,6 +3160,11 @@ is classified as <em>tree-like</em> (conflict is due to ILS).</p></li>
 </ol>
 <p>This algorithm matches the NANUQ method of Allman, Baños &amp; Rhodes (2019),
 implemented in R's MSCquartets package.</p>
+<p>Polytomies (collapsed branches) in gene trees are handled conservatively:
+bipartitions from polytomous nodes are excluded, so quartets spanning a
+polytomy are treated as unresolved rather than misclassified. Trifurcating
+roots (standard unrooted Newick) are not affected. This allows gene trees
+with collapsed low-support branches to be used directly as input.</p>
 <p>Input can be either:
 1) a file with one Newick tree per line, or
 2) a file with one tree-file path per line.</p>

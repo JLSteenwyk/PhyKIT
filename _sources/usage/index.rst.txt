@@ -1310,6 +1310,12 @@ Two metrics are available:
 - **nrf** (default): binary presence/absence, consistent with normalized Robinson-Foulds distance
 - **wrf**: branch-length weighted
 
+Polytomies (collapsed branches) in gene trees are handled conservatively:
+splits from polytomous nodes are excluded from the bipartition matrix since
+they represent unresolved relationships. Trifurcating roots (standard
+unrooted Newick) are not affected. This allows gene trees with collapsed
+low-support branches to be used directly as input.
+
 .. code-block:: shell
 
    phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>]
@@ -1544,6 +1550,12 @@ Extract bipartition splits from a collection of gene trees and summarize
 conflicting phylogenetic signal. Counts how frequently each non-trivial
 bipartition appears across input trees and filters by a minimum frequency
 threshold. Optionally draws a circular splits network diagram.
+
+Polytomies (collapsed branches) in input trees are handled conservatively:
+splits from polytomous nodes are excluded since they represent unresolved
+relationships. Trifurcating roots (standard unrooted Newick) are not
+affected. This allows gene trees with collapsed low-support branches to be
+used directly as input.
 
 Input can be either:
 1) a file with one Newick tree per line, or
@@ -2651,6 +2663,10 @@ may be biased. ``network_signal`` replaces the tree VCV with a
 Bastide et al. (*Systematic Biology*, 2018), which properly
 weights shared ancestry through both tree-like and hybrid lineages.
 
+Polytomies (collapsed branches) in the input tree are represented as star
+topologies in the network VCV, which correctly models unresolved
+relationships as equal covariance among all children.
+
 Two signal metrics are available (same as ``phylogenetic_signal``):
 
 - **Blomberg's K** (Blomberg et al. 2003): K = 1 under Brownian motion;
@@ -3482,6 +3498,12 @@ possible unrooted topologies and applies two hypothesis tests:
 
 This algorithm matches the NANUQ method of Allman, Baños & Rhodes (2019),
 implemented in R's MSCquartets package.
+
+Polytomies (collapsed branches) in gene trees are handled conservatively:
+bipartitions from polytomous nodes are excluded, so quartets spanning a
+polytomy are treated as unresolved rather than misclassified. Trifurcating
+roots (standard unrooted Newick) are not affected. This allows gene trees
+with collapsed low-support branches to be used directly as input.
 
 Input can be either:
 1) a file with one Newick tree per line, or

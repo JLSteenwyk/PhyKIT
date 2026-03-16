@@ -96,6 +96,19 @@ before rendering, producing a cleaner visual layout</p></li>
 <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>, <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code>,
 <code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>, <code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code>,
 <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code>, and <code class="docutils literal notranslate"><span class="pre">cophylo</span></code></p></li>
+<li><p>Added polytomy (collapsed branch) handling to hybridization and
+network analysis commands; gene trees with collapsed low-support
+branches can now be used directly as input:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">quartet_network</span></code>, <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>, <code class="docutils literal notranslate"><span class="pre">spectral_discordance</span></code>:
+bipartitions from polytomous nodes are excluded (treated as
+uninformative), so quartets spanning a polytomy are classified as
+unresolved rather than misclassified</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">network_signal</span></code>: polytomies are represented as star topologies
+in the network VCV, correctly modeling unresolved relationships</p></li>
+<li><p>Trifurcating roots (standard unrooted Newick) are not affected</p></li>
+</ul>
+</li>
 </ul>
 <p><strong>2.1.47</strong>:
 Added Fitch parsimony score command (<code class="docutils literal notranslate"><span class="pre">parsimony_score</span></code> / <code class="docutils literal notranslate"><span class="pre">pars</span></code>):</p>
