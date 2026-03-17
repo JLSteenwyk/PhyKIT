@@ -175,5 +175,6 @@ test.partition
 alignment_qc_example.png
 phylomorphospace_plot.png
 
-# Superpowers brainstorming artifacts
+# Superpowers artifacts
 .superpowers/
+docs/superpowers/
