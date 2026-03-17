@@ -80,6 +80,29 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.53</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">--color-file</span></code> plot option for clade and tip label coloring:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--color-file</span></code>: iTOL-inspired TSV annotation file for coloring
+tip labels (<code class="docutils literal notranslate"><span class="pre">label</span></code> type), highlighting clades with transparent
+background bands (<code class="docutils literal notranslate"><span class="pre">range</span></code> type), and coloring clade branches
+(<code class="docutils literal notranslate"><span class="pre">clade</span></code> type). Clades are defined by listing taxa whose MRCA
+determines the clade. Works with all phylogram-drawing commands
+in both rectangular and circular modes; <code class="docutils literal notranslate"><span class="pre">clade</span></code> branch coloring
+is silently skipped for trait-colored commands. Labeled ranges
+and clades appear in the figure legend.</p></li>
+<li><p>Added a plot customization tutorial to the documentation covering
+all shared plot options with example figures.</p></li>
+</ul>
+<p><strong>2.1.52</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">--circular</span></code> plot option:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--circular</span></code>: draw circular (radial/fan) phylograms with the root
+at the center, branches radiating outward, and tips around the
+perimeter. Curved arcs connect sister clades (FigTree/iTOL style).
+Combinable with <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> and <code class="docutils literal notranslate"><span class="pre">--ladderize</span></code>. Supported in
+all 11 phylogram-drawing commands.</p></li>
+</ul>
 <p><strong>2.1.51</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> plot option to all phylogram-drawing commands:</p>
 <ul class="simple">

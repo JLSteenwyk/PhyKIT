@@ -6,6 +6,29 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.53**:
+Added ``--color-file`` plot option for clade and tip label coloring:
+
+* ``--color-file``: iTOL-inspired TSV annotation file for coloring
+  tip labels (``label`` type), highlighting clades with transparent
+  background bands (``range`` type), and coloring clade branches
+  (``clade`` type). Clades are defined by listing taxa whose MRCA
+  determines the clade. Works with all phylogram-drawing commands
+  in both rectangular and circular modes; ``clade`` branch coloring
+  is silently skipped for trait-colored commands. Labeled ranges
+  and clades appear in the figure legend.
+* Added a plot customization tutorial to the documentation covering
+  all shared plot options with example figures.
+
+**2.1.52**:
+Added ``--circular`` plot option:
+
+* ``--circular``: draw circular (radial/fan) phylograms with the root
+  at the center, branches radiating outward, and tips around the
+  perimeter. Curved arcs connect sister clades (FigTree/iTOL style).
+  Combinable with ``--cladogram`` and ``--ladderize``. Supported in
+  all 11 phylogram-drawing commands.
+
 **2.1.51**:
 Added ``--cladogram`` plot option to all phylogram-drawing commands:
 

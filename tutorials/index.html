@@ -3116,6 +3116,206 @@ the standard analysis was adequate.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+<p>All PhyKIT commands that produce tree visualizations share a common set
+of plot customization options. This tutorial walks through each option
+using <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> as a demonstration, but the same options work for
+<code class="docutils literal notranslate"><span class="pre">character_map</span></code>, <code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code>, <code class="docutils literal notranslate"><span class="pre">cont_map</span></code>, <code class="docutils literal notranslate"><span class="pre">density_map</span></code>,
+<code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code>, <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code>,
+<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>, <code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code>, <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">cophylo</span></code>.</p>
+<p>We use the 8-taxon mammal tree and 10 gene trees included in PhyKIT's
+sample data:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">TREE</span><span class="o">=</span>tests/sample_files/tree_simple.tre
+<span class="nv">GENES</span><span class="o">=</span>tests/sample_files/gene_trees_simple.nwk
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Default output</strong></p>
+<p>The default <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> command produces a phylogram with pie charts
+at internal nodes showing concordance proportions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_default.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_default.png"><img alt="../_images/qpie_default.png" class="align-center" src="../_images/qpie_default.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Ladderizing the tree</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--ladderize</span></code> flag sorts the tree by the number of descendant
+tips at each node, producing a cleaner visual layout:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_ladderize.png<span class="w"> </span>--ladderize
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_ladderize.png"><img alt="../_images/qpie_ladderize.png" class="align-center" src="../_images/qpie_ladderize.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Cladogram layout</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> flag draws the tree with equal branch lengths and
+all tips aligned at the right edge. This is useful when branch lengths
+are uninformative or when you want to emphasize topology over
+evolutionary distance:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_cladogram.png<span class="w"> </span>--cladogram
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_cladogram.png"><img alt="../_images/qpie_cladogram.png" class="align-center" src="../_images/qpie_cladogram.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Circular layout</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--circular</span></code> flag draws the tree as a radial phylogram with
+the root at the center. Branches radiate outward and curved arcs
+connect sister clades at each internal node:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_circular.png<span class="w"> </span>--circular
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_circular.png"><img alt="../_images/qpie_circular.png" class="align-center" src="../_images/qpie_circular.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Circular + cladogram</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--circular</span></code> and <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> flags can be combined. This
+draws a circular cladogram where all tips sit on the outer ring at
+equal distance from the center:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_circular_clado.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--circular<span class="w"> </span>--cladogram
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_circular_cladogram.png"><img alt="../_images/qpie_circular_cladogram.png" class="align-center" src="../_images/qpie_circular_cladogram.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Annotating with values</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--annotate</span></code> flag adds numeric values (gCF/gDF1/gDF2) near each
+pie chart:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_annotate.png<span class="w"> </span>--annotate
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_annotate.png"><img alt="../_images/qpie_annotate.png" class="align-center" src="../_images/qpie_annotate.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Custom colors</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--colors</span></code> flag accepts comma-separated colors (hex or named) to
+override the defaults. For <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>, the three colors represent
+concordant, discordant alt 1, and discordant alt 2:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colors.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--colors<span class="w"> </span><span class="s2">&quot;#2ca02c,#ff7f0e,#9467bd&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_custom_colors.png"><img alt="../_images/qpie_custom_colors.png" class="align-center" src="../_images/qpie_custom_colors.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Custom title</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--title</span></code> flag sets a custom title. Use <code class="docutils literal notranslate"><span class="pre">--no-title</span></code> to remove
+the title entirely:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_title.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;Mammal Quartet Concordance&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_custom_title.png"><img alt="../_images/qpie_custom_title.png" class="align-center" src="../_images/qpie_custom_title.png" style="width: 80%;" />
+</a>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_no_title.png<span class="w"> </span>--no-title
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_no_title.png"><img alt="../_images/qpie_no_title.png" class="align-center" src="../_images/qpie_no_title.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Legend position</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--legend-position</span></code> flag controls legend placement. Options include
+<code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">right</span></code> (default), <code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">right</span></code>,
+<code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">right</span></code>, or <code class="docutils literal notranslate"><span class="pre">none</span></code> to hide the legend:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_legend.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--legend-position<span class="w"> </span><span class="s2">&quot;lower right&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_legend_lower.png"><img alt="../_images/qpie_legend_lower.png" class="align-center" src="../_images/qpie_legend_lower.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Coloring clades with a color file</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--color-file</span></code> flag accepts an iTOL-inspired TSV file for coloring
+tip labels, highlighting clades with transparent background bands, and
+coloring clade branches.</p>
+<p>Create a color annotation file (e.g., <code class="docutils literal notranslate"><span class="pre">colors.tsv</span></code>):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># node(s)            type     color      label
+bear                 label    #e41a1c
+raccoon              label    #e41a1c
+sea_lion             label    #377eb8
+seal                 label    #377eb8
+bear,raccoon         range    #ffe0e0    Ursids
+sea_lion,seal        range    #e0e0ff    Pinnipeds
+monkey,cat,weasel    range    #e0ffe0    Carnivorans+Primates
+</pre></div>
+</div>
+<p>The file supports three entry types:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">label</span></code> — color a tip's label text (field 1 = single taxon name)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">range</span></code> — draw a transparent background band behind a clade
+(field 1 = comma-separated taxa whose MRCA defines the clade)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clade</span></code> — color the branches of a clade (same MRCA logic)</p></li>
+</ul>
+<p>For <code class="docutils literal notranslate"><span class="pre">range</span></code> and <code class="docutils literal notranslate"><span class="pre">clade</span></code>, you only need to list enough taxa to
+uniquely identify the most recent common ancestor — typically one
+taxon from each side of the clade.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colored.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--color-file<span class="w"> </span>colors.tsv
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_colorfile.png"><img alt="../_images/qpie_colorfile.png" class="align-center" src="../_images/qpie_colorfile.png" style="width: 80%;" />
+</a>
+<p>The color file also works with the circular layout:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colored_circ.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--color-file<span class="w"> </span>colors.tsv<span class="w"> </span>--circular
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_colorfile_circular.png"><img alt="../_images/qpie_colorfile_circular.png" class="align-center" src="../_images/qpie_colorfile_circular.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Combining everything</strong></p>
+<p>All options can be combined for maximum customization:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_full.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--circular<span class="w"> </span>--ladderize<span class="w"> </span>--color-file<span class="w"> </span>colors.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--annotate<span class="w"> </span>--legend-position<span class="w"> </span><span class="s2">&quot;upper left&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;Full Customization&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/qpie_all_options.png"><img alt="../_images/qpie_all_options.png" class="align-center" src="../_images/qpie_all_options.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Additional options</strong></p>
+<p>Several other options are available for fine-tuning:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--fig-width</span></code> / <code class="docutils literal notranslate"><span class="pre">--fig-height</span></code> — figure dimensions in inches
+(auto-scaled if omitted)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--dpi</span></code> — resolution in dots per inch (default: 300)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span></code> — font size for tip labels; 0 to hide</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--xlabel-fontsize</span></code> — font size for x-axis labels; 0 to hide</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--title-fontsize</span></code> — font size for the title</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--axis-fontsize</span></code> — font size for axis labels</p></li>
+</ul>
+<p>These are useful for preparing figures for publication where
+specific dimensions or resolutions are required.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 </section>
 </section>
 
