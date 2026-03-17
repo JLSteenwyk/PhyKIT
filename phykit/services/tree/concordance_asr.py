@@ -12,6 +12,11 @@ from .base import Tree
 from .ancestral_reconstruction import AncestralReconstruction
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_branches,
+    draw_circular_tip_labels,
+)
 from ...errors import PhykitUserError
 
 
@@ -799,68 +804,116 @@ class ConcordanceAsr(Tree):
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        # Draw branches
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) not in parent_map:
-                continue
-            parent = parent_map[id(clade)]
-            if id(parent) not in node_x or id(clade) not in node_x:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            x0 = node_x[id(parent)]
-            x1 = node_x[id(clade)]
-            y0 = node_y.get(id(parent), 0)
-            y1 = node_y.get(id(clade), 0)
+            # Draw branches (gray)
+            draw_circular_branches(ax, tree, coords, parent_map, color="gray", lw=2)
 
-            ax.plot([x0, x1], [y1, y1], color="gray", lw=2)
-            ax.plot([x0, x0], [y0, y1], color="gray", lw=2)
+            # Draw gCF-sized dots at internal nodes
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                cid = id(clade)
+                if cid in gcf_values and cid in coords:
+                    gcf = gcf_values[cid]
+                    size = 50 + 200 * gcf
+                    color = plt.cm.RdYlGn(gcf)
+                    ax.scatter(
+                        coords[cid]["x"], coords[cid]["y"],
+                        s=size, c=[color], zorder=5,
+                        edgecolors="black", linewidths=0.5,
+                    )
+                    ax.annotate(
+                        f"{gcf:.2f}",
+                        (coords[cid]["x"], coords[cid]["y"]),
+                        textcoords="offset points",
+                        xytext=(5, 5),
+                        fontsize=7,
+                    )
 
-        # Draw gCF-sized dots at internal nodes
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                continue
-            if id(clade) in gcf_values and id(clade) in node_x:
-                gcf = gcf_values[id(clade)]
-                size = 50 + 200 * gcf
-                color = plt.cm.RdYlGn(gcf)
-                ax.scatter(
-                    node_x[id(clade)], node_y.get(id(clade), 0),
-                    s=size, c=[color], zorder=5, edgecolors="black", linewidths=0.5
-                )
-                ax.annotate(
-                    f"{gcf:.2f}",
-                    (node_x[id(clade)], node_y.get(id(clade), 0)),
-                    textcoords="offset points",
-                    xytext=(5, 5),
-                    fontsize=7,
-                )
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 0
-        offset = max_x * 0.02
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9,
+            # Colorbar for gCF
+            sm = plt.cm.ScalarMappable(
+                cmap=plt.cm.RdYlGn, norm=Normalize(vmin=0, vmax=1)
             )
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+            cbar.set_label("Gene Concordance Factor (gCF)")
 
-        # Colorbar for gCF
-        sm = plt.cm.ScalarMappable(
-            cmap=plt.cm.RdYlGn, norm=Normalize(vmin=0, vmax=1)
-        )
-        sm.set_array([])
-        cbar = fig.colorbar(sm, ax=ax, pad=0.15)
-        cbar.set_label("Gene Concordance Factor (gCF)")
+            if config.show_title:
+                ax.set_title(config.title or "Concordance-Aware ASR", fontsize=config.title_fontsize)
+        else:
+            # --- Rectangular mode ---
+            # Draw branches
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+                parent = parent_map[id(clade)]
+                if id(parent) not in node_x or id(clade) not in node_x:
+                    continue
 
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(config.title or "Concordance-Aware ASR", fontsize=config.title_fontsize)
+                x0 = node_x[id(parent)]
+                x1 = node_x[id(clade)]
+                y0 = node_y.get(id(parent), 0)
+                y1 = node_y.get(id(clade), 0)
+
+                ax.plot([x0, x1], [y1, y1], color="gray", lw=2)
+                ax.plot([x0, x0], [y0, y1], color="gray", lw=2)
+
+            # Draw gCF-sized dots at internal nodes
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                if id(clade) in gcf_values and id(clade) in node_x:
+                    gcf = gcf_values[id(clade)]
+                    size = 50 + 200 * gcf
+                    color = plt.cm.RdYlGn(gcf)
+                    ax.scatter(
+                        node_x[id(clade)], node_y.get(id(clade), 0),
+                        s=size, c=[color], zorder=5, edgecolors="black", linewidths=0.5
+                    )
+                    ax.annotate(
+                        f"{gcf:.2f}",
+                        (node_x[id(clade)], node_y.get(id(clade), 0)),
+                        textcoords="offset points",
+                        xytext=(5, 5),
+                        fontsize=7,
+                    )
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 0
+            offset = max_x * 0.02
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9,
+                )
+
+            # Colorbar for gCF
+            sm = plt.cm.ScalarMappable(
+                cmap=plt.cm.RdYlGn, norm=Normalize(vmin=0, vmax=1)
+            )
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+            cbar.set_label("Gene Concordance Factor (gCF)")
+
+            ax.set_xlabel("Branch length")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(config.title or "Concordance-Aware ASR", fontsize=config.title_fontsize)
+
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

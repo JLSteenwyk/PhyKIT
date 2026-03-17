@@ -96,6 +96,34 @@ class TestContMapIntegration:
             if os.path.exists(tmppath):
                 os.unlink(tmppath)
 
+    def test_cont_map_circular(self):
+        """--circular flag produces a circular layout contMap plot."""
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            tmppath = f.name
+
+        try:
+            testargs = [
+                "phykit",
+                "cont_map",
+                "-t", TREE_SIMPLE,
+                "-d", TRAITS_FILE,
+                "-o", tmppath,
+                "--circular",
+            ]
+            with patch.object(sys, "argv", testargs):
+                Phykit()
+
+            assert os.path.exists(tmppath)
+            assert os.path.getsize(tmppath) > 0
+        finally:
+            if os.path.exists(tmppath):
+                os.unlink(tmppath)
+
     @patch("builtins.print")
     def test_json_output(self, mocked_print):
         try:

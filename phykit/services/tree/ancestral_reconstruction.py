@@ -17,6 +17,13 @@ from ...helpers.discrete_models import (
     fit_q_matrix,
     parse_discrete_traits,
 )
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_branches,
+    draw_circular_tip_labels,
+    draw_circular_gradient_branch,
+    draw_circular_colored_arc,
+)
 from ...errors import PhykitUserError
 
 
@@ -868,70 +875,133 @@ class AncestralReconstruction(Tree):
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        n_seg = 50
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) not in parent_map:
-                continue
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+                parent = parent_map[id(clade)]
+                pid = id(parent)
+                cid = id(clade)
+                if pid not in coords or cid not in coords:
+                    continue
+                if pid not in all_estimates or cid not in all_estimates:
+                    continue
 
-            parent = parent_map[id(clade)]
-            if id(parent) not in node_x or id(clade) not in node_x:
-                continue
-            if id(parent) not in all_estimates or id(clade) not in all_estimates:
-                continue
+                parent_val = all_estimates[pid]
+                child_val = all_estimates[cid]
 
-            x0 = node_x[id(parent)]
-            x1 = node_x[id(clade)]
-            y0 = node_y[id(parent)]
-            y1 = node_y[id(clade)]
-            val0 = all_estimates[id(parent)]
-            val1 = all_estimates[id(clade)]
-
-            # Horizontal segment (at child's y): colored gradient
-            for s in range(n_seg):
-                frac_s = s / n_seg
-                frac_e = (s + 1) / n_seg
-                xs = x0 + frac_s * (x1 - x0)
-                xe = x0 + frac_e * (x1 - x0)
-                v = val0 + ((frac_s + frac_e) / 2) * (val1 - val0)
-                ax.plot(
-                    [xs, xe], [y1, y1],
-                    color=cmap(norm(v)), lw=3, solid_capstyle="butt",
+                draw_circular_gradient_branch(
+                    ax, coords[pid], coords[cid],
+                    cmap, vmin, vmax, parent_val, child_val, lw=3,
                 )
 
-            # Vertical connector (at parent's x): parent's trait color
-            ax.plot(
-                [x0, x0], [y0, y1],
-                color=cmap(norm(val0)), lw=3, solid_capstyle="butt",
-            )
+            # Arcs at internal nodes colored by trait value
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal() or not clade.clades:
+                    continue
+                cid = id(clade)
+                if cid not in coords or cid not in all_estimates:
+                    continue
+                child_angles = [coords[id(ch)]["angle"] for ch in clade.clades if id(ch) in coords]
+                if len(child_angles) < 2:
+                    continue
+                node_val = all_estimates[cid]
+                min_a = min(child_angles)
+                max_a = max(child_angles)
+                draw_circular_colored_arc(
+                    ax, 0, 0, coords[cid]["radius"],
+                    min_a, max_a, color=cmap(norm(node_val)), lw=3,
+                )
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 0
-        offset = max_x * 0.02
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9,
-            )
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
 
-        # Colorbar
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])
-        cbar = fig.colorbar(sm, ax=ax, pad=0.15)
-        cbar.set_label(trait_name)
+            # Colorbar
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+            cbar.set_label(trait_name)
 
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(
-                config.title or "Continuous Trait Map (contMap)",
-                fontsize=config.title_fontsize,
-            )
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Continuous Trait Map (contMap)",
+                    fontsize=config.title_fontsize,
+                )
+        else:
+            # --- Rectangular mode ---
+            n_seg = 50
+
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+
+                parent = parent_map[id(clade)]
+                if id(parent) not in node_x or id(clade) not in node_x:
+                    continue
+                if id(parent) not in all_estimates or id(clade) not in all_estimates:
+                    continue
+
+                x0 = node_x[id(parent)]
+                x1 = node_x[id(clade)]
+                y0 = node_y[id(parent)]
+                y1 = node_y[id(clade)]
+                val0 = all_estimates[id(parent)]
+                val1 = all_estimates[id(clade)]
+
+                # Horizontal segment (at child's y): colored gradient
+                for s in range(n_seg):
+                    frac_s = s / n_seg
+                    frac_e = (s + 1) / n_seg
+                    xs = x0 + frac_s * (x1 - x0)
+                    xe = x0 + frac_e * (x1 - x0)
+                    v = val0 + ((frac_s + frac_e) / 2) * (val1 - val0)
+                    ax.plot(
+                        [xs, xe], [y1, y1],
+                        color=cmap(norm(v)), lw=3, solid_capstyle="butt",
+                    )
+
+                # Vertical connector (at parent's x): parent's trait color
+                ax.plot(
+                    [x0, x0], [y0, y1],
+                    color=cmap(norm(val0)), lw=3, solid_capstyle="butt",
+                )
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 0
+            offset = max_x * 0.02
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9,
+                )
+
+            # Colorbar
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+            cbar.set_label(trait_name)
+
+            ax.set_xlabel("Branch length")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Continuous Trait Map (contMap)",
+                    fontsize=config.title_fontsize,
+                )
+
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
@@ -1443,85 +1513,143 @@ class AncestralReconstruction(Tree):
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        # Draw branches (gray)
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            if id(clade) not in parent_map:
-                continue
-            parent = parent_map[id(clade)]
-            if id(parent) not in node_x or id(clade) not in node_x:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            x0 = node_x[id(parent)]
-            x1 = node_x[id(clade)]
-            y0 = node_y[id(parent)]
-            y1 = node_y[id(clade)]
+            # Draw branches (gray)
+            draw_circular_branches(ax, tree, coords, parent_map, color="gray", lw=2)
 
-            # Horizontal segment
-            ax.plot([x0, x1], [y1, y1], color="gray", lw=2, solid_capstyle="butt")
-            # Vertical connector
-            ax.plot([x0, x0], [y0, y1], color="gray", lw=2, solid_capstyle="butt")
+            # Pie charts at internal nodes
+            max_x = max(node_x.values()) if node_x else 1.0
+            pie_radius = max_x * 0.02
 
-        # Pie charts at internal nodes
-        max_x = max(node_x.values()) if node_x else 1.0
-        pie_radius = max_x * 0.015
-
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                continue
-            if id(clade) not in node_posteriors:
-                continue
-
-            cx = node_x[id(clade)]
-            cy = node_y[id(clade)]
-            posterior = node_posteriors[id(clade)]
-
-            # Draw pie chart using Wedge patches
-            start_angle = 90.0
-            for i in range(k):
-                if posterior[i] < 1e-6:
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal():
                     continue
-                sweep = posterior[i] * 360.0
-                wedge = Wedge(
-                    (cx, cy), pie_radius, start_angle, start_angle + sweep,
-                    facecolor=state_colors[states[i]], edgecolor="black",
-                    linewidth=0.5,
+                cid = id(clade)
+                if cid not in node_posteriors or cid not in coords:
+                    continue
+
+                cx = coords[cid]["x"]
+                cy = coords[cid]["y"]
+                posterior = node_posteriors[cid]
+
+                start_angle = 90.0
+                for i in range(k):
+                    if posterior[i] < 1e-6:
+                        continue
+                    sweep = posterior[i] * 360.0
+                    wedge = Wedge(
+                        (cx, cy), pie_radius, start_angle, start_angle + sweep,
+                        facecolor=state_colors[states[i]], edgecolor="black",
+                        linewidth=0.5,
+                    )
+                    ax.add_patch(wedge)
+                    start_angle += sweep
+
+            # Tip labels
+            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
+
+            # Legend
+            legend_handles = []
+            for i, s in enumerate(states):
+                legend_handles.append(
+                    plt.Line2D([0], [0], marker="o", color="w",
+                               markerfacecolor=state_colors[s], markersize=10,
+                               label=s)
                 )
-                ax.add_patch(wedge)
-                start_angle += sweep
+            ax.legend(handles=legend_handles, loc="upper left", framealpha=0.9)
 
-        # Tip labels with state color
-        max_x_val = max(node_x.values()) if node_x else 0
-        offset = max_x_val * 0.02
-        for tip in tips:
-            color = state_colors.get(tip_states.get(tip.name, ""), "black")
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9, color=color,
-            )
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Discrete Ancestral State Reconstruction",
+                    fontsize=config.title_fontsize,
+                )
+        else:
+            # --- Rectangular mode ---
+            # Draw branches (gray)
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                if id(clade) not in parent_map:
+                    continue
+                parent = parent_map[id(clade)]
+                if id(parent) not in node_x or id(clade) not in node_x:
+                    continue
 
-        # Legend
-        legend_handles = []
-        for i, s in enumerate(states):
-            legend_handles.append(
-                plt.Line2D([0], [0], marker="o", color="w",
-                           markerfacecolor=state_colors[s], markersize=10,
-                           label=s)
-            )
-        ax.legend(handles=legend_handles, loc="upper left", framealpha=0.9)
+                x0 = node_x[id(parent)]
+                x1 = node_x[id(clade)]
+                y0 = node_y[id(parent)]
+                y1 = node_y[id(clade)]
 
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(
-                config.title or "Discrete Ancestral State Reconstruction",
-                fontsize=config.title_fontsize,
-            )
-        ax.set_aspect("auto")
+                # Horizontal segment
+                ax.plot([x0, x1], [y1, y1], color="gray", lw=2, solid_capstyle="butt")
+                # Vertical connector
+                ax.plot([x0, x0], [y0, y1], color="gray", lw=2, solid_capstyle="butt")
+
+            # Pie charts at internal nodes
+            max_x = max(node_x.values()) if node_x else 1.0
+            pie_radius = max_x * 0.015
+
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                if id(clade) not in node_posteriors:
+                    continue
+
+                cx = node_x[id(clade)]
+                cy = node_y[id(clade)]
+                posterior = node_posteriors[id(clade)]
+
+                # Draw pie chart using Wedge patches
+                start_angle = 90.0
+                for i in range(k):
+                    if posterior[i] < 1e-6:
+                        continue
+                    sweep = posterior[i] * 360.0
+                    wedge = Wedge(
+                        (cx, cy), pie_radius, start_angle, start_angle + sweep,
+                        facecolor=state_colors[states[i]], edgecolor="black",
+                        linewidth=0.5,
+                    )
+                    ax.add_patch(wedge)
+                    start_angle += sweep
+
+            # Tip labels with state color
+            max_x_val = max(node_x.values()) if node_x else 0
+            offset = max_x_val * 0.02
+            for tip in tips:
+                color = state_colors.get(tip_states.get(tip.name, ""), "black")
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9, color=color,
+                )
+
+            # Legend
+            legend_handles = []
+            for i, s in enumerate(states):
+                legend_handles.append(
+                    plt.Line2D([0], [0], marker="o", color="w",
+                               markerfacecolor=state_colors[s], markersize=10,
+                               label=s)
+                )
+            ax.legend(handles=legend_handles, loc="upper left", framealpha=0.9)
+
+            ax.set_xlabel("Branch length")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(
+                    config.title or "Discrete Ancestral State Reconstruction",
+                    fontsize=config.title_fontsize,
+                )
+            ax.set_aspect("auto")
+
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

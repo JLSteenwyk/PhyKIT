@@ -192,3 +192,33 @@ class TestStochasticCharacterMapIntegration:
         finally:
             if os.path.exists(tmppath):
                 os.unlink(tmppath)
+
+    def test_stochastic_character_map_circular(self):
+        """--circular flag produces a circular layout stochastic map plot."""
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            tmppath = f.name
+
+        try:
+            testargs = [
+                "phykit",
+                "simmap",
+                "-t", TREE_SIMPLE,
+                "-d", DISCRETE_TRAITS_FILE,
+                "-c", "diet",
+                "-n", "10",
+                "--seed", "42",
+                "--plot", tmppath,
+                "--circular",
+            ]
+            with patch.object(sys, "argv", testargs):
+                Phykit()
+            assert os.path.exists(tmppath)
+            assert os.path.getsize(tmppath) > 0
+        finally:
+            if os.path.exists(tmppath):
+                os.unlink(tmppath)

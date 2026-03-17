@@ -462,6 +462,44 @@ class TestRun:
         assert "distribution" in printed
 
 
+class TestCircularPlot:
+    def test_concordance_asr_circular(self):
+        """--circular flag produces a circular layout concordance ASR plot."""
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        import tempfile
+        import os
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            plot_path = f.name
+
+        try:
+            args = Namespace(
+                tree=TREE_SIMPLE,
+                gene_trees=GENE_TREES,
+                trait_data=TRAITS_FILE,
+                trait=None,
+                method="weighted",
+                ci=False,
+                plot=plot_path,
+                missing_taxa="shared",
+                json=False,
+                circular=True,
+            )
+            svc = ConcordanceAsr(args)
+            with patch("builtins.print"):
+                svc.run()
+
+            assert os.path.exists(plot_path)
+            assert os.path.getsize(plot_path) > 0
+        finally:
+            if os.path.exists(plot_path):
+                os.unlink(plot_path)
+
+
 class TestEdgeCases:
     def test_single_gene_tree_errors(self):
         """Single gene tree should raise error."""

@@ -15,6 +15,12 @@ from ...helpers.discrete_models import (
     fit_q_matrix,
     parse_discrete_traits,
 )
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_tip_labels,
+    draw_circular_colored_arc,
+    draw_circular_multi_segment_branch,
+)
 from ...errors import PhykitUserError
 
 
@@ -508,76 +514,170 @@ class StochasticCharacterMap(Tree):
 
         histories = mapping["branch_histories"]
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            parent = self._get_parent(tree, clade, parent_map)
-            if parent is None:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            parent_x = node_x[id(parent)]
-            parent_y = node_y[id(parent)]
-            child_x = node_x[id(clade)]
-            child_y = node_y[id(clade)]
-            t = clade.branch_length if clade.branch_length else 0.0
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                parent = self._get_parent(tree, clade, parent_map)
+                if parent is None:
+                    continue
 
-            # Draw vertical connector at parent x
-            ax.plot(
-                [parent_x, parent_x], [parent_y, child_y],
-                color="gray", linewidth=0.8, zorder=1
-            )
+                pid = id(parent)
+                cid = id(clade)
+                if pid not in coords or cid not in coords:
+                    continue
 
-            # Draw horizontal branch segments colored by history
-            clade_id = id(clade)
-            if clade_id in histories:
-                history = histories[clade_id]
-                for h_idx in range(len(history)):
-                    state = history[h_idx][1]
-                    seg_start = history[h_idx][0]
-                    if h_idx + 1 < len(history):
-                        seg_end = history[h_idx + 1][0]
-                    else:
-                        seg_end = t
-                    x0 = parent_x + seg_start
-                    x1 = parent_x + seg_end
-                    color = state_colors[state]
-                    ax.plot(
-                        [x0, x1], [child_y, child_y],
-                        color=color, linewidth=2.5, solid_capstyle="butt",
-                        zorder=2
+                t = clade.branch_length if clade.branch_length else 0.0
+
+                if cid in histories:
+                    history = histories[cid]
+                    # Convert history to fractional segments
+                    segments = []
+                    for h_idx in range(len(history)):
+                        state = history[h_idx][1]
+                        seg_start = history[h_idx][0]
+                        if h_idx + 1 < len(history):
+                            seg_end = history[h_idx + 1][0]
+                        else:
+                            seg_end = t
+                        if t > 0:
+                            start_frac = seg_start / t
+                            end_frac = seg_end / t
+                        else:
+                            start_frac = 0.0
+                            end_frac = 1.0
+                        segments.append((start_frac, end_frac, state))
+
+                    draw_circular_multi_segment_branch(
+                        ax, coords[pid], coords[cid],
+                        segments, state_colors, lw=2.5,
                     )
-            else:
-                ax.plot(
-                    [parent_x, child_x], [child_y, child_y],
-                    color="gray", linewidth=2.5, zorder=2
+                else:
+                    import math as _math
+                    angle = coords[cid]["angle"]
+                    r_p = coords[pid]["radius"]
+                    r_c = coords[cid]["radius"]
+                    x0 = r_p * _math.cos(angle)
+                    y0 = r_p * _math.sin(angle)
+                    x1 = r_c * _math.cos(angle)
+                    y1 = r_c * _math.sin(angle)
+                    ax.plot([x0, x1], [y0, y1], color="gray",
+                            linewidth=2.5, solid_capstyle="butt")
+
+            # Arcs at internal nodes
+            node_states = mapping.get("node_states", {})
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal() or not clade.clades:
+                    continue
+                cid = id(clade)
+                if cid not in coords:
+                    continue
+                child_angles = [coords[id(ch)]["angle"] for ch in clade.clades if id(ch) in coords]
+                if len(child_angles) < 2:
+                    continue
+                min_a = min(child_angles)
+                max_a = max(child_angles)
+                # Use the node's sampled state for color if available
+                arc_color = "gray"
+                if cid in node_states:
+                    arc_color = state_colors[node_states[cid]]
+                draw_circular_colored_arc(
+                    ax, 0, 0, coords[cid]["radius"],
+                    min_a, max_a, color=arc_color, lw=0.8,
                 )
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 0
-        offset = max_x * 0.02
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
+
+            # Legend
+            handles = [
+                Line2D([0], [0], color=state_colors[i], linewidth=3, label=states[i])
+                for i in range(k)
+            ]
+            ax.legend(handles=handles, title="States", loc="upper left",
+                      fontsize=8, title_fontsize=9)
+
+            if config.show_title:
+                ax.set_title(config.title or "Stochastic Character Map", fontsize=config.title_fontsize)
+        else:
+            # --- Rectangular mode ---
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                parent = self._get_parent(tree, clade, parent_map)
+                if parent is None:
+                    continue
+
+                parent_x = node_x[id(parent)]
+                parent_y = node_y[id(parent)]
+                child_x = node_x[id(clade)]
+                child_y = node_y[id(clade)]
+                t = clade.branch_length if clade.branch_length else 0.0
+
+                # Draw vertical connector at parent x
+                ax.plot(
+                    [parent_x, parent_x], [parent_y, child_y],
+                    color="gray", linewidth=0.8, zorder=1
+                )
+
+                # Draw horizontal branch segments colored by history
+                clade_id = id(clade)
+                if clade_id in histories:
+                    history = histories[clade_id]
+                    for h_idx in range(len(history)):
+                        state = history[h_idx][1]
+                        seg_start = history[h_idx][0]
+                        if h_idx + 1 < len(history):
+                            seg_end = history[h_idx + 1][0]
+                        else:
+                            seg_end = t
+                        x0 = parent_x + seg_start
+                        x1 = parent_x + seg_end
+                        color = state_colors[state]
+                        ax.plot(
+                            [x0, x1], [child_y, child_y],
+                            color=color, linewidth=2.5, solid_capstyle="butt",
+                            zorder=2
+                        )
+                else:
+                    ax.plot(
+                        [parent_x, child_x], [child_y, child_y],
+                        color="gray", linewidth=2.5, zorder=2
+                    )
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 0
+            offset = max_x * 0.02
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9
+                )
+
+            # Legend
+            handles = [
+                Line2D([0], [0], color=state_colors[i], linewidth=3, label=states[i])
+                for i in range(k)
+            ]
+            ax.legend(
+                handles=handles, title="States", loc="upper left",
+                fontsize=8, title_fontsize=9
             )
 
-        # Legend
-        handles = [
-            Line2D([0], [0], color=state_colors[i], linewidth=3, label=states[i])
-            for i in range(k)
-        ]
-        ax.legend(
-            handles=handles, title="States", loc="upper left",
-            fontsize=8, title_fontsize=9
-        )
+            ax.set_xlabel("Branch length")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(config.title or "Stochastic Character Map", fontsize=config.title_fontsize)
 
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(config.title or "Stochastic Character Map", fontsize=config.title_fontsize)
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

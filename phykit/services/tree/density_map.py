@@ -7,6 +7,13 @@ from .base import Tree
 from .stochastic_character_map import StochasticCharacterMap
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.circular_layout import (
+    compute_circular_coords,
+    draw_circular_tip_labels,
+    draw_circular_colored_branch,
+    draw_circular_colored_arc,
+    draw_circular_multi_segment_branch,
+)
 from ...errors import PhykitUserError
 
 
@@ -249,114 +256,231 @@ class DensityMap(Tree):
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                continue
-            parent = scm._get_parent(tree, clade, parent_map)
-            if parent is None:
-                continue
+        if self.plot_config.circular:
+            # --- Circular mode ---
+            # Build parent_map keyed by id(child) -> parent clade
+            circ_parent_map = {}
+            for clade in tree.find_clades(order="preorder"):
+                for child in clade.clades:
+                    circ_parent_map[id(child)] = clade
+            coords = compute_circular_coords(tree, node_x, circ_parent_map)
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            parent_x = node_x[id(parent)]
-            parent_y = node_y[id(parent)]
-            child_x = node_x[id(clade)]
-            child_y = node_y[id(clade)]
-            t = clade.branch_length if clade.branch_length else 0.0
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                parent = scm._get_parent(tree, clade, parent_map)
+                if parent is None:
+                    continue
 
-            # Draw vertical connector at parent x
-            ax.plot(
-                [parent_x, parent_x], [parent_y, child_y],
-                color="gray", linewidth=0.8, zorder=1
-            )
+                pid = id(parent)
+                cid = id(clade)
+                if pid not in coords or cid not in coords:
+                    continue
 
-            # Compute posterior probabilities along this branch
-            clade_id = id(clade)
-            posteriors = self._compute_branch_posteriors(
-                mappings, clade_id, t, states, n_segments=n_segments
-            )
+                t = clade.branch_length if clade.branch_length else 0.0
 
-            # Draw horizontal branch as colored segments
-            if t > 0:
-                for seg in range(n_segments):
-                    frac_s = seg / n_segments
-                    frac_e = (seg + 1) / n_segments
-                    x0 = parent_x + frac_s * t
-                    x1 = parent_x + frac_e * t
-
-                    # Compute weighted color from state posteriors
-                    color = np.zeros(3)
-                    for si in range(k):
-                        color += posteriors[seg, si] * state_colors_rgb[si]
-                    color = np.clip(color, 0, 1)
-
-                    ax.plot(
-                        [x0, x1], [child_y, child_y],
-                        color=color, linewidth=2.5,
-                        solid_capstyle="butt", zorder=2,
-                    )
-            else:
-                # Zero-length branch: just draw a point
-                color = np.zeros(3)
-                for si in range(k):
-                    color += posteriors[0, si] * state_colors_rgb[si]
-                color = np.clip(color, 0, 1)
-                ax.plot(
-                    [parent_x, child_x], [child_y, child_y],
-                    color=color, linewidth=2.5, zorder=2,
+                # Compute posterior probabilities along this branch
+                posteriors = self._compute_branch_posteriors(
+                    mappings, cid, t, states, n_segments=n_segments
                 )
 
-        # Tip labels
-        max_x = max(node_x.values()) if node_x else 0
-        offset = max_x * 0.02
-        for tip in tips:
-            ax.text(
-                node_x[id(tip)] + offset, node_y[id(tip)],
-                tip.name, va="center", fontsize=9,
+                # Build multi-segment data: each segment gets a blended color
+                # We use draw_circular_colored_branch for each sub-segment
+                if t > 0:
+                    for seg in range(n_segments):
+                        frac_s = seg / n_segments
+                        frac_e = (seg + 1) / n_segments
+                        # Compute weighted color
+                        color = np.zeros(3)
+                        for si in range(k):
+                            color += posteriors[seg, si] * state_colors_rgb[si]
+                        color = np.clip(color, 0, 1)
+
+                        # Draw sub-segment along the radial branch
+                        import math as _math
+                        angle = coords[cid]["angle"]
+                        r_p = coords[pid]["radius"]
+                        r_c = coords[cid]["radius"]
+                        r0 = r_p + (r_c - r_p) * frac_s
+                        r1 = r_p + (r_c - r_p) * frac_e
+                        x0 = r0 * _math.cos(angle)
+                        y0 = r0 * _math.sin(angle)
+                        x1 = r1 * _math.cos(angle)
+                        y1 = r1 * _math.sin(angle)
+                        ax.plot([x0, x1], [y0, y1], color=color,
+                                linewidth=2.5, solid_capstyle="butt")
+                else:
+                    # Zero-length branch
+                    color = np.zeros(3)
+                    for si in range(k):
+                        color += posteriors[0, si] * state_colors_rgb[si]
+                    color = np.clip(color, 0, 1)
+                    draw_circular_colored_branch(
+                        ax, coords[pid], coords[cid], color=color, lw=2.5
+                    )
+
+            # Arcs at internal nodes colored by parent state (gray)
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal() or not clade.clades:
+                    continue
+                cid = id(clade)
+                if cid not in coords:
+                    continue
+                child_angles = [coords[id(ch)]["angle"] for ch in clade.clades if id(ch) in coords]
+                if len(child_angles) < 2:
+                    continue
+                min_a = min(child_angles)
+                max_a = max(child_angles)
+                draw_circular_colored_arc(
+                    ax, 0, 0, coords[cid]["radius"],
+                    min_a, max_a, color="gray", lw=0.8,
+                )
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 1.0
+            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
+
+            # Add colorbar for 2-state case or legend for k-state
+            if k == 2:
+                cmap_colors = [state_colors_rgb[0], state_colors_rgb[1]]
+                custom_cmap = LinearSegmentedColormap.from_list(
+                    "density_grad", cmap_colors, N=256
+                )
+                sm = plt.cm.ScalarMappable(
+                    cmap=custom_cmap,
+                    norm=plt.Normalize(vmin=0, vmax=1),
+                )
+                sm.set_array([])
+                cbar = fig.colorbar(sm, ax=ax, shrink=0.6, pad=0.02)
+                cbar.set_label(f"P({states[1]})", fontsize=9)
+                cbar.set_ticks([0.0, 0.5, 1.0])
+                cbar.set_ticklabels([
+                    f"{states[0]} (1.0)", "0.5", f"{states[1]} (1.0)",
+                ])
+
+            handles = [
+                Line2D([0], [0], color=state_colors_rgb[i],
+                       linewidth=3, label=states[i])
+                for i in range(k)
+            ]
+            ax.legend(handles=handles, title="States", loc="upper left",
+                      fontsize=8, title_fontsize=9)
+
+            if config.show_title:
+                ax.set_title(config.title or "Density Map", fontsize=config.title_fontsize)
+        else:
+            # --- Rectangular mode ---
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    continue
+                parent = scm._get_parent(tree, clade, parent_map)
+                if parent is None:
+                    continue
+
+                parent_x = node_x[id(parent)]
+                parent_y = node_y[id(parent)]
+                child_x = node_x[id(clade)]
+                child_y = node_y[id(clade)]
+                t = clade.branch_length if clade.branch_length else 0.0
+
+                # Draw vertical connector at parent x
+                ax.plot(
+                    [parent_x, parent_x], [parent_y, child_y],
+                    color="gray", linewidth=0.8, zorder=1
+                )
+
+                # Compute posterior probabilities along this branch
+                clade_id = id(clade)
+                posteriors = self._compute_branch_posteriors(
+                    mappings, clade_id, t, states, n_segments=n_segments
+                )
+
+                # Draw horizontal branch as colored segments
+                if t > 0:
+                    for seg in range(n_segments):
+                        frac_s = seg / n_segments
+                        frac_e = (seg + 1) / n_segments
+                        x0 = parent_x + frac_s * t
+                        x1 = parent_x + frac_e * t
+
+                        # Compute weighted color from state posteriors
+                        color = np.zeros(3)
+                        for si in range(k):
+                            color += posteriors[seg, si] * state_colors_rgb[si]
+                        color = np.clip(color, 0, 1)
+
+                        ax.plot(
+                            [x0, x1], [child_y, child_y],
+                            color=color, linewidth=2.5,
+                            solid_capstyle="butt", zorder=2,
+                        )
+                else:
+                    # Zero-length branch: just draw a point
+                    color = np.zeros(3)
+                    for si in range(k):
+                        color += posteriors[0, si] * state_colors_rgb[si]
+                    color = np.clip(color, 0, 1)
+                    ax.plot(
+                        [parent_x, child_x], [child_y, child_y],
+                        color=color, linewidth=2.5, zorder=2,
+                    )
+
+            # Tip labels
+            max_x = max(node_x.values()) if node_x else 0
+            offset = max_x * 0.02
+            for tip in tips:
+                ax.text(
+                    node_x[id(tip)] + offset, node_y[id(tip)],
+                    tip.name, va="center", fontsize=9,
+                )
+
+            # Add colorbar for 2-state case or legend for k-state
+            if k == 2:
+                # Create a gradient colorbar between the two state colors
+                cmap_colors = [state_colors_rgb[0], state_colors_rgb[1]]
+                custom_cmap = LinearSegmentedColormap.from_list(
+                    "density_grad", cmap_colors, N=256
+                )
+                sm = plt.cm.ScalarMappable(
+                    cmap=custom_cmap,
+                    norm=plt.Normalize(vmin=0, vmax=1),
+                )
+                sm.set_array([])
+                cbar = fig.colorbar(sm, ax=ax, shrink=0.6, pad=0.02)
+                cbar.set_label(
+                    f"P({states[1]})",
+                    fontsize=9,
+                )
+                cbar.set_ticks([0.0, 0.5, 1.0])
+                cbar.set_ticklabels([
+                    f"{states[0]} (1.0)",
+                    "0.5",
+                    f"{states[1]} (1.0)",
+                ])
+
+            # Always add a legend with state names and colors
+            handles = [
+                Line2D(
+                    [0], [0], color=state_colors_rgb[i],
+                    linewidth=3, label=states[i],
+                )
+                for i in range(k)
+            ]
+            ax.legend(
+                handles=handles, title="States", loc="upper left",
+                fontsize=8, title_fontsize=9,
             )
 
-        # Add colorbar for 2-state case or legend for k-state
-        if k == 2:
-            # Create a gradient colorbar between the two state colors
-            cmap_colors = [state_colors_rgb[0], state_colors_rgb[1]]
-            custom_cmap = LinearSegmentedColormap.from_list(
-                "density_grad", cmap_colors, N=256
-            )
-            sm = plt.cm.ScalarMappable(
-                cmap=custom_cmap,
-                norm=plt.Normalize(vmin=0, vmax=1),
-            )
-            sm.set_array([])
-            cbar = fig.colorbar(sm, ax=ax, shrink=0.6, pad=0.02)
-            cbar.set_label(
-                f"P({states[1]})",
-                fontsize=9,
-            )
-            cbar.set_ticks([0.0, 0.5, 1.0])
-            cbar.set_ticklabels([
-                f"{states[0]} (1.0)",
-                "0.5",
-                f"{states[1]} (1.0)",
-            ])
+            ax.set_xlabel("Branch length")
+            ax.set_yticks([])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            if config.show_title:
+                ax.set_title(config.title or "Density Map", fontsize=config.title_fontsize)
 
-        # Always add a legend with state names and colors
-        handles = [
-            Line2D(
-                [0], [0], color=state_colors_rgb[i],
-                linewidth=3, label=states[i],
-            )
-            for i in range(k)
-        ]
-        ax.legend(
-            handles=handles, title="States", loc="upper left",
-            fontsize=8, title_fontsize=9,
-        )
-
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        if config.show_title:
-            ax.set_title(config.title or "Density Map", fontsize=config.title_fontsize)
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

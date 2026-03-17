@@ -15,6 +15,7 @@ SAMPLE_FILES = here.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_traits.tsv")
 MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
+DISCRETE_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_discrete_traits.tsv")
 
 
 @pytest.mark.integration
@@ -138,6 +139,66 @@ class TestAncestralReconstructionIntegration:
                 "-t", TREE_SIMPLE,
                 "-d", TRAITS_FILE,
                 "--plot", plot_path,
+            ]
+            with patch.object(sys, "argv", testargs):
+                Phykit()
+
+            assert os.path.exists(plot_path)
+            assert os.path.getsize(plot_path) > 0
+        finally:
+            if os.path.exists(plot_path):
+                os.unlink(plot_path)
+
+    @patch("builtins.print")
+    def test_ancestral_reconstruction_circular(self, mocked_print):
+        """--circular flag produces a circular layout ASR contMap plot."""
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            plot_path = f.name
+
+        try:
+            testargs = [
+                "phykit",
+                "asr",
+                "-t", TREE_SIMPLE,
+                "-d", TRAITS_FILE,
+                "--plot", plot_path,
+                "--circular",
+            ]
+            with patch.object(sys, "argv", testargs):
+                Phykit()
+
+            assert os.path.exists(plot_path)
+            assert os.path.getsize(plot_path) > 0
+        finally:
+            if os.path.exists(plot_path):
+                os.unlink(plot_path)
+
+    @patch("builtins.print")
+    def test_ancestral_reconstruction_discrete_circular(self, mocked_print):
+        """--circular flag produces a circular layout discrete ASR plot."""
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            plot_path = f.name
+
+        try:
+            testargs = [
+                "phykit",
+                "asr",
+                "-t", TREE_SIMPLE,
+                "-d", DISCRETE_TRAITS_FILE,
+                "-c", "diet",
+                "--type", "discrete",
+                "--plot", plot_path,
+                "--circular",
             ]
             with patch.object(sys, "argv", testargs):
                 Phykit()
