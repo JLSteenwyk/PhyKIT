@@ -178,3 +178,5 @@ phylomorphospace_plot.png
 # Superpowers artifacts
 .superpowers/
 docs/superpowers/
+
+claude_resume.sh
