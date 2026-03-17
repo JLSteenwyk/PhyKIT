@@ -229,7 +229,7 @@ With the `-v/--verbose` option, PhyKIT reports entropy for each site.
 	phykit alignment_entropy <alignment> [-v/--verbose] [--plot] [--plot-output <path>]
 		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
 		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Example output (default):
 
@@ -264,6 +264,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -586,7 +587,7 @@ col 4: uncorrected p-value
 	phykit comp_bias_per_site <alignment> [--plot] [--plot-output <path>]
 		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
 		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
@@ -607,6 +608,7 @@ fasta alignment to calculate the site-wise compositional bias of |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -637,7 +639,7 @@ PhyKIT will output three files:
 	phykit create_concat -a <file> -p <string> [--threshold <float>] [--plot-occupancy] [--plot-output <path>]
 		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
 		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-a/--alignment*: alignment list file. File should contain a single column list of alignment
@@ -668,6 +670,7 @@ characters in present genes, and fully absent gene blocks. |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print summary metadata as JSON
 
 |
@@ -691,7 +694,7 @@ at the given site) to 1 (fast evolving; all characters appear only once).
 	phykit evo_rate_per_site <alignment> [--plot] [--plot-output <path>]
 		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
 		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be a query
@@ -712,6 +715,7 @@ fasta alignment to calculate the site-wise evolutionary rate of |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -868,7 +872,7 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.
 	phykit pairwise_identity <alignment> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <file>]
 		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
 		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
@@ -890,6 +894,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1058,7 +1063,7 @@ from composition counts and normalization.
 	phykit relative_composition_variability_taxon <alignment> [--plot] [--plot-output <path>]
 		[--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
 		[--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
@@ -1078,6 +1083,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1297,6 +1303,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1369,7 +1376,7 @@ specifies which column to use.
    phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a phylogenetic tree file |br|
@@ -1394,6 +1401,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: output results as JSON
 
 Example contMap plot generated with the ``--plot`` option. Branches are colored
@@ -1438,7 +1446,7 @@ low-support branches to be used directly as input.
    phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-g/--gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
@@ -1462,6 +1470,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: output results as JSON
 
 .. image:: ../_static/img/spectral_discordance_example_scatter.png
@@ -1507,7 +1516,7 @@ Two strategies are available:
        [--plot <output>] [--missing-taxa error|shared]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: species tree file |br|
@@ -1532,6 +1541,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: output results as JSON
 
 Example output:
@@ -1687,7 +1697,7 @@ Input can be either:
    phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
@@ -1708,6 +1718,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 When ``--plot-output`` is specified, a circular splits network diagram is produced.
@@ -1855,7 +1866,7 @@ and mapped onto branches using a color gradient (coolwarm colormap).
    phykit cont_map -t <tree> -d <trait_data> -o <output.png>
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -1875,6 +1886,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/contmap_example.png
@@ -1901,7 +1913,7 @@ line crossings.
    phykit cophylo -t <tree1> -t2 <tree2> -o <output.png> [-m <mapping>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree1*: first tree file in Newick format |br|
@@ -1922,6 +1934,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/cophylo_example.png
@@ -1964,7 +1977,7 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
    phykit covarying_evolutionary_rates <tree_file_zero> <tree_file_one> -r/--reference <reference_tree_file> [-v/--verbose] [--plot] [--plot-output <path>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *<tree_file_zero>*: first argument after function name should be a tree file |br|
@@ -1988,6 +2001,7 @@ this is a putative species tree. |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -2039,7 +2053,7 @@ computes the fraction of simulations in each state.
    phykit density_map -t <tree> -d <trait_data> -c <trait_column> -o <output.png> [-n <nsim>] [--seed <seed>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -2062,6 +2076,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/densitymap_example.png
@@ -2101,7 +2116,7 @@ concordant and discordant gene trees is also reported.
    phykit evo_tempo_map -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a species tree file |br|
@@ -2122,6 +2137,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -2190,7 +2206,7 @@ using Benjamini-Hochberg FDR.
    phykit discordance_asymmetry -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a species tree file |br|
@@ -2211,6 +2227,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 Example output:
@@ -2435,7 +2452,7 @@ values near each pie.
 .. code-block:: shell
 
 	phykit quartet_pie -t <species_tree> [-g <gene_trees>] -o <output>
-		[--annotate] [--ladderize] [--cladogram] [--circular] [--json]
+		[--annotate] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: species tree file (required) |br|
@@ -2446,6 +2463,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to output per-node concordance values as JSON
 
 |
@@ -2473,7 +2491,7 @@ reflecting recent ecological opportunity or mass extinction recovery).
    phykit ltt -t <tree> [-v/--verbose] [--plot-output <file>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a rooted phylogeny file with branch lengths (required) |br|
@@ -2493,6 +2511,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: output results as JSON
 
 **Default output**: tab-separated gamma statistic and two-tailed p-value.
@@ -3145,7 +3164,7 @@ Ancestral states are reconstructed via maximum-likelihood.
    phykit phenogram -t <tree> -d <trait_data> -o <output.png>
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3165,6 +3184,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: ../_static/img/phenogram_example.png
@@ -3298,7 +3318,7 @@ lambda+corr) within numerical tolerance (1e-4).
    phykit phylogenetic_ordination -t <tree> -d <trait_data> [--method <pca|tsne|umap>] [--correction <BM|lambda>] [--mode <cov|corr>] [--n-components <int>] [--perplexity <float>] [--n-neighbors <int>] [--min-dist <float>] [--seed <int>] [--plot] [--plot-tree] [--no-plot-tree] [--color-by <col_or_file>] [--tree-color-by <col_or_file>] [--plot-output <path>] [-g <gene_trees>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3332,6 +3352,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3484,7 +3505,7 @@ are omitted, the first two columns are selected automatically.
    phykit phylomorphospace -t <tree> -d <trait_data> [--trait-x <name>] [--trait-y <name>] [--color-by <col_or_file>] [--plot-output <path>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3507,6 +3528,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3659,7 +3681,7 @@ Input can be either:
    phykit quartet_network -t/--trees <trees> [--alpha 0.05] [--beta 0.95] [--missing-taxa error|shared] [--plot-output <file>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
@@ -3681,6 +3703,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 When ``--plot-output`` is specified, a NANUQ-style splits graph is drawn from
@@ -3741,7 +3764,7 @@ number of tips per regime.
    phykit rate_heterogeneity -t <tree> -d <trait_data> -r <regime_data> [-n <nsim>] [--seed <seed>] [--plot <output.png>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3764,6 +3787,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3979,7 +4003,7 @@ nesting) are verified.
    phykit stochastic_character_map -t <tree> -d <trait_data> -c <trait_column> [-m <model>] [-n <nsim>] [--seed <seed>] [--plot <output.png>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -4003,6 +4027,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -4071,7 +4096,7 @@ discrete+discrete, or continuous+continuous.
    phykit threshold_model -t <tree> -d <trait_data> --traits <t1,t2> --types <type1,type2> [--ngen 100000] [--sample 100] [--burnin 0.2] [--seed <int>] [--plot <file>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: a rooted phylogeny file with branch lengths (required) |br|
@@ -4098,6 +4123,7 @@ left = MCMC trace, right = posterior histogram with 95% HPD shading) |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 Output (text mode): |br|
@@ -4220,7 +4246,7 @@ Distances are in substitutions per site.
    phykit tip_to_tip_distance <tree_file> --all-pairs [--plot] [--plot-output <path>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *<tree_file>*: first argument after function name should be a tree file |br|
@@ -4243,6 +4269,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -4357,7 +4384,7 @@ Test statistic: ``chi2 = (m1 - m2)^2 / (m1 + m2)``, with 1 degree of freedom.
        [--plot-output <path>] [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
        [--no-title] [--title <str>] [--legend-position <str>] [--ylabel-fontsize <float>]
        [--xlabel-fontsize <float>] [--title-fontsize <float>] [--axis-fontsize <float>]
-       [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 **Batch mode (multiple alignments, one shared tree):**
 
@@ -4367,7 +4394,7 @@ Test statistic: ``chi2 = (m1 - m2)^2 / (m1 + m2)``, with 1 degree of freedom.
        [--plot-output <path>] [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
        [--no-title] [--title <str>] [--legend-position <str>] [--ylabel-fontsize <float>]
        [--xlabel-fontsize <float>] [--title-fontsize <float>] [--axis-fontsize <float>]
-       [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-a/--alignment*: a single alignment file |br|
@@ -4389,6 +4416,7 @@ Options: |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 Single mode outputs one row per ingroup pair with m1, m2, chi-squared,
@@ -4457,7 +4485,7 @@ Biology (2011), doi: 10.1371/journal.pbio.1000602.
    phykit saturation -a <alignment> -t <tree> [-v/--verbose] [-e/--exclude_gaps] [--plot] [--plot-output <path>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--json]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-a/--alignment*: an alignment file |br|
@@ -4481,6 +4509,7 @@ distances used to determine saturation |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
 .. _cmd-treeness_over_rcv:

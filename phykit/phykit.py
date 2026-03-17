@@ -466,7 +466,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -524,6 +524,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -829,7 +834,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -885,6 +890,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -971,7 +981,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -1026,6 +1036,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1333,7 +1348,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -1393,6 +1408,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1531,7 +1551,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -1586,6 +1606,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1833,7 +1858,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
 
                 Options
                 =====================================================
@@ -1987,7 +2012,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -2054,6 +2079,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      output results as JSON
                 """
@@ -2128,7 +2158,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -2196,6 +2226,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      output results as JSON
                 """
@@ -2427,7 +2462,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -2495,6 +2530,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3109,7 +3149,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -3205,6 +3245,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3455,7 +3500,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -3517,6 +3562,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3817,7 +3867,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -3882,6 +3932,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3953,7 +4008,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -4007,6 +4062,11 @@ class Phykit:
                                             phylogram instead of
                                             rectangular
 
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
+
                 --json                      optional argument to also
                                             output results as JSON
                 """
@@ -4056,7 +4116,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -4120,6 +4180,11 @@ class Phykit:
                                             phylogram instead of
                                             rectangular
 
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
+
                 --json                      optional argument to also
                                             output results as JSON
                 """
@@ -4174,7 +4239,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -4228,6 +4293,11 @@ class Phykit:
                                             phylogram instead of
                                             rectangular
 
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -4274,7 +4344,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -4331,6 +4401,11 @@ class Phykit:
                                             phylogram instead of
                                             rectangular
 
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -4384,7 +4459,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -4446,6 +4521,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4934,7 +5014,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -4995,6 +5075,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                     optional argument to output
                                            results as JSON
@@ -5060,7 +5145,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
 
                 Options
                 =====================================================
@@ -5119,6 +5204,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             per-node concordance as JSON
@@ -5191,7 +5281,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -5258,6 +5348,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                     optional argument to output
                                            results as JSON
@@ -5424,7 +5519,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -5480,6 +5575,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5589,7 +5689,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -5647,6 +5747,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5707,7 +5812,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -5781,6 +5886,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6181,7 +6291,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -6248,6 +6358,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6428,7 +6543,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -6489,6 +6604,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6608,7 +6728,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -6663,6 +6783,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6719,7 +6844,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                     [--json]
 
                 Options
@@ -6773,6 +6898,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6836,7 +6966,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
                   [--json]
 
                 Options
@@ -6904,6 +7034,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      output results as JSON
                 """
@@ -6978,7 +7113,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
 
                 Options
                 =====================================================
@@ -7048,6 +7183,11 @@ class Phykit:
                 --circular                  draw circular (radial/fan)
                                             phylogram instead of
                                             rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
 
                 --json                      optional argument to output
                                             results as JSON

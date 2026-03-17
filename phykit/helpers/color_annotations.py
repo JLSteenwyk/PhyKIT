@@ -99,6 +99,28 @@ def get_clade_branch_ids(tree, clade, parent_map) -> set:
     return ids
 
 
+def build_color_legend_handles(color_data):
+    """Build matplotlib legend handles for labeled ranges and clades.
+
+    Returns a list of Patch objects for any range or clade entry that
+    has a label (field 4). Import matplotlib lazily.
+    """
+    from matplotlib.patches import Patch
+
+    handles = []
+    for taxa_list, color, label in color_data.get("ranges", []):
+        if label:
+            handles.append(
+                Patch(facecolor=color, alpha=0.3, edgecolor="none", label=label)
+            )
+    for taxa_list, color, label in color_data.get("clades", []):
+        if label:
+            handles.append(
+                Patch(facecolor=color, edgecolor="black", linewidth=0.5, label=label)
+            )
+    return handles
+
+
 # ---------------------------------------------------------------------------
 # Drawing helpers
 # ---------------------------------------------------------------------------
@@ -162,9 +184,9 @@ def draw_range_wedge(ax, tree, clade, color, coords, alpha=0.15):
     if len(tip_coords) < 2:
         return
 
-    # Compute angles and radii from Cartesian coords
-    angles = [atan2(y, x) for x, y in tip_coords]
-    radii = [(x ** 2 + y ** 2) ** 0.5 for x, y in tip_coords]
+    # Extract angles and radii from coords dicts
+    angles = [c["angle"] for c in tip_coords]
+    radii = [c["radius"] for c in tip_coords]
 
     # Sort angles for range computation
     sorted_angles = sorted(angles)
@@ -205,7 +227,7 @@ def draw_range_wedge(ax, tree, clade, color, coords, alpha=0.15):
     # Radii
     mrca_coord = coords.get(id(clade))
     if mrca_coord is not None:
-        r_inner = (mrca_coord[0] ** 2 + mrca_coord[1] ** 2) ** 0.5
+        r_inner = mrca_coord["radius"]
     else:
         r_inner = min(radii)
 

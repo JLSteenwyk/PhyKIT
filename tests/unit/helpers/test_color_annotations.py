@@ -215,17 +215,28 @@ class TestDrawRangeWedge:
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
         mrca = tree.common_ancestor(["A", "B"])
 
-        # Build circular coords dict: id(node) -> (x, y)
+        # Build circular coords dict: id(node) -> {"x", "y", "angle", "radius"}
         coords = {}
         tips = list(tree.get_terminals())
         n = len(tips)
         for i, tip in enumerate(tips):
             angle = 2 * math.pi * i / n
             r = 2.0
-            coords[id(tip)] = (r * math.cos(angle), r * math.sin(angle))
+            coords[id(tip)] = {
+                "x": r * math.cos(angle),
+                "y": r * math.sin(angle),
+                "angle": angle,
+                "radius": r,
+            }
 
         # Add MRCA coord at smaller radius
-        coords[id(mrca)] = (0.5, 0.5)
+        mrca_angle = math.pi / 4
+        coords[id(mrca)] = {
+            "x": 0.5 * math.cos(mrca_angle),
+            "y": 0.5 * math.sin(mrca_angle),
+            "angle": mrca_angle,
+            "radius": 0.5,
+        }
 
         fig, ax = plt.subplots(subplot_kw={"projection": "polar"})
         # draw_range_wedge works on a regular (non-polar) axes too
