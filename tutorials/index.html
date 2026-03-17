@@ -155,12 +155,83 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization-commands">14. Visualization commands</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">15. Comparing continuous trait evolution models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">16. Multi-regime OU models (OUwie)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">17. Automatic detection of adaptive shifts on a phylogeny</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">18. Visualizing conflicting phylogenetic signal with splits networks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#end-to-end-comparative-methods-workflow">19. End-to-end comparative methods workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#gene-tree-discordance-analysis-pipeline">20. Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparing-continuous-trait-evolution-models">15. Comparing continuous trait evolution models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id45">Step 0: Prepare data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-run-fit-continuous-with-all-models">Step 1: Run fit_continuous with all models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-interpret-the-aic-bic-table">Step 2: Interpret the AIC/BIC table</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-run-with-a-subset-of-models">Step 3: Run with a subset of models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-json-output-for-downstream-analysis">Step 4: JSON output for downstream analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-regime-ou-models-ouwie">16. Multi-regime OU models (OUwie)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-prepare-input-files">Step 1: Prepare input files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-run-ouwie-with-all-models">Step 2: Run OUwie with all models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id46">Step 3: Run with a subset of models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-interpret-the-output">Step 4: Interpret the output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-5-model-selection-guidance">Step 5: Model selection guidance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-6-json-output-for-downstream-analysis">Step 6: JSON output for downstream analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#comparison-with-r-s-ouwie">Comparison with R's OUwie</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny">17. Automatic detection of adaptive shifts on a phylogeny</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id47">Step 1: Prepare input files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-run-ou-shift-detection">Step 2: Run OU shift detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-interpret-the-output">Step 3: Interpret the output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-choose-a-model-selection-criterion">Step 4: Choose a model selection criterion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-5-limit-the-search">Step 5: Limit the search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id48">Step 6: JSON output for downstream analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biological-example-lizard-body-size-evolution">Biological example: lizard body size evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#comparison-with-r-s-l1ou">Comparison with R's l1ou</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks">18. Visualizing conflicting phylogenetic signal with splits networks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-prepare-a-gene-tree-file">Step 1: Prepare a gene-tree file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-run-the-consensus-network-analysis">Step 2: Run the consensus network analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-adjust-the-threshold">Step 3: Adjust the threshold</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-generate-a-circular-splits-network-plot">Step 4: Generate a circular splits network plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-5-json-output">Step 5: JSON output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#handling-trees-with-different-taxon-sets">Handling trees with different taxon sets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#end-to-end-comparative-methods-workflow">19. End-to-end comparative methods workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scenario">Scenario</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-files-used-in-this-tutorial">Data files used in this tutorial:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-test-for-phylogenetic-signal">Step 1: Test for phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-compare-evolutionary-models">Step 2: Compare evolutionary models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-test-a-trait-trait-relationship-with-pgls">Step 3: Test a trait-trait relationship with PGLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-visualize-trait-evolution">Step 4: Visualize trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#putting-it-all-together">Putting it all together</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#gene-tree-discordance-analysis-pipeline">20. Gene tree discordance analysis pipeline</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id49">Scenario</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id50">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id51">Data files used in this tutorial:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-visualize-gene-tree-conflict-with-a-splits-network">Step 1: Visualize gene tree conflict with a splits network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-test-for-rate-topology-associations-with-evolutionary-tempo-mapping">Step 2: Test for rate-topology associations with evolutionary tempo mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-test-for-asymmetric-discordance-gene-flow-detection">Step 3: Test for asymmetric discordance (gene flow detection)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-identify-diversification-patterns-with-ltt">Step 4: Identify diversification patterns with LTT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-5-concordance-aware-ancestral-state-reconstruction">Step 5: Concordance-aware ancestral state reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-6-discordance-aware-comparative-methods">Step 6: Discordance-aware comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id52">Putting it all together</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#customizing-phylogenetic-plots">21. Customizing phylogenetic plots</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#default-output">Default output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ladderizing-the-tree">Ladderizing the tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cladogram-layout">Cladogram layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#circular-layout">Circular layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#circular-cladogram">Circular + cladogram</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#annotating-with-values">Annotating with values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-colors">Custom colors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-title">Custom title</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#legend-position">Legend position</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#coloring-clades-with-a-color-file">Coloring clades with a color file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#combining-everything">Combining everything</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-options">Additional options</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
@@ -2066,7 +2137,8 @@ analogous to R's <code class="docutils literal notranslate"><span class="pre">ge
 <a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 0: Prepare data</strong></p>
+<section id="id45">
+<h3>Step 0: Prepare data<a class="headerlink" href="#id45" title="Link to this heading"></a></h3>
 <p>You need a Newick tree file and a tab-delimited trait file
 (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>). For example:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>raccoon      1.04
@@ -2078,7 +2150,9 @@ seal 1.88
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 1: Run fit_continuous with all models</strong></p>
+</section>
+<section id="step-1-run-fit-continuous-with-all-models">
+<h3>Step 1: Run fit_continuous with all models<a class="headerlink" href="#step-1-run-fit-continuous-with-all-models" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
 </pre></div>
 </div>
@@ -2103,7 +2177,9 @@ Best model (BIC): White
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Interpret the AIC/BIC table</strong></p>
+</section>
+<section id="step-2-interpret-the-aic-bic-table">
+<h3>Step 2: Interpret the AIC/BIC table<a class="headerlink" href="#step-2-interpret-the-aic-bic-table" title="Link to this heading"></a></h3>
 <p>The output table shows each model's parameter estimate, sigma-squared,
 ancestral state (z0), log-likelihood, AIC, delta-AIC, AIC weight, BIC,
 and delta-BIC. Lower AIC/BIC values and higher AIC weights indicate
@@ -2118,14 +2194,18 @@ consistent with early rapid evolution of body mass.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Run with a subset of models</strong></p>
+</section>
+<section id="step-3-run-with-a-subset-of-models">
+<h3>Step 3: Run with a subset of models<a class="headerlink" href="#step-3-run-with-a-subset-of-models" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span><span class="nb">fc</span><span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--models<span class="w"> </span>BM,OU,Lambda
 </pre></div>
 </div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: JSON output for downstream analysis</strong></p>
+</section>
+<section id="step-4-json-output-for-downstream-analysis">
+<h3>Step 4: JSON output for downstream analysis<a class="headerlink" href="#step-4-json-output-for-downstream-analysis" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span><span class="nb">fc</span><span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--json
 </pre></div>
 </div>
@@ -2134,6 +2214,7 @@ BIC, and the number of tips.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+</section>
 </section>
 <section id="multi-regime-ou-models-ouwie">
 <h2>16. Multi-regime OU models (OUwie)<a class="headerlink" href="#multi-regime-ou-models-ouwie" title="Link to this heading"></a></h2>
@@ -2147,7 +2228,8 @@ evolve toward different trait optima with potentially different rates.</p>
 <a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 1: Prepare input files</strong></p>
+<section id="step-1-prepare-input-files">
+<h3>Step 1: Prepare input files<a class="headerlink" href="#step-1-prepare-input-files" title="Link to this heading"></a></h3>
 <p>You need three files:</p>
 <ol class="arabic">
 <li><p><strong>Newick tree file</strong> -- a phylogenetic tree in Newick format. The tree
@@ -2186,7 +2268,9 @@ monkey    terrestrial
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Run OUwie with all models</strong></p>
+</section>
+<section id="step-2-run-ouwie-with-all-models">
+<h3>Step 2: Run OUwie with all models<a class="headerlink" href="#step-2-run-ouwie-with-all-models" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-r<span class="w"> </span>tree_simple_regimes.tsv
 </pre></div>
 </div>
@@ -2218,7 +2302,9 @@ is more conservative with few taxa.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Run with a subset of models</strong></p>
+</section>
+<section id="id46">
+<h3>Step 3: Run with a subset of models<a class="headerlink" href="#id46" title="Link to this heading"></a></h3>
 <p>To compare only specific models, use <code class="docutils literal notranslate"><span class="pre">--models</span></code>:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv<span class="w"> </span>--models<span class="w"> </span>BM1,OUM,OUMVA
 </pre></div>
@@ -2226,7 +2312,9 @@ is more conservative with few taxa.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: Interpret the output</strong></p>
+</section>
+<section id="step-4-interpret-the-output">
+<h3>Step 4: Interpret the output<a class="headerlink" href="#step-4-interpret-the-output" title="Link to this heading"></a></h3>
 <p>The output table includes:</p>
 <ul class="simple">
 <li><p><strong>logLik</strong> -- log-likelihood (higher = better fit)</p></li>
@@ -2248,7 +2336,9 @@ parameter; larger values = stronger constraint)</p></li>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 5: Model selection guidance</strong></p>
+</section>
+<section id="step-5-model-selection-guidance">
+<h3>Step 5: Model selection guidance<a class="headerlink" href="#step-5-model-selection-guidance" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>If <strong>BM1</strong> is best, a single Brownian motion rate explains the data.</p></li>
 <li><p>If <strong>BMS</strong> is best, different regimes evolve at different rates but
@@ -2265,7 +2355,9 @@ more conservative penalty on model complexity.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 6: JSON output for downstream analysis</strong></p>
+</section>
+<section id="step-6-json-output-for-downstream-analysis">
+<h3>Step 6: JSON output for downstream analysis<a class="headerlink" href="#step-6-json-output-for-downstream-analysis" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv<span class="w"> </span>--json
 </pre></div>
 </div>
@@ -2275,7 +2367,9 @@ programmatic downstream analysis or integration into pipelines.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Comparison with R's OUwie</strong></p>
+</section>
+<section id="comparison-with-r-s-ouwie">
+<h3>Comparison with R's OUwie<a class="headerlink" href="#comparison-with-r-s-ouwie" title="Link to this heading"></a></h3>
 <p>PhyKIT's OUwie implementation has been validated against R's OUwie
 package (v2.10). BM1 matches R exactly. OUMA and OUMVA agree within
 0.003-0.02 log-likelihood units. For OU1, OUM, and OUMV, PhyKIT's
@@ -2285,6 +2379,7 @@ datasets.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+</section>
 </section>
 <section id="automatic-detection-of-adaptive-shifts-on-a-phylogeny">
 <h2>17. Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h2>
@@ -2305,7 +2400,8 @@ rates. Unlike OUwie, no regime file is needed.</p>
 <a class="reference download internal" download="" href="../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 1: Prepare input files</strong></p>
+<section id="id47">
+<h3>Step 1: Prepare input files<a class="headerlink" href="#id47" title="Link to this heading"></a></h3>
 <p>You need two files:</p>
 <ol class="arabic">
 <li><p><strong>Newick tree file</strong> -- a phylogenetic tree with branch lengths.</p></li>
@@ -2326,7 +2422,9 @@ monkey    0.3
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Run OU shift detection</strong></p>
+</section>
+<section id="step-2-run-ou-shift-detection">
+<h3>Step 2: Run OU shift detection<a class="headerlink" href="#step-2-run-ou-shift-detection" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
 </pre></div>
 </div>
@@ -2362,7 +2460,9 @@ lower values, suggesting the shift is well-supported.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Interpret the output</strong></p>
+</section>
+<section id="step-3-interpret-the-output">
+<h3>Step 3: Interpret the output<a class="headerlink" href="#step-3-interpret-the-output" title="Link to this heading"></a></h3>
 <p>The output reports:</p>
 <ul class="simple">
 <li><p><strong>Number of shifts</strong> -- how many adaptive regime changes were detected</p></li>
@@ -2380,7 +2480,9 @@ shifted to a different optimum.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: Choose a model selection criterion</strong></p>
+</section>
+<section id="step-4-choose-a-model-selection-criterion">
+<h3>Step 4: Choose a model selection criterion<a class="headerlink" href="#step-4-choose-a-model-selection-criterion" title="Link to this heading"></a></h3>
 <p>Three criteria are available:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>pBIC<span class="w">   </span><span class="c1"># default, most conservative</span>
 phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>BIC<span class="w">    </span><span class="c1"># standard BIC</span>
@@ -2397,7 +2499,9 @@ overfitting, especially on large trees.</p></li>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 5: Limit the search</strong></p>
+</section>
+<section id="step-5-limit-the-search">
+<h3>Step 5: Limit the search<a class="headerlink" href="#step-5-limit-the-search" title="Link to this heading"></a></h3>
 <p>For large trees, you can cap the maximum number of shifts to speed up
 the analysis:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--max-shifts<span class="w"> </span><span class="m">10</span>
@@ -2406,7 +2510,9 @@ the analysis:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 6: JSON output for downstream analysis</strong></p>
+</section>
+<section id="id48">
+<h3>Step 6: JSON output for downstream analysis<a class="headerlink" href="#id48" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--json
 </pre></div>
 </div>
@@ -2416,7 +2522,9 @@ optima.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Biological example: lizard body size evolution</strong></p>
+</section>
+<section id="biological-example-lizard-body-size-evolution">
+<h3>Biological example: lizard body size evolution<a class="headerlink" href="#biological-example-lizard-body-size-evolution" title="Link to this heading"></a></h3>
 <p>Consider a phylogeny of 100 Anolis lizard species with log-transformed
 body size measurements. Running:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>lizards.tre<span class="w"> </span>-d<span class="w"> </span>lizard_body_size.tsv
@@ -2429,7 +2537,9 @@ radiation without specifying regimes in advance.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Comparison with R's l1ou</strong></p>
+</section>
+<section id="comparison-with-r-s-l1ou">
+<h3>Comparison with R's l1ou<a class="headerlink" href="#comparison-with-r-s-l1ou" title="Link to this heading"></a></h3>
 <p>PhyKIT's OU shift detection implementation has been validated against
 R's l1ou package (Khabbazian et al. 2016). On a 100-tip Anolis dataset,
 PhyKIT detects the same 8 shifts with matching alpha (0.607) and
@@ -2438,6 +2548,7 @@ difference arises from optimizer precision, not algorithmic differences.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+</section>
 </section>
 <section id="visualizing-conflicting-phylogenetic-signal-with-splits-networks">
 <h2>18. Visualizing conflicting phylogenetic signal with splits networks<a class="headerlink" href="#visualizing-conflicting-phylogenetic-signal-with-splits-networks" title="Link to this heading"></a></h2>
@@ -2449,7 +2560,8 @@ optionally visualizes them as a circular splits network.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 1: Prepare a gene-tree file</strong></p>
+<section id="step-1-prepare-a-gene-tree-file">
+<h3>Step 1: Prepare a gene-tree file<a class="headerlink" href="#step-1-prepare-a-gene-tree-file" title="Link to this heading"></a></h3>
 <p>Create a file with one Newick tree per line (or one tree-file path per line):</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>((A,B),((C,D),(E,F)));
 ((A,B),(C,(D,(E,F))));
@@ -2460,7 +2572,9 @@ optionally visualizes them as a circular splits network.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Run the consensus network analysis</strong></p>
+</section>
+<section id="step-2-run-the-consensus-network-analysis">
+<h3>Step 2: Run the consensus network analysis<a class="headerlink" href="#step-2-run-the-consensus-network-analysis" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk
 </pre></div>
 </div>
@@ -2479,7 +2593,9 @@ Splits above threshold: 3
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Adjust the threshold</strong></p>
+</section>
+<section id="step-3-adjust-the-threshold">
+<h3>Step 3: Adjust the threshold<a class="headerlink" href="#step-3-adjust-the-threshold" title="Link to this heading"></a></h3>
 <p>To show only splits present in at least 50% of gene trees:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--threshold<span class="w"> </span><span class="m">0</span>.5
 </pre></div>
@@ -2487,7 +2603,9 @@ Splits above threshold: 3
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: Generate a circular splits network plot</strong></p>
+</section>
+<section id="step-4-generate-a-circular-splits-network-plot">
+<h3>Step 4: Generate a circular splits network plot<a class="headerlink" href="#step-4-generate-a-circular-splits-network-plot" title="Link to this heading"></a></h3>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--plot-output<span class="w"> </span>network.png
 </pre></div>
 </div>
@@ -2499,7 +2617,9 @@ indicate higher-frequency splits.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 5: JSON output</strong></p>
+</section>
+<section id="step-5-json-output">
+<h3>Step 5: JSON output<a class="headerlink" href="#step-5-json-output" title="Link to this heading"></a></h3>
 <p>For programmatic downstream analysis:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--json
 </pre></div>
@@ -2507,7 +2627,9 @@ indicate higher-frequency splits.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Handling trees with different taxon sets</strong></p>
+</section>
+<section id="handling-trees-with-different-taxon-sets">
+<h3>Handling trees with different taxon sets<a class="headerlink" href="#handling-trees-with-different-taxon-sets" title="Link to this heading"></a></h3>
 <p>If some gene trees are missing taxa, use <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">shared</span></code> to
 prune all trees to their intersection before extracting splits:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees.nwk<span class="w"> </span>--missing-taxa<span class="w"> </span>shared
@@ -2516,6 +2638,7 @@ prune all trees to their intersection before extracting splits:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+</section>
 </section>
 <section id="end-to-end-comparative-methods-workflow">
 <h2>19. End-to-end comparative methods workflow<a class="headerlink" href="#end-to-end-comparative-methods-workflow" title="Link to this heading"></a></h2>
@@ -2526,7 +2649,8 @@ visualizing results — all using PhyKIT.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Scenario</strong></p>
+<section id="scenario">
+<h3>Scenario<a class="headerlink" href="#scenario" title="Link to this heading"></a></h3>
 <p>Imagine you have assembled a phylogeny of eight mammal species and measured
 their body mass and brain size. You want to answer a classic question in
 comparative biology: <em>does body mass predict brain size after controlling
@@ -2539,7 +2663,9 @@ brain-body relationship in phylogenetic morphospace.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Overview</strong></p>
+</section>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
 <p>We will use an eight-taxon mammal tree and body-mass trait data to:</p>
 <ol class="arabic simple">
 <li><p>Test whether body mass has phylogenetic signal (<code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>)</p></li>
@@ -2550,7 +2676,9 @@ brain-body relationship in phylogenetic morphospace.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Data files used in this tutorial:</strong></p>
+</section>
+<section id="data-files-used-in-this-tutorial">
+<h3>Data files used in this tutorial:<a class="headerlink" href="#data-files-used-in-this-tutorial" title="Link to this heading"></a></h3>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -2565,7 +2693,9 @@ tab-delimited with a header row</p></li>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 1: Test for phylogenetic signal</strong></p>
+</section>
+<section id="step-1-test-for-phylogenetic-signal">
+<h3>Step 1: Test for phylogenetic signal<a class="headerlink" href="#step-1-test-for-phylogenetic-signal" title="Link to this heading"></a></h3>
 <p>Before running any comparative analysis, check whether the trait shows
 phylogenetic signal — i.e., whether closely related species have more
 similar trait values than expected by chance. For our mammal dataset, we
@@ -2602,7 +2732,9 @@ strongly structured by evolutionary history.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Compare evolutionary models</strong></p>
+</section>
+<section id="step-2-compare-evolutionary-models">
+<h3>Step 2: Compare evolutionary models<a class="headerlink" href="#step-2-compare-evolutionary-models" title="Link to this heading"></a></h3>
 <p>Next, determine which model of continuous trait evolution best explains
 the observed body-mass data. This helps interpret <em>how</em> body mass has
 evolved across these mammals — did it drift randomly (Brownian motion),
@@ -2643,7 +2775,9 @@ would likely be preferred.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Test a trait-trait relationship with PGLS</strong></p>
+</section>
+<section id="step-3-test-a-trait-trait-relationship-with-pgls">
+<h3>Step 3: Test a trait-trait relationship with PGLS<a class="headerlink" href="#step-3-test-a-trait-trait-relationship-with-pgls" title="Link to this heading"></a></h3>
 <p>Now we arrive at the central question: <em>does body mass predict brain
 size?</em> A naive correlation would be misleading because closely related
 species share both large bodies and large brains simply due to common
@@ -2686,7 +2820,9 @@ captures both sources combined.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: Visualize trait evolution</strong></p>
+</section>
+<section id="step-4-visualize-trait-evolution">
+<h3>Step 4: Visualize trait evolution<a class="headerlink" href="#step-4-visualize-trait-evolution" title="Link to this heading"></a></h3>
 <p>Finally, generate publication-ready figures. Visualization often reveals
 patterns that summary statistics miss — for example, a contMap might
 show that large body mass evolved independently in two distant clades,
@@ -2738,7 +2874,9 @@ clade membership.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Putting it all together</strong></p>
+</section>
+<section id="putting-it-all-together">
+<h3>Putting it all together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading"></a></h3>
 <p>Returning to our mammal example, a typical analysis would proceed as:</p>
 <ol class="arabic simple">
 <li><p><strong>Phylogenetic signal?</strong> Body mass shows strong signal (K &gt; 1,
@@ -2761,6 +2899,7 @@ own tree, trait data, and biological question.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+</section>
 <section id="gene-tree-discordance-analysis-pipeline">
 <h2>20. Gene tree discordance analysis pipeline<a class="headerlink" href="#gene-tree-discordance-analysis-pipeline" title="Link to this heading"></a></h2>
 <p>Gene trees often disagree with the species tree due to incomplete
@@ -2771,7 +2910,8 @@ incorporate it into comparative methods — all using PhyKIT.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Scenario</strong></p>
+<section id="id49">
+<h3>Scenario<a class="headerlink" href="#id49" title="Link to this heading"></a></h3>
 <p>Imagine you have sequenced 200 genes across a clade that underwent a
 rapid radiation — for example, a group of closely related yeast species
 or a recent adaptive radiation of cichlid fishes. You have already
@@ -2792,7 +2932,9 @@ histories rather than just the species tree.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Overview</strong></p>
+</section>
+<section id="id50">
+<h3>Overview<a class="headerlink" href="#id50" title="Link to this heading"></a></h3>
 <p>We will:</p>
 <ol class="arabic simple">
 <li><p>Quantify gene tree conflict with a splits network (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>)</p></li>
@@ -2806,7 +2948,9 @@ matrices (<code class="docutils literal notranslate"><span class="pre">pgls</spa
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Data files used in this tutorial:</strong></p>
+</section>
+<section id="id51">
+<h3>Data files used in this tutorial:<a class="headerlink" href="#id51" title="Link to this heading"></a></h3>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span> <span class="pre">(species</span> <span class="pre">tree)</span></code></a>;
@@ -2823,7 +2967,9 @@ tab-delimited with a header row</p></li>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 1: Visualize gene tree conflict with a splits network</strong></p>
+</section>
+<section id="step-1-visualize-gene-tree-conflict-with-a-splits-network">
+<h3>Step 1: Visualize gene tree conflict with a splits network<a class="headerlink" href="#step-1-visualize-gene-tree-conflict-with-a-splits-network" title="Link to this heading"></a></h3>
 <p>Start by understanding the landscape of gene tree disagreement. In our
 rapid-radiation scenario, we expect that some bipartitions in the species
 tree are supported by most gene trees while others are contested — the
@@ -2868,7 +3014,9 @@ Steps 5-6 become especially important.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 2: Test for rate-topology associations with evolutionary tempo mapping</strong></p>
+</section>
+<section id="step-2-test-for-rate-topology-associations-with-evolutionary-tempo-mapping">
+<h3>Step 2: Test for rate-topology associations with evolutionary tempo mapping<a class="headerlink" href="#step-2-test-for-rate-topology-associations-with-evolutionary-tempo-mapping" title="Link to this heading"></a></h3>
 <p>The splits network shows <em>which</em> branches have discordance — but do the
 discordant gene trees also differ in branch lengths? Under the coalescent,
 discordant gene trees should have shorter internal branches at the
@@ -2916,7 +3064,9 @@ significant in this small dataset.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 3: Test for asymmetric discordance (gene flow detection)</strong></p>
+</section>
+<section id="step-3-test-for-asymmetric-discordance-gene-flow-detection">
+<h3>Step 3: Test for asymmetric discordance (gene flow detection)<a class="headerlink" href="#step-3-test-for-asymmetric-discordance-gene-flow-detection" title="Link to this heading"></a></h3>
 <p>Step 2 told us whether discordant gene trees differ in branch <em>lengths</em>
 from concordant ones. Now we ask a complementary question: are the two
 possible discordant topologies at each branch equally frequent?</p>
@@ -2958,7 +3108,9 @@ p-values.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 4: Identify diversification patterns with LTT</strong></p>
+</section>
+<section id="step-4-identify-diversification-patterns-with-ltt">
+<h3>Step 4: Identify diversification patterns with LTT<a class="headerlink" href="#step-4-identify-diversification-patterns-with-ltt" title="Link to this heading"></a></h3>
 <p>Before diving into trait analyses, examine the tempo of diversification.
 For a suspected rapid radiation, the lineage-through-time (LTT) plot
 can confirm whether most speciation events were clustered early in the
@@ -2979,7 +3131,9 @@ network.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 5: Concordance-aware ancestral state reconstruction</strong></p>
+</section>
+<section id="step-5-concordance-aware-ancestral-state-reconstruction">
+<h3>Step 5: Concordance-aware ancestral state reconstruction<a class="headerlink" href="#step-5-concordance-aware-ancestral-state-reconstruction" title="Link to this heading"></a></h3>
 <p>Standard ASR operates on a single species tree, ignoring gene tree
 conflict. For our clade, the ancestral thermal tolerance at the base of
 the radiation is of particular interest — but if 40% of gene trees
@@ -3034,7 +3188,9 @@ reconstructions.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Step 6: Discordance-aware comparative methods</strong></p>
+</section>
+<section id="step-6-discordance-aware-comparative-methods">
+<h3>Step 6: Discordance-aware comparative methods<a class="headerlink" href="#step-6-discordance-aware-comparative-methods" title="Link to this heading"></a></h3>
 <p>Now we return to our original question: <em>does thermal tolerance predict
 metabolic rate?</em> In a clade with substantial gene tree conflict, the
 species tree alone may not accurately represent how species are related
@@ -3082,7 +3238,9 @@ exactly as before (species-tree-only VCV).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Putting it all together</strong></p>
+</section>
+<section id="id52">
+<h3>Putting it all together<a class="headerlink" href="#id52" title="Link to this heading"></a></h3>
 <p>Returning to our rapid-radiation scenario, the workflow reveals a
 coherent story:</p>
 <ol class="arabic simple">
@@ -3116,6 +3274,10 @@ the standard analysis was adequate.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+</section>
+</section>
+<section id="customizing-phylogenetic-plots">
+<h2>21. Customizing phylogenetic plots<a class="headerlink" href="#customizing-phylogenetic-plots" title="Link to this heading"></a></h2>
 <p>All PhyKIT commands that produce tree visualizations share a common set
 of plot customization options. This tutorial walks through each option
 using <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> as a demonstration, but the same options work for
@@ -3132,7 +3294,8 @@ sample data:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Default output</strong></p>
+<section id="default-output">
+<h3>Default output<a class="headerlink" href="#default-output" title="Link to this heading"></a></h3>
 <p>The default <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> command produces a phylogram with pie charts
 at internal nodes showing concordance proportions:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_default.png
@@ -3143,7 +3306,9 @@ at internal nodes showing concordance proportions:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Ladderizing the tree</strong></p>
+</section>
+<section id="ladderizing-the-tree">
+<h3>Ladderizing the tree<a class="headerlink" href="#ladderizing-the-tree" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--ladderize</span></code> flag sorts the tree by the number of descendant
 tips at each node, producing a cleaner visual layout:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_ladderize.png<span class="w"> </span>--ladderize
@@ -3154,7 +3319,9 @@ tips at each node, producing a cleaner visual layout:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Cladogram layout</strong></p>
+</section>
+<section id="cladogram-layout">
+<h3>Cladogram layout<a class="headerlink" href="#cladogram-layout" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> flag draws the tree with equal branch lengths and
 all tips aligned at the right edge. This is useful when branch lengths
 are uninformative or when you want to emphasize topology over
@@ -3167,7 +3334,9 @@ evolutionary distance:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Circular layout</strong></p>
+</section>
+<section id="circular-layout">
+<h3>Circular layout<a class="headerlink" href="#circular-layout" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--circular</span></code> flag draws the tree as a radial phylogram with
 the root at the center. Branches radiate outward and curved arcs
 connect sister clades at each internal node:</p>
@@ -3179,7 +3348,9 @@ connect sister clades at each internal node:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Circular + cladogram</strong></p>
+</section>
+<section id="circular-cladogram">
+<h3>Circular + cladogram<a class="headerlink" href="#circular-cladogram" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--circular</span></code> and <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> flags can be combined. This
 draws a circular cladogram where all tips sit on the outer ring at
 equal distance from the center:</p>
@@ -3192,7 +3363,9 @@ equal distance from the center:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Annotating with values</strong></p>
+</section>
+<section id="annotating-with-values">
+<h3>Annotating with values<a class="headerlink" href="#annotating-with-values" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--annotate</span></code> flag adds numeric values (gCF/gDF1/gDF2) near each
 pie chart:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_annotate.png<span class="w"> </span>--annotate
@@ -3203,7 +3376,9 @@ pie chart:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Custom colors</strong></p>
+</section>
+<section id="custom-colors">
+<h3>Custom colors<a class="headerlink" href="#custom-colors" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--colors</span></code> flag accepts comma-separated colors (hex or named) to
 override the defaults. For <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>, the three colors represent
 concordant, discordant alt 1, and discordant alt 2:</p>
@@ -3216,7 +3391,9 @@ concordant, discordant alt 1, and discordant alt 2:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Custom title</strong></p>
+</section>
+<section id="custom-title">
+<h3>Custom title<a class="headerlink" href="#custom-title" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--title</span></code> flag sets a custom title. Use <code class="docutils literal notranslate"><span class="pre">--no-title</span></code> to remove
 the title entirely:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_title.png<span class="w"> </span><span class="se">\</span>
@@ -3233,7 +3410,9 @@ the title entirely:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Legend position</strong></p>
+</section>
+<section id="legend-position">
+<h3>Legend position<a class="headerlink" href="#legend-position" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--legend-position</span></code> flag controls legend placement. Options include
 <code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">right</span></code> (default), <code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">right</span></code>,
 <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">right</span></code>, or <code class="docutils literal notranslate"><span class="pre">none</span></code> to hide the legend:</p>
@@ -3246,7 +3425,9 @@ the title entirely:</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Coloring clades with a color file</strong></p>
+</section>
+<section id="coloring-clades-with-a-color-file">
+<h3>Coloring clades with a color file<a class="headerlink" href="#coloring-clades-with-a-color-file" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">--color-file</span></code> flag accepts an iTOL-inspired TSV file for coloring
 tip labels, highlighting clades with transparent background bands, and
 coloring clade branches.</p>
@@ -3287,7 +3468,9 @@ taxon from each side of the clade.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Combining everything</strong></p>
+</section>
+<section id="combining-everything">
+<h3>Combining everything<a class="headerlink" href="#combining-everything" title="Link to this heading"></a></h3>
 <p>All options can be combined for maximum customization:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_full.png<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--circular<span class="w"> </span>--ladderize<span class="w"> </span>--color-file<span class="w"> </span>colors.tsv<span class="w"> </span><span class="se">\</span>
@@ -3300,7 +3483,9 @@ taxon from each side of the clade.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<p><strong>Additional options</strong></p>
+</section>
+<section id="additional-options">
+<h3>Additional options<a class="headerlink" href="#additional-options" title="Link to this heading"></a></h3>
 <p>Several other options are available for fine-tuning:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--fig-width</span></code> / <code class="docutils literal notranslate"><span class="pre">--fig-height</span></code> — figure dimensions in inches
@@ -3316,6 +3501,7 @@ specific dimensions or resolutions are required.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
+</section>
 </section>
 </section>
 
