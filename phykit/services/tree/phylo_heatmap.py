@@ -19,6 +19,7 @@ from ...helpers.color_annotations import (
     draw_range_rect,
     draw_range_wedge,
     get_clade_branch_ids,
+    build_color_legend_handles,
 )
 from ...errors import PhykitUserError
 
@@ -350,6 +351,9 @@ class PhyloHeatmap(Tree):
                 taxon = label_obj.get_text()
                 if taxon in color_data["labels"]:
                     label_obj.set_color(color_data["labels"][taxon])
+            color_legend = build_color_legend_handles(color_data)
+            if color_legend:
+                ax_tree.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
         # Title
         if config.show_title:
@@ -446,6 +450,9 @@ class PhyloHeatmap(Tree):
                     if text_obj.get_text() == taxon:
                         text_obj.set_color(lbl_color)
                         break
+            color_legend = build_color_legend_handles(color_data)
+            if color_legend:
+                ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
         # Build colormap for heatmap
         cmap = plt.get_cmap(self.cmap_name)

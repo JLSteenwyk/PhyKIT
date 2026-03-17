@@ -12,6 +12,7 @@ from ...helpers.color_annotations import (
     draw_range_rect,
     draw_range_wedge,
     get_clade_branch_ids,
+    build_color_legend_handles,
 )
 from ...errors import PhykitUserError
 
@@ -387,6 +388,9 @@ class Cophylo(Tree):
                         if text_obj.get_text() == taxon:
                             text_obj.set_color(lbl_color)
                             break
+            color_legend = build_color_legend_handles(color_data)
+            if color_legend:
+                ax1.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
         # Build tip name -> id lookups
         tip_name_to_id1 = {t.name: id(t) for t in tree1.get_terminals()}
@@ -542,6 +546,9 @@ class Cophylo(Tree):
                     if text_obj.get_text() == taxon:
                         text_obj.set_color(lbl_color)
                         break
+            color_legend = build_color_legend_handles(color_data)
+            if color_legend:
+                ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
         n_max = max(tip_order.values()) + 1 if tip_order else 1
         ax.set_ylim(-0.5, n_max - 0.5)

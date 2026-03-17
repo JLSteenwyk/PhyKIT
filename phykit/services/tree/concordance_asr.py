@@ -22,6 +22,7 @@ from ...helpers.color_annotations import (
     resolve_mrca,
     draw_range_rect,
     draw_range_wedge,
+    build_color_legend_handles,
 )
 from ...errors import PhykitUserError
 
@@ -857,6 +858,9 @@ class ConcordanceAsr(Tree):
                         if text_obj.get_text() == taxon:
                             text_obj.set_color(lbl_color)
                             break
+                color_legend = build_color_legend_handles(color_data)
+                if color_legend:
+                    ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
             # Colorbar for gCF
             sm = plt.cm.ScalarMappable(
@@ -929,6 +933,9 @@ class ConcordanceAsr(Tree):
                         if text_obj.get_text() == taxon:
                             text_obj.set_color(lbl_color)
                             break
+                color_legend = build_color_legend_handles(color_data)
+                if color_legend:
+                    ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
             # Colorbar for gCF
             sm = plt.cm.ScalarMappable(

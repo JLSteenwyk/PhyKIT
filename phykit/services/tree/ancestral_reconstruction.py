@@ -31,6 +31,7 @@ from ...helpers.color_annotations import (
     draw_range_rect,
     draw_range_wedge,
     get_clade_branch_ids,
+    build_color_legend_handles,
 )
 from ...errors import PhykitUserError
 
@@ -944,6 +945,9 @@ class AncestralReconstruction(Tree):
                         if text_obj.get_text() == taxon:
                             text_obj.set_color(lbl_color)
                             break
+                color_legend = build_color_legend_handles(color_data)
+                if color_legend:
+                    ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
             # Colorbar
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -1018,6 +1022,9 @@ class AncestralReconstruction(Tree):
                         if text_obj.get_text() == taxon:
                             text_obj.set_color(lbl_color)
                             break
+                color_legend = build_color_legend_handles(color_data)
+                if color_legend:
+                    ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
             # Colorbar
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -1619,6 +1626,9 @@ class AncestralReconstruction(Tree):
                                markerfacecolor=state_colors[s], markersize=10,
                                label=s)
                 )
+            if self.plot_config.color_file:
+                color_legend = build_color_legend_handles(color_data)
+                legend_handles.extend(color_legend)
             ax.legend(handles=legend_handles, loc="upper left", framealpha=0.9)
 
             if config.show_title:
@@ -1722,6 +1732,9 @@ class AncestralReconstruction(Tree):
                                markerfacecolor=state_colors[s], markersize=10,
                                label=s)
                 )
+            if self.plot_config.color_file:
+                color_legend = build_color_legend_handles(color_data)
+                legend_handles.extend(color_legend)
             ax.legend(handles=legend_handles, loc="upper left", framealpha=0.9)
 
             ax.set_xlabel("Branch length")

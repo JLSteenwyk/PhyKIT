@@ -19,6 +19,7 @@ from ...helpers.color_annotations import (
     resolve_mrca,
     draw_range_rect,
     draw_range_wedge,
+    build_color_legend_handles,
 )
 from ...errors import PhykitUserError
 
@@ -384,6 +385,9 @@ class DensityMap(Tree):
                        linewidth=3, label=states[i])
                 for i in range(k)
             ]
+            if self.plot_config.color_file:
+                color_legend = build_color_legend_handles(color_data)
+                handles.extend(color_legend)
             ax.legend(handles=handles, title="States", loc="upper left",
                       fontsize=8, title_fontsize=9)
 
@@ -500,6 +504,9 @@ class DensityMap(Tree):
                 )
                 for i in range(k)
             ]
+            if self.plot_config.color_file:
+                color_legend = build_color_legend_handles(color_data)
+                handles.extend(color_legend)
             ax.legend(
                 handles=handles, title="States", loc="upper left",
                 fontsize=8, title_fontsize=9,

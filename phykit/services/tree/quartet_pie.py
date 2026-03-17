@@ -34,6 +34,7 @@ from ...helpers.color_annotations import (
     draw_range_rect,
     draw_range_wedge,
     get_clade_branch_ids,
+    build_color_legend_handles,
 )
 from ...errors import PhykitUserError
 
@@ -224,6 +225,9 @@ class QuartetPie(Tree):
                 Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
                       label="Discordant alt 2 (gDF2 / q3)"),
             ]
+            if self.plot_config.color_file:
+                color_legend = build_color_legend_handles(color_data)
+                legend_handles.extend(color_legend)
             legend_loc = config.legend_position or "upper right"
             if legend_loc != "none":
                 ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
@@ -360,6 +364,9 @@ class QuartetPie(Tree):
                 Patch(facecolor=colors[2], edgecolor="black", linewidth=0.5,
                       label="Discordant alt 2 (gDF2 / q3)"),
             ]
+            if self.plot_config.color_file:
+                color_legend = build_color_legend_handles(color_data)
+                legend_handles.extend(color_legend)
             legend_loc = config.legend_position or "upper right"
             if legend_loc != "none":
                 ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
