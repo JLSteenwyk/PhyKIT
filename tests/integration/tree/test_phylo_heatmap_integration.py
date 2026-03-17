@@ -120,3 +120,19 @@ class TestPhyloHeatmap:
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert Path(output).exists()
+
+    @patch("builtins.print")
+    def test_phylo_heatmap_circular(self, mocked_print, tmp_path):
+        output = str(tmp_path / "heatmap_circular.png")
+        testargs = [
+            "phykit",
+            "phylo_heatmap",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "-d", f"{here.parent.parent.parent}/sample_files/tree_simple_multi_traits.tsv",
+            "-o", output,
+            "--circular",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+        assert Path(output).exists()
+        assert Path(output).stat().st_size > 0

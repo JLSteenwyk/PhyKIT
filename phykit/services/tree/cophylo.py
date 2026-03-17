@@ -259,6 +259,20 @@ class Cophylo(Tree):
         config = self.plot_config
         config.resolve(n_rows=n_max, n_cols=None)
 
+        if config.circular:
+            self._plot_cophylo_circular(
+                tree1, tree2, mapping, output_path, config, plt,
+            )
+        else:
+            self._plot_cophylo_rect(
+                tree1, tree2, mapping, tree1_order, tree2_order,
+                output_path, config, n_max, plt,
+            )
+
+    def _plot_cophylo_rect(
+        self, tree1, tree2, mapping, tree1_order, tree2_order,
+        output_path, config, n_max, plt,
+    ) -> None:
         fig, (ax1, ax_mid, ax2) = plt.subplots(
             1, 3,
             figsize=(config.fig_width, config.fig_height),
@@ -291,6 +305,76 @@ class Cophylo(Tree):
                     color="gray", alpha=0.5, linewidth=0.8,
                     zorder=1,
                 )
+
+        if config.show_title:
+            ax1.set_title("Tree 1", fontsize=config.title_fontsize or 11, fontweight="bold")
+            ax2.set_title("Tree 2", fontsize=config.title_fontsize or 11, fontweight="bold")
+
+        fig.suptitle("Cophylogenetic Plot (Tanglegram)", fontsize=13)
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved cophylo plot: {output_path}")
+
+    def _plot_cophylo_circular(
+        self, tree1, tree2, mapping, output_path, config, plt,
+    ) -> None:
+        from matplotlib.patches import ConnectionPatch
+        from ...helpers.circular_layout import (
+            compute_circular_coords,
+            draw_circular_branches,
+            draw_circular_tip_labels,
+        )
+
+        fig, (ax1, ax2) = plt.subplots(
+            1, 2, figsize=(config.fig_width, config.fig_height),
+        )
+
+        def _build_circular(tree, ax, color):
+            parent_map = self._build_parent_map(tree)
+            root = tree.root
+            if config.cladogram:
+                node_x = compute_node_x_cladogram(tree, parent_map)
+            else:
+                node_x = {}
+                for clade in tree.find_clades(order="preorder"):
+                    if clade == root:
+                        node_x[id(clade)] = 0.0
+                    elif id(clade) in parent_map:
+                        parent = parent_map[id(clade)]
+                        bl = clade.branch_length if clade.branch_length else 0.0
+                        node_x[id(clade)] = node_x.get(id(parent), 0.0) + bl
+
+            coords = compute_circular_coords(tree, node_x, parent_map)
+            draw_circular_branches(ax, tree, coords, parent_map, color=color)
+            draw_circular_tip_labels(ax, tree, coords, fontsize=7)
+            ax.set_aspect("equal")
+            ax.axis("off")
+            return coords
+
+        coords1 = _build_circular(tree1, ax1, color="#2171b5")
+        coords2 = _build_circular(tree2, ax2, color="#cb181d")
+
+        # Build tip name -> id lookups
+        tip_name_to_id1 = {t.name: id(t) for t in tree1.get_terminals()}
+        tip_name_to_id2 = {t.name: id(t) for t in tree2.get_terminals()}
+
+        # Draw connecting lines between matched taxa
+        for t1_name, t2_name in mapping.items():
+            tid1 = tip_name_to_id1.get(t1_name)
+            tid2 = tip_name_to_id2.get(t2_name)
+            if tid1 is None or tid2 is None:
+                continue
+            if tid1 not in coords1 or tid2 not in coords2:
+                continue
+            con = ConnectionPatch(
+                xyA=(coords1[tid1]["x"], coords1[tid1]["y"]),
+                xyB=(coords2[tid2]["x"], coords2[tid2]["y"]),
+                coordsA="data", coordsB="data",
+                axesA=ax1, axesB=ax2,
+                color="gray", alpha=0.5, lw=0.5,
+            )
+            fig.add_artist(con)
 
         if config.show_title:
             ax1.set_title("Tree 1", fontsize=config.title_fontsize or 11, fontweight="bold")

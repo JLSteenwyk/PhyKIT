@@ -126,3 +126,30 @@ class TestCophyloIntegration:
         finally:
             if os.path.exists(tmppath):
                 os.unlink(tmppath)
+
+    def test_cophylo_circular(self):
+        try:
+            import matplotlib
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            tmppath = f.name
+
+        try:
+            testargs = [
+                "phykit",
+                "cophylo",
+                "-t", TREE1,
+                "-t2", TREE2,
+                "-o", tmppath,
+                "--circular",
+            ]
+            with patch.object(sys, "argv", testargs):
+                Phykit()
+
+            assert os.path.exists(tmppath)
+            assert os.path.getsize(tmppath) > 0
+        finally:
+            if os.path.exists(tmppath):
+                os.unlink(tmppath)

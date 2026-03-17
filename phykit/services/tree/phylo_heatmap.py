@@ -203,6 +203,21 @@ class PhyloHeatmap(Tree):
             col_stds[col_stds == 0] = 1.0
             matrix = (matrix - col_means) / col_stds
 
+        if config.circular:
+            self._plot_phylo_heatmap_circular(
+                tree, tip_order, trait_names, trait_data, matrix,
+                config, n_tips, n_traits, output_path, plt,
+            )
+        else:
+            self._plot_phylo_heatmap_rect(
+                tree, tip_order, trait_names, trait_data, matrix,
+                config, n_tips, n_traits, output_path, plt, gridspec,
+            )
+
+    def _plot_phylo_heatmap_rect(
+        self, tree, tip_order, trait_names, trait_data, matrix,
+        config, n_tips, n_traits, output_path, plt, gridspec,
+    ) -> None:
         fig = plt.figure(figsize=(config.fig_width, config.fig_height))
         gs = gridspec.GridSpec(
             1, 2,
@@ -306,6 +321,130 @@ class PhyloHeatmap(Tree):
                 y=1.02,
             )
 
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+        plt.close(fig)
+
+    def _plot_phylo_heatmap_circular(
+        self, tree, tip_order, trait_names, trait_data, matrix,
+        config, n_tips, n_traits, output_path, plt,
+    ) -> None:
+        import math
+        from matplotlib.patches import Wedge
+        import matplotlib.colors as mcolors
+        from ...helpers.circular_layout import (
+            compute_circular_coords,
+            draw_circular_branches,
+            draw_circular_tip_labels,
+        )
+
+        # Build parent_map and node_x
+        parent_map = {}
+        for clade in tree.find_clades(order="preorder"):
+            for child in clade.clades:
+                parent_map[id(child)] = clade
+
+        root = tree.root
+        if config.cladogram:
+            node_x = compute_node_x_cladogram(tree, parent_map)
+        else:
+            node_x = {}
+            for clade in tree.find_clades(order="preorder"):
+                if clade == root:
+                    node_x[id(clade)] = 0.0
+                elif id(clade) in parent_map:
+                    parent = parent_map[id(clade)]
+                    bl = clade.branch_length if clade.branch_length else 0.0
+                    node_x[id(clade)] = node_x.get(id(parent), 0.0) + bl
+
+        coords = compute_circular_coords(tree, node_x, parent_map)
+
+        # Build tip name -> id lookup
+        tip_name_to_id = {}
+        for tip in tree.get_terminals():
+            tip_name_to_id[tip.name] = id(tip)
+
+        # Compute max_radius from tips
+        max_radius = max(
+            coords[tip_name_to_id[name]]["radius"]
+            for name in tip_order
+            if name in tip_name_to_id
+        )
+
+        # Ring parameters
+        gap = max_radius * 0.15
+        ring_width = max_radius * 0.08
+
+        # Single axes figure
+        fig, ax = plt.subplots(
+            1, 1, figsize=(config.fig_width, config.fig_height)
+        )
+        ax.set_aspect("equal")
+        ax.axis("off")
+
+        # Draw circular tree
+        draw_circular_branches(ax, tree, coords, parent_map)
+        draw_circular_tip_labels(ax, tree, coords, fontsize=7,
+                                 offset=max_radius * 0.03)
+
+        # Build colormap for heatmap
+        cmap = plt.get_cmap(self.cmap_name)
+        vmin = float(np.nanmin(matrix))
+        vmax = float(np.nanmax(matrix))
+        if vmin == vmax:
+            vmax = vmin + 1.0
+        norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+
+        # Draw heatmap rings
+        wedge_half = (2.0 * math.pi / n_tips) / 2.0 * 0.9  # 90% of slot
+
+        for col_idx in range(n_traits):
+            r_inner = max_radius + gap + col_idx * ring_width
+            r_outer = r_inner + ring_width
+            for row_idx, taxon in enumerate(tip_order):
+                if taxon not in tip_name_to_id:
+                    continue
+                tid = tip_name_to_id[taxon]
+                tip_angle = coords[tid]["angle"]
+                theta1 = math.degrees(tip_angle - wedge_half)
+                theta2 = math.degrees(tip_angle + wedge_half)
+                value = matrix[row_idx, col_idx]
+                color = cmap(norm(value))
+                wedge = Wedge(
+                    (0, 0), r_outer, theta1, theta2,
+                    width=ring_width,
+                    facecolor=color, edgecolor="none",
+                )
+                ax.add_patch(wedge)
+
+        # Trait name labels at outside of each ring
+        label_fontsize = 6
+        for col_idx, trait_name in enumerate(trait_names):
+            r_label = max_radius + gap + col_idx * ring_width + ring_width / 2.0
+            ax.text(
+                0, r_label, trait_name,
+                fontsize=label_fontsize, ha="center", va="bottom",
+                rotation=0,
+            )
+
+        # Colorbar
+        import matplotlib.cm as mcm
+        sm = mcm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        cbar = fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04, shrink=0.6)
+        if self.standardize:
+            cbar.set_label("Z-score")
+        else:
+            cbar.set_label("Value")
+
+        # Title
+        if config.show_title:
+            fig.suptitle(
+                config.title or "Phylogenetic Heatmap",
+                fontsize=config.title_fontsize,
+                y=1.02,
+            )
+
+        ax.autoscale_view()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
