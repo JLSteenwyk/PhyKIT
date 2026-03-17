@@ -6,6 +6,24 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.51**:
+Added ``--cladogram`` plot option to all phylogram-drawing commands:
+
+* When set, trees are drawn with equal branch lengths and tips aligned
+  at the right edge (topological depth layout), instead of the default
+  phylogram layout where branch lengths are proportional to evolutionary
+  distance
+* Supported in all 11 phylogram-drawing commands: ``phylo_heatmap``,
+  ``cont_map``, ``density_map``, ``stochastic_character_map``,
+  ``quartet_pie``, ``ancestral_state_reconstruction``,
+  ``concordance_asr``, ``discordance_asymmetry``,
+  ``rate_heterogeneity``, ``cophylo``, and ``character_map``
+* Shared utility ``compute_node_x_cladogram`` ensures consistent
+  cladogram layout across all commands
+
+**2.1.50**:
+Added character map command and polytomy handling for network commands.
+
 **2.1.49**:
 Added wASTRAL ``--support 3`` compatibility and ``--ladderize`` plot option:
 
