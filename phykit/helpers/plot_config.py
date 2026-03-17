@@ -26,6 +26,7 @@ class PlotConfig:
     ladderize: bool = False
     cladogram: bool = False
     circular: bool = False
+    color_file: Optional[str] = None
 
     def validate(self) -> None:
         if self.fig_width is not None and self.fig_width <= 0:
@@ -197,6 +198,7 @@ class PlotConfig:
             ladderize=getattr(args, "ladderize", False),
             cladogram=getattr(args, "cladogram", False),
             circular=getattr(args, "circular", False),
+            color_file=getattr(args, "color_file", None),
         )
         config.validate()
         return config
@@ -218,6 +220,7 @@ def add_plot_arguments(parser) -> None:
     group.add_argument("--ladderize", action="store_true", default=False, help="Ladderize (sort) the tree before plotting")
     group.add_argument("--cladogram", action="store_true", default=False, help="Draw cladogram (equal branch lengths, tips aligned) instead of phylogram")
     group.add_argument("--circular", action="store_true", default=False, help="Draw circular (radial/fan) phylogram instead of rectangular")
+    group.add_argument("--color-file", type=str, default=None, help="Color annotation file for tip labels, clade ranges, and branch colors")
 
 
 def compute_node_x_cladogram(tree, parent_map):
