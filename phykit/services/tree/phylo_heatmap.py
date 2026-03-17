@@ -13,6 +13,13 @@ import numpy as np
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.color_annotations import (
+    parse_color_file,
+    resolve_mrca,
+    draw_range_rect,
+    draw_range_wedge,
+    get_clade_branch_ids,
+)
 from ...errors import PhykitUserError
 
 
@@ -279,6 +286,29 @@ class PhyloHeatmap(Tree):
             ax_tree.plot([x0, x1], [y1, y1], color="black", lw=1.5)
             ax_tree.plot([x0, x0], [y0, y1], color="black", lw=1.5)
 
+        # Apply color annotations to tree panel
+        if self.plot_config.color_file:
+            color_data = parse_color_file(self.plot_config.color_file)
+            for taxa_list, clr, lbl in color_data["ranges"]:
+                mrca = resolve_mrca(tree, taxa_list)
+                if mrca is not None:
+                    draw_range_rect(ax_tree, tree, mrca, clr, node_x, node_y)
+            for taxa_list, clade_color, lbl in color_data["clades"]:
+                mrca = resolve_mrca(tree, taxa_list)
+                if mrca is not None:
+                    clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                    for cl in tree.find_clades(order="preorder"):
+                        if cl == tree.root:
+                            continue
+                        if id(cl) in clade_ids and id(cl) in parent_map:
+                            pid_val = id(parent_map[id(cl)])
+                            cid_val = id(cl)
+                            x0, x1 = node_x[pid_val], node_x[cid_val]
+                            y0 = node_y.get(pid_val, 0)
+                            y1 = node_y.get(cid_val, 0)
+                            ax_tree.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
+                            ax_tree.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
+
         ax_tree.set_ylim(-0.5, n_tips - 0.5)
         ax_tree.invert_yaxis()
         ax_tree.axis("off")
@@ -312,6 +342,14 @@ class PhyloHeatmap(Tree):
             cbar.set_label("Z-score")
         else:
             cbar.set_label("Value")
+
+        # Apply label color annotations to heatmap y-tick labels
+        if self.plot_config.color_file:
+            color_data = parse_color_file(self.plot_config.color_file)
+            for label_obj in ax_heat.get_yticklabels():
+                taxon = label_obj.get_text()
+                if taxon in color_data["labels"]:
+                    label_obj.set_color(color_data["labels"][taxon])
 
         # Title
         if config.show_title:
@@ -385,6 +423,29 @@ class PhyloHeatmap(Tree):
         draw_circular_branches(ax, tree, coords, parent_map)
         draw_circular_tip_labels(ax, tree, coords, fontsize=7,
                                  offset=max_radius * 0.03)
+
+        # Apply color annotations
+        if self.plot_config.color_file:
+            from ...helpers.circular_layout import draw_circular_colored_branch
+            color_data = parse_color_file(self.plot_config.color_file)
+            for taxa_list, clr, lbl in color_data["ranges"]:
+                mrca = resolve_mrca(tree, taxa_list)
+                if mrca is not None:
+                    draw_range_wedge(ax, tree, mrca, clr, coords)
+            for taxa_list, clade_color, lbl in color_data["clades"]:
+                mrca = resolve_mrca(tree, taxa_list)
+                if mrca is not None:
+                    clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                    for cl in tree.find_clades(order="preorder"):
+                        if cl == tree.root:
+                            continue
+                        if id(cl) in clade_ids and id(cl) in parent_map:
+                            draw_circular_colored_branch(ax, coords[id(parent_map[id(cl)])], coords[id(cl)], clade_color, lw=1.5)
+            for taxon, lbl_color in color_data["labels"].items():
+                for text_obj in ax.texts:
+                    if text_obj.get_text() == taxon:
+                        text_obj.set_color(lbl_color)
+                        break
 
         # Build colormap for heatmap
         cmap = plt.get_cmap(self.cmap_name)

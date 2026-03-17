@@ -6,6 +6,13 @@ import numpy as np
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.color_annotations import (
+    parse_color_file,
+    resolve_mrca,
+    draw_range_rect,
+    draw_range_wedge,
+    get_clade_branch_ids,
+)
 from ...errors import PhykitUserError
 
 
@@ -350,10 +357,36 @@ class Cophylo(Tree):
             draw_circular_tip_labels(ax, tree, coords, fontsize=7)
             ax.set_aspect("equal")
             ax.axis("off")
-            return coords
+            return coords, parent_map
 
-        coords1 = _build_circular(tree1, ax1, color="#2171b5")
-        coords2 = _build_circular(tree2, ax2, color="#cb181d")
+        coords1, pmap1 = _build_circular(tree1, ax1, color="#2171b5")
+        coords2, pmap2 = _build_circular(tree2, ax2, color="#cb181d")
+
+        # Apply color annotations to both circular trees
+        if self.plot_config.color_file:
+            from ...helpers.circular_layout import draw_circular_colored_branch
+            color_data = parse_color_file(self.plot_config.color_file)
+            for tree_obj, coords_obj, pmap_obj, ax_obj in [
+                (tree1, coords1, pmap1, ax1), (tree2, coords2, pmap2, ax2)
+            ]:
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree_obj, taxa_list)
+                    if mrca is not None:
+                        draw_range_wedge(ax_obj, tree_obj, mrca, clr, coords_obj)
+                for taxa_list, clade_color, lbl in color_data["clades"]:
+                    mrca = resolve_mrca(tree_obj, taxa_list)
+                    if mrca is not None:
+                        clade_ids = get_clade_branch_ids(tree_obj, mrca, pmap_obj)
+                        for cl in tree_obj.find_clades(order="preorder"):
+                            if cl == tree_obj.root:
+                                continue
+                            if id(cl) in clade_ids and id(cl) in pmap_obj:
+                                draw_circular_colored_branch(ax_obj, coords_obj[id(pmap_obj[id(cl)])], coords_obj[id(cl)], clade_color, lw=1.5)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax_obj.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
 
         # Build tip name -> id lookups
         tip_name_to_id1 = {t.name: id(t) for t in tree1.get_terminals()}
@@ -481,6 +514,34 @@ class Cophylo(Tree):
                     tx - label_offset, ty, tip.name,
                     va="center", ha="right", fontsize=8,
                 )
+
+        # Apply color annotations
+        if self.plot_config.color_file:
+            color_data = parse_color_file(self.plot_config.color_file)
+            for taxa_list, clr, lbl in color_data["ranges"]:
+                mrca = resolve_mrca(tree, taxa_list)
+                if mrca is not None:
+                    draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
+            for taxa_list, clade_color, lbl in color_data["clades"]:
+                mrca = resolve_mrca(tree, taxa_list)
+                if mrca is not None:
+                    clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                    for cl in tree.find_clades(order="preorder"):
+                        if cl == tree.root:
+                            continue
+                        if id(cl) in clade_ids and id(cl) in parent_map:
+                            pid_val = id(parent_map[id(cl)])
+                            cid_val = id(cl)
+                            x0, x1 = node_x[pid_val], node_x[cid_val]
+                            y0 = node_y.get(pid_val, 0)
+                            y1 = node_y.get(cid_val, 0)
+                            ax.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
+                            ax.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
+            for taxon, lbl_color in color_data["labels"].items():
+                for text_obj in ax.texts:
+                    if text_obj.get_text() == taxon:
+                        text_obj.set_color(lbl_color)
+                        break
 
         n_max = max(tip_order.values()) + 1 if tip_order else 1
         ax.set_ylim(-0.5, n_max - 0.5)

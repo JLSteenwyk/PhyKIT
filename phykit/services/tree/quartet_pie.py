@@ -28,6 +28,13 @@ from ...helpers.circular_layout import (
     circular_branch_points,
     radial_offset,
 )
+from ...helpers.color_annotations import (
+    parse_color_file,
+    resolve_mrca,
+    draw_range_rect,
+    draw_range_wedge,
+    get_clade_branch_ids,
+)
 from ...errors import PhykitUserError
 
 
@@ -186,6 +193,28 @@ class QuartetPie(Tree):
             max_x = max(node_x.values()) if node_x else 1.0
             draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
+            # Apply color annotations
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, color, label in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_wedge(ax, tree, mrca, color, coords)
+                for taxa_list, clade_color, label in color_data["clades"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                        for cl in tree.find_clades(order="preorder"):
+                            if cl == tree.root:
+                                continue
+                            if id(cl) in clade_ids and id(cl) in parent_map:
+                                draw_circular_colored_branch(ax, coords[id(parent_map[id(cl)])], coords[id(cl)], clade_color, lw=1.5)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
+
             # Legend
             legend_handles = [
                 Patch(facecolor=colors[0], edgecolor="black", linewidth=0.5,
@@ -293,6 +322,34 @@ class QuartetPie(Tree):
                     node_x[id(tip)] + offset, node_y[id(tip)],
                     tip.name, va="center", fontsize=label_fontsize,
                 )
+
+            # Apply color annotations
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, color, label in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_rect(ax, tree, mrca, color, node_x, node_y)
+                for taxa_list, clade_color, label in color_data["clades"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                        for cl in tree.find_clades(order="preorder"):
+                            if cl == tree.root:
+                                continue
+                            if id(cl) in clade_ids and id(cl) in parent_map:
+                                pid = id(parent_map[id(cl)])
+                                cid = id(cl)
+                                x0, x1 = node_x[pid], node_x[cid]
+                                y0 = node_y.get(pid, 0)
+                                y1 = node_y.get(cid, 0)
+                                ax.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
+                                ax.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
 
             # Legend
             legend_handles = [

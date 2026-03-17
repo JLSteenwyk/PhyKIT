@@ -23,6 +23,13 @@ from ...helpers.circular_layout import (
     circular_branch_points,
     radial_offset,
 )
+from ...helpers.color_annotations import (
+    parse_color_file,
+    resolve_mrca,
+    draw_range_rect,
+    draw_range_wedge,
+    get_clade_branch_ids,
+)
 from ...helpers.parsimony_utils import (
     build_parent_map,
     resolve_polytomies,
@@ -433,6 +440,28 @@ class CharacterMap(Tree):
             max_x = max(node_x.values()) if node_x else 1.0
             draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
+            # Apply color annotations
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_wedge(ax, tree, mrca, clr, coords)
+                for taxa_list, clade_color, lbl in color_data["clades"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                        for cl in tree.find_clades(order="preorder"):
+                            if cl == tree.root:
+                                continue
+                            if id(cl) in clade_ids and id(cl) in parent_map:
+                                draw_circular_colored_branch(ax, coords[id(parent_map[id(cl)])], coords[id(cl)], clade_color, lw=1.5)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
+
             # Character change circles on branches
             # Smaller markers in circular mode — radial branches are shorter
             marker_size = max(10, min(50, 300 / max(n_tips, 1)))
@@ -548,6 +577,34 @@ class CharacterMap(Tree):
                     node_x[id(tip)] + offset, node_y[id(tip)],
                     tip.name, va="center", fontsize=label_fontsize,
                 )
+
+            # Apply color annotations
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
+                for taxa_list, clade_color, lbl in color_data["clades"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
+                        for cl in tree.find_clades(order="preorder"):
+                            if cl == tree.root:
+                                continue
+                            if id(cl) in clade_ids and id(cl) in parent_map:
+                                pid_val = id(parent_map[id(cl)])
+                                cid_val = id(cl)
+                                x0, x1 = node_x[pid_val], node_x[cid_val]
+                                y0 = node_y.get(pid_val, 0)
+                                y1 = node_y.get(cid_val, 0)
+                                ax.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
+                                ax.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
 
             # Character change circles on branches
             # Use scatter (marker size in points²) so circles stay round

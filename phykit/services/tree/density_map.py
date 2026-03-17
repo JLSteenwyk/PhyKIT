@@ -14,6 +14,12 @@ from ...helpers.circular_layout import (
     draw_circular_colored_arc,
     draw_circular_multi_segment_branch,
 )
+from ...helpers.color_annotations import (
+    parse_color_file,
+    resolve_mrca,
+    draw_range_rect,
+    draw_range_wedge,
+)
 from ...errors import PhykitUserError
 
 
@@ -342,6 +348,19 @@ class DensityMap(Tree):
             max_x = max(node_x.values()) if node_x else 1.0
             draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
 
+            # Apply color annotations (range + label only; branches are trait-colored)
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_wedge(ax, tree, mrca, clr, coords)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
+
             # Add colorbar for 2-state case or legend for k-state
             if k == 2:
                 cmap_colors = [state_colors_rgb[0], state_colors_rgb[1]]
@@ -435,6 +454,19 @@ class DensityMap(Tree):
                     node_x[id(tip)] + offset, node_y[id(tip)],
                     tip.name, va="center", fontsize=9,
                 )
+
+            # Apply color annotations (range + label only; branches are trait-colored)
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
 
             # Add colorbar for 2-state case or legend for k-state
             if k == 2:

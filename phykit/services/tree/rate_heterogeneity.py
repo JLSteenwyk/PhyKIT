@@ -18,6 +18,12 @@ from ...helpers.circular_layout import (
     circular_branch_points,
     radial_offset,
 )
+from ...helpers.color_annotations import (
+    parse_color_file,
+    resolve_mrca,
+    draw_range_rect,
+    draw_range_wedge,
+)
 from ...errors import PhykitUserError
 
 
@@ -754,6 +760,19 @@ class RateHeterogeneity(Tree):
             max_x = max(node_x.values()) if node_x else 1.0
             draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.02)
 
+            # Apply color annotations (range + label only; branches are trait-colored)
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_wedge(ax, tree, mrca, clr, coords)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
+
             # Legend
             handles = [
                 Line2D([0], [0], color=regime_colors[r], linewidth=3, label=r)
@@ -807,6 +826,19 @@ class RateHeterogeneity(Tree):
                     node_x[id(tip)] + offset, node_y[id(tip)],
                     tip.name, va="center", fontsize=9,
                 )
+
+            # Apply color annotations (range + label only; branches are trait-colored)
+            if self.plot_config.color_file:
+                color_data = parse_color_file(self.plot_config.color_file)
+                for taxa_list, clr, lbl in color_data["ranges"]:
+                    mrca = resolve_mrca(tree, taxa_list)
+                    if mrca is not None:
+                        draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
+                for taxon, lbl_color in color_data["labels"].items():
+                    for text_obj in ax.texts:
+                        if text_obj.get_text() == taxon:
+                            text_obj.set_color(lbl_color)
+                            break
 
             handles = [
                 Line2D([0], [0], color=regime_colors[r], linewidth=3, label=r)
