@@ -2111,7 +2111,8 @@ analogous to R's ``geiger::fitContinuous()``.
 
 |
 
-**Step 0: Prepare data**
+Step 0: Prepare data
+*********************
 
 You need a Newick tree file and a tab-delimited trait file
 (``taxon<tab>value``). For example:
@@ -2125,7 +2126,8 @@ You need a Newick tree file and a tab-delimited trait file
 
 |
 
-**Step 1: Run fit_continuous with all models**
+Step 1: Run fit_continuous with all models
+*******************************************
 
 .. code-block:: shell
 
@@ -2153,7 +2155,8 @@ Expected output:
 
 |
 
-**Step 2: Interpret the AIC/BIC table**
+Step 2: Interpret the AIC/BIC table
+*************************************
 
 The output table shows each model's parameter estimate, sigma-squared,
 ancestral state (z0), log-likelihood, AIC, delta-AIC, AIC weight, BIC,
@@ -2170,7 +2173,8 @@ consistent with early rapid evolution of body mass.
 
 |
 
-**Step 3: Run with a subset of models**
+Step 3: Run with a subset of models
+**************************************
 
 .. code-block:: shell
 
@@ -2178,7 +2182,8 @@ consistent with early rapid evolution of body mass.
 
 |
 
-**Step 4: JSON output for downstream analysis**
+Step 4: JSON output for downstream analysis
+*********************************************
 
 .. code-block:: shell
 
@@ -2204,7 +2209,8 @@ evolve toward different trait optima with potentially different rates.
 
 |
 
-**Step 1: Prepare input files**
+Step 1: Prepare input files
+*****************************
 
 You need three files:
 
@@ -2245,7 +2251,8 @@ You need three files:
 
 |
 
-**Step 2: Run OUwie with all models**
+Step 2: Run OUwie with all models
+************************************
 
 .. code-block:: shell
 
@@ -2281,7 +2288,8 @@ is more conservative with few taxa.
 
 |
 
-**Step 3: Run with a subset of models**
+Step 3: Run with a subset of models
+**************************************
 
 To compare only specific models, use ``--models``:
 
@@ -2291,7 +2299,8 @@ To compare only specific models, use ``--models``:
 
 |
 
-**Step 4: Interpret the output**
+Step 4: Interpret the output
+******************************
 
 The output table includes:
 
@@ -2313,7 +2322,8 @@ Key parameters:
 
 |
 
-**Step 5: Model selection guidance**
+Step 5: Model selection guidance
+**********************************
 
 - If **BM1** is best, a single Brownian motion rate explains the data.
 - If **BMS** is best, different regimes evolve at different rates but
@@ -2330,7 +2340,8 @@ more conservative penalty on model complexity.
 
 |
 
-**Step 6: JSON output for downstream analysis**
+Step 6: JSON output for downstream analysis
+**********************************************
 
 .. code-block:: shell
 
@@ -2342,7 +2353,8 @@ programmatic downstream analysis or integration into pipelines.
 
 |
 
-**Comparison with R's OUwie**
+Comparison with R's OUwie
+***************************
 
 PhyKIT's OUwie implementation has been validated against R's OUwie
 package (v2.10). BM1 matches R exactly. OUMA and OUMVA agree within
@@ -2376,7 +2388,8 @@ rates. Unlike OUwie, no regime file is needed.
 
 |
 
-**Step 1: Prepare input files**
+Step 1: Prepare input files
+*****************************
 
 You need two files:
 
@@ -2398,7 +2411,8 @@ You need two files:
 
 |
 
-**Step 2: Run OU shift detection**
+Step 2: Run OU shift detection
+*********************************
 
 .. code-block:: shell
 
@@ -2438,7 +2452,8 @@ lower values, suggesting the shift is well-supported.
 
 |
 
-**Step 3: Interpret the output**
+Step 3: Interpret the output
+******************************
 
 The output reports:
 
@@ -2457,7 +2472,8 @@ shifted to a different optimum.
 
 |
 
-**Step 4: Choose a model selection criterion**
+Step 4: Choose a model selection criterion
+********************************************
 
 Three criteria are available:
 
@@ -2475,7 +2491,8 @@ Three criteria are available:
 
 |
 
-**Step 5: Limit the search**
+Step 5: Limit the search
+**************************
 
 For large trees, you can cap the maximum number of shifts to speed up
 the analysis:
@@ -2486,7 +2503,8 @@ the analysis:
 
 |
 
-**Step 6: JSON output for downstream analysis**
+Step 6: JSON output for downstream analysis
+**********************************************
 
 .. code-block:: shell
 
@@ -2498,7 +2516,8 @@ optima.
 
 |
 
-**Biological example: lizard body size evolution**
+Biological example: lizard body size evolution
+*************************************************
 
 Consider a phylogeny of 100 Anolis lizard species with log-transformed
 body size measurements. Running:
@@ -2514,7 +2533,8 @@ radiation without specifying regimes in advance.
 
 |
 
-**Comparison with R's l1ou**
+Comparison with R's l1ou
+**************************
 
 PhyKIT's OU shift detection implementation has been validated against
 R's l1ou package (Khabbazian et al. 2016). On a 100-tip Anolis dataset,
@@ -2535,7 +2555,8 @@ optionally visualizes them as a circular splits network.
 
 |
 
-**Step 1: Prepare a gene-tree file**
+Step 1: Prepare a gene-tree file
+**********************************
 
 Create a file with one Newick tree per line (or one tree-file path per line):
 
@@ -2548,7 +2569,8 @@ Create a file with one Newick tree per line (or one tree-file path per line):
 
 |
 
-**Step 2: Run the consensus network analysis**
+Step 2: Run the consensus network analysis
+*********************************************
 
 .. code-block:: shell
 
@@ -2570,7 +2592,8 @@ This prints a summary of all splits found above the default threshold (0.1):
 
 |
 
-**Step 3: Adjust the threshold**
+Step 3: Adjust the threshold
+******************************
 
 To show only splits present in at least 50% of gene trees:
 
@@ -2580,7 +2603,8 @@ To show only splits present in at least 50% of gene trees:
 
 |
 
-**Step 4: Generate a circular splits network plot**
+Step 4: Generate a circular splits network plot
+**************************************************
 
 .. code-block:: shell
 
@@ -2596,7 +2620,8 @@ indicate higher-frequency splits.
 
 |
 
-**Step 5: JSON output**
+Step 5: JSON output
+*********************
 
 For programmatic downstream analysis:
 
@@ -2606,7 +2631,8 @@ For programmatic downstream analysis:
 
 |
 
-**Handling trees with different taxon sets**
+Handling trees with different taxon sets
+******************************************
 
 If some gene trees are missing taxa, use ``--missing-taxa shared`` to
 prune all trees to their intersection before extracting splits:
@@ -2627,7 +2653,8 @@ visualizing results — all using PhyKIT.
 
 |
 
-**Scenario**
+Scenario
+*********
 
 Imagine you have assembled a phylogeny of eight mammal species and measured
 their body mass and brain size. You want to answer a classic question in
@@ -2641,7 +2668,8 @@ brain-body relationship in phylogenetic morphospace.
 
 |
 
-**Overview**
+Overview
+*********
 
 We will use an eight-taxon mammal tree and body-mass trait data to:
 
@@ -2652,7 +2680,8 @@ We will use an eight-taxon mammal tree and body-mass trait data to:
 
 |
 
-**Data files used in this tutorial:**
+Data files used in this tutorial:
+************************************
 
 .. centered::
    Download test data:
@@ -2668,7 +2697,8 @@ We will use an eight-taxon mammal tree and body-mass trait data to:
 
 |
 
-**Step 1: Test for phylogenetic signal**
+Step 1: Test for phylogenetic signal
+***************************************
 
 Before running any comparative analysis, check whether the trait shows
 phylogenetic signal — i.e., whether closely related species have more
@@ -2716,7 +2746,8 @@ strongly structured by evolutionary history.
 
 |
 
-**Step 2: Compare evolutionary models**
+Step 2: Compare evolutionary models
+**************************************
 
 Next, determine which model of continuous trait evolution best explains
 the observed body-mass data. This helps interpret *how* body mass has
@@ -2764,7 +2795,8 @@ To compare only a subset of models:
 
 |
 
-**Step 3: Test a trait-trait relationship with PGLS**
+Step 3: Test a trait-trait relationship with PGLS
+****************************************************
 
 Now we arrive at the central question: *does body mass predict brain
 size?* A naive correlation would be misleading because closely related
@@ -2814,7 +2846,8 @@ For JSON output:
 
 |
 
-**Step 4: Visualize trait evolution**
+Step 4: Visualize trait evolution
+***********************************
 
 Finally, generate publication-ready figures. Visualization often reveals
 patterns that summary statistics miss — for example, a contMap might
@@ -2880,7 +2913,8 @@ clade membership.
 
 |
 
-**Putting it all together**
+Putting it all together
+*************************
 
 Returning to our mammal example, a typical analysis would proceed as:
 
@@ -2914,7 +2948,8 @@ incorporate it into comparative methods — all using PhyKIT.
 
 |
 
-**Scenario**
+Scenario
+*********
 
 Imagine you have sequenced 200 genes across a clade that underwent a
 rapid radiation — for example, a group of closely related yeast species
@@ -2937,7 +2972,8 @@ histories rather than just the species tree.
 
 |
 
-**Overview**
+Overview
+*********
 
 We will:
 
@@ -2951,7 +2987,8 @@ We will:
 
 |
 
-**Data files used in this tutorial:**
+Data files used in this tutorial:
+************************************
 
 .. centered::
    Download test data:
@@ -2969,7 +3006,8 @@ We will:
 
 |
 
-**Step 1: Visualize gene tree conflict with a splits network**
+Step 1: Visualize gene tree conflict with a splits network
+************************************************************
 
 Start by understanding the landscape of gene tree disagreement. In our
 rapid-radiation scenario, we expect that some bipartitions in the species
@@ -3024,7 +3062,8 @@ Steps 5-6 become especially important.
 
 |
 
-**Step 2: Test for rate-topology associations with evolutionary tempo mapping**
+Step 2: Test for rate-topology associations with evolutionary tempo mapping
+******************************************************************************
 
 The splits network shows *which* branches have discordance — but do the
 discordant gene trees also differ in branch lengths? Under the coalescent,
@@ -3083,7 +3122,8 @@ significant in this small dataset.
 
 |
 
-**Step 3: Test for asymmetric discordance (gene flow detection)**
+Step 3: Test for asymmetric discordance (gene flow detection)
+***************************************************************
 
 Step 2 told us whether discordant gene trees differ in branch *lengths*
 from concordant ones. Now we ask a complementary question: are the two
@@ -3136,7 +3176,8 @@ p-values.
 
 |
 
-**Step 4: Identify diversification patterns with LTT**
+Step 4: Identify diversification patterns with LTT
+*****************************************************
 
 Before diving into trait analyses, examine the tempo of diversification.
 For a suspected rapid radiation, the lineage-through-time (LTT) plot
@@ -3161,7 +3202,8 @@ network.
 
 |
 
-**Step 5: Concordance-aware ancestral state reconstruction**
+Step 5: Concordance-aware ancestral state reconstruction
+**********************************************************
 
 Standard ASR operates on a single species tree, ignoring gene tree
 conflict. For our clade, the ancestral thermal tolerance at the base of
@@ -3228,7 +3270,8 @@ For distribution-based reconstruction and confidence intervals:
 
 |
 
-**Step 6: Discordance-aware comparative methods**
+Step 6: Discordance-aware comparative methods
+************************************************
 
 Now we return to our original question: *does thermal tolerance predict
 metabolic rate?* In a clade with substantial gene tree conflict, the
@@ -3288,7 +3331,8 @@ exactly as before (species-tree-only VCV).
 
 |
 
-**Putting it all together**
+Putting it all together
+*************************
 
 Returning to our rapid-radiation scenario, the workflow reveals a
 coherent story:
@@ -3323,8 +3367,8 @@ the standard analysis was adequate.
 
 |
 
-Customizing phylogenetic plots
-------------------------------
+21. Customizing phylogenetic plots
+####################################
 
 All PhyKIT commands that produce tree visualizations share a common set
 of plot customization options. This tutorial walks through each option
@@ -3344,7 +3388,8 @@ sample data:
 
 |
 
-**Default output**
+Default output
+***************
 
 The default ``quartet_pie`` command produces a phylogram with pie charts
 at internal nodes showing concordance proportions:
@@ -3359,7 +3404,8 @@ at internal nodes showing concordance proportions:
 
 |
 
-**Ladderizing the tree**
+Ladderizing the tree
+**********************
 
 The ``--ladderize`` flag sorts the tree by the number of descendant
 tips at each node, producing a cleaner visual layout:
@@ -3374,7 +3420,8 @@ tips at each node, producing a cleaner visual layout:
 
 |
 
-**Cladogram layout**
+Cladogram layout
+******************
 
 The ``--cladogram`` flag draws the tree with equal branch lengths and
 all tips aligned at the right edge. This is useful when branch lengths
@@ -3391,7 +3438,8 @@ evolutionary distance:
 
 |
 
-**Circular layout**
+Circular layout
+*****************
 
 The ``--circular`` flag draws the tree as a radial phylogram with
 the root at the center. Branches radiate outward and curved arcs
@@ -3407,7 +3455,8 @@ connect sister clades at each internal node:
 
 |
 
-**Circular + cladogram**
+Circular + cladogram
+**********************
 
 The ``--circular`` and ``--cladogram`` flags can be combined. This
 draws a circular cladogram where all tips sit on the outer ring at
@@ -3424,7 +3473,8 @@ equal distance from the center:
 
 |
 
-**Annotating with values**
+Annotating with values
+************************
 
 The ``--annotate`` flag adds numeric values (gCF/gDF1/gDF2) near each
 pie chart:
@@ -3439,7 +3489,8 @@ pie chart:
 
 |
 
-**Custom colors**
+Custom colors
+***************
 
 The ``--colors`` flag accepts comma-separated colors (hex or named) to
 override the defaults. For ``quartet_pie``, the three colors represent
@@ -3456,7 +3507,8 @@ concordant, discordant alt 1, and discordant alt 2:
 
 |
 
-**Custom title**
+Custom title
+**************
 
 The ``--title`` flag sets a custom title. Use ``--no-title`` to remove
 the title entirely:
@@ -3480,7 +3532,8 @@ the title entirely:
 
 |
 
-**Legend position**
+Legend position
+*****************
 
 The ``--legend-position`` flag controls legend placement. Options include
 ``upper right`` (default), ``upper left``, ``lower left``, ``lower right``,
@@ -3497,7 +3550,8 @@ The ``--legend-position`` flag controls legend placement. Options include
 
 |
 
-**Coloring clades with a color file**
+Coloring clades with a color file
+************************************
 
 The ``--color-file`` flag accepts an iTOL-inspired TSV file for coloring
 tip labels, highlighting clades with transparent background bands, and
@@ -3549,7 +3603,8 @@ The color file also works with the circular layout:
 
 |
 
-**Combining everything**
+Combining everything
+**********************
 
 All options can be combined for maximum customization:
 
@@ -3566,7 +3621,8 @@ All options can be combined for maximum customization:
 
 |
 
-**Additional options**
+Additional options
+********************
 
 Several other options are available for fine-tuning:
 
