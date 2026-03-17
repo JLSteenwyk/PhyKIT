@@ -210,8 +210,10 @@ class QuartetPie(Tree):
             fig.canvas.draw()
 
             # Pie charts at internal nodes
+            # Circular mode: scale with n_tips but stay larger than rectangular
+            # since radial spacing gives more room between nodes
             n_tips = len(tips)
-            pie_size = min(0.06, 0.8 / max(n_tips, 1))
+            pie_size = min(0.05, 0.6 / max(n_tips, 1))
 
             for clade in tree.find_clades(order="preorder"):
                 if clade.is_terminal() or clade == root:

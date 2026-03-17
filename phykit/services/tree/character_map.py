@@ -434,8 +434,9 @@ class CharacterMap(Tree):
             draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
             # Character change circles on branches
-            marker_size = max(15, min(80, 600 / max(n_tips, 1)))
-            change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
+            # Smaller markers in circular mode — radial branches are shorter
+            marker_size = max(10, min(50, 300 / max(n_tips, 1)))
+            change_fontsize = max(3.0, min(5.0, 6.0 - n_tips * 0.03))
 
             filter_set = set(self.characters_filter) if self.characters_filter else None
 

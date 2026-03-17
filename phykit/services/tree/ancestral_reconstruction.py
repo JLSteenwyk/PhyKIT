@@ -1523,8 +1523,10 @@ class AncestralReconstruction(Tree):
             draw_circular_branches(ax, tree, coords, parent_map, color="gray", lw=2)
 
             # Pie charts at internal nodes
+            # Scale pie radius with tree size and number of tips
             max_x = max(node_x.values()) if node_x else 1.0
-            pie_radius = max_x * 0.02
+            n_tips = len(tips)
+            pie_radius = max_x * min(0.02, 0.15 / max(n_tips, 1))
 
             for clade in tree.find_clades(order="preorder"):
                 if clade.is_terminal():

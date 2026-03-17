@@ -466,7 +466,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -520,6 +520,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -825,7 +829,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -877,6 +881,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -963,7 +971,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -1014,6 +1022,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1321,7 +1333,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -1377,6 +1389,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1515,7 +1531,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -1566,6 +1582,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -1813,7 +1833,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
 
                 Options
                 =====================================================
@@ -1967,7 +1987,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -2030,6 +2050,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      output results as JSON
                 """
@@ -2104,7 +2128,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -2168,6 +2192,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      output results as JSON
                 """
@@ -2399,7 +2427,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -2463,6 +2491,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3077,7 +3109,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -3169,6 +3201,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3419,7 +3455,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -3477,6 +3513,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3777,7 +3817,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -3838,6 +3878,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3909,7 +3953,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -3958,6 +4002,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to also
                                             output results as JSON
@@ -4008,7 +4056,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -4068,6 +4116,10 @@ class Phykit:
                                             lengths, tips aligned)
                                             instead of phylogram
 
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
+
                 --json                      optional argument to also
                                             output results as JSON
                 """
@@ -4122,7 +4174,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -4172,6 +4224,10 @@ class Phykit:
                                             lengths, tips aligned)
                                             instead of phylogram
 
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -4218,7 +4274,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -4270,6 +4326,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4324,7 +4384,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -4382,6 +4442,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -4870,7 +4934,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -4927,6 +4991,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                     optional argument to output
                                            results as JSON
@@ -4992,7 +5060,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
 
                 Options
                 =====================================================
@@ -5047,6 +5115,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             per-node concordance as JSON
@@ -5119,7 +5191,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -5182,6 +5254,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                     optional argument to output
                                            results as JSON
@@ -5348,7 +5424,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -5400,6 +5476,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5509,7 +5589,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -5563,6 +5643,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -5623,7 +5707,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -5693,6 +5777,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6093,7 +6181,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -6156,6 +6244,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6336,7 +6428,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -6393,6 +6485,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6512,7 +6608,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -6563,6 +6659,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6619,7 +6719,7 @@ class Phykit:
                     [--legend-position <str>]
                     [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                     [--title-fontsize <float>] [--axis-fontsize <float>]
-                    [--colors <str>] [--ladderize] [--cladogram]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular]
                     [--json]
 
                 Options
@@ -6669,6 +6769,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6732,7 +6836,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
                   [--json]
 
                 Options
@@ -6796,6 +6900,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      output results as JSON
                 """
@@ -6870,7 +6978,7 @@ class Phykit:
                   [--legend-position <str>]
                   [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
                   [--title-fontsize <float>] [--axis-fontsize <float>]
-                  [--colors <str>] [--ladderize] [--cladogram]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular]
 
                 Options
                 =====================================================
@@ -6936,6 +7044,10 @@ class Phykit:
                 --cladogram                 draw cladogram (equal branch
                                             lengths, tips aligned)
                                             instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
 
                 --json                      optional argument to output
                                             results as JSON
