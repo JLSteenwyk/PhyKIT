@@ -6,6 +6,13 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.55**:
+Added ``--csv`` output to ``quartet_pie``:
+
+* ``quartet_pie`` now supports ``--csv <file>`` to output per-branch
+  concordance values (gCF, gDF1, gDF2, concordant/discordant counts)
+  as a CSV table. Works in both native (gene tree) and ASTRAL modes.
+
 **2.1.54**:
 Added ``--color-file`` plot option and ``alignment_subsample`` command:
 
