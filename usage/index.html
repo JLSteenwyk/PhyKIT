@@ -73,6 +73,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length-no-gaps">Alignment length no gaps</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-outlier-taxa">Alignment outlier taxa</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-subsampling">Alignment subsampling</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-recoding">Alignment recoding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#column-score">Column score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#composition-per-taxon">Composition per taxon</a></li>
@@ -284,6 +285,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <h3>Alignment manipulation<a class="headerlink" href="#alignment-manipulation" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-alignment-recoding"><span class="std std-ref">Alignment recoding</span></a>: Recode alignment into reduced alphabets</p></li>
+<li><p><a class="reference internal" href="#cmd-alignment-subsample"><span class="std std-ref">Alignment subsampling</span></a>: Randomly subsample genes, partitions, or sites</p></li>
 <li><p><a class="reference internal" href="#cmd-create-concatenation-matrix"><span class="std std-ref">Create concatenation matrix</span></a>: Concatenate multiple alignments into a supermatrix</p></li>
 <li><p><a class="reference internal" href="#cmd-faidx"><span class="std std-ref">Faidx</span></a>: Extract entries from FASTA files</p></li>
 <li><p><a class="reference internal" href="#cmd-mask-alignment"><span class="std std-ref">Mask alignment</span></a>: Mask sites in an alignment</p></li>
@@ -533,6 +535,48 @@ taxon_e<span class="w"> </span><span class="nv">gap_rate</span><span class="o">=
 <em>--rcvt-z</em>: z-threshold used for RCVT outlier detection (default: 3.0) <br/>
 <em>--occupancy-z</em>: z-threshold used for low-occupancy outlier detection (default: 3.0) <br/>
 <em>--entropy-z</em>: z-threshold used for entropy-burden outlier detection (default: 3.0) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="alignment-subsampling">
+<span id="cmd-alignment-subsample"></span><h3>Alignment subsampling<a class="headerlink" href="#alignment-subsampling" title="Link to this heading"></a></h3>
+<p>Function names: alignment_subsample; aln_subsample; subsample <br/>
+Command line interface: pk_alignment_subsample; pk_aln_subsample; pk_subsample</p>
+<p>Randomly subsample genes, partitions, or sites from phylogenomic datasets.
+Supports three modes:</p>
+<ul class="simple">
+<li><p><strong>genes</strong>: Given a file listing alignment paths, randomly select N of them.</p></li>
+<li><p><strong>partitions</strong>: Given a supermatrix + RAxML-style partition file, randomly
+select N partitions and extract their columns into a new alignment.</p></li>
+<li><p><strong>sites</strong>: Given a single alignment, randomly select N columns.</p></li>
+</ul>
+<p>Sampling can be without replacement (default, for jackknife-style tests) or
+with replacement using <code class="docutils literal notranslate"><span class="pre">--bootstrap</span></code> (for gene/site bootstrapping).
+Use <code class="docutils literal notranslate"><span class="pre">--seed</span></code> for reproducibility.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Subsample 50 genes from a list of 200</span>
+phykit<span class="w"> </span>alignment_subsample<span class="w"> </span>--mode<span class="w"> </span>genes<span class="w"> </span>-l<span class="w"> </span>gene_list.txt<span class="w"> </span>--number<span class="w"> </span><span class="m">50</span><span class="w"> </span>-o<span class="w"> </span>sub50
+
+<span class="c1"># Subsample 50% of partitions from a supermatrix</span>
+phykit<span class="w"> </span>alignment_subsample<span class="w"> </span>--mode<span class="w"> </span>partitions<span class="w"> </span>-a<span class="w"> </span>concat.fa<span class="w"> </span>-p<span class="w"> </span>concat.partition<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--fraction<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span>-o<span class="w"> </span>sub50pct
+
+<span class="c1"># Bootstrap-resample sites from an alignment</span>
+phykit<span class="w"> </span>alignment_subsample<span class="w"> </span>--mode<span class="w"> </span>sites<span class="w"> </span>-a<span class="w"> </span>alignment.fa<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--number<span class="w"> </span><span class="m">500</span><span class="w"> </span>--bootstrap<span class="w"> </span>--seed<span class="w"> </span><span class="m">1</span><span class="w"> </span>-o<span class="w"> </span>boot1
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>--mode</em>: subsampling mode: genes, partitions, or sites (required) <br/>
+<em>-a/--alignment</em>: input alignment file in FASTA format (required for partitions and sites modes) <br/>
+<em>-l/--list</em>: file listing alignment paths, one per line (required for genes mode) <br/>
+<em>-p/--partition</em>: RAxML-style partition file (required for partitions mode) <br/>
+<em>--number</em>: exact number of items to select (mutually exclusive with --fraction) <br/>
+<em>--fraction</em>: fraction of items to select, 0.0 to 1.0 (mutually exclusive with --number) <br/>
+<em>--bootstrap</em>: sample with replacement (default: without replacement) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>-o/--output</em>: output file prefix (default: subsampled) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

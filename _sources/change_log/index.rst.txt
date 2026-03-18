@@ -7,7 +7,16 @@ Change log
 Major changes to PhyKIT are summarized here.
 
 **2.1.53**:
-Added ``--color-file`` plot option for clade and tip label coloring:
+Added ``--color-file`` plot option and ``alignment_subsample`` command:
+
+* Added ``alignment_subsample`` (``aln_subsample`` / ``subsample``):
+  randomly subsample genes, partitions, or sites from phylogenomic
+  datasets. Three modes: ``genes`` (subsample gene list), ``partitions``
+  (subsample from supermatrix + partition file), ``sites`` (subsample
+  alignment columns). Supports bootstrap resampling (``--bootstrap``),
+  exact count (``--number``) or fraction (``--fraction``), and
+  reproducibility via ``--seed``.
+* Added ``--color-file`` plot option for clade and tip label coloring:
 
 * ``--color-file``: iTOL-inspired TSV annotation file for coloring
   tip labels (``label`` type), highlighting clades with transparent
