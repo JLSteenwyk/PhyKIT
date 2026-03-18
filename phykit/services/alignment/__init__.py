@@ -3,6 +3,7 @@ import importlib
 
 _EXPORTS = {
     "AlignmentLength": "alignment_length",
+    "AlignmentSubsample": "alignment_subsample",
     "AlignmentLengthNoGaps": "alignment_length_no_gaps",
     "AlignmentEntropy": "alignment_entropy",
     "AlignmentRecoding": "alignment_recoding",

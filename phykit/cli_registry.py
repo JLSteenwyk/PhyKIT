@@ -13,6 +13,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "al": "alignment_length",
     "aln_len_no_gaps": "alignment_length_no_gaps",
     "alng": "alignment_length_no_gaps",
+    "aln_subsample": "alignment_subsample",
+    "subsample": "alignment_subsample",
     "aln_entropy": "alignment_entropy",
     "entropy": "alignment_entropy",
     "aln_recoding": "alignment_recoding",

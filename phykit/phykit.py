@@ -117,6 +117,8 @@ class Phykit:
                     - calculates site-wise alignment entropy
                 alignment_recoding (alias: aln_recoding, recode)
                     - recode alignments using reduced character schemes
+                alignment_subsample (alias: aln_subsample; subsample)
+                    - randomly subsample genes, partitions, or sites
                 alignment_outlier_taxa (alias: outlier_taxa; aot)
                     - identify potential outlier taxa and why they were flagged
                 column_score (alias: cs)
@@ -1761,6 +1763,82 @@ class Phykit:
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         _add_json_argument(parser)
         _run_service(parser, argv, VariableSites)
+
+    @staticmethod
+    def alignment_subsample(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Randomly subsample genes, partitions, or sites from
+                phylogenomic datasets.
+
+                Three modes are available:
+                  genes       — subsample alignment files from a list
+                  partitions  — subsample partitions from a supermatrix
+                  sites       — subsample columns from an alignment
+
+                Aliases:
+                  alignment_subsample, aln_subsample, subsample
+                Command line interfaces:
+                  pk_alignment_subsample, pk_aln_subsample, pk_subsample
+
+                Usage:
+                phykit alignment_subsample --mode <genes|partitions|sites>
+                  [-a/--alignment <file>] [-l/--list <file>]
+                  [-p/--partition <file>]
+                  [--number N | --fraction F]
+                  [--seed S] [--bootstrap]
+                  [-o/--output <prefix>] [--json]
+
+                Options
+                =====================================================
+                --mode                      subsampling mode: genes,
+                                            partitions, or sites
+
+                -a/--alignment              alignment file (FASTA).
+                                            Required for partitions
+                                            and sites modes.
+
+                -l/--list                   file listing alignment
+                                            paths (one per line).
+                                            Required for genes mode.
+
+                -p/--partition              RAxML-style partition file.
+                                            Required for partitions
+                                            mode.
+
+                --number                    exact number of items to
+                                            select
+
+                --fraction                  fraction of items to select
+                                            (0.0 to 1.0)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                --bootstrap                 sample with replacement
+
+                -o/--output                 output file prefix
+                                            (default: subsampled)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("--mode", type=str, required=True, choices=["genes", "partitions", "sites"])
+        parser.add_argument("-a", "--alignment", type=str, default=None)
+        parser.add_argument("-l", "--list", type=str, default=None)
+        parser.add_argument("-p", "--partition", type=str, default=None)
+        parser.add_argument("--number", type=int, default=None)
+        parser.add_argument("--fraction", type=float, default=None)
+        parser.add_argument("--seed", type=int, default=None)
+        parser.add_argument("--bootstrap", action="store_true", default=False)
+        parser.add_argument("-o", "--output", type=str, default="subsampled")
+        _add_json_argument(parser)
+        _run_service(parser, argv, AlignmentSubsample)
 
     ## Tree functions
     @staticmethod
@@ -7355,6 +7433,10 @@ def sum_of_pairs_score(argv=None):
 
 def variable_sites(argv=None):
     Phykit.variable_sites(sys.argv[1:])
+
+
+def alignment_subsample(argv=None):
+    Phykit.alignment_subsample(sys.argv[1:])
 
 
 # Tree-based functions

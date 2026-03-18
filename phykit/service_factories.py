@@ -22,6 +22,7 @@ AlignmentLength = _LazyServiceFactory("phykit.services.alignment.alignment_lengt
 AlignmentLengthNoGaps = _LazyServiceFactory("phykit.services.alignment.alignment_length_no_gaps", "AlignmentLengthNoGaps")
 AlignmentEntropy = _LazyServiceFactory("phykit.services.alignment.alignment_entropy", "AlignmentEntropy")
 AlignmentRecoding = _LazyServiceFactory("phykit.services.alignment.alignment_recoding", "AlignmentRecoding")
+AlignmentSubsample = _LazyServiceFactory("phykit.services.alignment.alignment_subsample", "AlignmentSubsample")
 AlignmentOutlierTaxa = _LazyServiceFactory("phykit.services.alignment.alignment_outlier_taxa", "AlignmentOutlierTaxa")
 ColumnScore = _LazyServiceFactory("phykit.services.alignment.column_score", "ColumnScore")
 CompositionalBiasPerSite = _LazyServiceFactory("phykit.services.alignment.compositional_bias_per_site", "CompositionalBiasPerSite")
