@@ -6,7 +6,7 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**2.1.53**:
+**2.1.54**:
 Added ``--color-file`` plot option and ``alignment_subsample`` command:
 
 * Added ``alignment_subsample`` (``aln_subsample`` / ``subsample``):
