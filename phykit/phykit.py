@@ -5217,7 +5217,7 @@ class Phykit:
 
                 Usage:
                 phykit quartet_pie -t <tree> [-g <gene_trees>] -o <output>
-                  [--annotate] [--json]
+                  [--annotate] [--csv <file>] [--json]
                   [--fig-width <float>] [--fig-height <float>]
                   [--dpi <int>] [--no-title] [--title <str>]
                   [--legend-position <str>]
@@ -5288,6 +5288,9 @@ class Phykit:
                                             and branch colors (iTOL-
                                             inspired TSV format)
 
+                --csv                       output per-branch concordance
+                                            values as a CSV file
+
                 --json                      optional argument to output
                                             per-node concordance as JSON
                 """
@@ -5305,6 +5308,10 @@ class Phykit:
         )
         parser.add_argument(
             "--annotate", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--csv", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
         )
         add_plot_arguments(parser)
         _add_json_argument(parser)

@@ -47,6 +47,7 @@ class QuartetPie(Tree):
         self.output_path = parsed["output_path"]
         self.annotate = parsed["annotate"]
         self.json_output = parsed["json_output"]
+        self.csv_output = parsed["csv_output"]
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
@@ -85,10 +86,15 @@ class QuartetPie(Tree):
 
         self._plot_quartet_pie(tree, proportions, self.output_path)
 
+        if self.csv_output:
+            self._write_csv(tree, proportions, self.csv_output)
+
         if self.json_output:
             self._print_json(tree, proportions, input_mode, n_gene_trees)
         else:
             print(f"Quartet pie chart saved: {self.output_path}")
+            if self.csv_output:
+                print(f"Concordance table saved: {self.csv_output}")
 
     def process_args(self, args) -> Dict:
         return dict(
@@ -97,6 +103,7 @@ class QuartetPie(Tree):
             output_path=args.output,
             annotate=getattr(args, "annotate", False),
             json_output=getattr(args, "json", False),
+            csv_output=getattr(args, "csv", None),
             plot_config=PlotConfig.from_args(args),
         )
 
@@ -472,3 +479,21 @@ class QuartetPie(Tree):
             "output_file": self.output_path,
         }
         print_json(payload)
+
+    def _write_csv(self, tree, proportions, csv_path):
+        """Write per-branch gCF/gDF1/gDF2 values to a CSV file."""
+        with open(csv_path, "w") as f:
+            f.write("node_tips,gCF,gDF1,gDF2,concordant_count,disc1_count,disc2_count\n")
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                cid = id(clade)
+                if cid not in proportions:
+                    continue
+                props = proportions[cid]
+                tip_names = ";".join(sorted(t.name for t in clade.get_terminals()))
+                f.write(
+                    f"{tip_names},"
+                    f"{props[0]:.4f},{props[1]:.4f},{props[2]:.4f},"
+                    f"{props[3]},{props[4]},{props[5]}\n"
+                )
