@@ -100,6 +100,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#character-map-synapomorphy-homoplasy-mapping">Character map (synapomorphy/homoplasy mapping)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#independent-contrasts-pic">Independent contrasts (PIC)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ancestral-state-reconstruction">Ancestral state reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tree-space-visualization">Tree space visualization</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spectral-discordance-decomposition">Spectral discordance decomposition</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#concordance-aware-ancestral-state-reconstruction">Concordance-aware ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
@@ -336,6 +337,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
+<li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, or UMAP</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-pie"><span class="std std-ref">Quartet pie chart</span></a>: Phylogram with quartet concordance pie charts at internal nodes</p></li>
 <li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
@@ -1434,6 +1436,37 @@ specifies which column to use.</p>
 by interpolated ancestral trait values:</p>
 <a class="reference internal image-reference" href="../_images/asr_example.png"><img alt="../_images/asr_example.png" class="align-center" src="../_images/asr_example.png" style="width: 80%;" />
 </a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="tree-space-visualization">
+<span id="cmd-tree-space"></span><h3>Tree space visualization<a class="headerlink" href="#tree-space-visualization" title="Link to this heading"></a></h3>
+<p>Function names: tree_space; tspace; tree_landscape <br/>
+Command line interface: pk_tree_space; pk_tspace; pk_tree_landscape</p>
+<p>Visualize how gene trees cluster in topology space by computing pairwise
+distances (Robinson-Foulds or Kuhner-Felsenstein) and projecting into
+2D via MDS, t-SNE, or UMAP. Points are colored by spectral clustering
+with automatic cluster detection via the eigengap heuristic.</p>
+<p>Optionally highlight a species tree as a distinct marker to see where
+it sits relative to the gene tree cloud.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tree_space<span class="w"> </span>-t<span class="w"> </span>&lt;trees&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">    </span><span class="o">[</span>--metric<span class="w"> </span>rf<span class="p">|</span>kf<span class="o">]</span><span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>mds<span class="p">|</span>tsne<span class="p">|</span>umap<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--species-tree<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--k<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--trees</em>: file with gene trees (one Newick per line, or one file path per line) (required) <br/>
+<em>-o/--output</em>: output figure path (.png, .pdf, .svg) (required) <br/>
+<em>--metric</em>: distance metric: rf (normalized Robinson-Foulds, default) or kf (Kuhner-Felsenstein) <br/>
+<em>--method</em>: dimensionality reduction: mds (default), tsne, or umap <br/>
+<em>--species-tree</em>: optional species tree to highlight in the plot as a star marker <br/>
+<em>--k</em>: number of clusters (auto-detected via eigengap if omitted) <br/>
+<em>--seed</em>: random seed for reproducibility (t-SNE/UMAP) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.56</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">tree_space</span></code> command for gene tree topology visualization:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">tree_space</span></code> (<code class="docutils literal notranslate"><span class="pre">tspace</span></code> / <code class="docutils literal notranslate"><span class="pre">tree_landscape</span></code>): visualize
+gene tree topology space via MDS, t-SNE, or UMAP on pairwise
+Robinson-Foulds or Kuhner-Felsenstein distance matrices. Includes
+spectral clustering with eigengap auto-detection and optional
+species tree highlighting as a distinct marker.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phylogenetic_ordination</span></code> already supports <code class="docutils literal notranslate"><span class="pre">--color-by</span></code> for
+coloring points by a continuous trait column or a categorical
+group file (taxon-to-group TSV). This complements the auto-
+clustering in <code class="docutils literal notranslate"><span class="pre">tree_space</span></code>.</p></li>
+</ul>
 <p><strong>2.1.55</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--csv</span></code> output to <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>:</p>
 <ul class="simple">

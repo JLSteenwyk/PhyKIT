@@ -149,6 +149,7 @@ Tree comparison & consensus
 - :ref:`Evolutionary tempo mapping <cmd-evo_tempo_map>`: Detect rate-topology associations in gene trees
 - :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
 - :ref:`Spectral discordance decomposition <cmd-spectral_discordance>`: PCA ordination and clustering of gene tree topologies
+- :ref:`Tree space <cmd-tree_space>`: Visualize gene tree topology space via MDS, t-SNE, or UMAP
 - :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
 - :ref:`Quartet pie chart <cmd-quartet_pie>`: Phylogram with quartet concordance pie charts at internal nodes
 - :ref:`Kuhner-Felsenstein distance <cmd-kf_distance>`: Branch score distance between trees (topology + branch lengths)
@@ -1457,6 +1458,42 @@ by interpolated ancestral trait values:
 .. image:: ../_static/img/asr_example.png
    :align: center
    :width: 80%
+
+|
+
+.. _cmd-tree_space:
+
+Tree space visualization
+########################
+Function names: tree_space; tspace; tree_landscape |br|
+Command line interface: pk_tree_space; pk_tspace; pk_tree_landscape
+
+Visualize how gene trees cluster in topology space by computing pairwise
+distances (Robinson-Foulds or Kuhner-Felsenstein) and projecting into
+2D via MDS, t-SNE, or UMAP. Points are colored by spectral clustering
+with automatic cluster detection via the eigengap heuristic.
+
+Optionally highlight a species tree as a distinct marker to see where
+it sits relative to the gene tree cloud.
+
+.. code-block:: shell
+
+   phykit tree_space -t <trees> -o <output>
+       [--metric rf|kf] [--method mds|tsne|umap]
+       [--species-tree <file>] [--k <int>] [--seed <int>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+
+Options: |br|
+*-t/--trees*: file with gene trees (one Newick per line, or one file path per line) (required) |br|
+*-o/--output*: output figure path (.png, .pdf, .svg) (required) |br|
+*--metric*: distance metric: rf (normalized Robinson-Foulds, default) or kf (Kuhner-Felsenstein) |br|
+*--method*: dimensionality reduction: mds (default), tsne, or umap |br|
+*--species-tree*: optional species tree to highlight in the plot as a star marker |br|
+*--k*: number of clusters (auto-detected via eigengap if omitted) |br|
+*--seed*: random seed for reproducibility (t-SNE/UMAP) |br|
+*--json*: optional argument to print results as JSON
 
 |
 
