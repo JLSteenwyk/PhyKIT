@@ -289,6 +289,9 @@ setup(
             "pk_spectral_discordance = phykit.phykit:spectral_discordance",
             "pk_spec_disc = phykit.phykit:spectral_discordance",
             "pk_sd = phykit.phykit:spectral_discordance",
+            "pk_tree_space = phykit.phykit:tree_space",
+            "pk_tspace = phykit.phykit:tree_space",
+            "pk_tree_landscape = phykit.phykit:tree_space",
             "pk_create_concatenation_matrix = phykit.phykit:create_concatenation_matrix", # Helper functions
             "pk_create_concat = phykit.phykit:create_concatenation_matrix",
             "pk_cc = phykit.phykit:create_concatenation_matrix",

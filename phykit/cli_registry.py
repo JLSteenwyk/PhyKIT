@@ -176,6 +176,9 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "da": "discordance_asymmetry",
     "spec_disc": "spectral_discordance",
     "sd": "spectral_discordance",
+    "tree_space": "tree_space",
+    "tspace": "tree_space",
+    "tree_landscape": "tree_space",
     # Helper aliases
     "create_concat": "create_concatenation_matrix",
     "cc": "create_concatenation_matrix",

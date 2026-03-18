@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.56**:
+Added ``tree_space`` command for gene tree topology visualization:
+
+* Added ``tree_space`` (``tspace`` / ``tree_landscape``): visualize
+  gene tree topology space via MDS, t-SNE, or UMAP on pairwise
+  Robinson-Foulds or Kuhner-Felsenstein distance matrices. Includes
+  spectral clustering with eigengap auto-detection and optional
+  species tree highlighting as a distinct marker.
+* ``phylogenetic_ordination`` already supports ``--color-by`` for
+  coloring points by a continuous trait column or a categorical
+  group file (taxon-to-group TSV). This complements the auto-
+  clustering in ``tree_space``.
+
 **2.1.55**:
 Added ``--csv`` output to ``quartet_pie``:
 

@@ -300,6 +300,9 @@ class Phykit:
                 spectral_discordance (alias: spec_disc; sd)
                     - PCA + spectral clustering of gene tree space via
                       bipartition decomposition
+                tree_space (alias: tspace; tree_landscape)
+                    - visualize gene tree topology space via MDS, t-SNE,
+                      or UMAP on pairwise tree distance matrices
 
                 Alignment- and tree-based commands
                 ==================================
@@ -7160,6 +7163,103 @@ class Phykit:
         _add_json_argument(parser)
         _run_service(parser, argv, SpectralDiscordance)
 
+    @staticmethod
+    def tree_space(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Tree space visualization — visualize how gene trees
+                cluster in topology space using MDS, t-SNE, or UMAP
+                on pairwise tree distance matrices.
+
+                Gene trees are compared pairwise using Robinson-Foulds
+                (RF) or Kuhner-Felsenstein (KF) distance. The resulting
+                distance matrix is embedded into 2D using MDS, t-SNE,
+                or UMAP. Spectral clustering with eigengap heuristic
+                auto-detects topological groups.
+
+                An optional species tree can be highlighted as a
+                distinct marker in the plot.
+
+                Aliases:
+                  tree_space, tspace, tree_landscape
+                Command line interfaces:
+                  pk_tree_space, pk_tspace, pk_tree_landscape
+
+                Usage:
+                phykit tree_space -t <trees> -o <output>
+                  [--metric rf|kf] [--method mds|tsne|umap]
+                  [--species-tree <file>] [--k <int>] [--seed <int>]
+                  [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>]
+
+                Options
+                =====================================================
+                -t/--trees              file with gene trees (one
+                                        Newick per line, or one path
+                                        per line)
+
+                -o/--output             output figure path (.png,
+                                        .pdf, .svg)
+
+                --metric                distance metric: rf
+                                        (Robinson-Foulds, default)
+                                        or kf (Kuhner-Felsenstein)
+
+                --method                dimensionality reduction:
+                                        mds (default), tsne, or umap
+
+                --species-tree          optional species tree to
+                                        highlight in the plot
+
+                --k                     number of clusters (auto-
+                                        detected via eigengap if
+                                        omitted)
+
+                --seed                  random seed for
+                                        reproducibility (t-SNE/UMAP)
+
+                --json                  output structured JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--trees", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--metric", type=str, required=False, default="rf",
+            choices=["rf", "kf"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--method", type=str, required=False, default="mds",
+            choices=["mds", "tsne", "umap"], help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--species-tree", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--k", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--seed", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, TreeSpace)
+
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
@@ -7711,3 +7811,7 @@ def discordance_asymmetry(argv=None):
 
 def spectral_discordance(argv=None):
     Phykit.spectral_discordance(sys.argv[1:])
+
+
+def tree_space(argv=None):
+    Phykit.tree_space(sys.argv[1:])
