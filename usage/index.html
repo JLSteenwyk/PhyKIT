@@ -112,6 +112,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#discrete-trait-evolution-model-comparison-fitdiscrete">Discrete trait evolution model comparison (fitDiscrete)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trait-rate-map">Trait rate map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cophylogenetic-plot-tanglegram">Cophylogenetic plot (tanglegram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
@@ -364,6 +365,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-parsimony-score"><span class="std std-ref">Parsimony score</span></a>: Fitch parsimony score of a tree given an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-concordance-asr"><span class="std std-ref">Concordance-aware ASR</span></a>: ASR incorporating gene tree discordance</p></li>
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-trait-rate-map"><span class="std std-ref">Trait rate map</span></a>: Per-branch evolutionary rate map for a continuous trait</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a>: Compare continuous trait evolution models (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-discrete"><span class="std std-ref">Discrete trait evolution model comparison (fitDiscrete)</span></a>: Compare ER, SYM, ARD Mk models</p></li>
@@ -1930,6 +1932,47 @@ and mapped onto branches using a color gradient (coolwarm colormap).</p>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/contmap_example.png"><img alt="../_images/contmap_example.png" class="align-center" src="../_images/contmap_example.png" style="width: 80%;" />
 </a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="trait-rate-map">
+<span id="cmd-trait-rate-map"></span><h3>Trait rate map<a class="headerlink" href="#trait-rate-map" title="Link to this heading"></a></h3>
+<p>Function names: trait_rate_map; rate_map; branch_rates <br/>
+Command line interface: pk_trait_rate_map; pk_rate_map; pk_branch_rates</p>
+<p>Estimate per-branch evolutionary rates for a continuous trait and
+display them as a branch-colored phylogram. Ancestral states are
+reconstructed via Felsenstein's weighted-average method. Per-branch
+rate is the squared standardized contrast (proportional to local
+Brownian motion rate): <code class="docutils literal notranslate"><span class="pre">rate</span> <span class="pre">=</span> <span class="pre">(child_val</span> <span class="pre">-</span> <span class="pre">parent_val)^2</span> <span class="pre">/</span> <span class="pre">branch_length</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>trait_rate_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">    </span><span class="o">[</span>--trait<span class="w"> </span>&lt;column&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file (two-column: taxon&lt;tab&gt;value with no header; or multi-column with header when --trait is used) <br/>
+<em>-o/--output</em>: output plot file path (required) <br/>
+<em>--trait</em>: column name to use from a multi-column trait file (if omitted, two-column format is expected) <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
+<em>--ladderize</em>: ladderize (sort) the tree before plotting <br/>
+<em>--cladogram</em>: draw cladogram (equal branch lengths, tips aligned) instead of phylogram <br/>
+<em>--circular</em>: draw circular (radial/fan) phylogram instead of rectangular <br/>
+<em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
