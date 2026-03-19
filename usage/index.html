@@ -85,6 +85,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#mask-alignment">Mask alignment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#occupancy-per-taxon">Occupancy per taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cmd-identity-matrix">Identity matrix</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-alignment-qc">Plot alignment QC</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#protein-to-nucleotide-alignment">Protein-to-nucleotide alignment</a></li>
@@ -274,6 +275,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-gc-content"><span class="std std-ref">Guanine-cytosine (GC) content</span></a>: GC content of an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-occupancy-per-taxon"><span class="std std-ref">Occupancy per taxon</span></a>: Taxon occupancy in alignment columns</p></li>
 <li><p><a class="reference internal" href="#cmd-pairwise-identity"><span class="std std-ref">Pairwise identity</span></a>: Pairwise sequence identity in an alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-identity-matrix"><span class="std std-ref">Identity matrix</span></a>: Pairwise sequence identity heatmap</p></li>
 <li><p><a class="reference internal" href="#cmd-parsimony-informative-sites"><span class="std std-ref">Parsimony informative sites</span></a>: Count parsimony informative sites</p></li>
 <li><p><a class="reference internal" href="#cmd-plot-alignment-qc"><span class="std std-ref">Plot alignment QC</span></a>: Visual quality control plots for alignments</p></li>
 <li><p><a class="reference internal" href="#cmd-relative-composition-variability"><span class="std std-ref">Relative composition variability</span></a>: Composition variability across taxa</p></li>
@@ -1009,6 +1011,48 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 <em>--circular</em>: draw circular (radial/fan) phylogram instead of rectangular <br/>
 <em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="cmd-identity-matrix">
+<span id="identity-matrix"></span><h3>Identity matrix<a class="headerlink" href="#cmd-identity-matrix" title="Link to this heading"></a></h3>
+<p>Function names: identity_matrix; id_matrix; seqid <br/>
+Command line interface: pk_identity_matrix; pk_id_matrix; pk_seqid</p>
+<p>Compute a pairwise sequence identity matrix from an alignment and plot it as a
+clustered heatmap.</p>
+<p>For each pair of taxa, identity is defined as the fraction of non-gap,
+non-ambiguous columns that are identical. Gaps, '?', 'N', 'X', and '*' in
+either sequence cause a column to be skipped.</p>
+<p>The matrix can be displayed as identity (default) or p-distance (1 - identity)
+using --metric. Ordering can be by hierarchical clustering (default), tree tip
+order (--sort tree --tree &lt;file&gt;), or alphabetical (--sort alpha).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>identity_matrix<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">        </span><span class="o">[</span>--metric<span class="w"> </span>identity<span class="p">|</span>p-distance<span class="o">]</span><span class="w"> </span><span class="o">[</span>--tree<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--sort<span class="w"> </span>alpha<span class="p">|</span>cluster<span class="p">|</span>tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--partition<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: alignment file (FASTA or other supported format) <br/>
+<em>-o/--output</em>: output figure path (.png, .pdf, .svg) <br/>
+<em>--metric</em>: 'identity' (fraction matching) or 'p-distance' (1 - identity); default: identity <br/>
+<em>--tree</em>: tree file for tree-guided ordering (Newick format) <br/>
+<em>--sort</em>: ordering method: 'cluster' (hierarchical), 'tree' (requires --tree), or 'alpha' (alphabetical); default: cluster <br/>
+<em>--partition</em>: RAxML-style partition file (reserved for future use) <br/>
+<em>--json</em>: output structured JSON instead of plain text <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br/>
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br/>
+<em>--title-fontsize</em>: font size for the title <br/>
+<em>--axis-fontsize</em>: font size for axis labels</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

@@ -80,6 +80,24 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.59</strong>:
+Added partition support to <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code> now supports <code class="docutils literal notranslate"><span class="pre">--partition</span> <span class="pre">&lt;file&gt;</span></code> with a
+RAxML-style partition file. When provided, a per-gene identity
+panel is displayed alongside the main heatmap, showing mean
+pairwise identity per taxon for each gene partition.</p></li>
+</ul>
+<p><strong>2.1.58</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code> command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code> (<code class="docutils literal notranslate"><span class="pre">id_matrix</span></code> / <code class="docutils literal notranslate"><span class="pre">seqid</span></code>): compute
+pairwise sequence identity (or p-distance) matrix from an alignment
+and plot as a clustered heatmap with dendrograms. Supports three
+ordering modes: hierarchical clustering (default), tree-guided
+(<code class="docutils literal notranslate"><span class="pre">--sort</span> <span class="pre">tree</span> <span class="pre">--tree</span> <span class="pre">&lt;file&gt;</span></code>), or alphabetical (<code class="docutils literal notranslate"><span class="pre">--sort</span> <span class="pre">alpha</span></code>).
+Partition file support planned for a future release.</p></li>
+</ul>
 <p><strong>2.1.57</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--heatmap</span></code> and <code class="docutils literal notranslate"><span class="pre">--distance-matrix</span></code> options to <code class="docutils literal notranslate"><span class="pre">tree_space</span></code>:</p>
 <ul class="simple">
