@@ -80,6 +80,14 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.57</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">--heatmap</span></code> and <code class="docutils literal notranslate"><span class="pre">--distance-matrix</span></code> options to <code class="docutils literal notranslate"><span class="pre">tree_space</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--heatmap</span></code>: draw a clustered distance heatmap (with dendrogram)
+instead of the default MDS/t-SNE/UMAP scatter plot</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--distance-matrix</span> <span class="pre">&lt;file&gt;</span></code>: export the raw pairwise distance
+matrix as a CSV file (works with both scatter and heatmap modes)</p></li>
+</ul>
 <p><strong>2.1.56</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">tree_space</span></code> command for gene tree topology visualization:</p>
 <ul class="simple">

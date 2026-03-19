@@ -6,6 +6,14 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.57**:
+Added ``--heatmap`` and ``--distance-matrix`` options to ``tree_space``:
+
+* ``--heatmap``: draw a clustered distance heatmap (with dendrogram)
+  instead of the default MDS/t-SNE/UMAP scatter plot
+* ``--distance-matrix <file>``: export the raw pairwise distance
+  matrix as a CSV file (works with both scatter and heatmap modes)
+
 **2.1.56**:
 Added ``tree_space`` command for gene tree topology visualization:
 
