@@ -48,6 +48,7 @@ _EXPORTS = {
     "ThresholdModel": "threshold_model",
     "TreenessOverRCV": "treeness_over_rcv",
     "ConcordanceAsr": "concordance_asr",
+    "TraitCorrelation": "trait_correlation",
     "TreeSpace": "tree_space",
 }
 

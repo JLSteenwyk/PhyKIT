@@ -214,6 +214,9 @@ class Phykit:
                 phylogenetic_signal (alias: phylo_signal; ps)
                     - calculate phylogenetic signal (Blomberg's K or Pagel's
                       lambda) for continuous trait data
+                trait_correlation (alias: trait_corr; phylo_corr)
+                    - compute phylogenetic correlations between all pairs
+                      of traits and display as a heatmap
                 phylogenetic_ordination (alias: phylo_ordination; ordination; ord;
                     phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr)
                     - phylogenetic ordination (PCA, t-SNE, or UMAP) on
@@ -3290,6 +3293,88 @@ class Phykit:
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticSignal)
+
+    @staticmethod
+    def trait_correlation(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compute phylogenetic correlations between all pairs of
+                traits and display them as a heatmap with significance
+                indicators.
+
+                Uses GLS-centering via the tree's variance-covariance
+                matrix to account for phylogenetic non-independence.
+                P-values are computed from the t-distribution.
+
+                Significance stars in the heatmap:
+                  ***  p < 0.001
+                  **   p < 0.01
+                  *    p < alpha (default 0.05)
+
+                Input is a phylogenetic tree and a tab-delimited
+                multi-trait file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Aliases:
+                  trait_correlation, trait_corr, phylo_corr
+                Command line interfaces:
+                  pk_trait_correlation, pk_trait_corr, pk_phylo_corr
+
+                Usage:
+                phykit trait_correlation -t <tree> -d <trait_data> -o <output>
+                  [--alpha 0.05] [--cluster] [-g <gene_trees>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -d/--trait-data             multi-trait TSV with header
+                                            row (required)
+
+                -o/--output                 output figure path (required;
+                                            supports .png, .pdf, .svg)
+
+                --alpha                     significance threshold for
+                                            marking p-values
+                                            (default: 0.05)
+
+                --cluster                   cluster traits by correlation
+                                            similarity and display
+                                            dendrograms
+
+                -g/--gene-trees             optional multi-Newick file of
+                                            gene trees for discordance-
+                                            aware VCV computation
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait-data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--alpha", type=float, default=0.05, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--cluster", action="store_true", default=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, default=None, help=SUPPRESS, metavar=""
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, TraitCorrelation)
 
     @staticmethod
     def phylogenetic_ordination(argv):
@@ -7750,6 +7835,10 @@ def patristic_distances(argv=None):
 
 def phylogenetic_signal(argv=None):
     Phykit.phylogenetic_signal(sys.argv[1:])
+
+
+def trait_correlation(argv=None):
+    Phykit.trait_correlation(sys.argv[1:])
 
 
 def phylogenetic_ordination(argv=None):
