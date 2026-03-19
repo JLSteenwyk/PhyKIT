@@ -6,6 +6,24 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.59**:
+Added partition support to ``identity_matrix``:
+
+* ``identity_matrix`` now supports ``--partition <file>`` with a
+  RAxML-style partition file. When provided, a per-gene identity
+  panel is displayed alongside the main heatmap, showing mean
+  pairwise identity per taxon for each gene partition.
+
+**2.1.58**:
+Added ``identity_matrix`` command:
+
+* Added ``identity_matrix`` (``id_matrix`` / ``seqid``): compute
+  pairwise sequence identity (or p-distance) matrix from an alignment
+  and plot as a clustered heatmap with dendrograms. Supports three
+  ordering modes: hierarchical clustering (default), tree-guided
+  (``--sort tree --tree <file>``), or alphabetical (``--sort alpha``).
+  Partition file support planned for a future release.
+
 **2.1.57**:
 Added ``--heatmap`` and ``--distance-matrix`` options to ``tree_space``:
 

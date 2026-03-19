@@ -90,6 +90,7 @@ Alignment quality & statistics
 - :ref:`Guanine-cytosine (GC) content <cmd-gc_content>`: GC content of an alignment
 - :ref:`Occupancy per taxon <cmd-occupancy_per_taxon>`: Taxon occupancy in alignment columns
 - :ref:`Pairwise identity <cmd-pairwise_identity>`: Pairwise sequence identity in an alignment
+- :ref:`Identity matrix <cmd-identity_matrix>`: Pairwise sequence identity heatmap
 - :ref:`Parsimony informative sites <cmd-parsimony_informative_sites>`: Count parsimony informative sites
 - :ref:`Plot alignment QC <cmd-plot_alignment_qc>`: Visual quality control plots for alignments
 - :ref:`Relative composition variability <cmd-relative_composition_variability>`: Composition variability across taxa
@@ -944,6 +945,55 @@ Options: |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
 *--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-identity_matrix:
+
+Identity matrix
+###############
+
+Function names: identity_matrix; id_matrix; seqid |br|
+Command line interface: pk_identity_matrix; pk_id_matrix; pk_seqid
+
+Compute a pairwise sequence identity matrix from an alignment and plot it as a
+clustered heatmap.
+
+For each pair of taxa, identity is defined as the fraction of non-gap,
+non-ambiguous columns that are identical. Gaps, '?', 'N', 'X', and '*' in
+either sequence cause a column to be skipped.
+
+The matrix can be displayed as identity (default) or p-distance (1 - identity)
+using --metric. Ordering can be by hierarchical clustering (default), tree tip
+order (--sort tree --tree <file>), or alphabetical (--sort alpha).
+
+.. code-block:: shell
+
+	phykit identity_matrix -a <alignment> -o <output>
+		[--metric identity|p-distance] [--tree <file>]
+		[--sort alpha|cluster|tree] [--partition <file>] [--json]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>]
+		[--no-title] [--title <str>]
+		[--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>]
+
+Options: |br|
+*-a/--alignment*: alignment file (FASTA or other supported format) |br|
+*-o/--output*: output figure path (.png, .pdf, .svg) |br|
+*--metric*: 'identity' (fraction matching) or 'p-distance' (1 - identity); default: identity |br|
+*--tree*: tree file for tree-guided ordering (Newick format) |br|
+*--sort*: ordering method: 'cluster' (hierarchical), 'tree' (requires --tree), or 'alpha' (alphabetical); default: cluster |br|
+*--partition*: RAxML-style partition file (reserved for future use) |br|
+*--json*: output structured JSON instead of plain text |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels
 
 |
 

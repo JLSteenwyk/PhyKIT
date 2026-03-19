@@ -144,6 +144,9 @@ class Phykit:
                 pairwise_identity (alias: pairwise_id, pi)
                     - calculates average pairwise identify among sequences in
                       an alignment file. This is a proxy for evolutionary rate
+                identity_matrix (alias: id_matrix, seqid)
+                    - compute pairwise sequence identity matrix and plot as
+                      a clustered heatmap
                 parsimony_informative_sites (alias: pis)
                     - calculates the number and percentage of parsimony
                       informative sites in an alignment
@@ -1442,6 +1445,100 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PairwiseIdentity)
+
+    @staticmethod
+    def identity_matrix(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compute a pairwise sequence identity matrix from an
+                alignment and plot it as a clustered heatmap.
+
+                For each pair of taxa, identity is defined as the
+                fraction of non-gap, non-ambiguous columns that are
+                identical. Gaps, '?', 'N', 'X', and '*' in either
+                sequence cause a column to be skipped.
+
+                The matrix can be displayed as identity (default) or
+                p-distance (1 - identity) using --metric.
+
+                Ordering can be by hierarchical clustering (default),
+                tree tip order (--sort tree --tree <file>), or
+                alphabetical (--sort alpha).
+
+                Aliases:
+                  identity_matrix, id_matrix, seqid
+                Command line interfaces:
+                  pk_identity_matrix, pk_id_matrix, pk_seqid
+
+                Usage:
+                phykit identity_matrix -a <alignment> -o <output>
+                  [--metric identity|p-distance]
+                  [--tree <file>] [--sort alpha|cluster|tree]
+                  [--partition <file>] [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+
+                Options
+                =====================================================
+                -a/--alignment              alignment file (FASTA or
+                                            other supported format)
+
+                -o/--output                 output figure path
+                                            (.png, .pdf, .svg)
+
+                --metric                    'identity' (fraction matching)
+                                            or 'p-distance' (1 - identity)
+                                            (default: identity)
+
+                --tree                      tree file for tree-guided
+                                            ordering (Newick format)
+
+                --sort                      ordering method: 'cluster'
+                                            (hierarchical), 'tree'
+                                            (requires --tree), or 'alpha'
+                                            (alphabetical)
+                                            (default: cluster)
+
+                --partition                 RAxML-style partition file
+                                            (reserved for future use)
+
+                --json                      output structured JSON
+                                            instead of plain text
+                """
+            ),
+        )
+        parser.add_argument(
+            "-a", "--alignment", type=str, required=True, help=SUPPRESS
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--metric", type=str, default="identity",
+            choices=["identity", "p-distance"],
+            required=False, help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--tree", type=str, default=None,
+            required=False, help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--sort", type=str, default="cluster",
+            choices=["alpha", "cluster", "tree"],
+            required=False, help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--partition", type=str, default=None,
+            required=False, help=SUPPRESS,
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, IdentityMatrix)
 
     @staticmethod
     def parsimony_informative_sites(argv):
@@ -7532,6 +7629,10 @@ def occupancy_per_taxon(argv=None):
 
 def pairwise_identity(argv=None):
     Phykit.pairwise_identity(sys.argv[1:])
+
+
+def identity_matrix(argv=None):
+    Phykit.identity_matrix(sys.argv[1:])
 
 
 def parsimony_informative_sites(argv=None):

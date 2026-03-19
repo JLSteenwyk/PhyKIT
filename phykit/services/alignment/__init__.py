@@ -17,6 +17,7 @@ _EXPORTS = {
     "GCContent": "gc_content",
     "MaskAlignment": "mask_alignment",
     "PairwiseIdentity": "pairwise_identity",
+    "IdentityMatrix": "identity_matrix",
     "ParsimonyInformative": "parsimony_informative_sites",
     "OccupancyPerTaxon": "occupancy_per_taxon",
     "RelativeCompositionVariability": "rcv",

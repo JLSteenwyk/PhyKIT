@@ -36,6 +36,7 @@ MaskAlignment = _LazyServiceFactory("phykit.services.alignment.mask_alignment", 
 PlotAlignmentQC = _LazyServiceFactory("phykit.services.alignment.plot_alignment_qc", "PlotAlignmentQC")
 OccupancyPerTaxon = _LazyServiceFactory("phykit.services.alignment.occupancy_per_taxon", "OccupancyPerTaxon")
 PairwiseIdentity = _LazyServiceFactory("phykit.services.alignment.pairwise_identity", "PairwiseIdentity")
+IdentityMatrix = _LazyServiceFactory("phykit.services.alignment.identity_matrix", "IdentityMatrix")
 ParsimonyInformative = _LazyServiceFactory("phykit.services.alignment.parsimony_informative_sites", "ParsimonyInformative")
 RelativeCompositionVariability = _LazyServiceFactory("phykit.services.alignment.rcv", "RelativeCompositionVariability")
 RelativeCompositionVariabilityTaxon = _LazyServiceFactory("phykit.services.alignment.rcvt", "RelativeCompositionVariabilityTaxon")
