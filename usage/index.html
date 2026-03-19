@@ -337,7 +337,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
-<li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, or UMAP</p></li>
+<li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-pie"><span class="std std-ref">Quartet pie chart</span></a>: Phylogram with quartet concordance pie charts at internal nodes</p></li>
 <li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
@@ -1448,6 +1448,10 @@ Command line interface: pk_tree_space; pk_tspace; pk_tree_landscape</p>
 distances (Robinson-Foulds or Kuhner-Felsenstein) and projecting into
 2D via MDS, t-SNE, or UMAP. Points are colored by spectral clustering
 with automatic cluster detection via the eigengap heuristic.</p>
+<p>Alternatively, use <code class="docutils literal notranslate"><span class="pre">--heatmap</span></code> to draw a clustered distance heatmap
+with a dendrogram showing hierarchical relationships among gene trees.
+Use <code class="docutils literal notranslate"><span class="pre">--distance-matrix</span></code> to export the raw pairwise distance matrix
+as a CSV file.</p>
 <p>Optionally highlight a species tree as a distinct marker to see where
 it sits relative to the gene tree cloud.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>tree_space<span class="w"> </span>-t<span class="w"> </span>&lt;trees&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
