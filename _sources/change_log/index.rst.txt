@@ -6,6 +6,18 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.61**:
+Added ``trait_correlation`` command:
+
+* Added ``trait_correlation`` (``trait_corr`` / ``phylo_corr``):
+  compute phylogenetic correlations between all pairs of continuous
+  traits using GLS-centered covariance, and display as a heatmap
+  with significance stars (``*`` p<0.05, ``**`` p<0.01, ``***``
+  p<0.001). Supports optional hierarchical clustering of traits
+  (``--cluster``), custom significance threshold (``--alpha``), and
+  discordance-aware VCV via gene trees (``-g``). Cross-validates
+  against pairwise PGLS.
+
 **2.1.60**:
 Added ``--cluster-columns`` to ``phylo_heatmap`` and partition support
 to ``identity_matrix``:

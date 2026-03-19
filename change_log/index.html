@@ -80,6 +80,18 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.61</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">trait_correlation</span></code> command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">trait_correlation</span></code> (<code class="docutils literal notranslate"><span class="pre">trait_corr</span></code> / <code class="docutils literal notranslate"><span class="pre">phylo_corr</span></code>):
+compute phylogenetic correlations between all pairs of continuous
+traits using GLS-centered covariance, and display as a heatmap
+with significance stars (<code class="docutils literal notranslate"><span class="pre">*</span></code> p&lt;0.05, <code class="docutils literal notranslate"><span class="pre">**</span></code> p&lt;0.01, <code class="docutils literal notranslate"><span class="pre">***</span></code>
+p&lt;0.001). Supports optional hierarchical clustering of traits
+(<code class="docutils literal notranslate"><span class="pre">--cluster</span></code>), custom significance threshold (<code class="docutils literal notranslate"><span class="pre">--alpha</span></code>), and
+discordance-aware VCV via gene trees (<code class="docutils literal notranslate"><span class="pre">-g</span></code>). Cross-validates
+against pairwise PGLS.</p></li>
+</ul>
 <p><strong>2.1.60</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--cluster-columns</span></code> to <code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code> and partition support
 to <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code>:</p>

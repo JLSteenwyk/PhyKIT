@@ -138,6 +138,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cmd-phylogenetic-signal">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trait-correlation">Trait correlation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylomorphospace">Phylomorphospace</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
@@ -351,6 +352,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-network-signal"><span class="std std-ref">Network signal</span></a>: Phylogenetic signal on networks</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-signal"><span class="std std-ref">Phylogenetic signal</span></a>: Test for phylogenetic signal in traits (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-trait-correlation"><span class="std std-ref">Trait correlation</span></a>: Phylogenetic correlations between all pairs of traits with heatmap visualization</p></li>
 </ul>
 </section>
 <section id="trait-evolution">
@@ -3277,6 +3279,46 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 <em>-m/--method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: blombergs_k) <br/>
 <em>-p/--permutations</em>: number of permutations for Blomberg's K (default: 1000) <br/>
 <em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="trait-correlation">
+<span id="cmd-trait-correlation"></span><h3>Trait correlation<a class="headerlink" href="#trait-correlation" title="Link to this heading"></a></h3>
+<p>Function names: trait_correlation; trait_corr; phylo_corr <br/>
+Command line interface: pk_trait_correlation; pk_trait_corr; pk_phylo_corr</p>
+<p>Compute phylogenetic correlations between all pairs of traits and display
+them as a heatmap with significance indicators.</p>
+<p>Uses GLS-centering via the tree's variance-covariance matrix to account for
+phylogenetic non-independence among species. P-values are computed from the
+t-distribution and displayed as significance stars on the heatmap cells:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">***</span></code> p &lt; 0.001</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">**</span></code> p &lt; 0.01</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*</span></code> p &lt; alpha (default 0.05)</p></li>
+</ul>
+<p>The multi-trait input file should be tab-delimited with a header row:
+<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code>
+At least 2 traits are required. Lines starting with '#' are treated as
+comments. If the tree and trait file have different taxa, the intersection
+is used and warnings are printed to stderr.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--cluster</span></code> option clusters traits by correlation similarity
+(using <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">|r|</span></code> as distance) and draws dendrograms alongside the
+heatmap.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>trait_correlation<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">    </span><span class="o">[</span>--alpha<span class="w"> </span><span class="m">0</span>.05<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cluster<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait-data</em>: tab-delimited multi-trait file with header row (at least 2 traits) <br/>
+<em>-o/--output</em>: output figure path (supports .png, .pdf, .svg) <br/>
+<em>--alpha</em>: significance threshold for marking p-values (default: 0.05) <br/>
+<em>--cluster</em>: cluster traits by correlation similarity and display dendrograms <br/>
+<em>-g/--gene-trees</em>: optional multi-Newick file of gene trees for discordance-aware VCV <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
