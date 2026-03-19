@@ -298,6 +298,9 @@ setup(
             "pk_tree_space = phykit.phykit:tree_space",
             "pk_tspace = phykit.phykit:tree_space",
             "pk_tree_landscape = phykit.phykit:tree_space",
+            "pk_trait_rate_map = phykit.phykit:trait_rate_map",
+            "pk_rate_map = phykit.phykit:trait_rate_map",
+            "pk_branch_rates = phykit.phykit:trait_rate_map",
             "pk_create_concatenation_matrix = phykit.phykit:create_concatenation_matrix", # Helper functions
             "pk_create_concat = phykit.phykit:create_concatenation_matrix",
             "pk_cc = phykit.phykit:create_concatenation_matrix",

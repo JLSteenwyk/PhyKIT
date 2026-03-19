@@ -109,6 +109,7 @@ EvoTempoMap = _LazyServiceFactory("phykit.services.tree.evo_tempo_map", "EvoTemp
 DiscordanceAsymmetry = _LazyServiceFactory("phykit.services.tree.discordance_asymmetry", "DiscordanceAsymmetry")
 SpectralDiscordance = _LazyServiceFactory("phykit.services.tree.spectral_discordance", "SpectralDiscordance")
 TraitCorrelation = _LazyServiceFactory("phykit.services.tree.trait_correlation", "TraitCorrelation")
+TraitRateMap = _LazyServiceFactory("phykit.services.tree.trait_rate_map", "TraitRateMap")
 TreeSpace = _LazyServiceFactory("phykit.services.tree.tree_space", "TreeSpace")
 
 SERVICE_FACTORIES: Dict[str, _LazyServiceFactory] = {

@@ -234,6 +234,8 @@ class Phykit:
                     - stochastic character mapping (SIMMAP) of discrete traits
                 cont_map (alias: contmap; cmap)
                     - continuous trait map (contMap) visualization on a phylogeny
+                trait_rate_map (alias: rate_map; branch_rates)
+                    - per-branch evolutionary rate map for a continuous trait
                 density_map (alias: densitymap; dmap)
                     - density map of posterior state probabilities on a phylogeny
                 cophylo (alias: tanglegram; tangle)
@@ -7354,6 +7356,129 @@ class Phykit:
         _run_service(parser, argv, SpectralDiscordance)
 
     @staticmethod
+    def trait_rate_map(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Trait Rate Map — estimate per-branch evolutionary
+                rates for a continuous trait and display them as a
+                branch-colored phylogram.
+
+                Ancestral states are reconstructed via Felsenstein's
+                weighted-average method (inverse-branch-length
+                weighting, postorder traversal). Per-branch rate is
+                the squared standardized contrast:
+                  rate = (child_val - parent_val)^2 / branch_length
+
+                Input is a phylogenetic tree and either:
+                  (a) a two-column TSV (taxon<tab>value, no header), or
+                  (b) a multi-column TSV with header (use --trait to
+                      select a column)
+
+                Aliases:
+                  trait_rate_map, rate_map, branch_rates
+                Command line interfaces:
+                  pk_trait_rate_map, pk_rate_map, pk_branch_rates
+
+                Usage:
+                phykit trait_rate_map -t <tree> -d <trait_data> -o <output>
+                  [--trait <column>] [--json]
+                  [--fig-width <float>] [--fig-height <float>]
+                  [--dpi <int>] [--no-title] [--title <str>]
+                  [--legend-position <str>]
+                  [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                  [--title-fontsize <float>] [--axis-fontsize <float>]
+                  [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait_data             tab-delimited trait file
+                                            (two-column: taxon<tab>value,
+                                            no header; or multi-column
+                                            with header when --trait is
+                                            used)
+
+                -o/--output                 output plot file path
+                                            (required)
+
+                --trait                     column name to use from a
+                                            multi-column trait file
+                                            (if omitted, two-column
+                                            format is expected)
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named, e.g.,
+                                            "#ff0000,blue,#00ff00")
+
+                --ladderize                 ladderize (sort) the tree
+                                            before plotting
+
+                --cladogram                 draw cladogram (equal branch
+                                            lengths, tips aligned)
+                                            instead of phylogram
+
+                --circular                  draw circular (radial/fan)
+                                            phylogram instead of
+                                            rectangular
+
+                --color-file                color annotation file for
+                                            tip labels, clade ranges,
+                                            and branch colors (iTOL-
+                                            inspired TSV format)
+
+                --json                      optional argument to also
+                                            output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--trait", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, TraitRateMap)
+
+    @staticmethod
     def tree_space(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -8029,3 +8154,7 @@ def spectral_discordance(argv=None):
 
 def tree_space(argv=None):
     Phykit.tree_space(sys.argv[1:])
+
+
+def trait_rate_map(argv=None):
+    Phykit.trait_rate_map(sys.argv[1:])

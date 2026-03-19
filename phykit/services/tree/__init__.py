@@ -49,6 +49,7 @@ _EXPORTS = {
     "TreenessOverRCV": "treeness_over_rcv",
     "ConcordanceAsr": "concordance_asr",
     "TraitCorrelation": "trait_correlation",
+    "TraitRateMap": "trait_rate_map",
     "TreeSpace": "tree_space",
 }
 

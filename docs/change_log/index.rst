@@ -6,8 +6,18 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**2.1.61**:
-Added ``trait_correlation`` command:
+**2.1.63**:
+Added ``trait_rate_map`` command:
+
+* Added ``trait_rate_map`` (``rate_map`` / ``branch_rates``):
+  estimate per-branch evolutionary rates for a continuous trait
+  using squared standardized contrasts and display as a branch-
+  colored phylogram. Branches with faster evolution appear in
+  warmer colors. Supports rectangular and circular layouts,
+  cladogram mode, and color file annotations.
+
+**2.1.62**:
+Added ``trait_correlation`` command (with dendrogram fix).
 
 * Added ``trait_correlation`` (``trait_corr`` / ``phylo_corr``):
   compute phylogenetic correlations between all pairs of continuous
