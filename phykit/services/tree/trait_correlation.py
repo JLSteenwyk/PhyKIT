@@ -332,17 +332,20 @@ class TraitCorrelation(Tree):
 
         # Layout: dendrogram on top + left, heatmap center, colorbar right
         # Using add_axes for precise control
-        dendro_top_ax = fig.add_axes([0.15, 0.82, 0.65, 0.12])
-        dendro_left_ax = fig.add_axes([0.0, 0.10, 0.12, 0.70])
-        heat_ax = fig.add_axes([0.15, 0.10, 0.65, 0.70])
+        # Leave more space on the left for the dendrogram + label gap
+        dendro_top_ax = fig.add_axes([0.22, 0.82, 0.58, 0.12])
+        dendro_left_ax = fig.add_axes([0.02, 0.10, 0.10, 0.70])
+        heat_ax = fig.add_axes([0.22, 0.10, 0.58, 0.70])
         cbar_ax = fig.add_axes([0.83, 0.10, 0.03, 0.70])
 
-        # Draw top dendrogram
-        dendrogram(Z, ax=dendro_top_ax, no_labels=True, color_threshold=0)
+        # Draw top dendrogram (black)
+        dendrogram(Z, ax=dendro_top_ax, no_labels=True,
+                   color_threshold=0, above_threshold_color="#333333")
         dendro_top_ax.axis("off")
 
-        # Draw left dendrogram (rotated)
-        dendrogram(Z, ax=dendro_left_ax, no_labels=True, color_threshold=0,
+        # Draw left dendrogram (black, rotated)
+        dendrogram(Z, ax=dendro_left_ax, no_labels=True,
+                   color_threshold=0, above_threshold_color="#333333",
                    orientation="left")
         dendro_left_ax.axis("off")
 
