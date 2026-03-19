@@ -80,13 +80,16 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
-<p><strong>2.1.59</strong>:
-Added partition support to <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code>:</p>
+<p><strong>2.1.60</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">--cluster-columns</span></code> to <code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code> and partition support
+to <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code>:</p>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code> now supports <code class="docutils literal notranslate"><span class="pre">--cluster-columns</span></code> to cluster trait
+columns by similarity and display a dendrogram at the top. Column
+labels move to the bottom when the dendrogram is shown.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code> now supports <code class="docutils literal notranslate"><span class="pre">--partition</span> <span class="pre">&lt;file&gt;</span></code> with a
-RAxML-style partition file. When provided, a per-gene identity
-panel is displayed alongside the main heatmap, showing mean
-pairwise identity per taxon for each gene partition.</p></li>
+RAxML-style partition file. A per-gene identity panel is displayed
+alongside the main heatmap.</p></li>
 </ul>
 <p><strong>2.1.58</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">identity_matrix</span></code> command:</p>

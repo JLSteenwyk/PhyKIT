@@ -6,13 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**2.1.59**:
-Added partition support to ``identity_matrix``:
+**2.1.60**:
+Added ``--cluster-columns`` to ``phylo_heatmap`` and partition support
+to ``identity_matrix``:
 
+* ``phylo_heatmap`` now supports ``--cluster-columns`` to cluster trait
+  columns by similarity and display a dendrogram at the top. Column
+  labels move to the bottom when the dendrogram is shown.
 * ``identity_matrix`` now supports ``--partition <file>`` with a
-  RAxML-style partition file. When provided, a per-gene identity
-  panel is displayed alongside the main heatmap, showing mean
-  pairwise identity per taxon for each gene partition.
+  RAxML-style partition file. A per-gene identity panel is displayed
+  alongside the main heatmap.
 
 **2.1.58**:
 Added ``identity_matrix`` command:

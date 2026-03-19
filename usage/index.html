@@ -2985,7 +2985,7 @@ R's phytools::phylo.heatmap().</p>
 <a class="reference internal image-reference" href="../_images/phylo_heatmap_example.png"><img alt="../_images/phylo_heatmap_example.png" class="align-center" src="../_images/phylo_heatmap_example.png" style="width: 90%;" />
 </a>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_heatmap<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
-<span class="w">        </span><span class="o">[</span>--split<span class="w"> </span><span class="m">0</span>.3<span class="o">]</span><span class="w"> </span><span class="o">[</span>--standardize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cmap<span class="w"> </span>viridis<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--split<span class="w"> </span><span class="m">0</span>.3<span class="o">]</span><span class="w"> </span><span class="o">[</span>--standardize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cmap<span class="w"> </span>viridis<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cluster-columns<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2995,6 +2995,7 @@ R's phytools::phylo.heatmap().</p>
 <em>--split</em>: fraction of figure width for the tree panel (default: 0.3) <br/>
 <em>--standardize</em>: z-score each column before coloring <br/>
 <em>--cmap</em>: matplotlib colormap name (default: <code class="docutils literal notranslate"><span class="pre">viridis</span></code>) <br/>
+<em>--cluster-columns</em>: cluster trait columns by similarity and display a dendrogram at the top <br/>
 <em>--json</em>: optional argument to output metadata as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
