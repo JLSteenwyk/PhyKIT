@@ -3277,7 +3277,7 @@ R's phytools::phylo.heatmap().
 .. code-block:: shell
 
 	phykit phylo_heatmap -t <tree> -d <data> -o <output>
-		[--split 0.3] [--standardize] [--cmap viridis] [--json]
+		[--split 0.3] [--standardize] [--cmap viridis] [--cluster-columns] [--json]
 
 Options: |br|
 *-t/--tree*: tree file (required) |br|
@@ -3286,6 +3286,7 @@ Options: |br|
 *--split*: fraction of figure width for the tree panel (default: 0.3) |br|
 *--standardize*: z-score each column before coloring |br|
 *--cmap*: matplotlib colormap name (default: ``viridis``) |br|
+*--cluster-columns*: cluster trait columns by similarity and display a dendrogram at the top |br|
 *--json*: optional argument to output metadata as JSON
 
 |

@@ -3595,6 +3595,10 @@ class Phykit:
                 --cmap                      matplotlib colormap name
                                             (default: viridis)
 
+                --cluster-columns           cluster trait columns by
+                                            similarity and display a
+                                            dendrogram at the top
+
                 --fig-width                 figure width in inches
                                             (auto-scaled if omitted)
 
@@ -3638,6 +3642,10 @@ class Phykit:
         parser.add_argument(
             "--cmap", type=str, required=False, default="viridis",
             help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--cluster-columns", action="store_true", required=False,
+            default=False, help=SUPPRESS
         )
         add_plot_arguments(parser)
         _add_json_argument(parser)

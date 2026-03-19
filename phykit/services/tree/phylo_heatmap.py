@@ -33,6 +33,7 @@ class PhyloHeatmap(Tree):
         self.split = parsed["split"]
         self.standardize = parsed["standardize"]
         self.cmap_name = parsed["cmap"]
+        self.cluster_columns = parsed["cluster_columns"]
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
@@ -79,6 +80,7 @@ class PhyloHeatmap(Tree):
             split=split,
             standardize=getattr(args, "standardize", False),
             cmap=getattr(args, "cmap", "viridis"),
+            cluster_columns=getattr(args, "cluster_columns", False),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
         )
@@ -226,15 +228,48 @@ class PhyloHeatmap(Tree):
         self, tree, tip_order, trait_names, trait_data, matrix,
         config, n_tips, n_traits, output_path, plt, gridspec,
     ) -> None:
-        fig = plt.figure(figsize=(config.fig_width, config.fig_height))
-        gs = gridspec.GridSpec(
-            1, 2,
-            width_ratios=[self.split, 1 - self.split],
-            wspace=0.02,
-        )
+        from scipy.cluster.hierarchy import linkage, dendrogram, leaves_list
+        from scipy.spatial.distance import pdist
 
-        ax_tree = fig.add_subplot(gs[0])
-        ax_heat = fig.add_subplot(gs[1])
+        fig = plt.figure(figsize=(config.fig_width, config.fig_height))
+
+        # Cluster columns if requested
+        col_order = list(range(n_traits))
+        col_dendro_Z = None
+        if self.cluster_columns and n_traits >= 2:
+            # Cluster traits by their column values (transpose, compute distance)
+            col_dist = pdist(matrix.T, metric="euclidean")
+            col_dendro_Z = linkage(col_dist, method="average")
+            col_order = list(leaves_list(col_dendro_Z))
+            matrix = matrix[:, col_order]
+            trait_names = [trait_names[i] for i in col_order]
+
+        if col_dendro_Z is not None:
+            # 2x3 grid: tree | heatmap | colorbar, with dendrogram row on top
+            gs = gridspec.GridSpec(
+                2, 3,
+                width_ratios=[self.split, (1 - self.split) * 0.92, (1 - self.split) * 0.08],
+                height_ratios=[0.10, 0.90],
+                wspace=0.02, hspace=0.0,
+            )
+            ax_tree = fig.add_subplot(gs[1, 0])
+            ax_heat = fig.add_subplot(gs[1, 1])
+            ax_cbar = fig.add_subplot(gs[1, 2])
+            ax_col_dendro = fig.add_subplot(gs[0, 1])
+
+            # Hide unused cells
+            ax_empty_tl = fig.add_subplot(gs[0, 0])
+            ax_empty_tl.axis("off")
+            ax_empty_tr = fig.add_subplot(gs[0, 2])
+            ax_empty_tr.axis("off")
+        else:
+            gs = gridspec.GridSpec(
+                1, 2,
+                width_ratios=[self.split, 1 - self.split],
+                wspace=0.02,
+            )
+            ax_tree = fig.add_subplot(gs[0])
+            ax_heat = fig.add_subplot(gs[1])
 
         # --- Draw phylogram on left panel ---
         parent_map = {}
@@ -320,12 +355,34 @@ class PhyloHeatmap(Tree):
             interpolation="nearest",
         )
 
-        # Column labels on top
+        # Draw column dendrogram now (after imshow sets the x-axis range)
+        if col_dendro_Z is not None:
+            # imshow places columns at 0, 1, ..., n_traits-1
+            # dendrogram places leaves at 5, 15, 25, ... (10*i + 5)
+            # We need to draw dendrogram bars manually in heatmap x-coords
+            # by converting: heatmap_x = (dendro_x - 5) / 10
+            dendro_data = dendrogram(
+                col_dendro_Z, ax=ax_col_dendro,
+                no_labels=True, no_plot=True,
+            )
+            # Draw the dendrogram lines manually in the correct coordinates
+            for xs, ys in zip(dendro_data["icoord"], dendro_data["dcoord"]):
+                # Convert dendrogram x-coords to heatmap column indices
+                hx = [(x - 5.0) / 10.0 for x in xs]
+                ax_col_dendro.plot(hx, ys, color="#333", lw=1.0)
+            ax_col_dendro.set_xlim(-0.5, n_traits - 0.5)
+            ax_col_dendro.axis("off")
+
+        # Column labels: bottom if dendrogram on top, otherwise top
         ax_heat.set_xticks(np.arange(n_traits))
         xlabel_fs = config.xlabel_fontsize if config.xlabel_fontsize and config.xlabel_fontsize > 0 else 8
         ax_heat.set_xticklabels(trait_names, rotation=90, fontsize=xlabel_fs)
-        ax_heat.xaxis.set_ticks_position("top")
-        ax_heat.xaxis.set_label_position("top")
+        if col_dendro_Z is not None:
+            ax_heat.xaxis.set_ticks_position("bottom")
+            ax_heat.xaxis.set_label_position("bottom")
+        else:
+            ax_heat.xaxis.set_ticks_position("top")
+            ax_heat.xaxis.set_label_position("top")
 
         # Row labels (taxon names) on right side of heatmap
         ax_heat.set_yticks(np.arange(n_tips))
@@ -338,7 +395,11 @@ class PhyloHeatmap(Tree):
             ax_heat.set_yticklabels([])
 
         # Colorbar
-        cbar = fig.colorbar(im, ax=ax_heat, fraction=0.046, pad=0.12)
+        if col_dendro_Z is not None:
+            # Use dedicated colorbar axes (no space stealing)
+            cbar = fig.colorbar(im, cax=ax_cbar)
+        else:
+            cbar = fig.colorbar(im, ax=ax_heat, fraction=0.046, pad=0.12)
         if self.standardize:
             cbar.set_label("Z-score")
         else:
