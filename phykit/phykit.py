@@ -7192,6 +7192,7 @@ class Phykit:
                 phykit tree_space -t <trees> -o <output>
                   [--metric rf|kf] [--method mds|tsne|umap]
                   [--species-tree <file>] [--k <int>] [--seed <int>]
+                  [--heatmap] [--distance-matrix <file>]
                   [--json]
                   [--fig-width <float>] [--fig-height <float>]
                   [--dpi <int>] [--no-title] [--title <str>]
@@ -7226,6 +7227,13 @@ class Phykit:
                 --seed                  random seed for
                                         reproducibility (t-SNE/UMAP)
 
+                --heatmap               draw a clustered distance
+                                        heatmap instead of a scatter
+                                        plot
+
+                --distance-matrix       output pairwise distance
+                                        matrix as CSV file
+
                 --json                  output structured JSON
                 """
             ),
@@ -7254,6 +7262,14 @@ class Phykit:
         )
         parser.add_argument(
             "--seed", type=int, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--heatmap", action="store_true", default=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--distance-matrix", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
         add_plot_arguments(parser)

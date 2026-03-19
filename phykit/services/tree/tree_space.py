@@ -24,6 +24,8 @@ class TreeSpace(Tree):
         self.k = parsed["k"]
         self.seed = parsed["seed"]
         self.json_output = parsed["json_output"]
+        self.heatmap = parsed["heatmap"]
+        self.distance_matrix_path = parsed["distance_matrix"]
         self.plot_config = parsed["plot_config"]
 
     def process_args(self, args) -> Dict:
@@ -36,6 +38,8 @@ class TreeSpace(Tree):
             k=getattr(args, "k", None),
             seed=getattr(args, "seed", None),
             json_output=getattr(args, "json", False),
+            heatmap=getattr(args, "heatmap", False),
+            distance_matrix=getattr(args, "distance_matrix", None),
             plot_config=PlotConfig.from_args(args),
         )
 
@@ -476,6 +480,86 @@ class TreeSpace(Tree):
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
+    def _plot_heatmap(
+        self,
+        dist_matrix: np.ndarray,
+        tree_labels: List[str],
+        output_path: str,
+    ) -> None:
+        """Draw a clustered heatmap of pairwise tree distances."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from scipy.cluster.hierarchy import linkage, dendrogram
+
+        config = self.plot_config
+        n = len(tree_labels)
+        config.resolve(n_rows=n, n_cols=n)
+
+        # Hierarchical clustering for row/column ordering
+        condensed = []
+        for i in range(n):
+            for j in range(i + 1, n):
+                condensed.append(dist_matrix[i, j])
+        condensed = np.array(condensed)
+
+        Z = linkage(condensed, method="average")
+        dendro = dendrogram(Z, no_plot=True)
+        order = dendro["leaves"]
+
+        # Reorder matrix and labels
+        reordered = dist_matrix[np.ix_(order, order)]
+        reordered_labels = [tree_labels[i] for i in order]
+
+        # Create figure with dendrogram + heatmap
+        fig = plt.figure(figsize=(config.fig_width, config.fig_height))
+
+        # Dendrogram on top
+        ax_dendro = fig.add_axes([0.10, 0.80, 0.65, 0.15])
+        dendrogram(Z, ax=ax_dendro, leaf_rotation=90, leaf_font_size=0,
+                   color_threshold=0, above_threshold_color="#333")
+        ax_dendro.axis("off")
+
+        # Heatmap
+        ax_heat = fig.add_axes([0.10, 0.10, 0.65, 0.68])
+        im = ax_heat.imshow(reordered, cmap="viridis_r", aspect="auto",
+                            interpolation="nearest")
+
+        # Labels
+        label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 6
+        ax_heat.set_xticks(range(n))
+        ax_heat.set_yticks(range(n))
+        ax_heat.set_xticklabels(reordered_labels, rotation=90,
+                                fontsize=label_fontsize)
+        ax_heat.set_yticklabels(reordered_labels, fontsize=label_fontsize)
+
+        # Colorbar
+        ax_cbar = fig.add_axes([0.78, 0.10, 0.03, 0.68])
+        cbar = fig.colorbar(im, cax=ax_cbar)
+        cbar.set_label(f"{self.metric.upper()} distance", fontsize=9)
+
+        if config.show_title:
+            title = config.title or f"Tree Distance Heatmap ({self.metric.upper()})"
+            fig.suptitle(title, fontsize=config.title_fontsize, y=0.98)
+
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+        plt.close(fig)
+
+    @staticmethod
+    def _write_distance_matrix(
+        dist_matrix: np.ndarray,
+        tree_labels: List[str],
+        output_path: str,
+    ) -> None:
+        """Write pairwise distance matrix as CSV."""
+        with open(output_path, "w") as f:
+            f.write("," + ",".join(tree_labels) + "\n")
+            for i, label in enumerate(tree_labels):
+                row_vals = ",".join(f"{dist_matrix[i, j]:.6f}"
+                                    for j in range(len(tree_labels)))
+                f.write(f"{label},{row_vals}\n")
+
     # ------------------------------------------------------------------
     # Main run
     # ------------------------------------------------------------------
@@ -538,11 +622,26 @@ class TreeSpace(Tree):
         else:
             all_labels = labels_gene
 
-        # 8. Plot
-        self._plot(coords, all_labels, k, species_tree_idx, self.output)
-
-        # 9. Build cluster info
+        # 8. Write distance matrix if requested
         n_gene_trees = len(gene_trees)
+        if self.distance_matrix_path:
+            tree_labels = [f"tree_{i+1}" for i in range(n_gene_trees)]
+            if species_tree_idx is not None:
+                tree_labels.append("species_tree")
+            self._write_distance_matrix(
+                dist_matrix, tree_labels, self.distance_matrix_path
+            )
+
+        # 9. Plot
+        if self.heatmap:
+            tree_labels = [f"tree_{i+1}" for i in range(n_gene_trees)]
+            if species_tree_idx is not None:
+                tree_labels.append("species_tree")
+            self._plot_heatmap(dist_matrix, tree_labels, self.output)
+        else:
+            self._plot(coords, all_labels, k, species_tree_idx, self.output)
+
+        # 10. Build cluster info
         clusters_info = []
         for i in range(k):
             tree_indices = [
@@ -560,6 +659,7 @@ class TreeSpace(Tree):
 
         # 10. Output
         k_method = "user-specified" if self.k is not None else "auto-detected"
+        plot_mode = "heatmap" if self.heatmap else "scatter"
 
         if self.json_output:
             result = {
@@ -589,4 +689,7 @@ class TreeSpace(Tree):
                 print(f"  Cluster {ci['id']}: {ci['n_trees']} trees")
             if species_tree_cluster is not None:
                 print(f"Species tree: Cluster {species_tree_cluster}")
+            print(f"Plot mode: {plot_mode}")
             print(f"Output: {self.output}")
+            if self.distance_matrix_path:
+                print(f"Distance matrix: {self.distance_matrix_path}")
