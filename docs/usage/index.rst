@@ -149,7 +149,7 @@ Tree comparison & consensus
 - :ref:`Evolutionary tempo mapping <cmd-evo_tempo_map>`: Detect rate-topology associations in gene trees
 - :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
 - :ref:`Spectral discordance decomposition <cmd-spectral_discordance>`: PCA ordination and clustering of gene tree topologies
-- :ref:`Tree space <cmd-tree_space>`: Visualize gene tree topology space via MDS, t-SNE, or UMAP
+- :ref:`Tree space <cmd-tree_space>`: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap
 - :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
 - :ref:`Quartet pie chart <cmd-quartet_pie>`: Phylogram with quartet concordance pie charts at internal nodes
 - :ref:`Kuhner-Felsenstein distance <cmd-kf_distance>`: Branch score distance between trees (topology + branch lengths)
@@ -1472,6 +1472,11 @@ Visualize how gene trees cluster in topology space by computing pairwise
 distances (Robinson-Foulds or Kuhner-Felsenstein) and projecting into
 2D via MDS, t-SNE, or UMAP. Points are colored by spectral clustering
 with automatic cluster detection via the eigengap heuristic.
+
+Alternatively, use ``--heatmap`` to draw a clustered distance heatmap
+with a dendrogram showing hierarchical relationships among gene trees.
+Use ``--distance-matrix`` to export the raw pairwise distance matrix
+as a CSV file.
 
 Optionally highlight a species tree as a distinct marker to see where
 it sits relative to the gene tree cloud.
