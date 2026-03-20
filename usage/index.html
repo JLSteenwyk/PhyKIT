@@ -118,6 +118,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-tempo-mapping">Evolutionary tempo mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#d-statistic-abba-baba-test">D-statistic (ABBA-BABA test)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#discordance-asymmetry">Discordance asymmetry</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#hidden-paralogy-check">Hidden paralogy check</a></li>
@@ -337,6 +338,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-consensus-network"><span class="std std-ref">Consensus network</span></a>: Consensus network from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-consensus-tree"><span class="std std-ref">Consensus tree</span></a>: Consensus tree from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-cophylo"><span class="std std-ref">Cophylogenetic plot (tanglegram)</span></a>: Tanglegram for comparing two trees</p></li>
+<li><p><a class="reference internal" href="#cmd-dstatistic"><span class="std std-ref">D-statistic (ABBA-BABA)</span></a>: Patterson's D-statistic for detecting introgression</p></li>
 <li><p><a class="reference internal" href="#cmd-discordance-asymmetry"><span class="std std-ref">Discordance asymmetry</span></a>: Test for asymmetric discordance (gene flow detection)</p></li>
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
@@ -2220,6 +2222,45 @@ systematically different ratios of internal to total branch lengths.</p>
 branch, comparing branch lengths between concordant (blue) and discordant (orange)
 gene trees. Branches where the FDR-corrected p-value is below 0.05 are marked
 with an asterisk.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="d-statistic-abba-baba-test">
+<span id="cmd-dstatistic"></span><h3>D-statistic (ABBA-BABA test)<a class="headerlink" href="#d-statistic-abba-baba-test" title="Link to this heading"></a></h3>
+<p>Function names: dstatistic; dstat; abba_baba <br/>
+Command line interface: pk_dstatistic; pk_dstat; pk_abba_baba</p>
+<p>Compute Patterson's D-statistic (ABBA-BABA test) for detecting
+introgression or gene flow between taxa. Given a four-taxon alignment
+with topology <code class="docutils literal notranslate"><span class="pre">(((P1,</span> <span class="pre">P2),</span> <span class="pre">P3),</span> <span class="pre">Outgroup)</span></code>, the test counts ABBA
+and BABA site patterns:</p>
+<ul class="simple">
+<li><p><strong>ABBA</strong>: P1 has the ancestral allele, P2 and P3 share the derived
+allele — suggests introgression between P2 and P3</p></li>
+<li><p><strong>BABA</strong>: P2 has the ancestral allele, P1 and P3 share the derived
+allele — suggests introgression between P1 and P3</p></li>
+<li><p><strong>D = (ABBA - BABA) / (ABBA + BABA)</strong>: D = 0 under ILS alone;
+D significantly different from 0 indicates introgression</p></li>
+</ul>
+<p>Note: the D-statistic identifies which pair of lineages exchanged
+genetic material but cannot determine the direction of gene flow
+within that pair.</p>
+<p>Significance is assessed via block jackknife (Green et al. 2010),
+producing a Z-score and p-value.</p>
+<p>Only biallelic sites with no gaps or ambiguous characters are
+considered. Sites with more than two alleles are skipped.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>dstatistic<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--outgroup<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="o">[</span>--block-size<span class="w"> </span><span class="m">100</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: FASTA alignment file (required) <br/>
+<em>--p1</em>: taxon name for P1, sister to P2 (required) <br/>
+<em>--p2</em>: taxon name for P2, sister to P1, potential recipient of gene flow from P3 (required) <br/>
+<em>--p3</em>: taxon name for P3, donor lineage (required) <br/>
+<em>--outgroup</em>: outgroup taxon name, determines ancestral allele (required) <br/>
+<em>--block-size</em>: block size in sites for jackknife standard error estimation (default: 100) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

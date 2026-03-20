@@ -80,6 +80,15 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.64</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">dstatistic</span></code> (ABBA-BABA) command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">dstatistic</span></code> (<code class="docutils literal notranslate"><span class="pre">dstat</span></code> / <code class="docutils literal notranslate"><span class="pre">abba_baba</span></code>): compute Patterson's
+D-statistic for detecting introgression from a four-taxon alignment.
+Counts ABBA and BABA biallelic site patterns, computes D, and
+estimates significance via block jackknife (Z-score and p-value).
+Skips gaps, ambiguous characters, and non-biallelic sites.</p></li>
+</ul>
 <p><strong>2.1.63</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">trait_rate_map</span></code> command:</p>
 <ul class="simple">
