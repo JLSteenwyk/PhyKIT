@@ -6,6 +6,13 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.66**:
+Added ``--pie-size`` to ``quartet_pie``:
+
+* ``quartet_pie`` now supports ``--pie-size <float>`` to scale pie
+  chart sizes relative to the default (1.0 = default, 2.0 = double,
+  0.5 = half). Works in both rectangular and circular modes.
+
 **2.1.65**:
 Added gene-tree mode and support filtering to ``dstatistic`` (ABBA-BABA):
 
