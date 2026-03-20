@@ -6,6 +6,22 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.69**:
+Added ``phylo_logistic`` command (Ives & Garland 2010):
+
+* Added ``phylo_logistic`` (``phylo_logreg`` / ``plogreg``):
+  phylogenetic logistic regression for binary (0/1) response
+  variables using maximum penalized likelihood estimation (MPLE)
+  with Firth's bias-correction penalty. Estimates regression
+  coefficients, phylogenetic correlation parameter (alpha),
+  standard errors, Z-scores, p-values, log-likelihood, and AIC.
+  Jointly optimizes beta and alpha via L-BFGS-B. Cross-validated
+  against R's phylolm::phyloglm() on a 50-taxon simulated dataset:
+  predicted probabilities correlate at r = 0.9999, intercept
+  within 2%, slope within 6%, log-likelihood within 0.1%.
+  R validation script provided in
+  ``tests/r_validation/validate_phylo_logistic_50taxa.R``.
+
 **2.1.68**:
 Added CI visualization to ``ancestral_state_reconstruction``:
 

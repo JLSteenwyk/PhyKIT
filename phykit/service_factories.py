@@ -71,6 +71,7 @@ PhylogeneticOrdination = _LazyServiceFactory("phykit.services.tree.phylogenetic_
 Phylomorphospace = _LazyServiceFactory("phykit.services.tree.phylomorphospace", "Phylomorphospace")
 PhylogeneticRegression = _LazyServiceFactory("phykit.services.tree.phylogenetic_regression", "PhylogeneticRegression")
 PhylogeneticGLM = _LazyServiceFactory("phykit.services.tree.phylogenetic_glm", "PhylogeneticGLM")
+PhyloLogistic = _LazyServiceFactory("phykit.services.tree.phylo_logistic", "PhyloLogistic")
 StochasticCharacterMap = _LazyServiceFactory("phykit.services.tree.stochastic_character_map", "StochasticCharacterMap")
 ContMap = _LazyServiceFactory("phykit.services.tree.cont_map", "ContMap")
 DensityMap = _LazyServiceFactory("phykit.services.tree.density_map", "DensityMap")

@@ -237,6 +237,8 @@ class Phykit:
                     - fit phylogenetic generalized least squares (PGLS) regression
                 phylogenetic_glm (alias: phylo_glm; pglm)
                     - fit phylogenetic GLM for binary (logistic) or count (Poisson) data
+                phylo_logistic (alias: phylo_logreg; plogreg)
+                    - fit phylogenetic logistic regression (Ives & Garland 2010)
                 stochastic_character_map (alias: simmap; scm)
                     - stochastic character mapping (SIMMAP) of discrete traits
                 cont_map (alias: contmap; cmap)
@@ -4288,6 +4290,84 @@ class Phykit:
         _run_service(parser, argv, PhylogeneticGLM)
 
     @staticmethod
+    def phylo_logistic(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Fit a Phylogenetic Logistic Regression for binary (0/1)
+                response data while accounting for phylogenetic
+                non-independence among species (Ives & Garland 2010).
+
+                Uses Maximum Penalized Likelihood Estimation (logistic_MPLE)
+                with Firth's bias-correction penalty and jointly estimates
+                the phylogenetic signal parameter alpha via the
+                OU-transformed variance-covariance matrix.
+
+                Input is a phylogenetic tree and a tab-delimited multi-trait
+                file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Output includes coefficient estimates, standard errors,
+                z-values, p-values, alpha, log-likelihood, penalized
+                log-likelihood, and AIC.
+
+                Aliases:
+                  phylo_logistic, phylo_logreg, plogreg
+                Command line interfaces:
+                  pk_phylo_logistic, pk_phylo_logreg, pk_plogreg
+
+                Usage:
+                phykit phylo_logistic -t <tree> -d <trait_data> --response <column> --predictor <column> [--method logistic_MPLE|logistic_IG10] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   a tree file
+
+                -d/--trait-data             tab-delimited multi-trait file
+                                            with header row
+
+                --response                  binary response column name
+                                            (must contain only 0 and 1)
+
+                --predictor                 predictor column name(s),
+                                            comma-separated for multiple
+
+                --method                    estimation method: logistic_MPLE
+                                            or logistic_IG10
+                                            (default: logistic_MPLE)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait-data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--response", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--predictor", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--method",
+            type=str,
+            required=False,
+            default="logistic_MPLE",
+            choices=["logistic_MPLE", "logistic_IG10"],
+            help=SUPPRESS,
+            metavar="",
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhyloLogistic)
+
+    @staticmethod
     def stochastic_character_map(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -8190,6 +8270,10 @@ def phylogenetic_regression(argv=None):
 
 def phylogenetic_glm(argv=None):
     Phykit.phylogenetic_glm(sys.argv[1:])
+
+
+def phylo_logistic(argv=None):
+    Phykit.phylo_logistic(sys.argv[1:])
 
 
 def stochastic_character_map(argv=None):

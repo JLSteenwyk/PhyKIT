@@ -190,6 +190,7 @@ Phylogenetic comparative methods
 ################################
 
 - :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>`: Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)
+- :ref:`Phylogenetic Logistic Regression <cmd-phylo_logistic>`: Phylogenetic logistic regression for binary traits (Ives & Garland 2010)
 - :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)
 - :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>`: Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)
 - :ref:`Phylomorphospace <cmd-phylomorphospace>`: Phylomorphospace visualization
@@ -3527,6 +3528,40 @@ Options: |br|
 *--btol*: linear predictor bound for logistic model (default: 10) |br|
 *--log-alpha-bound*: bound on log(alpha) for logistic model (default: 4) |br|
 *-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-phylo_logistic:
+
+Phylogenetic Logistic Regression
+################################
+Function names: phylo_logistic; phylo_logreg; plogreg |br|
+Command line interface: pk_phylo_logistic; pk_phylo_logreg; pk_plogreg
+
+Fit a Phylogenetic Logistic Regression for binary (0/1) response data while
+accounting for phylogenetic non-independence among species (Ives & Garland 2010).
+
+Uses Maximum Penalized Likelihood Estimation (logistic_MPLE) with Firth's
+bias-correction penalty and jointly estimates the phylogenetic signal parameter
+alpha via the OU-transformed variance-covariance matrix.
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+
+Output includes coefficient estimates, standard errors, z-values,
+p-values, alpha, log-likelihood, penalized log-likelihood, and AIC.
+
+.. code-block:: shell
+
+   phykit phylo_logistic -t <tree> -d <trait_data> --response <column> --predictor <column> [--method logistic_MPLE|logistic_IG10] [--json]
+
+Options: |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait-data*: tab-delimited multi-trait file with header row |br|
+*--response*: binary response column name (must contain only 0 and 1) |br|
+*--predictor*: predictor column name(s), comma-separated for multiple |br|
+*--method*: estimation method: logistic_MPLE or logistic_IG10 (default: logistic_MPLE) |br|
 *--json*: optional argument to print results as JSON
 
 |
