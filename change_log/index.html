@@ -80,6 +80,22 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.69</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">phylo_logistic</span></code> command (Ives &amp; Garland 2010):</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">phylo_logistic</span></code> (<code class="docutils literal notranslate"><span class="pre">phylo_logreg</span></code> / <code class="docutils literal notranslate"><span class="pre">plogreg</span></code>):
+phylogenetic logistic regression for binary (0/1) response
+variables using maximum penalized likelihood estimation (MPLE)
+with Firth's bias-correction penalty. Estimates regression
+coefficients, phylogenetic correlation parameter (alpha),
+standard errors, Z-scores, p-values, log-likelihood, and AIC.
+Jointly optimizes beta and alpha via L-BFGS-B. Cross-validated
+against R's phylolm::phyloglm() on a 50-taxon simulated dataset:
+predicted probabilities correlate at r = 0.9999, intercept
+within 2%, slope within 6%, log-likelihood within 0.1%.
+R validation script provided in
+<code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_phylo_logistic_50taxa.R</span></code>.</p></li>
+</ul>
 <p><strong>2.1.68</strong>:
 Added CI visualization to <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code>:</p>
 <ul class="simple">

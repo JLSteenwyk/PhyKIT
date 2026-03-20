@@ -138,6 +138,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-heatmap">Phylogenetic heatmap</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-glm">Phylogenetic GLM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-logistic-regression">Phylogenetic Logistic Regression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-regression-pgls">Phylogenetic regression (PGLS)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cmd-phylogenetic-signal">Phylogenetic signal</a></li>
@@ -386,6 +387,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <h3>Phylogenetic comparative methods<a class="headerlink" href="#phylogenetic-comparative-methods" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a>: Phylogenetic generalized linear model (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-logistic"><span class="std std-ref">Phylogenetic Logistic Regression</span></a>: Phylogenetic logistic regression for binary traits (Ives &amp; Garland 2010)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic Ordination</span></a>: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-regression"><span class="std std-ref">Phylogenetic regression (PGLS)</span></a>: Phylogenetic generalized least squares regression (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylomorphospace"><span class="std std-ref">Phylomorphospace</span></a>: Phylomorphospace visualization</p></li>
@@ -3212,6 +3214,33 @@ full vs. intercept-only model log-likelihoods).</p>
 <em>--btol</em>: linear predictor bound for logistic model (default: 10) <br/>
 <em>--log-alpha-bound</em>: bound on log(alpha) for logistic model (default: 4) <br/>
 <em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phylogenetic-logistic-regression">
+<span id="cmd-phylo-logistic"></span><h3>Phylogenetic Logistic Regression<a class="headerlink" href="#phylogenetic-logistic-regression" title="Link to this heading"></a></h3>
+<p>Function names: phylo_logistic; phylo_logreg; plogreg <br/>
+Command line interface: pk_phylo_logistic; pk_phylo_logreg; pk_plogreg</p>
+<p>Fit a Phylogenetic Logistic Regression for binary (0/1) response data while
+accounting for phylogenetic non-independence among species (Ives &amp; Garland 2010).</p>
+<p>Uses Maximum Penalized Likelihood Estimation (logistic_MPLE) with Firth's
+bias-correction penalty and jointly estimates the phylogenetic signal parameter
+alpha via the OU-transformed variance-covariance matrix.</p>
+<p>The multi-trait input file should be tab-delimited with a header row:
+<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code></p>
+<p>Output includes coefficient estimates, standard errors, z-values,
+p-values, alpha, log-likelihood, penalized log-likelihood, and AIC.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_logistic<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>--response<span class="w"> </span>&lt;column&gt;<span class="w"> </span>--predictor<span class="w"> </span>&lt;column&gt;<span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>logistic_MPLE<span class="p">|</span>logistic_IG10<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: a tree file in Newick format <br/>
+<em>-d/--trait-data</em>: tab-delimited multi-trait file with header row <br/>
+<em>--response</em>: binary response column name (must contain only 0 and 1) <br/>
+<em>--predictor</em>: predictor column name(s), comma-separated for multiple <br/>
+<em>--method</em>: estimation method: logistic_MPLE or logistic_IG10 (default: logistic_MPLE) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
