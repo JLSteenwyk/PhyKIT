@@ -1956,21 +1956,26 @@ class Phykit:
                 {help_header}
 
                 Compute Patterson's D-statistic (ABBA-BABA test) for
-                detecting introgression or gene flow from a four-taxon
-                alignment.
+                detecting introgression or gene flow.
 
-                The assumed topology is (((P1, P2), P3), Outgroup).
-                Under incomplete lineage sorting (ILS) alone, ABBA and
-                BABA site patterns should be equally frequent. A
-                significant excess of either pattern indicates gene
-                flow.
+                Two input modes:
+                1) Site patterns from an alignment (-a)
+                2) Quartet topologies from gene trees (-g)
 
-                D > 0 suggests gene flow between P2 and P3.
-                D < 0 suggests gene flow between P1 and P3.
-                D = 0 is consistent with ILS alone.
+                Species topology: (((P1, P2), P3), Outgroup).
+                Under ILS alone, ABBA and BABA patterns (or
+                discordant topologies) are equally frequent. A
+                significant excess indicates introgression.
 
-                Significance is assessed via block jackknife (Green
-                et al. 2010; Patterson et al. 2012).
+                D > 0: introgression between P2 and P3.
+                D < 0: introgression between P1 and P3.
+                D = 0: consistent with ILS alone.
+                Note: D identifies which lineages exchanged genes
+                but cannot determine direction of flow.
+
+                Gene trees can have any number of taxa; only the
+                quartet induced by the four specified taxa is
+                evaluated from each tree.
 
                 Aliases:
                   dstatistic, dstat, abba_baba
@@ -1978,13 +1983,22 @@ class Phykit:
                   pk_dstatistic, pk_dstat, pk_abba_baba
 
                 Usage:
-                phykit dstatistic -a <alignment> --p1 <taxon> --p2 <taxon>
-                    --p3 <taxon> --outgroup <taxon>
+                phykit dstatistic -a <alignment> --p1 <taxon>
+                    --p2 <taxon> --p3 <taxon> --outgroup <taxon>
                     [--block-size 100] [--json]
+                phykit dstatistic -g <gene_trees> --p1 <taxon>
+                    --p2 <taxon> --p3 <taxon> --outgroup <taxon>
+                    [--json]
 
                 Options
                 =====================================================
                 -a/--alignment              FASTA alignment file
+                                            (site-pattern mode)
+
+                -g/--gene-trees             gene trees file, one
+                                            Newick per line (gene-
+                                            tree mode; trees can
+                                            have any number of taxa)
 
                 --p1                        taxon name for P1
                                             (sister to P2)
@@ -2000,18 +2014,28 @@ class Phykit:
 
                 --block-size                block size for jackknife
                                             estimation of standard
-                                            error (default: 100)
+                                            error (default: 100;
+                                            alignment mode only)
+
+                --support                   minimum branch support
+                                            threshold for gene trees;
+                                            branches below this value
+                                            are collapsed (treated as
+                                            unresolved). Gene-tree
+                                            mode only.
 
                 --json                      output results as JSON
                 """
             ),
         )
-        parser.add_argument("-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-a", "--alignment", type=str, required=False, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("-g", "--gene-trees", type=str, required=False, default=None, help=SUPPRESS, metavar="")
         parser.add_argument("--p1", type=str, required=True, help=SUPPRESS, metavar="")
         parser.add_argument("--p2", type=str, required=True, help=SUPPRESS, metavar="")
         parser.add_argument("--p3", type=str, required=True, help=SUPPRESS, metavar="")
         parser.add_argument("--outgroup", type=str, required=True, help=SUPPRESS, metavar="")
         parser.add_argument("--block-size", type=int, default=100, help=SUPPRESS, metavar="")
+        parser.add_argument("--support", type=float, default=None, help=SUPPRESS, metavar="")
         _add_json_argument(parser)
         _run_service(parser, argv, Dstatistic)
 

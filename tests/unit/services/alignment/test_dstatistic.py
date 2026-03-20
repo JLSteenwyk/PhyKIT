@@ -282,3 +282,126 @@ class TestDstatistic:
         assert isclose(payload["d_statistic"], 0.3333, rel_tol=0.01)
         assert "block_size" in payload
         assert "n_blocks" in payload
+
+
+def _write_gene_trees(path, newicks):
+    with open(path, "w") as f:
+        for nwk in newicks:
+            f.write(nwk + "\n")
+
+
+def _make_gt_args(gene_trees, p1="A", p2="B", p3="C", outgroup="O",
+                  json_output=False):
+    return Namespace(
+        alignment=None,
+        gene_trees=gene_trees,
+        p1=p1,
+        p2=p2,
+        p3=p3,
+        outgroup=outgroup,
+        block_size=100,
+        json=json_output,
+    )
+
+
+class TestGeneTreeMode:
+    def test_concordant_trees(self, tmp_path):
+        """All concordant trees → D = 0."""
+        gt_file = tmp_path / "trees.nwk"
+        # Species tree: (((A,B),C),O) → concordant
+        _write_gene_trees(gt_file, [
+            "((A:1,B:1):1,(C:1,O:1):1);",
+            "((A:1,B:1):1,(C:1,O:1):1);",
+            "((A:1,B:1):1,(C:1,O:1):1);",
+        ])
+        svc = Dstatistic(_make_gt_args(str(gt_file)))
+        svc.run()
+        # All concordant, no ABBA or BABA
+
+    def test_abba_trees_positive_d(self, tmp_path):
+        """More ABBA than BABA trees → D > 0."""
+        gt_file = tmp_path / "trees.nwk"
+        _write_gene_trees(gt_file, [
+            "((A:1,B:1):1,(C:1,O:1):1);",   # concordant
+            "((B:1,C:1):1,(A:1,O:1):1);",   # ABBA (P2+P3 together)
+            "((B:1,C:1):1,(A:1,O:1):1);",   # ABBA
+            "((A:1,C:1):1,(B:1,O:1):1);",   # BABA (P1+P3 together)
+        ])
+        svc = Dstatistic(_make_gt_args(str(gt_file)))
+        svc.run()
+
+    def test_d_from_gene_trees_value(self, tmp_path, mocker):
+        """Verify D = (ABBA - BABA) / (ABBA + BABA)."""
+        gt_file = tmp_path / "trees.nwk"
+        # 3 ABBA, 1 BABA → D = (3-1)/(3+1) = 0.5
+        _write_gene_trees(gt_file, [
+            "((B:1,C:1):1,(A:1,O:1):1);",   # ABBA
+            "((B:1,C:1):1,(A:1,O:1):1);",   # ABBA
+            "((B:1,C:1):1,(A:1,O:1):1);",   # ABBA
+            "((A:1,C:1):1,(B:1,O:1):1);",   # BABA
+        ])
+        mocked = mocker.patch("phykit.services.alignment.dstatistic.print_json")
+        svc = Dstatistic(_make_gt_args(str(gt_file), json_output=True))
+        svc.run()
+        payload = mocked.call_args.args[0]
+        assert payload["mode"] == "gene_trees"
+        assert payload["abba_count"] == 3
+        assert payload["baba_count"] == 1
+        assert isclose(payload["d_statistic"], 0.5, rel_tol=0.01)
+
+    def test_multi_taxon_gene_trees(self, tmp_path, mocker):
+        """Gene trees with >4 taxa — quartet is extracted correctly."""
+        gt_file = tmp_path / "trees.nwk"
+        # 8-taxon trees where the quartet (A,B,C,O) topology varies
+        _write_gene_trees(gt_file, [
+            # A+B together (concordant for (((A,B),C),O))
+            "(((A:1,B:1):1,(E:1,F:1):1):1,((C:1,G:1):1,(O:1,H:1):1):1);",
+            # B+C together (ABBA)
+            "(((B:1,C:1):1,(E:1,F:1):1):1,((A:1,G:1):1,(O:1,H:1):1):1);",
+            # B+C together (ABBA)
+            "(((B:1,C:1):1,(E:1,F:1):1):1,((A:1,G:1):1,(O:1,H:1):1):1);",
+        ])
+        mocked = mocker.patch("phykit.services.alignment.dstatistic.print_json")
+        svc = Dstatistic(_make_gt_args(str(gt_file), json_output=True))
+        svc.run()
+        payload = mocked.call_args.args[0]
+        assert payload["n_gene_trees"] == 3
+        assert payload["abba_count"] >= 1  # at least some ABBA detected
+
+    def test_missing_taxon_unresolved(self, tmp_path, mocker):
+        """Gene trees missing one of the four taxa → counted as unresolved."""
+        gt_file = tmp_path / "trees.nwk"
+        _write_gene_trees(gt_file, [
+            "((A:1,B:1):1,C:1);",  # missing O → unresolved
+        ])
+        mocked = mocker.patch("phykit.services.alignment.dstatistic.print_json")
+        svc = Dstatistic(_make_gt_args(str(gt_file), json_output=True))
+        svc.run()
+        payload = mocked.call_args.args[0]
+        assert payload["unresolved"] == 1
+        assert payload["abba_count"] == 0
+        assert payload["baba_count"] == 0
+
+    def test_mutual_exclusion(self, tmp_path):
+        """Cannot provide both -a and -g."""
+        aln = tmp_path / "test.fa"
+        aln.write_text(">A\nACGT\n>B\nACGT\n")
+        gt = tmp_path / "trees.nwk"
+        gt.write_text("((A:1,B:1):1,(C:1,O:1):1);\n")
+        with pytest.raises(SystemExit):
+            Dstatistic(Namespace(
+                alignment=str(aln),
+                gene_trees=str(gt),
+                p1="A", p2="B", p3="C", outgroup="O",
+                block_size=100, json=False,
+            ))
+
+    def test_neither_input_raises(self):
+        """Must provide either -a or -g."""
+        with pytest.raises(SystemExit):
+            Dstatistic(Namespace(
+                alignment=None,
+                gene_trees=None,
+                p1="A", p2="B", p3="C", outgroup="O",
+                block_size=100, json=False,
+            ))

@@ -6,14 +6,31 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.65**:
+Added gene-tree mode and support filtering to ``dstatistic`` (ABBA-BABA):
+
+* ``dstatistic`` now supports ``-g/--gene-trees`` as an alternative
+  to ``-a/--alignment``. Gene trees can have any number of taxa;
+  the induced quartet for the four specified taxa is extracted from
+  each tree. Significance via chi-squared test.
+* Added ``--support`` threshold for gene-tree mode: branches with
+  support values below the threshold are collapsed (treated as
+  unresolved), accounting for uncertainty in gene tree topology.
+  For example, ``--support 70`` ignores branches with bootstrap
+  support below 70%.
+
 **2.1.64**:
 Added ``dstatistic`` (ABBA-BABA) command:
 
 * Added ``dstatistic`` (``dstat`` / ``abba_baba``): compute Patterson's
-  D-statistic for detecting introgression from a four-taxon alignment.
-  Counts ABBA and BABA biallelic site patterns, computes D, and
-  estimates significance via block jackknife (Z-score and p-value).
-  Skips gaps, ambiguous characters, and non-biallelic sites.
+  D-statistic for detecting introgression. Two modes:
+
+  - **Site-pattern mode** (``-a``): counts ABBA/BABA from a FASTA
+    alignment with block jackknife significance testing
+  - **Gene-tree mode** (``-g``): counts discordant quartet topologies
+    from gene trees (any number of taxa) with chi-squared significance.
+    Extracts the induced quartet for the four specified taxa from each
+    multi-taxon gene tree.
 
 **2.1.63**:
 Added ``trait_rate_map`` command:
