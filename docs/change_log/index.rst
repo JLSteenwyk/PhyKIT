@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.70**:
+Added multivariate K_mult to ``phylogenetic_signal`` (Adams 2014):
+
+* ``phylogenetic_signal`` now supports ``--multivariate`` to compute
+  K_mult, the generalized K statistic for multivariate trait data
+  (Adams 2014). Uses distance-based formulation that works even when
+  the number of traits exceeds the number of taxa. Significance
+  assessed via permutation test (shuffling species, preserving trait
+  correlations). Cross-validated against R's geomorph::physignal():
+  K_mult matches exactly (0.563803); p-values differ only due to
+  permutation stochasticity. R validation script provided in
+  ``tests/r_validation/validate_kmult.R``.
+
 **2.1.69**:
 Added ``phylo_logistic`` command (Ives & Garland 2010):
 

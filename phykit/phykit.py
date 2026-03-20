@@ -3442,6 +3442,10 @@ class Phykit:
                                             gene trees for discordance-aware
                                             VCV computation
 
+                --multivariate              compute K_mult (Adams 2014)
+                                            for multivariate traits using
+                                            a multi-column TSV file
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -3475,6 +3479,10 @@ class Phykit:
         parser.add_argument(
             "-g", "--gene-trees", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--multivariate", action="store_true", default=False,
+            help=SUPPRESS,
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PhylogeneticSignal)
