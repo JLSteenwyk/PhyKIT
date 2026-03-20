@@ -80,14 +80,33 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.65</strong>:
+Added gene-tree mode and support filtering to <code class="docutils literal notranslate"><span class="pre">dstatistic</span></code> (ABBA-BABA):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dstatistic</span></code> now supports <code class="docutils literal notranslate"><span class="pre">-g/--gene-trees</span></code> as an alternative
+to <code class="docutils literal notranslate"><span class="pre">-a/--alignment</span></code>. Gene trees can have any number of taxa;
+the induced quartet for the four specified taxa is extracted from
+each tree. Significance via chi-squared test.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--support</span></code> threshold for gene-tree mode: branches with
+support values below the threshold are collapsed (treated as
+unresolved), accounting for uncertainty in gene tree topology.
+For example, <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">70</span></code> ignores branches with bootstrap
+support below 70%.</p></li>
+</ul>
 <p><strong>2.1.64</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">dstatistic</span></code> (ABBA-BABA) command:</p>
 <ul class="simple">
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">dstatistic</span></code> (<code class="docutils literal notranslate"><span class="pre">dstat</span></code> / <code class="docutils literal notranslate"><span class="pre">abba_baba</span></code>): compute Patterson's
-D-statistic for detecting introgression from a four-taxon alignment.
-Counts ABBA and BABA biallelic site patterns, computes D, and
-estimates significance via block jackknife (Z-score and p-value).
-Skips gaps, ambiguous characters, and non-biallelic sites.</p></li>
+D-statistic for detecting introgression. Two modes:</p>
+<ul>
+<li><p><strong>Site-pattern mode</strong> (<code class="docutils literal notranslate"><span class="pre">-a</span></code>): counts ABBA/BABA from a FASTA
+alignment with block jackknife significance testing</p></li>
+<li><p><strong>Gene-tree mode</strong> (<code class="docutils literal notranslate"><span class="pre">-g</span></code>): counts discordant quartet topologies
+from gene trees (any number of taxa) with chi-squared significance.
+Extracts the induced quartet for the four specified taxa from each
+multi-taxon gene tree.</p></li>
+</ul>
+</li>
 </ul>
 <p><strong>2.1.63</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">trait_rate_map</span></code> command:</p>

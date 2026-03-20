@@ -2247,19 +2247,33 @@ genetic material but cannot determine the direction of gene flow
 within that pair.</p>
 <p>Significance is assessed via block jackknife (Green et al. 2010),
 producing a Z-score and p-value.</p>
-<p>Only biallelic sites with no gaps or ambiguous characters are
-considered. Sites with more than two alleles are skipped.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>dstatistic<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
+<p>Two input modes are supported:</p>
+<ol class="arabic simple">
+<li><p><strong>Site patterns</strong> (<code class="docutils literal notranslate"><span class="pre">-a</span></code>): counts ABBA/BABA from a FASTA alignment.
+Only biallelic sites with no gaps or ambiguous characters are considered.
+Significance via block jackknife.</p></li>
+<li><p><strong>Gene trees</strong> (<code class="docutils literal notranslate"><span class="pre">-g</span></code>): counts discordant quartet topologies from gene
+trees. Gene trees can have any number of taxa; only the quartet induced
+by the four specified taxa is evaluated. Significance via chi-squared test.</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Site-pattern mode</span>
+phykit<span class="w"> </span>dstatistic<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--outgroup<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="o">[</span>--block-size<span class="w"> </span><span class="m">100</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+
+<span class="c1"># Gene-tree mode</span>
+phykit<span class="w"> </span>dstatistic<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--outgroup<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>-a/--alignment</em>: FASTA alignment file (required) <br/>
+<em>-a/--alignment</em>: FASTA alignment file (site-pattern mode) <br/>
+<em>-g/--gene-trees</em>: gene trees file, one Newick per line (gene-tree mode; trees can have any number of taxa) <br/>
 <em>--p1</em>: taxon name for P1, sister to P2 (required) <br/>
 <em>--p2</em>: taxon name for P2, sister to P1, potential recipient of gene flow from P3 (required) <br/>
 <em>--p3</em>: taxon name for P3, donor lineage (required) <br/>
 <em>--outgroup</em>: outgroup taxon name, determines ancestral allele (required) <br/>
-<em>--block-size</em>: block size in sites for jackknife standard error estimation (default: 100) <br/>
+<em>--block-size</em>: block size in sites for jackknife standard error estimation (default: 100; alignment mode only) <br/>
+<em>--support</em>: minimum branch support threshold; gene tree branches below this value are collapsed and treated as unresolved (gene-tree mode only) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
