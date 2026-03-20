@@ -97,7 +97,7 @@ run.thread_dna:
 ## Install, develop, and testing make commands
 install:
 	# install so phykit command is available in terminal
-	python setup.py install
+	pip install .
 
 develop:
 	# https://setuptools.readthedocs.io/en/latest/setuptools.html#development-mode
