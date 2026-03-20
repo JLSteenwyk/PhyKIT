@@ -2431,6 +2431,16 @@ class Phykit:
                                             and branch colors (iTOL-
                                             inspired TSV format)
 
+                --plot-ci                   draw confidence interval bars
+                                            at internal nodes on the
+                                            contMap plot (requires --ci
+                                            and --plot)
+
+                --ci-size                   scale factor for CI bar
+                                            size (default: 1.0; use
+                                            2.0 for larger, 0.5 for
+                                            smaller)
+
                 --json                      output results as JSON
                 """
             ),
@@ -2462,6 +2472,14 @@ class Phykit:
         )
         parser.add_argument(
             "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot-ci", action="store_true", required=False, default=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--ci-size", type=float, required=False, default=1.0,
             help=SUPPRESS, metavar=""
         )
         add_plot_arguments(parser)

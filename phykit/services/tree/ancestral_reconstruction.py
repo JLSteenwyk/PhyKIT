@@ -48,6 +48,8 @@ class AncestralReconstruction(Tree):
         self.json_output = parsed["json_output"]
         self.trait_type = parsed["trait_type"]
         self.model = parsed["model"]
+        self.plot_ci = parsed["plot_ci"]
+        self.ci_size = parsed["ci_size"]
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
@@ -112,9 +114,11 @@ class AncestralReconstruction(Tree):
         )
 
         if self.plot_output:
+            ci_data = node_cis if (self.plot_ci and self.ci and node_cis) else None
             self._plot_contmap(
                 tree_copy, node_estimates, node_labels,
-                trait_values, trait_name, self.plot_output
+                trait_values, trait_name, self.plot_output,
+                node_cis=ci_data,
             )
             result["plot_output"] = self.plot_output
 
@@ -144,6 +148,8 @@ class AncestralReconstruction(Tree):
             json_output=getattr(args, "json", False),
             trait_type=getattr(args, "type", "continuous"),
             model=getattr(args, "model", "ER"),
+            plot_ci=getattr(args, "plot_ci", False),
+            ci_size=getattr(args, "ci_size", 1.0),
             plot_config=PlotConfig.from_args(args),
         )
 
@@ -809,7 +815,7 @@ class AncestralReconstruction(Tree):
 
     def _plot_contmap(
         self, tree, node_estimates, node_labels, trait_values,
-        trait_name, output_path,
+        trait_name, output_path, node_cis=None,
     ) -> None:
         try:
             import matplotlib
@@ -827,6 +833,7 @@ class AncestralReconstruction(Tree):
 
         # Build estimates dict keyed by id(clade) for all nodes
         all_estimates = {}
+        node_labels_map = {}  # id(clade) → label string (for CI lookup)
         for clade in tree.find_clades(order="preorder"):
             if clade.is_terminal():
                 if clade.name in trait_values:
@@ -834,6 +841,7 @@ class AncestralReconstruction(Tree):
             else:
                 if id(clade) in node_labels:
                     label = node_labels[id(clade)]
+                    node_labels_map[id(clade)] = label
                     if label in node_estimates:
                         all_estimates[id(clade)] = node_estimates[label]
 
@@ -1042,6 +1050,59 @@ class AncestralReconstruction(Tree):
                     config.title or "Continuous Trait Map (contMap)",
                     fontsize=config.title_fontsize,
                 )
+
+        # Draw CI bars at internal nodes if requested
+        if node_cis:
+            ci_scale = self.ci_size
+            # Build label→id mapping for looking up CI values
+            label_to_id = {}
+            for clade in tree.find_clades(order="preorder"):
+                if not clade.is_terminal() and id(clade) in node_labels_map:
+                    label_to_id[node_labels_map[id(clade)]] = id(clade)
+
+            if config.circular:
+                # Circular: use data coordinates from coords dict
+                for label, (ci_lo, ci_hi) in node_cis.items():
+                    cid = label_to_id.get(label)
+                    if cid is None or cid not in coords:
+                        continue
+                    cx = coords[cid]["x"]
+                    cy = coords[cid]["y"]
+                    angle = coords[cid]["angle"]
+                    # CI bar perpendicular to the radius (tangential)
+                    bar_len = (ci_hi - ci_lo) * ci_scale * 0.3
+                    dx = -np.sin(angle) * bar_len / 2
+                    dy = np.cos(angle) * bar_len / 2
+                    # Main bar
+                    ax.plot([cx - dx, cx + dx], [cy - dy, cy + dy],
+                            color="black", lw=1.5 * ci_scale, zorder=8)
+                    # Point estimate dot
+                    ax.scatter(cx, cy, s=15 * ci_scale, c="black", zorder=9)
+            else:
+                # Rectangular: vertical bars at node positions
+                max_x_val = max(node_x.values()) if node_x else 1.0
+                for label, (ci_lo, ci_hi) in node_cis.items():
+                    cid = label_to_id.get(label)
+                    if cid is None or cid not in node_x or cid not in node_y:
+                        continue
+                    cx = node_x[cid]
+                    cy = node_y[cid]
+                    est = all_estimates.get(cid, (ci_lo + ci_hi) / 2)
+                    # Scale CI width relative to y-axis range
+                    bar_half = (ci_hi - ci_lo) / (vmax - vmin) * 0.4 * ci_scale if vmax != vmin else 0.2 * ci_scale
+                    cap_width = max_x_val * 0.008 * ci_scale
+                    # Vertical bar
+                    ax.plot([cx, cx], [cy - bar_half, cy + bar_half],
+                            color="black", lw=1.2 * ci_scale, zorder=8)
+                    # Caps
+                    ax.plot([cx - cap_width, cx + cap_width],
+                            [cy - bar_half, cy - bar_half],
+                            color="black", lw=1.0 * ci_scale, zorder=8)
+                    ax.plot([cx - cap_width, cx + cap_width],
+                            [cy + bar_half, cy + bar_half],
+                            color="black", lw=1.0 * ci_scale, zorder=8)
+                    # Point estimate dot
+                    ax.scatter(cx, cy, s=12 * ci_scale, c="black", zorder=9)
 
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")

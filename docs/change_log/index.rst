@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.68**:
+Added CI visualization to ``ancestral_state_reconstruction``:
+
+* ``ancestral_state_reconstruction`` now supports ``--plot-ci`` to
+  draw confidence interval bars at each internal node on the contMap
+  phylogram. Shows a vertical bar with caps spanning the 95% CI and
+  a dot for the point estimate. Requires ``--ci`` and ``--plot``.
+* ``--ci-size`` scale factor controls bar size (default 1.0).
+  Works in both rectangular and circular modes.
+
 **2.1.67**:
 Added ``dfoil`` command (Pease & Hahn 2015):
 
