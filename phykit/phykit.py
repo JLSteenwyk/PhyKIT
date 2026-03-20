@@ -119,6 +119,9 @@ class Phykit:
                     - recode alignments using reduced character schemes
                 alignment_subsample (alias: aln_subsample; subsample)
                     - randomly subsample genes, partitions, or sites
+                dstatistic (alias: dstat; abba_baba)
+                    - Patterson's D-statistic (ABBA-BABA test) for
+                      detecting introgression/gene flow
                 alignment_outlier_taxa (alias: outlier_taxa; aot)
                     - identify potential outlier taxa and why they were flagged
                 column_score (alias: cs)
@@ -1944,6 +1947,73 @@ class Phykit:
         parser.add_argument("-o", "--output", type=str, default="subsampled")
         _add_json_argument(parser)
         _run_service(parser, argv, AlignmentSubsample)
+
+    @staticmethod
+    def dstatistic(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compute Patterson's D-statistic (ABBA-BABA test) for
+                detecting introgression or gene flow from a four-taxon
+                alignment.
+
+                The assumed topology is (((P1, P2), P3), Outgroup).
+                Under incomplete lineage sorting (ILS) alone, ABBA and
+                BABA site patterns should be equally frequent. A
+                significant excess of either pattern indicates gene
+                flow.
+
+                D > 0 suggests gene flow between P2 and P3.
+                D < 0 suggests gene flow between P1 and P3.
+                D = 0 is consistent with ILS alone.
+
+                Significance is assessed via block jackknife (Green
+                et al. 2010; Patterson et al. 2012).
+
+                Aliases:
+                  dstatistic, dstat, abba_baba
+                Command line interfaces:
+                  pk_dstatistic, pk_dstat, pk_abba_baba
+
+                Usage:
+                phykit dstatistic -a <alignment> --p1 <taxon> --p2 <taxon>
+                    --p3 <taxon> --outgroup <taxon>
+                    [--block-size 100] [--json]
+
+                Options
+                =====================================================
+                -a/--alignment              FASTA alignment file
+
+                --p1                        taxon name for P1
+                                            (sister to P2)
+
+                --p2                        taxon name for P2
+                                            (sister to P1; potential
+                                            recipient of gene flow)
+
+                --p3                        taxon name for P3
+                                            (donor lineage)
+
+                --outgroup                  outgroup taxon name
+
+                --block-size                block size for jackknife
+                                            estimation of standard
+                                            error (default: 100)
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p1", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p2", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p3", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--outgroup", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--block-size", type=int, default=100, help=SUPPRESS, metavar="")
+        _add_json_argument(parser)
+        _run_service(parser, argv, Dstatistic)
 
     ## Tree functions
     @staticmethod
@@ -7879,6 +7949,10 @@ def variable_sites(argv=None):
 
 def alignment_subsample(argv=None):
     Phykit.alignment_subsample(sys.argv[1:])
+
+
+def dstatistic(argv=None):
+    Phykit.dstatistic(sys.argv[1:])
 
 
 # Tree-based functions

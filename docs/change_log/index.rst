@@ -6,6 +6,15 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.64**:
+Added ``dstatistic`` (ABBA-BABA) command:
+
+* Added ``dstatistic`` (``dstat`` / ``abba_baba``): compute Patterson's
+  D-statistic for detecting introgression from a four-taxon alignment.
+  Counts ABBA and BABA biallelic site patterns, computes D, and
+  estimates significance via block jackknife (Z-score and p-value).
+  Skips gaps, ambiguous characters, and non-biallelic sites.
+
 **2.1.63**:
 Added ``trait_rate_map`` command:
 

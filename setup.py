@@ -106,6 +106,9 @@ setup(
             "pk_alignment_subsample = phykit.phykit:alignment_subsample",
             "pk_aln_subsample = phykit.phykit:alignment_subsample",
             "pk_subsample = phykit.phykit:alignment_subsample",
+            "pk_dstatistic = phykit.phykit:dstatistic",
+            "pk_dstat = phykit.phykit:dstatistic",
+            "pk_abba_baba = phykit.phykit:dstatistic",
             "pk_ancestral_state_reconstruction = phykit.phykit:ancestral_state_reconstruction", # Tree-based functions
             "pk_parsimony_score = phykit.phykit:parsimony_score",
             "pk_parsimony = phykit.phykit:parsimony_score",

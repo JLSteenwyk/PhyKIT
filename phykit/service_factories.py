@@ -29,6 +29,7 @@ CompositionalBiasPerSite = _LazyServiceFactory("phykit.services.alignment.compos
 CompositionPerTaxon = _LazyServiceFactory("phykit.services.alignment.composition_per_taxon", "CompositionPerTaxon")
 CreateConcatenationMatrix = _LazyServiceFactory("phykit.services.alignment.create_concatenation_matrix", "CreateConcatenationMatrix")
 DNAThreader = _LazyServiceFactory("phykit.services.alignment.dna_threader", "DNAThreader")
+Dstatistic = _LazyServiceFactory("phykit.services.alignment.dstatistic", "Dstatistic")
 EvolutionaryRatePerSite = _LazyServiceFactory("phykit.services.alignment.evolutionary_rate_per_site", "EvolutionaryRatePerSite")
 Faidx = _LazyServiceFactory("phykit.services.alignment.faidx", "Faidx")
 GCContent = _LazyServiceFactory("phykit.services.alignment.gc_content", "GCContent")
