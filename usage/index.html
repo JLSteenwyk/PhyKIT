@@ -119,6 +119,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-tempo-mapping">Evolutionary tempo mapping</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#d-statistic-abba-baba-test">D-statistic (ABBA-BABA test)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dfoil-test-pease-hahn-2015">DFOIL test (Pease &amp; Hahn 2015)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#discordance-asymmetry">Discordance asymmetry</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-rate">Evolutionary rate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#hidden-paralogy-check">Hidden paralogy check</a></li>
@@ -339,6 +340,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-consensus-tree"><span class="std std-ref">Consensus tree</span></a>: Consensus tree from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-cophylo"><span class="std std-ref">Cophylogenetic plot (tanglegram)</span></a>: Tanglegram for comparing two trees</p></li>
 <li><p><a class="reference internal" href="#cmd-dstatistic"><span class="std std-ref">D-statistic (ABBA-BABA)</span></a>: Patterson's D-statistic for detecting introgression</p></li>
+<li><p><a class="reference internal" href="#cmd-dfoil"><span class="std std-ref">DFOIL test</span></a>: DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-discordance-asymmetry"><span class="std std-ref">Discordance asymmetry</span></a>: Test for asymmetric discordance (gene flow detection)</p></li>
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
@@ -2274,6 +2276,36 @@ phykit<span class="w"> </span>dstatistic<span class="w"> </span>-g<span class="w
 <em>--outgroup</em>: outgroup taxon name, determines ancestral allele (required) <br/>
 <em>--block-size</em>: block size in sites for jackknife standard error estimation (default: 100; alignment mode only) <br/>
 <em>--support</em>: minimum branch support threshold; gene tree branches below this value are collapsed and treated as unresolved (gene-tree mode only) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="dfoil-test-pease-hahn-2015">
+<span id="cmd-dfoil"></span><h3>DFOIL test (Pease &amp; Hahn 2015)<a class="headerlink" href="#dfoil-test-pease-hahn-2015" title="Link to this heading"></a></h3>
+<p>Function names: dfoil; dfoil_test <br/>
+Command line interface: pk_dfoil; pk_dfoil_test</p>
+<p>Compute DFOIL statistics (Pease &amp; Hahn 2015) for detecting and polarizing
+introgression in a 5-taxon symmetric phylogeny with topology
+<code class="docutils literal notranslate"><span class="pre">((P1,</span> <span class="pre">P2),</span> <span class="pre">(P3,</span> <span class="pre">P4),</span> <span class="pre">Outgroup)</span></code>.</p>
+<p>P1 and P2 are sister taxa; P3 and P4 are sister taxa; the two pairs are
+sister to each other, with an outgroup rooting the tree.</p>
+<p>Four D-statistics are computed: DFO (far-outer), DIL (inner-left),
+DFI (far-inner), and DOL (outer-left). Each is tested for significance
+using a chi-squared test (1 df). The sign pattern of the four statistics
+maps to a specific introgression scenario via the lookup table from
+Pease &amp; Hahn (2015).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>dfoil<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--p4<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--outgroup<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: FASTA alignment file (required) <br/>
+<em>--p1</em>: taxon name for P1, sister to P2 (required) <br/>
+<em>--p2</em>: taxon name for P2, sister to P1 (required) <br/>
+<em>--p3</em>: taxon name for P3, sister to P4 (required) <br/>
+<em>--p4</em>: taxon name for P4, sister to P3 (required) <br/>
+<em>--outgroup</em>: outgroup taxon name (required) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

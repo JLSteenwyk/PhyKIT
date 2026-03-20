@@ -80,6 +80,17 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.67</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">dfoil</span></code> command (Pease &amp; Hahn 2015):</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">dfoil</span></code> (<code class="docutils literal notranslate"><span class="pre">dfoil_test</span></code>): compute the four DFOIL statistics
+(DFO, DIL, DFI, DOL) for detecting and polarizing introgression
+in a 5-taxon symmetric phylogeny <code class="docutils literal notranslate"><span class="pre">((P1,</span> <span class="pre">P2),</span> <span class="pre">(P3,</span> <span class="pre">P4),</span> <span class="pre">Outgroup)</span></code>.
+Counts 16 binary site patterns, computes four D-statistics with
+chi-squared significance, and interprets the joint sign pattern
+to identify which lineages exchanged genes and the direction of
+gene flow. Based on Pease &amp; Hahn (<em>Systematic Biology</em>, 2015).</p></li>
+</ul>
 <p><strong>2.1.66</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--pie-size</span></code> to <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>:</p>
 <ul class="simple">
