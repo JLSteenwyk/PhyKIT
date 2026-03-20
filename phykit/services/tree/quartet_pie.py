@@ -48,6 +48,7 @@ class QuartetPie(Tree):
         self.annotate = parsed["annotate"]
         self.json_output = parsed["json_output"]
         self.csv_output = parsed["csv_output"]
+        self.pie_size = parsed["pie_size"]
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
@@ -104,6 +105,7 @@ class QuartetPie(Tree):
             annotate=getattr(args, "annotate", False),
             json_output=getattr(args, "json", False),
             csv_output=getattr(args, "csv", None),
+            pie_size=getattr(args, "pie_size", 1.0),
             plot_config=PlotConfig.from_args(args),
         )
 
@@ -253,7 +255,7 @@ class QuartetPie(Tree):
             # Circular mode: scale with n_tips but stay larger than rectangular
             # since radial spacing gives more room between nodes
             n_tips = len(tips)
-            pie_size = min(0.05, 0.6 / max(n_tips, 1))
+            pie_size = min(0.05, 0.6 / max(n_tips, 1)) * self.pie_size
 
             for clade in tree.find_clades(order="preorder"):
                 if clade.is_terminal() or clade == root:
@@ -400,7 +402,7 @@ class QuartetPie(Tree):
             # appear as perfect circles regardless of axis scaling, and are
             # drawn above the phylogeny branches.
             n_tips = len(tips)
-            pie_size = min(0.06, 0.8 / max(n_tips, 1))
+            pie_size = min(0.06, 0.8 / max(n_tips, 1)) * self.pie_size
 
             for clade in tree.find_clades(order="preorder"):
                 if clade.is_terminal() or clade == root:

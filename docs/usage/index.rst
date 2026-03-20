@@ -2709,6 +2709,7 @@ Options: |br|
 *-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
 *--annotate*: show gCF/gDF values as text near each pie chart |br|
 *--csv*: output per-branch concordance values (gCF, gDF1, gDF2, counts) as a CSV file |br|
+*--pie-size*: scale factor for pie chart size (default: 1.0; use 2.0 for double, 0.5 for half) |br|
 *--colors*: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
 *--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
