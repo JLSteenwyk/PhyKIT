@@ -3419,8 +3419,16 @@ likelihood ratio test against lambda = 0.</p></li>
 <p>The trait file should be tab-delimited with two columns (taxon_name&lt;tab&gt;trait_value).
 Lines starting with '#' are treated as comments. If the tree and trait file have
 different taxa, the intersection is used and warnings are printed to stderr.</p>
+<p><strong>Multivariate K_mult</strong> (Adams 2014): When the <code class="docutils literal notranslate"><span class="pre">--multivariate</span></code> flag is used,
+K_mult is computed instead of single-trait K. This generalizes Blomberg's K to
+multivariate data using distances in trait space. The trait file should be a
+multi-column TSV with a header row (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait1&lt;tab&gt;trait2&lt;tab&gt;...</span></code>),
+the same format used by <code class="docutils literal notranslate"><span class="pre">phylogenetic_ordination</span></code> and <code class="docutils literal notranslate"><span class="pre">trait_correlation</span></code>.
+K_mult only works with Blomberg's K framework; combining <code class="docutils literal notranslate"><span class="pre">--multivariate</span></code>
+with <code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">lambda</span></code> will produce an error.</p>
 <p>Output for Blomberg's K: K_value&lt;tab&gt;p_value&lt;tab&gt;R2_phylo <br/>
-Output for Pagel's lambda: lambda_value&lt;tab&gt;log_likelihood&lt;tab&gt;p_value&lt;tab&gt;R2_phylo</p>
+Output for Pagel's lambda: lambda_value&lt;tab&gt;log_likelihood&lt;tab&gt;p_value&lt;tab&gt;R2_phylo <br/>
+Output for K_mult: K_mult&lt;tab&gt;p_value&lt;tab&gt;n_traits&lt;tab&gt;permutations</p>
 <p>R²_phylo reports the fraction of trait variance explained by phylogenetic structure:
 <code class="docutils literal notranslate"><span class="pre">R²_phylo</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">(σ²_BM</span> <span class="pre">/</span> <span class="pre">σ²_WN)</span></code>. Values near 1 indicate strong phylogenetic signal;
 values near 0 indicate phylogeny explains little trait variance.</p>
@@ -3432,7 +3440,7 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>&lt;permutations&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;method&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>&lt;permutations&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--multivariate<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -3441,6 +3449,7 @@ and branch length scales. All metrics show Pearson r &gt; 0.999 with phytools.</
 <em>-m/--method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">blombergs_k</span></code> or <code class="docutils literal notranslate"><span class="pre">lambda</span></code> (default: blombergs_k) <br/>
 <em>-p/--permutations</em>: number of permutations for Blomberg's K (default: 1000) <br/>
 <em>-g/--gene-trees</em>: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV <br/>
+<em>--multivariate</em>: compute K_mult (Adams 2014) for multivariate traits; the trait file should be a multi-column TSV with header row instead of two-column <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

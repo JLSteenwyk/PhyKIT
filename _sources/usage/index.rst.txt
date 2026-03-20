@@ -3764,8 +3764,17 @@ The trait file should be tab-delimited with two columns (taxon_name<tab>trait_va
 Lines starting with '#' are treated as comments. If the tree and trait file have
 different taxa, the intersection is used and warnings are printed to stderr.
 
+**Multivariate K_mult** (Adams 2014): When the ``--multivariate`` flag is used,
+K_mult is computed instead of single-trait K. This generalizes Blomberg's K to
+multivariate data using distances in trait space. The trait file should be a
+multi-column TSV with a header row (``taxon<tab>trait1<tab>trait2<tab>...``),
+the same format used by ``phylogenetic_ordination`` and ``trait_correlation``.
+K_mult only works with Blomberg's K framework; combining ``--multivariate``
+with ``--method lambda`` will produce an error.
+
 Output for Blomberg's K: K_value<tab>p_value<tab>R2_phylo |br|
-Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value<tab>R2_phylo
+Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value<tab>R2_phylo |br|
+Output for K_mult: K_mult<tab>p_value<tab>n_traits<tab>permutations
 
 R²_phylo reports the fraction of trait variance explained by phylogenetic structure:
 ``R²_phylo = 1 - (σ²_BM / σ²_WN)``. Values near 1 indicate strong phylogenetic signal;
@@ -3783,7 +3792,7 @@ and branch length scales. All metrics show Pearson r > 0.999 with phytools.
 
 .. code-block:: shell
 
-   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [-g <gene_trees>] [--json]
+   phykit phylogenetic_signal -t <tree> -d <trait_data> [-m <method>] [-p <permutations>] [-g <gene_trees>] [--multivariate] [--json]
 
 Options: |br|
 *-t/--tree*: a tree file in Newick format |br|
@@ -3791,6 +3800,7 @@ Options: |br|
 *-m/--method*: method to use: ``blombergs_k`` or ``lambda`` (default: blombergs_k) |br|
 *-p/--permutations*: number of permutations for Blomberg's K (default: 1000) |br|
 *-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
+*--multivariate*: compute K_mult (Adams 2014) for multivariate traits; the trait file should be a multi-column TSV with header row instead of two-column |br|
 *--json*: optional argument to print results as JSON
 
 |
