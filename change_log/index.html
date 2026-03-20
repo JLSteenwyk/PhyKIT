@@ -80,6 +80,16 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.68</strong>:
+Added CI visualization to <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code> now supports <code class="docutils literal notranslate"><span class="pre">--plot-ci</span></code> to
+draw confidence interval bars at each internal node on the contMap
+phylogram. Shows a vertical bar with caps spanning the 95% CI and
+a dot for the point estimate. Requires <code class="docutils literal notranslate"><span class="pre">--ci</span></code> and <code class="docutils literal notranslate"><span class="pre">--plot</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ci-size</span></code> scale factor controls bar size (default 1.0).
+Works in both rectangular and circular modes.</p></li>
+</ul>
 <p><strong>2.1.67</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">dfoil</span></code> command (Pease &amp; Hahn 2015):</p>
 <ul class="simple">

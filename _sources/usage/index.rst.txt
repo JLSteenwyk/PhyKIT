@@ -1489,6 +1489,8 @@ Options: |br|
 *--model*: Mk model: ``ER``, ``SYM``, or ``ARD`` (discrete only; default: ``ER``) |br|
 *--ci*: include 95% confidence intervals (continuous only) |br|
 *--plot*: output path for plot (requires matplotlib) |br|
+*--plot-ci*: draw confidence interval bars at internal nodes on the contMap plot (requires --ci and --plot) |br|
+*--ci-size*: scale factor for CI bar size (default: 1.0; use 2.0 for larger, 0.5 for smaller) |br|
 *--fig-width*: figure width in inches (auto-scaled if omitted) |br|
 *--fig-height*: figure height in inches (auto-scaled if omitted) |br|
 *--dpi*: resolution in DPI (default: 300) |br|
