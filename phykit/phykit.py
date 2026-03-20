@@ -122,6 +122,10 @@ class Phykit:
                 dstatistic (alias: dstat; abba_baba)
                     - Patterson's D-statistic (ABBA-BABA test) for
                       detecting introgression/gene flow
+                dfoil (alias: dfoil_test)
+                    - DFOIL test (Pease & Hahn 2015) for detecting
+                      and polarizing introgression in a 5-taxon
+                      symmetric phylogeny
                 alignment_outlier_taxa (alias: outlier_taxa; aot)
                     - identify potential outlier taxa and why they were flagged
                 column_score (alias: cs)
@@ -2038,6 +2042,71 @@ class Phykit:
         parser.add_argument("--support", type=float, default=None, help=SUPPRESS, metavar="")
         _add_json_argument(parser)
         _run_service(parser, argv, Dstatistic)
+
+    @staticmethod
+    def dfoil(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Compute DFOIL statistics (Pease & Hahn 2015) for
+                detecting and polarizing introgression in a 5-taxon
+                symmetric phylogeny.
+
+                Topology: ((P1, P2), (P3, P4), Outgroup)
+                P1 and P2 are sister taxa; P3 and P4 are sister
+                taxa; the two pairs are sister to each other with
+                an outgroup rooting the tree.
+
+                Four D-statistics are computed:
+                  DFO (far-outer), DIL (inner-left),
+                  DFI (far-inner), DOL (outer-left)
+
+                The sign pattern of these four statistics maps to
+                a specific introgression scenario via the lookup
+                table from Pease & Hahn (2015).
+
+                Aliases:
+                  dfoil, dfoil_test
+                Command line interfaces:
+                  pk_dfoil, pk_dfoil_test
+
+                Usage:
+                phykit dfoil -a <alignment> --p1 <taxon>
+                    --p2 <taxon> --p3 <taxon> --p4 <taxon>
+                    --outgroup <taxon> [--json]
+
+                Options
+                =====================================================
+                -a/--alignment              FASTA alignment file
+
+                --p1                        taxon name for P1
+                                            (sister to P2)
+
+                --p2                        taxon name for P2
+                                            (sister to P1)
+
+                --p3                        taxon name for P3
+                                            (sister to P4)
+
+                --p4                        taxon name for P4
+                                            (sister to P3)
+
+                --outgroup                  outgroup taxon name
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p1", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p2", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p3", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--p4", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--outgroup", type=str, required=True, help=SUPPRESS, metavar="")
+        _add_json_argument(parser)
+        _run_service(parser, argv, Dfoil)
 
     ## Tree functions
     @staticmethod
@@ -7986,6 +8055,10 @@ def alignment_subsample(argv=None):
 
 def dstatistic(argv=None):
     Phykit.dstatistic(sys.argv[1:])
+
+
+def dfoil(argv=None):
+    Phykit.dfoil(sys.argv[1:])
 
 
 # Tree-based functions

@@ -23,6 +23,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "aot": "alignment_outlier_taxa",
     "dstat": "dstatistic",
     "abba_baba": "dstatistic",
+    "dfoil": "dfoil",
+    "dfoil_test": "dfoil",
     "cs": "column_score",
     "comp_bias_per_site": "compositional_bias_per_site",
     "cbps": "compositional_bias_per_site",

@@ -13,6 +13,7 @@ _EXPORTS = {
     "CreateConcatenationMatrix": "create_concatenation_matrix",
     "DNAThreader": "dna_threader",
     "Dstatistic": "dstatistic",
+    "Dfoil": "dfoil",
     "EvolutionaryRatePerSite": "evolutionary_rate_per_site",
     "Faidx": "faidx",
     "GCContent": "gc_content",

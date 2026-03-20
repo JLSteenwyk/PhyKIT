@@ -6,6 +6,17 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.67**:
+Added ``dfoil`` command (Pease & Hahn 2015):
+
+* Added ``dfoil`` (``dfoil_test``): compute the four DFOIL statistics
+  (DFO, DIL, DFI, DOL) for detecting and polarizing introgression
+  in a 5-taxon symmetric phylogeny ``((P1, P2), (P3, P4), Outgroup)``.
+  Counts 16 binary site patterns, computes four D-statistics with
+  chi-squared significance, and interprets the joint sign pattern
+  to identify which lineages exchanged genes and the direction of
+  gene flow. Based on Pease & Hahn (*Systematic Biology*, 2015).
+
 **2.1.66**:
 Added ``--pie-size`` to ``quartet_pie``:
 
