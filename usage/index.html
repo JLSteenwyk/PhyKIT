@@ -137,6 +137,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#ou-shift-detection-l1ou">OU shift detection (l1ou)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#patristic-distances">Patristic distances</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-heatmap">Phylogenetic heatmap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-imputation">Phylogenetic imputation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-glm">Phylogenetic GLM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-logistic-regression">Phylogenetic Logistic Regression</a></li>
@@ -379,6 +380,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a>: Detect OU regime shifts on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a>: Multi-regime Ornstein-Uhlenbeck models</p></li>
 <li><p><a class="reference internal" href="#cmd-phenogram"><span class="std std-ref">Phenogram (traitgram)</span></a>: Phenogram visualizing trait evolution</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-impute"><span class="std std-ref">Phylogenetic imputation</span></a>: Impute missing trait values using phylogenetic relationships</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-heatmap"><span class="std std-ref">Phylogenetic heatmap</span></a>: Phylogeny alongside a heatmap of numeric trait values</p></li>
 <li><p><a class="reference internal" href="#cmd-rate-heterogeneity"><span class="std std-ref">Rate heterogeneity test (multi-rate Brownian motion)</span></a>: Test for rate heterogeneity in trait evolution</p></li>
 <li><p><a class="reference internal" href="#cmd-stochastic-character-map"><span class="std std-ref">Stochastic character mapping (SIMMAP)</span></a>: Stochastic character mapping on a phylogeny</p></li>
@@ -3176,6 +3178,36 @@ R's phytools::phylo.heatmap().</p>
 <em>--cmap</em>: matplotlib colormap name (default: <code class="docutils literal notranslate"><span class="pre">viridis</span></code>) <br/>
 <em>--cluster-columns</em>: cluster trait columns by similarity and display a dendrogram at the top <br/>
 <em>--json</em>: optional argument to output metadata as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phylogenetic-imputation">
+<span id="cmd-phylo-impute"></span><h3>Phylogenetic imputation<a class="headerlink" href="#phylogenetic-imputation" title="Link to this heading"></a></h3>
+<p>Function names: phylo_impute; impute; phylo_imp <br/>
+Command line interface: pk_phylo_impute; pk_impute; pk_phylo_imp</p>
+<p>Impute missing continuous trait values using phylogenetic relationships
+and between-trait correlations under Brownian motion. Missing values
+(<code class="docutils literal notranslate"><span class="pre">NA</span></code>, <code class="docutils literal notranslate"><span class="pre">?</span></code>, or empty) in a multi-trait TSV are predicted from:</p>
+<ol class="arabic simple">
+<li><p><strong>Phylogenetic neighbors</strong>: closely related species with observed
+values contribute more to the imputation via the phylogenetic VCV</p></li>
+<li><p><strong>Trait correlations</strong>: if a taxon has observed values for other
+traits, between-trait covariance improves the prediction</p></li>
+</ol>
+<p>Reports imputed values with standard errors and 95% confidence
+intervals. The output TSV is a drop-in replacement for the input with
+all missing values filled in.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_impute<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+phykit<span class="w"> </span>phylo_impute<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: tree file in Newick format (required) <br/>
+<em>-d/--trait-data</em>: multi-trait TSV with header; missing values as NA, ?, or empty (required) <br/>
+<em>-o/--output</em>: output TSV file with imputed values (required) <br/>
+<em>-g/--gene-trees</em>: gene trees for discordance-aware VCV <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

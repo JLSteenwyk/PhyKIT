@@ -6,6 +6,20 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.72**:
+Added ``phylo_impute`` command for missing data imputation:
+
+* Added ``phylo_impute`` (``impute`` / ``phylo_imp``): impute missing
+  continuous trait values using phylogenetic relationships and
+  between-trait correlations under Brownian motion. For each missing
+  value, computes the conditional expectation from (1) phylogenetic
+  neighbors' observed values and (2) the taxon's own observed traits
+  via trait covariance. Reports imputed values with standard errors
+  and 95% CIs. Supports discordance-aware VCV via ``-g``.
+  Cross-compared against R's Rphylopars::phylopars(); imputed values
+  agree in direction and magnitude. R validation script provided in
+  ``tests/r_validation/validate_phylo_impute.R``.
+
 **2.1.71**:
 Added ``phylo_gwas`` command (Pease et al. 2016):
 
