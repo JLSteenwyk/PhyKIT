@@ -80,6 +80,21 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.71</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">phylo_gwas</span></code> command (Pease et al. 2016):</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">phylo_gwas</span></code> (<code class="docutils literal notranslate"><span class="pre">pgwas</span></code>): phylogenetic genome-wide
+association study. Tests each alignment site for association with
+a categorical (Fisher's exact) or continuous (point-biserial)
+phenotype, with Benjamini-Hochberg FDR correction. Optionally
+classifies significant hits as monophyletic (potentially inherited)
+or polyphyletic (convergent, the interesting candidates) using a
+phylogenetic tree. Produces a Manhattan plot with color-coded
+significance, optional gene partition annotations, and CSV/JSON
+output of per-site results. Supports <code class="docutils literal notranslate"><span class="pre">--exclude-monophyletic</span></code>
+to filter inherited associations. <code class="docutils literal notranslate"><span class="pre">--dot-size</span></code> controls Manhattan
+plot dot size (same scale-factor pattern as <code class="docutils literal notranslate"><span class="pre">--pie-size</span></code>).</p></li>
+</ul>
 <p><strong>2.1.70</strong>:
 Added multivariate K_mult to <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code> (Adams 2014):</p>
 <ul class="simple">

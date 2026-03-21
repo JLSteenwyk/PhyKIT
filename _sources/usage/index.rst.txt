@@ -96,6 +96,7 @@ Alignment quality & statistics
 - :ref:`Relative composition variability <cmd-relative_composition_variability>`: Composition variability across taxa
 - :ref:`Relative composition variability, taxon <cmd-relative_composition_variability_taxon>`: Per-taxon relative composition variability
 - :ref:`Sum-of-pairs score <cmd-sum_of_pairs_score>`: Sum-of-pairs alignment quality score
+- :ref:`Phylo GWAS <cmd-phylo_gwas>`: Phylogenetic genome-wide association study
 - :ref:`Variable sites <cmd-variable_sites>`: Count variable sites in an alignment
 
 Alignment manipulation
@@ -1243,6 +1244,51 @@ Options: |br|
 fasta alignment file to be scored for accuracy |br|
 *-r/--reference*: reference alignment to compare the query alignment
 to |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-phylo_gwas:
+
+Phylo GWAS
+##########
+Function names: phylo_gwas; pgwas |br|
+Command line interface: pk_phylo_gwas; pk_pgwas
+
+Phylogenetic genome-wide association study following the Pease et al.
+(2016) approach. Performs per-site association tests between alignment
+columns and a phenotype, applies Benjamini-Hochberg FDR correction,
+optionally classifies significant associations as monophyletic or
+polyphyletic using a phylogenetic tree, and produces a Manhattan plot.
+
+Categorical phenotypes use Fisher's exact test (2 groups) or chi-squared
+test (>2 groups). Continuous phenotypes use point-biserial correlation.
+Only biallelic sites are tested; invariant and multiallelic sites are
+skipped. Sites with gaps or ambiguous characters are also skipped.
+
+.. code-block:: shell
+
+   phykit phylo_gwas -a <alignment> -d <phenotype> -o <output>
+     [-t <tree>] [-p <partition>] [--alpha 0.05]
+     [--exclude-monophyletic] [--csv <file>] [--json]
+
+Options: |br|
+*-a/--alignment*: FASTA alignment file |br|
+*-d/--phenotype*: two-column TSV file (taxon<tab>phenotype) |br|
+*-o/--output*: output Manhattan plot path |br|
+*-t/--tree*: optional Newick tree for monophyletic/polyphyletic classification |br|
+*-p/--partition*: optional RAxML-style partition file for gene annotations |br|
+*--alpha*: FDR significance threshold (default: 0.05) |br|
+*--exclude-monophyletic*: exclude monophyletic associations from results |br|
+*--dot-size*: scale factor for dot size in the Manhattan plot (default: 1.0; use 2.0 for double, 0.5 for half) |br|
+*--csv*: output per-site results as CSV to the specified file |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none") |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |

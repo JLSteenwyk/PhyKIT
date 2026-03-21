@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.71**:
+Added ``phylo_gwas`` command (Pease et al. 2016):
+
+* Added ``phylo_gwas`` (``pgwas``): phylogenetic genome-wide
+  association study. Tests each alignment site for association with
+  a categorical (Fisher's exact) or continuous (point-biserial)
+  phenotype, with Benjamini-Hochberg FDR correction. Optionally
+  classifies significant hits as monophyletic (potentially inherited)
+  or polyphyletic (convergent, the interesting candidates) using a
+  phylogenetic tree. Produces a Manhattan plot with color-coded
+  significance, optional gene partition annotations, and CSV/JSON
+  output of per-site results. Supports ``--exclude-monophyletic``
+  to filter inherited associations. ``--dot-size`` controls Manhattan
+  plot dot size (same scale-factor pattern as ``--pie-size``).
+
 **2.1.70**:
 Added multivariate K_mult to ``phylogenetic_signal`` (Adams 2014):
 

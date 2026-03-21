@@ -93,6 +93,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#relative-composition-variability-taxon">Relative composition variability, taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-fasta-entries">Rename FASTA entries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylo-gwas">Phylo GWAS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
 </ul>
 </li>
@@ -286,6 +287,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-relative-composition-variability"><span class="std std-ref">Relative composition variability</span></a>: Composition variability across taxa</p></li>
 <li><p><a class="reference internal" href="#cmd-relative-composition-variability-taxon"><span class="std std-ref">Relative composition variability, taxon</span></a>: Per-taxon relative composition variability</p></li>
 <li><p><a class="reference internal" href="#cmd-sum-of-pairs-score"><span class="std std-ref">Sum-of-pairs score</span></a>: Sum-of-pairs alignment quality score</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-gwas"><span class="std std-ref">Phylo GWAS</span></a>: Phylogenetic genome-wide association study</p></li>
 <li><p><a class="reference internal" href="#cmd-variable-sites"><span class="std std-ref">Variable sites</span></a>: Count variable sites in an alignment</p></li>
 </ul>
 </section>
@@ -1263,6 +1265,46 @@ Acids Research (1999), doi: 10.1093/nar/27.13.2682.</p>
 fasta alignment file to be scored for accuracy <br/>
 <em>-r/--reference</em>: reference alignment to compare the query alignment
 to <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="phylo-gwas">
+<span id="cmd-phylo-gwas"></span><h3>Phylo GWAS<a class="headerlink" href="#phylo-gwas" title="Link to this heading"></a></h3>
+<p>Function names: phylo_gwas; pgwas <br/>
+Command line interface: pk_phylo_gwas; pk_pgwas</p>
+<p>Phylogenetic genome-wide association study following the Pease et al.
+(2016) approach. Performs per-site association tests between alignment
+columns and a phenotype, applies Benjamini-Hochberg FDR correction,
+optionally classifies significant associations as monophyletic or
+polyphyletic using a phylogenetic tree, and produces a Manhattan plot.</p>
+<p>Categorical phenotypes use Fisher's exact test (2 groups) or chi-squared
+test (&gt;2 groups). Continuous phenotypes use point-biserial correlation.
+Only biallelic sites are tested; invariant and multiallelic sites are
+skipped. Sites with gaps or ambiguous characters are also skipped.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_gwas<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;phenotype&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
+<span class="w">  </span><span class="o">[</span>-t<span class="w"> </span>&lt;tree&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>&lt;partition&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--alpha<span class="w"> </span><span class="m">0</span>.05<span class="o">]</span>
+<span class="w">  </span><span class="o">[</span>--exclude-monophyletic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--csv<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: FASTA alignment file <br/>
+<em>-d/--phenotype</em>: two-column TSV file (taxon&lt;tab&gt;phenotype) <br/>
+<em>-o/--output</em>: output Manhattan plot path <br/>
+<em>-t/--tree</em>: optional Newick tree for monophyletic/polyphyletic classification <br/>
+<em>-p/--partition</em>: optional RAxML-style partition file for gene annotations <br/>
+<em>--alpha</em>: FDR significance threshold (default: 0.05) <br/>
+<em>--exclude-monophyletic</em>: exclude monophyletic associations from results <br/>
+<em>--dot-size</em>: scale factor for dot size in the Manhattan plot (default: 1.0; use 2.0 for double, 0.5 for half) <br/>
+<em>--csv</em>: output per-site results as CSV to the specified file <br/>
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
+<em>--dpi</em>: resolution in DPI (default: 300) <br/>
+<em>--no-title</em>: hide the plot title <br/>
+<em>--title</em>: custom title text <br/>
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot;) <br/>
+<em>--colors</em>: comma-separated colors (hex or named) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
