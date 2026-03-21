@@ -167,6 +167,9 @@ class Phykit:
                     - calculate sum-of-pairs score between a reference and query alignment
                 thread_dna (alias: pal2nal; p2n)
                     - thread dna sequences over a protein alignment
+                phylo_gwas (alias: pgwas)
+                    - phylogenetic genome-wide association study
+                      (Pease et al. 2016 approach)
                 variable_sites (alias: vs)
                     - calculates the number and percentage of variable sites
                       in an alignment
@@ -1877,6 +1880,115 @@ class Phykit:
         parser.add_argument("alignment", type=str, help=SUPPRESS)
         _add_json_argument(parser)
         _run_service(parser, argv, VariableSites)
+
+    @staticmethod
+    def phylo_gwas(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Phylogenetic genome-wide association study following the
+                Pease et al. (2016) approach.
+
+                Performs per-site association tests between alignment
+                columns and a phenotype (categorical or continuous),
+                applies Benjamini-Hochberg FDR correction, optionally
+                classifies significant associations as monophyletic or
+                polyphyletic using a phylogenetic tree, and produces a
+                Manhattan plot.
+
+                Categorical phenotypes use Fisher's exact test (2 groups)
+                or chi-squared test (>2 groups). Continuous phenotypes use
+                point-biserial correlation. Only biallelic sites are tested.
+
+                Aliases:
+                  phylo_gwas, pgwas
+                Command line interfaces:
+                  pk_phylo_gwas, pk_pgwas
+
+                Usage:
+                phykit phylo_gwas -a <alignment> -d <phenotype> -o <output>
+                  [-t <tree>] [-p <partition>] [--alpha 0.05]
+                  [--exclude-monophyletic] [--csv <file>] [--json]
+                  [shared plot options]
+
+                Options
+                =====================================================
+                -a/--alignment              FASTA alignment file
+
+                -d/--phenotype              two-column TSV file:
+                                            taxon<tab>phenotype
+
+                -o/--output                 output Manhattan plot path
+
+                -t/--tree                   optional Newick tree for
+                                            monophyletic/polyphyletic
+                                            classification
+
+                -p/--partition              optional RAxML-style partition
+                                            file for gene annotations
+
+                --alpha                     FDR significance threshold
+                                            (default: 0.05)
+
+                --exclude-monophyletic      exclude monophyletic
+                                            associations from results
+
+                --dot-size                  scale factor for dot size
+                                            in the Manhattan plot
+                                            (default: 1.0; use 2.0
+                                            for double, 0.5 for half)
+
+                --csv                       output per-site results as CSV
+                                            to the specified file
+
+                --fig-width                 figure width in inches
+                                            (auto-scaled if omitted)
+
+                --fig-height                figure height in inches
+                                            (auto-scaled if omitted)
+
+                --dpi                       resolution in DPI
+                                            (default: 300)
+
+                --no-title                  hide the plot title
+
+                --title                     custom title text
+
+                --legend-position           legend location (e.g.,
+                                            "upper right", "none")
+
+                --ylabel-fontsize           font size for y-axis labels;
+                                            0 to hide
+
+                --xlabel-fontsize           font size for x-axis labels;
+                                            0 to hide
+
+                --title-fontsize            font size for the title
+
+                --axis-fontsize             font size for axis labels
+
+                --colors                    comma-separated colors
+                                            (hex or named)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-a", "--alignment", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-d", "--phenotype", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-o", "--output", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-t", "--tree", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("-p", "--partition", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--alpha", type=float, default=0.05, help=SUPPRESS, metavar="")
+        parser.add_argument("--exclude-monophyletic", action="store_true", default=False, help=SUPPRESS)
+        parser.add_argument("--dot-size", type=float, default=1.0, help=SUPPRESS, metavar="")
+        parser.add_argument("--csv", type=str, default=None, help=SUPPRESS, metavar="")
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhyloGwas)
 
     @staticmethod
     def alignment_subsample(argv):
@@ -8161,6 +8273,10 @@ def alignment_subsample(argv=None):
 
 def dstatistic(argv=None):
     Phykit.dstatistic(sys.argv[1:])
+
+
+def phylo_gwas(argv=None):
+    Phykit.phylo_gwas(sys.argv[1:])
 
 
 def dfoil(argv=None):

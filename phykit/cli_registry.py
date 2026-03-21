@@ -55,6 +55,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "sum_of_pairs_score": "sum_of_pairs_score",
     "sops": "sum_of_pairs_score",
     "sop": "sum_of_pairs_score",
+    "phylo_gwas": "phylo_gwas",
+    "pgwas": "phylo_gwas",
     "vs": "variable_sites",
     # Tree aliases
     "bss": "bipartition_support_stats",
