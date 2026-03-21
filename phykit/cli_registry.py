@@ -188,6 +188,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "da": "discordance_asymmetry",
     "spec_disc": "spectral_discordance",
     "sd": "spectral_discordance",
+    "impute": "phylo_impute",
+    "phylo_imp": "phylo_impute",
     "trait_correlation": "trait_correlation",
     "trait_corr": "trait_correlation",
     "phylo_corr": "trait_correlation",

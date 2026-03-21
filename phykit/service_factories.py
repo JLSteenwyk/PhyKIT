@@ -112,6 +112,7 @@ TreenessOverRCV = _LazyServiceFactory("phykit.services.tree.treeness_over_rcv", 
 EvoTempoMap = _LazyServiceFactory("phykit.services.tree.evo_tempo_map", "EvoTempoMap")
 DiscordanceAsymmetry = _LazyServiceFactory("phykit.services.tree.discordance_asymmetry", "DiscordanceAsymmetry")
 SpectralDiscordance = _LazyServiceFactory("phykit.services.tree.spectral_discordance", "SpectralDiscordance")
+PhyloImpute = _LazyServiceFactory("phykit.services.tree.phylo_impute", "PhyloImpute")
 TraitCorrelation = _LazyServiceFactory("phykit.services.tree.trait_correlation", "TraitCorrelation")
 TraitRateMap = _LazyServiceFactory("phykit.services.tree.trait_rate_map", "TraitRateMap")
 TreeSpace = _LazyServiceFactory("phykit.services.tree.tree_space", "TreeSpace")

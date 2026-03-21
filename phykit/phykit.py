@@ -227,6 +227,9 @@ class Phykit:
                 trait_correlation (alias: trait_corr; phylo_corr)
                     - compute phylogenetic correlations between all pairs
                       of traits and display as a heatmap
+                phylo_impute (alias: impute; phylo_imp)
+                    - impute missing trait values using phylogenetic
+                      relationships and between-trait correlations
                 phylogenetic_ordination (alias: phylo_ordination; ordination; ord;
                     phylo_pca; phyl_pca; ppca; phylo_dimreduce; dimreduce; pdr)
                     - phylogenetic ordination (PCA, t-SNE, or UMAP) on
@@ -3680,6 +3683,73 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, TraitCorrelation)
+
+    @staticmethod
+    def phylo_impute(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Phylogenetic imputation of missing trait values using
+                conditional multivariate normal distributions.
+
+                Captures both phylogenetic relationships (via the
+                tree's variance-covariance matrix) and between-trait
+                correlations to predict missing values. Reports
+                imputed values with standard errors and 95% CIs.
+
+                Missing values in the input trait file may be marked
+                as NA, na, ?, or left empty.
+
+                Input is a phylogenetic tree and a tab-delimited
+                multi-trait file with a header row:
+                taxon<tab>trait1<tab>trait2<tab>...
+
+                Aliases:
+                  phylo_impute, impute, phylo_imp
+                Command line interfaces:
+                  pk_phylo_impute, pk_impute, pk_phylo_imp
+
+                Usage:
+                phykit phylo_impute -t <tree> -d <trait_data> -o <output>
+                  [-g <gene_trees>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   tree file (required)
+
+                -d/--trait-data             multi-trait TSV with header
+                                            row; missing values marked
+                                            as NA, ?, or empty
+                                            (required)
+
+                -o/--output                 output TSV file with
+                                            imputed values (required)
+
+                -g/--gene-trees             optional multi-Newick file
+                                            of gene trees for
+                                            discordance-aware VCV
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-d", "--trait-data", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-o", "--output", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, default=None, help=SUPPRESS, metavar=""
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhyloImpute)
 
     @staticmethod
     def phylogenetic_ordination(argv):
@@ -8560,6 +8630,10 @@ def spectral_discordance(argv=None):
 
 def tree_space(argv=None):
     Phykit.tree_space(sys.argv[1:])
+
+
+def phylo_impute(argv=None):
+    Phykit.phylo_impute(sys.argv[1:])
 
 
 def trait_rate_map(argv=None):
