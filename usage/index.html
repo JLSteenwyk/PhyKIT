@@ -108,6 +108,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#branch-length-multiplier">Branch length multiplier</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neighbornet">NeighborNet</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#discrete-trait-evolution-model-comparison-fitdiscrete">Discrete trait evolution model comparison (fitDiscrete)</a></li>
@@ -350,6 +351,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
 <li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap</p></li>
+<li><p><a class="reference internal" href="#cmd-neighbor-net"><span class="std std-ref">NeighborNet</span></a>: NeighborNet phylogenetic network from distance matrix (Bryant &amp; Moulton 2004)</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
 <li><p><a class="reference internal" href="#cmd-quartet-pie"><span class="std std-ref">Quartet pie chart</span></a>: Phylogram with quartet concordance pie charts at internal nodes</p></li>
 <li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
@@ -1792,6 +1794,45 @@ collapsed <br/>
 <em>-o/--output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix
 &quot;.collapsed_(support).tre&quot; <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="neighbornet">
+<span id="cmd-neighbor-net"></span><h3>NeighborNet<a class="headerlink" href="#neighbornet" title="Link to this heading"></a></h3>
+<p>Function names: neighbor_net; nnet <br/>
+Command line interface: pk_neighbor_net; pk_nnet</p>
+<p>Construct a NeighborNet phylogenetic network from pairwise distances
+(Bryant &amp; Moulton 2004). Unlike a consensus network (which summarizes
+conflict across gene trees), NeighborNet infers a splits graph directly
+from a distance matrix — analogous to Neighbor-Joining but producing a
+network instead of a tree.</p>
+<p>Input is either a FASTA alignment (distances computed internally) or a
+pre-computed distance matrix CSV. The algorithm:</p>
+<ol class="arabic simple">
+<li><p>Computes pairwise distances (p-distance, identity, or Jukes-Cantor)</p></li>
+<li><p>Builds a NJ tree to determine the circular taxon ordering</p></li>
+<li><p>Enumerates all circular splits compatible with that ordering</p></li>
+<li><p>Estimates split weights via non-negative least squares (NNLS)</p></li>
+<li><p>Visualizes as a planar splits graph (Buneman graph)</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># From an alignment</span>
+phykit<span class="w"> </span>neighbor_net<span class="w"> </span>-a<span class="w"> </span>alignment.fa<span class="w"> </span>-o<span class="w"> </span>network.pdf
+
+<span class="c1"># From a pre-computed distance matrix</span>
+phykit<span class="w"> </span>neighbor_net<span class="w"> </span>--distance-matrix<span class="w"> </span>distances.csv<span class="w"> </span>-o<span class="w"> </span>network.pdf
+
+<span class="c1"># With Jukes-Cantor correction</span>
+phykit<span class="w"> </span>neighbor_net<span class="w"> </span>-a<span class="w"> </span>alignment.fa<span class="w"> </span>-o<span class="w"> </span>network.pdf<span class="w"> </span>--metric<span class="w"> </span>jc
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-a/--alignment</em>: FASTA alignment file (computes distances internally) <br/>
+<em>--distance-matrix</em>: pre-computed distance matrix CSV with taxon headers <br/>
+<em>-o/--output</em>: output figure path (required) <br/>
+<em>--metric</em>: distance metric when using -a: identity, p-distance (default), or jc (Jukes-Cantor) <br/>
+<em>--max-splits</em>: maximum splits for visualization (default: 30) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

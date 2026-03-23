@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.76**:
+Added ``neighbor_net`` command (Bryant & Moulton 2004):
+
+* Added ``neighbor_net`` (``nnet``): construct a NeighborNet
+  phylogenetic network from pairwise distances. Infers a splits
+  graph from a FASTA alignment or pre-computed distance matrix
+  using NJ-based circular ordering + NNLS split weight estimation.
+  Supports p-distance, identity, and Jukes-Cantor distance metrics.
+  Visualizes as a planar Buneman splits graph.
+
 **2.1.75**:
 Improved ``consensus_network`` for large datasets and plot customization:
 
