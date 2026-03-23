@@ -323,6 +323,10 @@ class Phykit:
                 treeness (alias: tness)
                     - reports treeness or stemminess, a measure of signal-to-
                       noise ratio in a phylogeny
+                hybridization (alias: hybrid; reticulation)
+                    - estimate minimum reticulation events and localize
+                      hybridization on a species tree using gene tree
+                      discordance asymmetry
                 spectral_discordance (alias: spec_disc; sd)
                     - PCA + spectral clustering of gene tree space via
                       bipartition decomposition
@@ -7692,9 +7696,12 @@ class Phykit:
                 f"""\
                 {help_header}
 
-                Test whether the two discordant NNI alternative topologies
-                at each species tree branch are equally frequent, detecting
-                gene flow direction from asymmetric discordance.
+                Estimate the minimum number of reticulation events and
+                localize where hybridization likely occurred. Tests
+                whether the two discordant NNI topologies at each branch
+                are significantly asymmetric (indicating introgression
+                rather than ILS). Note: identifies which lineages
+                exchanged genes but not the direction of flow.
 
                 Under incomplete lineage sorting (ILS) alone, the two minor
                 NNI alternatives (gDF1 and gDF2) should be equally frequent.
@@ -7806,6 +7813,84 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, DiscordanceAsymmetry)
+
+    @staticmethod
+    def hybridization(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Estimate the minimum number of reticulation (hybridization)
+                events and localize where hybridization likely occurred on
+                a species tree.
+
+                For each internal branch, the four-group decomposition is
+                used to count concordant and two NNI-alternative topologies
+                across gene trees. A two-sided binomial test detects
+                asymmetric discordance (a hallmark of hybridization or
+                introgression). P-values are corrected using Benjamini-
+                Hochberg FDR. Branches with significant asymmetry are
+                flagged as putative reticulation events.
+
+                Aliases:
+                  hybridization, hybrid, reticulation
+                Command line interfaces:
+                  pk_hybridization, pk_hybrid, pk_reticulation
+
+                Usage:
+                phykit hybridization -t/--tree <tree> -g/--gene-trees <gene_trees>
+                    [--support <float>] [--alpha <float>]
+                    [--plot <output>] [--json]
+                    [--fig-width <float>] [--fig-height <float>]
+                    [--dpi <int>] [--no-title] [--title <str>]
+                    [--legend-position <str>]
+                    [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+                    [--title-fontsize <float>] [--axis-fontsize <float>]
+                    [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
+
+                Options
+                =====================================================
+                -t/--tree                   a species tree file
+
+                -g/--gene-trees             multi-Newick file of gene trees
+
+                --support                   collapse gene tree branches
+                                            below this support value
+                                            before topology determination
+
+                --alpha                     significance threshold for
+                                            asymmetry tests after FDR
+                                            correction (default: 0.05)
+
+                --plot                      optional output path for
+                                            hybridization score phylogram
+                                            (PNG)
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-t", "--tree", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-g", "--gene-trees", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--support", type=float, default=None, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--alpha", type=float, default=0.05, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot", dest="plot_output", type=str, required=False,
+            default=None, help=SUPPRESS, metavar=""
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, Hybridization)
 
     @staticmethod
     def spectral_discordance(argv):
@@ -8767,6 +8852,10 @@ def evo_tempo_map(argv=None):
 
 def discordance_asymmetry(argv=None):
     Phykit.discordance_asymmetry(sys.argv[1:])
+
+
+def hybridization(argv=None):
+    Phykit.hybridization(sys.argv[1:])
 
 
 def spectral_discordance(argv=None):

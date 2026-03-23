@@ -188,6 +188,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "etm": "evo_tempo_map",
     "disc_asym": "discordance_asymmetry",
     "da": "discordance_asymmetry",
+    "hybrid": "hybridization",
+    "reticulation": "hybridization",
     "spec_disc": "spectral_discordance",
     "sd": "spectral_discordance",
     "impute": "phylo_impute",

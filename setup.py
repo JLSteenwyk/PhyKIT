@@ -317,6 +317,9 @@ setup(
             "pk_trait_rate_map = phykit.phykit:trait_rate_map",
             "pk_rate_map = phykit.phykit:trait_rate_map",
             "pk_branch_rates = phykit.phykit:trait_rate_map",
+            "pk_hybridization = phykit.phykit:hybridization",
+            "pk_hybrid = phykit.phykit:hybridization",
+            "pk_reticulation = phykit.phykit:hybridization",
             "pk_create_concatenation_matrix = phykit.phykit:create_concatenation_matrix", # Helper functions
             "pk_create_concat = phykit.phykit:create_concatenation_matrix",
             "pk_cc = phykit.phykit:create_concatenation_matrix",
