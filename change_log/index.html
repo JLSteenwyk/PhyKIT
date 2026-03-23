@@ -80,6 +80,17 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.73</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">allow</span></code> mode to <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">consensus_network</span></code> now supports <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">allow</span></code> (the new
+default), which handles gene trees with different taxon sets by
+extracting splits from each tree using its own taxon set. This is
+the standard approach for phylogenomic datasets with incomplete
+taxon sampling. Previously, <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">shared</span></code> required all
+taxa to be present in all trees, which fails when no taxon is
+universal across all gene trees.</p></li>
+</ul>
 <p><strong>2.1.72</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">phylo_impute</span></code> command for missing data imputation:</p>
 <ul class="simple">
