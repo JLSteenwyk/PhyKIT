@@ -6,6 +6,25 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.75**:
+Improved ``consensus_network`` for large datasets and plot customization:
+
+* Added ``--max-splits N`` (default 30) to cap the number of splits
+  used in the Buneman graph visualization, avoiding exponential
+  blowup with many splits. All splits are still reported in text/JSON.
+* Added ``--histogram <file>`` to output a split frequency distribution
+  plot showing how many splits occur at each frequency level.
+* Added warning for datasets with >100 taxa recommending ``--histogram``
+  over the network graph, which doesn't scale well to large trees.
+* Non-boundary taxa (not involved in displayed splits) now draw short,
+  faded pendant edges to reduce visual clutter in the network graph.
+* ``--ylabel-fontsize`` now controls tip label size in all phylogram
+  services; ``--ylabel-fontsize 0`` hides labels entirely. Fixed across
+  all 11 services that previously hardcoded fontsize=9.
+* ``discordance_asymmetry`` annotations are now opt-in with
+  ``--annotate`` (values shown as numbers without "gCF=" prefix).
+  ``--legend-position none`` now hides the colorbar too.
+
 **2.1.73**:
 Added ``--missing-taxa allow`` mode to ``consensus_network``:
 

@@ -80,6 +80,25 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.75</strong>:
+Improved <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code> for large datasets and plot customization:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--max-splits</span> <span class="pre">N</span></code> (default 30) to cap the number of splits
+used in the Buneman graph visualization, avoiding exponential
+blowup with many splits. All splits are still reported in text/JSON.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--histogram</span> <span class="pre">&lt;file&gt;</span></code> to output a split frequency distribution
+plot showing how many splits occur at each frequency level.</p></li>
+<li><p>Added warning for datasets with &gt;100 taxa recommending <code class="docutils literal notranslate"><span class="pre">--histogram</span></code>
+over the network graph, which doesn't scale well to large trees.</p></li>
+<li><p>Non-boundary taxa (not involved in displayed splits) now draw short,
+faded pendant edges to reduce visual clutter in the network graph.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span></code> now controls tip label size in all phylogram
+services; <code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span> <span class="pre">0</span></code> hides labels entirely. Fixed across
+all 11 services that previously hardcoded fontsize=9.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code> annotations are now opt-in with
+<code class="docutils literal notranslate"><span class="pre">--annotate</span></code> (values shown as numbers without &quot;gCF=&quot; prefix).
+<code class="docutils literal notranslate"><span class="pre">--legend-position</span> <span class="pre">none</span></code> now hides the colorbar too.</p></li>
+</ul>
 <p><strong>2.1.73</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span> <span class="pre">allow</span></code> mode to <code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>:</p>
 <ul class="simple">
