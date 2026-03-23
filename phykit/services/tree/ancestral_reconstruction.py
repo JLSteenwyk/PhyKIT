@@ -939,7 +939,9 @@ class AncestralReconstruction(Tree):
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
-            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
@@ -1012,11 +1014,13 @@ class AncestralReconstruction(Tree):
             # Tip labels
             max_x = max(node_x.values()) if node_x else 0
             offset = max_x * 0.02
-            for tip in tips:
-                ax.text(
-                    node_x[id(tip)] + offset, node_y[id(tip)],
-                    tip.name, va="center", fontsize=9,
-                )
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                for tip in tips:
+                    ax.text(
+                        node_x[id(tip)] + offset, node_y[id(tip)],
+                        tip.name, va="center", fontsize=label_fontsize,
+                    )
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
@@ -1655,7 +1659,9 @@ class AncestralReconstruction(Tree):
                     start_angle += sweep
 
             # Tip labels
-            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.03)
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.03)
 
             # Apply color annotations
             if self.plot_config.color_file:
@@ -1750,12 +1756,14 @@ class AncestralReconstruction(Tree):
             # Tip labels with state color
             max_x_val = max(node_x.values()) if node_x else 0
             offset = max_x_val * 0.02
-            for tip in tips:
-                color = state_colors.get(tip_states.get(tip.name, ""), "black")
-                ax.text(
-                    node_x[id(tip)] + offset, node_y[id(tip)],
-                    tip.name, va="center", fontsize=9, color=color,
-                )
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                for tip in tips:
+                    color = state_colors.get(tip_states.get(tip.name, ""), "black")
+                    ax.text(
+                        node_x[id(tip)] + offset, node_y[id(tip)],
+                        tip.name, va="center", fontsize=label_fontsize, color=color,
+                    )
 
             # Apply color annotations
             if self.plot_config.color_file:

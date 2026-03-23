@@ -759,7 +759,9 @@ class RateHeterogeneity(Tree):
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
-            draw_circular_tip_labels(ax, tree, coords, fontsize=9, offset=max_x * 0.02)
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                draw_circular_tip_labels(ax, tree, coords, fontsize=label_fontsize, offset=max_x * 0.02)
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
@@ -825,11 +827,13 @@ class RateHeterogeneity(Tree):
 
             max_x = max(node_x.values()) if node_x else 0
             offset = max_x * 0.02
-            for tip in tips:
-                ax.text(
-                    node_x[id(tip)] + offset, node_y[id(tip)],
-                    tip.name, va="center", fontsize=9,
-                )
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                for tip in tips:
+                    ax.text(
+                        node_x[id(tip)] + offset, node_y[id(tip)],
+                        tip.name, va="center", fontsize=label_fontsize,
+                    )
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:

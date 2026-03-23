@@ -487,12 +487,14 @@ class Phenogram(Tree):
         # Label tips with taxon names (offset to the right)
         max_x = max(node_x.values()) if node_x else 0
         offset = max_x * 0.02
-        for tip in tips:
-            if id(tip) in node_x and tip.name in trait_values:
-                ax.text(
-                    node_x[id(tip)] + offset, trait_values[tip.name],
-                    tip.name, va="center", fontsize=9,
-                )
+        label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+        if label_fontsize > 0:
+            for tip in tips:
+                if id(tip) in node_x and tip.name in trait_values:
+                    ax.text(
+                        node_x[id(tip)] + offset, trait_values[tip.name],
+                        tip.name, va="center", fontsize=label_fontsize,
+                    )
 
         ax.set_xlabel("Distance from root")
         ax.set_ylabel("Trait value")
