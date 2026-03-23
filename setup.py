@@ -142,6 +142,8 @@ setup(
             "pk_consnet = phykit.phykit:consensus_network",
             "pk_splitnet = phykit.phykit:consensus_network",
             "pk_splits_network = phykit.phykit:consensus_network",
+            "pk_neighbor_net = phykit.phykit:neighbor_net",
+            "pk_nnet = phykit.phykit:neighbor_net",
             "pk_consensus_tree = phykit.phykit:consensus_tree",
             "pk_consensus = phykit.phykit:consensus_tree",
             "pk_ctree = phykit.phykit:consensus_tree",

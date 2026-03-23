@@ -199,6 +199,9 @@ class Phykit:
                 consensus_network (alias: consnet; splitnet; splits_network)
                     - extract bipartition splits from gene trees and visualize
                       conflicting phylogenetic signal as a splits network
+                neighbor_net (alias: nnet)
+                    - construct a NeighborNet phylogenetic network from
+                      pairwise distances (alignment or CSV distance matrix)
                 consensus_tree (alias: consensus; ctree)
                     - infer strict or majority-rule consensus from a tree collection
                 degree_of_violation_of_a_molecular_clock (alias: dvmc)
@@ -5861,6 +5864,114 @@ class Phykit:
         _run_service(parser, argv, ConsensusNetwork)
 
     @staticmethod
+    def neighbor_net(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Construct a NeighborNet phylogenetic network from pairwise
+                distances and visualize it as a planar splits graph.
+
+                Accepts either a FASTA alignment (from which pairwise
+                distances are computed using the chosen metric) or a
+                pre-computed CSV distance matrix.
+
+                The implementation builds a Neighbor-Joining tree to obtain
+                a circular ordering, enumerates all circular splits
+                compatible with that ordering, and estimates split weights
+                via non-negative least squares (NNLS).
+
+                Aliases:
+                  neighbor_net, nnet
+                Command line interfaces:
+                  pk_neighbor_net, pk_nnet
+
+                Usage:
+                phykit neighbor_net -a/--alignment <alignment>
+                    -o/--output <output_figure>
+                    [--distance-matrix <csv>]
+                    [--metric identity|p-distance|jc]
+                    [--max-splits 30]
+                    [--json]
+                    [shared plot options]
+
+                Options
+                =====================================================
+                -a/--alignment             FASTA alignment file
+                                           (computes distances
+                                           internally)
+
+                --distance-matrix          pre-computed distance
+                                           matrix as CSV (taxon
+                                           labels as row/column
+                                           headers). One of -a or
+                                           --distance-matrix is
+                                           required.
+
+                -o/--output                output figure path
+                                           (required)
+
+                --metric                   distance metric when
+                                           using -a: identity,
+                                           p-distance, or jc
+                                           (Jukes-Cantor)
+                                           (Default: p-distance)
+
+                --max-splits               maximum number of splits
+                                           for visualization
+                                           (Default: 30)
+
+                --json                     optional argument to
+                                           output results as JSON
+                """
+            ),
+        )
+        parser.add_argument(
+            "-a", "--alignment",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--distance-matrix",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "-o", "--output",
+            type=str,
+            required=True,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--metric",
+            type=str,
+            default="p-distance",
+            choices=["identity", "p-distance", "jc"],
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        parser.add_argument(
+            "--max-splits",
+            type=int,
+            default=30,
+            required=False,
+            help=SUPPRESS,
+            metavar="",
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, NeighborNet)
+
+    @staticmethod
     def quartet_pie(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -8550,6 +8661,10 @@ def print_tree(argv=None):
 
 def consensus_network(argv=None):
     Phykit.consensus_network(sys.argv[1:])
+
+
+def neighbor_net(argv=None):
+    Phykit.neighbor_net(sys.argv[1:])
 
 
 def quartet_network(argv=None):

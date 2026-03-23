@@ -7,6 +7,7 @@ _EXPORTS = {
     "CollapseBranches": "collapse_branches",
     "CovaryingEvolutionaryRates": "covarying_evolutionary_rates",
     "ConsensusNetwork": "consensus_network",
+    "NeighborNet": "neighbor_net",
     "ConsensusTree": "consensus_tree",
     "DVMC": "dvmc",
     "DiscordanceAsymmetry": "discordance_asymmetry",

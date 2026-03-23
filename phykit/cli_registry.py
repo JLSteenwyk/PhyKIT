@@ -135,6 +135,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "ou_shifts": "ou_shift_detection",
     "l1ou": "ou_shift_detection",
     "detect_shifts": "ou_shift_detection",
+    "neighbor_net": "neighbor_net",
+    "nnet": "neighbor_net",
     "quartet_net": "quartet_network",
     "qnet": "quartet_network",
     "nanuq": "quartet_network",
