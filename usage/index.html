@@ -119,6 +119,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#covarying-evolutionary-rates">Covarying evolutionary rates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#degree-of-violation-of-the-molecular-clock">Degree of violation of the molecular clock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#density-map">Density map</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hybridization-analysis">Hybridization analysis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#evolutionary-tempo-mapping">Evolutionary tempo mapping</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#d-statistic-abba-baba-test">D-statistic (ABBA-BABA test)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dfoil-test-pease-hahn-2015">DFOIL test (Pease &amp; Hahn 2015)</a></li>
@@ -348,6 +349,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-dfoil"><span class="std std-ref">DFOIL test</span></a>: DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-discordance-asymmetry"><span class="std std-ref">Discordance asymmetry</span></a>: Test for asymmetric discordance (gene flow detection)</p></li>
 <li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
+<li><p><a class="reference internal" href="#cmd-hybridization"><span class="std std-ref">Hybridization analysis</span></a>: Estimate reticulation events and localize hybridization on a species tree</p></li>
 <li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
 <li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap</p></li>
@@ -2230,6 +2232,45 @@ computes the fraction of simulations in each state.</p>
 <em>--json</em>: optional argument to print results as JSON</p>
 <a class="reference internal image-reference" href="../_images/densitymap_example.png"><img alt="../_images/densitymap_example.png" class="align-center" src="../_images/densitymap_example.png" style="width: 80%;" />
 </a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="hybridization-analysis">
+<span id="cmd-hybridization"></span><h3>Hybridization analysis<a class="headerlink" href="#hybridization-analysis" title="Link to this heading"></a></h3>
+<p>Function names: hybridization; hybrid; reticulation <br/>
+Command line interface: pk_hybridization; pk_hybrid; pk_reticulation</p>
+<p>Estimate the minimum number of reticulation events and localize where
+hybridization likely occurred on a species tree. For each internal branch,
+tests whether the two discordant NNI topologies are significantly
+asymmetric (binomial test with FDR correction). Asymmetric discordance
+suggests introgression/gene flow rather than ILS.</p>
+<p>Each branch receives:</p>
+<ul class="simple">
+<li><p><strong>p-value</strong>: binomial test of gDF1 vs gDF2 equality (H0: ILS alone)</p></li>
+<li><p><strong>FDR-corrected p-value</strong>: Benjamini-Hochberg correction across all branches</p></li>
+<li><p><strong>Hybridization score</strong>: asymmetry ratio (0.5 = no signal, 1.0 = strong signal)
+for significant branches; 0 for non-significant</p></li>
+<li><p><strong>Favored alternative</strong>: which NNI topology is in excess, identifying
+which pair of lineages likely exchanged genes (but not the direction
+of gene flow)</p></li>
+</ul>
+<p>The estimated reticulation count is the number of branches with significant
+asymmetric discordance. Gene tree uncertainty can be accounted for with
+<code class="docutils literal notranslate"><span class="pre">--support</span></code> to collapse low-support branches before topology determination.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>hybridization<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;
+<span class="w">    </span><span class="o">[</span>--support<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--alpha<span class="w"> </span><span class="m">0</span>.05<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: species tree file (required) <br/>
+<em>-g/--gene-trees</em>: gene trees file, one Newick per line (required) <br/>
+<em>--support</em>: collapse gene tree branches below this support value before analysis <br/>
+<em>--alpha</em>: FDR significance threshold (default: 0.05) <br/>
+<em>--plot</em>: output hybridization score phylogram (branches colored by score, stars at significant nodes) <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

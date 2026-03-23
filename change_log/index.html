@@ -80,6 +80,20 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.77</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">hybridization</span></code> command for reticulation analysis:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">hybridization</span></code> (<code class="docutils literal notranslate"><span class="pre">hybrid</span></code> / <code class="docutils literal notranslate"><span class="pre">reticulation</span></code>): estimate
+the minimum number of reticulation events and localize where
+hybridization likely occurred on a species tree. For each branch,
+computes a binomial test for asymmetric discordance (FDR-corrected),
+a hybridization score, and identifies which pair of lineages
+likely exchanged genes (but not the direction of flow).
+Supports <code class="docutils literal notranslate"><span class="pre">--support</span></code> threshold for
+collapsing low-confidence gene tree branches before analysis.
+Visualizes as a branch-colored phylogram (gray = no signal,
+red = strong hybridization signal, stars at significant nodes).</p></li>
+</ul>
 <p><strong>2.1.76</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">neighbor_net</span></code> command (Bryant &amp; Moulton 2004):</p>
 <ul class="simple">
