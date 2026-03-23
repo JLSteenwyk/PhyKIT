@@ -6,6 +6,17 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.73**:
+Added ``--missing-taxa allow`` mode to ``consensus_network``:
+
+* ``consensus_network`` now supports ``--missing-taxa allow`` (the new
+  default), which handles gene trees with different taxon sets by
+  extracting splits from each tree using its own taxon set. This is
+  the standard approach for phylogenomic datasets with incomplete
+  taxon sampling. Previously, ``--missing-taxa shared`` required all
+  taxa to be present in all trees, which fails when no taxon is
+  universal across all gene trees.
+
 **2.1.72**:
 Added ``phylo_impute`` command for missing data imputation:
 

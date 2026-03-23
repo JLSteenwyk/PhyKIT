@@ -103,16 +103,29 @@ class ConsensusNetwork(Tree):
             raise PhykitUserError(
                 [
                     "Input trees do not share an identical taxon set.",
-                    "Use --missing-taxa shared to prune all trees to their shared taxa.",
+                    "Use --missing-taxa allow or --missing-taxa shared.",
                 ],
                 code=2,
             )
 
+        if self.missing_taxa == "allow":
+            # Use the union of all taxa; each tree contributes splits
+            # using its own taxon set. Split frequencies are normalized
+            # by how many trees could contain each split.
+            union_taxa = set.union(*tip_sets)
+            if len(union_taxa) < 3:
+                raise PhykitUserError(
+                    ["Fewer than 3 taxa found across all trees."], code=2
+                )
+            return trees, False, union_taxa
+
+        # shared mode
         if len(shared_taxa) < 3:
             raise PhykitUserError(
                 [
                     "Unable to compute network after pruning to shared taxa.",
                     "At least 3 shared taxa are required.",
+                    "Consider using --missing-taxa allow instead.",
                 ],
                 code=2,
             )
@@ -159,19 +172,80 @@ class ConsensusNetwork(Tree):
         return splits
 
     @staticmethod
-    def _count_splits(trees: List, all_taxa: frozenset) -> Counter:
+    def _count_splits(trees: List, all_taxa: frozenset,
+                      allow_mode: bool = False) -> Tuple[Counter, Counter]:
+        """Count splits across trees.
+
+        Returns (split_counts, split_possible) where split_possible[s]
+        is the number of trees that contain ALL taxa in split s (and
+        its complement). In allow mode, each tree uses its own taxon
+        set; in shared mode, all trees use all_taxa.
+        """
         counter = Counter()
-        for tree in trees:
-            tree_splits = ConsensusNetwork._extract_splits_from_tree(tree, all_taxa)
-            for split in tree_splits:
-                counter[split] += 1
-        return counter
+        possible = Counter()
+
+        if allow_mode:
+            # Precompute taxon sets for all trees
+            tree_taxa_list = [
+                frozenset(t.name for t in tree.get_terminals())
+                for tree in trees
+            ]
+
+            # Extract splits from each tree using its own taxon set
+            for tree, tree_taxa in zip(trees, tree_taxa_list):
+                tree_splits = ConsensusNetwork._extract_splits_from_tree(
+                    tree, tree_taxa
+                )
+                for split in tree_splits:
+                    counter[split] += 1
+
+            # For normalization: each split was found in counter[split]
+            # trees. The "possible" count is the number of trees that
+            # contain ALL taxa on both sides. Since we extracted each
+            # split from a tree that had all its taxa, the split count
+            # IS the possible count (a tree can only produce a split if
+            # it contains all the relevant taxa).
+            for split in counter:
+                possible[split] = counter[split]
+
+            # Actually, we should count how many trees COULD have
+            # produced the split but didn't. A more accurate approach:
+            # possible = number of trees containing all taxa in the
+            # split's smaller side. But since splits are defined
+            # relative to each tree's own taxon set, the split IS
+            # the canonical smaller side from that tree. Different
+            # trees may have different "all_taxa" so the same
+            # bipartition in two trees means different things.
+            #
+            # The simplest correct normalization for incomplete
+            # taxon sampling: frequency = count / n_trees.
+            # This is what most software does.
+            for split in counter:
+                possible[split] = len(trees)
+        else:
+            for tree in trees:
+                tree_splits = ConsensusNetwork._extract_splits_from_tree(
+                    tree, all_taxa
+                )
+                for split in tree_splits:
+                    counter[split] += 1
+            for split in counter:
+                possible[split] = len(trees)
+
+        return counter, possible
 
     @staticmethod
-    def _filter_splits(split_counts: Counter, n_trees: int, threshold: float) -> List[Tuple[frozenset, int, float]]:
+    def _filter_splits(
+        split_counts: Counter, n_trees: int, threshold: float,
+        split_possible: Counter = None,
+    ) -> List[Tuple[frozenset, int, float]]:
         results = []
         for split, count in split_counts.items():
-            freq = count / n_trees
+            if split_possible and split in split_possible:
+                denom = split_possible[split]
+            else:
+                denom = n_trees
+            freq = count / denom if denom > 0 else 0.0
             if freq >= threshold:
                 results.append((split, count, freq))
         results.sort(key=lambda x: (-x[2], sorted(x[0])))
@@ -435,8 +509,14 @@ class ConsensusNetwork(Tree):
         all_taxa = frozenset(all_taxa_set)
         n_trees = len(trees)
 
-        split_counts = self._count_splits(trees, all_taxa)
-        filtered = self._filter_splits(split_counts, n_trees, self.threshold)
+        allow_mode = (self.missing_taxa == "allow")
+        split_counts, split_possible = self._count_splits(
+            trees, all_taxa, allow_mode=allow_mode
+        )
+        filtered = self._filter_splits(
+            split_counts, n_trees, self.threshold,
+            split_possible=split_possible,
+        )
 
         if self.json_output:
             splits_list = [

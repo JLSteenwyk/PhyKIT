@@ -72,7 +72,7 @@ class TestCountSplits:
             _make_tree("((A,C),(B,D));"),
         ]
         all_taxa = frozenset({"A", "B", "C", "D"})
-        counts = ConsensusNetwork._count_splits(trees, all_taxa)
+        counts, possible = ConsensusNetwork._count_splits(trees, all_taxa)
         assert counts[frozenset({"A", "B"})] == 2
         assert counts[frozenset({"A", "C"})] == 1
 

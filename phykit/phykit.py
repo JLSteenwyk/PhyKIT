@@ -5821,8 +5821,8 @@ class Phykit:
         parser.add_argument(
             "--missing-taxa",
             type=str,
-            choices=["error", "shared"],
-            default="error",
+            choices=["allow", "error", "shared"],
+            default="allow",
             required=False,
             help=SUPPRESS,
         )
