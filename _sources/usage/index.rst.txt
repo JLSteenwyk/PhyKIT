@@ -2537,9 +2537,24 @@ For each internal branch of the species tree, a two-sided binomial test (H0:
 P(alt1) = 0.5) is applied, and p-values are corrected for multiple testing
 using Benjamini-Hochberg FDR.
 
+**Interpreting the plot:** When ``--plot`` is used, branches are colored by
+the **asymmetry ratio** = max(gDF1, gDF2) / (gDF1 + gDF2):
+
+- **Blue/cool colors (ratio ~ 0.5):** The two discordant topologies are
+  roughly equal, consistent with ILS alone — no evidence of gene flow.
+- **Red/warm colors (ratio → 1.0):** One discordant topology is much more
+  frequent than the other, suggesting introgression or gene flow.
+- **Red stars:** Branches where the asymmetry is statistically significant
+  (FDR < 0.05) — these are introgression candidates.
+
+Use ``--annotate`` to display gCF values on each branch. Use
+``--ylabel-fontsize 0`` to hide tip labels for large trees, and
+``--legend-position none`` to hide both the legend and colorbar.
+
 .. code-block:: shell
 
    phykit discordance_asymmetry -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
+       [--annotate]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
        [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]

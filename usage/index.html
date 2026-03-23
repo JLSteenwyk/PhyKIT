@@ -2371,7 +2371,21 @@ between specific lineages.</p>
 <p>For each internal branch of the species tree, a two-sided binomial test (H0:
 P(alt1) = 0.5) is applied, and p-values are corrected for multiple testing
 using Benjamini-Hochberg FDR.</p>
+<p><strong>Interpreting the plot:</strong> When <code class="docutils literal notranslate"><span class="pre">--plot</span></code> is used, branches are colored by
+the <strong>asymmetry ratio</strong> = max(gDF1, gDF2) / (gDF1 + gDF2):</p>
+<ul class="simple">
+<li><p><strong>Blue/cool colors (ratio ~ 0.5):</strong> The two discordant topologies are
+roughly equal, consistent with ILS alone — no evidence of gene flow.</p></li>
+<li><p><strong>Red/warm colors (ratio → 1.0):</strong> One discordant topology is much more
+frequent than the other, suggesting introgression or gene flow.</p></li>
+<li><p><strong>Red stars:</strong> Branches where the asymmetry is statistically significant
+(FDR &lt; 0.05) — these are introgression candidates.</p></li>
+</ul>
+<p>Use <code class="docutils literal notranslate"><span class="pre">--annotate</span></code> to display gCF values on each branch. Use
+<code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span> <span class="pre">0</span></code> to hide tip labels for large trees, and
+<code class="docutils literal notranslate"><span class="pre">--legend-position</span> <span class="pre">none</span></code> to hide both the legend and colorbar.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>discordance_asymmetry<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--annotate<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
