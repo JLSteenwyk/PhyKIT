@@ -33,6 +33,7 @@ class DiscordanceAsymmetry(Tree):
         super().__init__(tree_file_path=parsed["tree_file_path"])
         self.gene_trees_path = parsed["gene_trees_path"]
         self.verbose = parsed["verbose"]
+        self.annotate = parsed["annotate"]
         self.json_output = parsed["json_output"]
         self.plot_output = parsed["plot_output"]
         self.plot_config = parsed["plot_config"]
@@ -42,6 +43,7 @@ class DiscordanceAsymmetry(Tree):
             tree_file_path=args.tree,
             gene_trees_path=args.gene_trees,
             verbose=getattr(args, "verbose", False),
+            annotate=getattr(args, "annotate", False),
             json_output=getattr(args, "json", False),
             plot_output=getattr(args, "plot_output", None),
             plot_config=PlotConfig.from_args(args),
@@ -314,7 +316,9 @@ class DiscordanceAsymmetry(Tree):
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
-            draw_circular_tip_labels(ax, species_tree, coords, fontsize=9, offset=max_x * 0.02)
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                draw_circular_tip_labels(ax, species_tree, coords, fontsize=label_fontsize, offset=max_x * 0.02)
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
@@ -345,23 +349,28 @@ class DiscordanceAsymmetry(Tree):
 
                 total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
                 gcf = entry["n_concordant"] / total if total > 0 else 1.0
-                ax.annotate(
-                    f"gCF={gcf:.2f}",
-                    (cx, cy),
-                    textcoords="offset points",
-                    xytext=(5, 5),
-                    fontsize=7,
-                )
+
+                if self.annotate:
+                    ax.annotate(
+                        f"{gcf:.2f}",
+                        (cx, cy),
+                        textcoords="offset points",
+                        xytext=(5, 5),
+                        fontsize=max(4, 7 - n_tips * 0.01),
+                    )
 
                 if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
                         and entry["favored_alt"] is not None):
                     ax.scatter(cx, cy, s=100, c="red", marker="*", zorder=5)
 
-            # Colorbar
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-            sm.set_array([])
-            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
-            cbar.set_label("Asymmetry ratio")
+            # Colorbar (hide if legend-position is none)
+            legend_loc = config.legend_position or "upper right"
+            if legend_loc != "none":
+                sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+                sm.set_array([])
+                cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+                cbar_fontsize = config.axis_fontsize if config.axis_fontsize else 10
+                cbar.set_label("Asymmetry ratio", fontsize=cbar_fontsize)
 
             if config.show_title:
                 ax.set_title(config.title or "Discordance Asymmetry", fontsize=config.title_fontsize)
@@ -409,16 +418,18 @@ class DiscordanceAsymmetry(Tree):
                 x = node_x.get(id(clade), 0)
                 y = node_y.get(id(clade), 0)
 
-                # Show gCF value
+                # Show gCF value (only if --annotate)
                 total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
                 gcf = entry["n_concordant"] / total if total > 0 else 1.0
-                ax.annotate(
-                    f"gCF={gcf:.2f}",
-                    (x, y),
-                    textcoords="offset points",
-                    xytext=(5, 5),
-                    fontsize=7,
-                )
+
+                if self.annotate:
+                    ax.annotate(
+                        f"{gcf:.2f}",
+                        (x, y),
+                        textcoords="offset points",
+                        xytext=(5, 5),
+                        fontsize=max(4, 7 - n_tips * 0.01),
+                    )
 
                 # Mark significant branches (FDR < 0.05)
                 if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
@@ -426,13 +437,15 @@ class DiscordanceAsymmetry(Tree):
                     ax.scatter(x, y, s=100, c="red", marker="*", zorder=5)
 
             # Tip labels
-            max_x = max(node_x.values()) if node_x else 0
-            offset = max_x * 0.02
-            for tip in tips:
-                ax.text(
-                    node_x[id(tip)] + offset, node_y[id(tip)],
-                    tip.name, va="center", fontsize=9,
-                )
+            label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
+            if label_fontsize > 0:
+                max_x = max(node_x.values()) if node_x else 0
+                offset = max_x * 0.02
+                for tip in tips:
+                    ax.text(
+                        node_x[id(tip)] + offset, node_y[id(tip)],
+                        tip.name, va="center", fontsize=label_fontsize,
+                    )
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
@@ -450,11 +463,14 @@ class DiscordanceAsymmetry(Tree):
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
-            # Colorbar
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-            sm.set_array([])
-            cbar = fig.colorbar(sm, ax=ax, pad=0.15)
-            cbar.set_label("Asymmetry ratio")
+            # Colorbar (hide if legend-position is none)
+            legend_loc = config.legend_position or "upper right"
+            if legend_loc != "none":
+                sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+                sm.set_array([])
+                cbar = fig.colorbar(sm, ax=ax, pad=0.15)
+                cbar_fontsize = config.axis_fontsize if config.axis_fontsize else 10
+                cbar.set_label("Asymmetry ratio", fontsize=cbar_fontsize)
 
             ax.set_xlabel("Branch length (subs/site)")
             ax.set_yticks([])

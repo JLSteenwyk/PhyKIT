@@ -7598,6 +7598,9 @@ class Phykit:
 
                 -v/--verbose                print per-branch details
 
+                --annotate                  show gCF values on the
+                                            plot near each branch
+
                 --fig-width                 figure width in inches
                                             (auto-scaled if omitted)
 
@@ -7661,6 +7664,10 @@ class Phykit:
         )
         parser.add_argument(
             "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--annotate", action="store_true", required=False, default=False,
+            help=SUPPRESS,
         )
         add_plot_arguments(parser)
         _add_json_argument(parser)
