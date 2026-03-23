@@ -19,6 +19,8 @@ class ConsensusNetwork(Tree):
         super().__init__(trees=parsed["trees"])
         self.threshold = parsed["threshold"]
         self.missing_taxa = parsed["missing_taxa"]
+        self.max_splits = parsed["max_splits"]
+        self.histogram = parsed["histogram"]
         self.plot_output = parsed["plot_output"]
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
@@ -28,6 +30,8 @@ class ConsensusNetwork(Tree):
             trees=args.trees,
             threshold=args.threshold,
             missing_taxa=args.missing_taxa,
+            max_splits=getattr(args, "max_splits", 30),
+            histogram=getattr(args, "histogram", None),
             plot_output=getattr(args, "plot_output", None),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
@@ -414,9 +418,25 @@ class ConsensusNetwork(Tree):
         )
 
         config = self.plot_config
-        config.resolve(n_rows=len(all_taxa), n_cols=None)
+        n = len(ordering)
+        # Force square figure for network graphs
+        if config.fig_width is None and config.fig_height is None:
+            size = max(10, min(30, 8 + n * 0.05))
+            config.fig_width = size
+            config.fig_height = size
+        config.resolve(n_rows=n, n_cols=None)
         fig, ax = plt.subplots(1, 1, figsize=(config.fig_width, config.fig_height))
         ax.set_aspect("equal")
+
+        # Determine label fontsize: auto-suppress for large trees
+        if config.ylabel_fontsize is not None:
+            label_fontsize = config.ylabel_fontsize
+        elif n > 100:
+            label_fontsize = 0  # auto-hide for very large trees
+        elif n > 50:
+            label_fontsize = max(3, 8 - (n - 50) * 0.1)
+        else:
+            label_fontsize = 10
 
         if not splits_list:
             # No splits: place taxa evenly on a circle
@@ -424,9 +444,15 @@ class ConsensusNetwork(Tree):
                 angle = angles[taxon]
                 x = math.cos(angle)
                 y = math.sin(angle)
-                deg = math.degrees(angle)
-                ha = "left" if -90 < deg < 90 or deg > 270 else "right"
-                ax.text(x, y, taxon, ha=ha, va="center", fontsize=10)
+                if label_fontsize > 0:
+                    deg = math.degrees(angle)
+                    ha = "left" if -90 < deg < 90 or deg > 270 else "right"
+                    rotation = deg if -90 < deg < 90 or deg > 270 else deg + 180
+                    ax.text(x, y, taxon, ha=ha, va="center",
+                            fontsize=label_fontsize, rotation=rotation,
+                            rotation_mode="anchor")
+                else:
+                    ax.plot(x, y, "o", color="black", markersize=2)
         else:
             # Compute node positions: pos = sum(sign_i * weight_i * dir_i) / 2
             node_positions = {}
@@ -453,6 +479,16 @@ class ConsensusNetwork(Tree):
                 x2, y2 = node_positions[s2]
                 ax.plot([x1, x2], [y1, y2], "-", color="black", linewidth=1.5, zorder=2)
 
+            # Find taxa on split boundaries (participating in displayed splits)
+            boundary_taxa = set()
+            for split, count, freq in circular_splits:
+                for i in range(n):
+                    curr = ordering[i]
+                    nxt = ordering[(i + 1) % n]
+                    if (curr in split) != (nxt in split):
+                        boundary_taxa.add(curr)
+                        boundary_taxa.add(nxt)
+
             # Draw pendant edges and taxon labels
             for taxon in ordering:
                 angle = angles[taxon]
@@ -460,14 +496,30 @@ class ConsensusNetwork(Tree):
                     nx, ny = node_positions[taxon_signs[taxon]]
                 else:
                     nx, ny = 0.0, 0.0
-                tx = nx + pendant_len * math.cos(angle)
-                ty = ny + pendant_len * math.sin(angle)
-                ax.plot([nx, tx], [ny, ty], "-", color="black", linewidth=1.5, zorder=2)
-                lx = tx + 0.03 * math.cos(angle)
-                ly = ty + 0.03 * math.sin(angle)
-                deg = math.degrees(angle)
-                ha = "left" if -90 < deg < 90 or deg > 270 else "right"
-                ax.text(lx, ly, taxon, ha=ha, va="center", fontsize=10, zorder=4)
+
+                # Only draw full pendant edges for boundary taxa;
+                # non-boundary taxa get a short stub or are skipped
+                if taxon in boundary_taxa or n <= 50:
+                    plen = pendant_len
+                else:
+                    plen = pendant_len * 0.3  # short stub
+
+                tx = nx + plen * math.cos(angle)
+                ty = ny + plen * math.sin(angle)
+                ax.plot([nx, tx], [ny, ty], "-", color="black",
+                        linewidth=0.8 if taxon not in boundary_taxa else 1.5,
+                        alpha=0.3 if taxon not in boundary_taxa else 1.0,
+                        zorder=2)
+
+                if label_fontsize > 0 and (taxon in boundary_taxa or n <= 50):
+                    lx = tx + 0.03 * math.cos(angle)
+                    ly = ty + 0.03 * math.sin(angle)
+                    deg = math.degrees(angle)
+                    ha = "left" if -90 < deg < 90 or deg > 270 else "right"
+                    rotation = deg if -90 < deg < 90 or deg > 270 else deg + 180
+                    ax.text(lx, ly, taxon, ha=ha, va="center",
+                            fontsize=label_fontsize, rotation=rotation,
+                            rotation_mode="anchor", zorder=4)
 
             # Frequency labels on internal edges (one per split)
             labeled_splits = set()
@@ -496,6 +548,35 @@ class ConsensusNetwork(Tree):
     # ------------------------------------------------------------------
     # Output
     # ------------------------------------------------------------------
+
+    def _draw_histogram(self, split_counts, n_trees, output_path):
+        """Draw a histogram of split frequencies."""
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        config = self.plot_config
+        config.resolve(n_rows=10, n_cols=None)
+
+        frequencies = [count / n_trees for count in split_counts.values()]
+
+        fig, ax = plt.subplots(figsize=(config.fig_width or 10, config.fig_height or 6))
+        ax.hist(frequencies, bins=50, color="#377eb8", edgecolor="black", linewidth=0.5)
+        ax.set_xlabel("Split frequency", fontsize=config.axis_fontsize or 12)
+        ax.set_ylabel("Number of splits", fontsize=config.axis_fontsize or 12)
+        ax.axvline(x=self.threshold, color="red", linestyle="--", lw=1,
+                   label=f"Threshold ({self.threshold})")
+        ax.legend(fontsize=9)
+
+        if config.show_title:
+            ax.set_title(
+                config.title or "Split Frequency Distribution",
+                fontsize=config.title_fontsize or 14,
+            )
+
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+        plt.close(fig)
 
     def _format_split(self, split: frozenset) -> str:
         return "{" + ", ".join(sorted(split)) + "}"
@@ -551,6 +632,35 @@ class ConsensusNetwork(Tree):
             for split, count, freq in filtered:
                 print(f"{self._format_split(split)}\t{count}/{n_trees}\t{freq:.4f}")
 
+        if self.histogram:
+            self._draw_histogram(split_counts, n_trees, self.histogram)
+            if not self.json_output:
+                print(f"Histogram saved: {self.histogram}")
+
         if self.plot_output:
+            import sys
+            n_taxa = len(all_taxa)
+
+            if n_taxa > 100:
+                print(
+                    f"Warning: {n_taxa} taxa — network graph may not be "
+                    f"informative at this scale. Consider using "
+                    f"--histogram for a split frequency distribution instead.",
+                    file=sys.stderr,
+                )
+
             ordering = self._compute_circular_ordering(trees, all_taxa)
-            self._draw_network(ordering, filtered, all_taxa, self.plot_output)
+
+            # Cap splits for graph visualization to avoid exponential blowup
+            plot_filtered = filtered
+            if len(filtered) > self.max_splits:
+                print(
+                    f"Warning: {len(filtered)} splits above threshold; "
+                    f"using top {self.max_splits} for network graph "
+                    f"(use --max-splits to adjust).",
+                    file=sys.stderr,
+                )
+                # filtered is already sorted by frequency (descending)
+                plot_filtered = filtered[:self.max_splits]
+
+            self._draw_network(ordering, plot_filtered, all_taxa, self.plot_output)

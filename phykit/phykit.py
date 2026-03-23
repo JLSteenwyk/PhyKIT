@@ -5759,6 +5759,15 @@ class Phykit:
                                            circular splits network
                                            plot (optional)
 
+                --max-splits               maximum number of splits
+                                           to include in the network
+                                           graph (default: 30; higher
+                                           splits are still reported
+                                           in text/JSON output)
+
+                --histogram                output filename for a split
+                                           frequency histogram (optional)
+
                 --fig-width                 figure width in inches
                                             (auto-scaled if omitted)
 
@@ -5828,6 +5837,20 @@ class Phykit:
         )
         parser.add_argument(
             "--plot-output",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--max-splits",
+            type=int,
+            default=30,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--histogram",
             type=str,
             default=None,
             required=False,
