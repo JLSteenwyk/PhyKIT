@@ -298,6 +298,8 @@ class Phykit:
                     - prints ascii tree
                 prune_tree (alias: prune)
                     - prune taxa from a phylogeny
+                subtree_prune_regraft (alias: spr)
+                    - generate all SPR rearrangements for a specified subtree
                 relative_rate_test (alias: rrt; tajima_rrt)
                     - Tajima's relative rate test for equal evolutionary
                       rates between two ingroup lineages
@@ -6539,6 +6541,58 @@ class Phykit:
         _run_service(parser, argv, PruneTree)
 
     @staticmethod
+    def subtree_prune_regraft(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Generate all possible SPR (Subtree Pruning and Regrafting)
+                rearrangements for a specified subtree on a tree.
+
+                The subtree is identified by specifying one or more taxa
+                whose MRCA defines the clade to prune. The pruned subtree
+                is then regrafted onto every other branch in the remaining
+                tree, producing one Newick tree per regraft position.
+
+                Aliases:
+                  subtree_prune_regraft, spr
+                Command line interfaces:
+                  pk_subtree_prune_regraft, pk_spr
+
+                Usage:
+                phykit subtree_prune_regraft -t <tree> --subtree <taxa>
+                  [-o/--output <output_file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   input tree file in Newick
+                                            format (required)
+
+                --subtree                   comma-separated list of
+                                            taxa defining the subtree
+                                            to prune (MRCA resolved),
+                                            or a single-column file
+                                            with one taxon per line
+                                            (required)
+
+                -o/--output                 output file for SPR trees
+                                            (one Newick per line).
+                                            If omitted, prints to
+                                            stdout.
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--subtree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-o", "--output", type=str, default=None, help=SUPPRESS, metavar="")
+        _add_json_argument(parser)
+        _run_service(parser, argv, Spr)
+
+    @staticmethod
     def relative_rate_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -8822,6 +8876,14 @@ def consensus_tree(argv=None):
 
 def prune_tree(argv=None):
     Phykit.prune_tree(sys.argv[1:])
+
+
+def spr(argv=None):
+    Phykit.subtree_prune_regraft(sys.argv[1:])
+
+
+def subtree_prune_regraft(argv=None):
+    Phykit.subtree_prune_regraft(sys.argv[1:])
 
 
 def relative_rate_test(argv=None):

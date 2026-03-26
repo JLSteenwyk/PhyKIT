@@ -251,6 +251,8 @@ setup(
             "pk_pt = phykit.phykit:print_tree",
             "pk_prune_tree = phykit.phykit:prune_tree",
             "pk_prune = phykit.phykit:prune_tree",
+            "pk_spr = phykit.phykit:spr",
+            "pk_subtree_prune_regraft = phykit.phykit:subtree_prune_regraft",
             "pk_relative_rate_test = phykit.phykit:relative_rate_test",
             "pk_rrt = phykit.phykit:relative_rate_test",
             "pk_tajima_rrt = phykit.phykit:relative_rate_test",

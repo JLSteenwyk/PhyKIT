@@ -167,6 +167,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "rt": "root_tree",
     "spurious_seq": "spurious_sequence",
     "ss": "spurious_sequence",
+    "spr": "subtree_prune_regraft",
+    "subtree_prune_regraft": "subtree_prune_regraft",
     "tbs": "terminal_branch_stats",
     "labels": "tip_labels",
     "tree_labels": "tip_labels",

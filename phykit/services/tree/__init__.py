@@ -40,6 +40,7 @@ _EXPORTS = {
     "RobinsonFouldsDistance": "rf_distance",
     "RootTree": "root_tree",
     "Saturation": "saturation",
+    "Spr": "spr",
     "SpuriousSequence": "spurious_sequence",
     "TerminalBranchStats": "terminal_branch_stats",
     "TipLabels": "tip_labels",
