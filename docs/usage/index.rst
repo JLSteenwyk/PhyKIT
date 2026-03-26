@@ -108,6 +108,7 @@ Alignment manipulation
 - :ref:`Faidx <cmd-faidx>`: Extract entries from FASTA files
 - :ref:`Mask alignment <cmd-mask_alignment>`: Mask sites in an alignment
 - :ref:`Rename FASTA entries <cmd-rename_fasta_entries>`: Rename entries in a FASTA file
+- :ref:`Taxon groups <cmd-taxon_groups>`: Group files by shared taxon sets
 - :ref:`Protein-to-nucleotide alignment <cmd-thread_dna>`: Thread nucleotide onto protein alignment
 
 Tree summary statistics
@@ -1324,6 +1325,36 @@ doi: 10.1093/gbe/evw179.
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-taxon_groups:
+
+Taxon groups
+############
+
+Function names: taxon_groups; tgroups; shared_taxa |br|
+Command line interface: pk_taxon_groups; pk_tgroups; pk_shared_taxa
+
+Determine which tree or FASTA files share the same set of taxa.
+Reads a file listing paths to gene trees or alignments and groups
+them by their taxon set (exact match). Reports groups sorted by
+size (largest first), with the taxa present in each group.
+
+Useful for identifying subsets of genes with identical taxon
+sampling for concatenation or comparative analysis.
+
+.. code-block:: shell
+
+   phykit taxon_groups -l <file> [-f trees|fasta] [--json]
+
+Options: |br|
+*-l/--list*: file listing paths to gene trees or FASTA files (one per line).
+Blank lines and lines starting with # are skipped. Relative paths are resolved
+relative to the list file's directory. |br|
+*-f/--format*: input format: ``trees`` (Newick) or ``fasta`` (FASTA alignment).
+Default: ``trees``. |br|
 *--json*: optional argument to print results as JSON
 
 |

@@ -26,6 +26,7 @@ _EXPORTS = {
     "RelativeCompositionVariabilityTaxon": "rcvt",
     "RenameFastaEntries": "rename_fasta_entries",
     "SumOfPairsScore": "sum_of_pairs_score",
+    "TaxonGroups": "taxon_groups",
     "PhyloGwas": "phylo_gwas",
     "VariableSites": "variable_sites",
 }

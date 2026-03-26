@@ -45,6 +45,7 @@ RelativeCompositionVariabilityTaxon = _LazyServiceFactory("phykit.services.align
 RenameFastaEntries = _LazyServiceFactory("phykit.services.alignment.rename_fasta_entries", "RenameFastaEntries")
 SumOfPairsScore = _LazyServiceFactory("phykit.services.alignment.sum_of_pairs_score", "SumOfPairsScore")
 PhyloGwas = _LazyServiceFactory("phykit.services.alignment.phylo_gwas", "PhyloGwas")
+TaxonGroups = _LazyServiceFactory("phykit.services.alignment.taxon_groups", "TaxonGroups")
 VariableSites = _LazyServiceFactory("phykit.services.alignment.variable_sites", "VariableSites")
 
 AncestralReconstruction = _LazyServiceFactory("phykit.services.tree.ancestral_reconstruction", "AncestralReconstruction")

@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.78**:
+Added ``taxon_groups`` utility command:
+
+* Added ``taxon_groups`` (``tgroups`` / ``shared_taxa``): determine
+  which tree or FASTA files share the same set of taxa. Groups files
+  by identical taxon sets, reports groups sorted by size with the
+  taxa present in each group. Useful for identifying subsets of genes
+  with identical taxon sampling for concatenation or comparative
+  analysis.
+
 **2.1.77**:
 Added ``hybridization`` command for reticulation analysis:
 

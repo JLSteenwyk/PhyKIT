@@ -173,6 +173,8 @@ class Phykit:
                 variable_sites (alias: vs)
                     - calculates the number and percentage of variable sites
                       in an alignment
+                taxon_groups (alias: tgroups; shared_taxa)
+                    - group tree or FASTA files by their taxon set
 
                 Tree-based commands
                 ===================
@@ -8277,6 +8279,52 @@ class Phykit:
         _add_json_argument(parser)
         _run_service(parser, argv, TreeSpace)
 
+    @staticmethod
+    def taxon_groups(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Determine which tree or FASTA files share the same set
+                of taxa. Reads a file listing paths to gene trees or
+                alignments and groups them by their taxon set (exact
+                match). Reports groups sorted by size (largest first),
+                with the taxa present in each group.
+
+                Useful for identifying subsets of genes with identical
+                taxon sampling for concatenation or comparative analysis.
+
+                Aliases:
+                  taxon_groups, tgroups, shared_taxa
+                Command line interfaces:
+                  pk_taxon_groups, pk_tgroups, pk_shared_taxa
+
+                Usage:
+                phykit taxon_groups -l <file> [-f trees|fasta] [--json]
+
+                Options
+                =====================================================
+                -l/--list                   file listing paths to gene
+                                            trees or FASTA files (one
+                                            per line). Blank lines and
+                                            lines starting with # are
+                                            skipped.
+
+                -f/--format                 input format: trees (Newick)
+                                            or fasta (FASTA alignment).
+                                            default: trees
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-l", "--list", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-f", "--format", type=str, default="trees", choices=["trees", "fasta"], help=SUPPRESS, metavar="")
+        _add_json_argument(parser)
+        _run_service(parser, argv, TaxonGroups)
+
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
@@ -8872,3 +8920,7 @@ def phylo_impute(argv=None):
 
 def trait_rate_map(argv=None):
     Phykit.trait_rate_map(sys.argv[1:])
+
+
+def taxon_groups(argv=None):
+    Phykit.taxon_groups(sys.argv[1:])
