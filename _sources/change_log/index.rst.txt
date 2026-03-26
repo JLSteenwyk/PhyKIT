@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.79**:
+Added ``subtree_prune_regraft`` command:
+
+* Added ``subtree_prune_regraft`` (``spr``): generate all possible SPR
+  (Subtree Pruning and Regrafting) rearrangements for a user-specified
+  subtree on a parent tree. The subtree is defined by one or more
+  comma-separated taxa (resolved by MRCA). Each output Newick tree
+  represents the result of pruning the subtree and regrafting it onto
+  a different branch. Supports ``--json`` output and ``-o`` output file.
+
 **2.1.78**:
 Added ``taxon_groups`` utility command:
 

@@ -152,6 +152,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#polytomy-testing">Polytomy testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#print-tree">Print tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#prune-tree">Prune tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subtree-pruning-and-regrafting">Subtree pruning and regrafting</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#quartet-network">Quartet network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rate-heterogeneity-test-multi-rate-brownian-motion">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rename-tree-tips">Rename tree tips</a></li>
@@ -337,6 +338,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-print-tree"><span class="std std-ref">Print tree</span></a>: Print ASCII representation of a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-prune-tree"><span class="std std-ref">Prune tree</span></a>: Prune taxa from a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-rename-tree-tips"><span class="std std-ref">Rename tree tips</span></a>: Rename tip labels in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-subtree-prune-regraft"><span class="std std-ref">Subtree pruning and regrafting</span></a>: Generate all SPR rearrangements for a specified subtree</p></li>
 <li><p><a class="reference internal" href="#cmd-root-tree"><span class="std std-ref">Root tree</span></a>: Root or reroot a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-tip-labels"><span class="std std-ref">Tip labels</span></a>: Print tip labels of a tree</p></li>
 </ul>
@@ -3828,6 +3830,32 @@ Default output will have the same name as the input file but with the suffix
 keep them <br/>
 <em>--json</em>: optional argument to print results as JSON
 |</p>
+</section>
+<section id="subtree-pruning-and-regrafting">
+<span id="cmd-subtree-prune-regraft"></span><h3>Subtree pruning and regrafting<a class="headerlink" href="#subtree-pruning-and-regrafting" title="Link to this heading"></a></h3>
+<p>Function names: subtree_prune_regraft; spr <br/>
+Command line interface: pk_subtree_prune_regraft; pk_spr</p>
+<p>Generate all possible SPR (Subtree Pruning and Regrafting) rearrangements
+for a specified subtree on a tree.</p>
+<p>The subtree is identified by specifying one or more comma-separated taxa
+whose MRCA (most recent common ancestor) defines the clade to prune. The
+pruned subtree is then regrafted onto every other branch in the remaining
+tree, producing one Newick tree per regraft position.</p>
+<p>For a subtree defined by a single taxon (a single leaf), the leaf is pruned
+and reattached to each branch in the remaining tree. For a clade (two or
+more taxa), the entire clade is pruned and regrafted. Each output Newick
+contains all original taxa.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>subtree_prune_regraft<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>--subtree<span class="w"> </span>&lt;taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: input tree file in Newick format (required) <br/>
+<em>--subtree</em>: comma-separated list of taxa defining the subtree to prune (MRCA resolved), or a single-column file with one taxon per line (required) <br/>
+<em>-o/--output</em>: optional output file for SPR trees (one Newick per line); if omitted, prints to stdout <br/>
+<em>--json</em>: optional argument to print summary metadata and trees as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 </section>
 <section id="quartet-network">
 <span id="cmd-quartet-network"></span><h3>Quartet network<a class="headerlink" href="#quartet-network" title="Link to this heading"></a></h3>

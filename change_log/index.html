@@ -80,6 +80,16 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.79</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">subtree_prune_regraft</span></code> command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">subtree_prune_regraft</span></code> (<code class="docutils literal notranslate"><span class="pre">spr</span></code>): generate all possible SPR
+(Subtree Pruning and Regrafting) rearrangements for a user-specified
+subtree on a parent tree. The subtree is defined by one or more
+comma-separated taxa (resolved by MRCA). Each output Newick tree
+represents the result of pruning the subtree and regrafting it onto
+a different branch. Supports <code class="docutils literal notranslate"><span class="pre">--json</span></code> output and <code class="docutils literal notranslate"><span class="pre">-o</span></code> output file.</p></li>
+</ul>
 <p><strong>2.1.78</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">taxon_groups</span></code> utility command:</p>
 <ul class="simple">
