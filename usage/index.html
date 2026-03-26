@@ -2701,7 +2701,7 @@ values near each pie.</p>
 <a class="reference internal image-reference" href="../_images/quartet_pie_example.png"><img alt="../_images/quartet_pie_example.png" class="align-center" src="../_images/quartet_pie_example.png" style="width: 90%;" />
 </a>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span><span class="o">[</span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="o">]</span><span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
-<span class="w">        </span><span class="o">[</span>--annotate<span class="o">]</span><span class="w"> </span><span class="o">[</span>--csv<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">        </span><span class="o">[</span>--annotate<span class="o">]</span><span class="w"> </span><span class="o">[</span>--branch-labels<span class="o">]</span><span class="w"> </span><span class="o">[</span>--csv<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -2709,6 +2709,7 @@ values near each pie.</p>
 <em>-g/--gene-trees</em>: gene trees file, one Newick tree per line (optional; if omitted, ASTRAL <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">2</span></code> or wASTRAL <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> annotations are parsed) <br/>
 <em>-o/--output</em>: output figure path (required; supports .png, .pdf, .svg) <br/>
 <em>--annotate</em>: show gCF/gDF values as text near each pie chart <br/>
+<em>--branch-labels</em>: show the number of concordant gene trees (blue, above branch) and LPP support (red, below branch) on each internal branch. In ASTRAL mode, values come from <code class="docutils literal notranslate"><span class="pre">f1</span></code> and <code class="docutils literal notranslate"><span class="pre">pp1</span></code> annotations; in native mode, the concordant count is computed from gene trees <br/>
 <em>--csv</em>: output per-branch concordance values (gCF, gDF1, gDF2, counts) as a CSV file <br/>
 <em>--pie-size</em>: scale factor for pie chart size (default: 1.0; use 2.0 for double, 0.5 for half) <br/>
 <em>--colors</em>: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) <br/>
