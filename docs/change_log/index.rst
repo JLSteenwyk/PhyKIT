@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.80**:
+Added ``--branch-labels`` option to ``quartet_pie``:
+
+* Added ``--branch-labels`` flag to ``quartet_pie`` (``qpie``): displays
+  the number of concordant gene trees (blue, above branch) and the
+  local posterior probability (LPP; red, below branch) on each internal
+  branch, in the style of PhyTop. In ASTRAL mode, values are parsed
+  from ``f1`` and ``pp1`` annotations; in native mode, the concordant
+  gene count is computed directly from gene trees.
+
 **2.1.79**:
 Added ``subtree_prune_regraft`` command:
 

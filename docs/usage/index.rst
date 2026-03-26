@@ -2924,13 +2924,14 @@ values near each pie.
 .. code-block:: shell
 
 	phykit quartet_pie -t <species_tree> [-g <gene_trees>] -o <output>
-		[--annotate] [--csv <file>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+		[--annotate] [--branch-labels] [--csv <file>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
 *-t/--tree*: species tree file (required) |br|
 *-g/--gene-trees*: gene trees file, one Newick tree per line (optional; if omitted, ASTRAL ``-t 2`` or wASTRAL ``--support 3`` annotations are parsed) |br|
 *-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
 *--annotate*: show gCF/gDF values as text near each pie chart |br|
+*--branch-labels*: show the number of concordant gene trees (blue, above branch) and LPP support (red, below branch) on each internal branch. In ASTRAL mode, values come from ``f1`` and ``pp1`` annotations; in native mode, the concordant count is computed from gene trees |br|
 *--csv*: output per-branch concordance values (gCF, gDF1, gDF2, counts) as a CSV file |br|
 *--pie-size*: scale factor for pie chart size (default: 1.0; use 2.0 for double, 0.5 for half) |br|
 *--colors*: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) |br|

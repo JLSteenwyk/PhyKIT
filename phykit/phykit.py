@@ -6076,6 +6076,11 @@ class Phykit:
                                             and branch colors (iTOL-
                                             inspired TSV format)
 
+                --branch-labels             show concordant gene count
+                                            above and LPP support below
+                                            each internal branch
+                                            (PhyTop-style)
+
                 --csv                       output per-branch concordance
                                             values as a CSV file
 
@@ -6101,6 +6106,9 @@ class Phykit:
         )
         parser.add_argument(
             "--annotate", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--branch-labels", action="store_true", required=False, help=SUPPRESS
         )
         parser.add_argument(
             "--csv", type=str, required=False, default=None,

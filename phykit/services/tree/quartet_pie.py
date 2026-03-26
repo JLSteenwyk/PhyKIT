@@ -18,6 +18,7 @@ from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
 from ...helpers.quartet_utils import (
     compute_gcf_per_node,
     parse_astral_annotations,
+    parse_astral_branch_info,
 )
 from ...helpers.circular_layout import (
     compute_circular_coords,
@@ -46,6 +47,7 @@ class QuartetPie(Tree):
         self.gene_trees_path = parsed["gene_trees_path"]
         self.output_path = parsed["output_path"]
         self.annotate = parsed["annotate"]
+        self.branch_labels = parsed["branch_labels"]
         self.json_output = parsed["json_output"]
         self.csv_output = parsed["csv_output"]
         self.pie_size = parsed["pie_size"]
@@ -55,12 +57,23 @@ class QuartetPie(Tree):
         tree = self.read_tree_file()
         self._validate_tree(tree)
 
+        branch_info = {}  # clade id -> {"f1": ..., "pp1": ...}
+
         if self.gene_trees_path:
             # Native mode: compute gCF from gene trees
             gene_trees = self._parse_gene_trees(self.gene_trees_path)
             proportions = compute_gcf_per_node(tree, gene_trees)
             input_mode = "native"
             n_gene_trees = len(gene_trees)
+            # Build branch_info from raw counts + tree confidence
+            for cid, props in proportions.items():
+                info = {"f1": props[3]}
+                # Check if node has a confidence/support value
+                for clade in tree.find_clades(order="preorder"):
+                    if id(clade) == cid and clade.confidence is not None:
+                        info["pp1"] = clade.confidence
+                        break
+                branch_info[cid] = info
         else:
             # ASTRAL mode: parse q1/q2/q3 from node labels
             astral_props = parse_astral_annotations(tree)
@@ -74,18 +87,20 @@ class QuartetPie(Tree):
                     ],
                     code=2,
                 )
-            # Convert to same format: (q1, q2, q3, 0, 0, 0) — no raw counts
-            proportions = {
-                cid: (q1, q2, q3, 0, 0, 0)
-                for cid, (q1, q2, q3) in astral_props.items()
-            }
+            # Parse f1/pp1 from ASTRAL annotations
+            branch_info = parse_astral_branch_info(tree)
+            # Convert to same format: (q1, q2, q3, f1, 0, 0)
+            proportions = {}
+            for cid, (q1, q2, q3) in astral_props.items():
+                f1 = int(round(branch_info.get(cid, {}).get("f1", 0)))
+                proportions[cid] = (q1, q2, q3, f1, 0, 0)
             input_mode = "astral"
             n_gene_trees = 0
 
         if self.plot_config.ladderize:
             tree.ladderize()
 
-        self._plot_quartet_pie(tree, proportions, self.output_path)
+        self._plot_quartet_pie(tree, proportions, self.output_path, branch_info)
 
         if self.csv_output:
             self._write_csv(tree, proportions, self.csv_output)
@@ -103,6 +118,7 @@ class QuartetPie(Tree):
             gene_trees_path=getattr(args, "gene_trees", None),
             output_path=args.output,
             annotate=getattr(args, "annotate", False),
+            branch_labels=getattr(args, "branch_labels", False),
             json_output=getattr(args, "json", False),
             csv_output=getattr(args, "csv", None),
             pie_size=getattr(args, "pie_size", 1.0),
@@ -138,6 +154,7 @@ class QuartetPie(Tree):
         tree,
         proportions: Dict[int, Tuple],
         output_path: str,
+        branch_info: Dict[int, Dict[str, float]] = None,
     ) -> None:
         try:
             import matplotlib
@@ -302,6 +319,35 @@ class QuartetPie(Tree):
                         zorder=11,
                     )
 
+            # Branch labels in circular mode
+            if self.branch_labels and branch_info:
+                label_fs = max(5, min(8, 80 / max(n_tips, 1)))
+                for clade in tree.find_clades(order="preorder"):
+                    if clade.is_terminal() or clade == root:
+                        continue
+                    cid = id(clade)
+                    if cid not in branch_info or cid not in coords:
+                        continue
+                    info = branch_info[cid]
+                    cx = coords[cid]["x"]
+                    cy = coords[cid]["y"]
+                    if "f1" in info:
+                        f1_val = info["f1"]
+                        f1_str = str(int(round(f1_val))) if f1_val == int(f1_val) else f"{f1_val:.1f}"
+                        ax.annotate(
+                            f1_str, (cx, cy),
+                            textcoords="offset points", xytext=(0, 6),
+                            fontsize=label_fs, color="#2b8cbe",
+                            fontweight="bold", ha="center", zorder=12,
+                        )
+                    if "pp1" in info:
+                        ax.annotate(
+                            f"{info['pp1']:.2f}", (cx, cy),
+                            textcoords="offset points", xytext=(0, -6),
+                            fontsize=label_fs, color="#d62728",
+                            fontweight="bold", ha="center", va="top", zorder=12,
+                        )
+
             # Save without bbox_inches="tight" to preserve inset positions
             fig.savefig(output_path, dpi=config.dpi)
             plt.close(fig)
@@ -448,6 +494,37 @@ class QuartetPie(Tree):
                         color="black",
                         zorder=11,
                     )
+
+            # Branch labels: concordant count above, LPP below each branch
+            if self.branch_labels and branch_info:
+                label_fs = max(5, min(8, 80 / max(n_tips, 1)))
+                for clade in tree.find_clades(order="preorder"):
+                    if clade.is_terminal() or clade == root:
+                        continue
+                    cid = id(clade)
+                    if cid not in branch_info:
+                        continue
+                    info = branch_info[cid]
+                    pid = id(parent_map[cid]) if cid in parent_map else None
+                    if pid is None:
+                        continue
+                    # midpoint of horizontal branch
+                    mx = (node_x.get(pid, 0) + node_x.get(cid, 0)) / 2
+                    my = node_y.get(cid, 0)
+                    if "f1" in info:
+                        f1_val = info["f1"]
+                        f1_str = str(int(round(f1_val))) if f1_val == int(f1_val) else f"{f1_val:.1f}"
+                        ax.text(
+                            mx, my, f1_str, ha="center", va="bottom",
+                            fontsize=label_fs, color="#2b8cbe",
+                            fontweight="bold", zorder=12,
+                        )
+                    if "pp1" in info:
+                        ax.text(
+                            mx, my, f"{info['pp1']:.2f}", ha="center", va="top",
+                            fontsize=label_fs, color="#d62728",
+                            fontweight="bold", zorder=12,
+                        )
 
             # Save without bbox_inches="tight" to preserve inset positions
             fig.savefig(output_path, dpi=config.dpi)

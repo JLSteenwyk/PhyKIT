@@ -114,6 +114,42 @@ def parse_astral_annotations(
     return result
 
 
+def parse_astral_branch_info(
+    tree,
+) -> Dict[int, Dict[str, float]]:
+    """Parse f1 (concordant count) and pp1 (LPP) from ASTRAL/wASTRAL labels.
+
+    Returns dict mapping clade id -> {"f1": ..., "pp1": ...}.
+    Keys are only present if the value was found in the annotation.
+    """
+    result = {}
+    for clade in tree.find_clades(order="preorder"):
+        if clade.is_terminal():
+            continue
+        label = clade.name or clade.comment or ""
+        info = _parse_branch_info_from_label(str(label))
+        if info:
+            result[id(clade)] = info
+    return result
+
+
+def _parse_branch_info_from_label(label: str) -> Dict[str, float]:
+    """Extract f1, pp1 (and optionally f2, f3, pp2, pp3) from an ASTRAL label."""
+    s = label.strip("'\"").strip("[]")
+    info = {}
+    for part in s.split(";"):
+        if "=" not in part:
+            continue
+        key, val = part.split("=", 1)
+        key = key.strip()
+        try:
+            if key in ("f1", "f2", "f3", "pp1", "pp2", "pp3"):
+                info[key] = float(val)
+        except ValueError:
+            continue
+    return info
+
+
 def _parse_qs_from_label(label: str) -> Optional[Tuple[float, float, float]]:
     """Extract q1, q2, q3 from an ASTRAL node label string."""
     s = label.strip("'\"").strip("[]")
