@@ -95,6 +95,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylo-gwas">Phylo GWAS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#taxon-groups">Taxon groups</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-based-functions">Tree-based functions</a><ul>
@@ -303,6 +304,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-faidx"><span class="std std-ref">Faidx</span></a>: Extract entries from FASTA files</p></li>
 <li><p><a class="reference internal" href="#cmd-mask-alignment"><span class="std std-ref">Mask alignment</span></a>: Mask sites in an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-rename-fasta-entries"><span class="std std-ref">Rename FASTA entries</span></a>: Rename entries in a FASTA file</p></li>
+<li><p><a class="reference internal" href="#cmd-taxon-groups"><span class="std std-ref">Taxon groups</span></a>: Group files by shared taxon sets</p></li>
 <li><p><a class="reference internal" href="#cmd-thread-dna"><span class="std std-ref">Protein-to-nucleotide alignment</span></a>: Thread nucleotide onto protein alignment</p></li>
 </ul>
 </section>
@@ -1336,6 +1338,30 @@ doi: 10.1093/gbe/evw179.</p>
 </div>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="taxon-groups">
+<span id="cmd-taxon-groups"></span><h3>Taxon groups<a class="headerlink" href="#taxon-groups" title="Link to this heading"></a></h3>
+<p>Function names: taxon_groups; tgroups; shared_taxa <br/>
+Command line interface: pk_taxon_groups; pk_tgroups; pk_shared_taxa</p>
+<p>Determine which tree or FASTA files share the same set of taxa.
+Reads a file listing paths to gene trees or alignments and groups
+them by their taxon set (exact match). Reports groups sorted by
+size (largest first), with the taxa present in each group.</p>
+<p>Useful for identifying subsets of genes with identical taxon
+sampling for concatenation or comparative analysis.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>taxon_groups<span class="w"> </span>-l<span class="w"> </span>&lt;file&gt;<span class="w"> </span><span class="o">[</span>-f<span class="w"> </span>trees<span class="p">|</span>fasta<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-l/--list</em>: file listing paths to gene trees or FASTA files (one per line).
+Blank lines and lines starting with # are skipped. Relative paths are resolved
+relative to the list file's directory. <br/>
+<em>-f/--format</em>: input format: <code class="docutils literal notranslate"><span class="pre">trees</span></code> (Newick) or <code class="docutils literal notranslate"><span class="pre">fasta</span></code> (FASTA alignment).
+Default: <code class="docutils literal notranslate"><span class="pre">trees</span></code>. <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
