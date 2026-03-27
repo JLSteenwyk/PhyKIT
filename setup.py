@@ -114,6 +114,10 @@ setup(
             "pk_dfoil_test = phykit.phykit:dfoil",
             "pk_phylo_gwas = phykit.phykit:phylo_gwas",
             "pk_pgwas = phykit.phykit:phylo_gwas",
+            "pk_phylo_anova = phykit.phykit:phylo_anova",
+            "pk_panova = phykit.phykit:phylo_anova",
+            "pk_phylo_manova = phykit.phykit:phylo_anova",
+            "pk_pmanova = phykit.phykit:phylo_anova",
             "pk_ancestral_state_reconstruction = phykit.phykit:ancestral_state_reconstruction", # Tree-based functions
             "pk_parsimony_score = phykit.phykit:parsimony_score",
             "pk_parsimony = phykit.phykit:parsimony_score",

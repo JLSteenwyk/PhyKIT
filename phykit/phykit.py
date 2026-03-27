@@ -248,6 +248,8 @@ class Phykit:
                     - fit phylogenetic generalized least squares (PGLS) regression
                 phylogenetic_glm (alias: phylo_glm; pglm)
                     - fit phylogenetic GLM for binary (logistic) or count (Poisson) data
+                phylo_anova (alias: panova; phylo_manova; pmanova)
+                    - phylogenetic ANOVA / MANOVA using RRPP (Adams & Collyer 2018)
                 phylo_logistic (alias: phylo_logreg; plogreg)
                     - fit phylogenetic logistic regression (Ives & Garland 2010)
                 stochastic_character_map (alias: simmap; scm)
@@ -2003,6 +2005,87 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PhyloGwas)
+
+    @staticmethod
+    def phylo_anova(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Phylogenetic ANOVA / MANOVA using the Residual
+                Randomization Permutation Procedure (RRPP) of
+                Adams & Collyer (2018).
+
+                Tests whether a continuous trait (ANOVA) or multiple
+                traits (MANOVA) differ across discrete groups while
+                accounting for phylogenetic non-independence.
+
+                Auto-detects univariate vs multivariate based on the
+                number of response trait columns. Override with
+                --method anova or --method manova.
+
+                Aliases:
+                  phylo_anova, panova, phylo_manova, pmanova
+                Command line interfaces:
+                  pk_phylo_anova, pk_panova, pk_phylo_manova, pk_pmanova
+
+                Usage:
+                phykit phylo_anova -t <tree> --traits <traits_file>
+                  [--group-column <name>] [--method auto|anova|manova]
+                  [--permutations <int>] [--pairwise]
+                  [--plot-output <file>] [--plot-type boxplot|phylomorphospace]
+                  [--seed <int>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   species tree file (required)
+
+                --traits                    TSV file with taxon, group
+                                            column, and one or more
+                                            response trait columns
+                                            (required)
+
+                --group-column              name of the categorical
+                                            grouping column (default:
+                                            first non-taxon column)
+
+                --method                    analysis method: auto, anova,
+                                            or manova (default: auto)
+
+                --permutations              number of RRPP permutations
+                                            (default: 1000)
+
+                --pairwise                  include post-hoc pairwise
+                                            group comparisons
+
+                --plot-output               output figure path
+                                            (.png, .pdf, .svg)
+
+                --plot-type                 boxplot or phylomorphospace
+                                            (default: auto — boxplot for
+                                            ANOVA, phylomorphospace for
+                                            MANOVA)
+
+                --seed                      random seed for reproducible
+                                            permutations
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--traits", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--group-column", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--method", type=str, default="auto", choices=["auto", "anova", "manova"], help=SUPPRESS, metavar="")
+        parser.add_argument("--permutations", type=int, default=1000, help=SUPPRESS, metavar="")
+        parser.add_argument("--pairwise", action="store_true", help=SUPPRESS)
+        parser.add_argument("--plot-output", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--plot-type", type=str, default="auto", choices=["auto", "boxplot", "phylomorphospace"], help=SUPPRESS, metavar="")
+        parser.add_argument("--seed", type=int, default=None, help=SUPPRESS, metavar="")
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhyloAnova)
 
     @staticmethod
     def alignment_subsample(argv):
@@ -8683,6 +8766,10 @@ def dstatistic(argv=None):
 
 def phylo_gwas(argv=None):
     Phykit.phylo_gwas(sys.argv[1:])
+
+
+def phylo_anova(argv=None):
+    Phykit.phylo_anova(sys.argv[1:])
 
 
 def dfoil(argv=None):

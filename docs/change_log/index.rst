@@ -6,6 +6,20 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.81**:
+Added ``phylo_anova`` command for phylogenetic ANOVA / MANOVA:
+
+* Added ``phylo_anova`` (``panova`` / ``phylo_manova`` / ``pmanova``):
+  phylogenetic ANOVA (univariate) or MANOVA (multivariate) using the
+  Residual Randomization Permutation Procedure (RRPP; Adams & Collyer
+  2018). Auto-detects univariate vs multivariate from the data;
+  override with ``--method anova`` or ``--method manova``. Supports
+  ``--pairwise`` post-hoc comparisons, ``--plot-output`` for violin+boxplot
+  (ANOVA) or phylomorphospace (MANOVA) visualizations, ``--seed`` for
+  reproducibility, and ``--json`` output. Deterministic values (SS, MS, F,
+  Pillai's trace) validated against R (see
+  ``tests/r_validation/validate_phylo_anova.R``).
+
 **2.1.80**:
 Added ``--branch-labels`` option to ``quartet_pie``:
 
