@@ -254,6 +254,8 @@ class Phykit:
                     - fit phylogenetic logistic regression (Ives & Garland 2010)
                 stochastic_character_map (alias: simmap; scm)
                     - stochastic character mapping (SIMMAP) of discrete traits
+                simmap_summary (alias: smsummary; describe_simmap)
+                    - per-branch SIMMAP summary with node posteriors
                 cont_map (alias: contmap; cmap)
                     - continuous trait map (contMap) visualization on a phylogeny
                 trait_rate_map (alias: rate_map; branch_rates)
@@ -4797,6 +4799,79 @@ class Phykit:
         _run_service(parser, argv, StochasticCharacterMap)
 
     @staticmethod
+    def simmap_summary(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Run N stochastic character maps and summarize per-branch
+                dwelling time proportions, expected transitions, and
+                posterior state probabilities at each node.
+
+                This extends stochastic_character_map by providing a
+                detailed per-branch summary analogous to
+                phytools::describe.simmap() in R.
+
+                Aliases:
+                  simmap_summary, smsummary, describe_simmap
+                Command line interfaces:
+                  pk_simmap_summary, pk_smsummary, pk_describe_simmap
+
+                Usage:
+                phykit simmap_summary -t <tree> -d <trait_data> -c <trait>
+                  [-m/--model ER|SYM|ARD] [-n/--nsim <int>]
+                  [--seed <int>] [--plot <file>] [--csv <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   phylogenetic tree file
+                                            (required)
+
+                -d/--trait_data             tab-delimited trait file
+                                            with header row (required)
+
+                -c/--trait                  column name for the
+                                            discrete character trait
+                                            (required)
+
+                -m/--model                  substitution model: ER
+                                            (equal rates), SYM
+                                            (symmetric), or ARD (all
+                                            rates different). Default: ER
+
+                -n/--nsim                   number of stochastic maps
+                                            to simulate (default: 100)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                --plot                      output plot file showing
+                                            tree with posterior pie
+                                            charts at nodes
+
+                --csv                       output CSV file with
+                                            per-branch dwelling
+                                            proportions and node
+                                            posteriors
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-d", "--trait_data", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-c", "--trait", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-m", "--model", type=str, required=False, default="ER", help=SUPPRESS, metavar="")
+        parser.add_argument("-n", "--nsim", type=int, required=False, default=100, help=SUPPRESS, metavar="")
+        parser.add_argument("--seed", type=int, required=False, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--plot", type=str, required=False, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--csv", type=str, required=False, default=None, help=SUPPRESS, metavar="")
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, SimmapSummary)
+
+    @staticmethod
     def cont_map(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -8895,6 +8970,10 @@ def phylo_logistic(argv=None):
 
 def stochastic_character_map(argv=None):
     Phykit.stochastic_character_map(sys.argv[1:])
+
+
+def simmap_summary(argv=None):
+    Phykit.simmap_summary(sys.argv[1:])
 
 
 def cont_map(argv=None):

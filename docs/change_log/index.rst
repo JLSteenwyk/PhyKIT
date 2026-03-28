@@ -6,6 +6,18 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.82**:
+Added ``simmap_summary`` command:
+
+* Added ``simmap_summary`` (``smsummary`` / ``describe_simmap``): run N
+  stochastic character maps and provide per-branch summaries of dwelling
+  time proportions, expected transitions, and posterior state probabilities
+  at each internal node — analogous to ``phytools::describe.simmap()`` in R.
+  Supports ``--csv`` for per-branch output, ``--plot`` for posterior pie
+  chart tree, and ``--json`` output. Q matrix and log-likelihood validated
+  against ``phytools::fitMk()``
+  (see ``tests/r_validation/validate_simmap_summary.R``).
+
 **2.1.81**:
 Added ``phylo_anova`` command for phylogenetic ANOVA / MANOVA:
 
