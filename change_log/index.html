@@ -80,6 +80,32 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.82</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">simmap_summary</span></code> command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">simmap_summary</span></code> (<code class="docutils literal notranslate"><span class="pre">smsummary</span></code> / <code class="docutils literal notranslate"><span class="pre">describe_simmap</span></code>): run N
+stochastic character maps and provide per-branch summaries of dwelling
+time proportions, expected transitions, and posterior state probabilities
+at each internal node — analogous to <code class="docutils literal notranslate"><span class="pre">phytools::describe.simmap()</span></code> in R.
+Supports <code class="docutils literal notranslate"><span class="pre">--csv</span></code> for per-branch output, <code class="docutils literal notranslate"><span class="pre">--plot</span></code> for posterior pie
+chart tree, and <code class="docutils literal notranslate"><span class="pre">--json</span></code> output. Q matrix and log-likelihood validated
+against <code class="docutils literal notranslate"><span class="pre">phytools::fitMk()</span></code>
+(see <code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_simmap_summary.R</span></code>).</p></li>
+</ul>
+<p><strong>2.1.81</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">phylo_anova</span></code> command for phylogenetic ANOVA / MANOVA:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">phylo_anova</span></code> (<code class="docutils literal notranslate"><span class="pre">panova</span></code> / <code class="docutils literal notranslate"><span class="pre">phylo_manova</span></code> / <code class="docutils literal notranslate"><span class="pre">pmanova</span></code>):
+phylogenetic ANOVA (univariate) or MANOVA (multivariate) using the
+Residual Randomization Permutation Procedure (RRPP; Adams &amp; Collyer
+2018). Auto-detects univariate vs multivariate from the data;
+override with <code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">anova</span></code> or <code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">manova</span></code>. Supports
+<code class="docutils literal notranslate"><span class="pre">--pairwise</span></code> post-hoc comparisons, <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> for violin+boxplot
+(ANOVA) or phylomorphospace (MANOVA) visualizations, <code class="docutils literal notranslate"><span class="pre">--seed</span></code> for
+reproducibility, and <code class="docutils literal notranslate"><span class="pre">--json</span></code> output. Deterministic values (SS, MS, F,
+Pillai's trace) validated against R (see
+<code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_phylo_anova.R</span></code>).</p></li>
+</ul>
 <p><strong>2.1.80</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--branch-labels</span></code> option to <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>:</p>
 <ul class="simple">

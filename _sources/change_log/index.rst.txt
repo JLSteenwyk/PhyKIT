@@ -6,6 +6,32 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.82**:
+Added ``simmap_summary`` command:
+
+* Added ``simmap_summary`` (``smsummary`` / ``describe_simmap``): run N
+  stochastic character maps and provide per-branch summaries of dwelling
+  time proportions, expected transitions, and posterior state probabilities
+  at each internal node — analogous to ``phytools::describe.simmap()`` in R.
+  Supports ``--csv`` for per-branch output, ``--plot`` for posterior pie
+  chart tree, and ``--json`` output. Q matrix and log-likelihood validated
+  against ``phytools::fitMk()``
+  (see ``tests/r_validation/validate_simmap_summary.R``).
+
+**2.1.81**:
+Added ``phylo_anova`` command for phylogenetic ANOVA / MANOVA:
+
+* Added ``phylo_anova`` (``panova`` / ``phylo_manova`` / ``pmanova``):
+  phylogenetic ANOVA (univariate) or MANOVA (multivariate) using the
+  Residual Randomization Permutation Procedure (RRPP; Adams & Collyer
+  2018). Auto-detects univariate vs multivariate from the data;
+  override with ``--method anova`` or ``--method manova``. Supports
+  ``--pairwise`` post-hoc comparisons, ``--plot-output`` for violin+boxplot
+  (ANOVA) or phylomorphospace (MANOVA) visualizations, ``--seed`` for
+  reproducibility, and ``--json`` output. Deterministic values (SS, MS, F,
+  Pillai's trace) validated against R (see
+  ``tests/r_validation/validate_phylo_anova.R``).
+
 **2.1.80**:
 Added ``--branch-labels`` option to ``quartet_pie``:
 

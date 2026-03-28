@@ -142,6 +142,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-heatmap">Phylogenetic heatmap</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-imputation">Phylogenetic imputation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phenogram-traitgram">Phenogram (traitgram)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phylogenetic-anova-manova">Phylogenetic ANOVA / MANOVA</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-glm">Phylogenetic GLM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-logistic-regression">Phylogenetic Logistic Regression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-ordination">Phylogenetic Ordination</a></li>
@@ -160,6 +161,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#robinson-foulds-distance">Robinson-Foulds distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#root-tree">Root tree</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#spurious-homolog-identification">Spurious homolog identification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simmap-summary">SIMMAP summary</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#terminal-branch-statistics">Terminal branch statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#threshold-model">Threshold model</a></li>
@@ -391,6 +393,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-phylo-impute"><span class="std std-ref">Phylogenetic imputation</span></a>: Impute missing trait values using phylogenetic relationships</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-heatmap"><span class="std std-ref">Phylogenetic heatmap</span></a>: Phylogeny alongside a heatmap of numeric trait values</p></li>
 <li><p><a class="reference internal" href="#cmd-rate-heterogeneity"><span class="std std-ref">Rate heterogeneity test (multi-rate Brownian motion)</span></a>: Test for rate heterogeneity in trait evolution</p></li>
+<li><p><a class="reference internal" href="#cmd-simmap-summary"><span class="std std-ref">SIMMAP summary</span></a>: Per-branch SIMMAP summary with node posteriors (describe.simmap)</p></li>
 <li><p><a class="reference internal" href="#cmd-stochastic-character-map"><span class="std std-ref">Stochastic character mapping (SIMMAP)</span></a>: Stochastic character mapping on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-threshold-model"><span class="std std-ref">Threshold model</span></a>: Felsenstein threshold model for trait correlation</p></li>
 </ul>
@@ -398,6 +401,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <section id="phylogenetic-comparative-methods">
 <h3>Phylogenetic comparative methods<a class="headerlink" href="#phylogenetic-comparative-methods" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><a class="reference internal" href="#cmd-phylo-anova"><span class="std std-ref">Phylogenetic ANOVA / MANOVA</span></a>: Phylogenetic ANOVA or MANOVA using RRPP (Adams &amp; Collyer 2018)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a>: Phylogenetic generalized linear model (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-logistic"><span class="std std-ref">Phylogenetic Logistic Regression</span></a>: Phylogenetic logistic regression for binary traits (Ives &amp; Garland 2010)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic Ordination</span></a>: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
@@ -3377,6 +3381,106 @@ Ancestral states are reconstructed via maximum-likelihood.</p>
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="phylogenetic-anova-manova">
+<span id="cmd-phylo-anova"></span><h3>Phylogenetic ANOVA / MANOVA<a class="headerlink" href="#phylogenetic-anova-manova" title="Link to this heading"></a></h3>
+<p>Function names: phylo_anova; panova; phylo_manova; pmanova <br/>
+Command line interface: pk_phylo_anova; pk_panova; pk_phylo_manova; pk_pmanova</p>
+<p>Phylogenetic ANOVA (univariate) or MANOVA (multivariate) using the
+Residual Randomization Permutation Procedure (RRPP) of Adams &amp; Collyer
+(2018). Tests whether a continuous trait or multiple traits differ across
+discrete groups (e.g., diet, habitat) while accounting for phylogenetic
+non-independence via the phylogenetic variance-covariance matrix.</p>
+<p>The method auto-detects univariate vs multivariate based on the number
+of response trait columns. With one response trait, it runs a phylogenetic
+ANOVA; with multiple, it runs a phylogenetic MANOVA using Pillai's trace
+as the test statistic. Users can override with <code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">anova</span></code> or
+<code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">manova</span></code>.</p>
+<p><strong>How it works:</strong></p>
+<ol class="arabic simple">
+<li><p>The phylogenetic VCV matrix is Cholesky-decomposed and used to transform
+the data, removing phylogenetic correlation.</p></li>
+<li><p>A reduced model (intercept only) and full model (intercept + group)
+are fit to the transformed data.</p></li>
+<li><p>The observed F-statistic (ANOVA) or Pillai's trace (MANOVA) is computed.</p></li>
+<li><p>Residuals of the reduced model are permuted (RRPP) to build a null
+distribution; the p-value is the proportion of permuted statistics
+&gt;= the observed statistic.</p></li>
+<li><p>A Z-score (effect size) is also reported.</p></li>
+</ol>
+<p><strong>Interpreting the output:</strong></p>
+<p>The ANOVA table shows:</p>
+<ul class="simple">
+<li><p><strong>SS</strong> (Sum of Squares): variance attributed to the grouping factor vs residuals.</p></li>
+<li><p><strong>MS</strong> (Mean Squares): SS / Df.</p></li>
+<li><p><strong>F</strong>: ratio of MS_model to MS_residual. Larger F means greater group separation relative to within-group variation.</p></li>
+<li><p><strong>Z</strong>: standardized effect size — how many standard deviations the observed F is from the null mean. Z &gt; 2 generally indicates strong signal.</p></li>
+<li><p><strong>p-value</strong>: proportion of permuted F values &gt;= observed. Small p (e.g., &lt; 0.05) suggests groups differ significantly after accounting for phylogeny.</p></li>
+<li><p><strong>Pillai's trace</strong> (MANOVA only): ranges from 0 to the number of response traits. Higher values indicate stronger multivariate group separation.</p></li>
+</ul>
+<p>A non-significant result (large p-value) means that after accounting for
+shared ancestry, the groups do not differ more than expected by chance.
+This is common when closely related species share similar trait values
+regardless of group assignment.</p>
+<p><strong>Pairwise comparisons</strong> (<code class="docutils literal notranslate"><span class="pre">--pairwise</span></code>): for each pair of groups,
+computes the Euclidean distance between group means in phylogenetically
+transformed space, with permutation-based p-values.</p>
+<p><strong>Example (ANOVA):</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_anova<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>trait_data.tsv<span class="w"> </span>--permutations<span class="w"> </span><span class="m">999</span>
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Phylogenetic ANOVA (RRPP, 999 permutations)
+Response: body_mass
+Groups (3): carnivore, herbivore, omnivore
+N taxa: 8
+
+Source             Df           SS           MS          F          Z    p-value
+----------------------------------------------------------------------------
+group               2       0.0382       0.0191     0.3548    -0.7213     0.8088
+residuals           5       0.2691       0.0538
+total               7       0.3073
+</pre></div>
+</div>
+<p>In this example, p = 0.81 and Z = -0.72 indicate no significant
+difference in body mass among diet groups after accounting for phylogeny.</p>
+<p><strong>Example (MANOVA with pairwise):</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_manova<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>multi_traits.tsv<span class="w"> </span>--pairwise<span class="w"> </span>--permutations<span class="w"> </span><span class="m">999</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/phylo_anova_boxplot.png"><img alt="../_images/phylo_anova_boxplot.png" class="align-center" src="../_images/phylo_anova_boxplot.png" style="width: 90%;" />
+</a>
+<p><em>Violin + boxplot showing trait values by group for phylogenetic ANOVA.</em></p>
+<a class="reference internal image-reference" href="../_images/phylo_manova_morphospace.png"><img alt="../_images/phylo_manova_morphospace.png" class="align-center" src="../_images/phylo_manova_morphospace.png" style="width: 90%;" />
+</a>
+<p><em>Phylomorphospace colored by group for phylogenetic MANOVA. Points represent
+species, edges represent phylogenetic relationships, and colors correspond to
+group membership.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylo_anova<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>--traits<span class="w"> </span>&lt;traits_file&gt;
+<span class="w">    </span><span class="o">[</span>--group-column<span class="w"> </span>&lt;name&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--method<span class="w"> </span>auto<span class="p">|</span>anova<span class="p">|</span>manova<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--permutations<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pairwise<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-type<span class="w"> </span>boxplot<span class="p">|</span>phylomorphospace<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: species tree file (required) <br/>
+<em>--traits</em>: TSV file with taxon, group column, and one or more response trait columns (required) <br/>
+<em>--group-column</em>: name of the categorical grouping column (default: first non-taxon column) <br/>
+<em>--method</em>: <code class="docutils literal notranslate"><span class="pre">auto</span></code>, <code class="docutils literal notranslate"><span class="pre">anova</span></code>, or <code class="docutils literal notranslate"><span class="pre">manova</span></code> (default: <code class="docutils literal notranslate"><span class="pre">auto</span></code> — detects from number of response columns) <br/>
+<em>--permutations</em>: number of RRPP permutations (default: 1000) <br/>
+<em>--pairwise</em>: include post-hoc pairwise group comparisons <br/>
+<em>--plot-output</em>: output figure path (.png, .pdf, .svg) <br/>
+<em>--plot-type</em>: <code class="docutils literal notranslate"><span class="pre">boxplot</span></code> (violin+boxplot for ANOVA) or <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code> (for MANOVA); default: auto-detected <br/>
+<em>--seed</em>: random seed for reproducible permutations <br/>
+<em>--json</em>: output results as JSON</p>
+<p><strong>R validation:</strong> Deterministic components (SS, MS, F, Pillai's trace)
+have been validated against manual Cholesky-transformed ANOVA/MANOVA
+in R using <code class="docutils literal notranslate"><span class="pre">ape::vcv()</span></code> for the phylogenetic covariance matrix
+(see <code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_phylo_anova.R</span></code>).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="phylogenetic-glm">
 <span id="cmd-phylogenetic-glm"></span><h3>Phylogenetic GLM<a class="headerlink" href="#phylogenetic-glm" title="Link to this heading"></a></h3>
 <p>Function names: phylogenetic_glm; phylo_glm; pglm <br/>
@@ -4121,6 +4225,63 @@ Cell doi: 10.1016/j.cell.2018.10.023.</p>
 <em>-f/--factor</em>: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="simmap-summary">
+<span id="cmd-simmap-summary"></span><h3>SIMMAP summary<a class="headerlink" href="#simmap-summary" title="Link to this heading"></a></h3>
+<p>Function names: simmap_summary; smsummary; describe_simmap <br/>
+Command line interface: pk_simmap_summary; pk_smsummary; pk_describe_simmap</p>
+<p>Run N stochastic character maps (SIMMAP) and summarize the results
+per branch, analogous to <code class="docutils literal notranslate"><span class="pre">phytools::describe.simmap()</span></code> in R.</p>
+<p>For each branch, reports:</p>
+<ul class="simple">
+<li><p><strong>Dwelling time proportions</strong>: the average fraction of time spent in
+each character state across all simulations</p></li>
+<li><p><strong>Expected transitions</strong>: the mean number of state changes on that branch</p></li>
+</ul>
+<p>For each internal node, reports:</p>
+<ul class="simple">
+<li><p><strong>Posterior probabilities</strong>: the proportion of simulations in which
+each state was sampled at that node</p></li>
+</ul>
+<p><strong>Interpreting the output:</strong></p>
+<ul class="simple">
+<li><p>A branch with dwelling proportions <code class="docutils literal notranslate"><span class="pre">carnivore=0.72,</span> <span class="pre">herbivore=0.17,</span>
+<span class="pre">omnivore=0.11</span></code> spent 72% of its evolutionary time in the carnivore
+state (averaged across N maps). This indicates high confidence the
+lineage was carnivorous along that branch.</p></li>
+<li><p>A node with posteriors <code class="docutils literal notranslate"><span class="pre">carnivore=0.56,</span> <span class="pre">herbivore=0.25,</span> <span class="pre">omnivore=0.19</span></code>
+was reconstructed as carnivore in 56% of simulations. Low values
+across all states indicate genuine ancestral uncertainty.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">E[trans]</span></code> is the expected number of state changes on each branch.
+High values on long branches are expected. Values &gt; 1 on short branches
+suggest rapid trait evolution.</p></li>
+</ul>
+<a class="reference internal image-reference" href="../_images/simmap_summary_posteriors.png"><img alt="../_images/simmap_summary_posteriors.png" class="align-center" src="../_images/simmap_summary_posteriors.png" style="width: 90%;" />
+</a>
+<p><em>Tree with pie charts at internal nodes showing posterior state
+probabilities from 100 stochastic maps. Branches colored by the
+dominant state.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>simmap_summary<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait&gt;
+<span class="w">    </span><span class="o">[</span>-m/--model<span class="w"> </span>ER<span class="p">|</span>SYM<span class="p">|</span>ARD<span class="o">]</span><span class="w"> </span><span class="o">[</span>-n/--nsim<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--csv<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: phylogenetic tree file (required) <br/>
+<em>-d/--trait_data</em>: tab-delimited trait file with header row (required) <br/>
+<em>-c/--trait</em>: column name for the discrete character trait (required) <br/>
+<em>-m/--model</em>: substitution model — <code class="docutils literal notranslate"><span class="pre">ER</span></code> (equal rates, default), <code class="docutils literal notranslate"><span class="pre">SYM</span></code> (symmetric), or <code class="docutils literal notranslate"><span class="pre">ARD</span></code> (all rates different) <br/>
+<em>-n/--nsim</em>: number of stochastic maps to simulate (default: 100) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>--plot</em>: output plot file showing tree with posterior pie charts at nodes (.png, .pdf, .svg) <br/>
+<em>--csv</em>: output CSV file with per-branch dwelling proportions and node posteriors <br/>
+<em>--json</em>: output results as JSON</p>
+<p><strong>R validation:</strong> Q matrix and log-likelihood validated against
+<code class="docutils literal notranslate"><span class="pre">phytools::fitMk()</span></code> and <code class="docutils literal notranslate"><span class="pre">phytools::make.simmap()</span></code>
+(see <code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_simmap_summary.R</span></code>).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
