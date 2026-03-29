@@ -185,7 +185,7 @@ class TestLogisticMPLE:
         """Logistic MPLE should produce finite coefficients within btol bounds."""
         svc = PhylogeneticGLM(binomial_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 
@@ -213,7 +213,7 @@ class TestLogisticMPLE:
         """Alpha should be within the bounds set by log_alpha_bound."""
         svc = PhylogeneticGLM(binomial_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 
@@ -236,7 +236,7 @@ class TestLogisticMPLE:
         """Standard errors should be positive and finite."""
         svc = PhylogeneticGLM(binomial_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 
@@ -301,7 +301,7 @@ class TestPoissonGEE:
         """Poisson GEE should converge for our test data."""
         svc = PhylogeneticGLM(poisson_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 
@@ -327,7 +327,7 @@ class TestPoissonGEE:
         """Count trait increases with body_mass, so slope should be positive."""
         svc = PhylogeneticGLM(poisson_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 
@@ -349,7 +349,7 @@ class TestPoissonGEE:
         """Overdispersion phi should be positive."""
         svc = PhylogeneticGLM(poisson_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 
@@ -370,7 +370,7 @@ class TestPoissonGEE:
         """Standard errors should be positive."""
         svc = PhylogeneticGLM(poisson_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
 

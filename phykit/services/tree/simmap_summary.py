@@ -47,7 +47,7 @@ class SimmapSummary(StochasticCharacterMap):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="SIMMAP summary")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         tip_states = self._parse_discrete_trait_file(

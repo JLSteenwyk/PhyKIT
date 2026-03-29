@@ -39,7 +39,7 @@ class PhyloHeatmap(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="phylo heatmap")
 
         tree_tips = [t.name for t in tree.get_terminals()]
         trait_names, trait_data = self._parse_trait_matrix(
@@ -84,16 +84,6 @@ class PhyloHeatmap(Tree):
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
         )
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
-            raise PhykitUserError(
-                ["Tree must have at least 3 tips."], code=2
-            )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                clade.branch_length = 1e-8
 
     def _parse_trait_matrix(
         self, path: str, tree_tips: List[str]

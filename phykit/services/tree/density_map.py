@@ -57,7 +57,7 @@ class DensityMap(Tree):
         scm.tree_file_path = self.tree_file_path
         scm.tree_format = "newick"
 
-        scm._validate_tree(tree)
+        scm.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="density map")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         tip_states = scm._parse_discrete_trait_file(

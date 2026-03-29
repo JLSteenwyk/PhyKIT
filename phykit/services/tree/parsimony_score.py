@@ -29,7 +29,7 @@ class ParsimonyScore(Tree):
     def run(self) -> None:
         tree = self.read_tree_file()
         tree = copy.deepcopy(tree)
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, context="parsimony score")
         self._resolve_polytomies(tree)
 
         sequences = self._parse_alignment(self.alignment_path)
@@ -80,13 +80,6 @@ class ParsimonyScore(Tree):
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
         )
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
-            raise PhykitUserError(
-                ["Tree must have at least 3 tips."], code=2
-            )
 
     def _resolve_polytomies(self, tree) -> None:
         from Bio.Phylo import Newick

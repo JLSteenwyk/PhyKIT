@@ -281,7 +281,7 @@ class TestPhylogeneticPCACov:
     def test_eigenvalues(self, default_args):
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 

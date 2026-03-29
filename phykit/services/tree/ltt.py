@@ -18,7 +18,7 @@ class LTT(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, context="gamma statistic")
 
         gamma, p_value, bt, g = self._compute_gamma(tree)
         ltt_data = self._compute_ltt(tree)
@@ -40,20 +40,6 @@ class LTT(Tree):
             plot_output=getattr(args, "plot_output", None),
             plot_config=PlotConfig.from_args(args),
         )
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
-            raise PhykitUserError(
-                ["Tree must have at least 3 tips for gamma statistic."],
-                code=2,
-            )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                raise PhykitUserError(
-                    ["All branches in the tree must have lengths."],
-                    code=2,
-                )
 
     @staticmethod
     def _compute_gamma(tree):

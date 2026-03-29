@@ -12,6 +12,7 @@ from phykit.helpers.pgls_utils import (
     estimate_lambda,
     fit_gls,
 )
+from phykit.helpers.trait_parsing import parse_multi_trait_file
 from phykit.errors import PhykitUserError
 
 
@@ -164,7 +165,7 @@ class TestPGLSBM:
         svc = PhylogeneticRegression(default_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -195,7 +196,7 @@ class TestPGLSBM:
         svc = PhylogeneticRegression(default_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -232,7 +233,7 @@ class TestPGLSBM:
         svc = PhylogeneticRegression(default_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -262,7 +263,7 @@ class TestPGLSBM:
         svc = PhylogeneticRegression(default_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -299,7 +300,7 @@ class TestPGLSLambda:
         svc = PhylogeneticRegression(lambda_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -325,7 +326,7 @@ class TestPGLSLambda:
         svc = PhylogeneticRegression(lambda_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -370,7 +371,7 @@ class TestMultipleRegression:
         svc = PhylogeneticRegression(multi_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(svc.trait_data_path, tree_tips)
+        trait_names, traits = parse_multi_trait_file(svc.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)

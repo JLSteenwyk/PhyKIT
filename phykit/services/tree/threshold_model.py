@@ -87,7 +87,7 @@ class ThresholdModel(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="threshold model")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait1_dict, trait2_dict, ordered_names = self._parse_multi_trait_file(
@@ -135,20 +135,6 @@ class ThresholdModel(Tree):
 
         if self.plot_output:
             self._plot_trace(mcmc_result, self.plot_output)
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
-            raise PhykitUserError(
-                ["Tree must have at least 3 tips for threshold model."],
-                code=2,
-            )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                raise PhykitUserError(
-                    ["All branches in the tree must have lengths."],
-                    code=2,
-                )
 
     @staticmethod
     def _parse_multi_trait_file(path, trait1, trait2, type1, type2, tree_tips):

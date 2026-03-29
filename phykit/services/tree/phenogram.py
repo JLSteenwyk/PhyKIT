@@ -22,7 +22,7 @@ class Phenogram(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phenogram visualization")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_values = self._parse_single_trait_data(
@@ -81,20 +81,6 @@ class Phenogram(Tree):
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
         )
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
-            raise PhykitUserError(
-                ["Tree must have at least 3 tips for phenogram visualization."],
-                code=2,
-            )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                raise PhykitUserError(
-                    ["All branches in the tree must have lengths."],
-                    code=2,
-                )
 
     def _parse_single_trait_data(
         self, path: str, tree_tips: List[str]

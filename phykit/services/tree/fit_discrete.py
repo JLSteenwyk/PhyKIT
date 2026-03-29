@@ -32,7 +32,7 @@ class FitDiscrete(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="model fitting")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         tip_states = parse_discrete_traits(
@@ -83,16 +83,6 @@ class FitDiscrete(Tree):
             models=models,
             json_output=getattr(args, "json", False),
         )
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
-            raise PhykitUserError(
-                ["Tree must have at least 3 tips."], code=2
-            )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                clade.branch_length = 1e-8
 
     def _fit_model(self, tree, tip_states, states, model_name, n_obs):
         k = len(states)

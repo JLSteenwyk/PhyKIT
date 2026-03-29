@@ -62,7 +62,7 @@ class ConcordanceAsr(Tree):
         self._asr = AncestralReconstruction.__new__(AncestralReconstruction)
         self._asr.ci = True  # always compute CIs internally
 
-        self._asr._validate_tree(species_tree)
+        self._asr.validate_tree(species_tree, min_tips=3, require_branch_lengths=True, context="concordance ASR")
 
         gene_trees = self._parse_gene_trees(self.gene_trees_path)
 

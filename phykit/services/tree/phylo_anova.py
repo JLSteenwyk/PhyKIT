@@ -53,7 +53,7 @@ class PhyloAnova(Tree):
         from .vcv_utils import build_vcv_matrix
 
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="phylogenetic ANOVA")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         header, traits = self._parse_trait_file(self.trait_data_path, tree_tips)
@@ -185,11 +185,6 @@ class PhyloAnova(Tree):
                     tree, ordered_names, Y, groups, unique_groups,
                     response_names, self.plot_output,
                 )
-
-    def _validate_tree(self, tree) -> None:
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                clade.branch_length = 1e-8
 
     def _parse_trait_file(
         self, path: str, tree_tips: List[str]

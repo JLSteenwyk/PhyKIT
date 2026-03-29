@@ -152,7 +152,7 @@ class TestFit:
 
         svc = PhyloLogistic(glm_traits_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
@@ -182,7 +182,7 @@ class TestFit:
 
         svc = PhyloLogistic(glm_traits_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
@@ -204,7 +204,7 @@ class TestFit:
 
         svc = PhyloLogistic(glm_traits_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
         trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())

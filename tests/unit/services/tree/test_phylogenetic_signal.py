@@ -119,7 +119,7 @@ class TestValidateTree:
         from io import StringIO
         tree = Phylo.read(StringIO("(A:1.0,B:2.0);"), "newick")
         with pytest.raises(PhykitUserError):
-            svc._validate_tree(tree)
+            svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
 
     def test_missing_branch_lengths(self, default_args):
         svc = PhylogeneticSignal(default_args)
@@ -127,12 +127,12 @@ class TestValidateTree:
         from io import StringIO
         tree = Phylo.read(StringIO("(A,B,C);"), "newick")
         with pytest.raises(PhykitUserError):
-            svc._validate_tree(tree)
+            svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
 
     def test_valid_tree_passes(self, default_args):
         svc = PhylogeneticSignal(default_args)
         tree = svc.read_tree_file()
-        svc._validate_tree(tree)
+        svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
 
 
 class TestBuildVCVMatrix:

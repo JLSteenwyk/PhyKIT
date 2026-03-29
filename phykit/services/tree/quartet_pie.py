@@ -55,7 +55,7 @@ class QuartetPie(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=4, assign_default_branch_length=1e-8, context="quartet analysis")
 
         branch_info = {}  # clade id -> {"f1": ..., "pp1": ...}
 
@@ -124,17 +124,6 @@ class QuartetPie(Tree):
             pie_size=getattr(args, "pie_size", 1.0),
             plot_config=PlotConfig.from_args(args),
         )
-
-    def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 4:
-            raise PhykitUserError(
-                ["Tree must have at least 4 tips for quartet analysis."],
-                code=2,
-            )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                clade.branch_length = 1e-8
 
     def _parse_gene_trees(self, path: str) -> list:
         from Bio import Phylo

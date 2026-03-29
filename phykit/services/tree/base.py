@@ -106,6 +106,46 @@ class Tree(BaseService):
         # Use list comprehension for better performance
         return [tip.name for tip in tree.get_terminals()]
 
+    def validate_tree(
+        self,
+        tree,
+        min_tips: int = 3,
+        require_branch_lengths: bool = False,
+        assign_default_branch_length: float = None,
+        context: str = "",
+    ) -> None:
+        """Validate a tree for common issues.
+
+        Parameters
+        ----------
+        tree : Bio.Phylo tree
+        min_tips : minimum number of tips required (default 3)
+        require_branch_lengths : if True, raise error when branches lack lengths
+        assign_default_branch_length : if set, assign this value to missing lengths
+            instead of raising an error (e.g. 1e-8)
+        context : description for error messages (e.g. "phylogenetic regression")
+        """
+        tips = list(tree.get_terminals())
+        ctx = f" for {context}" if context else ""
+
+        if len(tips) < min_tips:
+            raise PhykitUserError(
+                [f"Tree must have at least {min_tips} tips{ctx}."],
+                code=2,
+            )
+
+        if assign_default_branch_length is not None:
+            for clade in tree.find_clades():
+                if clade.branch_length is None and clade != tree.root:
+                    clade.branch_length = assign_default_branch_length
+        elif require_branch_lengths:
+            for clade in tree.find_clades():
+                if clade.branch_length is None and clade != tree.root:
+                    raise PhykitUserError(
+                        [f"All branches in the tree must have lengths{ctx}."],
+                        code=2,
+                    )
+
     def shared_tips(self, a, b):
         """
         Determines what tips are shared between two trees

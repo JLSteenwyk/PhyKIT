@@ -51,7 +51,7 @@ class PhyloPath(Tree):
         from .vcv_utils import build_vcv_matrix
 
         tree = self.read_tree_file()
-        self._validate_tree(tree)
+        self.validate_tree(tree, min_tips=4, assign_default_branch_length=1e-8, context="path analysis")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = self._parse_trait_file(
@@ -188,13 +188,6 @@ class PhyloPath(Tree):
             self._plot_dag(
                 avg_coefs, variables, self.plot_output, best_edges
             )
-
-    # ---- Tree validation ----
-
-    def _validate_tree(self, tree) -> None:
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                clade.branch_length = 1e-8
 
     # ---- File parsing ----
 
