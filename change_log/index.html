@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.83</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">phylo_path</span></code> command for phylogenetic path analysis:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">phylo_path</span></code> (<code class="docutils literal notranslate"><span class="pre">ppath</span></code> / <code class="docutils literal notranslate"><span class="pre">phylopath</span></code>): phylogenetic path
+analysis following von Hardenberg &amp; Gonzalez-Voyer (2013). Compares
+competing causal DAGs using d-separation tests via PGLS with Pagel's
+lambda, ranks models by CICc, and estimates conditionally model-averaged
+path coefficients. Users define candidate models in a simple text file
+(<code class="docutils literal notranslate"><span class="pre">name:</span> <span class="pre">A-&gt;B,</span> <span class="pre">B-&gt;C</span></code>). Supports <code class="docutils literal notranslate"><span class="pre">--best-only</span></code> for single-model
+inference, <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> for DAG visualization with path coefficients,
+<code class="docutils literal notranslate"><span class="pre">--csv</span></code>, and <code class="docutils literal notranslate"><span class="pre">--json</span></code> output. Validated against R <code class="docutils literal notranslate"><span class="pre">phylopath</span></code>
+package (see <code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_phylo_path.R</span></code>).</p></li>
+</ul>
 <p><strong>2.1.82</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">simmap_summary</span></code> command:</p>
 <ul class="simple">
