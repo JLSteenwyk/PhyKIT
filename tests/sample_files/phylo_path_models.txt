@@ -1,0 +1,5 @@
+# Candidate causal models for path analysis
+# Format: model_name: var1->var2, var2->var3, ...
+direct: body_mass->brain_size, body_mass->longevity
+mediated: body_mass->brain_size, brain_size->longevity
+full: body_mass->brain_size, body_mass->longevity, brain_size->longevity

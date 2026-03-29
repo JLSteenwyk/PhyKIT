@@ -118,6 +118,9 @@ setup(
             "pk_panova = phykit.phykit:phylo_anova",
             "pk_phylo_manova = phykit.phykit:phylo_anova",
             "pk_pmanova = phykit.phykit:phylo_anova",
+            "pk_phylo_path = phykit.phykit:phylo_path",
+            "pk_ppath = phykit.phykit:phylo_path",
+            "pk_phylopath = phykit.phykit:phylo_path",
             "pk_ancestral_state_reconstruction = phykit.phykit:ancestral_state_reconstruction", # Tree-based functions
             "pk_parsimony_score = phykit.phykit:parsimony_score",
             "pk_parsimony = phykit.phykit:parsimony_score",

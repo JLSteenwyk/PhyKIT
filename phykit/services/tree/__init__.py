@@ -54,6 +54,7 @@ _EXPORTS = {
     "ConcordanceAsr": "concordance_asr",
     "PhyloLogistic": "phylo_logistic",
     "PhyloAnova": "phylo_anova",
+    "PhyloPath": "phylo_path",
     "PhyloImpute": "phylo_impute",
     "TraitCorrelation": "trait_correlation",
     "TraitRateMap": "trait_rate_map",

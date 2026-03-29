@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.83**:
+Added ``phylo_path`` command for phylogenetic path analysis:
+
+* Added ``phylo_path`` (``ppath`` / ``phylopath``): phylogenetic path
+  analysis following von Hardenberg & Gonzalez-Voyer (2013). Compares
+  competing causal DAGs using d-separation tests via PGLS with Pagel's
+  lambda, ranks models by CICc, and estimates conditionally model-averaged
+  path coefficients. Users define candidate models in a simple text file
+  (``name: A->B, B->C``). Supports ``--best-only`` for single-model
+  inference, ``--plot-output`` for DAG visualization with path coefficients,
+  ``--csv``, and ``--json`` output. Validated against R ``phylopath``
+  package (see ``tests/r_validation/validate_phylo_path.R``).
+
 **2.1.82**:
 Added ``simmap_summary`` command:
 

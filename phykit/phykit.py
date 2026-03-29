@@ -250,6 +250,8 @@ class Phykit:
                     - fit phylogenetic GLM for binary (logistic) or count (Poisson) data
                 phylo_anova (alias: panova; phylo_manova; pmanova)
                     - phylogenetic ANOVA / MANOVA using RRPP (Adams & Collyer 2018)
+                phylo_path (alias: ppath; phylopath)
+                    - phylogenetic path analysis (von Hardenberg & Gonzalez-Voyer 2013)
                 phylo_logistic (alias: phylo_logreg; plogreg)
                     - fit phylogenetic logistic regression (Ives & Garland 2010)
                 stochastic_character_map (alias: simmap; scm)
@@ -2088,6 +2090,65 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PhyloAnova)
+
+    @staticmethod
+    def phylo_path(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Phylogenetic path analysis (von Hardenberg & Gonzalez-Voyer
+                2013). Compare competing causal DAGs using d-separation
+                tests via PGLS with Pagel's lambda, rank models by CICc,
+                and estimate model-averaged path coefficients.
+
+                Aliases:
+                  phylo_path, ppath, phylopath
+                Command line interfaces:
+                  pk_phylo_path, pk_ppath, pk_phylopath
+
+                Usage:
+                phykit phylo_path -t <tree> --traits <traits_file>
+                  --models <models_file> [--best-only]
+                  [--plot-output <file>] [--csv <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   species tree (required)
+
+                --traits                    TSV file with taxon and
+                                            continuous trait columns
+                                            (required)
+
+                --models                    model definition file
+                                            with candidate DAGs
+                                            (required). Format:
+                                            name: A->B, B->C, ...
+
+                --best-only                 report only best model
+                                            coefficients (default:
+                                            model averaging)
+
+                --plot-output               output DAG plot file
+
+                --csv                       output CSV with model
+                                            comparison and path
+                                            coefficients
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--traits", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--models", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--best-only", action="store_true", help=SUPPRESS)
+        parser.add_argument("--plot-output", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--csv", type=str, default=None, help=SUPPRESS, metavar="")
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, PhyloPath)
 
     @staticmethod
     def alignment_subsample(argv):
@@ -8845,6 +8906,10 @@ def phylo_gwas(argv=None):
 
 def phylo_anova(argv=None):
     Phykit.phylo_anova(sys.argv[1:])
+
+
+def phylo_path(argv=None):
+    Phykit.phylo_path(sys.argv[1:])
 
 
 def dfoil(argv=None):
