@@ -7,6 +7,11 @@ from argparse import Namespace
 from pathlib import Path
 
 from phykit.services.tree.phylogenetic_regression import PhylogeneticRegression
+from phykit.helpers.pgls_utils import (
+    max_lambda as compute_max_lambda,
+    estimate_lambda,
+    fit_gls,
+)
 from phykit.errors import PhykitUserError
 
 
@@ -174,7 +179,7 @@ class TestPGLSBM:
         vcv = svc._build_vcv_matrix(tree, ordered_names)
         C_inv = np.linalg.inv(vcv)
 
-        beta_hat, residuals, sigma2, var_beta = svc._fit_gls(y, X, C_inv)
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
         se = np.sqrt(np.diag(var_beta))
 
         # R reference: Intercept=0.9972138 SE=0.0871177 t=11.4467407
@@ -205,7 +210,7 @@ class TestPGLSBM:
         vcv = svc._build_vcv_matrix(tree, ordered_names)
         C_inv = np.linalg.inv(vcv)
 
-        beta_hat, residuals, sigma2, var_beta = svc._fit_gls(y, X, C_inv)
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
         fitted = X @ beta_hat
 
         r2, adj_r2, f_stat, f_p, r2_total, r2_phylo = svc._compute_model_stats(
@@ -241,7 +246,7 @@ class TestPGLSBM:
         ])
         vcv = svc._build_vcv_matrix(tree, ordered_names)
         C_inv = np.linalg.inv(vcv)
-        beta_hat, residuals, _, _ = svc._fit_gls(y, X, C_inv)
+        beta_hat, residuals, _, _ = fit_gls(y, X, C_inv)
 
         # Compute ML log-likelihood (same formula as in run())
         sign, logdet_C = np.linalg.slogdet(vcv)
@@ -272,7 +277,7 @@ class TestPGLSBM:
         vcv = svc._build_vcv_matrix(tree, ordered_names)
         C_inv = np.linalg.inv(vcv)
 
-        beta_hat, residuals, sigma2, var_beta = svc._fit_gls(y, X, C_inv)
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
         se = np.sqrt(np.diag(var_beta))
         t_stats = beta_hat / se
 
@@ -307,9 +312,9 @@ class TestPGLSLambda:
             np.array([traits[name][pred_idx] for name in ordered_names]),
         ])
         vcv = svc._build_vcv_matrix(tree, ordered_names)
-        max_lam = svc._max_lambda(tree)
+        max_lam = compute_max_lambda(tree)
 
-        lambda_val, ll = svc._estimate_lambda(y, X, vcv, max_lam)
+        lambda_val, ll = estimate_lambda(y, X, vcv, max_lam)
 
         # Lambda should be between 0 and max_lambda
         assert 0 <= lambda_val <= max_lam
@@ -333,9 +338,9 @@ class TestPGLSLambda:
             np.array([traits[name][pred_idx] for name in ordered_names]),
         ])
         vcv = svc._build_vcv_matrix(tree, ordered_names)
-        max_lam = svc._max_lambda(tree)
+        max_lam = compute_max_lambda(tree)
 
-        lambda_val, _ = svc._estimate_lambda(y, X, vcv, max_lam)
+        lambda_val, _ = estimate_lambda(y, X, vcv, max_lam)
 
         # Transform VCV
         diag_vals = np.diag(vcv).copy()
@@ -343,7 +348,7 @@ class TestPGLSLambda:
         np.fill_diagonal(vcv_t, diag_vals)
 
         C_inv = np.linalg.inv(vcv_t)
-        beta_hat, _, _, _ = svc._fit_gls(y, X, C_inv)
+        beta_hat, _, _, _ = fit_gls(y, X, C_inv)
 
         # Coefficients should still be reasonable
         assert 0.5 < beta_hat[0] < 1.5
@@ -380,7 +385,7 @@ class TestMultipleRegression:
         vcv = svc._build_vcv_matrix(tree, ordered_names)
         C_inv = np.linalg.inv(vcv)
 
-        beta_hat, residuals, sigma2, var_beta = svc._fit_gls(y, X, C_inv)
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
         se = np.sqrt(np.diag(var_beta))
 
         # Should have 3 coefficients: intercept + 2 predictors

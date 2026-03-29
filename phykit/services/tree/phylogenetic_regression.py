@@ -2,12 +2,18 @@ import sys
 from typing import Dict, List, Tuple
 
 import numpy as np
-from scipy.optimize import minimize_scalar
 from scipy.stats import t as t_dist
 from scipy.stats import f as f_dist
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.pgls_utils import (
+    max_lambda as compute_max_lambda,
+    estimate_lambda,
+    pgls_log_likelihood,
+    fit_gls,
+    apply_lambda,
+)
 from ...errors import PhykitUserError
 
 
@@ -93,14 +99,11 @@ class PhylogeneticRegression(Tree):
         log_likelihood_lambda = None
 
         if self.method == "lambda":
-            max_lam = self._max_lambda(tree)
-            lambda_val, log_likelihood_lambda = self._estimate_lambda(
+            max_lam = compute_max_lambda(tree)
+            lambda_val, log_likelihood_lambda = estimate_lambda(
                 y, X, vcv, max_lam
             )
-            # Transform VCV
-            diag_vals = np.diag(vcv).copy()
-            vcv = vcv * lambda_val
-            np.fill_diagonal(vcv, diag_vals)
+            vcv = apply_lambda(vcv, lambda_val)
 
         try:
             C_inv = np.linalg.inv(vcv)
@@ -114,7 +117,7 @@ class PhylogeneticRegression(Tree):
             )
 
         # GLS estimation
-        beta_hat, residuals, sigma2, var_beta = self._fit_gls(y, X, C_inv)
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
 
         # Standard errors, t-stats, p-values
         se = np.sqrt(np.diag(var_beta))
@@ -326,125 +329,6 @@ class PhylogeneticRegression(Tree):
     ) -> np.ndarray:
         from .vcv_utils import build_vcv_matrix
         return build_vcv_matrix(tree, ordered_names)
-
-    def _max_lambda(self, tree) -> float:
-        tips = tree.get_terminals()
-        root = tree.root
-        tip_heights = [tree.distance(root, tip) for tip in tips]
-        max_tip_height = max(tip_heights)
-        min_tip_height = min(tip_heights)
-
-        is_ultrametric = (max_tip_height - min_tip_height) / max_tip_height < 1e-6
-
-        if not is_ultrametric:
-            return 1.0
-
-        max_parent_height = 0.0
-        for clade in tree.find_clades(order="level"):
-            if clade == root:
-                continue
-            node_height = tree.distance(root, clade)
-            parent_height = node_height - (clade.branch_length or 0.0)
-            if parent_height > max_parent_height:
-                max_parent_height = parent_height
-
-        if max_parent_height == 0.0:
-            return 1.0
-
-        return max_tip_height / max_parent_height
-
-    def _fit_gls(
-        self, y: np.ndarray, X: np.ndarray, C_inv: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, float, np.ndarray]:
-        """GLS estimation: beta_hat = (X' C_inv X)^{-1} X' C_inv y
-
-        Returns (beta_hat, residuals, sigma2_reml, var_beta).
-        """
-        n, k_plus_1 = X.shape
-        XtCiX = X.T @ C_inv @ X
-        try:
-            XtCiX_inv = np.linalg.inv(XtCiX)
-        except np.linalg.LinAlgError:
-            raise PhykitUserError(
-                [
-                    "Singular design matrix: cannot estimate coefficients.",
-                    "Check that predictors are not collinear.",
-                ],
-                code=2,
-            )
-
-        beta_hat = XtCiX_inv @ X.T @ C_inv @ y
-        residuals = y - X @ beta_hat
-
-        # REML-style sigma^2 for inference
-        df_resid = n - k_plus_1
-        sigma2 = float(residuals @ C_inv @ residuals) / df_resid
-
-        var_beta = sigma2 * XtCiX_inv
-
-        return beta_hat, residuals, sigma2, var_beta
-
-    def _pgls_log_likelihood(
-        self, y: np.ndarray, X: np.ndarray, C: np.ndarray
-    ) -> float:
-        """Concentrated log-likelihood with beta and sigma^2 profiled out."""
-        n = len(y)
-        C_inv = np.linalg.inv(C)
-
-        XtCiX = X.T @ C_inv @ X
-        XtCiX_inv = np.linalg.inv(XtCiX)
-        beta_hat = XtCiX_inv @ X.T @ C_inv @ y
-        e = y - X @ beta_hat
-
-        sigma2_ml = float(e @ C_inv @ e) / n
-
-        sign, logdet_C = np.linalg.slogdet(C)
-        if sign <= 0 or sigma2_ml <= 0:
-            return -1e20
-
-        ll = -0.5 * (
-            n * np.log(2 * np.pi) + n * np.log(sigma2_ml) + logdet_C + n
-        )
-        return float(ll)
-
-    def _estimate_lambda(
-        self,
-        y: np.ndarray,
-        X: np.ndarray,
-        vcv: np.ndarray,
-        max_lambda: float,
-    ) -> Tuple[float, float]:
-        """Optimize Pagel's lambda via ML using multi-interval bounded search."""
-        diag_vals = np.diag(vcv).copy()
-        niter = 10
-
-        def neg_ll(lam):
-            C_lam = vcv * lam
-            np.fill_diagonal(C_lam, diag_vals)
-            try:
-                ll = self._pgls_log_likelihood(y, X, C_lam)
-                return -ll
-            except (np.linalg.LinAlgError, FloatingPointError, ValueError):
-                return 1e10
-
-        bounds_lo = np.linspace(0, max_lambda - max_lambda / niter, niter)
-        bounds_hi = np.linspace(max_lambda / niter, max_lambda, niter)
-
-        best_ll = -np.inf
-        lambda_hat = 0.0
-        for lo, hi in zip(bounds_lo, bounds_hi):
-            res = minimize_scalar(neg_ll, bounds=(lo, hi), method="bounded")
-            ll_val = -res.fun
-            if ll_val > best_ll:
-                best_ll = ll_val
-                lambda_hat = res.x
-
-        # Compute log-likelihood at fitted lambda
-        C_fitted = vcv * lambda_hat
-        np.fill_diagonal(C_fitted, diag_vals)
-        ll_fitted = self._pgls_log_likelihood(y, X, C_fitted)
-
-        return float(lambda_hat), float(ll_fitted)
 
     def _compute_model_stats(
         self,

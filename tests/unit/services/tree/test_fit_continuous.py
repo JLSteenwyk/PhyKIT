@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from phykit.services.tree.fit_continuous import FitContinuous, ALL_MODELS
+from phykit.helpers.pgls_utils import max_lambda as compute_max_lambda
 from phykit.errors import PhykitUserError
 
 
@@ -42,7 +43,7 @@ def tree_vcv_data(svc):
     parent_map = svc._build_parent_map(tree)
     paths = svc._build_root_to_tip_paths(tree, ordered_names, parent_map)
     tree_height = float(np.max(np.diag(vcv)))
-    max_lam = svc._max_lambda(tree)
+    max_lam = compute_max_lambda(tree)
     return dict(
         svc=svc, tree=tree, x=x, vcv=vcv, ordered_names=ordered_names,
         paths=paths, tree_height=tree_height, max_lam=max_lam,

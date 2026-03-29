@@ -7,6 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from phykit.services.tree.phylogenetic_ordination import PhylogeneticOrdination
+from phykit.helpers.pgls_utils import max_lambda as compute_max_lambda
 from phykit.errors import PhykitUserError
 
 
@@ -493,7 +494,7 @@ class TestPhylogeneticPCALambda:
         p = len(trait_names)
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
         vcv = svc._build_vcv_matrix(tree, ordered_names)
-        max_lam = svc._max_lambda(tree)
+        max_lam = compute_max_lambda(tree)
 
         lambda_val, log_likelihood = svc._multi_trait_lambda(Y, vcv, max_lam)
 
@@ -511,7 +512,7 @@ class TestPhylogeneticPCALambda:
         p = len(trait_names)
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
         vcv = svc._build_vcv_matrix(tree, ordered_names)
-        max_lam = svc._max_lambda(tree)
+        max_lam = compute_max_lambda(tree)
 
         lambda_val, _ = svc._multi_trait_lambda(Y, vcv, max_lam)
 
@@ -675,7 +676,7 @@ class TestLambdaCorrection:
 
         # Lambda centering
         vcv_lam = svc_bm._build_vcv_matrix(tree, ordered_names)
-        max_lam = svc_bm._max_lambda(tree)
+        max_lam = compute_max_lambda(tree)
         lambda_val, _ = svc_bm._multi_trait_lambda(Y, vcv_lam, max_lam)
         diag_vals = np.diag(vcv_lam).copy()
         vcv_lam = vcv_lam * lambda_val

@@ -9,12 +9,17 @@ from collections import defaultdict
 from typing import Dict, List, Tuple
 
 import numpy as np
-from scipy.optimize import minimize_scalar
 from scipy.stats import chi2, t as t_dist
 
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig
+from ...helpers.pgls_utils import (
+    estimate_lambda,
+    pgls_log_likelihood,
+    fit_gls,
+    apply_lambda,
+)
 from ...errors import PhykitUserError
 
 
@@ -404,35 +409,23 @@ class PhyloPath(Tree):
             [np.ones(n)] + [z_data[p] for p in predictors]
         )
 
-        # Estimate lambda
-        lambda_val = self._estimate_lambda(y, X, vcv, n)
-
-        # Apply lambda
-        diag_vals = np.diag(vcv).copy()
-        vcv_lam = vcv * lambda_val
-        np.fill_diagonal(vcv_lam, diag_vals)
+        lambda_val, _ = estimate_lambda(y, X, vcv)
+        vcv_lam = apply_lambda(vcv, lambda_val)
 
         try:
             C_inv = np.linalg.inv(vcv_lam)
         except np.linalg.LinAlgError:
             return 1.0
 
-        # GLS
-        XtCiX = X.T @ C_inv @ X
         try:
-            XtCiX_inv = np.linalg.inv(XtCiX)
-        except np.linalg.LinAlgError:
+            beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
+        except SystemExit:
             return 1.0
 
-        beta_hat = XtCiX_inv @ X.T @ C_inv @ y
-        residuals = y - X @ beta_hat
         df_resid = n - X.shape[1]
         if df_resid <= 0:
             return 1.0
-        sigma2 = float(residuals @ C_inv @ residuals) / df_resid
-        var_beta = sigma2 * XtCiX_inv
 
-        # p-value for the predictor (last column)
         pred_idx = X.shape[1] - 1
         se = np.sqrt(max(var_beta[pred_idx, pred_idx], 0.0))
         if se <= 0:
@@ -447,77 +440,14 @@ class PhyloPath(Tree):
         vcv: np.ndarray, n: int,
     ) -> Tuple[np.ndarray, np.ndarray, float]:
         """Fit PGLS with lambda. Returns (beta, se, sigma2)."""
-        lambda_val = self._estimate_lambda(y, X, vcv, n)
-
-        diag_vals = np.diag(vcv).copy()
-        vcv_lam = vcv * lambda_val
-        np.fill_diagonal(vcv_lam, diag_vals)
+        lambda_val, _ = estimate_lambda(y, X, vcv)
+        vcv_lam = apply_lambda(vcv, lambda_val)
 
         C_inv = np.linalg.inv(vcv_lam)
-        XtCiX = X.T @ C_inv @ X
-        XtCiX_inv = np.linalg.inv(XtCiX)
-        beta_hat = XtCiX_inv @ X.T @ C_inv @ y
-        residuals = y - X @ beta_hat
-        df_resid = n - X.shape[1]
-        sigma2 = float(residuals @ C_inv @ residuals) / max(df_resid, 1)
-        var_beta = sigma2 * XtCiX_inv
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
         se = np.sqrt(np.maximum(np.diag(var_beta), 0.0))
 
         return beta_hat, se, sigma2
-
-    @staticmethod
-    def _pgls_log_likelihood(
-        y: np.ndarray, X: np.ndarray, C: np.ndarray
-    ) -> float:
-        n = len(y)
-        try:
-            C_inv = np.linalg.inv(C)
-            XtCiX = X.T @ C_inv @ X
-            XtCiX_inv = np.linalg.inv(XtCiX)
-        except np.linalg.LinAlgError:
-            return -1e20
-
-        beta_hat = XtCiX_inv @ X.T @ C_inv @ y
-        e = y - X @ beta_hat
-        sigma2_ml = float(e @ C_inv @ e) / n
-
-        sign, logdet_C = np.linalg.slogdet(C)
-        if sign <= 0 or sigma2_ml <= 0:
-            return -1e20
-
-        ll = -0.5 * (
-            n * np.log(2 * np.pi) + n * np.log(sigma2_ml) + logdet_C + n
-        )
-        return float(ll)
-
-    def _estimate_lambda(
-        self, y: np.ndarray, X: np.ndarray,
-        vcv: np.ndarray, n: int,
-    ) -> float:
-        diag_vals = np.diag(vcv).copy()
-        niter = 10
-
-        # Compute max lambda
-        max_lambda = 1.0
-
-        def neg_ll(lam):
-            C_lam = vcv * lam
-            np.fill_diagonal(C_lam, diag_vals)
-            return -self._pgls_log_likelihood(y, X, C_lam)
-
-        bounds_lo = np.linspace(0, max_lambda - max_lambda / niter, niter)
-        bounds_hi = np.linspace(max_lambda / niter, max_lambda, niter)
-
-        best_ll = -np.inf
-        lambda_hat = 0.0
-        for lo, hi in zip(bounds_lo, bounds_hi):
-            res = minimize_scalar(neg_ll, bounds=(lo, hi), method="bounded")
-            ll_val = -res.fun
-            if ll_val > best_ll:
-                best_ll = ll_val
-                lambda_hat = res.x
-
-        return float(lambda_hat)
 
     # ---- Path coefficient estimation ----
 

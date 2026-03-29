@@ -8,6 +8,7 @@ from scipy.optimize import minimize_scalar
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.pgls_utils import max_lambda as compute_max_lambda
 from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
@@ -67,7 +68,7 @@ class PhylogeneticOrdination(Tree):
         log_likelihood = None
 
         if self.correction == "lambda":
-            max_lam = self._max_lambda(tree)
+            max_lam = compute_max_lambda(tree)
             lambda_val, log_likelihood = self._multi_trait_lambda(Y, vcv, max_lam)
             diag_vals = np.diag(vcv).copy()
             vcv = vcv * lambda_val
@@ -331,32 +332,6 @@ class PhylogeneticOrdination(Tree):
     ) -> np.ndarray:
         from .vcv_utils import build_vcv_matrix
         return build_vcv_matrix(tree, ordered_names)
-
-    def _max_lambda(self, tree) -> float:
-        tips = tree.get_terminals()
-        root = tree.root
-        tip_heights = [tree.distance(root, tip) for tip in tips]
-        max_tip_height = max(tip_heights)
-        min_tip_height = min(tip_heights)
-
-        is_ultrametric = (max_tip_height - min_tip_height) / max_tip_height < 1e-6
-
-        if not is_ultrametric:
-            return 1.0
-
-        max_parent_height = 0.0
-        for clade in tree.find_clades(order="level"):
-            if clade == root:
-                continue
-            node_height = tree.distance(root, clade)
-            parent_height = node_height - (clade.branch_length or 0.0)
-            if parent_height > max_parent_height:
-                max_parent_height = parent_height
-
-        if max_parent_height == 0.0:
-            return 1.0
-
-        return max_tip_height / max_parent_height
 
     def _multi_trait_log_likelihood(
         self, Y: np.ndarray, C: np.ndarray

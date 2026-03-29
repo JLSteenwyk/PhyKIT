@@ -7,6 +7,7 @@ from scipy.stats import chi2
 
 from .base import Tree
 from ...helpers.json_output import print_json
+from ...helpers.pgls_utils import max_lambda as compute_max_lambda
 from ...errors import PhykitUserError
 
 
@@ -109,7 +110,7 @@ class PhylogeneticSignal(Tree):
                 f"{round(result['r_squared_phylo'], 4)}"
             )
         elif self.method == "lambda":
-            max_lam = self._max_lambda(tree)
+            max_lam = compute_max_lambda(tree)
             result = self._pagels_lambda(x, vcv, max_lam)
             result["r_squared_phylo"] = r2_phylo
             if vcv_meta is not None:
@@ -513,41 +514,6 @@ class PhylogeneticSignal(Tree):
             p_value=p_value,
             permutations=n_perm,
         )
-
-    def _max_lambda(self, tree) -> float:
-        """Compute the upper bound for lambda, matching phytools::maxLambda.
-
-        For ultrametric trees: max_tip_height / max_parent_node_height.
-        For non-ultrametric trees: 1.0.
-        """
-        tips = tree.get_terminals()
-        root = tree.root
-        tip_heights = [tree.distance(root, tip) for tip in tips]
-        max_tip_height = max(tip_heights)
-        min_tip_height = min(tip_heights)
-
-        # Check ultrametric: all tips equidistant from root (within tolerance)
-        is_ultrametric = (max_tip_height - min_tip_height) / max_tip_height < 1e-6
-
-        if not is_ultrametric:
-            return 1.0
-
-        # For ultrametric trees: max_tip_height / max_parent_node_height
-        # Parent node height = distance from root to the start of each edge
-        max_parent_height = 0.0
-        for clade in tree.find_clades(order="level"):
-            if clade == root:
-                continue
-            # Parent height = node height - branch length
-            node_height = tree.distance(root, clade)
-            parent_height = node_height - (clade.branch_length or 0.0)
-            if parent_height > max_parent_height:
-                max_parent_height = parent_height
-
-        if max_parent_height == 0.0:
-            return 1.0
-
-        return max_tip_height / max_parent_height
 
     def _pagels_lambda(
         self, x: np.ndarray, vcv: np.ndarray, max_lambda: float = 1.0
