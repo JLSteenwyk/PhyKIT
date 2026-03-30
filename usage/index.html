@@ -57,7 +57,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#functions-by-analytical-category">Functions by analytical category</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-quality-statistics">Alignment quality &amp; statistics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#alignment-manipulation">Alignment manipulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment-dataset-utilities">Alignment &amp; dataset utilities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tree-summary-statistics">Tree summary statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tree-manipulation-utilities">Tree manipulation &amp; utilities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tree-comparison-consensus">Tree comparison &amp; consensus</a></li>
@@ -328,18 +328,18 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-variable-sites"><span class="std std-ref">Variable sites</span></a>: Count variable sites in an alignment</p></li>
 </ul>
 </section>
-<section id="alignment-manipulation">
-<h3>Alignment manipulation<a class="headerlink" href="#alignment-manipulation" title="Link to this heading"></a></h3>
+<section id="alignment-dataset-utilities">
+<h3>Alignment &amp; dataset utilities<a class="headerlink" href="#alignment-dataset-utilities" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-alignment-recoding"><span class="std std-ref">Alignment recoding</span></a>: Recode alignment into reduced alphabets</p></li>
 <li><p><a class="reference internal" href="#cmd-alignment-subsample"><span class="std std-ref">Alignment subsampling</span></a>: Randomly subsample genes, partitions, or sites</p></li>
 <li><p><a class="reference internal" href="#cmd-create-concatenation-matrix"><span class="std std-ref">Create concatenation matrix</span></a>: Concatenate multiple alignments into a supermatrix</p></li>
 <li><p><a class="reference internal" href="#cmd-faidx"><span class="std std-ref">Faidx</span></a>: Extract entries from FASTA files</p></li>
 <li><p><a class="reference internal" href="#cmd-mask-alignment"><span class="std std-ref">Mask alignment</span></a>: Mask sites in an alignment</p></li>
-<li><p><a class="reference internal" href="#cmd-rename-fasta-entries"><span class="std std-ref">Rename FASTA entries</span></a>: Rename entries in a FASTA file</p></li>
-<li><p><a class="reference internal" href="#cmd-occupancy-filter"><span class="std std-ref">Occupancy filter</span></a>: Filter alignments/trees by cross-file taxon occupancy</p></li>
-<li><p><a class="reference internal" href="#cmd-taxon-groups"><span class="std std-ref">Taxon groups</span></a>: Group files by shared taxon sets</p></li>
+<li><p><a class="reference internal" href="#cmd-occupancy-filter"><span class="std std-ref">Occupancy filter</span></a>: Filter alignments or trees by cross-file taxon occupancy (works with both FASTA and Newick)</p></li>
 <li><p><a class="reference internal" href="#cmd-thread-dna"><span class="std std-ref">Protein-to-nucleotide alignment</span></a>: Thread nucleotide onto protein alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-rename-fasta-entries"><span class="std std-ref">Rename FASTA entries</span></a>: Rename entries in a FASTA file</p></li>
+<li><p><a class="reference internal" href="#cmd-taxon-groups"><span class="std std-ref">Taxon groups</span></a>: Group alignment or tree files by shared taxon sets (works with both FASTA and Newick)</p></li>
 </ul>
 </section>
 <section id="tree-summary-statistics">
@@ -438,13 +438,13 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <section id="phylogenetic-comparative-methods">
 <h3>Phylogenetic comparative methods<a class="headerlink" href="#phylogenetic-comparative-methods" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><a class="reference internal" href="#cmd-phylo-gwas"><span class="std std-ref">Phylo GWAS</span></a>: Phylogenetic genome-wide association study</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-anova"><span class="std std-ref">Phylogenetic ANOVA / MANOVA</span></a>: Phylogenetic ANOVA or MANOVA using RRPP (Adams &amp; Collyer 2018)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a>: Phylogenetic generalized linear model (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-logistic"><span class="std std-ref">Phylogenetic logistic regression</span></a>: Phylogenetic logistic regression for binary traits (Ives &amp; Garland 2010)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic ordination</span></a>: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-path"><span class="std std-ref">Phylogenetic path analysis</span></a>: Compare causal DAGs via d-separation + PGLS (von Hardenberg &amp; Gonzalez-Voyer 2013)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-regression"><span class="std std-ref">Phylogenetic regression (PGLS)</span></a>: Phylogenetic generalized least squares regression (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
-<li><p><a class="reference internal" href="#cmd-phylo-gwas"><span class="std std-ref">Phylo GWAS</span></a>: Phylogenetic genome-wide association study</p></li>
 <li><p><a class="reference internal" href="#cmd-phylomorphospace"><span class="std std-ref">Phylomorphospace</span></a>: Phylomorphospace visualization</p></li>
 </ul>
 </section>

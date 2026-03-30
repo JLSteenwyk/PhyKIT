@@ -124,18 +124,18 @@ Alignment quality & statistics
 - :ref:`Sum-of-pairs score <cmd-sum_of_pairs_score>`: Sum-of-pairs alignment quality score
 - :ref:`Variable sites <cmd-variable_sites>`: Count variable sites in an alignment
 
-Alignment manipulation
-######################
+Alignment & dataset utilities
+#############################
 
 - :ref:`Alignment recoding <cmd-alignment_recoding>`: Recode alignment into reduced alphabets
 - :ref:`Alignment subsampling <cmd-alignment_subsample>`: Randomly subsample genes, partitions, or sites
 - :ref:`Create concatenation matrix <cmd-create_concatenation_matrix>`: Concatenate multiple alignments into a supermatrix
 - :ref:`Faidx <cmd-faidx>`: Extract entries from FASTA files
 - :ref:`Mask alignment <cmd-mask_alignment>`: Mask sites in an alignment
-- :ref:`Rename FASTA entries <cmd-rename_fasta_entries>`: Rename entries in a FASTA file
-- :ref:`Occupancy filter <cmd-occupancy_filter>`: Filter alignments/trees by cross-file taxon occupancy
-- :ref:`Taxon groups <cmd-taxon_groups>`: Group files by shared taxon sets
+- :ref:`Occupancy filter <cmd-occupancy_filter>`: Filter alignments or trees by cross-file taxon occupancy (works with both FASTA and Newick)
 - :ref:`Protein-to-nucleotide alignment <cmd-thread_dna>`: Thread nucleotide onto protein alignment
+- :ref:`Rename FASTA entries <cmd-rename_fasta_entries>`: Rename entries in a FASTA file
+- :ref:`Taxon groups <cmd-taxon_groups>`: Group alignment or tree files by shared taxon sets (works with both FASTA and Newick)
 
 Tree summary statistics
 #######################
@@ -227,13 +227,13 @@ Trait evolution
 Phylogenetic comparative methods
 ################################
 
+- :ref:`Phylo GWAS <cmd-phylo_gwas>`: Phylogenetic genome-wide association study
 - :ref:`Phylogenetic ANOVA / MANOVA <cmd-phylo_anova>`: Phylogenetic ANOVA or MANOVA using RRPP (Adams & Collyer 2018)
 - :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>`: Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)
 - :ref:`Phylogenetic logistic regression <cmd-phylo_logistic>`: Phylogenetic logistic regression for binary traits (Ives & Garland 2010)
 - :ref:`Phylogenetic ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)
 - :ref:`Phylogenetic path analysis <cmd-phylo_path>`: Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)
 - :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>`: Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)
-- :ref:`Phylo GWAS <cmd-phylo_gwas>`: Phylogenetic genome-wide association study
 - :ref:`Phylomorphospace <cmd-phylomorphospace>`: Phylomorphospace visualization
 
 Evolutionary rate analysis
