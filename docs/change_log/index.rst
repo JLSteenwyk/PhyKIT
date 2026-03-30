@@ -10,11 +10,11 @@ Major changes to PhyKIT are summarized here.
 Added ``transfer_annotations`` and ``occupancy_filter`` commands:
 
 * Added ``transfer_annotations`` (``transfer_annot`` / ``annotate_tree``):
-  transfer internal node annotations (e.g., wASTRAL q1/q2/q3, pp1, f1)
-  from an annotated source tree onto a target tree with optimized branch
-  lengths. Nodes are matched by bipartition (descendant taxa set).
-  Typical use case: transfer wASTRAL support annotations onto a RAxML-NG
-  branch-length-optimized topology for visualization with ``quartet_pie``.
+  transfer internal node annotations (e.g., wASTRAL q1/q2/q3, pp1, f1,
+  or any Newick node labels/comments) from an annotated source tree onto
+  a target tree with optimized branch lengths. Nodes are matched by
+  bipartition (descendant taxa set). Works with any branch length
+  optimizer (RAxML-NG, IQ-TREE, etc.) and any annotation format.
 
 **2.1.84**:
 Added ``occupancy_filter`` command:

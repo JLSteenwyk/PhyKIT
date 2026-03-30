@@ -5,9 +5,9 @@ Copies internal node annotations (e.g., wASTRAL q1/q2/q3, pp1, f1)
 from an annotated source tree onto a target tree with optimized branch
 lengths. Nodes are matched by their bipartition (set of descendant taxa).
 
-Typical use case: transfer wASTRAL support annotations onto a RAxML-NG
-branch-length-optimized topology for use with quartet_pie or other
-visualization commands.
+Typical use case: transfer wASTRAL support annotations onto a
+branch-length-optimized topology from RAxML-NG, IQ-TREE, or any
+other tool for use with quartet_pie or other visualization commands.
 """
 from io import StringIO
 from typing import Dict, List, Set, Tuple

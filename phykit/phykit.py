@@ -309,7 +309,7 @@ class Phykit:
                 subtree_prune_regraft (alias: spr)
                     - generate all SPR rearrangements for a specified subtree
                 transfer_annotations (alias: transfer_annot; annotate_tree)
-                    - transfer node annotations between trees (e.g., wASTRAL to RAxML)
+                    - transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)
                 relative_rate_test (alias: rrt; tajima_rrt)
                     - Tajima's relative rate test for equal evolutionary
                       rates between two ingroup lineages
@@ -6836,9 +6836,10 @@ class Phykit:
 
                 Typical use case: transfer wASTRAL support annotations
                 (q1/q2/q3, pp1, f1, etc.) from an annotated ASTRAL
-                tree onto a RAxML-NG branch-length-optimized topology.
-                The output tree has the target's branch lengths with
-                the source's annotations.
+                tree onto a branch-length-optimized topology from
+                RAxML-NG, IQ-TREE, or any other tool. The output tree
+                has the target's branch lengths with the source's
+                annotations.
 
                 Aliases:
                   transfer_annotations, transfer_annot, annotate_tree
@@ -6858,7 +6859,8 @@ class Phykit:
 
                 --target                    target tree file with
                                             branch lengths to keep
-                                            (e.g., RAxML-NG output)
+                                            (e.g., RAxML-NG or
+                                            IQ-TREE output)
 
                 -o/--output                 output file for the
                                             annotated tree (default:
