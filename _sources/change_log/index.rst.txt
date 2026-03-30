@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.84**:
+Added ``occupancy_filter`` command:
+
+* Added ``occupancy_filter`` (``occ_filter`` / ``filter_occupancy``):
+  filter alignments and/or trees by cross-file taxon occupancy. Given
+  a list of FASTA or tree files, counts how many files each taxon
+  appears in and retains only taxa meeting a minimum threshold. The
+  threshold can be a fraction (e.g., ``0.5`` for 50% of files, the
+  default) or an absolute count (e.g., ``5``). Outputs filtered copies
+  of each input file. For FASTA files, sequences of removed taxa are
+  dropped; for tree files, tips are pruned. Supports ``--output-dir``,
+  ``--suffix``, and ``--json`` output.
+
 **2.1.83**:
 Added ``phylo_path`` command for phylogenetic path analysis:
 

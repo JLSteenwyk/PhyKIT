@@ -97,6 +97,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#sum-of-pairs-score">Sum-of-pairs score</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylo-gwas">Phylo GWAS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#variable-sites">Variable sites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#occupancy-filter">Occupancy filter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#taxon-groups">Taxon groups</a></li>
 </ul>
 </li>
@@ -335,6 +336,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-faidx"><span class="std std-ref">Faidx</span></a>: Extract entries from FASTA files</p></li>
 <li><p><a class="reference internal" href="#cmd-mask-alignment"><span class="std std-ref">Mask alignment</span></a>: Mask sites in an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-rename-fasta-entries"><span class="std std-ref">Rename FASTA entries</span></a>: Rename entries in a FASTA file</p></li>
+<li><p><a class="reference internal" href="#cmd-occupancy-filter"><span class="std std-ref">Occupancy filter</span></a>: Filter alignments/trees by cross-file taxon occupancy</p></li>
 <li><p><a class="reference internal" href="#cmd-taxon-groups"><span class="std std-ref">Taxon groups</span></a>: Group files by shared taxon sets</p></li>
 <li><p><a class="reference internal" href="#cmd-thread-dna"><span class="std std-ref">Protein-to-nucleotide alignment</span></a>: Thread nucleotide onto protein alignment</p></li>
 </ul>
@@ -1380,6 +1382,58 @@ doi: 10.1093/gbe/evw179.</p>
 <p>Options: <br/>
 <em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="occupancy-filter">
+<span id="cmd-occupancy-filter"></span><h3>Occupancy filter<a class="headerlink" href="#occupancy-filter" title="Link to this heading"></a></h3>
+<p>Function names: occupancy_filter; occ_filter; filter_occupancy <br/>
+Command line interface: pk_occupancy_filter; pk_occ_filter; pk_filter_occupancy</p>
+<p>Filter alignments and/or trees by cross-file taxon occupancy. Given a
+list of alignment or tree files, counts how many files each taxon appears
+in and retains only taxa meeting a minimum threshold. Outputs filtered
+copies of each input file.</p>
+<p>This is useful for phylogenomics workflows where you want to ensure all
+taxa in your dataset are present in at least N genes before concatenation
+or downstream analysis. For FASTA files, sequences of removed taxa are
+dropped. For tree files, tips of removed taxa are pruned.</p>
+<p><strong>Example:</strong> Given 10 alignment files and <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">0.5</span></code> (the default), only
+taxa present in at least 5 of the 10 alignments will be retained. New
+filtered alignment files are written with the removed taxa excluded.</p>
+<p><strong>Threshold interpretation:</strong></p>
+<ul class="simple">
+<li><p>Values <strong>between 0 and 1</strong> (inclusive) are treated as a <strong>fraction</strong> of the
+total number of files. For example, <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">0.5</span></code> means 50% of files;
+<code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">1.0</span></code> means 100% (taxon must be in every file).</p></li>
+<li><p>Values <strong>greater than 1</strong> are treated as an <strong>absolute count</strong>. For example,
+<code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">5</span></code> means the taxon must appear in at least 5 files.</p></li>
+<li><p>The default is <code class="docutils literal notranslate"><span class="pre">0.5</span></code> (50% occupancy).</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Keep taxa in at least 50% of files (default)</span>
+phykit<span class="w"> </span>occupancy_filter<span class="w"> </span>-l<span class="w"> </span>alignment_list.txt
+
+<span class="c1"># Keep taxa in all files (100% occupancy)</span>
+phykit<span class="w"> </span>occupancy_filter<span class="w"> </span>-l<span class="w"> </span>alignment_list.txt<span class="w"> </span>-t<span class="w"> </span><span class="m">1</span>.0
+
+<span class="c1"># Keep taxa in at least 20 files</span>
+phykit<span class="w"> </span>occupancy_filter<span class="w"> </span>-l<span class="w"> </span>alignment_list.txt<span class="w"> </span>-t<span class="w"> </span><span class="m">20</span>
+
+<span class="c1"># Filter trees instead of alignments</span>
+phykit<span class="w"> </span>occ_filter<span class="w"> </span>-l<span class="w"> </span>tree_list.txt<span class="w"> </span>-f<span class="w"> </span>trees<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>-o<span class="w"> </span>filtered_trees/
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>occupancy_filter<span class="w"> </span>-l<span class="w"> </span>&lt;file_list&gt;<span class="w"> </span><span class="o">[</span>-f/--format<span class="w"> </span>fasta<span class="p">|</span>trees<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>-t/--threshold<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-o/--output-dir<span class="w"> </span>&lt;dir&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--suffix<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-l/--list</em>: file listing paths to alignment or tree files, one per line (required) <br/>
+<em>-f/--format</em>: input file format — <code class="docutils literal notranslate"><span class="pre">fasta</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">trees</span></code> <br/>
+<em>-t/--threshold</em>: minimum occupancy to retain a taxon. Values between 0 and 1 (inclusive) are treated as a fraction (e.g., <code class="docutils literal notranslate"><span class="pre">0.5</span></code> = 50%, <code class="docutils literal notranslate"><span class="pre">1.0</span></code> = 100%); values &gt; 1 are treated as an absolute count (default: <code class="docutils literal notranslate"><span class="pre">0.5</span></code>) <br/>
+<em>-o/--output-dir</em>: directory for filtered output files (default: same directory as input) <br/>
+<em>--suffix</em>: suffix added to output filenames before the extension (default: <code class="docutils literal notranslate"><span class="pre">.filtered</span></code>) <br/>
+<em>--json</em>: output results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

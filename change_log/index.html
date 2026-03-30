@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.84</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">occupancy_filter</span></code> command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">occupancy_filter</span></code> (<code class="docutils literal notranslate"><span class="pre">occ_filter</span></code> / <code class="docutils literal notranslate"><span class="pre">filter_occupancy</span></code>):
+filter alignments and/or trees by cross-file taxon occupancy. Given
+a list of FASTA or tree files, counts how many files each taxon
+appears in and retains only taxa meeting a minimum threshold. The
+threshold can be a fraction (e.g., <code class="docutils literal notranslate"><span class="pre">0.5</span></code> for 50% of files, the
+default) or an absolute count (e.g., <code class="docutils literal notranslate"><span class="pre">5</span></code>). Outputs filtered copies
+of each input file. For FASTA files, sequences of removed taxa are
+dropped; for tree files, tips are pruned. Supports <code class="docutils literal notranslate"><span class="pre">--output-dir</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--suffix</span></code>, and <code class="docutils literal notranslate"><span class="pre">--json</span></code> output.</p></li>
+</ul>
 <p><strong>2.1.83</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">phylo_path</span></code> command for phylogenetic path analysis:</p>
 <ul class="simple">
