@@ -169,6 +169,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#stochastic-character-mapping-simmap">Stochastic character mapping (SIMMAP)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#terminal-branch-statistics">Terminal branch statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#threshold-model">Threshold model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transfer-annotations">Transfer annotations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-labels">Tip labels</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-distance">Tip-to-tip distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-node-distance">Tip-to-tip node distance</a></li>
@@ -373,6 +374,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-root-tree"><span class="std std-ref">Root tree</span></a>: Root or reroot a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-subtree-prune-regraft"><span class="std std-ref">Subtree pruning and regrafting</span></a>: Generate all SPR rearrangements for a specified subtree</p></li>
 <li><p><a class="reference internal" href="#cmd-tip-labels"><span class="std std-ref">Tip labels</span></a>: Print tip labels of a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-transfer-annotations"><span class="std std-ref">Transfer annotations</span></a>: Transfer node annotations between trees (e.g., wASTRAL to RAxML)</p></li>
 </ul>
 </section>
 <section id="tree-comparison-consensus">
@@ -4679,6 +4681,47 @@ and a dashed line at the posterior mean.</p>
 </div>
 <p>The JSON output includes full posterior sample arrays, summary
 statistics (mean, median, 95% HPD), and MCMC metadata.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="transfer-annotations">
+<span id="cmd-transfer-annotations"></span><h3>Transfer annotations<a class="headerlink" href="#transfer-annotations" title="Link to this heading"></a></h3>
+<p>Function names: transfer_annotations; transfer_annot; annotate_tree <br/>
+Command line interface: pk_transfer_annotations; pk_transfer_annot; pk_annotate_tree</p>
+<p>Transfer internal node annotations from one tree onto another. Matches
+nodes by bipartition (the set of descendant taxa) and copies the
+annotation labels from the source to the target tree.</p>
+<p><strong>Typical use case:</strong> Transfer wASTRAL support annotations (q1/q2/q3,
+pp1, f1, localPP, etc.) from a wASTRAL <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> output tree onto
+a RAxML-NG branch-length-optimized topology. The output tree has the
+target's branch lengths with the source's annotations, ready for use
+with <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> or other visualization tools.</p>
+<p><strong>Workflow:</strong></p>
+<ol class="arabic simple">
+<li><p>Run wASTRAL to get an annotated species tree (mode 1 or 4, <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code>)</p></li>
+<li><p>Extract the unannotated s0 topology</p></li>
+<li><p>Optimize branch lengths on s0 with RAxML-NG</p></li>
+<li><p>Transfer annotations from step 1 onto the optimized tree from step 3:</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>transfer_annotations<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--source<span class="w"> </span>wastral_annotated.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>raxml_optimized.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-o<span class="w"> </span>combined.tre
+
+<span class="c1"># Now use the combined tree with quartet_pie</span>
+phykit<span class="w"> </span>qpie<span class="w"> </span>-t<span class="w"> </span>combined.tre<span class="w"> </span>-o<span class="w"> </span>concordance.png<span class="w"> </span>--branch-labels
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>transfer_annotations<span class="w"> </span>--source<span class="w"> </span>&lt;annotated_tree&gt;<span class="w"> </span>--target<span class="w"> </span>&lt;branch_length_tree&gt;
+<span class="w">    </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>--source</em>: annotated tree file, e.g., wASTRAL output with <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> (required) <br/>
+<em>--target</em>: target tree file with branch lengths to keep, e.g., RAxML-NG output (required) <br/>
+<em>-o/--output</em>: output file for the annotated tree (default: target file + <code class="docutils literal notranslate"><span class="pre">.annotated</span></code>) <br/>
+<em>--json</em>: output results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>

@@ -168,6 +168,7 @@ Tree manipulation & utilities
 - :ref:`Root tree <cmd-root_tree>`: Root or reroot a tree
 - :ref:`Subtree pruning and regrafting <cmd-subtree_prune_regraft>`: Generate all SPR rearrangements for a specified subtree
 - :ref:`Tip labels <cmd-tip_labels>`: Print tip labels of a tree
+- :ref:`Transfer annotations <cmd-transfer_annotations>`: Transfer node annotations between trees (e.g., wASTRAL to RAxML)
 
 Tree comparison & consensus
 ###########################
@@ -5232,6 +5233,53 @@ and a dashed line at the posterior mean.
 
 The JSON output includes full posterior sample arrays, summary
 statistics (mean, median, 95% HPD), and MCMC metadata.
+
+|
+
+.. _cmd-transfer_annotations:
+
+Transfer annotations
+####################
+Function names: transfer_annotations; transfer_annot; annotate_tree |br|
+Command line interface: pk_transfer_annotations; pk_transfer_annot; pk_annotate_tree
+
+Transfer internal node annotations from one tree onto another. Matches
+nodes by bipartition (the set of descendant taxa) and copies the
+annotation labels from the source to the target tree.
+
+**Typical use case:** Transfer wASTRAL support annotations (q1/q2/q3,
+pp1, f1, localPP, etc.) from a wASTRAL ``--support 3`` output tree onto
+a RAxML-NG branch-length-optimized topology. The output tree has the
+target's branch lengths with the source's annotations, ready for use
+with ``quartet_pie`` or other visualization tools.
+
+**Workflow:**
+
+1. Run wASTRAL to get an annotated species tree (mode 1 or 4, ``--support 3``)
+2. Extract the unannotated s0 topology
+3. Optimize branch lengths on s0 with RAxML-NG
+4. Transfer annotations from step 1 onto the optimized tree from step 3:
+
+.. code-block:: shell
+
+   phykit transfer_annotations \
+       --source wastral_annotated.tre \
+       --target raxml_optimized.tre \
+       -o combined.tre
+
+   # Now use the combined tree with quartet_pie
+   phykit qpie -t combined.tre -o concordance.png --branch-labels
+
+.. code-block:: shell
+
+   phykit transfer_annotations --source <annotated_tree> --target <branch_length_tree>
+       [-o/--output <file>] [--json]
+
+Options: |br|
+*--source*: annotated tree file, e.g., wASTRAL output with ``--support 3`` (required) |br|
+*--target*: target tree file with branch lengths to keep, e.g., RAxML-NG output (required) |br|
+*-o/--output*: output file for the annotated tree (default: target file + ``.annotated``) |br|
+*--json*: output results as JSON
 
 |
 
