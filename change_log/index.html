@@ -84,11 +84,11 @@
 Added <code class="docutils literal notranslate"><span class="pre">transfer_annotations</span></code> and <code class="docutils literal notranslate"><span class="pre">occupancy_filter</span></code> commands:</p>
 <ul class="simple">
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">transfer_annotations</span></code> (<code class="docutils literal notranslate"><span class="pre">transfer_annot</span></code> / <code class="docutils literal notranslate"><span class="pre">annotate_tree</span></code>):
-transfer internal node annotations (e.g., wASTRAL q1/q2/q3, pp1, f1)
-from an annotated source tree onto a target tree with optimized branch
-lengths. Nodes are matched by bipartition (descendant taxa set).
-Typical use case: transfer wASTRAL support annotations onto a RAxML-NG
-branch-length-optimized topology for visualization with <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>.</p></li>
+transfer internal node annotations (e.g., wASTRAL q1/q2/q3, pp1, f1,
+or any Newick node labels/comments) from an annotated source tree onto
+a target tree with optimized branch lengths. Nodes are matched by
+bipartition (descendant taxa set). Works with any branch length
+optimizer (RAxML-NG, IQ-TREE, etc.) and any annotation format.</p></li>
 </ul>
 <p><strong>2.1.84</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">occupancy_filter</span></code> command:</p>

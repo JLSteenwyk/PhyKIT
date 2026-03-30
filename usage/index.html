@@ -374,7 +374,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-root-tree"><span class="std std-ref">Root tree</span></a>: Root or reroot a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-subtree-prune-regraft"><span class="std std-ref">Subtree pruning and regrafting</span></a>: Generate all SPR rearrangements for a specified subtree</p></li>
 <li><p><a class="reference internal" href="#cmd-tip-labels"><span class="std std-ref">Tip labels</span></a>: Print tip labels of a tree</p></li>
-<li><p><a class="reference internal" href="#cmd-transfer-annotations"><span class="std std-ref">Transfer annotations</span></a>: Transfer node annotations between trees (e.g., wASTRAL to RAxML)</p></li>
+<li><p><a class="reference internal" href="#cmd-transfer-annotations"><span class="std std-ref">Transfer annotations</span></a>: Transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)</p></li>
 </ul>
 </section>
 <section id="tree-comparison-consensus">
@@ -4694,14 +4694,20 @@ nodes by bipartition (the set of descendant taxa) and copies the
 annotation labels from the source to the target tree.</p>
 <p><strong>Typical use case:</strong> Transfer wASTRAL support annotations (q1/q2/q3,
 pp1, f1, localPP, etc.) from a wASTRAL <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> output tree onto
-a RAxML-NG branch-length-optimized topology. The output tree has the
-target's branch lengths with the source's annotations, ready for use
-with <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> or other visualization tools.</p>
+a branch-length-optimized topology from RAxML-NG, IQ-TREE, or any other
+tool. The output tree has the target's branch lengths with the source's
+annotations, ready for use with <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> or other visualization
+tools.</p>
+<p>This function works with any Newick node annotations — not just wASTRAL.
+Any labels or comments attached to internal nodes in the source tree will
+be transferred to the matching nodes in the target tree (e.g., ASTRAL
+<code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">2</span></code> annotations, bootstrap support values, Bayesian posterior
+probabilities, or custom labels).</p>
 <p><strong>Workflow:</strong></p>
 <ol class="arabic simple">
 <li><p>Run wASTRAL to get an annotated species tree (mode 1 or 4, <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code>)</p></li>
 <li><p>Extract the unannotated s0 topology</p></li>
-<li><p>Optimize branch lengths on s0 with RAxML-NG</p></li>
+<li><p>Optimize branch lengths on s0 with RAxML-NG or IQ-TREE</p></li>
 <li><p>Transfer annotations from step 1 onto the optimized tree from step 3:</p></li>
 </ol>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>transfer_annotations<span class="w"> </span><span class="se">\</span>
@@ -4718,8 +4724,8 @@ phykit<span class="w"> </span>qpie<span class="w"> </span>-t<span class="w"> </s
 </pre></div>
 </div>
 <p>Options: <br/>
-<em>--source</em>: annotated tree file, e.g., wASTRAL output with <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> (required) <br/>
-<em>--target</em>: target tree file with branch lengths to keep, e.g., RAxML-NG output (required) <br/>
+<em>--source</em>: annotated tree file, e.g., wASTRAL output with <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> or any tree with node labels/comments (required) <br/>
+<em>--target</em>: target tree file with branch lengths to keep, e.g., RAxML-NG or IQ-TREE output (required) <br/>
 <em>-o/--output</em>: output file for the annotated tree (default: target file + <code class="docutils literal notranslate"><span class="pre">.annotated</span></code>) <br/>
 <em>--json</em>: output results as JSON</p>
 <div class="line-block">

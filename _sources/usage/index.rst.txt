@@ -168,7 +168,7 @@ Tree manipulation & utilities
 - :ref:`Root tree <cmd-root_tree>`: Root or reroot a tree
 - :ref:`Subtree pruning and regrafting <cmd-subtree_prune_regraft>`: Generate all SPR rearrangements for a specified subtree
 - :ref:`Tip labels <cmd-tip_labels>`: Print tip labels of a tree
-- :ref:`Transfer annotations <cmd-transfer_annotations>`: Transfer node annotations between trees (e.g., wASTRAL to RAxML)
+- :ref:`Transfer annotations <cmd-transfer_annotations>`: Transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)
 
 Tree comparison & consensus
 ###########################
@@ -5249,15 +5249,22 @@ annotation labels from the source to the target tree.
 
 **Typical use case:** Transfer wASTRAL support annotations (q1/q2/q3,
 pp1, f1, localPP, etc.) from a wASTRAL ``--support 3`` output tree onto
-a RAxML-NG branch-length-optimized topology. The output tree has the
-target's branch lengths with the source's annotations, ready for use
-with ``quartet_pie`` or other visualization tools.
+a branch-length-optimized topology from RAxML-NG, IQ-TREE, or any other
+tool. The output tree has the target's branch lengths with the source's
+annotations, ready for use with ``quartet_pie`` or other visualization
+tools.
+
+This function works with any Newick node annotations — not just wASTRAL.
+Any labels or comments attached to internal nodes in the source tree will
+be transferred to the matching nodes in the target tree (e.g., ASTRAL
+``-t 2`` annotations, bootstrap support values, Bayesian posterior
+probabilities, or custom labels).
 
 **Workflow:**
 
 1. Run wASTRAL to get an annotated species tree (mode 1 or 4, ``--support 3``)
 2. Extract the unannotated s0 topology
-3. Optimize branch lengths on s0 with RAxML-NG
+3. Optimize branch lengths on s0 with RAxML-NG or IQ-TREE
 4. Transfer annotations from step 1 onto the optimized tree from step 3:
 
 .. code-block:: shell
@@ -5276,8 +5283,8 @@ with ``quartet_pie`` or other visualization tools.
        [-o/--output <file>] [--json]
 
 Options: |br|
-*--source*: annotated tree file, e.g., wASTRAL output with ``--support 3`` (required) |br|
-*--target*: target tree file with branch lengths to keep, e.g., RAxML-NG output (required) |br|
+*--source*: annotated tree file, e.g., wASTRAL output with ``--support 3`` or any tree with node labels/comments (required) |br|
+*--target*: target tree file with branch lengths to keep, e.g., RAxML-NG or IQ-TREE output (required) |br|
 *-o/--output*: output file for the annotated tree (default: target file + ``.annotated``) |br|
 *--json*: output results as JSON
 
