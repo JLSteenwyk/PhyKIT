@@ -86,17 +86,16 @@ Alignment quality & statistics
 - :ref:`Column score <cmd-column_score>`: Column score for alignment quality
 - :ref:`Compositional bias per site <cmd-compositional_bias_per_site>`: Detect compositional bias across sites
 - :ref:`Composition per taxon <cmd-composition_per_taxon>`: Nucleotide or amino acid composition per taxon
-- :ref:`Evolutionary Rate per Site <cmd-evolutionary_rate_per_site>`: Site-specific evolutionary rate estimation
+- :ref:`Evolutionary rate per site <cmd-evolutionary_rate_per_site>`: Site-specific evolutionary rate estimation
 - :ref:`Guanine-cytosine (GC) content <cmd-gc_content>`: GC content of an alignment
+- :ref:`Identity matrix <cmd-identity_matrix>`: Pairwise sequence identity heatmap
 - :ref:`Occupancy per taxon <cmd-occupancy_per_taxon>`: Taxon occupancy in alignment columns
 - :ref:`Pairwise identity <cmd-pairwise_identity>`: Pairwise sequence identity in an alignment
-- :ref:`Identity matrix <cmd-identity_matrix>`: Pairwise sequence identity heatmap
 - :ref:`Parsimony informative sites <cmd-parsimony_informative_sites>`: Count parsimony informative sites
 - :ref:`Plot alignment QC <cmd-plot_alignment_qc>`: Visual quality control plots for alignments
 - :ref:`Relative composition variability <cmd-relative_composition_variability>`: Composition variability across taxa
 - :ref:`Relative composition variability, taxon <cmd-relative_composition_variability_taxon>`: Per-taxon relative composition variability
 - :ref:`Sum-of-pairs score <cmd-sum_of_pairs_score>`: Sum-of-pairs alignment quality score
-- :ref:`Phylo GWAS <cmd-phylo_gwas>`: Phylogenetic genome-wide association study
 - :ref:`Variable sites <cmd-variable_sites>`: Count variable sites in an alignment
 
 Alignment manipulation
@@ -139,8 +138,8 @@ Tree manipulation & utilities
 - :ref:`Print tree <cmd-print_tree>`: Print ASCII representation of a tree
 - :ref:`Prune tree <cmd-prune_tree>`: Prune taxa from a tree
 - :ref:`Rename tree tips <cmd-rename_tree_tips>`: Rename tip labels in a tree
-- :ref:`Subtree pruning and regrafting <cmd-subtree_prune_regraft>`: Generate all SPR rearrangements for a specified subtree
 - :ref:`Root tree <cmd-root_tree>`: Root or reroot a tree
+- :ref:`Subtree pruning and regrafting <cmd-subtree_prune_regraft>`: Generate all SPR rearrangements for a specified subtree
 - :ref:`Tip labels <cmd-tip_labels>`: Print tip labels of a tree
 
 Tree comparison & consensus
@@ -149,19 +148,23 @@ Tree comparison & consensus
 - :ref:`Consensus network <cmd-consensus_network>`: Consensus network from multiple trees
 - :ref:`Consensus tree <cmd-consensus_tree>`: Consensus tree from multiple trees
 - :ref:`Cophylogenetic plot (tanglegram) <cmd-cophylo>`: Tanglegram for comparing two trees
+- :ref:`Evolutionary tempo mapping <cmd-evo_tempo_map>`: Detect rate-topology associations in gene trees
+- :ref:`Kuhner-Felsenstein distance <cmd-kf_distance>`: Branch score distance between trees (topology + branch lengths)
+- :ref:`NeighborNet <cmd-neighbor_net>`: NeighborNet phylogenetic network from distance matrix (Bryant & Moulton 2004)
+- :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
+- :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
+- :ref:`Quartet pie chart <cmd-quartet_pie>`: Phylogram with quartet concordance pie charts at internal nodes
+- :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>`: Topological distance between trees
+- :ref:`Spectral discordance decomposition <cmd-spectral_discordance>`: PCA ordination and clustering of gene tree topologies
+- :ref:`Tree space <cmd-tree_space>`: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap
+
+Introgression & gene flow
+#########################
+
 - :ref:`D-statistic (ABBA-BABA) <cmd-dstatistic>`: Patterson's D-statistic for detecting introgression
 - :ref:`DFOIL test <cmd-dfoil>`: DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny
 - :ref:`Discordance asymmetry <cmd-discordance_asymmetry>`: Test for asymmetric discordance (gene flow detection)
-- :ref:`Evolutionary tempo mapping <cmd-evo_tempo_map>`: Detect rate-topology associations in gene trees
 - :ref:`Hybridization analysis <cmd-hybridization>`: Estimate reticulation events and localize hybridization on a species tree
-- :ref:`Polytomy testing <cmd-polytomy_test>`: Test for polytomies in a tree
-- :ref:`Spectral discordance decomposition <cmd-spectral_discordance>`: PCA ordination and clustering of gene tree topologies
-- :ref:`Tree space <cmd-tree_space>`: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap
-- :ref:`NeighborNet <cmd-neighbor_net>`: NeighborNet phylogenetic network from distance matrix (Bryant & Moulton 2004)
-- :ref:`Quartet network <cmd-quartet_network>`: Quartet-based network visualization
-- :ref:`Quartet pie chart <cmd-quartet_pie>`: Phylogram with quartet concordance pie charts at internal nodes
-- :ref:`Kuhner-Felsenstein distance <cmd-kf_distance>`: Branch score distance between trees (topology + branch lengths)
-- :ref:`Robinson-Foulds distance <cmd-robinson_foulds_distance>`: Topological distance between trees
 
 Phylogenetic signal
 ###################
@@ -175,33 +178,34 @@ Trait evolution
 
 - :ref:`Ancestral state reconstruction <cmd-ancestral_state_reconstruction>`: Reconstruct ancestral character states
 - :ref:`Character map <cmd-character_map>`: Map synapomorphies and homoplasies onto a phylogeny
-- :ref:`Independent contrasts (PIC) <cmd-independent_contrasts>`: Felsenstein's phylogenetically independent contrasts
-- :ref:`Parsimony score <cmd-parsimony_score>`: Fitch parsimony score of a tree given an alignment
 - :ref:`Concordance-aware ASR <cmd-concordance_asr>`: ASR incorporating gene tree discordance
-- :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
-- :ref:`Trait rate map <cmd-trait_rate_map>`: Per-branch evolutionary rate map for a continuous trait
-- :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
 - :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>`: Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)
+- :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
+- :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
 - :ref:`Discrete trait evolution model comparison (fitDiscrete) <cmd-fit_discrete>`: Compare ER, SYM, ARD Mk models
-- :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
+- :ref:`Independent contrasts (PIC) <cmd-independent_contrasts>`: Felsenstein's phylogenetically independent contrasts
 - :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>`: Multi-regime Ornstein-Uhlenbeck models
+- :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
+- :ref:`Parsimony score <cmd-parsimony_score>`: Fitch parsimony score of a tree given an alignment
 - :ref:`Phenogram (traitgram) <cmd-phenogram>`: Phenogram visualizing trait evolution
-- :ref:`Phylogenetic imputation <cmd-phylo_impute>`: Impute missing trait values using phylogenetic relationships
 - :ref:`Phylogenetic heatmap <cmd-phylo_heatmap>`: Phylogeny alongside a heatmap of numeric trait values
+- :ref:`Phylogenetic imputation <cmd-phylo_impute>`: Impute missing trait values using phylogenetic relationships
 - :ref:`Rate heterogeneity test (multi-rate Brownian motion) <cmd-rate_heterogeneity>`: Test for rate heterogeneity in trait evolution
 - :ref:`SIMMAP summary <cmd-simmap_summary>`: Per-branch SIMMAP summary with node posteriors (describe.simmap)
 - :ref:`Stochastic character mapping (SIMMAP) <cmd-stochastic_character_map>`: Stochastic character mapping on a phylogeny
 - :ref:`Threshold model <cmd-threshold_model>`: Felsenstein threshold model for trait correlation
+- :ref:`Trait rate map <cmd-trait_rate_map>`: Per-branch evolutionary rate map for a continuous trait
 
 Phylogenetic comparative methods
 ################################
 
 - :ref:`Phylogenetic ANOVA / MANOVA <cmd-phylo_anova>`: Phylogenetic ANOVA or MANOVA using RRPP (Adams & Collyer 2018)
-- :ref:`Phylogenetic path analysis <cmd-phylo_path>`: Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)
 - :ref:`Phylogenetic GLM <cmd-phylogenetic_glm>`: Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)
-- :ref:`Phylogenetic Logistic Regression <cmd-phylo_logistic>`: Phylogenetic logistic regression for binary traits (Ives & Garland 2010)
-- :ref:`Phylogenetic Ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)
+- :ref:`Phylogenetic logistic regression <cmd-phylo_logistic>`: Phylogenetic logistic regression for binary traits (Ives & Garland 2010)
+- :ref:`Phylogenetic ordination <cmd-phylogenetic_ordination>`: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)
+- :ref:`Phylogenetic path analysis <cmd-phylo_path>`: Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)
 - :ref:`Phylogenetic regression (PGLS) <cmd-phylogenetic_regression>`: Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)
+- :ref:`Phylo GWAS <cmd-phylo_gwas>`: Phylogenetic genome-wide association study
 - :ref:`Phylomorphospace <cmd-phylomorphospace>`: Phylomorphospace visualization
 
 Evolutionary rate analysis
