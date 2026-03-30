@@ -217,6 +217,9 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "tree_landscape": "tree_space",
     "tgroups": "taxon_groups",
     "shared_taxa": "taxon_groups",
+    "occupancy_filter": "occupancy_filter",
+    "occ_filter": "occupancy_filter",
+    "filter_occupancy": "occupancy_filter",
     # Helper aliases
     "create_concat": "create_concatenation_matrix",
     "cc": "create_concatenation_matrix",

@@ -175,6 +175,8 @@ class Phykit:
                       in an alignment
                 taxon_groups (alias: tgroups; shared_taxa)
                     - group tree or FASTA files by their taxon set
+                occupancy_filter (alias: occ_filter; filter_occupancy)
+                    - filter alignments/trees by cross-file taxon occupancy
 
                 Tree-based commands
                 ===================
@@ -8606,6 +8608,69 @@ class Phykit:
         _add_json_argument(parser)
         _run_service(parser, argv, TaxonGroups)
 
+    @staticmethod
+    def occupancy_filter(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Filter alignments and/or trees by cross-file taxon
+                occupancy. Counts how many files each taxon appears in
+                and retains only taxa meeting a minimum threshold.
+                Outputs filtered copies of each input file.
+
+                For FASTA files, removes sequences of filtered taxa.
+                For tree files, prunes tips of filtered taxa.
+
+                Aliases:
+                  occupancy_filter, occ_filter, filter_occupancy
+                Command line interfaces:
+                  pk_occupancy_filter, pk_occ_filter, pk_filter_occupancy
+
+                Usage:
+                phykit occupancy_filter -l <file_list>
+                  [-f/--format fasta|trees] [-t/--threshold <int>]
+                  [-o/--output-dir <dir>] [--suffix <str>] [--json]
+
+                Options
+                =====================================================
+                -l/--list                   file listing paths to
+                                            alignment or tree files,
+                                            one per line (required)
+
+                -f/--format                 input file format: fasta
+                                            or trees (default: fasta)
+
+                -t/--threshold              minimum occupancy to retain
+                                            a taxon. Values between 0
+                                            and 1 are treated as a
+                                            fraction (e.g., 0.5 = 50%
+                                            of files). Values >= 1 are
+                                            treated as an absolute
+                                            count. (default: 0.5)
+
+                -o/--output-dir             directory for filtered
+                                            output files (default:
+                                            same directory as input)
+
+                --suffix                    suffix added to output
+                                            filenames before the
+                                            extension (default:
+                                            ".filtered")
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-l", "--list", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-f", "--format", type=str, default="fasta", choices=["fasta", "trees"], help=SUPPRESS, metavar="")
+        parser.add_argument("-t", "--threshold", type=float, default=0.5, help=SUPPRESS, metavar="")
+        parser.add_argument("-o", "--output-dir", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--suffix", type=str, default=".filtered", help=SUPPRESS, metavar="")
+        _add_json_argument(parser)
+        _run_service(parser, argv, OccupancyFilter)
+
     ### Helper commands
     @staticmethod
     def create_concatenation_matrix(argv):
@@ -9225,3 +9290,7 @@ def trait_rate_map(argv=None):
 
 def taxon_groups(argv=None):
     Phykit.taxon_groups(sys.argv[1:])
+
+
+def occupancy_filter(argv=None):
+    Phykit.occupancy_filter(sys.argv[1:])

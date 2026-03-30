@@ -47,6 +47,7 @@ SumOfPairsScore = _LazyServiceFactory("phykit.services.alignment.sum_of_pairs_sc
 PhyloAnova = _LazyServiceFactory("phykit.services.tree.phylo_anova", "PhyloAnova")
 PhyloPath = _LazyServiceFactory("phykit.services.tree.phylo_path", "PhyloPath")
 PhyloGwas = _LazyServiceFactory("phykit.services.alignment.phylo_gwas", "PhyloGwas")
+OccupancyFilter = _LazyServiceFactory("phykit.services.alignment.occupancy_filter", "OccupancyFilter")
 TaxonGroups = _LazyServiceFactory("phykit.services.alignment.taxon_groups", "TaxonGroups")
 VariableSites = _LazyServiceFactory("phykit.services.alignment.variable_sites", "VariableSites")
 
