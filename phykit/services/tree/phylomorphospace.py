@@ -1,6 +1,5 @@
 import copy
 import os
-import sys
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -8,6 +7,7 @@ import numpy as np
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig
+from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
 
 
@@ -40,7 +40,7 @@ class Phylomorphospace(Tree):
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phylomorphospace")
 
         tree_tips = self.get_tip_names_from_tree(tree)
-        trait_names, traits = self._parse_multi_trait_file(
+        trait_names, traits = parse_multi_trait_file(
             self.trait_data_path, tree_tips
         )
 
@@ -132,105 +132,6 @@ class Phylomorphospace(Tree):
         x_idx = trait_names.index(self.trait_x)
         y_idx = trait_names.index(self.trait_y)
         return self.trait_x, self.trait_y, x_idx, y_idx
-
-    def _parse_multi_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Tuple[List[str], Dict[str, List[float]]]:
-        try:
-            with open(path) as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            raise PhykitUserError(
-                [
-                    f"{path} corresponds to no such file or directory.",
-                    "Please check filename and pathing",
-                ],
-                code=2,
-            )
-
-        data_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            data_lines.append(stripped)
-
-        if len(data_lines) < 2:
-            raise PhykitUserError(
-                [
-                    "Multi-trait file must have a header row and at least one data row.",
-                ],
-                code=2,
-            )
-
-        header_parts = data_lines[0].split("\t")
-        n_cols = len(header_parts)
-        if n_cols < 2:
-            raise PhykitUserError(
-                [
-                    "Header must have at least 2 columns (taxon + at least 1 trait).",
-                ],
-                code=2,
-            )
-        trait_names = header_parts[1:]
-
-        traits = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != n_cols:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_idx} has {len(parts)} columns; expected {n_cols}.",
-                        f"Each line should have: taxon_name<tab>{'<tab>'.join(['trait'] * len(trait_names))}",
-                    ],
-                    code=2,
-                )
-            taxon = parts[0]
-            values = []
-            for i, val_str in enumerate(parts[1:]):
-                try:
-                    values.append(float(val_str))
-                except ValueError:
-                    raise PhykitUserError(
-                        [
-                            f"Non-numeric trait value '{val_str}' for taxon '{taxon}' "
-                            f"(trait '{trait_names[i]}') on line {line_idx}.",
-                        ],
-                        code=2,
-                    )
-            traits[taxon] = values
-
-        tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
-        shared = tree_tip_set & trait_taxa_set
-
-        tree_only = tree_tip_set - trait_taxa_set
-        trait_only = trait_taxa_set - tree_tip_set
-
-        if tree_only:
-            print(
-                f"Warning: {len(tree_only)} taxa in tree but not in trait file: "
-                f"{', '.join(sorted(tree_only))}",
-                file=sys.stderr,
-            )
-        if trait_only:
-            print(
-                f"Warning: {len(trait_only)} taxa in trait file but not in tree: "
-                f"{', '.join(sorted(trait_only))}",
-                file=sys.stderr,
-            )
-
-        if len(shared) < 3:
-            raise PhykitUserError(
-                [
-                    f"Only {len(shared)} shared taxa between tree and trait file.",
-                    "At least 3 shared taxa are required.",
-                ],
-                code=2,
-            )
-
-        filtered = {taxon: traits[taxon] for taxon in shared}
-        return trait_names, filtered
 
     def _reconstruct_ancestral_scores(
         self, tree, scores: np.ndarray, ordered_names: List[str]

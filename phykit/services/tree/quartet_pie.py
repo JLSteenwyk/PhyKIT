@@ -14,7 +14,15 @@ import numpy as np
 
 from .base import Tree
 from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.plot_config import (
+    PlotConfig,
+    compute_node_x_cladogram,
+    build_parent_map,
+    compute_node_positions,
+    draw_tree_branches,
+    draw_tip_labels,
+    cleanup_tree_axes,
+)
 from ...helpers.quartet_utils import (
     compute_gcf_per_node,
     parse_astral_annotations,
@@ -161,40 +169,11 @@ class QuartetPie(Tree):
         default_colors = ["#2b8cbe", "#d62728", "#969696"]
         colors = config.merge_colors(default_colors)
 
-        # Build parent map
-        parent_map = {}
-        for clade in tree.find_clades(order="preorder"):
-            for child in clade.clades:
-                parent_map[id(child)] = clade
-
-        # Compute node positions
-        node_x = {}
-        node_y = {}
-
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(
+            tree, parent_map, cladogram=self.plot_config.cladogram
+        )
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                elif id(clade) in parent_map:
-                    parent = parent_map[id(clade)]
-                    t = clade.branch_length if clade.branch_length else 0.0
-                    node_x[id(clade)] = node_x.get(id(parent), 0.0) + t
-
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
@@ -344,32 +323,11 @@ class QuartetPie(Tree):
         else:
             # --- Rectangular mode ---
             # Draw branches
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    continue
-                if id(clade) not in parent_map:
-                    continue
-                parent = parent_map[id(clade)]
-                if id(parent) not in node_x or id(clade) not in node_x:
-                    continue
-
-                x0 = node_x[id(parent)]
-                x1 = node_x[id(clade)]
-                y0 = node_y.get(id(parent), 0)
-                y1 = node_y.get(id(clade), 0)
-
-                ax.plot([x0, x1], [y1, y1], color="black", lw=1.5)
-                ax.plot([x0, x0], [y0, y1], color="black", lw=1.5)
+            draw_tree_branches(ax, tree, node_x, node_y, parent_map)
 
             # Tip labels
-            max_x = max(node_x.values()) if node_x else 1.0
-            offset = max_x * 0.03
             label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize and config.ylabel_fontsize > 0 else 9
-            for tip in tips:
-                ax.text(
-                    node_x[id(tip)] + offset, node_y[id(tip)],
-                    tip.name, va="center", fontsize=label_fontsize,
-                )
+            draw_tip_labels(ax, tree, node_x, node_y, fontsize=label_fontsize)
 
             # Apply color annotations
             if self.plot_config.color_file:
@@ -415,11 +373,8 @@ class QuartetPie(Tree):
             if legend_loc != "none":
                 ax.legend(handles=legend_handles, loc=legend_loc, fontsize=8, frameon=True)
 
+            cleanup_tree_axes(ax)
             ax.set_xlabel("Branch length (subs/site)")
-            ax.set_yticks([])
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-            ax.spines["left"].set_visible(False)
 
             if config.show_title:
                 ax.set_title(

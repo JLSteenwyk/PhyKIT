@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from phykit.services.tree.phylo_logistic import PhyloLogistic
+from phykit.helpers.trait_parsing import parse_multi_trait_file
 from phykit.errors import PhykitUserError
 
 
@@ -106,7 +107,7 @@ class TestTransformedVCV:
         svc = PhyloLogistic(basic_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(BINARY_TRAITS_FILE, tree_tips)
+        trait_names, traits = parse_multi_trait_file(BINARY_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
 
         vcv_bm = build_vcv_matrix(tree, ordered_names)
@@ -126,7 +127,7 @@ class TestTransformedVCV:
         svc = PhyloLogistic(basic_args)
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(BINARY_TRAITS_FILE, tree_tips)
+        trait_names, traits = parse_multi_trait_file(BINARY_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
 
         vcv, diag_corr = svc._build_logistic_vcv(
@@ -154,7 +155,7 @@ class TestFit:
         tree = svc.read_tree_file()
         svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
+        trait_names, traits = parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         resp_idx = trait_names.index("binary_trait")
@@ -184,7 +185,7 @@ class TestFit:
         tree = svc.read_tree_file()
         svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
+        trait_names, traits = parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         resp_idx = trait_names.index("binary_trait")
@@ -206,7 +207,7 @@ class TestFit:
         tree = svc.read_tree_file()
         svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
+        trait_names, traits = parse_multi_trait_file(GLM_TRAITS_FILE, tree_tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         resp_idx = trait_names.index("binary_trait")

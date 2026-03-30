@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from phykit.services.tree.phylogenetic_signal import PhylogeneticSignal
+from phykit.helpers.trait_parsing import parse_multi_trait_file
 import phykit.services.tree.phylogenetic_signal as ps_module
 from phykit.errors import PhykitUserError
 
@@ -532,7 +533,7 @@ class TestKmult:
         svc = PhylogeneticSignal(args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits_multi = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits_multi = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered = sorted(traits_multi.keys())
         from phykit.services.tree.vcv_utils import build_vcv_matrix
         vcv = build_vcv_matrix(tree, ordered)
@@ -554,7 +555,7 @@ class TestKmult:
         svc = PhylogeneticSignal(args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits_multi = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits_multi = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered = sorted(traits_multi.keys())
         from phykit.services.tree.vcv_utils import build_vcv_matrix
         vcv = build_vcv_matrix(tree, ordered)

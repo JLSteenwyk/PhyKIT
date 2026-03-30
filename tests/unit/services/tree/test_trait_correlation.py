@@ -8,6 +8,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from phykit.services.tree.trait_correlation import TraitCorrelation
+from phykit.helpers.trait_parsing import parse_multi_trait_file
 from phykit.errors import PhykitUserError
 
 
@@ -147,8 +148,8 @@ class TestTraitCorrelation:
 
         tree = svc.read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(
-            svc.trait_data_path, tree_tips
+        trait_names, traits = parse_multi_trait_file(
+            svc.trait_data_path, tree_tips, min_columns=3
         )
         ordered_names = sorted(traits.keys())
         vcv = build_vcv_matrix(tree, ordered_names)

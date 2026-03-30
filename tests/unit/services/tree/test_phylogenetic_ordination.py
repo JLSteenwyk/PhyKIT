@@ -8,6 +8,7 @@ from pathlib import Path
 
 from phykit.services.tree.phylogenetic_ordination import PhylogeneticOrdination
 from phykit.helpers.pgls_utils import max_lambda as compute_max_lambda
+from phykit.helpers.trait_parsing import parse_multi_trait_file
 from phykit.errors import PhykitUserError
 
 
@@ -167,7 +168,7 @@ class TestParseMultiTraitFile:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         assert len(traits) == 8
         assert trait_names == ["body_mass", "brain_size", "longevity"]
         assert traits["raccoon"] == pytest.approx([1.04, 1.60, 2.71])
@@ -176,28 +177,28 @@ class TestParseMultiTraitFile:
     def test_missing_file(self, default_args):
         svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
-            svc._parse_multi_trait_file("/nonexistent/path.tsv", ["a", "b", "c"])
+            parse_multi_trait_file("/nonexistent/path.tsv", ["a", "b", "c"])
 
     def test_non_numeric_value(self, default_args, tmp_path):
         trait_file = tmp_path / "bad.tsv"
         trait_file.write_text("taxon\ttrait1\ntaxon1\tabc\n")
         svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
-            svc._parse_multi_trait_file(str(trait_file), ["taxon1"])
+            parse_multi_trait_file(str(trait_file), ["taxon1"])
 
     def test_wrong_column_count(self, default_args, tmp_path):
         trait_file = tmp_path / "bad.tsv"
         trait_file.write_text("taxon\ttrait1\ttrait2\ntaxon1\t1.0\n")
         svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
-            svc._parse_multi_trait_file(str(trait_file), ["taxon1"])
+            parse_multi_trait_file(str(trait_file), ["taxon1"])
 
     def test_header_only(self, default_args, tmp_path):
         trait_file = tmp_path / "header_only.tsv"
         trait_file.write_text("taxon\ttrait1\ttrait2\n")
         svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
-            svc._parse_multi_trait_file(str(trait_file), ["taxon1", "taxon2", "taxon3"])
+            parse_multi_trait_file(str(trait_file), ["taxon1", "taxon2", "taxon3"])
 
     def test_comments_and_blanks(self, default_args, tmp_path):
         trait_file = tmp_path / "good.tsv"
@@ -206,7 +207,7 @@ class TestParseMultiTraitFile:
             "taxon1\t1.0\t2.0\ntaxon2\t3.0\t4.0\ntaxon3\t5.0\t6.0\n"
         )
         svc = PhylogeneticOrdination(default_args)
-        trait_names, traits = svc._parse_multi_trait_file(
+        trait_names, traits = parse_multi_trait_file(
             str(trait_file), ["taxon1", "taxon2", "taxon3"]
         )
         assert len(traits) == 3
@@ -218,7 +219,7 @@ class TestParseMultiTraitFile:
             "taxon\tt1\ntaxon1\t1.0\ntaxon2\t2.0\ntaxon3\t3.0\nextra\t4.0\n"
         )
         svc = PhylogeneticOrdination(default_args)
-        trait_names, traits = svc._parse_multi_trait_file(
+        trait_names, traits = parse_multi_trait_file(
             str(trait_file), ["taxon1", "taxon2", "taxon3", "taxon4"]
         )
         _, err = capsys.readouterr()
@@ -230,7 +231,7 @@ class TestParseMultiTraitFile:
         trait_file.write_text("taxon\tt1\ntaxon1\t1.0\ntaxon2\t2.0\n")
         svc = PhylogeneticOrdination(default_args)
         with pytest.raises(PhykitUserError):
-            svc._parse_multi_trait_file(str(trait_file), ["taxon1", "taxon2"])
+            parse_multi_trait_file(str(trait_file), ["taxon1", "taxon2"])
 
 
 class TestBuildVCVMatrix:
@@ -283,7 +284,7 @@ class TestPhylogeneticPCACov:
         tree = svc.read_tree_file()
         svc.validate_tree(tree, min_tips=3, require_branch_lengths=True)
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -306,7 +307,7 @@ class TestPhylogeneticPCACov:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -332,7 +333,7 @@ class TestPhylogeneticPCACov:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -385,7 +386,7 @@ class TestPhylogeneticPCACorr:
         svc = PhylogeneticOrdination(corr_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -412,7 +413,7 @@ class TestPhylogeneticPCACorr:
         svc = PhylogeneticOrdination(corr_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -442,7 +443,7 @@ class TestPhylogeneticPCACorr:
         svc = PhylogeneticOrdination(corr_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -488,7 +489,7 @@ class TestPhylogeneticPCALambda:
         svc = PhylogeneticOrdination(lambda_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         p = len(trait_names)
@@ -505,7 +506,7 @@ class TestPhylogeneticPCALambda:
         svc = PhylogeneticOrdination(lambda_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -538,7 +539,7 @@ class TestTSNEEmbedding:
         svc = PhylogeneticOrdination(tsne_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -557,7 +558,7 @@ class TestTSNEEmbedding:
         svc = PhylogeneticOrdination(tsne_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -577,7 +578,7 @@ class TestTSNEEmbedding:
         svc = PhylogeneticOrdination(tsne_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -599,7 +600,7 @@ class TestUMAPEmbedding:
         svc = PhylogeneticOrdination(umap_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -618,7 +619,7 @@ class TestUMAPEmbedding:
         svc = PhylogeneticOrdination(umap_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -638,7 +639,7 @@ class TestUMAPEmbedding:
         svc = PhylogeneticOrdination(umap_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -660,7 +661,7 @@ class TestLambdaCorrection:
         svc_bm = PhylogeneticOrdination(tsne_args)
         tree = svc_bm.read_tree_file()
         tips = svc_bm.get_tip_names_from_tree(tree)
-        trait_names, traits = svc_bm._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
         p = len(trait_names)
@@ -1104,7 +1105,7 @@ class TestReconstructAncestralScores:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -1134,7 +1135,7 @@ class TestReconstructAncestralScores:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -1166,7 +1167,7 @@ class TestReconstructAncestralScores:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
 
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
@@ -1199,7 +1200,7 @@ class TestParseColorBy:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         p = len(trait_names)
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
@@ -1215,7 +1216,7 @@ class TestParseColorBy:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         p = len(trait_names)
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
@@ -1234,7 +1235,7 @@ class TestParseColorBy:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         p = len(trait_names)
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
@@ -1255,7 +1256,7 @@ class TestParseColorBy:
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
-        trait_names, traits = svc._parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
+        trait_names, traits = parse_multi_trait_file(MULTI_TRAITS_FILE, tips)
         ordered_names = sorted(traits.keys())
         p = len(trait_names)
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])

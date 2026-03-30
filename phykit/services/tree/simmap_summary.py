@@ -12,7 +12,11 @@ import numpy as np
 
 from .stochastic_character_map import StochasticCharacterMap
 from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
+from ...helpers.plot_config import (
+    PlotConfig, compute_node_x_cladogram,
+    build_parent_map, compute_node_positions,
+    draw_tree_branches, draw_tip_labels, cleanup_tree_axes,
+)
 from ...errors import PhykitUserError
 
 
@@ -461,40 +465,14 @@ class SimmapSummary(StochasticCharacterMap):
         state_colors = [cmap(i / max(k - 1, 1)) for i in range(k)]
 
         tips = list(tree.get_terminals())
-        node_x = {}
-        node_y = {}
-
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
-        root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                else:
-                    parent = parent_map.get(id(clade))
-                    if parent is not None:
-                        t = clade.branch_length if clade.branch_length else 0.0
-                        node_x[id(clade)] = node_x[id(parent)] + t
-
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades
-                    if id(c) in node_y
-                ]
-                node_y[id(clade)] = (
-                    float(np.mean(child_ys)) if child_ys else 0.0
-                )
+        node_x, node_y = compute_node_positions(tree, parent_map, cladogram=self.plot_config.cladogram)
 
         config = self.plot_config
         config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         # Draw branches colored by dominant state proportion
+        root = tree.root
         for clade in tree.find_clades(order="preorder"):
             if clade == root:
                 continue
@@ -522,17 +500,10 @@ class SimmapSummary(StochasticCharacterMap):
             ax.plot([x0, x0], [y0, y1], color="gray", lw=0.8)
 
         # Tip labels
-        max_x = max(node_x.values()) if node_x else 1.0
-        offset = max_x * 0.02
         label_fs = (
             config.ylabel_fontsize if config.ylabel_fontsize else 9
         )
-        if label_fs > 0:
-            for tip in tips:
-                ax.text(
-                    node_x[id(tip)] + offset, node_y[id(tip)],
-                    tip.name, va="center", fontsize=label_fs,
-                )
+        draw_tip_labels(ax, tree, node_x, node_y, fontsize=label_fs)
 
         # Pie charts at internal nodes
         n_tips = len(tips)
@@ -588,11 +559,7 @@ class SimmapSummary(StochasticCharacterMap):
                 fontsize=8, title_fontsize=9,
             )
 
-        ax.set_xlabel("Branch length")
-        ax.set_yticks([])
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
+        cleanup_tree_axes(ax)
         if config.show_title:
             ax.set_title(
                 config.title or "SIMMAP Summary — Node Posteriors",

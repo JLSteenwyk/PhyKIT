@@ -248,3 +248,119 @@ def compute_node_x_cladogram(tree, parent_map):
         else:
             node_x[cid] = float(node_depth.get(cid, 0)) * step_size
     return node_x
+
+
+# ---- Shared rectangular tree plotting utilities ----
+
+
+def build_parent_map(tree):
+    """Build a dict mapping child node id -> parent node."""
+    parent_map = {}
+    for clade in tree.find_clades(order="preorder"):
+        for child in clade.clades:
+            parent_map[id(child)] = clade
+    return parent_map
+
+
+def compute_node_positions(tree, parent_map, cladogram=False):
+    """Compute (node_x, node_y) for a rectangular tree layout.
+
+    Parameters
+    ----------
+    tree : Bio.Phylo tree
+    parent_map : dict from build_parent_map()
+    cladogram : if True, use equal-depth x-positions (tips aligned)
+
+    Returns
+    -------
+    (node_x, node_y) : dicts mapping node id -> coordinate
+    """
+    import numpy as np
+
+    tips = list(tree.get_terminals())
+    root = tree.root
+
+    node_y = {}
+    for i, tip in enumerate(tips):
+        node_y[id(tip)] = i
+
+    if cladogram:
+        node_x = compute_node_x_cladogram(tree, parent_map)
+    else:
+        node_x = {}
+        for clade in tree.find_clades(order="preorder"):
+            if clade == root:
+                node_x[id(clade)] = 0.0
+            elif id(clade) in parent_map:
+                parent = parent_map[id(clade)]
+                t = clade.branch_length if clade.branch_length else 0.0
+                node_x[id(clade)] = node_x.get(id(parent), 0.0) + t
+
+    for clade in tree.find_clades(order="postorder"):
+        if not clade.is_terminal() and id(clade) not in node_y:
+            child_ys = [
+                node_y[id(c)] for c in clade.clades if id(c) in node_y
+            ]
+            if child_ys:
+                node_y[id(clade)] = float(np.mean(child_ys))
+            else:
+                node_y[id(clade)] = 0.0
+
+    return node_x, node_y
+
+
+def draw_tree_branches(
+    ax, tree, node_x, node_y, parent_map,
+    color="black", lw=1.5, vertical_color="black", vertical_lw=0.8,
+):
+    """Draw rectangular tree branches (horizontal + vertical connectors).
+
+    Override color per branch by passing a callable for `color`:
+        color=lambda clade: "red" if ... else "black"
+    """
+    root = tree.root
+    for clade in tree.find_clades(order="preorder"):
+        if clade == root:
+            continue
+        if id(clade) not in parent_map:
+            continue
+        parent = parent_map[id(clade)]
+        if id(parent) not in node_x or id(clade) not in node_x:
+            continue
+
+        x0 = node_x[id(parent)]
+        x1 = node_x[id(clade)]
+        y0 = node_y.get(id(parent), 0)
+        y1 = node_y.get(id(clade), 0)
+
+        branch_color = color(clade) if callable(color) else color
+        ax.plot([x0, x1], [y1, y1], color=branch_color, lw=lw)
+        ax.plot([x0, x0], [y0, y1], color=vertical_color, lw=vertical_lw)
+
+
+def draw_tip_labels(
+    ax, tree, node_x, node_y, fontsize=9, offset_fraction=0.03,
+):
+    """Draw taxon name labels at tree tips."""
+    tips = list(tree.get_terminals())
+    max_x = max(node_x.values()) if node_x else 1.0
+    offset = max_x * offset_fraction
+
+    if fontsize <= 0:
+        return
+
+    for tip in tips:
+        ax.text(
+            node_x[id(tip)] + offset, node_y[id(tip)],
+            tip.name, va="center", fontsize=fontsize,
+        )
+
+
+def cleanup_tree_axes(ax, show_xlabel=True):
+    """Standard axis cleanup for rectangular tree plots."""
+    ax.set_yticks([])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    if show_xlabel:
+        ax.set_xlabel("Branch length")

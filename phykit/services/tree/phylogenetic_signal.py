@@ -8,6 +8,7 @@ from scipy.stats import chi2
 from .base import Tree
 from ...helpers.json_output import print_json
 from ...helpers.pgls_utils import max_lambda as compute_max_lambda
+from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
 
 
@@ -41,7 +42,7 @@ class PhylogeneticSignal(Tree):
                     code=2,
                 )
 
-            trait_names, traits_multi = self._parse_multi_trait_file(
+            trait_names, traits_multi = parse_multi_trait_file(
                 self.trait_data_path, tree_tips
             )
             ordered_names = sorted(traits_multi.keys())
@@ -206,114 +207,6 @@ class PhylogeneticSignal(Tree):
             )
 
         return {taxon: traits[taxon] for taxon in shared}
-
-    def _parse_multi_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Tuple[List[str], Dict[str, List[float]]]:
-        """Parse a multi-column TSV trait file with header row.
-
-        Format:
-            taxon	trait1	trait2	trait3
-            A	1.0	2.0	3.0
-            B	0.5	1.5	2.5
-
-        Returns (trait_names, {taxon: [val1, val2, ...]}).
-        """
-        try:
-            with open(path) as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            raise PhykitUserError(
-                [
-                    f"{path} corresponds to no such file or directory.",
-                    "Please check filename and pathing",
-                ],
-                code=2,
-            )
-
-        data_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            data_lines.append(stripped)
-
-        if len(data_lines) < 2:
-            raise PhykitUserError(
-                [
-                    "Multi-trait file must have a header row and at least one data row.",
-                ],
-                code=2,
-            )
-
-        header_parts = data_lines[0].split("\t")
-        n_cols = len(header_parts)
-        if n_cols < 2:
-            raise PhykitUserError(
-                [
-                    "Header must have at least 2 columns (taxon + at least 1 trait).",
-                ],
-                code=2,
-            )
-        trait_names = header_parts[1:]
-
-        traits = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != n_cols:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_idx} has {len(parts)} columns; expected {n_cols}.",
-                        f"Each line should have: taxon_name<tab>{'<tab>'.join(['trait'] * len(trait_names))}",
-                    ],
-                    code=2,
-                )
-            taxon = parts[0]
-            values = []
-            for i, val_str in enumerate(parts[1:]):
-                try:
-                    values.append(float(val_str))
-                except ValueError:
-                    raise PhykitUserError(
-                        [
-                            f"Non-numeric trait value '{val_str}' for taxon '{taxon}' "
-                            f"(trait '{trait_names[i]}') on line {line_idx}.",
-                        ],
-                        code=2,
-                    )
-            traits[taxon] = values
-
-        tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
-        shared = tree_tip_set & trait_taxa_set
-
-        tree_only = tree_tip_set - trait_taxa_set
-        trait_only = trait_taxa_set - tree_tip_set
-
-        if tree_only:
-            print(
-                f"Warning: {len(tree_only)} taxa in tree but not in trait file: "
-                f"{', '.join(sorted(tree_only))}",
-                file=sys.stderr,
-            )
-        if trait_only:
-            print(
-                f"Warning: {len(trait_only)} taxa in trait file but not in tree: "
-                f"{', '.join(sorted(trait_only))}",
-                file=sys.stderr,
-            )
-
-        if len(shared) < 3:
-            raise PhykitUserError(
-                [
-                    f"Only {len(shared)} shared taxa between tree and trait file.",
-                    "At least 3 shared taxa are required.",
-                ],
-                code=2,
-            )
-
-        filtered = {taxon: traits[taxon] for taxon in shared}
-        return trait_names, filtered
 
     def _kmult(
         self, Y: np.ndarray, vcv: np.ndarray, n_perm: int
