@@ -108,6 +108,7 @@ RobinsonFouldsDistance = _LazyServiceFactory("phykit.services.tree.rf_distance",
 RootTree = _LazyServiceFactory("phykit.services.tree.root_tree", "RootTree")
 Saturation = _LazyServiceFactory("phykit.services.tree.saturation", "Saturation")
 Spr = _LazyServiceFactory("phykit.services.tree.spr", "Spr")
+TransferAnnotations = _LazyServiceFactory("phykit.services.tree.transfer_annotations", "TransferAnnotations")
 SpuriousSequence = _LazyServiceFactory("phykit.services.tree.spurious_sequence", "SpuriousSequence")
 TerminalBranchStats = _LazyServiceFactory("phykit.services.tree.terminal_branch_stats", "TerminalBranchStats")
 TipLabels = _LazyServiceFactory("phykit.services.tree.tip_labels", "TipLabels")

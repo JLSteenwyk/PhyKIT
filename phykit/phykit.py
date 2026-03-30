@@ -308,6 +308,8 @@ class Phykit:
                     - prune taxa from a phylogeny
                 subtree_prune_regraft (alias: spr)
                     - generate all SPR rearrangements for a specified subtree
+                transfer_annotations (alias: transfer_annot; annotate_tree)
+                    - transfer node annotations between trees (e.g., wASTRAL to RAxML)
                 relative_rate_test (alias: rrt; tajima_rrt)
                     - Tajima's relative rate test for equal evolutionary
                       rates between two ingroup lineages
@@ -6822,6 +6824,57 @@ class Phykit:
         _run_service(parser, argv, Spr)
 
     @staticmethod
+    def transfer_annotations(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Transfer internal node annotations from one tree onto
+                another. Matches nodes by bipartition (descendant taxa
+                set) and copies the annotation labels.
+
+                Typical use case: transfer wASTRAL support annotations
+                (q1/q2/q3, pp1, f1, etc.) from an annotated ASTRAL
+                tree onto a RAxML-NG branch-length-optimized topology.
+                The output tree has the target's branch lengths with
+                the source's annotations.
+
+                Aliases:
+                  transfer_annotations, transfer_annot, annotate_tree
+                Command line interfaces:
+                  pk_transfer_annotations, pk_transfer_annot, pk_annotate_tree
+
+                Usage:
+                phykit transfer_annotations --source <annotated_tree>
+                  --target <branch_length_tree> [-o/--output <file>]
+                  [--json]
+
+                Options
+                =====================================================
+                --source                    annotated tree file (e.g.,
+                                            wASTRAL output with
+                                            --support 3)
+
+                --target                    target tree file with
+                                            branch lengths to keep
+                                            (e.g., RAxML-NG output)
+
+                -o/--output                 output file for the
+                                            annotated tree (default:
+                                            target file + ".annotated")
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("--source", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--target", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("-o", "--output", type=str, default=None, help=SUPPRESS, metavar="")
+        _add_json_argument(parser)
+        _run_service(parser, argv, TransferAnnotations)
+
+    @staticmethod
     def relative_rate_test(argv):
         parser = _new_parser(
             description=textwrap.dedent(
@@ -9188,6 +9241,10 @@ def spr(argv=None):
 
 def subtree_prune_regraft(argv=None):
     Phykit.subtree_prune_regraft(sys.argv[1:])
+
+
+def transfer_annotations(argv=None):
+    Phykit.transfer_annotations(sys.argv[1:])
 
 
 def relative_rate_test(argv=None):

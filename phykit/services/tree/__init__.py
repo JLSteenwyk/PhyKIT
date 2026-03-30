@@ -48,6 +48,7 @@ _EXPORTS = {
     "TipToTipDistance": "tip_to_tip_distance",
     "TipToTipNodeDistance": "tip_to_tip_node_distance",
     "TotalTreeLength": "total_tree_length",
+    "TransferAnnotations": "transfer_annotations",
     "Treeness": "treeness",
     "ThresholdModel": "threshold_model",
     "TreenessOverRCV": "treeness_over_rcv",
