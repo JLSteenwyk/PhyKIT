@@ -60,6 +60,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#tree-summary-statistics">Tree summary statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tree-manipulation-utilities">Tree manipulation &amp; utilities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tree-comparison-consensus">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#introgression-gene-flow">Introgression &amp; gene flow</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-signal">Phylogenetic signal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#trait-evolution">Trait evolution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylogenetic-comparative-methods">Phylogenetic comparative methods</a></li>
@@ -285,17 +286,16 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-column-score"><span class="std std-ref">Column score</span></a>: Column score for alignment quality</p></li>
 <li><p><a class="reference internal" href="#cmd-compositional-bias-per-site"><span class="std std-ref">Compositional bias per site</span></a>: Detect compositional bias across sites</p></li>
 <li><p><a class="reference internal" href="#cmd-composition-per-taxon"><span class="std std-ref">Composition per taxon</span></a>: Nucleotide or amino acid composition per taxon</p></li>
-<li><p><a class="reference internal" href="#cmd-evolutionary-rate-per-site"><span class="std std-ref">Evolutionary Rate per Site</span></a>: Site-specific evolutionary rate estimation</p></li>
+<li><p><a class="reference internal" href="#cmd-evolutionary-rate-per-site"><span class="std std-ref">Evolutionary rate per site</span></a>: Site-specific evolutionary rate estimation</p></li>
 <li><p><a class="reference internal" href="#cmd-gc-content"><span class="std std-ref">Guanine-cytosine (GC) content</span></a>: GC content of an alignment</p></li>
+<li><p><a class="reference internal" href="#cmd-identity-matrix"><span class="std std-ref">Identity matrix</span></a>: Pairwise sequence identity heatmap</p></li>
 <li><p><a class="reference internal" href="#cmd-occupancy-per-taxon"><span class="std std-ref">Occupancy per taxon</span></a>: Taxon occupancy in alignment columns</p></li>
 <li><p><a class="reference internal" href="#cmd-pairwise-identity"><span class="std std-ref">Pairwise identity</span></a>: Pairwise sequence identity in an alignment</p></li>
-<li><p><a class="reference internal" href="#cmd-identity-matrix"><span class="std std-ref">Identity matrix</span></a>: Pairwise sequence identity heatmap</p></li>
 <li><p><a class="reference internal" href="#cmd-parsimony-informative-sites"><span class="std std-ref">Parsimony informative sites</span></a>: Count parsimony informative sites</p></li>
 <li><p><a class="reference internal" href="#cmd-plot-alignment-qc"><span class="std std-ref">Plot alignment QC</span></a>: Visual quality control plots for alignments</p></li>
 <li><p><a class="reference internal" href="#cmd-relative-composition-variability"><span class="std std-ref">Relative composition variability</span></a>: Composition variability across taxa</p></li>
 <li><p><a class="reference internal" href="#cmd-relative-composition-variability-taxon"><span class="std std-ref">Relative composition variability, taxon</span></a>: Per-taxon relative composition variability</p></li>
 <li><p><a class="reference internal" href="#cmd-sum-of-pairs-score"><span class="std std-ref">Sum-of-pairs score</span></a>: Sum-of-pairs alignment quality score</p></li>
-<li><p><a class="reference internal" href="#cmd-phylo-gwas"><span class="std std-ref">Phylo GWAS</span></a>: Phylogenetic genome-wide association study</p></li>
 <li><p><a class="reference internal" href="#cmd-variable-sites"><span class="std std-ref">Variable sites</span></a>: Count variable sites in an alignment</p></li>
 </ul>
 </section>
@@ -341,8 +341,8 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-print-tree"><span class="std std-ref">Print tree</span></a>: Print ASCII representation of a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-prune-tree"><span class="std std-ref">Prune tree</span></a>: Prune taxa from a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-rename-tree-tips"><span class="std std-ref">Rename tree tips</span></a>: Rename tip labels in a tree</p></li>
-<li><p><a class="reference internal" href="#cmd-subtree-prune-regraft"><span class="std std-ref">Subtree pruning and regrafting</span></a>: Generate all SPR rearrangements for a specified subtree</p></li>
 <li><p><a class="reference internal" href="#cmd-root-tree"><span class="std std-ref">Root tree</span></a>: Root or reroot a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-subtree-prune-regraft"><span class="std std-ref">Subtree pruning and regrafting</span></a>: Generate all SPR rearrangements for a specified subtree</p></li>
 <li><p><a class="reference internal" href="#cmd-tip-labels"><span class="std std-ref">Tip labels</span></a>: Print tip labels of a tree</p></li>
 </ul>
 </section>
@@ -352,19 +352,24 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-consensus-network"><span class="std std-ref">Consensus network</span></a>: Consensus network from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-consensus-tree"><span class="std std-ref">Consensus tree</span></a>: Consensus tree from multiple trees</p></li>
 <li><p><a class="reference internal" href="#cmd-cophylo"><span class="std std-ref">Cophylogenetic plot (tanglegram)</span></a>: Tanglegram for comparing two trees</p></li>
+<li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
+<li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
+<li><p><a class="reference internal" href="#cmd-neighbor-net"><span class="std std-ref">NeighborNet</span></a>: NeighborNet phylogenetic network from distance matrix (Bryant &amp; Moulton 2004)</p></li>
+<li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
+<li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
+<li><p><a class="reference internal" href="#cmd-quartet-pie"><span class="std std-ref">Quartet pie chart</span></a>: Phylogram with quartet concordance pie charts at internal nodes</p></li>
+<li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a>: Topological distance between trees</p></li>
+<li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
+<li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap</p></li>
+</ul>
+</section>
+<section id="introgression-gene-flow">
+<h3>Introgression &amp; gene flow<a class="headerlink" href="#introgression-gene-flow" title="Link to this heading"></a></h3>
+<ul class="simple">
 <li><p><a class="reference internal" href="#cmd-dstatistic"><span class="std std-ref">D-statistic (ABBA-BABA)</span></a>: Patterson's D-statistic for detecting introgression</p></li>
 <li><p><a class="reference internal" href="#cmd-dfoil"><span class="std std-ref">DFOIL test</span></a>: DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-discordance-asymmetry"><span class="std std-ref">Discordance asymmetry</span></a>: Test for asymmetric discordance (gene flow detection)</p></li>
-<li><p><a class="reference internal" href="#cmd-evo-tempo-map"><span class="std std-ref">Evolutionary tempo mapping</span></a>: Detect rate-topology associations in gene trees</p></li>
 <li><p><a class="reference internal" href="#cmd-hybridization"><span class="std std-ref">Hybridization analysis</span></a>: Estimate reticulation events and localize hybridization on a species tree</p></li>
-<li><p><a class="reference internal" href="#cmd-polytomy-test"><span class="std std-ref">Polytomy testing</span></a>: Test for polytomies in a tree</p></li>
-<li><p><a class="reference internal" href="#cmd-spectral-discordance"><span class="std std-ref">Spectral discordance decomposition</span></a>: PCA ordination and clustering of gene tree topologies</p></li>
-<li><p><a class="reference internal" href="#cmd-tree-space"><span class="std std-ref">Tree space</span></a>: Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap</p></li>
-<li><p><a class="reference internal" href="#cmd-neighbor-net"><span class="std std-ref">NeighborNet</span></a>: NeighborNet phylogenetic network from distance matrix (Bryant &amp; Moulton 2004)</p></li>
-<li><p><a class="reference internal" href="#cmd-quartet-network"><span class="std std-ref">Quartet network</span></a>: Quartet-based network visualization</p></li>
-<li><p><a class="reference internal" href="#cmd-quartet-pie"><span class="std std-ref">Quartet pie chart</span></a>: Phylogram with quartet concordance pie charts at internal nodes</p></li>
-<li><p><a class="reference internal" href="#cmd-kf-distance"><span class="std std-ref">Kuhner-Felsenstein distance</span></a>: Branch score distance between trees (topology + branch lengths)</p></li>
-<li><p><a class="reference internal" href="#cmd-robinson-foulds-distance"><span class="std std-ref">Robinson-Foulds distance</span></a>: Topological distance between trees</p></li>
 </ul>
 </section>
 <section id="phylogenetic-signal">
@@ -380,34 +385,35 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-ancestral-state-reconstruction"><span class="std std-ref">Ancestral state reconstruction</span></a>: Reconstruct ancestral character states</p></li>
 <li><p><a class="reference internal" href="#cmd-character-map"><span class="std std-ref">Character map</span></a>: Map synapomorphies and homoplasies onto a phylogeny</p></li>
-<li><p><a class="reference internal" href="#cmd-independent-contrasts"><span class="std std-ref">Independent contrasts (PIC)</span></a>: Felsenstein's phylogenetically independent contrasts</p></li>
-<li><p><a class="reference internal" href="#cmd-parsimony-score"><span class="std std-ref">Parsimony score</span></a>: Fitch parsimony score of a tree given an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-concordance-asr"><span class="std std-ref">Concordance-aware ASR</span></a>: ASR incorporating gene tree discordance</p></li>
-<li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
-<li><p><a class="reference internal" href="#cmd-trait-rate-map"><span class="std std-ref">Trait rate map</span></a>: Per-branch evolutionary rate map for a continuous trait</p></li>
-<li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a>: Compare continuous trait evolution models (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-discrete"><span class="std std-ref">Discrete trait evolution model comparison (fitDiscrete)</span></a>: Compare ER, SYM, ARD Mk models</p></li>
-<li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a>: Detect OU regime shifts on a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-independent-contrasts"><span class="std std-ref">Independent contrasts (PIC)</span></a>: Felsenstein's phylogenetically independent contrasts</p></li>
 <li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a>: Multi-regime Ornstein-Uhlenbeck models</p></li>
+<li><p><a class="reference internal" href="#cmd-ou-shift-detection"><span class="std std-ref">OU shift detection (l1ou)</span></a>: Detect OU regime shifts on a phylogeny</p></li>
+<li><p><a class="reference internal" href="#cmd-parsimony-score"><span class="std std-ref">Parsimony score</span></a>: Fitch parsimony score of a tree given an alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-phenogram"><span class="std std-ref">Phenogram (traitgram)</span></a>: Phenogram visualizing trait evolution</p></li>
-<li><p><a class="reference internal" href="#cmd-phylo-impute"><span class="std std-ref">Phylogenetic imputation</span></a>: Impute missing trait values using phylogenetic relationships</p></li>
 <li><p><a class="reference internal" href="#cmd-phylo-heatmap"><span class="std std-ref">Phylogenetic heatmap</span></a>: Phylogeny alongside a heatmap of numeric trait values</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-impute"><span class="std std-ref">Phylogenetic imputation</span></a>: Impute missing trait values using phylogenetic relationships</p></li>
 <li><p><a class="reference internal" href="#cmd-rate-heterogeneity"><span class="std std-ref">Rate heterogeneity test (multi-rate Brownian motion)</span></a>: Test for rate heterogeneity in trait evolution</p></li>
 <li><p><a class="reference internal" href="#cmd-simmap-summary"><span class="std std-ref">SIMMAP summary</span></a>: Per-branch SIMMAP summary with node posteriors (describe.simmap)</p></li>
 <li><p><a class="reference internal" href="#cmd-stochastic-character-map"><span class="std std-ref">Stochastic character mapping (SIMMAP)</span></a>: Stochastic character mapping on a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-threshold-model"><span class="std std-ref">Threshold model</span></a>: Felsenstein threshold model for trait correlation</p></li>
+<li><p><a class="reference internal" href="#cmd-trait-rate-map"><span class="std std-ref">Trait rate map</span></a>: Per-branch evolutionary rate map for a continuous trait</p></li>
 </ul>
 </section>
 <section id="phylogenetic-comparative-methods">
 <h3>Phylogenetic comparative methods<a class="headerlink" href="#phylogenetic-comparative-methods" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-phylo-anova"><span class="std std-ref">Phylogenetic ANOVA / MANOVA</span></a>: Phylogenetic ANOVA or MANOVA using RRPP (Adams &amp; Collyer 2018)</p></li>
-<li><p><a class="reference internal" href="#cmd-phylo-path"><span class="std std-ref">Phylogenetic path analysis</span></a>: Compare causal DAGs via d-separation + PGLS (von Hardenberg &amp; Gonzalez-Voyer 2013)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-glm"><span class="std std-ref">Phylogenetic GLM</span></a>: Phylogenetic generalized linear model (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
-<li><p><a class="reference internal" href="#cmd-phylo-logistic"><span class="std std-ref">Phylogenetic Logistic Regression</span></a>: Phylogenetic logistic regression for binary traits (Ives &amp; Garland 2010)</p></li>
-<li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic Ordination</span></a>: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-logistic"><span class="std std-ref">Phylogenetic logistic regression</span></a>: Phylogenetic logistic regression for binary traits (Ives &amp; Garland 2010)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylogenetic-ordination"><span class="std std-ref">Phylogenetic ordination</span></a>: Ordination incorporating phylogenetic structure (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-path"><span class="std std-ref">Phylogenetic path analysis</span></a>: Compare causal DAGs via d-separation + PGLS (von Hardenberg &amp; Gonzalez-Voyer 2013)</p></li>
 <li><p><a class="reference internal" href="#cmd-phylogenetic-regression"><span class="std std-ref">Phylogenetic regression (PGLS)</span></a>: Phylogenetic generalized least squares regression (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
+<li><p><a class="reference internal" href="#cmd-phylo-gwas"><span class="std std-ref">Phylo GWAS</span></a>: Phylogenetic genome-wide association study</p></li>
 <li><p><a class="reference internal" href="#cmd-phylomorphospace"><span class="std std-ref">Phylomorphospace</span></a>: Phylomorphospace visualization</p></li>
 </ul>
 </section>
