@@ -3,17 +3,43 @@
 Usage
 =====
 
-PhyKIT helps process and analyze multiple sequence alignments and phylogenies.
+PhyKIT provides 100+ functions for processing and analyzing multiple sequence
+alignments and phylogenies. Functions span alignment quality assessment,
+tree manipulation, phylogenetic comparative methods, trait evolution modeling,
+introgression detection, and more.
 
-Generally, all functions are designed to help understand the contents of alignments
-(e.g., gc content or the number of parsimony informative sites) and the shape
-of trees (e.g., treeness, degree of violation of a molecular clock).
-
-Some help messages indicate that summary statistics are reported (e.g., 
+Some help messages indicate that summary statistics are reported (e.g.,
 bipartition_support_stats). Summary statistics include mean, median, 25th percentile,
 75th percentile, minimum, maximum, standard deviation, and variance. These functions
 typically have a verbose option that allows users to get the underlying data
-used to calculate summary statistics. 
+used to calculate summary statistics.
+
+|
+
+Quick start
+-----------
+
+Here is a typical workflow showing a few common PhyKIT operations:
+
+.. code-block:: shell
+
+   # Check alignment quality
+   phykit pis alignment.fa                  # count parsimony informative sites
+   phykit aot alignment.fa --json           # flag outlier taxa
+
+   # Summarize tree properties
+   phykit treeness species.tre              # treeness (internal/total branch length)
+   phykit dvmc species.tre                  # degree of violation of a molecular clock
+
+   # Phylogenetic comparative methods
+   phykit pgls -t species.tre -d traits.tsv \
+       --response brain_size --predictor body_mass   # PGLS regression
+   phykit panova -t species.tre \
+       --traits traits.tsv --pairwise                # phylogenetic ANOVA
+
+   # Visualize gene tree concordance
+   phykit qpie -t species.tre -g gene_trees.nwk \
+       -o concordance.png --branch-labels            # quartet pie chart
 
 |
 
@@ -1394,6 +1420,9 @@ Options: |br|
 *-v/--verbose*: print per-site parsimony scores |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``phangorn`` in R
+(see ``tests/r_validation/validate_parsimony.R``).
+
 |
 
 .. _cmd-character_map:
@@ -1497,6 +1526,9 @@ Options: |br|
 *--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``phytools`` in R
+(see ``tests/r_validation/validate_character_map.R``).
+
 |
 
 .. _cmd-independent_contrasts:
@@ -1522,6 +1554,9 @@ Options: |br|
 *-t/--tree*: tree file (required) |br|
 *-d/--trait_data*: trait data file, two columns: taxon<tab>value (required) |br|
 *--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``ape`` in R
+(see ``tests/r_validation/validate_pic.R``).
 
 |
 
@@ -2073,6 +2108,9 @@ Options: |br|
 *--models*: comma-separated list of models to fit (default: ``ER,SYM,ARD``) |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``geiger`` in R
+(see ``tests/r_validation/validate_fit_discrete.R``).
+
 |
 
 .. _cmd-fit_continuous:
@@ -2126,6 +2164,9 @@ Example output:
 
    Best model (AIC): BM
    Best model (BIC): BM
+
+**R validation:** Validated against ``geiger`` in R
+(see ``tests/r_validation/validate_fit_continuous_r2.R``).
 
 |
 
@@ -3255,6 +3296,9 @@ Example output:
    Best model (AICc): OUM
    Best model (BIC): OUM
 
+**R validation:** Validated against ``OUwie`` in R
+(see ``tests/r_validation/validate_ouwie_r2.R``).
+
 |
 
 .. _cmd-nearest_neighbor_interchange:
@@ -3662,6 +3706,9 @@ Options: |br|
 *-g/--gene-trees*: gene trees for discordance-aware VCV |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``Rphylopars`` in R
+(see ``tests/r_validation/validate_phylo_impute.R``).
+
 |
 
 .. _cmd-phenogram:
@@ -3951,6 +3998,9 @@ Options: |br|
 *-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``phylolm`` in R
+(see ``tests/r_validation/validate_glm_pseudo_r2.R``).
+
 |
 
 .. _cmd-phylo_logistic:
@@ -3984,6 +4034,9 @@ Options: |br|
 *--predictor*: predictor column name(s), comma-separated for multiple |br|
 *--method*: estimation method: logistic_MPLE or logistic_IG10 (default: logistic_MPLE) |br|
 *--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``phylolm`` in R
+(see ``tests/r_validation/validate_phylo_logistic.R``).
 
 |
 
@@ -4159,6 +4212,9 @@ Options: |br|
 *-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``caper``, ``nlme`` in R
+(see ``tests/r_validation/validate_pgls_r2.R``).
+
 |
 
 .. _cmd-phylogenetic_signal:
@@ -4223,6 +4279,9 @@ Options: |br|
 *-g/--gene-trees*: optional multi-Newick file of gene trees; when provided, uses a discordance-aware VCV (genome-wide average) instead of the species-tree VCV |br|
 *--multivariate*: compute K_mult (Adams 2014) for multivariate traits; the trait file should be a multi-column TSV with header row instead of two-column |br|
 *--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``phytools``, ``geiger`` in R
+(see ``tests/r_validation/validate_signal_r2.R`` and ``tests/r_validation/validate_kmult.R``).
 
 |
 
@@ -4625,6 +4684,9 @@ Options: |br|
 *--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
 
+**R validation:** Validated against ``phytools`` in R
+(see ``tests/r_validation/validate_brownie_r2.R``).
+
 |
 
 .. _cmd-rename_tree_tips:
@@ -4688,6 +4750,9 @@ Options: |br|
 *<tree_file_zero>*: first argument after function name should be a tree file |br|
 *<tree_file_one>*: second argument after function name should be a tree file |br|
 *--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``phangorn`` in R
+(see ``tests/r_validation/validate_kf_distance.R``).
 
 |
 
