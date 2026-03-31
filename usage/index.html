@@ -1796,7 +1796,7 @@ percentile confidence intervals (2.5th--97.5th).</p></li>
 </ul>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>&lt;species_tree&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;
 <span class="w">    </span><span class="o">[</span>-c<span class="w"> </span>&lt;trait&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>weighted<span class="p">|</span>distribution<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ci<span class="o">]</span>
-<span class="w">    </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-uncertainty<span class="w"> </span>&lt;output&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--missing-taxa<span class="w"> </span>error<span class="p">|</span>shared<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
@@ -1809,7 +1809,8 @@ percentile confidence intervals (2.5th--97.5th).</p></li>
 <em>-c/--trait</em>: trait column name (required for multi-trait files) <br/>
 <em>-m/--method</em>: method to use: <code class="docutils literal notranslate"><span class="pre">weighted</span></code> or <code class="docutils literal notranslate"><span class="pre">distribution</span></code> (default: <code class="docutils literal notranslate"><span class="pre">weighted</span></code>) <br/>
 <em>--ci</em>: include 95% confidence intervals <br/>
-<em>--plot</em>: output path for concordance ASR plot <br/>
+<em>--plot</em>: output path for concordance ASR contMap plot <br/>
+<em>--plot-uncertainty</em>: output path for uncertainty plot showing the distribution of ancestral estimates across gene trees (distribution method) or concordance sources (weighted method) as violin + boxplots colored by gCF <br/>
 <em>--missing-taxa</em>: how to handle taxa mismatches: <code class="docutils literal notranslate"><span class="pre">shared</span></code> (default, prune to intersection) or <code class="docutils literal notranslate"><span class="pre">error</span></code> (reject) <br/>
 <em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br/>
 <em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br/>
@@ -1848,6 +1849,17 @@ Ancestral estimates:
 <p>Example plot generated with the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option. Internal nodes are sized
 and colored by gene concordance factor (gCF):</p>
 <a class="reference internal image-reference" href="../_images/concordance_asr_example.png"><img alt="../_images/concordance_asr_example.png" class="align-center" src="../_images/concordance_asr_example.png" style="width: 80%;" />
+</a>
+<p>The <code class="docutils literal notranslate"><span class="pre">--plot-uncertainty</span></code> option generates a violin + boxplot showing the
+distribution of ancestral state estimates for each internal node. For the
+<strong>distribution</strong> method, each violin shows per-gene-tree estimates. For the
+<strong>weighted</strong> method, each violin shows the concordant and discordant source
+estimates. Nodes are colored by gCF: blue (gCF &gt;= 0.7, high concordance),
+gray (0.4 &lt;= gCF &lt; 0.7), red (gCF &lt; 0.4, high discordance). Wide violins
+indicate high uncertainty — the ancestral estimate varies substantially
+across gene trees, suggesting that gene tree conflict propagates into
+trait estimates at that node.</p>
+<a class="reference internal image-reference" href="../_images/asr_uncertainty.png"><img alt="../_images/asr_uncertainty.png" class="align-center" src="../_images/asr_uncertainty.png" style="width: 90%;" />
 </a>
 <div class="line-block">
 <div class="line"><br /></div>

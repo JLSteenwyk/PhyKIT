@@ -1846,7 +1846,7 @@ Two strategies are available:
 
    phykit concordance_asr -t <species_tree> -g <gene_trees> -d <trait_data>
        [-c <trait>] [-m weighted|distribution] [--ci]
-       [--plot <output>] [--missing-taxa error|shared]
+       [--plot <output>] [--plot-uncertainty <output>] [--missing-taxa error|shared]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
        [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
@@ -1858,7 +1858,8 @@ Options: |br|
 *-c/--trait*: trait column name (required for multi-trait files) |br|
 *-m/--method*: method to use: ``weighted`` or ``distribution`` (default: ``weighted``) |br|
 *--ci*: include 95% confidence intervals |br|
-*--plot*: output path for concordance ASR plot |br|
+*--plot*: output path for concordance ASR contMap plot |br|
+*--plot-uncertainty*: output path for uncertainty plot showing the distribution of ancestral estimates across gene trees (distribution method) or concordance sources (weighted method) as violin + boxplots colored by gCF |br|
 *--missing-taxa*: how to handle taxa mismatches: ``shared`` (default, prune to intersection) or ``error`` (reject) |br|
 *--fig-width*: figure width in inches (auto-scaled if omitted) |br|
 *--fig-height*: figure height in inches (auto-scaled if omitted) |br|
@@ -1903,6 +1904,20 @@ and colored by gene concordance factor (gCF):
 .. image:: ../_static/img/concordance_asr_example.png
    :align: center
    :width: 80%
+
+The ``--plot-uncertainty`` option generates a violin + boxplot showing the
+distribution of ancestral state estimates for each internal node. For the
+**distribution** method, each violin shows per-gene-tree estimates. For the
+**weighted** method, each violin shows the concordant and discordant source
+estimates. Nodes are colored by gCF: blue (gCF >= 0.7, high concordance),
+gray (0.4 <= gCF < 0.7), red (gCF < 0.4, high discordance). Wide violins
+indicate high uncertainty — the ancestral estimate varies substantially
+across gene trees, suggesting that gene tree conflict propagates into
+trait estimates at that node.
+
+.. image:: ../_static/asr_uncertainty.png
+   :align: center
+   :width: 90%
 
 |
 
