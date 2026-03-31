@@ -37,6 +37,7 @@ class ConcordanceAsr(Tree):
         self.method = parsed["method"]
         self.ci = parsed["ci"]
         self.plot_output = parsed["plot_output"]
+        self.plot_uncertainty = parsed["plot_uncertainty"]
         self.missing_taxa = parsed["missing_taxa"]
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
@@ -50,6 +51,7 @@ class ConcordanceAsr(Tree):
             method=getattr(args, "method", "weighted"),
             ci=getattr(args, "ci", False),
             plot_output=getattr(args, "plot", None),
+            plot_uncertainty=getattr(args, "plot_uncertainty", None),
             missing_taxa=getattr(args, "missing_taxa", "shared"),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
@@ -130,6 +132,12 @@ class ConcordanceAsr(Tree):
                 species_copy, result, self.plot_output
             )
             result["plot_output"] = self.plot_output
+
+        if self.plot_uncertainty:
+            self._plot_uncertainty(
+                species_copy, result, self.plot_uncertainty
+            )
+            result["plot_uncertainty"] = self.plot_uncertainty
 
         if self.json_output:
             print_json(result)
@@ -586,6 +594,8 @@ class ConcordanceAsr(Tree):
                 "gdf2": float(gdf2),
                 "var_topology": float(between_var),
                 "var_parameter": float(within_var),
+                "source_estimates": [float(m) for m in means],
+                "source_weights": [float(w) for w in weights],
             }
 
             if self.ci:
@@ -658,6 +668,7 @@ class ConcordanceAsr(Tree):
                 "n_gene_trees_with_node": len(estimates_list),
                 "var_topology": float(np.var(estimates_list)),
                 "var_parameter": 0.0,
+                "gene_tree_estimates": estimates_list,
             }
 
             if self.ci and len(estimates_list) >= 2:
@@ -961,3 +972,149 @@ class ConcordanceAsr(Tree):
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved concordance ASR plot: {output_path}")
+
+    # ------------------------------------------------------------------
+    # Uncertainty plot
+    # ------------------------------------------------------------------
+
+    def _plot_uncertainty(self, species_tree, result, output_path) -> None:
+        """Violin + boxplot showing distribution of ancestral estimates.
+
+        For the distribution method: per-gene-tree estimates.
+        For the weighted method: concordant + discordant source estimates.
+        """
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print("matplotlib is required for plotting.")
+            return
+
+        anc = result.get("ancestral_estimates", {})
+        if not anc:
+            return
+
+        config = self.plot_config
+
+        # Collect data: (node_label, estimates_list, gcf, estimate)
+        node_data = []
+        for clade in species_tree.find_clades(order="preorder"):
+            if clade.is_terminal():
+                continue
+            # Match by descendants
+            desc = sorted(t.name for t in clade.get_terminals())
+            for label, entry in anc.items():
+                if entry.get("descendants") == desc:
+                    if result["method"] == "distribution":
+                        estimates = entry.get("gene_tree_estimates", [])
+                    else:
+                        estimates = entry.get("source_estimates", [])
+                    if len(estimates) >= 2:
+                        # Short label for display
+                        if len(desc) <= 2:
+                            short = f"({', '.join(desc)})"
+                        else:
+                            short = f"({desc[0]}, ..., {desc[-1]})"
+                        node_data.append((
+                            short, estimates,
+                            entry.get("gcf", 1.0),
+                            entry.get("estimate", 0.0),
+                        ))
+                    break
+
+        if not node_data:
+            print("No nodes with enough estimates for uncertainty plot.")
+            return
+
+        # Sort by weighted/mean estimate
+        node_data.sort(key=lambda x: x[3])
+
+        labels = [d[0] for d in node_data]
+        data = [d[1] for d in node_data]
+        gcfs = [d[2] for d in node_data]
+
+        n_nodes = len(node_data)
+        fig_h = max(4, n_nodes * 0.5)
+        fig_w = config.fig_width or 8
+        if config.fig_height:
+            fig_h = config.fig_height
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+
+        positions = list(range(n_nodes))
+
+        # Color by gCF: high concordance = blue, low = red
+        gcf_colors = []
+        for g in gcfs:
+            if g >= 0.7:
+                gcf_colors.append("#2b8cbe")
+            elif g >= 0.4:
+                gcf_colors.append("#969696")
+            else:
+                gcf_colors.append("#d62728")
+
+        # Violin plots (horizontal)
+        vp = ax.violinplot(
+            data, positions=positions, vert=False,
+            showmeans=False, showmedians=False, showextrema=False,
+        )
+        for i, body in enumerate(vp["bodies"]):
+            body.set_facecolor(gcf_colors[i])
+            body.set_alpha(0.3)
+            body.set_edgecolor(gcf_colors[i])
+
+        # Boxplots
+        bp = ax.boxplot(
+            data, positions=positions, vert=False,
+            widths=0.3, patch_artist=True, showfliers=True, zorder=3,
+        )
+        for i, box in enumerate(bp["boxes"]):
+            box.set_facecolor(gcf_colors[i])
+            box.set_alpha(0.6)
+        for element in ["whiskers", "caps", "medians"]:
+            for line in bp[element]:
+                line.set_color("black")
+
+        # Mean markers
+        for i, d in enumerate(data):
+            mean_val = np.mean(d)
+            ax.plot(
+                mean_val, i, "D", color="white",
+                markeredgecolor="black", markersize=5, zorder=4,
+            )
+
+        ax.set_yticks(positions)
+        ax.set_yticklabels(labels, fontsize=7)
+        xlabel = "Ancestral state estimate"
+        ax.set_xlabel(xlabel)
+
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+        # Legend for gCF colors
+        from matplotlib.patches import Patch
+        legend_handles = [
+            Patch(facecolor="#2b8cbe", alpha=0.6, label="gCF >= 0.7"),
+            Patch(facecolor="#969696", alpha=0.6, label="0.4 <= gCF < 0.7"),
+            Patch(facecolor="#d62728", alpha=0.6, label="gCF < 0.4"),
+        ]
+        ax.legend(
+            handles=legend_handles, loc="lower right",
+            fontsize=7, title="Concordance", title_fontsize=8,
+        )
+
+        method_label = (
+            "gene trees" if result["method"] == "distribution"
+            else "concordance sources"
+        )
+        if config.show_title:
+            ax.set_title(
+                config.title
+                or f"Ancestral state uncertainty across {method_label}",
+                fontsize=config.title_fontsize,
+            )
+
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved uncertainty plot: {output_path}")

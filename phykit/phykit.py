@@ -2825,6 +2825,14 @@ class Phykit:
                 --plot                      output path for concordance
                                             ASR plot
 
+                --plot-uncertainty          output path for uncertainty
+                                            plot showing the distribution
+                                            of ancestral estimates across
+                                            gene trees (distribution
+                                            method) or concordance
+                                            sources (weighted method)
+                                            as violin + boxplots
+
                 --missing-taxa              how to handle taxa mismatches:
                                             shared (default) or error
 
@@ -2900,6 +2908,10 @@ class Phykit:
         )
         parser.add_argument(
             "--plot", type=str, required=False, default=None,
+            help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--plot-uncertainty", type=str, required=False, default=None,
             help=SUPPRESS, metavar=""
         )
         parser.add_argument(

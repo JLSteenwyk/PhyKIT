@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.86**:
+Added ``--plot-uncertainty`` to ``concordance_asr``:
+
+* Added ``--plot-uncertainty`` option to ``concordance_asr``: generates
+  violin + boxplots showing the distribution of ancestral state estimates
+  across gene trees (distribution method) or concordance sources (weighted
+  method). Nodes are colored by gCF to show how gene tree concordance
+  relates to ancestral state uncertainty. Wide violins indicate high
+  uncertainty at that node.
+
 **2.1.85**:
 Added ``transfer_annotations`` and ``occupancy_filter`` commands:
 
