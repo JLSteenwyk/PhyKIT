@@ -46,7 +46,7 @@ class TestRootTree:
         )
         tree = _Tree()
         mocker.patch.object(RootTree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.root_tree.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.root_tree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.root_tree.read_single_column_file_to_list",
             return_value=["sea_lion", "seal"],
@@ -69,7 +69,7 @@ class TestRootTree:
         )
         tree = _Tree()
         mocker.patch.object(RootTree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.root_tree.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.root_tree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.root_tree.read_single_column_file_to_list",
             return_value=["sea_lion", "seal"],

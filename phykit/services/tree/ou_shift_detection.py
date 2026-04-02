@@ -1,4 +1,4 @@
-import copy
+import pickle
 import sys
 from typing import Dict, List, Tuple
 
@@ -61,7 +61,7 @@ class OUShiftDetection(Tree):
         shared = set(traits.keys())
 
         # Prune tree to shared taxa
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
         to_prune = [t for t in tip_names_in_tree if t not in shared]
         if to_prune:

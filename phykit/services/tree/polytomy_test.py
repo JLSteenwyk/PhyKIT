@@ -1,6 +1,6 @@
 import sys
 import itertools
-import copy
+import pickle
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Tuple, Union
 import multiprocessing as mp
@@ -77,13 +77,21 @@ class PolytomyTest(Tree):
             json_output=getattr(args, "json", False),
         )
 
+    @staticmethod
+    def _safe_copy(obj):
+        try:
+            return pickle.loads(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL))
+        except (pickle.PicklingError, TypeError, AttributeError):
+            import copy
+            return copy.deepcopy(obj)
+
     def _read_tree_with_cache(self, tree_path: str) -> Newick.Tree:
         if not hasattr(self, "_tree_cache"):
             self._tree_cache = {}
         if tree_path not in self._tree_cache:
             tree = Phylo.read(tree_path, self.tree_format)
-            self._tree_cache[tree_path] = copy.deepcopy(tree)
-        return copy.deepcopy(self._tree_cache[tree_path])
+            self._tree_cache[tree_path] = self._safe_copy(tree)
+        return self._safe_copy(self._tree_cache[tree_path])
 
     def read_in_groups(
         self
@@ -173,7 +181,7 @@ class PolytomyTest(Tree):
         return batch_summary
 
     def _prepare_tree_for_triplets(self, tree: Newick.Tree, outgroup_taxa: List[str]) -> Newick.Tree:
-        prepared = copy.deepcopy(tree)
+        prepared = self._safe_copy(tree)
         if outgroup_taxa:
             try:
                 prepared.root_with_outgroup(outgroup_taxa)

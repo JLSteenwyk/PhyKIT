@@ -8,7 +8,7 @@ total is summed.
 
 Cross-validated against R's phangorn::parsimony().
 """
-import copy
+import pickle
 from typing import Dict, List
 
 from Bio import SeqIO
@@ -28,7 +28,7 @@ class ParsimonyScore(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        tree = copy.deepcopy(tree)
+        tree = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         self.validate_tree(tree, min_tips=3, context="parsimony score")
         self._resolve_polytomies(tree)
 

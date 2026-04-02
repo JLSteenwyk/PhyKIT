@@ -54,7 +54,7 @@ class TestLastCommonAncestorSubtree:
         service = LastCommonAncestorSubtree(args)
         tree = _Tree()
         mocker.patch.object(LastCommonAncestorSubtree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.last_common_ancestor_subtree.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.last_common_ancestor_subtree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.last_common_ancestor_subtree.read_single_column_file_to_list",
             return_value=["a", "b"],

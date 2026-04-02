@@ -55,7 +55,7 @@ class TestBranchLengthMultiplier:
         service = BranchLengthMultiplier(args)
         tree = _Tree()
         mocker.patch.object(BranchLengthMultiplier, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.branch_length_multiplier.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.branch_length_multiplier.pickle.loads", return_value=tree)
         mocker.patch.object(BranchLengthMultiplier, "multiply_branch_lengths_by_factor", return_value=2)
         mocked_write = mocker.patch.object(BranchLengthMultiplier, "write_tree_file")
         mocked_json = mocker.patch("phykit.services.tree.branch_length_multiplier.print_json")

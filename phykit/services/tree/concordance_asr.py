@@ -1,4 +1,3 @@
-import copy
 import math
 import pickle
 from io import StringIO
@@ -107,7 +106,7 @@ class ConcordanceAsr(Tree):
             )
 
         # Prune species tree to shared taxa with trait data
-        species_copy = copy.deepcopy(species_tree)
+        species_copy = pickle.loads(pickle.dumps(species_tree, protocol=pickle.HIGHEST_PROTOCOL))
         sp_tips = [t.name for t in species_copy.get_terminals()]
         tips_to_prune = [t for t in sp_tips if t not in trait_values]
         if tips_to_prune:
@@ -417,7 +416,7 @@ class ConcordanceAsr(Tree):
 
     def _run_asr_on_tree(self, tree, trait_values):
         """Run _fast_anc on one tree, return results keyed by descendant frozensets."""
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
         # Prune to trait taxa
         tip_names = [t.name for t in tree_copy.get_terminals()]

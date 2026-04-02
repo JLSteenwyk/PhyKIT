@@ -76,7 +76,7 @@ class TestRenameTreeTips:
         )
         tree = _Tree(["a", "b"])
         mocker.patch.object(RenameTreeTips, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.rename_tree_tips.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.rename_tree_tips.pickle.loads", return_value=tree)
         mocker.patch.object(RenameTreeTips, "read_id_map", return_value={"a": "A"})
         mocked_write = mocker.patch.object(RenameTreeTips, "write_tree_file")
         mocked_json = mocker.patch("phykit.services.tree.rename_tree_tips.print_json")

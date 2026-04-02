@@ -1,4 +1,4 @@
-import copy
+import pickle
 from Bio import Phylo
 
 from .base import Tree
@@ -20,7 +20,7 @@ class RootTree(Tree):
     def run(self):
         tree = self.read_tree_file()
         # Make a deep copy to avoid modifying the cached tree
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
         outgroup = \
             read_single_column_file_to_list(self.outgroup_taxa_file_path)

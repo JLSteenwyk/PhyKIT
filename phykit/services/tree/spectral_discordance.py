@@ -1,4 +1,4 @@
-import copy
+import pickle
 import sys
 from io import StringIO
 from pathlib import Path
@@ -500,7 +500,7 @@ class SpectralDiscordance(Tree):
         all_bipartitions: set = set()
 
         for gt in gene_trees:
-            pruned = copy.deepcopy(gt)
+            pruned = pickle.loads(pickle.dumps(gt, protocol=pickle.HIGHEST_PROTOCOL))
             tips_to_remove = [
                 tip.name
                 for tip in pruned.get_terminals()
@@ -546,7 +546,7 @@ class SpectralDiscordance(Tree):
         # Species tree flags
         sp_flags: Dict[frozenset, bool] = {}
         if species_tree is not None:
-            sp_pruned = copy.deepcopy(species_tree)
+            sp_pruned = pickle.loads(pickle.dumps(species_tree, protocol=pickle.HIGHEST_PROTOCOL))
             sp_tips_to_remove = [
                 tip.name
                 for tip in sp_pruned.get_terminals()

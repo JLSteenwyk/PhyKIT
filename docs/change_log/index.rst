@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.87**:
+Fixed RecursionError on deeply nested trees:
+
+* Fixed ``RecursionError: maximum recursion depth exceeded`` that occurred
+  when processing trees with deep ladder-like topologies (e.g., large
+  polytomies or caterpillar trees with hundreds of cascading bifurcations).
+  The root cause was ``copy.deepcopy()`` on BioPython tree objects, which
+  recurses once per tree level and exceeds Python's default limit of 1000.
+  Replaced all 28 occurrences of ``copy.deepcopy`` on tree objects across
+  the codebase with pickle-based copying, which is iterative and handles
+  arbitrarily deep trees. All tree-based commands are now safe for deeply
+  nested topologies.
+
 **2.1.86**:
 Added ``--plot-uncertainty`` to ``concordance_asr``:
 

@@ -1,6 +1,6 @@
 """Shared VCV matrix utilities for phylogenetic comparative methods."""
 
-import copy
+import pickle
 import sys
 from io import StringIO
 from pathlib import Path
@@ -140,7 +140,7 @@ def build_discordance_vcv(
                 )
 
         # Prune gene tree to shared taxa
-        gt_copy = copy.deepcopy(gt)
+        gt_copy = pickle.loads(pickle.dumps(gt, protocol=pickle.HIGHEST_PROTOCOL))
         gt_tips = set(t.name for t in gt_copy.get_terminals())
         tips_to_remove = gt_tips - shared_taxa
         if tips_to_remove:

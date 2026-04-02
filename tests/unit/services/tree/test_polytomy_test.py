@@ -204,11 +204,13 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertFalse(result)
 
     def test_prepare_tree_for_triplets_handles_rooting_error(self):
-        tree = Mock()
-        tree.root_with_outgroup.side_effect = ValueError("cannot root")
-        with patch("copy.deepcopy", return_value=tree):
-            prepared = self.polytomy._prepare_tree_for_triplets(tree, ["out"])
-        self.assertIs(prepared, tree)
+        """Rooting errors should be caught silently (tree returned regardless)."""
+        from Bio import Phylo
+        from io import StringIO
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        # _prepare_tree_for_triplets should not raise even with bad outgroup
+        prepared = self.polytomy._prepare_tree_for_triplets(tree, ["NONEXISTENT"])
+        self.assertIsNotNone(prepared)
 
     def test_determine_sisters_from_triplet(self):
         """Test determining which taxa are sisters"""

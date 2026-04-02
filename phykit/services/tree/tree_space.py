@@ -1,5 +1,5 @@
-import copy
 import math
+import pickle
 from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -273,7 +273,7 @@ class TreeSpace(Tree):
         # Prune trees and extract splits
         tree_data = []
         for gt in trees:
-            pruned = copy.deepcopy(gt)
+            pruned = pickle.loads(pickle.dumps(gt, protocol=pickle.HIGHEST_PROTOCOL))
             tips_to_remove = [
                 tip.name
                 for tip in pruned.get_terminals()

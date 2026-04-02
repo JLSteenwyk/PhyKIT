@@ -50,7 +50,7 @@ class TestCollapseBranches:
         service = CollapseBranches(args)
         tree = _Tree()
         mocker.patch.object(CollapseBranches, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.collapse_branches.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.collapse_branches.pickle.loads", return_value=tree)
         mocked_write = mocker.patch.object(CollapseBranches, "write_tree_file")
 
         service.run()
@@ -64,7 +64,7 @@ class TestCollapseBranches:
         service = CollapseBranches(args)
         tree = _Tree()
         mocker.patch.object(CollapseBranches, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.collapse_branches.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.collapse_branches.pickle.loads", return_value=tree)
         mocker.patch.object(CollapseBranches, "write_tree_file")
         mocked_json = mocker.patch("phykit.services.tree.collapse_branches.print_json")
 

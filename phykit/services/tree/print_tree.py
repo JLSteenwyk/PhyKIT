@@ -1,5 +1,5 @@
 from typing import Dict
-import copy
+import pickle
 
 from Bio import Phylo
 
@@ -21,7 +21,7 @@ class PrintTree(Tree):
 
         if self.remove:
             # Make a deep copy to avoid modifying the cached tree
-            tree = copy.deepcopy(tree)
+            tree = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
             for node in tree.get_terminals() + tree.get_nonterminals():
                 node.branch_length = None
 

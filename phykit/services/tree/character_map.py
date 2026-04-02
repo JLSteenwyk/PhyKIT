@@ -7,7 +7,7 @@ produces a phylogram/cladogram plot with annotated character changes.
 
 Uses the generalized parsimony utilities in phykit.helpers.parsimony_utils.
 """
-import copy
+import pickle
 from collections import Counter
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -79,7 +79,7 @@ class CharacterMap(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        tree = copy.deepcopy(tree)
+        tree = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
         char_names, tip_states = self._parse_character_matrix(self.data_path)
         n_chars = len(char_names)

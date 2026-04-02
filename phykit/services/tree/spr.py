@@ -1,6 +1,6 @@
-import copy
 import json
 import os
+import pickle
 from io import StringIO
 from typing import Dict, List, Tuple
 
@@ -143,7 +143,7 @@ class Spr(Tree):
 
         # Step 4: For each regraft target, create a new tree
         for target in regraft_targets:
-            new_tree = copy.deepcopy(tree)
+            new_tree = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
             # Build new parent map
             new_parent_map = {}

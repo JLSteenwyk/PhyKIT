@@ -1,5 +1,5 @@
 from typing import Dict
-import copy
+import pickle
 
 from .base import Tree
 from ...helpers.json_output import print_json
@@ -18,7 +18,7 @@ class CollapseBranches(Tree):
     def run(self):
         tree = self.read_tree_file()
         # Make a deep copy to avoid modifying the cached tree
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         initial_nonterminals = len(tree_copy.get_nonterminals())
         tree_copy.collapse_all(
             lambda c: c.confidence and c.confidence < self.support

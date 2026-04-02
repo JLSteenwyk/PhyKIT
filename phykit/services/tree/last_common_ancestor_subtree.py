@@ -1,5 +1,5 @@
+import pickle
 import sys
-import copy
 from typing import Dict
 
 from .base import Tree
@@ -21,7 +21,7 @@ class LastCommonAncestorSubtree(Tree):
     def run(self):
         tree = self.read_tree_file()
         # Make a deep copy to avoid issues with cached tree modifications
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         try:
             taxa = read_single_column_file_to_list(self.list_of_taxa)
         except FileNotFoundError:

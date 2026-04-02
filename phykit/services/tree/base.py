@@ -1,4 +1,5 @@
 import copy
+import pickle
 from typing import List
 from functools import lru_cache
 import os
@@ -80,12 +81,29 @@ class Tree(BaseService):
     def read_reference_tree_file(self):
         return self._read_tree_with_error(self.reference, "reference")
 
+    @staticmethod
+    def _fast_copy(tree):
+        """Copy a tree using pickle instead of deepcopy.
+
+        Avoids RecursionError on deeply nested trees (e.g., ladder-like
+        topologies with hundreds of cascading bifurcations) where
+        copy.deepcopy exceeds Python's default recursion limit.
+        Falls back to deepcopy for objects that can't be pickled (e.g.,
+        mocks in unit tests).
+        """
+        try:
+            return pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
+        except (pickle.PicklingError, TypeError, AttributeError):
+            return copy.deepcopy(tree)
+
     def _read_tree_with_error(self, tree_path: str, attr_name: str):
         try:
             file_hash = self._get_file_hash(tree_path)
             tree = self._cached_tree_read(tree_path, self.tree_format, file_hash)
-            # Return a deep copy to prevent modifications to the cached tree
-            return copy.deepcopy(tree)
+            # Return a copy to prevent modifications to the cached tree.
+            # Uses pickle instead of deepcopy to avoid RecursionError on
+            # deeply nested trees.
+            return self._fast_copy(tree)
         except FileNotFoundError:
             path = getattr(self, attr_name)
             raise PhykitUserError(

@@ -1,4 +1,4 @@
-import copy
+import pickle
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -156,7 +156,7 @@ class PhyloLogistic(Tree):
             return vcv, diag_corr
 
         # Transform branch lengths
-        tree_t = copy.deepcopy(tree)
+        tree_t = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         for clade in tree_t.find_clades():
             if clade.branch_length is not None and clade.branch_length > 0:
                 bl = clade.branch_length

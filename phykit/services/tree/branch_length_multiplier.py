@@ -1,5 +1,5 @@
 from typing import Dict
-import copy
+import pickle
 
 from Bio.Phylo import Newick
 
@@ -20,7 +20,7 @@ class BranchLengthMultiplier(Tree):
     def run(self) -> None:
         tree = self.read_tree_file()
         # Make a deep copy to avoid modifying the cached tree
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         scaled_count = self.multiply_branch_lengths_by_factor(tree_copy, self.factor)
         self.write_tree_file(tree_copy, self.output_file_path)
 

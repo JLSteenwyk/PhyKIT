@@ -1,5 +1,5 @@
+import pickle
 import sys
-import copy
 from typing import Dict
 
 from Bio.Phylo import Newick
@@ -21,7 +21,7 @@ class RenameTreeTips(Tree):
     def run(self):
         tree = self.read_tree_file()
         # Make a deep copy to avoid modifying the cached tree
-        tree_copy = copy.deepcopy(tree)
+        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
         idmap = self.read_id_map()
 

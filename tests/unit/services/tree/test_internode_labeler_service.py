@@ -48,7 +48,7 @@ class TestInternodeLabeler:
         service = InternodeLabeler(args)
         tree = _Tree()
         mocker.patch.object(InternodeLabeler, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.internode_labeler.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.internode_labeler.pickle.loads", return_value=tree)
         mocked_write = mocker.patch.object(InternodeLabeler, "write_tree_file")
         mocked_json = mocker.patch("phykit.services.tree.internode_labeler.print_json")
 

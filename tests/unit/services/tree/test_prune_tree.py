@@ -64,7 +64,7 @@ class TestPruneTree:
         tree = _Tree(["a", "b", "c"])
 
         mocker.patch.object(PruneTree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.prune_tree.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.prune_tree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.prune_tree.read_single_column_file_to_list",
             return_value=["a", "b"],
@@ -95,7 +95,7 @@ class TestPruneTree:
         tree = _Tree(["a", "b", "c"])
 
         mocker.patch.object(PruneTree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.prune_tree.copy.deepcopy", return_value=tree)
+        mocker.patch("phykit.services.tree.prune_tree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.prune_tree.read_single_column_file_to_list",
             return_value=["a", "b"],

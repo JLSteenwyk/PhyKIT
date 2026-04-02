@@ -7,7 +7,7 @@ contrast (standardized difference), producing n-1 contrasts for n tips.
 
 Cross-validated against R's ape::pic().
 """
-import copy
+import pickle
 import sys
 from typing import Dict, List, Tuple
 
@@ -27,7 +27,7 @@ class IndependentContrasts(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file()
-        tree = copy.deepcopy(tree)
+        tree = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="independent contrasts")
 
         tree_tips = [t.name for t in tree.get_terminals()]
