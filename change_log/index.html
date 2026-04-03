@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.88</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">chronogram</span></code> command for time-calibrated tree visualization:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">chronogram</span></code> (<code class="docutils literal notranslate"><span class="pre">chrono</span></code> / <code class="docutils literal notranslate"><span class="pre">time_tree</span></code>): plot a time-calibrated
+phylogeny with geological timescale bands from the ICS 2024
+International Chronostratigraphic Chart. Supports rectangular and
+circular (<code class="docutils literal notranslate"><span class="pre">--circular</span></code>) layouts, with epochs, periods, or eras
+auto-selected based on root age. 95% HPD confidence intervals from
+BEAST (<code class="docutils literal notranslate"><span class="pre">height_95%_HPD</span></code>) or MCMCTree (<code class="docutils literal notranslate"><span class="pre">95%HPD</span></code>) annotations are
+automatically detected and drawn as translucent bars at each node.
+Includes a labeled timescale bar, optional node age labels
+(<code class="docutils literal notranslate"><span class="pre">--node-ages</span></code>), italic tip names, and <code class="docutils literal notranslate"><span class="pre">--color-file</span></code> support.</p></li>
+</ul>
 <p><strong>2.1.87</strong>:
 Fixed RecursionError on deeply nested trees:</p>
 <ul class="simple">

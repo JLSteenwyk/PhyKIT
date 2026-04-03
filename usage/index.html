@@ -111,6 +111,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#concordance-aware-ancestral-state-reconstruction">Concordance-aware ancestral state reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bipartition-support-statistics">Bipartition support statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#branch-length-multiplier">Branch length multiplier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#chronogram">Chronogram</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#collapse-bipartitions">Collapse bipartitions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#neighbornet">NeighborNet</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
@@ -363,6 +364,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <h3>Tree manipulation &amp; utilities<a class="headerlink" href="#tree-manipulation-utilities" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="#cmd-branch-length-multiplier"><span class="std std-ref">Branch length multiplier</span></a>: Multiply branch lengths by a factor</p></li>
+<li><p><a class="reference internal" href="#cmd-chronogram"><span class="std std-ref">Chronogram</span></a>: Time-calibrated tree with geological timescale (rectangular or circular)</p></li>
 <li><p><a class="reference internal" href="#cmd-collapse-branches"><span class="std std-ref">Collapse bipartitions</span></a>: Collapse low-support bipartitions</p></li>
 <li><p><a class="reference internal" href="#cmd-internode-labeler"><span class="std std-ref">Internode labeler</span></a>: Label internal nodes of a tree</p></li>
 <li><p><a class="reference internal" href="#cmd-last-common-ancestor-subtree"><span class="std std-ref">Last common ancestor subtree</span></a>: Extract subtree from LCA of specified taxa</p></li>
@@ -1916,6 +1918,57 @@ or other analyses.</p>
 <em>-o/--output</em>: optional argument to name the outputted tree file. Default
 output will have the same name as the input file but with the suffix &quot;.factor_(n).tre&quot; <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="chronogram">
+<span id="cmd-chronogram"></span><h3>Chronogram<a class="headerlink" href="#chronogram" title="Link to this heading"></a></h3>
+<p>Function names: chronogram; chrono; time_tree <br/>
+Command line interface: pk_chronogram; pk_chrono; pk_time_tree</p>
+<p>Plot a chronogram (time-calibrated phylogeny) with geological timescale
+bands. Requires an ultrametric (or approximately ultrametric) tree and
+the root age in millions of years (Ma).</p>
+<p>Geological epoch, period, or era bands are drawn behind the tree as
+colored stripes based on the ICS 2024 International Chronostratigraphic
+Chart. A labeled timescale bar is displayed below the tree. The time
+axis runs from past (left) to present (right).</p>
+<p><strong>95% HPD confidence intervals</strong> are automatically detected and drawn
+when the input tree contains BEAST (<code class="docutils literal notranslate"><span class="pre">height_95%_HPD</span></code>) or MCMCTree
+(<code class="docutils literal notranslate"><span class="pre">95%HPD</span></code>) node annotations. The intervals appear as translucent
+blue bars at each internal node — no extra flags needed. Trees without
+annotations are plotted without bars.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--timescale</span></code> option controls the level of detail:</p>
+<ul class="simple">
+<li><p><strong>auto</strong> (default): selects epochs for trees &lt;= 66 Ma, periods for
+&lt;= 252 Ma, eras for deeper timescales</p></li>
+<li><p><strong>epoch</strong>: Cenozoic and Mesozoic epochs (Holocene through Early Triassic)</p></li>
+<li><p><strong>period</strong>: geological periods (Quaternary through Cambrian)</p></li>
+<li><p><strong>era</strong>: Cenozoic, Mesozoic, Paleozoic</p></li>
+</ul>
+<a class="reference internal image-reference" href="../_images/chronogram_ultrametric.png"><img alt="../_images/chronogram_ultrametric.png" class="align-center" src="../_images/chronogram_ultrametric.png" style="width: 90%;" />
+</a>
+<p><em>Rectangular chronogram with epoch bands, node age labels, and a
+geological timescale bar.</em></p>
+<a class="reference internal image-reference" href="../_images/chronogram_ultrametric_circular.png"><img alt="../_images/chronogram_ultrametric_circular.png" class="align-center" src="../_images/chronogram_ultrametric_circular.png" style="width: 60%;" />
+</a>
+<p><em>Circular chronogram with concentric geological epoch rings and
+radial time tick marks.</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>chronogram<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>--root-age<span class="w"> </span>&lt;float&gt;<span class="w"> </span>--plot-output<span class="w"> </span>&lt;file&gt;
+<span class="w">    </span><span class="o">[</span>--timescale<span class="w"> </span>auto<span class="p">|</span>epoch<span class="p">|</span>period<span class="p">|</span>era<span class="o">]</span><span class="w"> </span><span class="o">[</span>--node-ages<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: ultrametric tree file (required) <br/>
+<em>--root-age</em>: age of the root in millions of years (Ma; required) <br/>
+<em>--plot-output</em>: output figure path (.png, .pdf, .svg; required) <br/>
+<em>--timescale</em>: timescale level — <code class="docutils literal notranslate"><span class="pre">auto</span></code> (default), <code class="docutils literal notranslate"><span class="pre">epoch</span></code>, <code class="docutils literal notranslate"><span class="pre">period</span></code>, or <code class="docutils literal notranslate"><span class="pre">era</span></code> <br/>
+<em>--node-ages</em>: label internal nodes with divergence times (Ma) <br/>
+<em>--circular</em>: draw circular chronogram with concentric geological rings <br/>
+<em>--ladderize</em>: ladderize (sort) the tree before plotting <br/>
+<em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br/>
+<em>--json</em>: output node ages as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
