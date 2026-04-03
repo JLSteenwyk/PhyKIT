@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.88**:
+Added ``chronogram`` command for time-calibrated tree visualization:
+
+* Added ``chronogram`` (``chrono`` / ``time_tree``): plot a time-calibrated
+  phylogeny with geological timescale bands from the ICS 2024
+  International Chronostratigraphic Chart. Supports rectangular and
+  circular (``--circular``) layouts, with epochs, periods, or eras
+  auto-selected based on root age. 95% HPD confidence intervals from
+  BEAST (``height_95%_HPD``) or MCMCTree (``95%HPD``) annotations are
+  automatically detected and drawn as translucent bars at each node.
+  Includes a labeled timescale bar, optional node age labels
+  (``--node-ages``), italic tip names, and ``--color-file`` support.
+
 **2.1.87**:
 Fixed RecursionError on deeply nested trees:
 

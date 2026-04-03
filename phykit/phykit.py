@@ -192,6 +192,8 @@ class Phykit:
                 concordance_asr (alias: conc_asr; casr)
                     - concordance-aware ancestral state reconstruction
                       incorporating gene tree discordance
+                chronogram (alias: chrono; time_tree)
+                    - plot a time-calibrated tree with geological timescale
                 bipartition_support_stats (alias: bss)
                     - calculates summary statistics for bipartition support
                 branch_length_multiplier (alias: blm)
@@ -2921,6 +2923,72 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ConcordanceAsr)
+
+    @staticmethod
+    def chronogram(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Plot a chronogram (time-calibrated phylogeny) with
+                geological timescale bands. Requires an ultrametric
+                tree and the root age in millions of years (Ma).
+
+                Geological epoch/period/era bands are drawn behind
+                the tree as colored stripes, with labels along the
+                top. The time axis runs from past (left) to present
+                (right).
+
+                Aliases:
+                  chronogram, chrono, time_tree
+                Command line interfaces:
+                  pk_chronogram, pk_chrono, pk_time_tree
+
+                Usage:
+                phykit chronogram -t <tree> --root-age <float>
+                  --plot-output <file> [--timescale auto|epoch|period|era]
+                  [--node-ages] [--circular] [--ladderize]
+                  [--color-file <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   ultrametric tree file
+                                            (required)
+
+                --root-age                  age of the root in Ma
+                                            (required)
+
+                --plot-output               output figure path
+                                            (required; .png, .pdf, .svg)
+
+                --timescale                 timescale level: auto
+                                            (default), epoch, period,
+                                            or era. Auto selects based
+                                            on root age.
+
+                --node-ages                 label internal nodes with
+                                            divergence times (Ma)
+
+                --circular                  draw circular chronogram
+
+                --ladderize                 ladderize the tree
+
+                --color-file                color annotation file
+                                            (iTOL-inspired TSV)
+
+                --json                      output node ages as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--root-age", type=float, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--plot-output", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--timescale", type=str, default="auto", choices=["auto", "epoch", "period", "era"], help=SUPPRESS, metavar="")
+        parser.add_argument("--node-ages", action="store_true", help=SUPPRESS)
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, Chronogram)
 
     @staticmethod
     def bipartition_support_stats(argv):
@@ -9067,6 +9135,10 @@ def ancestral_state_reconstruction(argv=None):
 
 def concordance_asr(argv=None):
     Phykit.concordance_asr(sys.argv[1:])
+
+
+def chronogram(argv=None):
+    Phykit.chronogram(sys.argv[1:])
 
 
 def bipartition_support_stats(argv=None):

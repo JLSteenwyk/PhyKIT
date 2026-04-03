@@ -5,6 +5,7 @@ _EXPORTS = {
     "BipartitionSupportStats": "bipartition_support_stats",
     "BranchLengthMultiplier": "branch_length_multiplier",
     "CollapseBranches": "collapse_branches",
+    "Chronogram": "chronogram",
     "CovaryingEvolutionaryRates": "covarying_evolutionary_rates",
     "ConsensusNetwork": "consensus_network",
     "NeighborNet": "neighbor_net",
