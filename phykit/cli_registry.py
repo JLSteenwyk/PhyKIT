@@ -21,6 +21,8 @@ ALIAS_TO_HANDLER: Dict[str, str] = {
     "recode": "alignment_recoding",
     "outlier_taxa": "alignment_outlier_taxa",
     "aot": "alignment_outlier_taxa",
+    "dtt": "dtt",
+    "disparity_through_time": "dtt",
     "dstat": "dstatistic",
     "abba_baba": "dstatistic",
     "dfoil": "dfoil",

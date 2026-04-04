@@ -194,6 +194,8 @@ class Phykit:
                       incorporating gene tree discordance
                 chronogram (alias: chrono; time_tree)
                     - plot a time-calibrated tree with geological timescale
+                dtt (alias: disparity_through_time)
+                    - disparity through time analysis (Harmon et al. 2003)
                 bipartition_support_stats (alias: bss)
                     - calculates summary statistics for bipartition support
                 branch_length_multiplier (alias: blm)
@@ -2989,6 +2991,77 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, Chronogram)
+
+    @staticmethod
+    def dtt(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Disparity through time (DTT) analysis. Computes how
+                morphological disparity partitions among subclades
+                through time (Harmon et al. 2003).
+
+                At each branching time, calculates the mean relative
+                subclade disparity. Under Brownian motion, this declines
+                linearly. The MDI (Morphological Disparity Index) is the
+                area between the observed DTT and the BM null median.
+
+                Positive MDI = late disparity accumulation
+                Negative MDI = early disparity accumulation (radiation)
+
+                Aliases:
+                  dtt, disparity_through_time
+                Command line interfaces:
+                  pk_dtt, pk_disparity_through_time
+
+                Usage:
+                phykit dtt -t <tree> --traits <traits_file>
+                  [--trait <column>] [--index avg_sq|avg_manhattan]
+                  [--nsim <int>] [--seed <int>]
+                  [--plot-output <file>] [--json]
+
+                Options
+                =====================================================
+                -t/--tree                   ultrametric tree file
+                                            (required)
+
+                --traits                    TSV file with trait data
+                                            (required)
+
+                --trait                     specific trait column name
+                                            (default: all traits)
+
+                --index                     disparity index: avg_sq
+                                            (average squared Euclidean
+                                            distance, default) or
+                                            avg_manhattan
+
+                --nsim                      number of BM simulations
+                                            for null DTT envelope and
+                                            MDI p-value (default: 0,
+                                            no simulations)
+
+                --seed                      random seed for
+                                            reproducibility
+
+                --plot-output               output figure path
+
+                --json                      output results as JSON
+                """
+            ),
+        )
+        parser.add_argument("-t", "--tree", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--traits", type=str, required=True, help=SUPPRESS, metavar="")
+        parser.add_argument("--trait", type=str, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--index", type=str, default="avg_sq", choices=["avg_sq", "avg_manhattan"], help=SUPPRESS, metavar="")
+        parser.add_argument("--nsim", type=int, default=0, help=SUPPRESS, metavar="")
+        parser.add_argument("--seed", type=int, default=None, help=SUPPRESS, metavar="")
+        parser.add_argument("--plot-output", type=str, default=None, help=SUPPRESS, metavar="")
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, Dtt)
 
     @staticmethod
     def bipartition_support_stats(argv):
@@ -9139,6 +9212,10 @@ def concordance_asr(argv=None):
 
 def chronogram(argv=None):
     Phykit.chronogram(sys.argv[1:])
+
+
+def dtt(argv=None):
+    Phykit.dtt(sys.argv[1:])
 
 
 def bipartition_support_stats(argv=None):

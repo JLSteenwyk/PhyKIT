@@ -226,6 +226,16 @@ class TestBrokenPipeError(object):
         assert exit_status == 0
     
     @pytest.mark.slow
+    def test_pk_dtt(self):
+        exit_status = self._run_cli("pk_dtt")
+        assert exit_status == 0
+
+    @pytest.mark.slow
+    def test_pk_disparity_through_time(self):
+        exit_status = self._run_cli("pk_disparity_through_time")
+        assert exit_status == 0
+
+    @pytest.mark.slow
     def test_pk_dvmc(self):
         exit_status = self._run_cli("pk_dvmc")
         assert exit_status == 0

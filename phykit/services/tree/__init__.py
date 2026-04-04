@@ -11,6 +11,7 @@ _EXPORTS = {
     "NeighborNet": "neighbor_net",
     "ConsensusTree": "consensus_tree",
     "DVMC": "dvmc",
+    "Dtt": "dtt",
     "DiscordanceAsymmetry": "discordance_asymmetry",
     "EvolutionaryRate": "evolutionary_rate",
     "EvoTempoMap": "evo_tempo_map",
