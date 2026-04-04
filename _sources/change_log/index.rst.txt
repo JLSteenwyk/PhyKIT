@@ -6,6 +6,18 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.89**:
+Added ``dtt`` (disparity through time) command:
+
+* Added ``dtt`` (``disparity_through_time``): compute disparity-through-time
+  curves following Harmon et al. (2003). At each branching time, calculates the
+  mean relative subclade disparity. Supports single-trait and multivariate DTT,
+  two disparity indices (``avg_sq``, ``avg_manhattan``), Brownian motion null
+  envelope via simulation (``--nsim``), and the Morphological Disparity Index
+  (MDI) with p-value. Includes ``--plot-output`` for publication-ready DTT
+  plots with 95% null envelope shading. Cross-validated against R's
+  ``geiger::dtt()``.
+
 **2.1.88**:
 Added ``chronogram`` command for time-calibrated tree visualization:
 

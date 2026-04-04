@@ -80,6 +80,18 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.89</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">dtt</span></code> (disparity through time) command:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">dtt</span></code> (<code class="docutils literal notranslate"><span class="pre">disparity_through_time</span></code>): compute disparity-through-time
+curves following Harmon et al. (2003). At each branching time, calculates the
+mean relative subclade disparity. Supports single-trait and multivariate DTT,
+two disparity indices (<code class="docutils literal notranslate"><span class="pre">avg_sq</span></code>, <code class="docutils literal notranslate"><span class="pre">avg_manhattan</span></code>), Brownian motion null
+envelope via simulation (<code class="docutils literal notranslate"><span class="pre">--nsim</span></code>), and the Morphological Disparity Index
+(MDI) with p-value. Includes <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code> for publication-ready DTT
+plots with 95% null envelope shading. Cross-validated against R's
+<code class="docutils literal notranslate"><span class="pre">geiger::dtt()</span></code>.</p></li>
+</ul>
 <p><strong>2.1.88</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">chronogram</span></code> command for time-calibrated tree visualization:</p>
 <ul class="simple">

@@ -116,6 +116,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#neighbornet">NeighborNet</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-network">Consensus network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consensus-tree">Consensus tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#disparity-through-time-dtt">Disparity through time (DTT)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#discrete-trait-evolution-model-comparison-fitdiscrete">Discrete trait evolution model comparison (fitDiscrete)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-evolution-model-comparison-fitcontinuous">Continuous trait evolution model comparison (fitContinuous)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#continuous-trait-mapping-contmap">Continuous trait mapping (contMap)</a></li>
@@ -422,6 +423,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-fit-continuous"><span class="std std-ref">Continuous trait evolution model comparison (fitContinuous)</span></a>: Compare continuous trait evolution models (supports discordance-aware VCV with <code class="docutils literal notranslate"><span class="pre">-g</span></code>)</p></li>
 <li><p><a class="reference internal" href="#cmd-cont-map"><span class="std std-ref">Continuous trait mapping (contMap)</span></a>: Map continuous traits onto a phylogeny</p></li>
 <li><p><a class="reference internal" href="#cmd-density-map"><span class="std std-ref">Density map</span></a>: Posterior density of stochastic character maps</p></li>
+<li><p><a class="reference internal" href="#cmd-dtt"><span class="std std-ref">Disparity through time (DTT)</span></a>: Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)</p></li>
 <li><p><a class="reference internal" href="#cmd-fit-discrete"><span class="std std-ref">Discrete trait evolution model comparison (fitDiscrete)</span></a>: Compare ER, SYM, ARD Mk models</p></li>
 <li><p><a class="reference internal" href="#cmd-independent-contrasts"><span class="std std-ref">Independent contrasts (PIC)</span></a>: Felsenstein's phylogenetically independent contrasts</p></li>
 <li><p><a class="reference internal" href="#cmd-ouwie"><span class="std std-ref">Multi-regime OU models (OUwie)</span></a>: Multi-regime Ornstein-Uhlenbeck models</p></li>
@@ -2110,6 +2112,59 @@ Command line interface: pk_consensus_tree; pk_consensus; pk_ctree</p>
 <em>-m/--method</em>: consensus method (<code class="docutils literal notranslate"><span class="pre">strict</span></code> or <code class="docutils literal notranslate"><span class="pre">majority</span></code>; default: <code class="docutils literal notranslate"><span class="pre">majority</span></code>) <br/>
 <em>--missing-taxa</em>: handling strategy for mismatched taxa (<code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>; default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="disparity-through-time-dtt">
+<span id="cmd-dtt"></span><h3>Disparity through time (DTT)<a class="headerlink" href="#disparity-through-time-dtt" title="Link to this heading"></a></h3>
+<p>Function names: dtt; disparity_through_time <br/>
+Command line interface: pk_dtt; pk_disparity_through_time</p>
+<p>Compute disparity-through-time (DTT) curves following Harmon et al. (2003).
+At each branching time the mean relative subclade disparity is calculated.
+Under Brownian motion the DTT curve declines linearly from 1 to 0; deviations
+from this expectation reveal tempo of morphological diversification.</p>
+<p>The Morphological Disparity Index (MDI) measures the area between the
+observed DTT and the Brownian motion null median. Positive MDI indicates
+late disparity accumulation; negative MDI indicates early disparity
+accumulation (consistent with adaptive radiation).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>dtt<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>--traits<span class="w"> </span>&lt;traits_file&gt;
+<span class="w">    </span><span class="o">[</span>--trait<span class="w"> </span>&lt;column&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--index<span class="w"> </span>avg_sq<span class="p">|</span>avg_manhattan<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--nsim<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;int&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>-t/--tree</em>: ultrametric tree file (required) <br/>
+<em>--traits</em>: TSV file with header row; first column <code class="docutils literal notranslate"><span class="pre">taxon</span></code>, remaining columns are trait values (required) <br/>
+<em>--trait</em>: specific trait column name; if omitted all trait columns are used (multivariate DTT) <br/>
+<em>--index</em>: disparity index — <code class="docutils literal notranslate"><span class="pre">avg_sq</span></code> (average squared Euclidean distance, default) or <code class="docutils literal notranslate"><span class="pre">avg_manhattan</span></code> <br/>
+<em>--nsim</em>: number of Brownian motion simulations for null DTT envelope and MDI p-value (default: 0, no simulations) <br/>
+<em>--seed</em>: random seed for reproducibility <br/>
+<em>--plot-output</em>: output filename for the DTT plot (PNG, PDF, SVG) <br/>
+<em>--json</em>: output results as JSON</p>
+<p><strong>Default output</strong>: text summary with DTT curve data points.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Single trait DTT</span>
+phykit<span class="w"> </span>dtt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>traits.tsv<span class="w"> </span>--trait<span class="w"> </span>body_mass
+
+<span class="c1"># Multivariate DTT (all traits)</span>
+phykit<span class="w"> </span>dtt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>traits.tsv
+
+<span class="c1"># With BM null envelope and MDI p-value</span>
+phykit<span class="w"> </span>dtt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>traits.tsv<span class="w"> </span>--trait<span class="w"> </span>body_mass<span class="w"> </span>--nsim<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span>
+
+<span class="c1"># With plot output</span>
+phykit<span class="w"> </span>dtt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>traits.tsv<span class="w"> </span>--trait<span class="w"> </span>body_mass<span class="w"> </span>--nsim<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--plot-output<span class="w"> </span>dtt.png
+
+<span class="c1"># JSON output</span>
+phykit<span class="w"> </span>dtt<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>--traits<span class="w"> </span>traits.tsv<span class="w"> </span>--trait<span class="w"> </span>body_mass<span class="w"> </span>--json
+</pre></div>
+</div>
+<p><strong>R validation:</strong> Validated against <code class="docutils literal notranslate"><span class="pre">geiger::dtt()</span></code> in R
+(see <code class="docutils literal notranslate"><span class="pre">tests/r_validation/validate_dtt.R</span></code>).</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
