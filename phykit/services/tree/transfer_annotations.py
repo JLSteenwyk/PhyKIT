@@ -114,6 +114,12 @@ class TransferAnnotations(Tree):
             annotation = clade.comment or clade.name or ""
             if not annotation:
                 continue
+            # wASTRAL --support 3 wraps annotations as '[key=val;...]'
+            # which BioPython parses as a quoted node name including the
+            # brackets.  Strip them so BioPython's comment writer can
+            # re-add proper brackets on output.
+            if annotation.startswith("[") and annotation.endswith("]"):
+                annotation = annotation[1:-1]
             bp = self._get_bipartition(clade, all_taxa)
             if bp:
                 annotations[bp] = annotation
@@ -149,6 +155,8 @@ class TransferAnnotations(Tree):
             content = f.read()
         # Remove the & prefix that BioPython adds
         content = content.replace("[&", "[")
+        # BioPython may also backslash-escape brackets inside comments
+        content = content.replace("\\[", "[").replace("\\]", "]")
         with open(output_path, "w") as f:
             f.write(content)
 
