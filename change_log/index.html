@@ -80,6 +80,17 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.90</strong>:
+Fixed <code class="docutils literal notranslate"><span class="pre">transfer_annotations</span></code> with wASTRAL <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> trees:</p>
+<ul class="simple">
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">transfer_annotations</span></code> producing malformed output (escaped brackets
+<code class="docutils literal notranslate"><span class="pre">\[</span></code> and <code class="docutils literal notranslate"><span class="pre">\]</span></code>) when the source tree used wASTRAL's <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code>
+annotation format. wASTRAL wraps annotations in single quotes
+(<code class="docutils literal notranslate"><span class="pre">'[key=val;...]'</span></code>), which BioPython parses as a quoted node name
+including the brackets. The outer brackets are now stripped before
+re-attaching as comments, and any residual backslash-escaped brackets
+are cleaned up on write.</p></li>
+</ul>
 <p><strong>2.1.89</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">dtt</span></code> (disparity through time) command:</p>
 <ul class="simple">

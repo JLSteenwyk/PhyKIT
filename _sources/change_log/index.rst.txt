@@ -6,6 +6,17 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.90**:
+Fixed ``transfer_annotations`` with wASTRAL ``--support 3`` trees:
+
+* Fixed ``transfer_annotations`` producing malformed output (escaped brackets
+  ``\[`` and ``\]``) when the source tree used wASTRAL's ``--support 3``
+  annotation format. wASTRAL wraps annotations in single quotes
+  (``'[key=val;...]'``), which BioPython parses as a quoted node name
+  including the brackets. The outer brackets are now stripped before
+  re-attaching as comments, and any residual backslash-escaped brackets
+  are cleaned up on write.
+
 **2.1.89**:
 Added ``dtt`` (disparity through time) command:
 
