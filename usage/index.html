@@ -175,6 +175,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#tip-labels">Tip labels</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-distance">Tip-to-tip distance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tip-to-tip-node-distance">Tip-to-tip node distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faith-s-phylogenetic-diversity">Faith's phylogenetic diversity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#total-tree-length">Total tree length</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#treeness">Treeness</a></li>
 </ul>
@@ -350,6 +351,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-bipartition-support-stats"><span class="std std-ref">Bipartition support statistics</span></a>: Summary statistics of bipartition support values</p></li>
 <li><p><a class="reference internal" href="#cmd-degree-of-violation-of-a-molecular-clock"><span class="std std-ref">Degree of violation of the molecular clock</span></a>: Measure molecular clock violation</p></li>
 <li><p><a class="reference internal" href="#cmd-evolutionary-rate"><span class="std std-ref">Evolutionary rate</span></a>: Calculate tree-based evolutionary rate</p></li>
+<li><p><a class="reference internal" href="#cmd-faiths-pd"><span class="std std-ref">Faith's phylogenetic diversity</span></a>: Sum of branch lengths spanning a community of tips</p></li>
 <li><p><a class="reference internal" href="#cmd-internal-branch-stats"><span class="std std-ref">Internal branch statistics</span></a>: Summary statistics of internal branch lengths</p></li>
 <li><p><a class="reference internal" href="#cmd-ltt"><span class="std std-ref">Lineage-through-time plot and gamma statistic</span></a>: Lineage-through-time analysis and gamma statistic</p></li>
 <li><p><a class="reference internal" href="#cmd-long-branch-score"><span class="std std-ref">Long branch score</span></a>: Identify long branches in a tree</p></li>
@@ -4921,6 +4923,33 @@ and another.</p>
 <em>&lt;tree_file&gt;</em>: first argument after function name should be a tree file <br/>
 <em>&lt;tip_1&gt;</em>: second argument should be the name of the first tip of interest <br/>
 <em>&lt;tip_2&gt;</em>: third argument should be the name of the second tip of interest <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="faith-s-phylogenetic-diversity">
+<span id="cmd-faiths-pd"></span><h3>Faith's phylogenetic diversity<a class="headerlink" href="#faith-s-phylogenetic-diversity" title="Link to this heading"></a></h3>
+<p>Function names: faiths_pd; faith_pd; fpd; phylo_diversity <br/>
+Command line interface: pk_faiths_pd; pk_faith_pd; pk_fpd; pk_phylo_diversity</p>
+<p>Calculate Faith's phylogenetic diversity (PD) for a community of tips
+on a phylogeny (Faith, <em>Biological Conservation</em>, 1992;
+doi: 10.1016/0006-3207(92)91201-3).</p>
+<p>Faith's PD is the sum of branch lengths in the minimum subtree that
+connects a set of taxa. By default, the path from the community's most
+recent common ancestor up to the tree root is included, matching the
+original definition and <code class="docutils literal notranslate"><span class="pre">picante::pd(...,</span> <span class="pre">include.root</span> <span class="pre">=</span> <span class="pre">TRUE)</span></code>. Pass
+<code class="docutils literal notranslate"><span class="pre">--exclude-root</span></code> to sum only the branches of the induced subtree
+rooted at the MRCA, matching <code class="docutils literal notranslate"><span class="pre">picante::pd(...,</span> <span class="pre">include.root</span> <span class="pre">=</span> <span class="pre">FALSE)</span></code>.</p>
+<p>The community is supplied as a single-column text file of tip labels,
+one per line.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>faiths_pd<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-t/--taxa<span class="w"> </span>&lt;taxa_file&gt;<span class="w"> </span><span class="o">[</span>--exclude-root<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br/>
+<em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
+<em>-t/--taxa</em>: file with one tip label per line defining the community <br/>
+<em>--exclude-root</em>: sum only branches of the induced subtree rooted at the community MRCA <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
 <div class="line-block">
 <div class="line"><br /></div>

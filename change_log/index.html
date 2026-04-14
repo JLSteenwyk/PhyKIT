@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.91</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">faiths_pd</span></code> command for Faith's phylogenetic diversity:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">faiths_pd</span></code> (<code class="docutils literal notranslate"><span class="pre">faith_pd</span></code> / <code class="docutils literal notranslate"><span class="pre">fpd</span></code> / <code class="docutils literal notranslate"><span class="pre">phylo_diversity</span></code>): compute
+Faith's phylogenetic diversity (Faith 1992) for a community of tips, defined
+as the sum of branch lengths in the minimum subtree connecting the community.
+The community is supplied as a single-column file of tip labels via
+<code class="docutils literal notranslate"><span class="pre">-t</span></code>/<code class="docutils literal notranslate"><span class="pre">--taxa</span></code>. By default the path from the community's MRCA up to the
+tree root is included, matching <code class="docutils literal notranslate"><span class="pre">picante::pd(...,</span> <span class="pre">include.root</span> <span class="pre">=</span> <span class="pre">TRUE)</span></code>;
+pass <code class="docutils literal notranslate"><span class="pre">--exclude-root</span></code> to sum only the induced subtree rooted at the MRCA,
+matching <code class="docutils literal notranslate"><span class="pre">picante::pd(...,</span> <span class="pre">include.root</span> <span class="pre">=</span> <span class="pre">FALSE)</span></code>. Cross-validated against
+<code class="docutils literal notranslate"><span class="pre">picante::pd</span></code> on multiple community configurations.</p></li>
+</ul>
 <p><strong>2.1.90</strong>:
 Fixed <code class="docutils literal notranslate"><span class="pre">transfer_annotations</span></code> with wASTRAL <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">3</span></code> trees:</p>
 <ul class="simple">
