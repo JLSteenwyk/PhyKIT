@@ -143,6 +143,7 @@ Tree summary statistics
 - :ref:`Bipartition support statistics <cmd-bipartition_support_stats>`: Summary statistics of bipartition support values
 - :ref:`Degree of violation of the molecular clock <cmd-degree_of_violation_of_a_molecular_clock>`: Measure molecular clock violation
 - :ref:`Evolutionary rate <cmd-evolutionary_rate>`: Calculate tree-based evolutionary rate
+- :ref:`Faith's phylogenetic diversity <cmd-faiths_pd>`: Sum of branch lengths spanning a community of tips
 - :ref:`Internal branch statistics <cmd-internal_branch_stats>`: Summary statistics of internal branch lengths
 - :ref:`Lineage-through-time plot and gamma statistic <cmd-ltt>`: Lineage-through-time analysis and gamma statistic
 - :ref:`Long branch score <cmd-long_branch_score>`: Identify long branches in a tree
@@ -5515,6 +5516,39 @@ Options: |br|
 *<tree_file>*: first argument after function name should be a tree file |br|
 *<tip_1>*: second argument should be the name of the first tip of interest |br|
 *<tip_2>*: third argument should be the name of the second tip of interest |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-faiths_pd:
+
+Faith's phylogenetic diversity
+##############################
+Function names: faiths_pd; faith_pd; fpd; phylo_diversity |br|
+Command line interface: pk_faiths_pd; pk_faith_pd; pk_fpd; pk_phylo_diversity
+
+Calculate Faith's phylogenetic diversity (PD) for a community of tips
+on a phylogeny (Faith, *Biological Conservation*, 1992;
+doi: 10.1016/0006-3207(92)91201-3).
+
+Faith's PD is the sum of branch lengths in the minimum subtree that
+connects a set of taxa. By default, the path from the community's most
+recent common ancestor up to the tree root is included, matching the
+original definition and ``picante::pd(..., include.root = TRUE)``. Pass
+``--exclude-root`` to sum only the branches of the induced subtree
+rooted at the MRCA, matching ``picante::pd(..., include.root = FALSE)``.
+
+The community is supplied as a single-column text file of tip labels,
+one per line.
+
+.. code-block:: shell
+
+   phykit faiths_pd <tree> -t/--taxa <taxa_file> [--exclude-root] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-t/--taxa*: file with one tip label per line defining the community |br|
+*--exclude-root*: sum only branches of the induced subtree rooted at the community MRCA |br|
 *--json*: optional argument to print results as JSON
 
 |

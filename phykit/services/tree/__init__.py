@@ -15,6 +15,7 @@ _EXPORTS = {
     "DiscordanceAsymmetry": "discordance_asymmetry",
     "EvolutionaryRate": "evolutionary_rate",
     "EvoTempoMap": "evo_tempo_map",
+    "FaithsPD": "faiths_pd",
     "FitDiscrete": "fit_discrete",
     "HiddenParalogyCheck": "hidden_paralogy_check",
     "Hybridization": "hybridization",

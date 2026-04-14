@@ -230,6 +230,9 @@ class Phykit:
                     - determines if a set of tip names are monophyletic
                 nearest_neighbor_interchange (alias: nni)
                     - make nearest neighbor interchange moves on a tree
+                faiths_pd (alias: faith_pd; fpd; phylo_diversity)
+                    - calculate Faith's phylogenetic diversity for a
+                      community of tips
                 patristic_distances (alias: pd)
                     - calculate all pairwise distances between tips in a tree
                 phylogenetic_signal (alias: phylo_signal; ps)
@@ -3776,6 +3779,67 @@ class Phykit:
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         _add_json_argument(parser)
         _run_service(parser, argv, NearestNeighborInterchange)
+
+    @staticmethod
+    def faiths_pd(argv):
+        parser = _new_parser(
+            description=textwrap.dedent(
+                f"""\
+                {help_header}
+
+                Calculate Faith's phylogenetic diversity (PD) for a
+                community of tips on a phylogeny.
+
+                Faith's PD is the sum of branch lengths in the minimum
+                subtree that connects a set of taxa. By default, the
+                path from the community's most recent common ancestor
+                up to the tree root is included, matching Faith (1992)
+                and picante::pd(..., include.root = TRUE). Use
+                --exclude-root to sum only the branches of the induced
+                subtree rooted at the MRCA, matching
+                picante::pd(..., include.root = FALSE).
+
+                Aliases:
+                  faiths_pd, faith_pd, fpd, phylo_diversity
+                Command line interfaces:
+                  pk_faiths_pd, pk_faith_pd, pk_fpd, pk_phylo_diversity
+
+                Usage:
+                phykit faiths_pd <tree> -t/--taxa <taxa_file>
+                  [--exclude-root] [--json]
+
+                Options
+                =====================================================
+                <tree>                      first argument after
+                                            function name should be
+                                            a tree file
+
+                -t/--taxa                   file with one tip label per
+                                            line defining the community
+
+                --exclude-root              sum only branches of the
+                                            induced subtree rooted at
+                                            the community MRCA; by
+                                            default the path up to the
+                                            tree root is included
+
+                --json                      optional argument to output
+                                            results as JSON
+                """
+            ),
+        )
+        parser.add_argument("tree", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-t", "--taxa", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--exclude-root",
+            dest="exclude_root",
+            action="store_true",
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, FaithsPD)
 
     @staticmethod
     def patristic_distances(argv):
@@ -9268,6 +9332,10 @@ def monophyly_check(argv=None):
 
 def nearest_neighbor_interchange(argv=None):
     Phykit.nearest_neighbor_interchange(sys.argv[1:])
+
+
+def faiths_pd(argv=None):
+    Phykit.faiths_pd(sys.argv[1:])
 
 
 def patristic_distances(argv=None):

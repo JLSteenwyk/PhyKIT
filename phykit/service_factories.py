@@ -66,6 +66,7 @@ NeighborNet = _LazyServiceFactory("phykit.services.tree.neighbor_net", "Neighbor
 ConsensusTree = _LazyServiceFactory("phykit.services.tree.consensus_tree", "ConsensusTree")
 DVMC = _LazyServiceFactory("phykit.services.tree.dvmc", "DVMC")
 EvolutionaryRate = _LazyServiceFactory("phykit.services.tree.evolutionary_rate", "EvolutionaryRate")
+FaithsPD = _LazyServiceFactory("phykit.services.tree.faiths_pd", "FaithsPD")
 HiddenParalogyCheck = _LazyServiceFactory("phykit.services.tree.hidden_paralogy_check", "HiddenParalogyCheck")
 InternalBranchStats = _LazyServiceFactory("phykit.services.tree.internal_branch_stats", "InternalBranchStats")
 InternodeLabeler = _LazyServiceFactory("phykit.services.tree.internode_labeler", "InternodeLabeler")

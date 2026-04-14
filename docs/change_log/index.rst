@@ -6,6 +6,19 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.91**:
+Added ``faiths_pd`` command for Faith's phylogenetic diversity:
+
+* Added ``faiths_pd`` (``faith_pd`` / ``fpd`` / ``phylo_diversity``): compute
+  Faith's phylogenetic diversity (Faith 1992) for a community of tips, defined
+  as the sum of branch lengths in the minimum subtree connecting the community.
+  The community is supplied as a single-column file of tip labels via
+  ``-t``/``--taxa``. By default the path from the community's MRCA up to the
+  tree root is included, matching ``picante::pd(..., include.root = TRUE)``;
+  pass ``--exclude-root`` to sum only the induced subtree rooted at the MRCA,
+  matching ``picante::pd(..., include.root = FALSE)``. Cross-validated against
+  ``picante::pd`` on multiple community configurations.
+
 **2.1.90**:
 Fixed ``transfer_annotations`` with wASTRAL ``--support 3`` trees:
 
