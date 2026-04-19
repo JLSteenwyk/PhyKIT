@@ -110,8 +110,8 @@ Alignment quality & statistics
 - :ref:`Alignment length no gaps <cmd-alignment_length_no_gaps>`: Alignment length excluding gapped sites
 - :ref:`Alignment outlier taxa <cmd-alignment_outlier_taxa>`: Identify outlier taxa in alignments
 - :ref:`Column score <cmd-column_score>`: Column score for alignment quality
-- :ref:`Compositional bias per site <cmd-compositional_bias_per_site>`: Detect compositional bias across sites
 - :ref:`Composition per taxon <cmd-composition_per_taxon>`: Nucleotide or amino acid composition per taxon
+- :ref:`Compositional bias per site <cmd-compositional_bias_per_site>`: Detect compositional bias across sites
 - :ref:`Evolutionary rate per site <cmd-evolutionary_rate_per_site>`: Site-specific evolutionary rate estimation
 - :ref:`Guanine-cytosine (GC) content <cmd-gc_content>`: GC content of an alignment
 - :ref:`Identity matrix <cmd-identity_matrix>`: Pairwise sequence identity heatmap
@@ -212,8 +212,8 @@ Trait evolution
 - :ref:`Continuous trait evolution model comparison (fitContinuous) <cmd-fit_continuous>`: Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)
 - :ref:`Continuous trait mapping (contMap) <cmd-cont_map>`: Map continuous traits onto a phylogeny
 - :ref:`Density map <cmd-density_map>`: Posterior density of stochastic character maps
-- :ref:`Disparity through time (DTT) <cmd-dtt>`: Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)
 - :ref:`Discrete trait evolution model comparison (fitDiscrete) <cmd-fit_discrete>`: Compare ER, SYM, ARD Mk models
+- :ref:`Disparity through time (DTT) <cmd-dtt>`: Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)
 - :ref:`Independent contrasts (PIC) <cmd-independent_contrasts>`: Felsenstein's phylogenetically independent contrasts
 - :ref:`Multi-regime OU models (OUwie) <cmd-ouwie>`: Multi-regime Ornstein-Uhlenbeck models
 - :ref:`OU shift detection (l1ou) <cmd-ou_shift_detection>`: Detect OU regime shifts on a phylogeny
@@ -433,52 +433,6 @@ Options: |br|
 
 |
 
-.. _cmd-alignment_subsample:
-
-Alignment subsampling
-#####################
-Function names: alignment_subsample; aln_subsample; subsample |br|
-Command line interface: pk_alignment_subsample; pk_aln_subsample; pk_subsample
-
-Randomly subsample genes, partitions, or sites from phylogenomic datasets.
-Supports three modes:
-
-- **genes**: Given a file listing alignment paths, randomly select N of them.
-- **partitions**: Given a supermatrix + RAxML-style partition file, randomly
-  select N partitions and extract their columns into a new alignment.
-- **sites**: Given a single alignment, randomly select N columns.
-
-Sampling can be without replacement (default, for jackknife-style tests) or
-with replacement using ``--bootstrap`` (for gene/site bootstrapping).
-Use ``--seed`` for reproducibility.
-
-.. code-block:: shell
-
-   # Subsample 50 genes from a list of 200
-   phykit alignment_subsample --mode genes -l gene_list.txt --number 50 -o sub50
-
-   # Subsample 50% of partitions from a supermatrix
-   phykit alignment_subsample --mode partitions -a concat.fa -p concat.partition \
-       --fraction 0.5 --seed 42 -o sub50pct
-
-   # Bootstrap-resample sites from an alignment
-   phykit alignment_subsample --mode sites -a alignment.fa \
-       --number 500 --bootstrap --seed 1 -o boot1
-
-Options: |br|
-*--mode*: subsampling mode: genes, partitions, or sites (required) |br|
-*-a/--alignment*: input alignment file in FASTA format (required for partitions and sites modes) |br|
-*-l/--list*: file listing alignment paths, one per line (required for genes mode) |br|
-*-p/--partition*: RAxML-style partition file (required for partitions mode) |br|
-*--number*: exact number of items to select (mutually exclusive with --fraction) |br|
-*--fraction*: fraction of items to select, 0.0 to 1.0 (mutually exclusive with --number) |br|
-*--bootstrap*: sample with replacement (default: without replacement) |br|
-*--seed*: random seed for reproducibility |br|
-*-o/--output*: output file prefix (default: subsampled) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
 .. _cmd-alignment_recoding:
 
 Alignment recoding
@@ -594,6 +548,52 @@ H = C |br|
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
 *-c/--code*: argument to specify the recoding scheme to use |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-alignment_subsample:
+
+Alignment subsampling
+#####################
+Function names: alignment_subsample; aln_subsample; subsample |br|
+Command line interface: pk_alignment_subsample; pk_aln_subsample; pk_subsample
+
+Randomly subsample genes, partitions, or sites from phylogenomic datasets.
+Supports three modes:
+
+- **genes**: Given a file listing alignment paths, randomly select N of them.
+- **partitions**: Given a supermatrix + RAxML-style partition file, randomly
+  select N partitions and extract their columns into a new alignment.
+- **sites**: Given a single alignment, randomly select N columns.
+
+Sampling can be without replacement (default, for jackknife-style tests) or
+with replacement using ``--bootstrap`` (for gene/site bootstrapping).
+Use ``--seed`` for reproducibility.
+
+.. code-block:: shell
+
+   # Subsample 50 genes from a list of 200
+   phykit alignment_subsample --mode genes -l gene_list.txt --number 50 -o sub50
+
+   # Subsample 50% of partitions from a supermatrix
+   phykit alignment_subsample --mode partitions -a concat.fa -p concat.partition \
+       --fraction 0.5 --seed 42 -o sub50pct
+
+   # Bootstrap-resample sites from an alignment
+   phykit alignment_subsample --mode sites -a alignment.fa \
+       --number 500 --bootstrap --seed 1 -o boot1
+
+Options: |br|
+*--mode*: subsampling mode: genes, partitions, or sites (required) |br|
+*-a/--alignment*: input alignment file in FASTA format (required for partitions and sites modes) |br|
+*-l/--list*: file listing alignment paths, one per line (required for genes mode) |br|
+*-p/--partition*: RAxML-style partition file (required for partitions mode) |br|
+*--number*: exact number of items to select (mutually exclusive with --fraction) |br|
+*--fraction*: fraction of items to select, 0.0 to 1.0 (mutually exclusive with --number) |br|
+*--bootstrap*: sample with replacement (default: without replacement) |br|
+*--seed*: random seed for reproducibility |br|
+*-o/--output*: output file prefix (default: subsampled) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -885,6 +885,55 @@ entry |br|
 
 |
 
+.. _cmd-identity_matrix:
+
+Identity matrix
+###############
+
+Function names: identity_matrix; id_matrix; seqid |br|
+Command line interface: pk_identity_matrix; pk_id_matrix; pk_seqid
+
+Compute a pairwise sequence identity matrix from an alignment and plot it as a
+clustered heatmap.
+
+For each pair of taxa, identity is defined as the fraction of non-gap,
+non-ambiguous columns that are identical. Gaps, '?', 'N', 'X', and '*' in
+either sequence cause a column to be skipped.
+
+The matrix can be displayed as identity (default) or p-distance (1 - identity)
+using --metric. Ordering can be by hierarchical clustering (default), tree tip
+order (--sort tree --tree <file>), or alphabetical (--sort alpha).
+
+.. code-block:: shell
+
+	phykit identity_matrix -a <alignment> -o <output>
+		[--metric identity|p-distance] [--tree <file>]
+		[--sort alpha|cluster|tree] [--partition <file>] [--json]
+		[--fig-width <float>] [--fig-height <float>] [--dpi <int>]
+		[--no-title] [--title <str>]
+		[--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+		[--title-fontsize <float>] [--axis-fontsize <float>]
+
+Options: |br|
+*-a/--alignment*: alignment file (FASTA or other supported format) |br|
+*-o/--output*: output figure path (.png, .pdf, .svg) |br|
+*--metric*: 'identity' (fraction matching) or 'p-distance' (1 - identity); default: identity |br|
+*--tree*: tree file for tree-guided ordering (Newick format) |br|
+*--sort*: ordering method: 'cluster' (hierarchical), 'tree' (requires --tree), or 'alpha' (alphabetical); default: cluster |br|
+*--partition*: RAxML-style partition file (reserved for future use) |br|
+*--json*: output structured JSON instead of plain text |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels
+
+|
+
 .. _cmd-mask_alignment:
 
 Mask alignment
@@ -907,6 +956,65 @@ Options: |br|
 *-o/--min_occupancy*: minimum required occupancy at a site (default: 0.0) |br|
 *-e/--max_entropy*: maximum allowed site entropy (default: no filter) |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-occupancy_filter:
+
+Occupancy filter
+################
+Function names: occupancy_filter; occ_filter; filter_occupancy |br|
+Command line interface: pk_occupancy_filter; pk_occ_filter; pk_filter_occupancy
+
+Filter alignments and/or trees by cross-file taxon occupancy. Given a
+list of alignment or tree files, counts how many files each taxon appears
+in and retains only taxa meeting a minimum threshold. Outputs filtered
+copies of each input file.
+
+This is useful for phylogenomics workflows where you want to ensure all
+taxa in your dataset are present in at least N genes before concatenation
+or downstream analysis. For FASTA files, sequences of removed taxa are
+dropped. For tree files, tips of removed taxa are pruned.
+
+**Example:** Given 10 alignment files and ``-t 0.5`` (the default), only
+taxa present in at least 5 of the 10 alignments will be retained. New
+filtered alignment files are written with the removed taxa excluded.
+
+**Threshold interpretation:**
+
+- Values **between 0 and 1** (inclusive) are treated as a **fraction** of the
+  total number of files. For example, ``-t 0.5`` means 50% of files;
+  ``-t 1.0`` means 100% (taxon must be in every file).
+- Values **greater than 1** are treated as an **absolute count**. For example,
+  ``-t 5`` means the taxon must appear in at least 5 files.
+- The default is ``0.5`` (50% occupancy).
+
+.. code-block:: shell
+
+   # Keep taxa in at least 50% of files (default)
+   phykit occupancy_filter -l alignment_list.txt
+
+   # Keep taxa in all files (100% occupancy)
+   phykit occupancy_filter -l alignment_list.txt -t 1.0
+
+   # Keep taxa in at least 20 files
+   phykit occupancy_filter -l alignment_list.txt -t 20
+
+   # Filter trees instead of alignments
+   phykit occ_filter -l tree_list.txt -f trees -t 0.5 -o filtered_trees/
+
+.. code-block:: shell
+
+   phykit occupancy_filter -l <file_list> [-f/--format fasta|trees]
+       [-t/--threshold <float>] [-o/--output-dir <dir>] [--suffix <str>] [--json]
+
+Options: |br|
+*-l/--list*: file listing paths to alignment or tree files, one per line (required) |br|
+*-f/--format*: input file format — ``fasta`` (default) or ``trees`` |br|
+*-t/--threshold*: minimum occupancy to retain a taxon. Values between 0 and 1 (inclusive) are treated as a fraction (e.g., ``0.5`` = 50%, ``1.0`` = 100%); values > 1 are treated as an absolute count (default: ``0.5``) |br|
+*-o/--output-dir*: directory for filtered output files (default: same directory as input) |br|
+*--suffix*: suffix added to output filenames before the extension (default: ``.filtered``) |br|
+*--json*: output results as JSON
 
 |
 
@@ -997,55 +1105,6 @@ Options: |br|
 
 |
 
-.. _cmd-identity_matrix:
-
-Identity matrix
-###############
-
-Function names: identity_matrix; id_matrix; seqid |br|
-Command line interface: pk_identity_matrix; pk_id_matrix; pk_seqid
-
-Compute a pairwise sequence identity matrix from an alignment and plot it as a
-clustered heatmap.
-
-For each pair of taxa, identity is defined as the fraction of non-gap,
-non-ambiguous columns that are identical. Gaps, '?', 'N', 'X', and '*' in
-either sequence cause a column to be skipped.
-
-The matrix can be displayed as identity (default) or p-distance (1 - identity)
-using --metric. Ordering can be by hierarchical clustering (default), tree tip
-order (--sort tree --tree <file>), or alphabetical (--sort alpha).
-
-.. code-block:: shell
-
-	phykit identity_matrix -a <alignment> -o <output>
-		[--metric identity|p-distance] [--tree <file>]
-		[--sort alpha|cluster|tree] [--partition <file>] [--json]
-		[--fig-width <float>] [--fig-height <float>] [--dpi <int>]
-		[--no-title] [--title <str>]
-		[--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-		[--title-fontsize <float>] [--axis-fontsize <float>]
-
-Options: |br|
-*-a/--alignment*: alignment file (FASTA or other supported format) |br|
-*-o/--output*: output figure path (.png, .pdf, .svg) |br|
-*--metric*: 'identity' (fraction matching) or 'p-distance' (1 - identity); default: identity |br|
-*--tree*: tree file for tree-guided ordering (Newick format) |br|
-*--sort*: ordering method: 'cluster' (hierarchical), 'tree' (requires --tree), or 'alpha' (alphabetical); default: cluster |br|
-*--partition*: RAxML-style partition file (reserved for future use) |br|
-*--json*: output structured JSON instead of plain text |br|
-*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
-*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
-*--dpi*: resolution in DPI (default: 300) |br|
-*--no-title*: hide the plot title |br|
-*--title*: custom title text |br|
-*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
-*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
-*--title-fontsize*: font size for the title |br|
-*--axis-fontsize*: font size for axis labels
-
-|
-
 .. _cmd-parsimony_informative_sites:
 
 Parsimony informative sites
@@ -1076,6 +1135,51 @@ doi: 10.1093/gbe/evw179 and Steenwyk et al., PLOS Biology
 
 Options: |br|
 *<alignment>*: first argument after function name should be an alignment file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-phylo_gwas:
+
+Phylo GWAS
+##########
+Function names: phylo_gwas; pgwas |br|
+Command line interface: pk_phylo_gwas; pk_pgwas
+
+Phylogenetic genome-wide association study following the Pease et al.
+(2016) approach. Performs per-site association tests between alignment
+columns and a phenotype, applies Benjamini-Hochberg FDR correction,
+optionally classifies significant associations as monophyletic or
+polyphyletic using a phylogenetic tree, and produces a Manhattan plot.
+
+Categorical phenotypes use Fisher's exact test (2 groups) or chi-squared
+test (>2 groups). Continuous phenotypes use point-biserial correlation.
+Only biallelic sites are tested; invariant and multiallelic sites are
+skipped. Sites with gaps or ambiguous characters are also skipped.
+
+.. code-block:: shell
+
+   phykit phylo_gwas -a <alignment> -d <phenotype> -o <output>
+     [-t <tree>] [-p <partition>] [--alpha 0.05]
+     [--exclude-monophyletic] [--csv <file>] [--json]
+
+Options: |br|
+*-a/--alignment*: FASTA alignment file |br|
+*-d/--phenotype*: two-column TSV file (taxon<tab>phenotype) |br|
+*-o/--output*: output Manhattan plot path |br|
+*-t/--tree*: optional Newick tree for monophyletic/polyphyletic classification |br|
+*-p/--partition*: optional RAxML-style partition file for gene annotations |br|
+*--alpha*: FDR significance threshold (default: 0.05) |br|
+*--exclude-monophyletic*: exclude monophyletic associations from results |br|
+*--dot-size*: scale factor for dot size in the Manhattan plot (default: 1.0; use 2.0 for double, 0.5 for half) |br|
+*--csv*: output per-site results as CSV to the specified file |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none") |br|
+*--colors*: comma-separated colors (hex or named) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1291,47 +1395,32 @@ to |br|
 
 |
 
-.. _cmd-phylo_gwas:
+.. _cmd-taxon_groups:
 
-Phylo GWAS
-##########
-Function names: phylo_gwas; pgwas |br|
-Command line interface: pk_phylo_gwas; pk_pgwas
+Taxon groups
+############
 
-Phylogenetic genome-wide association study following the Pease et al.
-(2016) approach. Performs per-site association tests between alignment
-columns and a phenotype, applies Benjamini-Hochberg FDR correction,
-optionally classifies significant associations as monophyletic or
-polyphyletic using a phylogenetic tree, and produces a Manhattan plot.
+Function names: taxon_groups; tgroups; shared_taxa |br|
+Command line interface: pk_taxon_groups; pk_tgroups; pk_shared_taxa
 
-Categorical phenotypes use Fisher's exact test (2 groups) or chi-squared
-test (>2 groups). Continuous phenotypes use point-biserial correlation.
-Only biallelic sites are tested; invariant and multiallelic sites are
-skipped. Sites with gaps or ambiguous characters are also skipped.
+Determine which tree or FASTA files share the same set of taxa.
+Reads a file listing paths to gene trees or alignments and groups
+them by their taxon set (exact match). Reports groups sorted by
+size (largest first), with the taxa present in each group.
+
+Useful for identifying subsets of genes with identical taxon
+sampling for concatenation or comparative analysis.
 
 .. code-block:: shell
 
-   phykit phylo_gwas -a <alignment> -d <phenotype> -o <output>
-     [-t <tree>] [-p <partition>] [--alpha 0.05]
-     [--exclude-monophyletic] [--csv <file>] [--json]
+   phykit taxon_groups -l <file> [-f trees|fasta] [--json]
 
 Options: |br|
-*-a/--alignment*: FASTA alignment file |br|
-*-d/--phenotype*: two-column TSV file (taxon<tab>phenotype) |br|
-*-o/--output*: output Manhattan plot path |br|
-*-t/--tree*: optional Newick tree for monophyletic/polyphyletic classification |br|
-*-p/--partition*: optional RAxML-style partition file for gene annotations |br|
-*--alpha*: FDR significance threshold (default: 0.05) |br|
-*--exclude-monophyletic*: exclude monophyletic associations from results |br|
-*--dot-size*: scale factor for dot size in the Manhattan plot (default: 1.0; use 2.0 for double, 0.5 for half) |br|
-*--csv*: output per-site results as CSV to the specified file |br|
-*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
-*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
-*--dpi*: resolution in DPI (default: 300) |br|
-*--no-title*: hide the plot title |br|
-*--title*: custom title text |br|
-*--legend-position*: legend location (e.g., "upper right", "none") |br|
-*--colors*: comma-separated colors (hex or named) |br|
+*-l/--list*: file listing paths to gene trees or FASTA files (one per line).
+Blank lines and lines starting with # are skipped. Relative paths are resolved
+relative to the list file's directory. |br|
+*-f/--format*: input format: ``trees`` (Newick) or ``fasta`` (FASTA alignment).
+Default: ``trees``. |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -1368,124 +1457,157 @@ Options: |br|
 
 |
 
-.. _cmd-occupancy_filter:
-
-Occupancy filter
-################
-Function names: occupancy_filter; occ_filter; filter_occupancy |br|
-Command line interface: pk_occupancy_filter; pk_occ_filter; pk_filter_occupancy
-
-Filter alignments and/or trees by cross-file taxon occupancy. Given a
-list of alignment or tree files, counts how many files each taxon appears
-in and retains only taxa meeting a minimum threshold. Outputs filtered
-copies of each input file.
-
-This is useful for phylogenomics workflows where you want to ensure all
-taxa in your dataset are present in at least N genes before concatenation
-or downstream analysis. For FASTA files, sequences of removed taxa are
-dropped. For tree files, tips of removed taxa are pruned.
-
-**Example:** Given 10 alignment files and ``-t 0.5`` (the default), only
-taxa present in at least 5 of the 10 alignments will be retained. New
-filtered alignment files are written with the removed taxa excluded.
-
-**Threshold interpretation:**
-
-- Values **between 0 and 1** (inclusive) are treated as a **fraction** of the
-  total number of files. For example, ``-t 0.5`` means 50% of files;
-  ``-t 1.0`` means 100% (taxon must be in every file).
-- Values **greater than 1** are treated as an **absolute count**. For example,
-  ``-t 5`` means the taxon must appear in at least 5 files.
-- The default is ``0.5`` (50% occupancy).
-
-.. code-block:: shell
-
-   # Keep taxa in at least 50% of files (default)
-   phykit occupancy_filter -l alignment_list.txt
-
-   # Keep taxa in all files (100% occupancy)
-   phykit occupancy_filter -l alignment_list.txt -t 1.0
-
-   # Keep taxa in at least 20 files
-   phykit occupancy_filter -l alignment_list.txt -t 20
-
-   # Filter trees instead of alignments
-   phykit occ_filter -l tree_list.txt -f trees -t 0.5 -o filtered_trees/
-
-.. code-block:: shell
-
-   phykit occupancy_filter -l <file_list> [-f/--format fasta|trees]
-       [-t/--threshold <float>] [-o/--output-dir <dir>] [--suffix <str>] [--json]
-
-Options: |br|
-*-l/--list*: file listing paths to alignment or tree files, one per line (required) |br|
-*-f/--format*: input file format — ``fasta`` (default) or ``trees`` |br|
-*-t/--threshold*: minimum occupancy to retain a taxon. Values between 0 and 1 (inclusive) are treated as a fraction (e.g., ``0.5`` = 50%, ``1.0`` = 100%); values > 1 are treated as an absolute count (default: ``0.5``) |br|
-*-o/--output-dir*: directory for filtered output files (default: same directory as input) |br|
-*--suffix*: suffix added to output filenames before the extension (default: ``.filtered``) |br|
-*--json*: output results as JSON
-
-|
-
-.. _cmd-taxon_groups:
-
-Taxon groups
-############
-
-Function names: taxon_groups; tgroups; shared_taxa |br|
-Command line interface: pk_taxon_groups; pk_tgroups; pk_shared_taxa
-
-Determine which tree or FASTA files share the same set of taxa.
-Reads a file listing paths to gene trees or alignments and groups
-them by their taxon set (exact match). Reports groups sorted by
-size (largest first), with the taxa present in each group.
-
-Useful for identifying subsets of genes with identical taxon
-sampling for concatenation or comparative analysis.
-
-.. code-block:: shell
-
-   phykit taxon_groups -l <file> [-f trees|fasta] [--json]
-
-Options: |br|
-*-l/--list*: file listing paths to gene trees or FASTA files (one per line).
-Blank lines and lines starting with # are skipped. Relative paths are resolved
-relative to the list file's directory. |br|
-*-f/--format*: input format: ``trees`` (Newick) or ``fasta`` (FASTA alignment).
-Default: ``trees``. |br|
-*--json*: optional argument to print results as JSON
-
-|
-
 Tree-based functions
 --------------------
 
-.. _cmd-parsimony_score:
+.. _cmd-ancestral_state_reconstruction:
 
-Parsimony score
-###############
-Function names: parsimony_score; parsimony; pars |br|
-Command line interface: pk_parsimony_score; pk_parsimony; pk_pars
+Ancestral state reconstruction
+##############################
+Function names: ancestral_state_reconstruction; asr; anc_recon |br|
+Command line interface: pk_ancestral_state_reconstruction; pk_asr; pk_anc_recon
 
-Compute the Fitch (1971) maximum parsimony score of a tree given an
-alignment. The parsimony score is the minimum number of character state
-changes required to explain the alignment on the given tree topology.
-Gap characters (-, N, X, ?) are treated as wildcards.
+Estimate ancestral states using maximum likelihood. Supports both
+continuous and discrete traits.
 
-Cross-validated against R's phangorn::parsimony(method="fitch").
+**Continuous traits** (``--type continuous``, default): Brownian Motion
+model, analogous to R's ``phytools::fastAnc()`` and
+``ape::ace(type="ML")``. Optionally produce a contMap plot.
+
+Two methods are available for continuous traits:
+
+- **fast** (default): Felsenstein's pruning/contrasts shortcut, O(n) time
+- **ml**: full VCV-based ML with exact conditional CIs, O(n^3)
+
+Both methods produce identical point estimates; ``ml`` gives exact
+conditional confidence intervals.
+
+**Discrete traits** (``--type discrete``): Mk model with marginal
+posterior probabilities at each internal node, analogous to
+``ape::ace(type="discrete")``. Optionally produce a pie-chart phylogeny
+plot.
+
+Three models are available for discrete traits:
+
+- **ER** (default): equal rates
+- **SYM**: symmetric rates
+- **ARD**: all rates different
+
+Input trait data can be either a two-column file (``taxon<tab>value``)
+when ``-c`` is omitted, or a multi-trait file with header row when ``-c``
+specifies which column to use.
 
 .. code-block:: shell
 
-	phykit parsimony_score -t <tree> -a <alignment> [-v/--verbose] [--json]
+   phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
-*-t/--tree*: tree file (required) |br|
-*-a/--alignment*: alignment file in FASTA format (required) |br|
-*-v/--verbose*: print per-site parsimony scores |br|
+*-t/--tree*: a phylogenetic tree file |br|
+*-d/--trait_data*: trait data file (two-column or multi-trait with header) |br|
+*-c/--trait*: trait column name (required for multi-trait files) |br|
+*--type*: trait type: ``continuous`` or ``discrete`` (default: ``continuous``) |br|
+*-m/--method*: method to use: ``fast`` or ``ml`` (continuous only; default: ``fast``) |br|
+*--model*: Mk model: ``ER``, ``SYM``, or ``ARD`` (discrete only; default: ``ER``) |br|
+*--ci*: include 95% confidence intervals (continuous only) |br|
+*--plot*: output path for plot (requires matplotlib) |br|
+*--plot-ci*: draw confidence interval bars at internal nodes on the contMap plot (requires --ci and --plot) |br|
+*--ci-size*: scale factor for CI bar size (default: 1.0; use 2.0 for larger, 0.5 for smaller) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
+*--ladderize*: ladderize (sort) the tree before plotting |br|
+*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
+*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
+*--json*: output results as JSON
+
+Example contMap plot generated with the ``--plot`` option. Branches are colored
+by interpolated ancestral trait values:
+
+.. image:: ../_static/img/asr_example.png
+   :align: center
+   :width: 80%
+
+|
+
+.. _cmd-bipartition_support_stats:
+
+Bipartition support statistics
+##############################
+Function names: bipartition_support_stats; bss |br|
+Command line interface: pk_bipartition_support_stats; pk_bss
+
+Calculate summary statistics for bipartition support.
+
+High bipartition support values are thought to be desirable because
+they are indicative of greater certainty in tree topology.
+
+To obtain all bipartition support values, use the -v/--verbose option.
+In addition to support values for each node, the names of all terminal
+branch tips are also included. Each terminal branch name is separated
+with a semi-colon (;).
+
+.. code-block:: shell
+
+   phykit bipartition_support_stats <tree> [-v/--verbose]
+       [--thresholds <comma-separated-floats>] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-v/--verbose*: optional argument to print all bipartition support values |br|
+*--thresholds*: optional comma-separated support cutoffs; prints count and
+fraction of bipartitions below each cutoff |br|
 *--json*: optional argument to print results as JSON
 
-**R validation:** Validated against ``phangorn`` in R
-(see ``tests/r_validation/validate_parsimony.R``).
+Example JSON output (summary mode):
+
+.. code-block:: shell
+
+   phykit bipartition_support_stats test.tre --thresholds 70,90 --json
+   {"summary": {"maximum": 100, "mean": 95.71428571428571, "median": 100, "minimum": 85, "seventy_fifth": 100.0, "standard_deviation": 7.319250547113999, "twenty_fifth": 92.5, "variance": 53.57142857142857}, "thresholds": [{"count_below": 0, "fraction_below": 0.0, "threshold": 70.0}, {"count_below": 2, "fraction_below": 0.2857142857142857, "threshold": 90.0}], "verbose": false}
+
+Example JSON output (verbose mode):
+
+.. code-block:: shell
+
+   phykit bipartition_support_stats test.tre -v --json
+   {"bipartitions": [{"support": 85, "terminals": ["taxon_a", "taxon_b"]}, {"support": 100, "terminals": ["taxon_c", "taxon_d"]}], "thresholds": [], "verbose": true}
+
+|
+
+.. _cmd-branch_length_multiplier:
+
+Branch length multiplier
+########################
+Function names: branch_length_multiplier; blm |br|
+Command line interface: pk_branch_length_multiplier; pk_blm
+
+Multiply branch lengths in a phylogeny by a given factor.
+                
+This can help modify reference trees when conducting simulations
+or other analyses.  
+
+.. code-block:: shell
+
+   phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-f/--factor*: factor to multiply branch lengths by |br|
+*-o/--output*: optional argument to name the outputted tree file. Default 
+output will have the same name as the input file but with the suffix ".factor_(n).tre" |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -1595,229 +1717,93 @@ Options: |br|
 
 |
 
-.. _cmd-independent_contrasts:
+.. _cmd-chronogram:
 
-Independent contrasts (PIC)
-###########################
-Function names: independent_contrasts; pic; phylo_contrasts |br|
-Command line interface: pk_independent_contrasts; pk_pic; pk_phylo_contrasts
+Chronogram
+##########
+Function names: chronogram; chrono; time_tree |br|
+Command line interface: pk_chronogram; pk_chrono; pk_time_tree
 
-Compute Felsenstein's (1985) phylogenetically independent contrasts for a
-continuous trait on a phylogeny. Each internal node yields one standardized
-contrast, producing n-1 contrasts for n tips. Multifurcations are
-automatically resolved.
+Plot a chronogram (time-calibrated phylogeny) with geological timescale
+bands. Requires an ultrametric (or approximately ultrametric) tree and
+the root age in millions of years (Ma).
 
-Cross-validated against R's ape::pic(). The sum of squared contrasts
-matches R exactly.
+Geological epoch, period, or era bands are drawn behind the tree as
+colored stripes based on the ICS 2024 International Chronostratigraphic
+Chart. A labeled timescale bar is displayed below the tree. The time
+axis runs from past (left) to present (right).
 
-.. code-block:: shell
+**95% HPD confidence intervals** are automatically detected and drawn
+when the input tree contains BEAST (``height_95%_HPD``) or MCMCTree
+(``95%HPD``) node annotations. The intervals appear as translucent
+blue bars at each internal node — no extra flags needed. Trees without
+annotations are plotted without bars.
 
-	phykit independent_contrasts -t <tree> -d <trait_data> [--json]
+The ``--timescale`` option controls the level of detail:
 
-Options: |br|
-*-t/--tree*: tree file (required) |br|
-*-d/--trait_data*: trait data file, two columns: taxon<tab>value (required) |br|
-*--json*: optional argument to print results as JSON
+- **auto** (default): selects epochs for trees <= 66 Ma, periods for
+  <= 252 Ma, eras for deeper timescales
+- **epoch**: Cenozoic and Mesozoic epochs (Holocene through Early Triassic)
+- **period**: geological periods (Quaternary through Cambrian)
+- **era**: Cenozoic, Mesozoic, Paleozoic
 
-**R validation:** Validated against ``ape`` in R
-(see ``tests/r_validation/validate_pic.R``).
+.. image:: ../_static/chronogram_ultrametric.png
+   :align: center
+   :width: 90%
 
-|
+*Rectangular chronogram with epoch bands, node age labels, and a
+geological timescale bar.*
 
-.. _cmd-ancestral_state_reconstruction:
+.. image:: ../_static/chronogram_ultrametric_circular.png
+   :align: center
+   :width: 60%
 
-Ancestral state reconstruction
-##############################
-Function names: ancestral_state_reconstruction; asr; anc_recon |br|
-Command line interface: pk_ancestral_state_reconstruction; pk_asr; pk_anc_recon
-
-Estimate ancestral states using maximum likelihood. Supports both
-continuous and discrete traits.
-
-**Continuous traits** (``--type continuous``, default): Brownian Motion
-model, analogous to R's ``phytools::fastAnc()`` and
-``ape::ace(type="ML")``. Optionally produce a contMap plot.
-
-Two methods are available for continuous traits:
-
-- **fast** (default): Felsenstein's pruning/contrasts shortcut, O(n) time
-- **ml**: full VCV-based ML with exact conditional CIs, O(n^3)
-
-Both methods produce identical point estimates; ``ml`` gives exact
-conditional confidence intervals.
-
-**Discrete traits** (``--type discrete``): Mk model with marginal
-posterior probabilities at each internal node, analogous to
-``ape::ace(type="discrete")``. Optionally produce a pie-chart phylogeny
-plot.
-
-Three models are available for discrete traits:
-
-- **ER** (default): equal rates
-- **SYM**: symmetric rates
-- **ARD**: all rates different
-
-Input trait data can be either a two-column file (``taxon<tab>value``)
-when ``-c`` is omitted, or a multi-trait file with header row when ``-c``
-specifies which column to use.
+*Circular chronogram with concentric geological epoch rings and
+radial time tick marks.*
 
 .. code-block:: shell
 
-   phykit ancestral_state_reconstruction -t <tree> -d <trait_data> [-c <trait>] [--type <type>] [-m <method>] [--model <model>] [--ci] [--plot <output>]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
-       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+   phykit chronogram -t <tree> --root-age <float> --plot-output <file>
+       [--timescale auto|epoch|period|era] [--node-ages]
+       [--circular] [--ladderize] [--color-file <file>] [--json]
 
 Options: |br|
-*-t/--tree*: a phylogenetic tree file |br|
-*-d/--trait_data*: trait data file (two-column or multi-trait with header) |br|
-*-c/--trait*: trait column name (required for multi-trait files) |br|
-*--type*: trait type: ``continuous`` or ``discrete`` (default: ``continuous``) |br|
-*-m/--method*: method to use: ``fast`` or ``ml`` (continuous only; default: ``fast``) |br|
-*--model*: Mk model: ``ER``, ``SYM``, or ``ARD`` (discrete only; default: ``ER``) |br|
-*--ci*: include 95% confidence intervals (continuous only) |br|
-*--plot*: output path for plot (requires matplotlib) |br|
-*--plot-ci*: draw confidence interval bars at internal nodes on the contMap plot (requires --ci and --plot) |br|
-*--ci-size*: scale factor for CI bar size (default: 1.0; use 2.0 for larger, 0.5 for smaller) |br|
-*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
-*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
-*--dpi*: resolution in DPI (default: 300) |br|
-*--no-title*: hide the plot title |br|
-*--title*: custom title text |br|
-*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
-*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
-*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
-*--title-fontsize*: font size for the title |br|
-*--axis-fontsize*: font size for axis labels |br|
-*--colors*: comma-separated colors (hex or named) |br|
+*-t/--tree*: ultrametric tree file (required) |br|
+*--root-age*: age of the root in millions of years (Ma; required) |br|
+*--plot-output*: output figure path (.png, .pdf, .svg; required) |br|
+*--timescale*: timescale level — ``auto`` (default), ``epoch``, ``period``, or ``era`` |br|
+*--node-ages*: label internal nodes with divergence times (Ma) |br|
+*--circular*: draw circular chronogram with concentric geological rings |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|
-*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
-*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
 *--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
-*--json*: output results as JSON
-
-Example contMap plot generated with the ``--plot`` option. Branches are colored
-by interpolated ancestral trait values:
-
-.. image:: ../_static/img/asr_example.png
-   :align: center
-   :width: 80%
+*--json*: output node ages as JSON
 
 |
 
-.. _cmd-tree_space:
+.. _cmd-collapse_branches:
 
-Tree space visualization
-########################
-Function names: tree_space; tspace; tree_landscape |br|
-Command line interface: pk_tree_space; pk_tspace; pk_tree_landscape
+Collapse bipartitions
+#####################
+Function names: collapse_branches; collapse; cb |br|
+Command line interface: pk_collapse_branches; pk_collapse; pk_cb
 
-Visualize how gene trees cluster in topology space by computing pairwise
-distances (Robinson-Foulds or Kuhner-Felsenstein) and projecting into
-2D via MDS, t-SNE, or UMAP. Points are colored by spectral clustering
-with automatic cluster detection via the eigengap heuristic.
+Collapse branches on a phylogeny according to bipartition support.
 
-Alternatively, use ``--heatmap`` to draw a clustered distance heatmap
-with a dendrogram showing hierarchical relationships among gene trees.
-Use ``--distance-matrix`` to export the raw pairwise distance matrix
-as a CSV file.
-
-Optionally highlight a species tree as a distinct marker to see where
-it sits relative to the gene tree cloud.
+Bipartitions will be collapsed if they are less than the user specified
+value.    
 
 .. code-block:: shell
 
-   phykit tree_space -t <trees> -o <output>
-       [--metric rf|kf] [--method mds|tsne|umap]
-       [--species-tree <file>] [--k <int>] [--seed <int>]
-       [--heatmap] [--distance-matrix <file>]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
-       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+   phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>] [--json]
 
 Options: |br|
-*-t/--trees*: file with gene trees (one Newick per line, or one file path per line) (required) |br|
-*-o/--output*: output figure path (.png, .pdf, .svg) (required) |br|
-*--metric*: distance metric: rf (normalized Robinson-Foulds, default) or kf (Kuhner-Felsenstein) |br|
-*--method*: dimensionality reduction: mds (default), tsne, or umap |br|
-*--species-tree*: optional species tree to highlight in the plot as a star marker |br|
-*--k*: number of clusters (auto-detected via eigengap if omitted) |br|
-*--seed*: random seed for reproducibility (t-SNE/UMAP) |br|
-*--heatmap*: draw a clustered distance heatmap instead of a scatter plot |br|
-*--distance-matrix*: output the pairwise distance matrix as a CSV file |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-s/--support*: bipartitions with support less than this value will be 
+collapsed |br|
+*-o/--output*: optional argument to name the outputted tree file. Default 
+output will have the same name as the input file but with the suffix 
+".collapsed_(support).tre" |br|
 *--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-spectral_discordance:
-
-Spectral discordance decomposition
-###################################
-Function names: spectral_discordance; spec_disc; sd |br|
-Command line interface: pk_spectral_discordance; pk_spec_disc; pk_sd
-
-Decompose gene tree space via PCA on a bipartition presence/absence (or
-branch-length) matrix, with spectral clustering and automatic cluster
-detection via the eigengap heuristic.
-
-Each gene tree is encoded as a vector over the union of all observed
-bipartitions. PCA reveals the axes of topological variation, with loading
-vectors directly identifying which bipartitions drive each PC. Spectral
-clustering groups genes sharing similar topologies; the number of clusters
-is auto-detected from the eigengap of the graph Laplacian.
-
-Two metrics are available:
-
-- **nrf** (default): binary presence/absence, consistent with normalized Robinson-Foulds distance
-- **wrf**: branch-length weighted
-
-Polytomies (collapsed branches) in gene trees are handled conservatively:
-splits from polytomous nodes are excluded from the bipartition matrix since
-they represent unresolved relationships. Trifurcating roots (standard
-unrooted Newick) are not affected. This allows gene trees with collapsed
-low-support branches to be used directly as input.
-
-.. code-block:: shell
-
-   phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
-       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
-
-Options: |br|
-*-g/--gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
-*-t/--tree*: species tree (optional; flags species-tree bipartitions in loadings) |br|
-*--metric*: distance metric: ``nrf`` or ``wrf`` (default: ``nrf``) |br|
-*--clusters*: override auto-detected number of clusters |br|
-*--n-pcs*: number of PCs to report (default: min(10, G-1)) |br|
-*--top-loadings*: top bipartitions per PC to display (default: 5) |br|
-*--plot*: output prefix for plots (generates ``_scatter.png`` and ``_eigengap.png``) |br|
-*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
-*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
-*--dpi*: resolution in DPI (default: 300) |br|
-*--no-title*: hide the plot title |br|
-*--title*: custom title text |br|
-*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
-*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
-*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
-*--title-fontsize*: font size for the title |br|
-*--axis-fontsize*: font size for axis labels |br|
-*--colors*: comma-separated colors (hex or named) |br|
-*--ladderize*: ladderize (sort) the tree before plotting |br|
-*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
-*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
-*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
-*--json*: output results as JSON
-
-.. image:: ../_static/img/spectral_discordance_example_scatter.png
-   :align: center
-   :width: 80%
-
-|
-
-.. image:: ../_static/img/spectral_discordance_example_eigengap.png
-   :align: center
-   :width: 80%
 
 |
 
@@ -1924,209 +1910,6 @@ trait estimates at that node.
 
 |
 
-.. _cmd-bipartition_support_stats:
-
-Bipartition support statistics
-##############################
-Function names: bipartition_support_stats; bss |br|
-Command line interface: pk_bipartition_support_stats; pk_bss
-
-Calculate summary statistics for bipartition support.
-
-High bipartition support values are thought to be desirable because
-they are indicative of greater certainty in tree topology.
-
-To obtain all bipartition support values, use the -v/--verbose option.
-In addition to support values for each node, the names of all terminal
-branch tips are also included. Each terminal branch name is separated
-with a semi-colon (;).
-
-.. code-block:: shell
-
-   phykit bipartition_support_stats <tree> [-v/--verbose]
-       [--thresholds <comma-separated-floats>] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-v/--verbose*: optional argument to print all bipartition support values |br|
-*--thresholds*: optional comma-separated support cutoffs; prints count and
-fraction of bipartitions below each cutoff |br|
-*--json*: optional argument to print results as JSON
-
-Example JSON output (summary mode):
-
-.. code-block:: shell
-
-   phykit bipartition_support_stats test.tre --thresholds 70,90 --json
-   {"summary": {"maximum": 100, "mean": 95.71428571428571, "median": 100, "minimum": 85, "seventy_fifth": 100.0, "standard_deviation": 7.319250547113999, "twenty_fifth": 92.5, "variance": 53.57142857142857}, "thresholds": [{"count_below": 0, "fraction_below": 0.0, "threshold": 70.0}, {"count_below": 2, "fraction_below": 0.2857142857142857, "threshold": 90.0}], "verbose": false}
-
-Example JSON output (verbose mode):
-
-.. code-block:: shell
-
-   phykit bipartition_support_stats test.tre -v --json
-   {"bipartitions": [{"support": 85, "terminals": ["taxon_a", "taxon_b"]}, {"support": 100, "terminals": ["taxon_c", "taxon_d"]}], "thresholds": [], "verbose": true}
-
-|
-
-.. _cmd-branch_length_multiplier:
-
-Branch length multiplier
-########################
-Function names: branch_length_multiplier; blm |br|
-Command line interface: pk_branch_length_multiplier; pk_blm
-
-Multiply branch lengths in a phylogeny by a given factor.
-                
-This can help modify reference trees when conducting simulations
-or other analyses.  
-
-.. code-block:: shell
-
-   phykit branch_length_multiplier <tree> -f n [-o/--output <output_file>] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-f/--factor*: factor to multiply branch lengths by |br|
-*-o/--output*: optional argument to name the outputted tree file. Default 
-output will have the same name as the input file but with the suffix ".factor_(n).tre" |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-chronogram:
-
-Chronogram
-##########
-Function names: chronogram; chrono; time_tree |br|
-Command line interface: pk_chronogram; pk_chrono; pk_time_tree
-
-Plot a chronogram (time-calibrated phylogeny) with geological timescale
-bands. Requires an ultrametric (or approximately ultrametric) tree and
-the root age in millions of years (Ma).
-
-Geological epoch, period, or era bands are drawn behind the tree as
-colored stripes based on the ICS 2024 International Chronostratigraphic
-Chart. A labeled timescale bar is displayed below the tree. The time
-axis runs from past (left) to present (right).
-
-**95% HPD confidence intervals** are automatically detected and drawn
-when the input tree contains BEAST (``height_95%_HPD``) or MCMCTree
-(``95%HPD``) node annotations. The intervals appear as translucent
-blue bars at each internal node — no extra flags needed. Trees without
-annotations are plotted without bars.
-
-The ``--timescale`` option controls the level of detail:
-
-- **auto** (default): selects epochs for trees <= 66 Ma, periods for
-  <= 252 Ma, eras for deeper timescales
-- **epoch**: Cenozoic and Mesozoic epochs (Holocene through Early Triassic)
-- **period**: geological periods (Quaternary through Cambrian)
-- **era**: Cenozoic, Mesozoic, Paleozoic
-
-.. image:: ../_static/chronogram_ultrametric.png
-   :align: center
-   :width: 90%
-
-*Rectangular chronogram with epoch bands, node age labels, and a
-geological timescale bar.*
-
-.. image:: ../_static/chronogram_ultrametric_circular.png
-   :align: center
-   :width: 60%
-
-*Circular chronogram with concentric geological epoch rings and
-radial time tick marks.*
-
-.. code-block:: shell
-
-   phykit chronogram -t <tree> --root-age <float> --plot-output <file>
-       [--timescale auto|epoch|period|era] [--node-ages]
-       [--circular] [--ladderize] [--color-file <file>] [--json]
-
-Options: |br|
-*-t/--tree*: ultrametric tree file (required) |br|
-*--root-age*: age of the root in millions of years (Ma; required) |br|
-*--plot-output*: output figure path (.png, .pdf, .svg; required) |br|
-*--timescale*: timescale level — ``auto`` (default), ``epoch``, ``period``, or ``era`` |br|
-*--node-ages*: label internal nodes with divergence times (Ma) |br|
-*--circular*: draw circular chronogram with concentric geological rings |br|
-*--ladderize*: ladderize (sort) the tree before plotting |br|
-*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
-*--json*: output node ages as JSON
-
-|
-
-.. _cmd-collapse_branches:
-
-Collapse bipartitions
-#####################
-Function names: collapse_branches; collapse; cb |br|
-Command line interface: pk_collapse_branches; pk_collapse; pk_cb
-
-Collapse branches on a phylogeny according to bipartition support.
-
-Bipartitions will be collapsed if they are less than the user specified
-value.    
-
-.. code-block:: shell
-
-   phykit collapse_branches <tree> -s/--support n [-o/--output <output_file>] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-s/--support*: bipartitions with support less than this value will be 
-collapsed |br|
-*-o/--output*: optional argument to name the outputted tree file. Default 
-output will have the same name as the input file but with the suffix 
-".collapsed_(support).tre" |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-neighbor_net:
-
-NeighborNet
-###########
-Function names: neighbor_net; nnet |br|
-Command line interface: pk_neighbor_net; pk_nnet
-
-Construct a NeighborNet phylogenetic network from pairwise distances
-(Bryant & Moulton 2004). Unlike a consensus network (which summarizes
-conflict across gene trees), NeighborNet infers a splits graph directly
-from a distance matrix — analogous to Neighbor-Joining but producing a
-network instead of a tree.
-
-Input is either a FASTA alignment (distances computed internally) or a
-pre-computed distance matrix CSV. The algorithm:
-
-1. Computes pairwise distances (p-distance, identity, or Jukes-Cantor)
-2. Builds a NJ tree to determine the circular taxon ordering
-3. Enumerates all circular splits compatible with that ordering
-4. Estimates split weights via non-negative least squares (NNLS)
-5. Visualizes as a planar splits graph (Buneman graph)
-
-.. code-block:: shell
-
-   # From an alignment
-   phykit neighbor_net -a alignment.fa -o network.pdf
-
-   # From a pre-computed distance matrix
-   phykit neighbor_net --distance-matrix distances.csv -o network.pdf
-
-   # With Jukes-Cantor correction
-   phykit neighbor_net -a alignment.fa -o network.pdf --metric jc
-
-Options: |br|
-*-a/--alignment*: FASTA alignment file (computes distances internally) |br|
-*--distance-matrix*: pre-computed distance matrix CSV with taxon headers |br|
-*-o/--output*: output figure path (required) |br|
-*--metric*: distance metric when using -a: identity, p-distance (default), or jc (Jukes-Cantor) |br|
-*--max-splits*: maximum splits for visualization (default: 30) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
 .. _cmd-consensus_network:
 
 Consensus network
@@ -2223,103 +2006,10 @@ Options: |br|
 
 |
 
-.. _cmd-dtt:
-
-Disparity through time (DTT)
-#############################
-Function names: dtt; disparity_through_time |br|
-Command line interface: pk_dtt; pk_disparity_through_time
-
-Compute disparity-through-time (DTT) curves following Harmon et al. (2003).
-At each branching time the mean relative subclade disparity is calculated.
-Under Brownian motion the DTT curve declines linearly from 1 to 0; deviations
-from this expectation reveal tempo of morphological diversification.
-
-The Morphological Disparity Index (MDI) measures the area between the
-observed DTT and the Brownian motion null median. Positive MDI indicates
-late disparity accumulation; negative MDI indicates early disparity
-accumulation (consistent with adaptive radiation).
-
-.. code-block:: shell
-
-   phykit dtt -t <tree> --traits <traits_file>
-       [--trait <column>] [--index avg_sq|avg_manhattan]
-       [--nsim <int>] [--seed <int>]
-       [--plot-output <file>] [--json]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
-       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
-
-Options: |br|
-*-t/--tree*: ultrametric tree file (required) |br|
-*--traits*: TSV file with header row; first column ``taxon``, remaining columns are trait values (required) |br|
-*--trait*: specific trait column name; if omitted all trait columns are used (multivariate DTT) |br|
-*--index*: disparity index — ``avg_sq`` (average squared Euclidean distance, default) or ``avg_manhattan`` |br|
-*--nsim*: number of Brownian motion simulations for null DTT envelope and MDI p-value (default: 0, no simulations) |br|
-*--seed*: random seed for reproducibility |br|
-*--plot-output*: output filename for the DTT plot (PNG, PDF, SVG) |br|
-*--json*: output results as JSON
-
-**Default output**: text summary with DTT curve data points.
-
-.. code-block:: shell
-
-   # Single trait DTT
-   phykit dtt -t species.tre --traits traits.tsv --trait body_mass
-
-   # Multivariate DTT (all traits)
-   phykit dtt -t species.tre --traits traits.tsv
-
-   # With BM null envelope and MDI p-value
-   phykit dtt -t species.tre --traits traits.tsv --trait body_mass --nsim 1000 --seed 42
-
-   # With plot output
-   phykit dtt -t species.tre --traits traits.tsv --trait body_mass --nsim 1000 --plot-output dtt.png
-
-   # JSON output
-   phykit dtt -t species.tre --traits traits.tsv --trait body_mass --json
-
-**R validation:** Validated against ``geiger::dtt()`` in R
-(see ``tests/r_validation/validate_dtt.R``).
-
-|
-
-.. _cmd-fit_discrete:
-
-Discrete trait evolution model comparison (fitDiscrete)
-#######################################################
-Function names: fit_discrete; fitdiscrete; fd |br|
-Command line interface: pk_fit_discrete; pk_fitdiscrete; pk_fd
-
-Compare models of discrete trait evolution on a phylogeny. Fits ER
-(Equal Rates), SYM (Symmetric), and ARD (All Rates Different) Mk
-models of discrete character evolution via maximum likelihood.
-Compares models using AIC and BIC.
-
-Analogous to R's geiger::fitDiscrete(). Cross-validated against R's
-geiger package.
-
-.. code-block:: shell
-
-	phykit fit_discrete -t <tree> -d <trait_data> -c <trait>
-		[--models ER,SYM,ARD] [--json]
-
-Options: |br|
-*-t/--tree*: tree file (required) |br|
-*-d/--trait_data*: trait data file in TSV format (required) |br|
-*-c/--trait*: column name for the discrete trait in the data file (required) |br|
-*--models*: comma-separated list of models to fit (default: ``ER,SYM,ARD``) |br|
-*--json*: optional argument to print results as JSON
-
-**R validation:** Validated against ``geiger`` in R
-(see ``tests/r_validation/validate_fit_discrete.R``).
-
-|
-
 .. _cmd-fit_continuous:
 
 Continuous trait evolution model comparison (fitContinuous)
-##########################################################
+###########################################################
 Function names: fit_continuous; fitcontinuous; fc |br|
 Command line interface: pk_fit_continuous; pk_fitcontinuous; pk_fc
 
@@ -2416,51 +2106,6 @@ Options: |br|
 .. image:: ../_static/img/contmap_example.png
    :align: center
    :width: 80%
-
-|
-
-.. _cmd-trait_rate_map:
-
-Trait rate map
-##################################
-Function names: trait_rate_map; rate_map; branch_rates |br|
-Command line interface: pk_trait_rate_map; pk_rate_map; pk_branch_rates
-
-Estimate per-branch evolutionary rates for a continuous trait and
-display them as a branch-colored phylogram. Ancestral states are
-reconstructed via Felsenstein's weighted-average method. Per-branch
-rate is the squared standardized contrast (proportional to local
-Brownian motion rate): ``rate = (child_val - parent_val)^2 / branch_length``.
-
-.. code-block:: shell
-
-   phykit trait_rate_map -t <tree> -d <trait_data> -o <output>
-       [--trait <column>] [--json]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
-       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
-
-Options: |br|
-*-t/--tree*: a tree file in Newick format |br|
-*-d/--trait_data*: tab-delimited trait file (two-column: taxon<tab>value with no header; or multi-column with header when --trait is used) |br|
-*-o/--output*: output plot file path (required) |br|
-*--trait*: column name to use from a multi-column trait file (if omitted, two-column format is expected) |br|
-*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
-*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
-*--dpi*: resolution in DPI (default: 300) |br|
-*--no-title*: hide the plot title |br|
-*--title*: custom title text |br|
-*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
-*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
-*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
-*--title-fontsize*: font size for the title |br|
-*--axis-fontsize*: font size for axis labels |br|
-*--colors*: comma-separated colors (hex or named) |br|
-*--ladderize*: ladderize (sort) the tree before plotting |br|
-*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
-*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
-*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
-*--json*: optional argument to print results as JSON
 
 |
 
@@ -2575,6 +2220,65 @@ this is a putative species tree. |br|
 
 |
 
+.. _cmd-dstatistic:
+
+D-statistic (ABBA-BABA test)
+############################
+Function names: dstatistic; dstat; abba_baba |br|
+Command line interface: pk_dstatistic; pk_dstat; pk_abba_baba
+
+Compute Patterson's D-statistic (ABBA-BABA test) for detecting
+introgression or gene flow between taxa. Given a four-taxon alignment
+with topology ``(((P1, P2), P3), Outgroup)``, the test counts ABBA
+and BABA site patterns:
+
+- **ABBA**: P1 has the ancestral allele, P2 and P3 share the derived
+  allele — suggests introgression between P2 and P3
+- **BABA**: P2 has the ancestral allele, P1 and P3 share the derived
+  allele — suggests introgression between P1 and P3
+- **D = (ABBA - BABA) / (ABBA + BABA)**: D = 0 under ILS alone;
+  D significantly different from 0 indicates introgression
+
+Note: the D-statistic identifies which pair of lineages exchanged
+genetic material but cannot determine the direction of gene flow
+within that pair.
+
+Significance is assessed via block jackknife (Green et al. 2010),
+producing a Z-score and p-value.
+
+Two input modes are supported:
+
+1. **Site patterns** (``-a``): counts ABBA/BABA from a FASTA alignment.
+   Only biallelic sites with no gaps or ambiguous characters are considered.
+   Significance via block jackknife.
+
+2. **Gene trees** (``-g``): counts discordant quartet topologies from gene
+   trees. Gene trees can have any number of taxa; only the quartet induced
+   by the four specified taxa is evaluated. Significance via chi-squared test.
+
+.. code-block:: shell
+
+   # Site-pattern mode
+   phykit dstatistic -a <alignment> --p1 <taxon> --p2 <taxon> --p3 <taxon> \
+       --outgroup <taxon> [--block-size 100] [--json]
+
+   # Gene-tree mode
+   phykit dstatistic -g <gene_trees> --p1 <taxon> --p2 <taxon> --p3 <taxon> \
+       --outgroup <taxon> [--json]
+
+Options: |br|
+*-a/--alignment*: FASTA alignment file (site-pattern mode) |br|
+*-g/--gene-trees*: gene trees file, one Newick per line (gene-tree mode; trees can have any number of taxa) |br|
+*--p1*: taxon name for P1, sister to P2 (required) |br|
+*--p2*: taxon name for P2, sister to P1, potential recipient of gene flow from P3 (required) |br|
+*--p3*: taxon name for P3, donor lineage (required) |br|
+*--outgroup*: outgroup taxon name, determines ancestral allele (required) |br|
+*--block-size*: block size in sites for jackknife standard error estimation (default: 100; alignment mode only) |br|
+*--support*: minimum branch support threshold; gene tree branches below this value are collapsed and treated as unresolved (gene-tree mode only) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 .. _cmd-degree_of_violation_of_a_molecular_clock:
 
 Degree of violation of the molecular clock
@@ -2651,208 +2355,6 @@ Options: |br|
 .. image:: ../_static/img/densitymap_example.png
    :align: center
    :width: 80%
-
-|
-
-.. _cmd-hybridization:
-
-Hybridization analysis
-######################
-Function names: hybridization; hybrid; reticulation |br|
-Command line interface: pk_hybridization; pk_hybrid; pk_reticulation
-
-Estimate the minimum number of reticulation events and localize where
-hybridization likely occurred on a species tree. For each internal branch,
-tests whether the two discordant NNI topologies are significantly
-asymmetric (binomial test with FDR correction). Asymmetric discordance
-suggests introgression/gene flow rather than ILS.
-
-Each branch receives:
-
-- **p-value**: binomial test of gDF1 vs gDF2 equality (H0: ILS alone)
-- **FDR-corrected p-value**: Benjamini-Hochberg correction across all branches
-- **Hybridization score**: asymmetry ratio (0.5 = no signal, 1.0 = strong signal)
-  for significant branches; 0 for non-significant
-- **Favored alternative**: which NNI topology is in excess, identifying
-  which pair of lineages likely exchanged genes (but not the direction
-  of gene flow)
-
-The estimated reticulation count is the number of branches with significant
-asymmetric discordance. Gene tree uncertainty can be accounted for with
-``--support`` to collapse low-support branches before topology determination.
-
-.. code-block:: shell
-
-   phykit hybridization -t <species_tree> -g <gene_trees>
-       [--support <float>] [--alpha 0.05] [--plot <output>] [--json]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
-       [--ladderize] [--cladogram] [--circular] [--ylabel-fontsize <float>]
-
-Options: |br|
-*-t/--tree*: species tree file (required) |br|
-*-g/--gene-trees*: gene trees file, one Newick per line (required) |br|
-*--support*: collapse gene tree branches below this support value before analysis |br|
-*--alpha*: FDR significance threshold (default: 0.05) |br|
-*--plot*: output hybridization score phylogram (branches colored by score, stars at significant nodes) |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-evo_tempo_map:
-
-Evolutionary tempo mapping
-##########################
-Function names: evo_tempo_map; etm |br|
-Command line interface: pk_evo_tempo_map; pk_etm
-
-Detect rate-topology associations by comparing branch length distributions
-between concordant and discordant gene trees at each species tree branch.
-
-Under the multispecies coalescent, discordant gene trees should have shorter
-internal branches near the discordant node (because the coalescence happened
-deeper, in the ancestral population). Deviations from this expectation suggest
-substitution rate heterogeneity correlated with topology, which could indicate
-adaptive evolution, different selective pressures in hybridizing lineages, or
-systematic error from model misspecification.
-
-For each internal branch of the species tree, gene trees are classified as
-concordant or discordant via bipartition matching (same as gCF). The homologous
-branch length is extracted from each gene tree and the two groups are compared
-using a Mann-Whitney U test and a permutation test (1000 permutations). P-values
-are corrected for multiple testing using Benjamini-Hochberg FDR.
-
-A global treeness (internal/total branch length ratio) comparison between
-concordant and discordant gene trees is also reported.
-
-.. code-block:: shell
-
-   phykit evo_tempo_map -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
-       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
-       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
-
-Options: |br|
-*-t/--tree*: a species tree file |br|
-*-g/--gene-trees*: multi-Newick file of gene trees with branch lengths |br|
-*--plot*: optional output path for box/strip plot (PNG) |br|
-*-v/--verbose*: print per-gene-tree classification details |br|
-*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
-*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
-*--dpi*: resolution in DPI (default: 300) |br|
-*--no-title*: hide the plot title |br|
-*--title*: custom title text |br|
-*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
-*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
-*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
-*--title-fontsize*: font size for the title |br|
-*--axis-fontsize*: font size for axis labels |br|
-*--colors*: comma-separated colors (hex or named) |br|
-*--ladderize*: ladderize (sort) the tree before plotting |br|
-*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
-*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
-*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
-*--json*: optional argument to print results as JSON
-
-Example output:
-
-.. code-block:: text
-
-   branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
-   ----------------------------------------------------------------------------------------------------------
-   bear,dog,raccoon                     6       1    3.875000    3.600000          NA          NA          NA
-   bear,raccoon                         7       3    0.880000    0.700000    0.516667    0.077000    0.516667
-   cat,monkey                          10       0   20.450000          NA          NA          NA          NA
-   cat,monkey,weasel                    9       1    2.120000    2.800000          NA          NA          NA
-   sea_lion,seal                        9       1    7.500000    7.200000          NA          NA          NA
-   ---
-   Global treeness: concordant=0.126489 (n=6), discordant=0.119014 (n=4)
-   Branches tested: 1, significant (FDR<0.05): 0
-
-Each row corresponds to an internal branch of the species tree identified by the
-smaller partition of taxa. The ``n_conc`` and ``n_disc`` columns show how many gene
-trees are concordant or discordant at that branch. The ``med_conc`` and ``med_disc``
-columns show the median branch length (in substitutions/site) for each group. The
-``U_pval`` is the two-sided Mann-Whitney U test p-value, ``perm_pval`` is the
-permutation test p-value (1000 permutations), and ``fdr_p`` is the
-Benjamini-Hochberg corrected p-value. Branches with fewer than 2 gene trees
-in either group show ``NA`` for p-values.
-
-The global treeness comparison tests whether concordant gene trees have
-systematically different ratios of internal to total branch lengths.
-
-To generate a visualization:
-
-.. code-block:: shell
-
-   phykit evo_tempo_map -t <species_tree> -g <gene_trees> --plot tempo_map.png
-
-.. image:: ../_static/img/tutorial_etm_plot.png
-   :align: center
-   :width: 80%
-
-The plot shows grouped box plots with jittered data points for each species tree
-branch, comparing branch lengths between concordant (blue) and discordant (orange)
-gene trees. Branches where the FDR-corrected p-value is below 0.05 are marked
-with an asterisk.
-
-|
-
-.. _cmd-dstatistic:
-
-D-statistic (ABBA-BABA test)
-############################
-Function names: dstatistic; dstat; abba_baba |br|
-Command line interface: pk_dstatistic; pk_dstat; pk_abba_baba
-
-Compute Patterson's D-statistic (ABBA-BABA test) for detecting
-introgression or gene flow between taxa. Given a four-taxon alignment
-with topology ``(((P1, P2), P3), Outgroup)``, the test counts ABBA
-and BABA site patterns:
-
-- **ABBA**: P1 has the ancestral allele, P2 and P3 share the derived
-  allele — suggests introgression between P2 and P3
-- **BABA**: P2 has the ancestral allele, P1 and P3 share the derived
-  allele — suggests introgression between P1 and P3
-- **D = (ABBA - BABA) / (ABBA + BABA)**: D = 0 under ILS alone;
-  D significantly different from 0 indicates introgression
-
-Note: the D-statistic identifies which pair of lineages exchanged
-genetic material but cannot determine the direction of gene flow
-within that pair.
-
-Significance is assessed via block jackknife (Green et al. 2010),
-producing a Z-score and p-value.
-
-Two input modes are supported:
-
-1. **Site patterns** (``-a``): counts ABBA/BABA from a FASTA alignment.
-   Only biallelic sites with no gaps or ambiguous characters are considered.
-   Significance via block jackknife.
-
-2. **Gene trees** (``-g``): counts discordant quartet topologies from gene
-   trees. Gene trees can have any number of taxa; only the quartet induced
-   by the four specified taxa is evaluated. Significance via chi-squared test.
-
-.. code-block:: shell
-
-   # Site-pattern mode
-   phykit dstatistic -a <alignment> --p1 <taxon> --p2 <taxon> --p3 <taxon> \
-       --outgroup <taxon> [--block-size 100] [--json]
-
-   # Gene-tree mode
-   phykit dstatistic -g <gene_trees> --p1 <taxon> --p2 <taxon> --p3 <taxon> \
-       --outgroup <taxon> [--json]
-
-Options: |br|
-*-a/--alignment*: FASTA alignment file (site-pattern mode) |br|
-*-g/--gene-trees*: gene trees file, one Newick per line (gene-tree mode; trees can have any number of taxa) |br|
-*--p1*: taxon name for P1, sister to P2 (required) |br|
-*--p2*: taxon name for P2, sister to P1, potential recipient of gene flow from P3 (required) |br|
-*--p3*: taxon name for P3, donor lineage (required) |br|
-*--outgroup*: outgroup taxon name, determines ancestral allele (required) |br|
-*--block-size*: block size in sites for jackknife standard error estimation (default: 100; alignment mode only) |br|
-*--support*: minimum branch support threshold; gene tree branches below this value are collapsed and treated as unresolved (gene-tree mode only) |br|
-*--json*: optional argument to print results as JSON
 
 |
 
@@ -3003,6 +2505,99 @@ gCF values.
 
 |
 
+.. _cmd-fit_discrete:
+
+Discrete trait evolution model comparison (fitDiscrete)
+#######################################################
+Function names: fit_discrete; fitdiscrete; fd |br|
+Command line interface: pk_fit_discrete; pk_fitdiscrete; pk_fd
+
+Compare models of discrete trait evolution on a phylogeny. Fits ER
+(Equal Rates), SYM (Symmetric), and ARD (All Rates Different) Mk
+models of discrete character evolution via maximum likelihood.
+Compares models using AIC and BIC.
+
+Analogous to R's geiger::fitDiscrete(). Cross-validated against R's
+geiger package.
+
+.. code-block:: shell
+
+	phykit fit_discrete -t <tree> -d <trait_data> -c <trait>
+		[--models ER,SYM,ARD] [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-d/--trait_data*: trait data file in TSV format (required) |br|
+*-c/--trait*: column name for the discrete trait in the data file (required) |br|
+*--models*: comma-separated list of models to fit (default: ``ER,SYM,ARD``) |br|
+*--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``geiger`` in R
+(see ``tests/r_validation/validate_fit_discrete.R``).
+
+|
+
+.. _cmd-dtt:
+
+Disparity through time (DTT)
+#############################
+Function names: dtt; disparity_through_time |br|
+Command line interface: pk_dtt; pk_disparity_through_time
+
+Compute disparity-through-time (DTT) curves following Harmon et al. (2003).
+At each branching time the mean relative subclade disparity is calculated.
+Under Brownian motion the DTT curve declines linearly from 1 to 0; deviations
+from this expectation reveal tempo of morphological diversification.
+
+The Morphological Disparity Index (MDI) measures the area between the
+observed DTT and the Brownian motion null median. Positive MDI indicates
+late disparity accumulation; negative MDI indicates early disparity
+accumulation (consistent with adaptive radiation).
+
+.. code-block:: shell
+
+   phykit dtt -t <tree> --traits <traits_file>
+       [--trait <column>] [--index avg_sq|avg_manhattan]
+       [--nsim <int>] [--seed <int>]
+       [--plot-output <file>] [--json]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
+
+Options: |br|
+*-t/--tree*: ultrametric tree file (required) |br|
+*--traits*: TSV file with header row; first column ``taxon``, remaining columns are trait values (required) |br|
+*--trait*: specific trait column name; if omitted all trait columns are used (multivariate DTT) |br|
+*--index*: disparity index — ``avg_sq`` (average squared Euclidean distance, default) or ``avg_manhattan`` |br|
+*--nsim*: number of Brownian motion simulations for null DTT envelope and MDI p-value (default: 0, no simulations) |br|
+*--seed*: random seed for reproducibility |br|
+*--plot-output*: output filename for the DTT plot (PNG, PDF, SVG) |br|
+*--json*: output results as JSON
+
+**Default output**: text summary with DTT curve data points.
+
+.. code-block:: shell
+
+   # Single trait DTT
+   phykit dtt -t species.tre --traits traits.tsv --trait body_mass
+
+   # Multivariate DTT (all traits)
+   phykit dtt -t species.tre --traits traits.tsv
+
+   # With BM null envelope and MDI p-value
+   phykit dtt -t species.tre --traits traits.tsv --trait body_mass --nsim 1000 --seed 42
+
+   # With plot output
+   phykit dtt -t species.tre --traits traits.tsv --trait body_mass --nsim 1000 --plot-output dtt.png
+
+   # JSON output
+   phykit dtt -t species.tre --traits traits.tsv --trait body_mass --json
+
+**R validation:** Validated against ``geiger::dtt()`` in R
+(see ``tests/r_validation/validate_dtt.R``).
+
+|
+
 .. _cmd-evolutionary_rate:
 
 Evolutionary rate
@@ -3024,6 +2619,138 @@ of the Royal Society B (2014).
 
 Options: |br|
 *<tree>*: input file tree name |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-evo_tempo_map:
+
+Evolutionary tempo mapping
+##########################
+Function names: evo_tempo_map; etm |br|
+Command line interface: pk_evo_tempo_map; pk_etm
+
+Detect rate-topology associations by comparing branch length distributions
+between concordant and discordant gene trees at each species tree branch.
+
+Under the multispecies coalescent, discordant gene trees should have shorter
+internal branches near the discordant node (because the coalescence happened
+deeper, in the ancestral population). Deviations from this expectation suggest
+substitution rate heterogeneity correlated with topology, which could indicate
+adaptive evolution, different selective pressures in hybridizing lineages, or
+systematic error from model misspecification.
+
+For each internal branch of the species tree, gene trees are classified as
+concordant or discordant via bipartition matching (same as gCF). The homologous
+branch length is extracted from each gene tree and the two groups are compared
+using a Mann-Whitney U test and a permutation test (1000 permutations). P-values
+are corrected for multiple testing using Benjamini-Hochberg FDR.
+
+A global treeness (internal/total branch length ratio) comparison between
+concordant and discordant gene trees is also reported.
+
+.. code-block:: shell
+
+   phykit evo_tempo_map -t <species_tree> -g <gene_trees> [--plot <output>] [-v]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+
+Options: |br|
+*-t/--tree*: a species tree file |br|
+*-g/--gene-trees*: multi-Newick file of gene trees with branch lengths |br|
+*--plot*: optional output path for box/strip plot (PNG) |br|
+*-v/--verbose*: print per-gene-tree classification details |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
+*--ladderize*: ladderize (sort) the tree before plotting |br|
+*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
+*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
+*--json*: optional argument to print results as JSON
+
+Example output:
+
+.. code-block:: text
+
+   branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
+   ----------------------------------------------------------------------------------------------------------
+   bear,dog,raccoon                     6       1    3.875000    3.600000          NA          NA          NA
+   bear,raccoon                         7       3    0.880000    0.700000    0.516667    0.077000    0.516667
+   cat,monkey                          10       0   20.450000          NA          NA          NA          NA
+   cat,monkey,weasel                    9       1    2.120000    2.800000          NA          NA          NA
+   sea_lion,seal                        9       1    7.500000    7.200000          NA          NA          NA
+   ---
+   Global treeness: concordant=0.126489 (n=6), discordant=0.119014 (n=4)
+   Branches tested: 1, significant (FDR<0.05): 0
+
+Each row corresponds to an internal branch of the species tree identified by the
+smaller partition of taxa. The ``n_conc`` and ``n_disc`` columns show how many gene
+trees are concordant or discordant at that branch. The ``med_conc`` and ``med_disc``
+columns show the median branch length (in substitutions/site) for each group. The
+``U_pval`` is the two-sided Mann-Whitney U test p-value, ``perm_pval`` is the
+permutation test p-value (1000 permutations), and ``fdr_p`` is the
+Benjamini-Hochberg corrected p-value. Branches with fewer than 2 gene trees
+in either group show ``NA`` for p-values.
+
+The global treeness comparison tests whether concordant gene trees have
+systematically different ratios of internal to total branch lengths.
+
+To generate a visualization:
+
+.. code-block:: shell
+
+   phykit evo_tempo_map -t <species_tree> -g <gene_trees> --plot tempo_map.png
+
+.. image:: ../_static/img/tutorial_etm_plot.png
+   :align: center
+   :width: 80%
+
+The plot shows grouped box plots with jittered data points for each species tree
+branch, comparing branch lengths between concordant (blue) and discordant (orange)
+gene trees. Branches where the FDR-corrected p-value is below 0.05 are marked
+with an asterisk.
+
+|
+
+.. _cmd-faiths_pd:
+
+Faith's phylogenetic diversity
+##############################
+Function names: faiths_pd; faith_pd; fpd; phylo_diversity |br|
+Command line interface: pk_faiths_pd; pk_faith_pd; pk_fpd; pk_phylo_diversity
+
+Calculate Faith's phylogenetic diversity (PD) for a community of tips
+on a phylogeny (Faith, *Biological Conservation*, 1992;
+doi: 10.1016/0006-3207(92)91201-3).
+
+Faith's PD is the sum of branch lengths in the minimum subtree that
+connects a set of taxa. By default, the path from the community's most
+recent common ancestor up to the tree root is included, matching the
+original definition and ``picante::pd(..., include.root = TRUE)``. Pass
+``--exclude-root`` to sum only the branches of the induced subtree
+rooted at the MRCA, matching ``picante::pd(..., include.root = FALSE)``.
+
+The community is supplied as a single-column text file of tip labels,
+one per line.
+
+.. code-block:: shell
+
+   phykit faiths_pd <tree> -t/--taxa <taxa_file> [--exclude-root] [--json]
+
+Options: |br|
+*<tree>*: first argument after function name should be a tree file |br|
+*-t/--taxa*: file with one tip label per line defining the community |br|
+*--exclude-root*: sum only branches of the induced subtree rooted at the community MRCA |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -3082,6 +2809,79 @@ be scanned for |br|
 
 |
 
+.. _cmd-hybridization:
+
+Hybridization analysis
+######################
+Function names: hybridization; hybrid; reticulation |br|
+Command line interface: pk_hybridization; pk_hybrid; pk_reticulation
+
+Estimate the minimum number of reticulation events and localize where
+hybridization likely occurred on a species tree. For each internal branch,
+tests whether the two discordant NNI topologies are significantly
+asymmetric (binomial test with FDR correction). Asymmetric discordance
+suggests introgression/gene flow rather than ILS.
+
+Each branch receives:
+
+- **p-value**: binomial test of gDF1 vs gDF2 equality (H0: ILS alone)
+- **FDR-corrected p-value**: Benjamini-Hochberg correction across all branches
+- **Hybridization score**: asymmetry ratio (0.5 = no signal, 1.0 = strong signal)
+  for significant branches; 0 for non-significant
+- **Favored alternative**: which NNI topology is in excess, identifying
+  which pair of lineages likely exchanged genes (but not the direction
+  of gene flow)
+
+The estimated reticulation count is the number of branches with significant
+asymmetric discordance. Gene tree uncertainty can be accounted for with
+``--support`` to collapse low-support branches before topology determination.
+
+.. code-block:: shell
+
+   phykit hybridization -t <species_tree> -g <gene_trees>
+       [--support <float>] [--alpha 0.05] [--plot <output>] [--json]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
+       [--ladderize] [--cladogram] [--circular] [--ylabel-fontsize <float>]
+
+Options: |br|
+*-t/--tree*: species tree file (required) |br|
+*-g/--gene-trees*: gene trees file, one Newick per line (required) |br|
+*--support*: collapse gene tree branches below this support value before analysis |br|
+*--alpha*: FDR significance threshold (default: 0.05) |br|
+*--plot*: output hybridization score phylogram (branches colored by score, stars at significant nodes) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-independent_contrasts:
+
+Independent contrasts (PIC)
+###########################
+Function names: independent_contrasts; pic; phylo_contrasts |br|
+Command line interface: pk_independent_contrasts; pk_pic; pk_phylo_contrasts
+
+Compute Felsenstein's (1985) phylogenetically independent contrasts for a
+continuous trait on a phylogeny. Each internal node yields one standardized
+contrast, producing n-1 contrasts for n tips. Multifurcations are
+automatically resolved.
+
+Cross-validated against R's ape::pic(). The sum of squared contrasts
+matches R exactly.
+
+.. code-block:: shell
+
+	phykit independent_contrasts -t <tree> -d <trait_data> [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-d/--trait_data*: trait data file, two columns: taxon<tab>value (required) |br|
+*--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``ape`` in R
+(see ``tests/r_validation/validate_pic.R``).
+
+|
+
 .. _cmd-internal_branch_stats:
 
 Internal branch statistics
@@ -3128,6 +2928,45 @@ Options: |br|
 
 |
 
+.. _cmd-kf_distance:
+
+Kuhner-Felsenstein distance
+###########################
+Function names: kuhner_felsenstein_distance; kf_distance; kf_dist; kf |br|
+Command line interface: pk_kuhner_felsenstein_distance; pk_kf_distance; pk_kf_dist; pk_kf
+
+Calculate the Kuhner-Felsenstein (KF) branch score distance between two trees.
+
+Unlike Robinson-Foulds distance which only considers topology, KF distance
+incorporates both topology and branch length differences. The KF distance
+is calculated as KF = sqrt(sum over all splits of (b1_i - b2_i)^2), where
+b1_i and b2_i are branch lengths for split i in each tree. Splits absent
+from one tree use branch length 0. Both internal and terminal branches are
+included.
+
+PhyKIT will print out
+col 1: the plain KF distance and
+col 2: the normalized KF distance.
+
+KF distances are calculated following Kuhner & Felsenstein, Journal of
+Computational Biology (1994), doi: 10.1089/cmb.1994.1.183.
+
+Cross-validated against R's phangorn::KF.dist().
+
+.. code-block:: shell
+
+	phykit kf_distance <tree_file_zero> <tree_file_one> [--json]
+
+Options: |br|
+*<tree_file_zero>*: first argument after function name should be a tree file |br|
+*<tree_file_one>*: second argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``phangorn`` in R
+(see ``tests/r_validation/validate_kf_distance.R``).
+
+|
+
 .. _cmd-last_common_ancestor_subtree:
 
 Last common ancestor subtree
@@ -3148,49 +2987,6 @@ Options: |br|
 file with the list of taxa to get the last common ancestor subtree for |br|
 *-o/--output*: optional argument to name the outputted tree file |br|
 *--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-quartet_pie:
-
-Quartet pie chart
-#################
-Function names: quartet_pie; qpie; quartet_pie_chart |br|
-Command line interface: pk_quartet_pie; pk_qpie; pk_quartet_pie_chart
-
-Draw a phylogram with pie charts at internal nodes showing quartet
-concordance proportions. In native mode (-g provided), computes gene
-concordance factors (gCF, gDF1, gDF2) from a species tree and gene trees
-via bipartition matching. In ASTRAL mode (no -g), parses q1/q2/q3
-annotations from ASTRAL ``-t 2`` or wASTRAL ``--support 3`` output.
-
-Pie slices show concordant (blue), discordant alt 1 (red), and
-discordant alt 2 (gray) proportions. Use ``--annotate`` to add numeric
-values near each pie.
-
-.. image:: ../_static/quartet_pie_example.png
-   :align: center
-   :width: 90%
-
-.. code-block:: shell
-
-	phykit quartet_pie -t <species_tree> [-g <gene_trees>] -o <output>
-		[--annotate] [--branch-labels] [--csv <file>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
-
-Options: |br|
-*-t/--tree*: species tree file (required) |br|
-*-g/--gene-trees*: gene trees file, one Newick tree per line (optional; if omitted, ASTRAL ``-t 2`` or wASTRAL ``--support 3`` annotations are parsed) |br|
-*-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
-*--annotate*: show gCF/gDF values as text near each pie chart |br|
-*--branch-labels*: show the number of concordant gene trees (blue, above branch) and LPP support (red, below branch) on each internal branch. In ASTRAL mode, values come from ``f1`` and ``pp1`` annotations; in native mode, the concordant count is computed from gene trees |br|
-*--csv*: output per-branch concordance values (gCF, gDF1, gDF2, counts) as a CSV file |br|
-*--pie-size*: scale factor for pie chart size (default: 1.0; use 2.0 for double, 0.5 for half) |br|
-*--colors*: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) |br|
-*--ladderize*: ladderize (sort) the tree before plotting |br|
-*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
-*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
-*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
-*--json*: optional argument to output per-node concordance values as JSON
 
 |
 
@@ -3530,6 +3326,49 @@ Options: |br|
 
 |
 
+.. _cmd-neighbor_net:
+
+NeighborNet
+###########
+Function names: neighbor_net; nnet |br|
+Command line interface: pk_neighbor_net; pk_nnet
+
+Construct a NeighborNet phylogenetic network from pairwise distances
+(Bryant & Moulton 2004). Unlike a consensus network (which summarizes
+conflict across gene trees), NeighborNet infers a splits graph directly
+from a distance matrix — analogous to Neighbor-Joining but producing a
+network instead of a tree.
+
+Input is either a FASTA alignment (distances computed internally) or a
+pre-computed distance matrix CSV. The algorithm:
+
+1. Computes pairwise distances (p-distance, identity, or Jukes-Cantor)
+2. Builds a NJ tree to determine the circular taxon ordering
+3. Enumerates all circular splits compatible with that ordering
+4. Estimates split weights via non-negative least squares (NNLS)
+5. Visualizes as a planar splits graph (Buneman graph)
+
+.. code-block:: shell
+
+   # From an alignment
+   phykit neighbor_net -a alignment.fa -o network.pdf
+
+   # From a pre-computed distance matrix
+   phykit neighbor_net --distance-matrix distances.csv -o network.pdf
+
+   # With Jukes-Cantor correction
+   phykit neighbor_net -a alignment.fa -o network.pdf --metric jc
+
+Options: |br|
+*-a/--alignment*: FASTA alignment file (computes distances internally) |br|
+*--distance-matrix*: pre-computed distance matrix CSV with taxon headers |br|
+*-o/--output*: output figure path (required) |br|
+*--metric*: distance metric when using -a: identity, p-distance (default), or jc (Jukes-Cantor) |br|
+*--max-splits*: maximum splits for visualization (default: 30) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
 .. _cmd-network_signal:
 
 Network signal
@@ -3818,6 +3657,35 @@ with matching alpha (0.607) and pBIC (17.6 vs R's 16.8).
 
 |
 
+.. _cmd-parsimony_score:
+
+Parsimony score
+###############
+Function names: parsimony_score; parsimony; pars |br|
+Command line interface: pk_parsimony_score; pk_parsimony; pk_pars
+
+Compute the Fitch (1971) maximum parsimony score of a tree given an
+alignment. The parsimony score is the minimum number of character state
+changes required to explain the alignment on the given tree topology.
+Gap characters (-, N, X, ?) are treated as wildcards.
+
+Cross-validated against R's phangorn::parsimony(method="fitch").
+
+.. code-block:: shell
+
+	phykit parsimony_score -t <tree> -a <alignment> [-v/--verbose] [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-a/--alignment*: alignment file in FASTA format (required) |br|
+*-v/--verbose*: print per-site parsimony scores |br|
+*--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``phangorn`` in R
+(see ``tests/r_validation/validate_parsimony.R``).
+
+|
+
 .. _cmd-patristic_distances:
 
 Patristic distances
@@ -3842,75 +3710,6 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
 *-v/--verbose*: optional argument to print all tip-to-tip distances |br|
 *--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-phylo_heatmap:
-
-Phylogenetic heatmap
-####################
-Function names: phylo_heatmap; pheatmap; ph |br|
-Command line interface: pk_phylo_heatmap; pk_pheatmap; pk_ph
-
-Draw a phylogenetic heatmap: a phylogeny alongside a color-coded matrix
-of numeric trait values, with rows aligned to tree tips. Analogous to
-R's phytools::phylo.heatmap().
-
-.. image:: ../_static/phylo_heatmap_example.png
-   :align: center
-   :width: 90%
-
-.. code-block:: shell
-
-	phykit phylo_heatmap -t <tree> -d <data> -o <output>
-		[--split 0.3] [--standardize] [--cmap viridis] [--cluster-columns] [--json]
-
-Options: |br|
-*-t/--tree*: tree file (required) |br|
-*-d/--data*: numeric data matrix in TSV format with header row (required) |br|
-*-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
-*--split*: fraction of figure width for the tree panel (default: 0.3) |br|
-*--standardize*: z-score each column before coloring |br|
-*--cmap*: matplotlib colormap name (default: ``viridis``) |br|
-*--cluster-columns*: cluster trait columns by similarity and display a dendrogram at the top |br|
-*--json*: optional argument to output metadata as JSON
-
-|
-
-.. _cmd-phylo_impute:
-
-Phylogenetic imputation
-#######################
-Function names: phylo_impute; impute; phylo_imp |br|
-Command line interface: pk_phylo_impute; pk_impute; pk_phylo_imp
-
-Impute missing continuous trait values using phylogenetic relationships
-and between-trait correlations under Brownian motion. Missing values
-(``NA``, ``?``, or empty) in a multi-trait TSV are predicted from:
-
-1. **Phylogenetic neighbors**: closely related species with observed
-   values contribute more to the imputation via the phylogenetic VCV
-2. **Trait correlations**: if a taxon has observed values for other
-   traits, between-trait covariance improves the prediction
-
-Reports imputed values with standard errors and 95% confidence
-intervals. The output TSV is a drop-in replacement for the input with
-all missing values filled in.
-
-.. code-block:: shell
-
-   phykit phylo_impute -t <tree> -d <trait_data> -o <output> [--json]
-   phykit phylo_impute -t <tree> -d <trait_data> -o <output> -g <gene_trees>
-
-Options: |br|
-*-t/--tree*: tree file in Newick format (required) |br|
-*-d/--trait-data*: multi-trait TSV with header; missing values as NA, ?, or empty (required) |br|
-*-o/--output*: output TSV file with imputed values (required) |br|
-*-g/--gene-trees*: gene trees for discordance-aware VCV |br|
-*--json*: optional argument to print results as JSON
-
-**R validation:** Validated against ``Rphylopars`` in R
-(see ``tests/r_validation/validate_phylo_impute.R``).
 
 |
 
@@ -4082,80 +3881,6 @@ in R using ``ape::vcv()`` for the phylogenetic covariance matrix
 
 |
 
-.. _cmd-phylo_path:
-
-Phylogenetic path analysis
-##########################
-Function names: phylo_path; ppath; phylopath |br|
-Command line interface: pk_phylo_path; pk_ppath; pk_phylopath
-
-Phylogenetic path analysis (von Hardenberg & Gonzalez-Voyer 2013).
-Compare competing causal hypotheses (DAGs) about trait evolution while
-accounting for phylogenetic non-independence, using Shipley's
-d-separation test combined with PGLS.
-
-**How it works:**
-
-1. Define a set of candidate causal models as directed acyclic graphs (DAGs).
-   Each DAG specifies which traits causally influence which other traits.
-2. For each DAG, derive the **basis set** — the minimal set of conditional
-   independence claims implied by the graph (Shipley 2000).
-3. Test each independence claim using PGLS with Pagel's lambda. If the
-   predictor is non-significant after conditioning, the independence holds.
-4. Combine p-values into **Fisher's C** statistic. A model with a high p-value
-   (C-test) is consistent with the data; a low p-value means the model is rejected.
-5. Rank models by **CICc** (C-statistic Information Criterion, corrected for
-   sample size). Lower CICc = better fit.
-6. Estimate path coefficients (standardized PGLS regression slopes) and
-   **conditionally average** them across well-supported models weighted by CICc.
-
-**Interpreting the output:**
-
-- **CICc and weights**: models with delta CICc < 2 have substantial support.
-  Weights sum to 1 and represent relative evidence.
-- **Model p-value**: p > 0.05 means the data are consistent with the DAG's
-  independence claims. A rejected model (p < 0.05) has causal structure
-  contradicted by the data.
-- **Path coefficients**: standardized (z-scored) regression slopes. Positive
-  = positive causal effect; magnitude indicates strength. CIs not
-  overlapping zero indicate significance.
-
-.. image:: ../_static/phylo_path_dag.png
-   :align: center
-   :width: 60%
-
-*DAG plot showing model-averaged path coefficients. Blue = positive
-effect, line thickness proportional to coefficient magnitude.*
-
-**Model file format:**
-
-.. code-block:: text
-
-   # model_name: edge1, edge2, ...
-   direct: body_mass->brain_size, body_mass->longevity
-   mediated: body_mass->brain_size, brain_size->longevity
-   full: body_mass->brain_size, body_mass->longevity, brain_size->longevity
-
-.. code-block:: shell
-
-   phykit phylo_path -t <tree> --traits <traits_file> --models <models_file>
-       [--best-only] [--plot-output <file>] [--csv <file>] [--json]
-
-Options: |br|
-*-t/--tree*: species tree file (required) |br|
-*--traits*: TSV file with taxon and continuous trait columns (required) |br|
-*--models*: model definition file with candidate DAGs (required) |br|
-*--best-only*: report only best model coefficients instead of model averaging |br|
-*--plot-output*: output DAG plot file (.png, .pdf, .svg) |br|
-*--csv*: output CSV with model comparison table and path coefficients |br|
-*--json*: output results as JSON
-
-**R validation:** Fisher's C, CICc, weights, and path coefficients validated
-against ``phylopath::phylo_path()`` in R
-(see ``tests/r_validation/validate_phylo_path.R``).
-
-|
-
 .. _cmd-phylogenetic_glm:
 
 Phylogenetic GLM
@@ -4203,6 +3928,75 @@ Options: |br|
 
 **R validation:** Validated against ``phylolm`` in R
 (see ``tests/r_validation/validate_glm_pseudo_r2.R``).
+
+|
+
+.. _cmd-phylo_heatmap:
+
+Phylogenetic heatmap
+####################
+Function names: phylo_heatmap; pheatmap; ph |br|
+Command line interface: pk_phylo_heatmap; pk_pheatmap; pk_ph
+
+Draw a phylogenetic heatmap: a phylogeny alongside a color-coded matrix
+of numeric trait values, with rows aligned to tree tips. Analogous to
+R's phytools::phylo.heatmap().
+
+.. image:: ../_static/phylo_heatmap_example.png
+   :align: center
+   :width: 90%
+
+.. code-block:: shell
+
+	phykit phylo_heatmap -t <tree> -d <data> -o <output>
+		[--split 0.3] [--standardize] [--cmap viridis] [--cluster-columns] [--json]
+
+Options: |br|
+*-t/--tree*: tree file (required) |br|
+*-d/--data*: numeric data matrix in TSV format with header row (required) |br|
+*-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
+*--split*: fraction of figure width for the tree panel (default: 0.3) |br|
+*--standardize*: z-score each column before coloring |br|
+*--cmap*: matplotlib colormap name (default: ``viridis``) |br|
+*--cluster-columns*: cluster trait columns by similarity and display a dendrogram at the top |br|
+*--json*: optional argument to output metadata as JSON
+
+|
+
+.. _cmd-phylo_impute:
+
+Phylogenetic imputation
+#######################
+Function names: phylo_impute; impute; phylo_imp |br|
+Command line interface: pk_phylo_impute; pk_impute; pk_phylo_imp
+
+Impute missing continuous trait values using phylogenetic relationships
+and between-trait correlations under Brownian motion. Missing values
+(``NA``, ``?``, or empty) in a multi-trait TSV are predicted from:
+
+1. **Phylogenetic neighbors**: closely related species with observed
+   values contribute more to the imputation via the phylogenetic VCV
+2. **Trait correlations**: if a taxon has observed values for other
+   traits, between-trait covariance improves the prediction
+
+Reports imputed values with standard errors and 95% confidence
+intervals. The output TSV is a drop-in replacement for the input with
+all missing values filled in.
+
+.. code-block:: shell
+
+   phykit phylo_impute -t <tree> -d <trait_data> -o <output> [--json]
+   phykit phylo_impute -t <tree> -d <trait_data> -o <output> -g <gene_trees>
+
+Options: |br|
+*-t/--tree*: tree file in Newick format (required) |br|
+*-d/--trait-data*: multi-trait TSV with header; missing values as NA, ?, or empty (required) |br|
+*-o/--output*: output TSV file with imputed values (required) |br|
+*-g/--gene-trees*: gene trees for discordance-aware VCV |br|
+*--json*: optional argument to print results as JSON
+
+**R validation:** Validated against ``Rphylopars`` in R
+(see ``tests/r_validation/validate_phylo_impute.R``).
 
 |
 
@@ -4360,6 +4154,80 @@ Options: |br|
 
 |
 
+.. _cmd-phylo_path:
+
+Phylogenetic path analysis
+##########################
+Function names: phylo_path; ppath; phylopath |br|
+Command line interface: pk_phylo_path; pk_ppath; pk_phylopath
+
+Phylogenetic path analysis (von Hardenberg & Gonzalez-Voyer 2013).
+Compare competing causal hypotheses (DAGs) about trait evolution while
+accounting for phylogenetic non-independence, using Shipley's
+d-separation test combined with PGLS.
+
+**How it works:**
+
+1. Define a set of candidate causal models as directed acyclic graphs (DAGs).
+   Each DAG specifies which traits causally influence which other traits.
+2. For each DAG, derive the **basis set** — the minimal set of conditional
+   independence claims implied by the graph (Shipley 2000).
+3. Test each independence claim using PGLS with Pagel's lambda. If the
+   predictor is non-significant after conditioning, the independence holds.
+4. Combine p-values into **Fisher's C** statistic. A model with a high p-value
+   (C-test) is consistent with the data; a low p-value means the model is rejected.
+5. Rank models by **CICc** (C-statistic Information Criterion, corrected for
+   sample size). Lower CICc = better fit.
+6. Estimate path coefficients (standardized PGLS regression slopes) and
+   **conditionally average** them across well-supported models weighted by CICc.
+
+**Interpreting the output:**
+
+- **CICc and weights**: models with delta CICc < 2 have substantial support.
+  Weights sum to 1 and represent relative evidence.
+- **Model p-value**: p > 0.05 means the data are consistent with the DAG's
+  independence claims. A rejected model (p < 0.05) has causal structure
+  contradicted by the data.
+- **Path coefficients**: standardized (z-scored) regression slopes. Positive
+  = positive causal effect; magnitude indicates strength. CIs not
+  overlapping zero indicate significance.
+
+.. image:: ../_static/phylo_path_dag.png
+   :align: center
+   :width: 60%
+
+*DAG plot showing model-averaged path coefficients. Blue = positive
+effect, line thickness proportional to coefficient magnitude.*
+
+**Model file format:**
+
+.. code-block:: text
+
+   # model_name: edge1, edge2, ...
+   direct: body_mass->brain_size, body_mass->longevity
+   mediated: body_mass->brain_size, brain_size->longevity
+   full: body_mass->brain_size, body_mass->longevity, brain_size->longevity
+
+.. code-block:: shell
+
+   phykit phylo_path -t <tree> --traits <traits_file> --models <models_file>
+       [--best-only] [--plot-output <file>] [--csv <file>] [--json]
+
+Options: |br|
+*-t/--tree*: species tree file (required) |br|
+*--traits*: TSV file with taxon and continuous trait columns (required) |br|
+*--models*: model definition file with candidate DAGs (required) |br|
+*--best-only*: report only best model coefficients instead of model averaging |br|
+*--plot-output*: output DAG plot file (.png, .pdf, .svg) |br|
+*--csv*: output CSV with model comparison table and path coefficients |br|
+*--json*: output results as JSON
+
+**R validation:** Fisher's C, CICc, weights, and path coefficients validated
+against ``phylopath::phylo_path()`` in R
+(see ``tests/r_validation/validate_phylo_path.R``).
+
+|
+
 .. _cmd-phylogenetic_regression:
 
 Phylogenetic regression (PGLS)
@@ -4485,52 +4353,6 @@ Options: |br|
 
 **R validation:** Validated against ``phytools``, ``geiger`` in R
 (see ``tests/r_validation/validate_signal_r2.R`` and ``tests/r_validation/validate_kmult.R``).
-
-|
-
-.. _cmd-trait_correlation:
-
-Trait correlation
-#################
-Function names: trait_correlation; trait_corr; phylo_corr |br|
-Command line interface: pk_trait_correlation; pk_trait_corr; pk_phylo_corr
-
-Compute phylogenetic correlations between all pairs of traits and display
-them as a heatmap with significance indicators.
-
-Uses GLS-centering via the tree's variance-covariance matrix to account for
-phylogenetic non-independence among species. P-values are computed from the
-t-distribution and displayed as significance stars on the heatmap cells:
-
-- ``***`` p < 0.001
-- ``**`` p < 0.01
-- ``*`` p < alpha (default 0.05)
-
-The multi-trait input file should be tab-delimited with a header row:
-``taxon<tab>trait1<tab>trait2<tab>...``
-At least 2 traits are required. Lines starting with '#' are treated as
-comments. If the tree and trait file have different taxa, the intersection
-is used and warnings are printed to stderr.
-
-The ``--cluster`` option clusters traits by correlation similarity
-(using ``1 - |r|`` as distance) and draws dendrograms alongside the
-heatmap.
-
-.. code-block:: shell
-
-   phykit trait_correlation -t <tree> -d <trait_data> -o <output>
-       [--alpha 0.05] [--cluster] [-g <gene_trees>] [--json]
-       [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
-       [--no-title] [--title <str>]
-
-Options: |br|
-*-t/--tree*: a tree file in Newick format |br|
-*-d/--trait-data*: tab-delimited multi-trait file with header row (at least 2 traits) |br|
-*-o/--output*: output figure path (supports .png, .pdf, .svg) |br|
-*--alpha*: significance threshold for marking p-values (default: 0.05) |br|
-*--cluster*: cluster traits by correlation similarity and display dendrograms |br|
-*-g/--gene-trees*: optional multi-Newick file of gene trees for discordance-aware VCV |br|
-*--json*: optional argument to print results as JSON
 
 |
 
@@ -4701,38 +4523,6 @@ keep them |br|
 *--json*: optional argument to print results as JSON
 |
 
-.. _cmd-subtree_prune_regraft:
-
-Subtree pruning and regrafting
-##############################
-Function names: subtree_prune_regraft; spr |br|
-Command line interface: pk_subtree_prune_regraft; pk_spr
-
-Generate all possible SPR (Subtree Pruning and Regrafting) rearrangements
-for a specified subtree on a tree.
-
-The subtree is identified by specifying one or more comma-separated taxa
-whose MRCA (most recent common ancestor) defines the clade to prune. The
-pruned subtree is then regrafted onto every other branch in the remaining
-tree, producing one Newick tree per regraft position.
-
-For a subtree defined by a single taxon (a single leaf), the leaf is pruned
-and reattached to each branch in the remaining tree. For a clade (two or
-more taxa), the entire clade is pruned and regrafted. Each output Newick
-contains all original taxa.
-
-.. code-block:: shell
-
-   phykit subtree_prune_regraft -t <tree> --subtree <taxa> [-o/--output <output_file>] [--json]
-
-Options: |br|
-*-t/--tree*: input tree file in Newick format (required) |br|
-*--subtree*: comma-separated list of taxa defining the subtree to prune (MRCA resolved), or a single-column file with one taxon per line (required) |br|
-*-o/--output*: optional output file for SPR trees (one Newick per line); if omitted, prints to stdout |br|
-*--json*: optional argument to print summary metadata and trees as JSON
-
-|
-
 .. _cmd-quartet_network:
 
 Quartet network
@@ -4829,6 +4619,49 @@ C, D, E, and F:
 
 |
 
+.. _cmd-quartet_pie:
+
+Quartet pie chart
+#################
+Function names: quartet_pie; qpie; quartet_pie_chart |br|
+Command line interface: pk_quartet_pie; pk_qpie; pk_quartet_pie_chart
+
+Draw a phylogram with pie charts at internal nodes showing quartet
+concordance proportions. In native mode (-g provided), computes gene
+concordance factors (gCF, gDF1, gDF2) from a species tree and gene trees
+via bipartition matching. In ASTRAL mode (no -g), parses q1/q2/q3
+annotations from ASTRAL ``-t 2`` or wASTRAL ``--support 3`` output.
+
+Pie slices show concordant (blue), discordant alt 1 (red), and
+discordant alt 2 (gray) proportions. Use ``--annotate`` to add numeric
+values near each pie.
+
+.. image:: ../_static/quartet_pie_example.png
+   :align: center
+   :width: 90%
+
+.. code-block:: shell
+
+	phykit quartet_pie -t <species_tree> [-g <gene_trees>] -o <output>
+		[--annotate] [--branch-labels] [--csv <file>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+
+Options: |br|
+*-t/--tree*: species tree file (required) |br|
+*-g/--gene-trees*: gene trees file, one Newick tree per line (optional; if omitted, ASTRAL ``-t 2`` or wASTRAL ``--support 3`` annotations are parsed) |br|
+*-o/--output*: output figure path (required; supports .png, .pdf, .svg) |br|
+*--annotate*: show gCF/gDF values as text near each pie chart |br|
+*--branch-labels*: show the number of concordant gene trees (blue, above branch) and LPP support (red, below branch) on each internal branch. In ASTRAL mode, values come from ``f1`` and ``pp1`` annotations; in native mode, the concordant count is computed from gene trees |br|
+*--csv*: output per-branch concordance values (gCF, gDF1, gDF2, counts) as a CSV file |br|
+*--pie-size*: scale factor for pie chart size (default: 1.0; use 2.0 for double, 0.5 for half) |br|
+*--colors*: comma-separated colors for concordant, disc1, disc2 (default: blue, red, gray) |br|
+*--ladderize*: ladderize (sort) the tree before plotting |br|
+*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
+*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
+*--json*: optional argument to output per-node concordance values as JSON
+
+|
+
 .. _cmd-rate_heterogeneity:
 
 Rate heterogeneity test (multi-rate Brownian motion)
@@ -4920,45 +4753,6 @@ output will have the same name as the input file but with the suffix ".renamed" 
 
 |
 
-.. _cmd-kf_distance:
-
-Kuhner-Felsenstein distance
-###########################
-Function names: kuhner_felsenstein_distance; kf_distance; kf_dist; kf |br|
-Command line interface: pk_kuhner_felsenstein_distance; pk_kf_distance; pk_kf_dist; pk_kf
-
-Calculate the Kuhner-Felsenstein (KF) branch score distance between two trees.
-
-Unlike Robinson-Foulds distance which only considers topology, KF distance
-incorporates both topology and branch length differences. The KF distance
-is calculated as KF = sqrt(sum over all splits of (b1_i - b2_i)^2), where
-b1_i and b2_i are branch lengths for split i in each tree. Splits absent
-from one tree use branch length 0. Both internal and terminal branches are
-included.
-
-PhyKIT will print out
-col 1: the plain KF distance and
-col 2: the normalized KF distance.
-
-KF distances are calculated following Kuhner & Felsenstein, Journal of
-Computational Biology (1994), doi: 10.1089/cmb.1994.1.183.
-
-Cross-validated against R's phangorn::KF.dist().
-
-.. code-block:: shell
-
-	phykit kf_distance <tree_file_zero> <tree_file_one> [--json]
-
-Options: |br|
-*<tree_file_zero>*: first argument after function name should be a tree file |br|
-*<tree_file_one>*: second argument after function name should be a tree file |br|
-*--json*: optional argument to print results as JSON
-
-**R validation:** Validated against ``phangorn`` in R
-(see ``tests/r_validation/validate_kf_distance.R``).
-
-|
-
 .. _cmd-robinson_foulds_distance:
 
 Robinson-Foulds distance
@@ -5018,46 +4812,6 @@ Options: |br|
 *<tree>*: first argument after function name should be a tree file to root |br|
 *-r/--root*: single column file with taxa names to root the phylogeny on |br|
 *-o/--output*: optional argument to specify the name of the output file |br|
-*--json*: optional argument to print results as JSON
-
-|
-
-.. _cmd-spurious_sequence:
-
-Spurious homolog identification
-###############################
-Function names: spurious_sequence; spurious_seq; ss |br|
-Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss
-
-Determines potentially spurious homologs using branch lengths.
-
-Identifies potentially spurious sequences and reports
-tips in the phylogeny that could possibly be removed
-from the associated multiple sequence alignment. PhyKIT
-does so by identifying and reporting long terminal branches
-defined as branches that are equal to or greater than 20 times the median
-length of all branches.
-
-PhyKIT reports the following information
-col1: name of tip that is a putatively spurious sequence
-col2: length of branch leading to putatively spurious sequence
-col3: threshold used to identify putatively spurious sequences
-col4: median branch length in the phylogeny
-
-If there are no putatively spurious sequences, "None" is reported.
-
-Using this method to identify potentially spurious sequences
-was, to my knowledge, first introduced by Shen et al., (2018)
-Cell doi: 10.1016/j.cell.2018.10.023. 
-
-.. code-block:: shell
-
-   phykit spurious_seq <file> -f/--factor [--json]
-
-Options: |br|
-*<file>*: first argument after function name should be a tree file |br|
-*-f/--factor*: factor to multiply median branch length by to calculate
-the threshold of long branches. (Default: 20) |br|
 *--json*: optional argument to print results as JSON
 
 |
@@ -5124,6 +4878,118 @@ Options: |br|
 **R validation:** Q matrix and log-likelihood validated against
 ``phytools::fitMk()`` and ``phytools::make.simmap()``
 (see ``tests/r_validation/validate_simmap_summary.R``).
+
+|
+
+.. _cmd-spectral_discordance:
+
+Spectral discordance decomposition
+###################################
+Function names: spectral_discordance; spec_disc; sd |br|
+Command line interface: pk_spectral_discordance; pk_spec_disc; pk_sd
+
+Decompose gene tree space via PCA on a bipartition presence/absence (or
+branch-length) matrix, with spectral clustering and automatic cluster
+detection via the eigengap heuristic.
+
+Each gene tree is encoded as a vector over the union of all observed
+bipartitions. PCA reveals the axes of topological variation, with loading
+vectors directly identifying which bipartitions drive each PC. Spectral
+clustering groups genes sharing similar topologies; the number of clusters
+is auto-detected from the eigengap of the graph Laplacian.
+
+Two metrics are available:
+
+- **nrf** (default): binary presence/absence, consistent with normalized Robinson-Foulds distance
+- **wrf**: branch-length weighted
+
+Polytomies (collapsed branches) in gene trees are handled conservatively:
+splits from polytomous nodes are excluded from the bipartition matrix since
+they represent unresolved relationships. Trifurcating roots (standard
+unrooted Newick) are not affected. This allows gene trees with collapsed
+low-support branches to be used directly as input.
+
+.. code-block:: shell
+
+   phykit spectral_discordance -g <gene_trees> [-t <tree>] [--metric nrf|wrf] [--clusters K] [--n-pcs N] [--top-loadings N] [--plot <prefix>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+
+Options: |br|
+*-g/--gene-trees*: file of gene trees (one Newick per line, or file of filenames) |br|
+*-t/--tree*: species tree (optional; flags species-tree bipartitions in loadings) |br|
+*--metric*: distance metric: ``nrf`` or ``wrf`` (default: ``nrf``) |br|
+*--clusters*: override auto-detected number of clusters |br|
+*--n-pcs*: number of PCs to report (default: min(10, G-1)) |br|
+*--top-loadings*: top bipartitions per PC to display (default: 5) |br|
+*--plot*: output prefix for plots (generates ``_scatter.png`` and ``_eigengap.png``) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
+*--ladderize*: ladderize (sort) the tree before plotting |br|
+*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
+*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
+*--json*: output results as JSON
+
+.. image:: ../_static/img/spectral_discordance_example_scatter.png
+   :align: center
+   :width: 80%
+
+|
+
+.. image:: ../_static/img/spectral_discordance_example_eigengap.png
+   :align: center
+   :width: 80%
+
+|
+
+.. _cmd-spurious_sequence:
+
+Spurious homolog identification
+###############################
+Function names: spurious_sequence; spurious_seq; ss |br|
+Command line interface: pk_spurious_sequence; pk_spurious_seq; pk_ss
+
+Determines potentially spurious homologs using branch lengths.
+
+Identifies potentially spurious sequences and reports
+tips in the phylogeny that could possibly be removed
+from the associated multiple sequence alignment. PhyKIT
+does so by identifying and reporting long terminal branches
+defined as branches that are equal to or greater than 20 times the median
+length of all branches.
+
+PhyKIT reports the following information
+col1: name of tip that is a putatively spurious sequence
+col2: length of branch leading to putatively spurious sequence
+col3: threshold used to identify putatively spurious sequences
+col4: median branch length in the phylogeny
+
+If there are no putatively spurious sequences, "None" is reported.
+
+Using this method to identify potentially spurious sequences
+was, to my knowledge, first introduced by Shen et al., (2018)
+Cell doi: 10.1016/j.cell.2018.10.023. 
+
+.. code-block:: shell
+
+   phykit spurious_seq <file> -f/--factor [--json]
+
+Options: |br|
+*<file>*: first argument after function name should be a tree file |br|
+*-f/--factor*: factor to multiply median branch length by to calculate
+the threshold of long branches. (Default: 20) |br|
+*--json*: optional argument to print results as JSON
 
 |
 
@@ -5197,6 +5063,38 @@ Options: |br|
 *--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
 *--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
 *--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-subtree_prune_regraft:
+
+Subtree pruning and regrafting
+##############################
+Function names: subtree_prune_regraft; spr |br|
+Command line interface: pk_subtree_prune_regraft; pk_spr
+
+Generate all possible SPR (Subtree Pruning and Regrafting) rearrangements
+for a specified subtree on a tree.
+
+The subtree is identified by specifying one or more comma-separated taxa
+whose MRCA (most recent common ancestor) defines the clade to prune. The
+pruned subtree is then regrafted onto every other branch in the remaining
+tree, producing one Newick tree per regraft position.
+
+For a subtree defined by a single taxon (a single leaf), the leaf is pruned
+and reattached to each branch in the remaining tree. For a clade (two or
+more taxa), the entire clade is pruned and regrafted. Each output Newick
+contains all original taxa.
+
+.. code-block:: shell
+
+   phykit subtree_prune_regraft -t <tree> --subtree <taxa> [-o/--output <output_file>] [--json]
+
+Options: |br|
+*-t/--tree*: input tree file in Newick format (required) |br|
+*--subtree*: comma-separated list of taxa defining the subtree to prune (MRCA resolved), or a single-column file with one taxon per line (required) |br|
+*-o/--output*: optional output file for SPR trees (one Newick per line); if omitted, prints to stdout |br|
+*--json*: optional argument to print summary metadata and trees as JSON
 
 |
 
@@ -5378,60 +5276,6 @@ statistics (mean, median, 95% HPD), and MCMC metadata.
 
 |
 
-.. _cmd-transfer_annotations:
-
-Transfer annotations
-####################
-Function names: transfer_annotations; transfer_annot; annotate_tree |br|
-Command line interface: pk_transfer_annotations; pk_transfer_annot; pk_annotate_tree
-
-Transfer internal node annotations from one tree onto another. Matches
-nodes by bipartition (the set of descendant taxa) and copies the
-annotation labels from the source to the target tree.
-
-**Typical use case:** Transfer wASTRAL support annotations (q1/q2/q3,
-pp1, f1, localPP, etc.) from a wASTRAL ``--support 3`` output tree onto
-a branch-length-optimized topology from RAxML-NG, IQ-TREE, or any other
-tool. The output tree has the target's branch lengths with the source's
-annotations, ready for use with ``quartet_pie`` or other visualization
-tools.
-
-This function works with any Newick node annotations — not just wASTRAL.
-Any labels or comments attached to internal nodes in the source tree will
-be transferred to the matching nodes in the target tree (e.g., ASTRAL
-``-t 2`` annotations, bootstrap support values, Bayesian posterior
-probabilities, or custom labels).
-
-**Workflow:**
-
-1. Run wASTRAL to get an annotated species tree (mode 1 or 4, ``--support 3``)
-2. Extract the unannotated s0 topology
-3. Optimize branch lengths on s0 with RAxML-NG or IQ-TREE
-4. Transfer annotations from step 1 onto the optimized tree from step 3:
-
-.. code-block:: shell
-
-   phykit transfer_annotations \
-       --source wastral_annotated.tre \
-       --target raxml_optimized.tre \
-       -o combined.tre
-
-   # Now use the combined tree with quartet_pie
-   phykit qpie -t combined.tre -o concordance.png --branch-labels
-
-.. code-block:: shell
-
-   phykit transfer_annotations --source <annotated_tree> --target <branch_length_tree>
-       [-o/--output <file>] [--json]
-
-Options: |br|
-*--source*: annotated tree file, e.g., wASTRAL output with ``--support 3`` or any tree with node labels/comments (required) |br|
-*--target*: target tree file with branch lengths to keep, e.g., RAxML-NG or IQ-TREE output (required) |br|
-*-o/--output*: output file for the annotated tree (default: target file + ``.annotated``) |br|
-*--json*: output results as JSON
-
-|
-
 .. _cmd-tip_labels:
 
 Tip labels
@@ -5520,39 +5364,6 @@ Options: |br|
 
 |
 
-.. _cmd-faiths_pd:
-
-Faith's phylogenetic diversity
-##############################
-Function names: faiths_pd; faith_pd; fpd; phylo_diversity |br|
-Command line interface: pk_faiths_pd; pk_faith_pd; pk_fpd; pk_phylo_diversity
-
-Calculate Faith's phylogenetic diversity (PD) for a community of tips
-on a phylogeny (Faith, *Biological Conservation*, 1992;
-doi: 10.1016/0006-3207(92)91201-3).
-
-Faith's PD is the sum of branch lengths in the minimum subtree that
-connects a set of taxa. By default, the path from the community's most
-recent common ancestor up to the tree root is included, matching the
-original definition and ``picante::pd(..., include.root = TRUE)``. Pass
-``--exclude-root`` to sum only the branches of the induced subtree
-rooted at the MRCA, matching ``picante::pd(..., include.root = FALSE)``.
-
-The community is supplied as a single-column text file of tip labels,
-one per line.
-
-.. code-block:: shell
-
-   phykit faiths_pd <tree> -t/--taxa <taxa_file> [--exclude-root] [--json]
-
-Options: |br|
-*<tree>*: first argument after function name should be a tree file |br|
-*-t/--taxa*: file with one tip label per line defining the community |br|
-*--exclude-root*: sum only branches of the induced subtree rooted at the community MRCA |br|
-*--json*: optional argument to print results as JSON
-
-|
-
 .. _cmd-total_tree_length:
 
 Total tree length
@@ -5568,6 +5379,195 @@ Calculate total tree length, which is a sum of all branches.
 
 Options: |br|
 *<tree>*: first argument after function name should be a tree file |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-trait_correlation:
+
+Trait correlation
+#################
+Function names: trait_correlation; trait_corr; phylo_corr |br|
+Command line interface: pk_trait_correlation; pk_trait_corr; pk_phylo_corr
+
+Compute phylogenetic correlations between all pairs of traits and display
+them as a heatmap with significance indicators.
+
+Uses GLS-centering via the tree's variance-covariance matrix to account for
+phylogenetic non-independence among species. P-values are computed from the
+t-distribution and displayed as significance stars on the heatmap cells:
+
+- ``***`` p < 0.001
+- ``**`` p < 0.01
+- ``*`` p < alpha (default 0.05)
+
+The multi-trait input file should be tab-delimited with a header row:
+``taxon<tab>trait1<tab>trait2<tab>...``
+At least 2 traits are required. Lines starting with '#' are treated as
+comments. If the tree and trait file have different taxa, the intersection
+is used and warnings are printed to stderr.
+
+The ``--cluster`` option clusters traits by correlation similarity
+(using ``1 - |r|`` as distance) and draws dendrograms alongside the
+heatmap.
+
+.. code-block:: shell
+
+   phykit trait_correlation -t <tree> -d <trait_data> -o <output>
+       [--alpha 0.05] [--cluster] [-g <gene_trees>] [--json]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>]
+       [--no-title] [--title <str>]
+
+Options: |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait-data*: tab-delimited multi-trait file with header row (at least 2 traits) |br|
+*-o/--output*: output figure path (supports .png, .pdf, .svg) |br|
+*--alpha*: significance threshold for marking p-values (default: 0.05) |br|
+*--cluster*: cluster traits by correlation similarity and display dendrograms |br|
+*-g/--gene-trees*: optional multi-Newick file of gene trees for discordance-aware VCV |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-trait_rate_map:
+
+Trait rate map
+##################################
+Function names: trait_rate_map; rate_map; branch_rates |br|
+Command line interface: pk_trait_rate_map; pk_rate_map; pk_branch_rates
+
+Estimate per-branch evolutionary rates for a continuous trait and
+display them as a branch-colored phylogram. Ancestral states are
+reconstructed via Felsenstein's weighted-average method. Per-branch
+rate is the squared standardized contrast (proportional to local
+Brownian motion rate): ``rate = (child_val - parent_val)^2 / branch_length``.
+
+.. code-block:: shell
+
+   phykit trait_rate_map -t <tree> -d <trait_data> -o <output>
+       [--trait <column>] [--json]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>]
+
+Options: |br|
+*-t/--tree*: a tree file in Newick format |br|
+*-d/--trait_data*: tab-delimited trait file (two-column: taxon<tab>value with no header; or multi-column with header when --trait is used) |br|
+*-o/--output*: output plot file path (required) |br|
+*--trait*: column name to use from a multi-column trait file (if omitted, two-column format is expected) |br|
+*--fig-width*: figure width in inches (auto-scaled if omitted) |br|
+*--fig-height*: figure height in inches (auto-scaled if omitted) |br|
+*--dpi*: resolution in DPI (default: 300) |br|
+*--no-title*: hide the plot title |br|
+*--title*: custom title text |br|
+*--legend-position*: legend location (e.g., "upper right", "none" to hide) |br|
+*--ylabel-fontsize*: font size for y-axis labels; 0 to hide |br|
+*--xlabel-fontsize*: font size for x-axis labels; 0 to hide |br|
+*--title-fontsize*: font size for the title |br|
+*--axis-fontsize*: font size for axis labels |br|
+*--colors*: comma-separated colors (hex or named) |br|
+*--ladderize*: ladderize (sort) the tree before plotting |br|
+*--cladogram*: draw cladogram (equal branch lengths, tips aligned) instead of phylogram |br|
+*--circular*: draw circular (radial/fan) phylogram instead of rectangular |br|
+*--color-file*: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) |br|
+*--json*: optional argument to print results as JSON
+
+|
+
+.. _cmd-transfer_annotations:
+
+Transfer annotations
+####################
+Function names: transfer_annotations; transfer_annot; annotate_tree |br|
+Command line interface: pk_transfer_annotations; pk_transfer_annot; pk_annotate_tree
+
+Transfer internal node annotations from one tree onto another. Matches
+nodes by bipartition (the set of descendant taxa) and copies the
+annotation labels from the source to the target tree.
+
+**Typical use case:** Transfer wASTRAL support annotations (q1/q2/q3,
+pp1, f1, localPP, etc.) from a wASTRAL ``--support 3`` output tree onto
+a branch-length-optimized topology from RAxML-NG, IQ-TREE, or any other
+tool. The output tree has the target's branch lengths with the source's
+annotations, ready for use with ``quartet_pie`` or other visualization
+tools.
+
+This function works with any Newick node annotations — not just wASTRAL.
+Any labels or comments attached to internal nodes in the source tree will
+be transferred to the matching nodes in the target tree (e.g., ASTRAL
+``-t 2`` annotations, bootstrap support values, Bayesian posterior
+probabilities, or custom labels).
+
+**Workflow:**
+
+1. Run wASTRAL to get an annotated species tree (mode 1 or 4, ``--support 3``)
+2. Extract the unannotated s0 topology
+3. Optimize branch lengths on s0 with RAxML-NG or IQ-TREE
+4. Transfer annotations from step 1 onto the optimized tree from step 3:
+
+.. code-block:: shell
+
+   phykit transfer_annotations \
+       --source wastral_annotated.tre \
+       --target raxml_optimized.tre \
+       -o combined.tre
+
+   # Now use the combined tree with quartet_pie
+   phykit qpie -t combined.tre -o concordance.png --branch-labels
+
+.. code-block:: shell
+
+   phykit transfer_annotations --source <annotated_tree> --target <branch_length_tree>
+       [-o/--output <file>] [--json]
+
+Options: |br|
+*--source*: annotated tree file, e.g., wASTRAL output with ``--support 3`` or any tree with node labels/comments (required) |br|
+*--target*: target tree file with branch lengths to keep, e.g., RAxML-NG or IQ-TREE output (required) |br|
+*-o/--output*: output file for the annotated tree (default: target file + ``.annotated``) |br|
+*--json*: output results as JSON
+
+|
+
+.. _cmd-tree_space:
+
+Tree space visualization
+########################
+Function names: tree_space; tspace; tree_landscape |br|
+Command line interface: pk_tree_space; pk_tspace; pk_tree_landscape
+
+Visualize how gene trees cluster in topology space by computing pairwise
+distances (Robinson-Foulds or Kuhner-Felsenstein) and projecting into
+2D via MDS, t-SNE, or UMAP. Points are colored by spectral clustering
+with automatic cluster detection via the eigengap heuristic.
+
+Alternatively, use ``--heatmap`` to draw a clustered distance heatmap
+with a dendrogram showing hierarchical relationships among gene trees.
+Use ``--distance-matrix`` to export the raw pairwise distance matrix
+as a CSV file.
+
+Optionally highlight a species tree as a distinct marker to see where
+it sits relative to the gene tree cloud.
+
+.. code-block:: shell
+
+   phykit tree_space -t <trees> -o <output>
+       [--metric rf|kf] [--method mds|tsne|umap]
+       [--species-tree <file>] [--k <int>] [--seed <int>]
+       [--heatmap] [--distance-matrix <file>]
+       [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
+       [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
+       [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
+
+Options: |br|
+*-t/--trees*: file with gene trees (one Newick per line, or one file path per line) (required) |br|
+*-o/--output*: output figure path (.png, .pdf, .svg) (required) |br|
+*--metric*: distance metric: rf (normalized Robinson-Foulds, default) or kf (Kuhner-Felsenstein) |br|
+*--method*: dimensionality reduction: mds (default), tsne, or umap |br|
+*--species-tree*: optional species tree to highlight in the plot as a star marker |br|
+*--k*: number of clusters (auto-detected via eigengap if omitted) |br|
+*--seed*: random seed for reproducibility (t-SNE/UMAP) |br|
+*--heatmap*: draw a clustered distance heatmap instead of a scatter plot |br|
+*--distance-matrix*: output the pairwise distance matrix as a CSV file |br|
 *--json*: optional argument to print results as JSON
 
 |
