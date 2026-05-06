@@ -6951,28 +6951,37 @@ class Phykit:
 
                 Usage:
                 phykit prune_tree <tree> <list_of_taxa> [-o/--output <output_file>
-                -k/--keep] [--json]
+                -k/--keep] [--ignore-branch-labels] [--json]
 
                 Options
                 =====================================================
-                <tree>                      first argument after 
+                <tree>                      first argument after
                                             function name should be
                                             a tree file
 
                 <list_of_taxa>              single column file with the
                                             names of the tips to remove
-                                            from the phylogeny 
+                                            from the phylogeny
 
                 -o/--output                 name of output file for the
-                                            pruned phylogeny. 
-                                            Default output will have 
+                                            pruned phylogeny.
+                                            Default output will have
                                             the same name as the input
-                                            file but with the suffix 
+                                            file but with the suffix
                                             ".pruned"
 
                 -k/--keep                   optional argument. If used
                                             instead of pruning taxa in
                                             <list_of_taxa>, keep them
+
+                --ignore-branch-labels      optional argument. Strip
+                                            HyPhy/aBSREL-style {{...}}
+                                            branch labels (e.g.,
+                                            "Hydlep{{FG}}") from tip
+                                            names when matching
+                                            against <list_of_taxa>.
+                                            The labels are preserved
+                                            in the output tree.
 
                 --json                      optional argument to output
                                             results as JSON
@@ -6984,6 +6993,12 @@ class Phykit:
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
         parser.add_argument(
             "-k", "--keep", type=str2bool, nargs="?", default=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--ignore-branch-labels",
+            action="store_true",
+            default=False,
+            help=SUPPRESS,
         )
         _add_json_argument(parser)
         _run_service(parser, argv, PruneTree)

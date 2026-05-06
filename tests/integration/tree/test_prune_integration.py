@@ -1,8 +1,11 @@
 import pytest
 import sys
 import json
+from io import StringIO
 from mock import patch
 from pathlib import Path
+
+from Bio import Phylo
 
 from phykit.phykit import Phykit
 
@@ -150,3 +153,88 @@ class TestPruneTree(object):
         assert payload["keep_input_taxa"] is False
         assert payload["pruned_count"] == 2
         assert payload["remaining_tips"] == 6
+
+    @patch("builtins.print")
+    def test_prune_keep_ignore_branch_labels(self, mocked_print):
+        out_path = (
+            f"{here.parent.parent.parent}/sample_files/"
+            "tree_simple_labeled.tre.keep_stripped"
+        )
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_labeled.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_labeled_keep.txt",
+            "-k",
+            "--ignore-branch-labels",
+            "-o",
+            out_path,
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        with open(out_path) as fh:
+            tree = Phylo.read(StringIO(fh.read()), "newick")
+
+        tip_names = sorted(t.name for t in tree.get_terminals())
+        # Keep list (raccoon, bear, monkey, cat) matches by stripped name;
+        # the {FG} markers must be preserved on the kept tips.
+        assert tip_names == ["bear", "cat{FG}", "monkey{FG}", "raccoon"]
+
+    @patch("builtins.print")
+    def test_prune_ignore_branch_labels(self, mocked_print):
+        out_path = (
+            f"{here.parent.parent.parent}/sample_files/"
+            "tree_simple_labeled.tre.prune_stripped"
+        )
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_labeled.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_labeled_prune.txt",
+            "--ignore-branch-labels",
+            "-o",
+            out_path,
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        with open(out_path) as fh:
+            tree = Phylo.read(StringIO(fh.read()), "newick")
+
+        tip_names = sorted(t.name for t in tree.get_terminals())
+        # Prune list (monkey, cat) matches by stripped name; both labeled
+        # tips should be removed even though the list lacks {FG}.
+        assert tip_names == ["bear", "dog", "raccoon", "sea_lion", "seal", "weasel"]
+
+    @patch("builtins.print")
+    def test_prune_keep_ignore_branch_labels_json(self, mocked_print):
+        out_path = (
+            f"{here.parent.parent.parent}/sample_files/"
+            "tree_simple_labeled.tre.keep_stripped_json"
+        )
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_labeled.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_labeled_keep.txt",
+            "-k",
+            "--ignore-branch-labels",
+            "-o",
+            out_path,
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["keep_input_taxa"] is True
+        assert payload["ignore_branch_labels"] is True
+        assert payload["remaining_tips"] == 4
+        # Pruned names retain their {FG} labels in the report.
+        assert payload["taxa_pruned"] == sorted(
+            ["sea_lion", "seal", "weasel", "dog"]
+        )

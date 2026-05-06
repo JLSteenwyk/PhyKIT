@@ -1,10 +1,19 @@
 from typing import Dict
 import pickle
+import re
 
 from .base import Tree
 
 from ...helpers.files import read_single_column_file_to_list
 from ...helpers.json_output import print_json
+
+
+_BRANCH_LABEL_RE = re.compile(r"\{[^{}]*\}")
+
+
+def _strip_branch_label(name: str) -> str:
+    """Remove HyPhy/aBSREL-style {…} branch labels from a tip name."""
+    return _BRANCH_LABEL_RE.sub("", name) if name else name
 
 
 class PruneTree(Tree):
@@ -17,6 +26,7 @@ class PruneTree(Tree):
             keep=parsed["keep"],
         )
         self.json_output = parsed["json_output"]
+        self.ignore_branch_labels = parsed["ignore_branch_labels"]
 
     def run(self) -> None:
         tree = self.read_tree_file()
@@ -25,7 +35,20 @@ class PruneTree(Tree):
 
         taxa = read_single_column_file_to_list(self.list_of_taxa)
 
-        if self.keep:
+        if self.ignore_branch_labels:
+            taxa_set = set(taxa)
+            tips_in_tree = [term.name for term in tree_copy.get_terminals()]
+            if self.keep:
+                taxa = [
+                    tip for tip in tips_in_tree
+                    if _strip_branch_label(tip) not in taxa_set
+                ]
+            else:
+                taxa = [
+                    tip for tip in tips_in_tree
+                    if _strip_branch_label(tip) in taxa_set
+                ]
+        elif self.keep:
             tips_in_tree = [term.name for term in tree_copy.get_terminals()]
             taxa = [x for x in tips_in_tree if x not in taxa]
 
@@ -39,6 +62,7 @@ class PruneTree(Tree):
                     input_tree=self.tree_file_path,
                     input_taxa_file=self.list_of_taxa,
                     keep_input_taxa=self.keep,
+                    ignore_branch_labels=self.ignore_branch_labels,
                     taxa_pruned=sorted(taxa),
                     pruned_count=len(taxa),
                     remaining_tips=tree_copy.count_terminals(),
@@ -58,5 +82,6 @@ class PruneTree(Tree):
             list_of_taxa=args.list_of_taxa,
             output_file_path=output_file_path,
             keep=keep,
+            ignore_branch_labels=getattr(args, "ignore_branch_labels", False),
             json_output=getattr(args, "json", False),
         )
