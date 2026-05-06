@@ -80,6 +80,18 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.92</strong>:
+Added <code class="docutils literal notranslate"><span class="pre">--ignore-branch-labels</span></code> to <code class="docutils literal notranslate"><span class="pre">prune_tree</span></code>:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--ignore-branch-labels</span></code> to <code class="docutils literal notranslate"><span class="pre">prune_tree</span></code> (<code class="docutils literal notranslate"><span class="pre">prune</span></code>): match the
+<code class="docutils literal notranslate"><span class="pre">&lt;list_of_taxa&gt;</span></code> against tip names with HyPhy/aBSREL-style <code class="docutils literal notranslate"><span class="pre">{...}</span></code>
+branch labels (e.g., <code class="docutils literal notranslate"><span class="pre">Hydlep{FG}</span></code>) stripped, and preserve those labels
+on the surviving tips in the output. This makes it straightforward to
+subset a labeled species tree to the taxa present in a given orthogroup
+alignment for branch-site selection tests such as aBSREL or RELAX,
+without losing the foreground annotations on the labeled branches. Works
+with both default (prune) and <code class="docutils literal notranslate"><span class="pre">-k</span></code>/<code class="docutils literal notranslate"><span class="pre">--keep</span></code> modes.</p></li>
+</ul>
 <p><strong>2.1.91</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">faiths_pd</span></code> command for Faith's phylogenetic diversity:</p>
 <ul class="simple">

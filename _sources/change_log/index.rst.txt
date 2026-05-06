@@ -6,6 +6,18 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.92**:
+Added ``--ignore-branch-labels`` to ``prune_tree``:
+
+* Added ``--ignore-branch-labels`` to ``prune_tree`` (``prune``): match the
+  ``<list_of_taxa>`` against tip names with HyPhy/aBSREL-style ``{...}``
+  branch labels (e.g., ``Hydlep{FG}``) stripped, and preserve those labels
+  on the surviving tips in the output. This makes it straightforward to
+  subset a labeled species tree to the taxa present in a given orthogroup
+  alignment for branch-site selection tests such as aBSREL or RELAX,
+  without losing the foreground annotations on the labeled branches. Works
+  with both default (prune) and ``-k``/``--keep`` modes.
+
 **2.1.91**:
 Added ``faiths_pd`` command for Faith's phylogenetic diversity:
 

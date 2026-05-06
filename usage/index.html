@@ -4059,7 +4059,8 @@ Command line interface: pk_prune_tree; pk_prune</p>
 <p>Provide a single column file with the names of the tips
 in the input phylogeny you would like to prune from the
 tree.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>prune_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-k/--keep<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>prune_tree<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>&lt;list_of_taxa&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-k/--keep<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--ignore-branch-labels<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
@@ -4071,8 +4072,19 @@ Default output will have the same name as the input file but with the suffix
 &quot;.pruned&quot; <br/>
 <em>-k/--keep</em>: optional argument. If used instead of pruning taxa in &lt;list_of_taxa&gt;,
 keep them <br/>
-<em>--json</em>: optional argument to print results as JSON
-|</p>
+<em>--ignore-branch-labels</em>: optional argument. Strip HyPhy/aBSREL-style <code class="docutils literal notranslate"><span class="pre">{...}</span></code>
+branch labels (e.g., <code class="docutils literal notranslate"><span class="pre">Hydlep{FG}</span></code>) from tip names when matching against
+<code class="docutils literal notranslate"><span class="pre">&lt;list_of_taxa&gt;</span></code>. The labels are preserved on the surviving tips in the
+output tree, so a list of bare names produced by tools like <code class="docutils literal notranslate"><span class="pre">seqkit</span> <span class="pre">seq</span> <span class="pre">-n</span></code>
+will keep (or remove) the foreground-tagged tips intact. <br/>
+<em>--json</em>: optional argument to print results as JSON</p>
+<p>Tip: when preparing trees for branch-site selection tests such as aBSREL or
+RELAX, use <code class="docutils literal notranslate"><span class="pre">--ignore-branch-labels</span></code> together with <code class="docutils literal notranslate"><span class="pre">-k</span></code> to subset a labeled
+species tree to the taxa present in a given orthogroup alignment without
+losing the <code class="docutils literal notranslate"><span class="pre">{FG}</span></code> (foreground) annotations on the labeled branches.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 </section>
 <section id="quartet-network">
 <span id="cmd-quartet-network"></span><h3>Quartet network<a class="headerlink" href="#quartet-network" title="Link to this heading"></a></h3>
