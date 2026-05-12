@@ -80,6 +80,21 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.1.93</strong>:
+Added targeted NNI generation to <code class="docutils literal notranslate"><span class="pre">nearest_neighbor_interchange</span></code>:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--branch</span></code>, <code class="docutils literal notranslate"><span class="pre">--branches</span></code>, and <code class="docutils literal notranslate"><span class="pre">--no-input-tree</span></code> options to
+<code class="docutils literal notranslate"><span class="pre">nearest_neighbor_interchange</span></code> (<code class="docutils literal notranslate"><span class="pre">nni</span></code>). Pass <code class="docutils literal notranslate"><span class="pre">--branch</span> <span class="pre">A,B</span></code> to
+emit just the two NNI rearrangements around the internal branch whose
+MRCA is defined by taxa <code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code>, or <code class="docutils literal notranslate"><span class="pre">--branches</span> <span class="pre">FILE</span></code> to
+request the two NNIs around each branch in a file (one comma- or
+tab-separated taxon pair per line, optionally preceded by a label).
+This makes it straightforward to compare the likelihood of competing
+resolutions at a specific split (e.g., re-scoring with IQ-TREE
+<code class="docutils literal notranslate"><span class="pre">-te</span></code>) without having to filter through every NNI of the tree.
+Errors are raised for taxa not present in the tree, pairs whose MRCA
+is the root, and malformed branch specifications.</p></li>
+</ul>
 <p><strong>2.1.92</strong>:
 Added <code class="docutils literal notranslate"><span class="pre">--ignore-branch-labels</span></code> to <code class="docutils literal notranslate"><span class="pre">prune_tree</span></code>:</p>
 <ul class="simple">

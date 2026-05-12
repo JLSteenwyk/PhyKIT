@@ -3039,18 +3039,47 @@ Best model (BIC): OUM
 <span id="cmd-nearest-neighbor-interchange"></span><h3>Nearest neighbor interchange<a class="headerlink" href="#nearest-neighbor-interchange" title="Link to this heading"></a></h3>
 <p>Function names: nearest_neighbor_interchange; nni <br/>
 Command line interface: pk_nearest_neighbor_interchange; pk_nni</p>
-<p>Generate all nearest neighbor interchange moves for a binary
+<p>Generate nearest neighbor interchange (NNI) moves for a binary
 rooted tree.</p>
-<p>By default, the output file will have the same name as the input
-file but with the suffix &quot;.nnis&quot;</p>
-<p>The output file will also include the original phylogeny.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>nearest_neighbor_interchange<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<p>By default, all NNI rearrangements are emitted (one tree per neighbor),
+and the output file will have the same name as the input file but with
+the suffix <code class="docutils literal notranslate"><span class="pre">.nnis</span></code>. The input phylogeny is written at the top of the
+output unless <code class="docutils literal notranslate"><span class="pre">--no-input-tree</span></code> is supplied.</p>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">--branch</span></code> (a comma-separated pair of taxa) or <code class="docutils literal notranslate"><span class="pre">--branches</span></code>
+(a file with one pair per line) to restrict output to the two NNI
+rearrangements around a specific internal branch. The branch is
+identified as the edge leading to the most recent common ancestor
+(MRCA) of the supplied taxa. This is useful for branch-by-branch
+likelihood comparison in IQ-TREE / RAxML: re-score the bundle of
+output trees against an alignment and compare site-likelihoods at the
+labelled split.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>nearest_neighbor_interchange<span class="w"> </span>&lt;tree&gt;<span class="w"> </span><span class="o">[</span>-o/--output<span class="w"> </span>&lt;output_file&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--branch<span class="w"> </span>A,B<span class="o">]</span><span class="w"> </span><span class="o">[</span>--branches<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-input-tree<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 </pre></div>
 </div>
 <p>Options: <br/>
 <em>&lt;tree&gt;</em>: first argument after function name should be a tree file <br/>
 <em>-o/--output</em>: optional argument to specify output file name <br/>
+<em>--branch</em>: optional argument. Two taxa separated by a comma
+(e.g., <code class="docutils literal notranslate"><span class="pre">--branch</span> <span class="pre">A,B</span></code>) whose MRCA defines the internal branch to
+rearrange. Emits the two alternative NNI topologies for that branch. <br/>
+<em>--branches</em>: optional argument. Path to a file with one taxon pair per
+line (comma- or tab-separated). Lines may optionally start with a label
+followed by the two taxa (<code class="docutils literal notranslate"><span class="pre">label&lt;TAB&gt;A&lt;TAB&gt;B</span></code>), in which case the
+label is echoed in the <code class="docutils literal notranslate"><span class="pre">--json</span></code> report. Lines that are blank or
+start with <code class="docutils literal notranslate"><span class="pre">#</span></code> are ignored. Each pair yields two NNI trees, emitted
+in the order the pairs appear. <br/>
+<em>--no-input-tree</em>: optional argument. Omit the input phylogeny from the
+top of the output file. <br/>
 <em>--json</em>: optional argument to print summary metadata as JSON</p>
+<p>Example: explore likelihoods around a single internal split</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Emit the input tree + the 2 NNIs around the MRCA of taxa A, B</span>
+phykit<span class="w"> </span>nni<span class="w"> </span>species.tre<span class="w"> </span>--branch<span class="w"> </span>A,B<span class="w"> </span>-o<span class="w"> </span>candidates.nwk
+
+<span class="c1"># Then evaluate likelihoods in IQ-TREE</span>
+iqtree<span class="w"> </span>-s<span class="w"> </span>alignment.fa<span class="w"> </span>-te<span class="w"> </span>candidates.nwk<span class="w"> </span>-pre<span class="w"> </span>nni_compare
+</pre></div>
+</div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
