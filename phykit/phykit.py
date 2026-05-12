@@ -3742,10 +3742,19 @@ class Phykit:
                 f"""\
                 {help_header}
 
-                Generate all nearest neighbor interchange moves for a binary
-                rooted tree.
+                Generate nearest neighbor interchange (NNI) moves for a
+                binary rooted tree.
 
-                The output file will also include the original phylogeny.
+                By default, all NNI rearrangements are emitted. Pass
+                --branch (a comma-separated pair of taxa) or --branches
+                (a file with one pair per line) to restrict output to the
+                two NNI rearrangements around a specific internal branch.
+                The branch is identified as the edge leading to the MRCA
+                of the supplied taxa. Useful for branch-by-branch
+                likelihood comparison in IQ-TREE / RAxML.
+
+                The output file includes the input phylogeny at the top
+                unless --no-input-tree is supplied.
 
                 Aliases:
                   nearest_neighbor_interchange, nni
@@ -3753,22 +3762,49 @@ class Phykit:
                   pk_nearest_neighbor_interchange, pk_nni
 
                 Usage:
-                phykit nearest_neighbor_interchange <tree> [-o/--output <output_file>] [--json]
+                phykit nearest_neighbor_interchange <tree>
+                  [-o/--output <output_file>] [--branch A,B]
+                  [--branches <file>] [--no-input-tree] [--json]
 
                 Options
                 =====================================================
-                <tree>                      first argument after 
+                <tree>                      first argument after
                                             function name should be
                                             a tree file
 
                 -o/--output                 name of output file that will
                                             contain all trees with the
                                             nearest neighbor interchange
-                                            moves. 
-                                            Default output will have 
+                                            moves.
+                                            Default output will have
                                             the same name as the input
-                                            file but with the suffix 
-                                            ".NNIs"
+                                            file but with the suffix
+                                            ".nnis"
+
+                --branch                    optional argument. Two taxa
+                                            separated by a comma
+                                            (e.g., --branch A,B) whose
+                                            MRCA defines the internal
+                                            branch to rearrange. Emits
+                                            the two alternative NNI
+                                            topologies for that branch.
+
+                --branches                  optional argument. Path to a
+                                            file with one taxon pair per
+                                            line (comma- or tab-
+                                            separated). Lines may
+                                            optionally start with a
+                                            label followed by the two
+                                            taxa, in which case the
+                                            label is echoed in the
+                                            --json report. Lines that
+                                            are blank or start with #
+                                            are ignored. Each pair
+                                            yields two NNI trees.
+
+                --no-input-tree             optional argument. Omit the
+                                            input phylogeny from the
+                                            top of the output file.
 
                 --json                      optional argument to output
                                             results as JSON
@@ -3777,6 +3813,14 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-o", "--output", type=str, required=False, help=SUPPRESS)
+        parser.add_argument("--branch", type=str, default=None, help=SUPPRESS)
+        parser.add_argument("--branches", type=str, default=None, help=SUPPRESS)
+        parser.add_argument(
+            "--no-input-tree",
+            action="store_true",
+            default=False,
+            help=SUPPRESS,
+        )
         _add_json_argument(parser)
         _run_service(parser, argv, NearestNeighborInterchange)
 

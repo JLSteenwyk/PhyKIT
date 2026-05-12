@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.1.93**:
+Added targeted NNI generation to ``nearest_neighbor_interchange``:
+
+* Added ``--branch``, ``--branches``, and ``--no-input-tree`` options to
+  ``nearest_neighbor_interchange`` (``nni``). Pass ``--branch A,B`` to
+  emit just the two NNI rearrangements around the internal branch whose
+  MRCA is defined by taxa ``A`` and ``B``, or ``--branches FILE`` to
+  request the two NNIs around each branch in a file (one comma- or
+  tab-separated taxon pair per line, optionally preceded by a label).
+  This makes it straightforward to compare the likelihood of competing
+  resolutions at a specific split (e.g., re-scoring with IQ-TREE
+  ``-te``) without having to filter through every NNI of the tree.
+  Errors are raised for taxa not present in the tree, pairs whose MRCA
+  is the root, and malformed branch specifications.
+
 **2.1.92**:
 Added ``--ignore-branch-labels`` to ``prune_tree``:
 
