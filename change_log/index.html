@@ -80,26 +80,6 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
-<p><strong>2.1.94</strong>:
-Robustness and performance fixes for trait analyses and discrete model fitting:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code> and <code class="docutils literal notranslate"><span class="pre">trait_correlation</span></code> now handle invariant
-(zero-variance) traits gracefully. <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code> reports <code class="docutils literal notranslate"><span class="pre">NA</span></code>
-(text) / <code class="docutils literal notranslate"><span class="pre">null</span></code> (JSON) with a warning instead of emitting <code class="docutils literal notranslate"><span class="pre">nan</span></code>/<code class="docutils literal notranslate"><span class="pre">inf</span></code>,
-since phylogenetic signal is undefined for a constant trait.
-<code class="docutils literal notranslate"><span class="pre">trait_correlation</span></code> drops invariant trait columns (with a warning) before
-computing correlations and clustering, rather than crashing in hierarchical
-clustering with &quot;The condensed distance matrix must contain only finite
-values&quot;.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">fit_discrete</span></code> is substantially faster for multi-state traits. Transition
-probabilities are now computed from a single eigendecomposition of the rate
-matrix per likelihood evaluation (with an <code class="docutils literal notranslate"><span class="pre">expm</span></code> fallback when the
-decomposition is numerically unreliable), and the optimizer runs
-gradient-based L-BFGS-B from each starting value followed by a single
-Nelder-Mead refinement of the best result. Fitted models are unchanged; a
-5-state ER/SYM/ARD comparison on 110 taxa that previously did not finish
-within multi-minute timeouts now completes.</p></li>
-</ul>
 <p><strong>2.1.93</strong>:
 Added targeted NNI generation to <code class="docutils literal notranslate"><span class="pre">nearest_neighbor_interchange</span></code>:</p>
 <ul class="simple">

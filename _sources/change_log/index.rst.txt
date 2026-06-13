@@ -6,26 +6,6 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**2.1.94**:
-Robustness and performance fixes for trait analyses and discrete model fitting:
-
-* ``phylogenetic_signal`` and ``trait_correlation`` now handle invariant
-  (zero-variance) traits gracefully. ``phylogenetic_signal`` reports ``NA``
-  (text) / ``null`` (JSON) with a warning instead of emitting ``nan``/``inf``,
-  since phylogenetic signal is undefined for a constant trait.
-  ``trait_correlation`` drops invariant trait columns (with a warning) before
-  computing correlations and clustering, rather than crashing in hierarchical
-  clustering with "The condensed distance matrix must contain only finite
-  values".
-* ``fit_discrete`` is substantially faster for multi-state traits. Transition
-  probabilities are now computed from a single eigendecomposition of the rate
-  matrix per likelihood evaluation (with an ``expm`` fallback when the
-  decomposition is numerically unreliable), and the optimizer runs
-  gradient-based L-BFGS-B from each starting value followed by a single
-  Nelder-Mead refinement of the best result. Fitted models are unchanged; a
-  5-state ER/SYM/ARD comparison on 110 taxa that previously did not finish
-  within multi-minute timeouts now completes.
-
 **2.1.93**:
 Added targeted NNI generation to ``nearest_neighbor_interchange``:
 
