@@ -64,12 +64,18 @@ class MonophylyCheck(Tree):
     def get_bootstrap_statistics(
         self,
         clade: Newick.Clade
-    ) -> Dict[str, Union[int, float]]:
+    ) -> Union[Dict[str, Union[int, float]], None]:
         # Use generator for memory efficiency
         bs_vals = [
             terminal.confidence for terminal in clade.get_nonterminals()
             if terminal.confidence is not None
         ]
+
+        # No internal support values to summarize (e.g., a time tree or a
+        # tree with no bootstrap labels); return None so callers report "NA"
+        # support rather than failing to subscript a missing result.
+        if not bs_vals:
+            return None
 
         return calculate_summary_statistics_from_arr(bs_vals)
 
@@ -85,14 +91,25 @@ class MonophylyCheck(Tree):
             temp.append("monophyletic")
         else:
             temp.append("not_monophyletic")
-        temp.append(stats["mean"])
-        temp.append(stats["maximum"])
-        temp.append(stats["minimum"])
-        temp.append(stats["standard_deviation"])
+        # stats is None when the tree has no internal support values to
+        # summarize; monophyly is still well-defined, so report the status
+        # with "NA" support fields rather than crashing.
+        if stats is None:
+            temp.extend([None, None, None, None])
+        else:
+            temp.append(stats["mean"])
+            temp.append(stats["maximum"])
+            temp.append(stats["minimum"])
+            temp.append(stats["standard_deviation"])
         temp.append(diff_tips_between_clade_and_curr_tree)
         res_arr.append(temp)
 
         return res_arr
+
+    @staticmethod
+    def _fmt_support(value: Union[int, float, None]) -> Union[int, float, str]:
+        """Format a support value, rendering a missing (None) value as "NA"."""
+        return "NA" if value is None else round(value, 4)
 
     def print_results(self, res_arr: List[List[Union[str, int, float]]]) -> None:
         if self.json_output:
@@ -100,10 +117,10 @@ class MonophylyCheck(Tree):
             for res in res_arr:
                 row = dict(status=res[0])
                 if len(res) > 1:
-                    row["mean_support"] = round(res[1], 4)
-                    row["max_support"] = round(res[2], 4)
-                    row["min_support"] = round(res[3], 4)
-                    row["stdev_support"] = round(res[4], 4)
+                    row["mean_support"] = None if res[1] is None else round(res[1], 4)
+                    row["max_support"] = None if res[2] is None else round(res[2], 4)
+                    row["min_support"] = None if res[3] is None else round(res[3], 4)
+                    row["stdev_support"] = None if res[4] is None else round(res[4], 4)
                     row["offending_taxa"] = sorted(res[5]) if len(res) > 5 and res[5] else []
                 rows.append(row)
             print_json(dict(rows=rows, results=rows))
@@ -114,11 +131,11 @@ class MonophylyCheck(Tree):
                 if res[5]:
                     res[5].sort()
                     print(
-                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}"
+                        f"{res[0]}\t{self._fmt_support(res[1])}\t{self._fmt_support(res[2])}\t{self._fmt_support(res[3])}\t{self._fmt_support(res[4])}\t{';'.join(res[5])}"
                     )
                 else:
                     print(
-                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}"
+                        f"{res[0]}\t{self._fmt_support(res[1])}\t{self._fmt_support(res[2])}\t{self._fmt_support(res[3])}\t{self._fmt_support(res[4])}"
                     )
             except IndexError:
                 print(f"{res[0]}")

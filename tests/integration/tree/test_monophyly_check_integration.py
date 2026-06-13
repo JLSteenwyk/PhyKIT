@@ -117,3 +117,54 @@ class TestMonophylyCheck(object):
         assert payload["rows"][0] == payload["results"][0]
         assert payload["results"][0]["status"] == "not_monophyletic"
         assert round(payload["results"][0]["mean_support"], 4) == 95.7143
+
+    @patch("builtins.print")
+    def test_monophyly_check_no_support_values(self, mocked_print):
+        # a tree without internal support values (e.g., a time tree) should
+        # still report monophyly, with "NA" in place of support statistics
+        testargs = [
+            "phykit",
+            "monophyly_check",
+            f"{here.parent.parent.parent}/sample_files/small_no_support_tree.tre",
+            f"{here.parent.parent.parent}/sample_files/small_no_support_tree.monophyly_check.true.txt",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call("monophyletic\tNA\tNA\tNA\tNA"),
+        ]
+
+    @patch("builtins.print")
+    def test_monophyly_check_no_support_values_not_true(self, mocked_print):
+        testargs = [
+            "phykit",
+            "monophyly_check",
+            f"{here.parent.parent.parent}/sample_files/small_no_support_tree.tre",
+            f"{here.parent.parent.parent}/sample_files/small_no_support_tree.monophyly_check.false.txt",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        assert mocked_print.mock_calls == [
+            call(
+                "not_monophyletic\tNA\tNA\tNA\tNA\tAspergillus_b;Aspergillus_c;Penicillium_e"
+            ),
+        ]
+
+    @patch("builtins.print")
+    def test_monophyly_check_no_support_values_json(self, mocked_print):
+        testargs = [
+            "phykit",
+            "monophyly_check",
+            f"{here.parent.parent.parent}/sample_files/small_no_support_tree.tre",
+            f"{here.parent.parent.parent}/sample_files/small_no_support_tree.monophyly_check.true.txt",
+            "--json",
+        ]
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["results"][0]["status"] == "monophyletic"
+        assert payload["results"][0]["mean_support"] is None
+        assert payload["results"][0]["offending_taxa"] == []
