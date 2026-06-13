@@ -66,6 +66,39 @@ def matrix_exp(Q: np.ndarray, t: float) -> np.ndarray:
     return expm(Q * t)
 
 
+def make_transition_probability_fn(Q: np.ndarray):
+    """Return a callable t -> P(t) = exp(Q * t).
+
+    The transition probabilities for many branch lengths are needed for every
+    likelihood evaluation, so eigendecompose Q once and reconstruct
+    P(t) = V @ diag(exp(w * t)) @ V_inv per branch. This is mathematically
+    equivalent to scipy's expm but avoids recomputing a full matrix
+    exponential (scaling-and-squaring Pade) for every branch, which dominates
+    runtime for multi-state models.
+
+    Falls back to expm when the eigendecomposition is numerically unreliable
+    (e.g. a defective / ill-conditioned eigenvector matrix), so results are
+    unchanged.
+    """
+    try:
+        w, V = np.linalg.eig(Q)
+        V_inv = np.linalg.inv(V)
+        if not (np.all(np.isfinite(V)) and np.all(np.isfinite(V_inv))):
+            raise np.linalg.LinAlgError("non-finite eigendecomposition")
+        if np.linalg.cond(V) > 1e12:
+            raise np.linalg.LinAlgError("ill-conditioned eigenvectors")
+
+        def P(t: float) -> np.ndarray:
+            return np.real((V * np.exp(w * t)) @ V_inv)
+
+        return P
+    except (np.linalg.LinAlgError, ValueError):
+        def P(t: float) -> np.ndarray:
+            return expm(Q * t)
+
+        return P
+
+
 def felsenstein_pruning(
     tree, tip_states: Dict[str, str], Q: np.ndarray,
     pi: np.ndarray, states: List[str]
@@ -79,6 +112,9 @@ def felsenstein_pruning(
     state_idx = {s: i for i, s in enumerate(states)}
     cond_liks = {}
 
+    # Eigendecompose Q once and reuse it for every branch length.
+    transition_probability = make_transition_probability_fn(Q)
+
     for clade in tree.find_clades(order="postorder"):
         if clade.is_terminal():
             lik = np.zeros(k)
@@ -89,7 +125,7 @@ def felsenstein_pruning(
             lik = np.ones(k)
             for child in clade.clades:
                 t = child.branch_length if child.branch_length else 1e-8
-                P = matrix_exp(Q, t)
+                P = transition_probability(t)
                 child_lik = cond_liks[id(child)]
                 lik *= P @ child_lik
             cond_liks[id(clade)] = lik
@@ -130,27 +166,32 @@ def fit_q_matrix(
     best_negll = np.inf
     best_params = np.ones(n_params) * 0.1
 
+    # Gradient-based multi-start: L-BFGS-B from each starting value is cheap
+    # and finds the optimum's basin. Running Nelder-Mead from every start as
+    # well is what makes multi-state models (many parameters) slow, since
+    # Nelder-Mead needs O(n_params) function evaluations per step; a single
+    # Nelder-Mead refinement of the best L-BFGS-B result (below) recovers the
+    # same optimum at a fraction of the cost.
     for sv in starting_values:
         x0 = np.ones(n_params) * sv
-        for method in ["L-BFGS-B", "Nelder-Mead"]:
-            try:
-                kwargs = {"method": method}
-                if method == "L-BFGS-B":
-                    kwargs["bounds"] = bounds
-                result = minimize(neg_loglik, x0, **kwargs)
-                if result.fun < best_negll:
-                    best_negll = result.fun
-                    best_params = np.abs(result.x)
-            except (ValueError, np.linalg.LinAlgError):
-                continue
+        try:
+            result = minimize(
+                neg_loglik, x0, method="L-BFGS-B", bounds=bounds
+            )
+            if result.fun < best_negll:
+                best_negll = result.fun
+                best_params = np.abs(result.x)
+        except (ValueError, np.linalg.LinAlgError):
+            continue
 
-    # Refine best result
+    # Refine the best result with Nelder-Mead (gradient-free polish).
     try:
         result = minimize(
             neg_loglik, best_params, method="Nelder-Mead",
             options={"maxiter": 10000, "xatol": 1e-10, "fatol": 1e-10},
         )
         if result.fun < best_negll:
+            best_negll = result.fun
             best_params = np.abs(result.x)
     except (ValueError, np.linalg.LinAlgError):
         pass

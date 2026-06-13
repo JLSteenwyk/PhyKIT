@@ -3,6 +3,7 @@ Phylogenetic trait correlation: compute phylogenetic correlations between
 all pairs of traits and display them as a heatmap with significance
 indicators.
 """
+import sys
 from typing import Dict, List
 
 import numpy as np
@@ -57,6 +58,33 @@ class TraitCorrelation(Tree):
         p = len(trait_names)
 
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+
+        # Drop invariant (zero-variance) traits: their correlations are
+        # undefined (division by a zero standard deviation), which yields
+        # NaNs that propagate into the heatmap and crash hierarchical
+        # clustering. Warn and continue with the variable traits.
+        col_var = np.var(Y, axis=0)
+        invariant = [trait_names[j] for j in range(p) if col_var[j] < 1e-12]
+        if invariant:
+            keep = [j for j in range(p) if col_var[j] >= 1e-12]
+            print(
+                f"Warning: dropping {len(invariant)} invariant trait(s) "
+                f"(zero variance): {', '.join(invariant)}",
+                file=sys.stderr,
+            )
+            Y = Y[:, keep]
+            trait_names = [trait_names[j] for j in keep]
+            p = len(trait_names)
+            if p < 2:
+                raise PhykitUserError(
+                    [
+                        "Fewer than 2 variable traits remain after dropping "
+                        "invariant traits.",
+                        "Trait correlation requires at least 2 traits with "
+                        "non-zero variance.",
+                    ],
+                    code=2,
+                )
 
         # GLS-centered data
         C_inv = np.linalg.inv(vcv)

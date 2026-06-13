@@ -95,6 +95,34 @@ class PhylogeneticSignal(Tree):
 
         x = np.array([traits[name] for name in ordered_names])
 
+        if np.var(x) < 1e-12:
+            note = (
+                "Trait has zero variance across the shared taxa; "
+                "phylogenetic signal is undefined."
+            )
+            print(f"Warning: {note}", file=sys.stderr)
+            if self.method == "blombergs_k":
+                if self.json_output:
+                    print_json(
+                        dict(K=None, p_value=None, r_squared_phylo=None, note=note)
+                    )
+                else:
+                    print("NA\tNA\tNA")
+            else:
+                if self.json_output:
+                    print_json(
+                        dict(
+                            lambda_value=None,
+                            log_likelihood=None,
+                            p_value=None,
+                            r_squared_phylo=None,
+                            note=note,
+                        )
+                    )
+                else:
+                    print("NA\tNA\tNA\tNA")
+            return
+
         r2_phylo = self._compute_r2_phylo(x, vcv)
 
         if self.method == "blombergs_k":
