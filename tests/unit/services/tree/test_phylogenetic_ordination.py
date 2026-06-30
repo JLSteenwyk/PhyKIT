@@ -1234,6 +1234,37 @@ class TestRun:
             "Log-likelihood: -12.250000"
         )
 
+    def test_pca_text_output_formats_converted_rows(self, default_args, mocker):
+        svc = PhylogeneticOrdination(default_args)
+        printed = mocker.patch("builtins.print")
+
+        svc._print_pca_text_output(
+            eigenvalues=np.array([2.0, 1.0, 0.5]),
+            proportions=np.array([0.5, 0.3, 0.2]),
+            eigenvectors=np.array([[0.1234567, 0.2, -0.3]]),
+            scores=np.array([[1.2345678, 2.0, -3.5]]),
+            trait_names=["trait_a"],
+            taxon_names=["taxon_a"],
+            pc_labels=["PC1", "PC2", "PC3"],
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        printed.assert_called_once_with(
+            "Eigenvalues:\n"
+            "\tPC1\tPC2\tPC3\n"
+            "eigenvalue\t2.000000\t1.000000\t0.500000\n"
+            "proportion\t0.500000\t0.300000\t0.200000\n"
+            "\n"
+            "Loadings:\n"
+            "\tPC1\tPC2\tPC3\n"
+            "trait_a\t0.123457\t0.200000\t-0.300000\n"
+            "\n"
+            "Scores:\n"
+            "\tPC1\tPC2\tPC3\n"
+            "taxon_a\t1.234568\t2.000000\t-3.500000"
+        )
+
     def test_format_pca_result_preserves_payload_shape(self, default_args):
         svc = PhylogeneticOrdination(default_args)
 

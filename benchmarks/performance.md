@@ -1729,6 +1729,7 @@ Results:
 | `PhylogeneticOrdination._center_traits_by_vcv_cholesky` residual solve reuse | 120 repeated 420-taxon SPD VCV x 10-trait weighted centering calls, SciPy already warm | 0.056996s | 0.050926s | 1.12x |
 | `PhylogeneticOrdination` broadcast centering products | 420 taxa x 700 traits, centered traits plus weighted centered traits | 0.000867s | 0.000635s | 1.37x |
 | `PhylogeneticOrdination._print_pca_text_output` batched text output | 100k taxa x 4 PC scores plus 8 trait loadings, captured stdout and identical text | 0.183670s | 0.169344s | 1.08x |
+| `PhylogeneticOrdination._print_pca_text_output` score/loadings row conversion | 100k taxa x 4 PC scores plus 8 trait loadings, identical captured text while avoiding per-cell NumPy indexing | 0.602249s | 0.511011s | 1.18x |
 | `PhylogeneticOrdination._format_pca_result` row-slice JSON payload | 100k taxa x 4 PC scores plus 8 trait loadings, identical nested payload | 0.072574s | 0.058033s | 1.25x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` batched text output | 100k taxa x 2 embedding dimensions, captured stdout and identical text | 0.111761s | 0.099769s | 1.12x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` embedding row conversion | 100k taxa x 2 embedding dimensions, identical captured text while avoiding per-cell NumPy indexing | 0.692168s | 0.517560s | 1.34x |

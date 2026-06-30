@@ -715,15 +715,15 @@ class PhylogeneticOrdination(Tree):
             "\t" + "\t".join(pc_labels),
         ]
         append = lines.append
-        for j, trait in enumerate(trait_names):
-            row = "\t".join(fmt(eigenvectors[j, i]) for i in range(len(pc_labels)))
+        for trait, values in zip(trait_names, eigenvectors.tolist()):
+            row = "\t".join(fmt(value) for value in values)
             append(f"{trait}\t{row}")
 
         append("")
         append("Scores:")
         append("\t" + "\t".join(pc_labels))
-        for k, taxon in enumerate(taxon_names):
-            row = "\t".join(fmt(scores[k, i]) for i in range(len(pc_labels)))
+        for taxon, values in zip(taxon_names, scores.tolist()):
+            row = "\t".join(fmt(value) for value in values)
             append(f"{taxon}\t{row}")
 
         if lambda_val is not None:
