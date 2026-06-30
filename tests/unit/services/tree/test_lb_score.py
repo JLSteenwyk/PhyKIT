@@ -199,6 +199,25 @@ class TestLBScore(object):
 
         assert result == pytest.approx(expected)
 
+    def test_average_distance_to_other_taxa_reuses_tip_set(self, mocker, args):
+        class CountingTips(list):
+            def __init__(self, values):
+                super().__init__(values)
+                self.iterations = 0
+
+            def __iter__(self):
+                self.iterations += 1
+                return super().__iter__()
+
+        t = LBScore(args)
+        mocker.patch.object(t, "calculate_pairwise_tip_distances_fast", return_value=None)
+        tips = CountingTips([f"tip{i}" for i in range(12)])
+        tree = _IndexedDummyTree()
+
+        t.calculate_average_distance_of_taxon_to_other_taxa(tips, tree)
+
+        assert tips.iterations == 2
+
     def test_calculate_average_distance_of_taxon_to_other_taxa_parallel_path(
         self, mocker, args
     ):

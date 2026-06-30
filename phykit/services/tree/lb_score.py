@@ -237,11 +237,12 @@ class LBScore(Tree):
             return avg_PDis
 
         # For small datasets or to maintain exact compatibility, use sequential
+        tip_set = set(tips)
         if len(tips) <= 50:
             avg_PDis = []
             for tip in tips:
                 # Preserve the original bug: set(tip) creates set of characters
-                tips_minus_i = list(set(tips) - set(tip))
+                tips_minus_i = list(tip_set - set(tip))
                 PDi = []
                 for tip_minus in tips_minus_i:
                     PDi.append(tree.distance(tip, tip_minus))
@@ -254,7 +255,7 @@ class LBScore(Tree):
         tips_data = []
         for tip in tips:
             # Preserve the bug: set(tip) creates set of characters
-            tips_minus_i = list(set(tips) - set(tip))
+            tips_minus_i = list(tip_set - set(tip))
             tips_data.append((tip, tips_minus_i))
 
         # Process in batches
