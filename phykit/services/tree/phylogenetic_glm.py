@@ -1,14 +1,128 @@
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize
-from scipy.stats import norm as norm_dist
+import sys
+from math import sqrt
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def parse_multi_trait_file(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        parse_multi_trait_file as _parse_multi_trait_file,
+    )
+
+    return _parse_multi_trait_file(*args, **kwargs)
+
+
+def response_predictor_arrays(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        response_predictor_arrays as _response_predictor_arrays,
+    )
+
+    return _response_predictor_arrays(*args, **kwargs)
+
+
+def subset_traits_to_ordered_shared_taxa(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        subset_traits_to_ordered_shared_taxa as _subset_traits_to_ordered_shared_taxa,
+    )
+
+    return _subset_traits_to_ordered_shared_taxa(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_MINIMIZE = None
+_SPECIAL_ERFC = None
+
+
+def special_erfc(*args, **kwargs):
+    global _SPECIAL_ERFC
+
+    if _SPECIAL_ERFC is None:
+        from scipy.special import erfc as _erfc
+
+        _SPECIAL_ERFC = _erfc
+
+    return _SPECIAL_ERFC(*args, **kwargs)
+
+
+def minimize(*args, **kwargs):
+    global _MINIMIZE
+
+    if _MINIMIZE is None:
+        from scipy.optimize import minimize as _minimize
+
+        _MINIMIZE = _minimize
+
+    return _MINIMIZE(*args, **kwargs)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def _normal_two_tailed_p_values(z_stats: np.ndarray) -> np.ndarray:
+    z_values = np.asarray(z_stats, dtype=float)
+    p_values = special_erfc(
+        np.abs(z_values) / sqrt(2.0),
+    )
+    return np.asarray(p_values, dtype=np.float64).reshape(z_values.shape)
+
+
+def _standard_errors_from_info_matrix(
+    info_matrix: np.ndarray,
+    scale: float = 1.0,
+) -> np.ndarray:
+    try:
+        factor = cho_factor(info_matrix, lower=True, check_finite=False)
+        info_inv_diag = np.diag(
+            cho_solve(
+                factor,
+                np.eye(info_matrix.shape[0]),
+                check_finite=False,
+            )
+        )
+    except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+        try:
+            info_inv_diag = np.diag(np.linalg.inv(info_matrix))
+        except np.linalg.LinAlgError:
+            return np.full(info_matrix.shape[0], np.nan)
+
+    return np.sqrt(np.abs(scale * info_inv_diag))
 
 
 class PhylogeneticGLM(Tree):
@@ -26,18 +140,28 @@ class PhylogeneticGLM(Tree):
         self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phylogenetic GLM")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylogenetic GLM",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = parse_multi_trait_file(
             self.trait_data_path, tree_tips
         )
 
+        trait_name_to_idx = {}
+        for idx, name in enumerate(trait_names):
+            if name not in trait_name_to_idx:
+                trait_name_to_idx[name] = idx
+
         # Validate column names
         all_columns = [self.response] + list(self.predictors)
         for col in all_columns:
-            if col not in trait_names:
+            if col not in trait_name_to_idx:
                 raise PhykitUserError(
                     [
                         f"Column '{col}' not found in trait file.",
@@ -57,15 +181,20 @@ class PhylogeneticGLM(Tree):
         ordered_names = sorted(traits.keys())
 
         # Pre-compute discordance VCV if gene trees provided
+        discordance_vcv = None
         vcv_meta = None
         if self.gene_trees_path:
             from .vcv_utils import build_discordance_vcv, parse_gene_trees
             gene_trees = parse_gene_trees(self.gene_trees_path)
-            _, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+            discordance_vcv, vcv_meta = build_discordance_vcv(
+                tree,
+                gene_trees,
+                ordered_names,
+            )
             shared = vcv_meta["shared_taxa"]
-            if set(shared) != set(ordered_names):
-                traits = {k: traits[k] for k in shared}
-                ordered_names = shared
+            traits, ordered_names = subset_traits_to_ordered_shared_taxa(
+                traits, ordered_names, shared
+            )
 
         n = len(ordered_names)
         k = len(self.predictors)
@@ -80,14 +209,12 @@ class PhylogeneticGLM(Tree):
             )
 
         # Build response vector y and design matrix X (with intercept)
-        resp_idx = trait_names.index(self.response)
-        pred_indices = [trait_names.index(p) for p in self.predictors]
+        resp_idx = trait_name_to_idx[self.response]
+        pred_indices = [trait_name_to_idx[p] for p in self.predictors]
 
-        y = np.array([traits[name][resp_idx] for name in ordered_names])
-        X_pred = np.array(
-            [[traits[name][j] for j in pred_indices] for name in ordered_names]
+        y, X = response_predictor_arrays(
+            traits, ordered_names, resp_idx, pred_indices
         )
-        X = np.column_stack([np.ones(n), X_pred])
 
         # Validate response variable
         if self.family == "binomial":
@@ -120,13 +247,7 @@ class PhylogeneticGLM(Tree):
                 )
 
         # Pre-compute VCV for Poisson GEE if gene trees provided
-        self._precomputed_vcv = None
-        if self.gene_trees_path:
-            from .vcv_utils import build_discordance_vcv, parse_gene_trees
-            gene_trees = parse_gene_trees(self.gene_trees_path)
-            self._precomputed_vcv, _ = build_discordance_vcv(
-                tree, gene_trees, ordered_names
-            )
+        self._precomputed_vcv = discordance_vcv
 
         if self.family == "binomial":
             result = self._fit_logistic_mple(tree, y, X, ordered_names)
@@ -168,7 +289,7 @@ class PhylogeneticGLM(Tree):
         else:
             self._print_text_output(result)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         family = getattr(args, "family", "binomial")
         method = getattr(args, "method", None)
         if method is None:
@@ -187,7 +308,7 @@ class PhylogeneticGLM(Tree):
         )
 
     def _build_vcv_matrix(
-        self, tree, ordered_names: List[str]
+        self, tree, ordered_names: list[str]
     ) -> np.ndarray:
         from .vcv_utils import build_vcv_matrix
         return build_vcv_matrix(tree, ordered_names)
@@ -208,23 +329,61 @@ class PhylogeneticGLM(Tree):
     # Logistic MPLE (Ives & Garland 2010)
     # ----------------------------------------------------------------
 
+    @staticmethod
+    def _root_tip_distances(tree, ordered_names: list[str]) -> np.ndarray:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            try:
+                distance_by_name = {}
+                stack = [(root, 0.0)]
+                while stack:
+                    clade, distance = stack.pop()
+                    children = clade.clades
+                    if children:
+                        for child in reversed(children):
+                            stack.append(
+                                (
+                                    child,
+                                    distance + (child.branch_length or 0.0),
+                                )
+                            )
+                    else:
+                        distance_by_name[clade.name] = distance
+                return np.array([distance_by_name[name] for name in ordered_names])
+            except (AttributeError, KeyError, TypeError):
+                pass
+
+        try:
+            depths = tree.depths()
+            root_depth = depths[tree.root]
+            terminals = tree.get_terminals()
+            terminal_by_name = {terminal.name: terminal for terminal in terminals}
+            return np.array([
+                depths[terminal_by_name[name]] - root_depth for name in ordered_names
+            ])
+        except (AttributeError, KeyError, TypeError):
+            return np.array([
+                tree.distance(tree.root, name) for name in ordered_names
+            ])
+
     def _make_ultrametric(
-        self, tree, ordered_names: List[str]
-    ) -> Tuple[np.ndarray, float, float]:
+        self, tree, ordered_names: list[str]
+    ) -> tuple[np.ndarray, float, float]:
         """Compute ultrametric correction D, Tmax, and mean tip height.
 
         D_i = max(root-to-tip) - root_to_tip[i]
         Tmax = max root-to-tip distance
         mean_height = mean root-to-tip distance (used for initial alpha)
         """
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        heights = list(root_to_tip.values())
-        max_dist = max(heights)
+        heights = self._root_tip_distances(tree, ordered_names)
+        max_dist = float(np.max(heights))
         mean_height = float(np.mean(heights))
-        D = np.array([max_dist - root_to_tip[name] for name in ordered_names])
+        D = max_dist - heights
         Tmax = max_dist
         return D, Tmax, mean_height
 
@@ -240,10 +399,13 @@ class PhylogeneticGLM(Tree):
             eta = np.clip(eta, -btol, btol)
             mu = 1.0 / (1.0 + np.exp(-eta))
             mu = np.clip(mu, 1e-6, 1 - 1e-6)
-            W = np.diag(mu * (1 - mu))
+            weights = mu * (1 - mu)
             z = eta + (y - mu) / (mu * (1 - mu))
             try:
-                beta_new = np.linalg.solve(X.T @ W @ X, X.T @ W @ z)
+                beta_new = np.linalg.solve(
+                    X.T @ (weights[:, None] * X),
+                    X.T @ (weights * z),
+                )
             except np.linalg.LinAlgError:
                 break
             if np.max(np.abs(beta_new - beta)) < 1e-8:
@@ -269,7 +431,7 @@ class PhylogeneticGLM(Tree):
 
     def _pruning_log_likelihood(
         self, tree, y: np.ndarray, mu: np.ndarray,
-        alpha: float, ordered_names: List[str], dk: int,
+        alpha: float, ordered_names: list[str], dk: int,
     ) -> float:
         """Log-likelihood via 2-state CTMC pruning (Ives & Garland 2010).
 
@@ -364,10 +526,10 @@ class PhylogeneticGLM(Tree):
         )
 
     def _three_point_compute(
-        self, tree, ordered_names: List[str],
+        self, tree, ordered_names: list[str],
         alpha: float, mu: np.ndarray, D: np.ndarray, Tmax: float,
         X_mat: np.ndarray,
-    ) -> Tuple[float, np.ndarray]:
+    ) -> tuple[float, np.ndarray]:
         """Compute log|V| and X'V^{-1}X via postorder tree traversal.
 
         Matches R's three.point.compute: O(n) algorithm that computes
@@ -489,7 +651,7 @@ class PhylogeneticGLM(Tree):
         return logd[rid], XX[rid]
 
     def _compute_dia(
-        self, ordered_names: List[str],
+        self, ordered_names: list[str],
         alpha: float, mu: np.ndarray, D: np.ndarray,
     ) -> np.ndarray:
         """Compute diagonal scaling factors for Fisher info.
@@ -515,8 +677,8 @@ class PhylogeneticGLM(Tree):
         return dia
 
     def _fit_logistic_mple(
-        self, tree, y: np.ndarray, X: np.ndarray, ordered_names: List[str]
-    ) -> Dict:
+        self, tree, y: np.ndarray, X: np.ndarray, ordered_names: list[str]
+    ) -> dict:
         """Fit logistic phylogenetic GLM via MPLE (Ives & Garland 2010).
 
         Minimizes -(LL + 0.5*log(det(I))) where:
@@ -627,20 +789,22 @@ class PhylogeneticGLM(Tree):
             _, infoM = self._three_point_compute(
                 tree, ordered_names, alpha_hat, mu, D, Tmax, X_scaled,
             )
-            I_inv = np.linalg.inv(infoM)
-            se = np.sqrt(np.abs(np.diag(I_inv)))
+            se = _standard_errors_from_info_matrix(infoM)
         except np.linalg.LinAlgError:
             se = np.full(p, np.nan)
 
         z_stats = beta_hat / se
-        p_values = 2.0 * norm_dist.sf(np.abs(z_stats))
+        p_values = _normal_two_tailed_p_values(z_stats)
 
         # AIC: -2*ll + 2*(p+1) where p coefficients + alpha
         aic = -2.0 * ll + 2.0 * (p + 1)
 
         coef_names = ["(Intercept)"] + list(self.predictors)
         formula = f"{self.response} ~ {' + '.join(self.predictors)}"
-        fitted_dict = {ordered_names[i]: float(mu[i]) for i in range(n)}
+        fitted_dict = {
+            name: float(value)
+            for name, value in zip(ordered_names, mu)
+        }
 
         return self._format_result(
             family="binomial",
@@ -678,10 +842,12 @@ class PhylogeneticGLM(Tree):
             eta = np.clip(eta, -20, 20)
             mu = np.exp(eta)
             mu = np.clip(mu, 1e-6, 1e10)
-            W = np.diag(mu)
             z = eta + (y - mu) / mu
             try:
-                beta_new = np.linalg.solve(X.T @ W @ X, X.T @ W @ z)
+                beta_new = np.linalg.solve(
+                    X.T @ (mu[:, None] * X),
+                    X.T @ (mu * z),
+                )
             except np.linalg.LinAlgError:
                 break
             if np.max(np.abs(beta_new - beta)) < 1e-8:
@@ -691,9 +857,55 @@ class PhylogeneticGLM(Tree):
 
         return beta
 
+    @staticmethod
+    def _poisson_gee_information_and_score(
+        X: np.ndarray, R_inv: np.ndarray, mu: np.ndarray, y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        sqrt_mu = np.sqrt(mu)
+        WX = sqrt_mu[:, None] * X
+        I_mat = WX.T @ R_inv @ WX
+        score = WX.T @ (R_inv @ ((y - mu) / sqrt_mu))
+        return I_mat, score
+
+    @staticmethod
+    def _poisson_gee_information(
+        X: np.ndarray, R_inv: np.ndarray, mu: np.ndarray
+    ) -> np.ndarray:
+        sqrt_mu = np.sqrt(mu)
+        WX = sqrt_mu[:, None] * X
+        return WX.T @ R_inv @ WX
+
+    @staticmethod
+    def _poisson_gee_information_and_score_cholesky(
+        X: np.ndarray, R_factor, mu: np.ndarray, y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        sqrt_mu = np.sqrt(mu)
+        WX = sqrt_mu[:, None] * X
+        rhs = np.empty(
+            (X.shape[0], X.shape[1] + 1),
+            dtype=np.result_type(X, mu, y),
+        )
+        rhs[:, :X.shape[1]] = WX
+        rhs[:, X.shape[1]] = (y - mu) / sqrt_mu
+        solved = cho_solve(R_factor, rhs, check_finite=False)
+        R_inv_WX = solved[:, :X.shape[1]]
+        R_inv_residual = solved[:, X.shape[1]]
+        I_mat = WX.T @ R_inv_WX
+        score = WX.T @ R_inv_residual
+        return I_mat, score
+
+    @staticmethod
+    def _poisson_gee_information_cholesky(
+        X: np.ndarray, R_factor, mu: np.ndarray
+    ) -> np.ndarray:
+        sqrt_mu = np.sqrt(mu)
+        WX = sqrt_mu[:, None] * X
+        R_inv_WX = cho_solve(R_factor, WX, check_finite=False)
+        return WX.T @ R_inv_WX
+
     def _fit_poisson_gee(
-        self, tree, y: np.ndarray, X: np.ndarray, ordered_names: List[str]
-    ) -> Dict:
+        self, tree, y: np.ndarray, X: np.ndarray, ordered_names: list[str]
+    ) -> dict:
         """Fit Poisson phylogenetic GLM via GEE with Fisher scoring.
 
         GEE for Poisson with log link and phylogenetic correlation R:
@@ -712,16 +924,21 @@ class PhylogeneticGLM(Tree):
         d = np.sqrt(np.diag(vcv))
         R = vcv / np.outer(d, d)
 
+        R_inv = None
+        R_factor = None
         try:
-            R_inv = np.linalg.inv(R)
-        except np.linalg.LinAlgError:
-            raise PhykitUserError(
-                [
-                    "Singular correlation matrix: cannot invert.",
-                    "Check that the tree has valid branch lengths.",
-                ],
-                code=2,
-            )
+            R_factor = cho_factor(R, lower=True, check_finite=False)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            try:
+                R_inv = np.linalg.inv(R)
+            except np.linalg.LinAlgError:
+                raise PhykitUserError(
+                    [
+                        "Singular correlation matrix: cannot invert.",
+                        "Check that the tree has valid branch lengths.",
+                    ],
+                    code=2,
+                )
 
         beta = self._poisson_starting_values(y, X)
 
@@ -735,12 +952,14 @@ class PhylogeneticGLM(Tree):
             mu = np.exp(eta)
             mu = np.clip(mu, 1e-10, 1e10)
 
-            sqrt_mu = np.sqrt(mu)
-            inv_sqrt_mu = 1.0 / sqrt_mu
-
-            WX = np.diag(sqrt_mu) @ X
-            I_mat = WX.T @ R_inv @ WX
-            score = WX.T @ R_inv @ (inv_sqrt_mu * (y - mu))
+            if R_factor is not None:
+                I_mat, score = self._poisson_gee_information_and_score_cholesky(
+                    X, R_factor, mu, y
+                )
+            else:
+                I_mat, score = self._poisson_gee_information_and_score(
+                    X, R_inv, mu, y
+                )
 
             try:
                 delta = np.linalg.solve(I_mat, score)
@@ -775,25 +994,24 @@ class PhylogeneticGLM(Tree):
         ))
 
         # Covariance: phi * I^{-1}
-        sqrt_mu_final = np.sqrt(mu)
-        WX_final = np.diag(sqrt_mu_final) @ X
-        I_final = WX_final.T @ R_inv @ WX_final
+        if R_factor is not None:
+            I_final = self._poisson_gee_information_cholesky(X, R_factor, mu)
+        else:
+            I_final = self._poisson_gee_information(X, R_inv, mu)
 
-        try:
-            I_inv = np.linalg.inv(I_final)
-            var_beta = phi * I_inv
-            se = np.sqrt(np.abs(np.diag(var_beta)))
-        except np.linalg.LinAlgError:
-            se = np.full(p, np.nan)
+        se = _standard_errors_from_info_matrix(I_final, scale=phi)
 
         z_stats = beta / se
-        p_values = 2.0 * norm_dist.sf(np.abs(z_stats))
+        p_values = _normal_two_tailed_p_values(z_stats)
 
         aic = -2.0 * ll + 2.0 * p
 
         coef_names = ["(Intercept)"] + list(self.predictors)
         formula = f"{self.response} ~ {' + '.join(self.predictors)}"
-        fitted_dict = {ordered_names[i]: float(mu[i]) for i in range(n)}
+        fitted_dict = {
+            name: float(value)
+            for name, value in zip(ordered_names, mu)
+        }
 
         return self._format_result(
             family="poisson",
@@ -818,56 +1036,68 @@ class PhylogeneticGLM(Tree):
     # Output formatting
     # ----------------------------------------------------------------
 
-    def _print_text_output(self, result: Dict) -> None:
+    def _print_text_output(self, result: dict) -> None:
         family = result["family"]
         method = result["method"]
+        lines = []
+        append = lines.append
 
         if family == "binomial":
-            print("Phylogenetic GLM (Logistic MPLE)")
+            append("Phylogenetic GLM (Logistic MPLE)")
         else:
-            print("Phylogenetic GLM (Poisson GEE)")
+            append("Phylogenetic GLM (Poisson GEE)")
 
-        print(f"\nFormula: {result['formula']}")
-        print(f"Family: {family}, Method: {method}")
+        append(f"\nFormula: {result['formula']}")
+        append(f"Family: {family}, Method: {method}")
 
         if result.get("alpha") is not None:
-            print(f"\nEstimated alpha: {result['alpha']:.4f}")
+            append(f"\nEstimated alpha: {result['alpha']:.4f}")
         if result.get("overdispersion") is not None:
-            print(f"\nOverdispersion (phi): {result['overdispersion']:.4f}")
+            append(f"\nOverdispersion (phi): {result['overdispersion']:.4f}")
 
-        print("\nCoefficients:")
-        print(
+        append("\nCoefficients:")
+        append(
             f"{'':20s}{'Estimate':>12s}{'Std.Error':>12s}"
             f"{'z-value':>12s}{'p-value':>12s}"
         )
 
         coefficients = result["coefficients"]
-        for name in coefficients:
-            coef = coefficients[name]
-            sig = self._signif_code(coef["p_value"])
-            print(
+        for name, coef in coefficients.items():
+            p_value = coef["p_value"]
+            if p_value < 0.001:
+                sig = "***"
+            elif p_value < 0.01:
+                sig = "**"
+            elif p_value < 0.05:
+                sig = "*"
+            elif p_value < 0.1:
+                sig = "."
+            else:
+                sig = " "
+            append(
                 f"{name:20s}{coef['estimate']:12.4f}{coef['std_error']:12.4f}"
-                f"{coef['z_value']:12.4f}{coef['p_value']:12.6f}    {sig}"
+                f"{coef['z_value']:12.4f}{p_value:12.6f}    {sig}"
             )
 
-        print("---")
-        print("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1")
+        append("---")
+        append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1")
 
-        print(
+        append(
             f"\nLog-likelihood: {result['log_likelihood']:.4f}    "
             f"AIC: {result['aic']:.4f}"
         )
         if "pseudo_r_squared_mcfadden" in result:
             r2_val = result["pseudo_r_squared_mcfadden"]
-            print(f"Pseudo-R² (McFadden): {r2_val:.4f}")
-        print(f"Number of observations: {result['n_observations']}")
+            append(f"Pseudo-R² (McFadden): {r2_val:.4f}")
+        append(f"Number of observations: {result['n_observations']}")
+        print("\n".join(lines))
 
     def _format_result(
         self,
         *,
         family: str,
         method: str,
-        coef_names: List[str],
+        coef_names: list[str],
         beta_hat: np.ndarray,
         se: np.ndarray,
         z_stats: np.ndarray,
@@ -877,19 +1107,22 @@ class PhylogeneticGLM(Tree):
         formula: str,
         n: int,
         k: int,
-        ordered_names: List[str],
-        fitted: Dict,
+        ordered_names: list[str],
+        fitted: dict,
         alpha: float,
         overdispersion: float,
-    ) -> Dict:
-        coefficients = {}
-        for i, name in enumerate(coef_names):
-            coefficients[name] = {
-                "estimate": float(beta_hat[i]),
-                "std_error": float(se[i]),
-                "z_value": float(z_stats[i]),
-                "p_value": float(p_values[i]),
+    ) -> dict:
+        coefficients = {
+            name: {
+                "estimate": float(beta),
+                "std_error": float(std_error),
+                "z_value": float(z_stat),
+                "p_value": float(p_value),
             }
+            for name, beta, std_error, z_stat, p_value in zip(
+                coef_names, beta_hat, se, z_stats, p_values
+            )
+        }
 
         result = {
             "family": family,

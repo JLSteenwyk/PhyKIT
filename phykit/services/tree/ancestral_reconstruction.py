@@ -1,39 +1,218 @@
-import math
-import pickle
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.linalg import expm
-from scipy.optimize import minimize
+import math
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
-from ...helpers.discrete_models import (
-    build_q_matrix,
-    matrix_exp,
-    felsenstein_pruning,
-    fit_q_matrix,
-    parse_discrete_traits,
-)
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_branches,
-    draw_circular_tip_labels,
-    draw_circular_gradient_branch,
-    draw_circular_colored_arc,
-    draw_circular_colored_branch,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    get_clade_branch_ids,
-    build_color_legend_handles,
-)
+from ...helpers.tree_paths import build_root_path_map
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _value_range(values):
+    iterator = iter(values)
+    try:
+        vmin = vmax = next(iterator)
+    except StopIteration:
+        return None
+
+    for value in iterator:
+        if value < vmin:
+            vmin = value
+        elif value > vmax:
+            vmax = value
+    return vmin, vmax
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+
+
+class _LazyPickle:
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+
+pickle = _LazyPickle()
+
+
+class _LazyHeapq:
+    def merge(self, *args, **kwargs):
+        import heapq as _heapq
+
+        return _heapq.merge(*args, **kwargs)
+
+
+heapq = _LazyHeapq()
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def build_vcv_matrix(*args, **kwargs):
+    from .vcv_utils import build_vcv_matrix as _build_vcv_matrix
+
+    return _build_vcv_matrix(*args, **kwargs)
+
+
+def compute_node_positions(*args, **kwargs):
+    from ...helpers.plot_config import compute_node_positions as _compute_node_positions
+
+    return _compute_node_positions(*args, **kwargs)
+
+
+def build_q_matrix(*args, **kwargs):
+    from ...helpers.discrete_models import build_q_matrix as _build_q_matrix
+
+    return _build_q_matrix(*args, **kwargs)
+
+
+def matrix_exp(*args, **kwargs):
+    from ...helpers.discrete_models import matrix_exp as _matrix_exp
+
+    return _matrix_exp(*args, **kwargs)
+
+
+def felsenstein_pruning(*args, **kwargs):
+    from ...helpers.discrete_models import (
+        felsenstein_pruning as _felsenstein_pruning,
+    )
+
+    return _felsenstein_pruning(*args, **kwargs)
+
+
+def fit_q_matrix(*args, **kwargs):
+    from ...helpers.discrete_models import fit_q_matrix as _fit_q_matrix
+
+    return _fit_q_matrix(*args, **kwargs)
+
+
+def parse_discrete_traits(*args, **kwargs):
+    from ...helpers.discrete_models import parse_discrete_traits as _parse_discrete_traits
+
+    return _parse_discrete_traits(*args, **kwargs)
+
+
+def compute_circular_coords(*args, **kwargs):
+    from ...helpers.circular_layout import compute_circular_coords as _compute_circular_coords
+
+    return _compute_circular_coords(*args, **kwargs)
+
+
+def draw_circular_branches(*args, **kwargs):
+    from ...helpers.circular_layout import draw_circular_branches as _draw_circular_branches
+
+    return _draw_circular_branches(*args, **kwargs)
+
+
+def draw_circular_tip_labels(*args, **kwargs):
+    from ...helpers.circular_layout import draw_circular_tip_labels as _draw_circular_tip_labels
+
+    return _draw_circular_tip_labels(*args, **kwargs)
+
+
+def draw_circular_gradient_branches(*args, **kwargs):
+    from ...helpers.circular_layout import (
+        draw_circular_gradient_branches as _draw_circular_gradient_branches,
+    )
+
+    return _draw_circular_gradient_branches(*args, **kwargs)
+
+
+def draw_circular_colored_arcs(*args, **kwargs):
+    from ...helpers.circular_layout import (
+        draw_circular_colored_arcs as _draw_circular_colored_arcs,
+    )
+
+    return _draw_circular_colored_arcs(*args, **kwargs)
+
+
+def parse_color_file(*args, **kwargs):
+    from ...helpers.color_annotations import parse_color_file as _parse_color_file
+
+    return _parse_color_file(*args, **kwargs)
+
+
+def resolve_mrca(*args, **kwargs):
+    from ...helpers.color_annotations import resolve_mrca as _resolve_mrca
+
+    return _resolve_mrca(*args, **kwargs)
+
+
+def draw_range_rect(*args, **kwargs):
+    from ...helpers.color_annotations import draw_range_rect as _draw_range_rect
+
+    return _draw_range_rect(*args, **kwargs)
+
+
+def draw_range_wedge(*args, **kwargs):
+    from ...helpers.color_annotations import draw_range_wedge as _draw_range_wedge
+
+    return _draw_range_wedge(*args, **kwargs)
+
+
+def get_clade_branch_ids(*args, **kwargs):
+    from ...helpers.color_annotations import get_clade_branch_ids as _get_clade_branch_ids
+
+    return _get_clade_branch_ids(*args, **kwargs)
+
+
+def build_color_legend_handles(*args, **kwargs):
+    from ...helpers.color_annotations import (
+        build_color_legend_handles as _build_color_legend_handles,
+    )
+
+    return _build_color_legend_handles(*args, **kwargs)
+
+
+def apply_label_colors(*args, **kwargs):
+    from ...helpers.color_annotations import apply_label_colors as _apply_label_colors
+
+    return _apply_label_colors(*args, **kwargs)
 
 
 class AncestralReconstruction(Tree):
@@ -53,7 +232,7 @@ class AncestralReconstruction(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="ancestral reconstruction")
         tree_tips = self.get_tip_names_from_tree(tree)
         if self.trait_type == "discrete":
@@ -77,27 +256,28 @@ class AncestralReconstruction(Tree):
         n = len(ordered_names)
         x = np.array([trait_values[name] for name in ordered_names])
 
-        # Prune tree to shared taxa
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in trait_values]
+        tips_to_prune = [t for t in tree_tips if t not in trait_values]
+        needs_working_copy = bool(tips_to_prune) or self.plot_config.ladderize
+        tree_for_analysis = self._fast_copy(tree) if needs_working_copy else tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
+            )
 
         if self.plot_config.ladderize:
-            tree_copy.ladderize()
+            tree_for_analysis.ladderize()
 
         # Label internal nodes
-        node_labels = self._label_internal_nodes(tree_copy)
+        node_labels = self._label_internal_nodes(tree_for_analysis)
 
         if self.method == "ml":
             (
                 node_estimates, node_cis, sigma2, log_likelihood
-            ) = self._anc_ml(tree_copy, x, ordered_names, node_labels)
+            ) = self._anc_ml(tree_for_analysis, x, ordered_names, node_labels)
         else:
             (
                 node_estimates, node_cis, sigma2, log_likelihood
-            ) = self._fast_anc(tree_copy, x, ordered_names, node_labels)
+            ) = self._fast_anc(tree_for_analysis, x, ordered_names, node_labels)
 
         # Build result
         result = self._format_result(
@@ -109,14 +289,14 @@ class AncestralReconstruction(Tree):
             node_estimates=node_estimates,
             node_cis=node_cis,
             node_labels=node_labels,
-            tree=tree_copy,
+            tree=tree_for_analysis,
             trait_values=trait_values,
         )
 
         if self.plot_output:
             ci_data = node_cis if (self.plot_ci and self.ci and node_cis) else None
             self._plot_contmap(
-                tree_copy, node_estimates, node_labels,
+                tree_for_analysis, node_estimates, node_labels,
                 trait_values, trait_name, self.plot_output,
                 node_cis=ci_data,
             )
@@ -134,10 +314,12 @@ class AncestralReconstruction(Tree):
                 node_estimates=node_estimates,
                 node_cis=node_cis,
                 node_labels=node_labels,
-                tree=tree_copy,
+                tree=tree_for_analysis,
             )
 
     def process_args(self, args) -> Dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -153,12 +335,52 @@ class AncestralReconstruction(Tree):
             plot_config=PlotConfig.from_args(args),
         )
 
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
+
     def _parse_single_trait_data(
         self, path: str, tree_tips: List[str]
     ) -> Dict[str, float]:
         try:
+            traits = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    taxon, sep, value_str = line.partition("\t")
+                    if not sep or "\t" in value_str:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                            code=2,
+                        )
+                    try:
+                        traits[taxon] = float(value_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -168,33 +390,15 @@ class AncestralReconstruction(Tree):
                 code=2,
             )
 
-        traits = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value_str = parts
-            try:
-                traits[taxon] = float(value_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -229,7 +433,79 @@ class AncestralReconstruction(Tree):
     ) -> Dict[str, float]:
         try:
             with open(path) as f:
-                lines = f.readlines()
+                header_parts = None
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    header_parts = stripped.split("\t")
+                    break
+
+                if header_parts is None:
+                    raise PhykitUserError(
+                        [
+                            "Multi-trait file must have a header row and at least one data row.",
+                        ],
+                        code=2,
+                    )
+
+                if len(header_parts) < 2:
+                    raise PhykitUserError(
+                        [
+                            "Header must have at least 2 columns (taxon + at least 1 trait).",
+                        ],
+                        code=2,
+                    )
+                trait_names = header_parts[1:]
+
+                if trait_column not in trait_names:
+                    raise PhykitUserError(
+                        [
+                            f"Column '{trait_column}' not found in trait file.",
+                            f"Available columns: {', '.join(trait_names)}",
+                        ],
+                        code=2,
+                    )
+
+                col_idx = trait_names.index(trait_column)
+
+                traits = {}
+                saw_data = False
+                data_line_idx = 2
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    saw_data = True
+                    parts = stripped.split("\t")
+                    if len(parts) != len(header_parts):
+                        raise PhykitUserError(
+                            [
+                                f"Line {data_line_idx} has {len(parts)} columns; expected {len(header_parts)}.",
+                            ],
+                            code=2,
+                        )
+                    taxon = parts[0]
+                    val_str = parts[1 + col_idx]
+                    try:
+                        traits[taxon] = float(val_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{val_str}' for taxon '{taxon}' "
+                                f"(trait '{trait_column}') on line {data_line_idx}.",
+                            ],
+                            code=2,
+                        )
+                    data_line_idx += 1
+
+                if not saw_data:
+                    raise PhykitUserError(
+                        [
+                            "Multi-trait file must have a header row and at least one data row.",
+                        ],
+                        code=2,
+                    )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -239,67 +515,15 @@ class AncestralReconstruction(Tree):
                 code=2,
             )
 
-        data_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            data_lines.append(stripped)
-
-        if len(data_lines) < 2:
-            raise PhykitUserError(
-                [
-                    "Multi-trait file must have a header row and at least one data row.",
-                ],
-                code=2,
-            )
-
-        header_parts = data_lines[0].split("\t")
-        if len(header_parts) < 2:
-            raise PhykitUserError(
-                [
-                    "Header must have at least 2 columns (taxon + at least 1 trait).",
-                ],
-                code=2,
-            )
-        trait_names = header_parts[1:]
-
-        if trait_column not in trait_names:
-            raise PhykitUserError(
-                [
-                    f"Column '{trait_column}' not found in trait file.",
-                    f"Available columns: {', '.join(trait_names)}",
-                ],
-                code=2,
-            )
-
-        col_idx = trait_names.index(trait_column)
-
-        traits = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != len(header_parts):
-                raise PhykitUserError(
-                    [
-                        f"Line {line_idx} has {len(parts)} columns; expected {len(header_parts)}.",
-                    ],
-                    code=2,
-                )
-            taxon = parts[0]
-            val_str = parts[1 + col_idx]
-            try:
-                traits[taxon] = float(val_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{val_str}' for taxon '{taxon}' "
-                        f"(trait '{trait_column}') on line {line_idx}.",
-                    ],
-                    code=2,
-                )
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -336,6 +560,30 @@ class AncestralReconstruction(Tree):
         """
         labels = {}
         counter = 1
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            stack = [root]
+            try:
+                while stack:
+                    clade = stack.pop()
+                    children = clade.clades
+                    if children:
+                        if clade.name:
+                            labels[id(clade)] = clade.name
+                        else:
+                            labels[id(clade)] = f"N{counter}"
+                            counter += 1
+                        stack.extend(reversed(children))
+                return labels
+            except AttributeError:
+                labels = {}
+                counter = 1
+
         for clade in tree.find_clades(order="preorder"):
             if not clade.is_terminal():
                 if clade.name:
@@ -346,13 +594,95 @@ class AncestralReconstruction(Tree):
         return labels
 
     def _get_descendant_tips(self, tree, node) -> List[str]:
-        tips = []
-        for tip in node.get_terminals():
-            tips.append(tip.name)
-        return sorted(tips)
+        tips = Tree.calculate_terminal_names_fast(node)
+        if tips is not None:
+            return sorted(tips)
+        return sorted(tip.name for tip in node.get_terminals())
+
+    def _collect_descendant_tip_counts(self, tree):
+        try:
+            preorder = list(self._iter_preorder(tree.root))
+        except AttributeError:
+            return None
+
+        counts = {}
+        try:
+            for clade in reversed(preorder):
+                children = clade.clades
+                if children:
+                    counts[id(clade)] = sum(counts[id(child)] for child in children)
+                else:
+                    counts[id(clade)] = 1
+        except (AttributeError, KeyError):
+            return None
+        return counts
+
+    def _collect_descendant_tip_names(self, tree):
+        try:
+            preorder = list(self._iter_preorder(tree.root))
+        except AttributeError:
+            return None
+
+        names = {}
+        try:
+            for clade in reversed(preorder):
+                children = clade.clades
+                if children:
+                    if len(children) == 2:
+                        left = names[id(children[0])]
+                        right = names[id(children[1])]
+                        if left and right and left[-1] <= right[0]:
+                            names[id(clade)] = left + right
+                        elif left and right and right[-1] <= left[0]:
+                            names[id(clade)] = right + left
+                        else:
+                            names[id(clade)] = tuple(heapq.merge(left, right))
+                    else:
+                        child_names = [names[id(child)] for child in children]
+                        ordered = True
+                        previous = child_names[0]
+                        for current in child_names[1:]:
+                            if previous and current and previous[-1] > current[0]:
+                                ordered = False
+                                break
+                            previous = current
+                        if ordered:
+                            merged_names = []
+                            for current in child_names:
+                                merged_names.extend(current)
+                            names[id(clade)] = tuple(merged_names)
+                        else:
+                            names[id(clade)] = tuple(heapq.merge(*child_names))
+                else:
+                    names[id(clade)] = (clade.name,)
+        except (AttributeError, KeyError, TypeError):
+            return None
+        return names
 
     def _build_parent_map(self, tree) -> Dict:
         parent_map = {}
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            stack = [root]
+            pop = stack.pop
+            extend = stack.extend
+            try:
+                while stack:
+                    clade = pop()
+                    children = clade.clades
+                    for child in children:
+                        parent_map[id(child)] = clade
+                    if children:
+                        extend(children)
+                return parent_map
+            except AttributeError:
+                parent_map = {}
+
         for clade in tree.find_clades(order="preorder"):
             for child in clade.clades:
                 parent_map[id(child)] = clade
@@ -369,25 +699,43 @@ class AncestralReconstruction(Tree):
         tree so that every internal node gets the full-tree ML estimate.
         """
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
-        parent_map = self._build_parent_map(tree)
+        try:
+            root = tree.root
+            root.clades
+            preorder_clades = list(self._iter_preorder(root))
+            parent_map = {}
+            for clade in preorder_clades:
+                for child in clade.clades:
+                    parent_map[id(child)] = clade
+        except AttributeError:
+            root = tree.root
+            preorder_clades = None
+            parent_map = self._build_parent_map(tree)
 
         # --- Pass 1: postorder (subtree estimates) ---
         est_down = {}
         var_down = {}
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
-                name = clade.name
-                if name in name_to_idx:
-                    est_down[id(clade)] = x[name_to_idx[name]]
-                    var_down[id(clade)] = 0.0
+        postorder_clades = (
+            reversed(preorder_clades)
+            if preorder_clades is not None
+            else tree.find_clades(order="postorder")
+        )
+        for clade in postorder_clades:
+            children = clade.clades
+            clade_id = id(clade)
+            if not children:
+                idx = name_to_idx.get(clade.name)
+                if idx is not None:
+                    est_down[clade_id] = x[idx]
+                    var_down[clade_id] = 0.0
             else:
-                children = clade.clades
-                precisions = []
-                weighted_vals = []
+                total_prec = 0.0
+                weighted_sum = 0.0
                 for child in children:
                     child_id = id(child)
-                    if child_id not in est_down:
+                    child_estimate = est_down.get(child_id)
+                    if child_estimate is None:
                         continue
                     v_i = child.branch_length if child.branch_length else 0.0
                     child_var = var_down[child_id]
@@ -395,13 +743,12 @@ class AncestralReconstruction(Tree):
                     if denom == 0:
                         denom = 1e-10
                     prec = 1.0 / denom
-                    precisions.append(prec)
-                    weighted_vals.append(prec * est_down[child_id])
+                    total_prec += prec
+                    weighted_sum += prec * child_estimate
 
-                if precisions:
-                    total_prec = sum(precisions)
-                    est_down[id(clade)] = sum(weighted_vals) / total_prec
-                    var_down[id(clade)] = 1.0 / total_prec
+                if total_prec:
+                    est_down[clade_id] = weighted_sum / total_prec
+                    var_down[clade_id] = 1.0 / total_prec
 
         # --- Pass 2: preorder (incorporate full-tree information) ---
         # For each node, compute the "message from above": an estimate
@@ -412,60 +759,75 @@ class AncestralReconstruction(Tree):
         est_final = {}
         var_final = {}
 
-        root = tree.root
         # Root has no information from above
-        est_final[id(root)] = est_down[id(root)]
-        var_final[id(root)] = var_down[id(root)]
+        root_id = id(root)
+        est_final[root_id] = est_down[root_id]
+        var_final[root_id] = var_down[root_id]
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
+        preorder_iter = (
+            preorder_clades
+            if preorder_clades is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in preorder_iter:
+            clade_id = id(clade)
+            if clade_id == root_id:
                 continue
-            if id(clade) not in parent_map:
+            parent = parent_map.get(clade_id)
+            if parent is None:
                 continue
-            parent = parent_map[id(clade)]
+            parent_id = id(parent)
             bl = clade.branch_length if clade.branch_length else 0.0
 
             # Gather precision from parent's "above" message
             prec_above = 0.0
             est_above_weighted = 0.0
-            if id(parent) in est_up:
-                v_up_parent = var_up[id(parent)]
+            parent_estimate = est_up.get(parent_id)
+            if parent_estimate is not None:
+                v_up_parent = var_up[parent_id]
                 if v_up_parent > 0:
                     p = 1.0 / v_up_parent
                     prec_above += p
-                    est_above_weighted += p * est_up[id(parent)]
-                elif v_up_parent == 0 and id(parent) != id(root):
+                    est_above_weighted += p * parent_estimate
+                elif v_up_parent == 0 and parent_id != root_id:
                     p = 1.0 / 1e-10
                     prec_above += p
-                    est_above_weighted += p * est_up[id(parent)]
+                    est_above_weighted += p * parent_estimate
 
             # Gather precision from siblings
             for sibling in parent.clades:
-                if id(sibling) == id(clade):
+                sibling_id = id(sibling)
+                if sibling_id == clade_id:
                     continue
-                if id(sibling) not in est_down:
+                sibling_estimate = est_down.get(sibling_id)
+                if sibling_estimate is None:
                     continue
                 sib_bl = sibling.branch_length if sibling.branch_length else 0.0
-                sib_var = var_down[id(sibling)] + sib_bl
+                sib_var = var_down[sibling_id] + sib_bl
                 if sib_var == 0:
                     sib_var = 1e-10
                 p = 1.0 / sib_var
                 prec_above += p
-                est_above_weighted += p * est_down[id(sibling)]
+                est_above_weighted += p * sibling_estimate
 
             # The "above" message for this node
             if prec_above > 0:
-                est_up[id(clade)] = est_above_weighted / prec_above
-                var_up[id(clade)] = bl + 1.0 / prec_above
+                up_estimate = est_above_weighted / prec_above
+                est_up[clade_id] = up_estimate
+                up_variance = bl + 1.0 / prec_above
+                var_up[clade_id] = up_variance
             else:
                 # No information from above (shouldn't happen in a valid tree)
-                est_up[id(clade)] = est_down.get(id(clade), 0.0)
-                var_up[id(clade)] = bl + 1e10
+                up_estimate = est_down.get(clade_id, 0.0)
+                est_up[clade_id] = up_estimate
+                up_variance = bl + 1e10
+                var_up[clade_id] = up_variance
 
             # Combine down and up for final estimate
-            if id(clade) in est_down:
-                vd = var_down[id(clade)]
-                vu = var_up[id(clade)]
+            down_estimate = est_down.get(clade_id)
+            if down_estimate is not None:
+                vd = var_down[clade_id]
+                vu = up_variance
                 if vd == 0:
                     vd = 1e-10
                 if vu == 0:
@@ -473,14 +835,23 @@ class AncestralReconstruction(Tree):
                 prec_d = 1.0 / vd
                 prec_u = 1.0 / vu
                 total = prec_d + prec_u
-                est_final[id(clade)] = (
-                    prec_d * est_down[id(clade)] + prec_u * est_up[id(clade)]
+                est_final[clade_id] = (
+                    prec_d * down_estimate + prec_u * up_estimate
                 ) / total
-                var_final[id(clade)] = 1.0 / total
+                var_final[clade_id] = 1.0 / total
 
         # Compute sigma^2 from phylogenetic independent contrasts
         sigma2 = self._compute_sigma2_from_contrasts(
-            tree, x, est_down, var_down, ordered_names
+            tree,
+            x,
+            est_down,
+            var_down,
+            ordered_names,
+            postorder_clades=(
+                reversed(preorder_clades)
+                if preorder_clades is not None
+                else None
+            ),
         )
 
         # Compute log-likelihood
@@ -491,14 +862,24 @@ class AncestralReconstruction(Tree):
         # Build output dicts keyed by node label
         node_estimates = {}
         node_cis = {}
-        for clade in tree.find_clades(order="preorder"):
-            if not clade.is_terminal() and id(clade) in node_labels:
-                label = node_labels[id(clade)]
-                if id(clade) in est_final:
-                    est = est_final[id(clade)]
-                    node_estimates[label] = est
-                    if self.ci and id(clade) in var_final:
-                        var = var_final[id(clade)]
+        preorder_iter = (
+            preorder_clades
+            if preorder_clades is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in preorder_iter:
+            if clade.clades:
+                clade_id = id(clade)
+                label = node_labels.get(clade_id)
+                if label is None:
+                    continue
+                est = est_final.get(clade_id)
+                if est is None:
+                    continue
+                node_estimates[label] = est
+                if self.ci:
+                    var = var_final.get(clade_id)
+                    if var is not None:
                         se = math.sqrt(sigma2 * var) if sigma2 * var > 0 else 0.0
                         node_cis[label] = (est - 1.96 * se, est + 1.96 * se)
 
@@ -506,7 +887,7 @@ class AncestralReconstruction(Tree):
 
     def _compute_sigma2_from_contrasts(
         self, tree, x: np.ndarray, node_estimates: Dict,
-        node_variances: Dict, ordered_names: List[str],
+        node_variances: Dict, ordered_names: List[str], postorder_clades=None,
     ) -> float:
         """Compute BM rate (sigma^2) from phylogenetic independent contrasts.
 
@@ -516,56 +897,65 @@ class AncestralReconstruction(Tree):
         contrasts per node). This ensures the total number of contrasts
         equals n_tips - 1 for a fully resolved tree.
         """
-        contrasts_sq = []
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
+        contrasts_sum = 0.0
+        contrast_count = 0
+        if postorder_clades is None:
+            postorder_clades = tree.find_clades(order="postorder")
+        for clade in postorder_clades:
+            if not clade.clades:
                 continue
             children = clade.clades
-            valid_children = [
-                c for c in children if id(c) in node_estimates
-            ]
-            if len(valid_children) < 2:
-                continue
+            first_child = None
+            combined_est = 0.0
+            combined_var = 0.0
+            valid_count = 0
 
-            # Process first two children
-            c1, c2 = valid_children[0], valid_children[1]
-            v1 = (c1.branch_length or 0.0) + node_variances[id(c1)]
-            v2 = (c2.branch_length or 0.0) + node_variances[id(c2)]
-            denom = v1 + v2
-            if denom > 0:
-                contrast = (
-                    node_estimates[id(c1)] - node_estimates[id(c2)]
-                ) / math.sqrt(denom)
-                contrasts_sq.append(contrast ** 2)
+            for child in children:
+                child_id = id(child)
+                child_estimate = node_estimates.get(child_id)
+                if child_estimate is None:
+                    continue
 
-            # Combined estimate and variance after first two children
-            if denom > 0:
-                combined_est = (
-                    v2 * node_estimates[id(c1)] + v1 * node_estimates[id(c2)]
-                ) / denom
-                combined_var = (v1 * v2) / denom
-            else:
-                combined_est = node_estimates[id(c1)]
-                combined_var = 0.0
+                if valid_count == 0:
+                    first_child = child
+                    valid_count = 1
+                    continue
 
-            # Process additional children (for polytomies)
-            for k in range(2, len(valid_children)):
-                ck = valid_children[k]
-                vk = (ck.branch_length or 0.0) + node_variances[id(ck)]
+                if valid_count == 1:
+                    first_id = id(first_child)
+                    v1 = (
+                        first_child.branch_length or 0.0
+                    ) + node_variances[first_id]
+                    v2 = (child.branch_length or 0.0) + node_variances[child_id]
+                    denom = v1 + v2
+                    if denom > 0:
+                        diff = node_estimates[first_id] - child_estimate
+                        contrasts_sum += (diff * diff) / denom
+                        contrast_count += 1
+                        combined_est = (
+                            v2 * node_estimates[first_id] + v1 * child_estimate
+                        ) / denom
+                        combined_var = (v1 * v2) / denom
+                    else:
+                        combined_est = node_estimates[first_id]
+                        combined_var = 0.0
+                    valid_count = 2
+                    continue
+
+                vk = (child.branch_length or 0.0) + node_variances[child_id]
                 vc = combined_var
                 denom_k = vk + vc
                 if denom_k > 0:
-                    contrast_k = (
-                        node_estimates[id(ck)] - combined_est
-                    ) / math.sqrt(denom_k)
-                    contrasts_sq.append(contrast_k ** 2)
+                    diff = child_estimate - combined_est
+                    contrasts_sum += (diff * diff) / denom_k
+                    contrast_count += 1
                     combined_est = (
-                        vc * node_estimates[id(ck)] + vk * combined_est
+                        vc * child_estimate + vk * combined_est
                     ) / denom_k
                     combined_var = (vk * vc) / denom_k
 
-        if contrasts_sq:
-            return sum(contrasts_sq) / len(contrasts_sq)
+        if contrast_count:
+            return contrasts_sum / contrast_count
         return 0.0
 
     def _compute_log_likelihood(
@@ -580,47 +970,43 @@ class AncestralReconstruction(Tree):
         C = sigma2 * vcv
 
         try:
-            sign, logdet = np.linalg.slogdet(C)
-            if sign <= 0:
+            factor = cho_factor(C, lower=True, check_finite=False)
+            rhs = np.empty((n, 2), dtype=np.result_type(C, x))
+            rhs[:, 0] = 1.0
+            rhs[:, 1] = x
+            solved = cho_solve(factor, rhs, check_finite=False)
+            C_inv_ones = solved[:, 0]
+            C_inv_x = solved[:, 1]
+            logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            try:
+                sign, logdet = np.linalg.slogdet(C)
+                if sign <= 0:
+                    return float("-inf")
+                C_inv = np.linalg.inv(C)
+            except np.linalg.LinAlgError:
                 return float("-inf")
-            C_inv = np.linalg.inv(C)
-        except np.linalg.LinAlgError:
-            return float("-inf")
+
+            ones = np.ones(n)
+            C_inv_ones = C_inv @ ones
+            C_inv_x = C_inv @ x
 
         ones = np.ones(n)
-        a_hat = float(ones @ C_inv @ x) / float(ones @ C_inv @ ones)
+        a_hat = float(ones @ C_inv_x) / float(ones @ C_inv_ones)
         residuals = x - a_hat
+        C_inv_residuals = C_inv_x - a_hat * C_inv_ones
 
         ll = -0.5 * (
-            n * np.log(2 * np.pi) + logdet + float(residuals @ C_inv @ residuals)
+            n * np.log(2 * np.pi)
+            + logdet
+            + float(residuals @ C_inv_residuals)
         )
         return float(ll)
 
     def _build_vcv_matrix(
         self, tree, ordered_names: List[str]
     ) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
-
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
-
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
-
-        return vcv
+        return build_vcv_matrix(tree, ordered_names)
 
     def _anc_ml(
         self, tree, x: np.ndarray, ordered_names: List[str],
@@ -642,13 +1028,18 @@ class AncestralReconstruction(Tree):
             )
 
         ones = np.ones(n)
+        C_inv_x = C_inv @ x
+        C_inv_ones = C_inv @ ones
+        root_precision = float(ones @ C_inv_ones)
         # ML root estimate
-        a_hat = float(ones @ C_inv @ x) / float(ones @ C_inv @ ones)
+        a_hat = float(ones @ C_inv_x) / root_precision
         # ML rate (sigma^2)
         residuals = x - a_hat
-        sigma2_ml = float(residuals @ C_inv @ residuals) / n
+        C_inv_residuals = C_inv_x - C_inv_ones * a_hat
+        residual_ss = float(residuals @ C_inv_residuals)
+        sigma2_ml = residual_ss / n
         # REML rate for CIs (matches R's fastAnc)
-        sigma2_reml = float(residuals @ C_inv @ residuals) / (n - 1)
+        sigma2_reml = residual_ss / (n - 1)
 
         # Log-likelihood (uses ML sigma^2)
         sign, logdet = np.linalg.slogdet(vcv)
@@ -657,43 +1048,128 @@ class AncestralReconstruction(Tree):
         )
 
         # Variance of the root estimate
-        root_var = 1.0 / float(ones @ C_inv @ ones)
+        root_var = 1.0 / root_precision
 
         # Compute cross-covariance and conditional estimates for each internal node
         node_estimates = {}
         node_cis = {}
+        direct_cross_covariance = None
+        try:
+            depths = tree.depths()
+            root = tree.root
+            root_depth = depths[root]
+            direct_cross_covariance = self._prepare_ml_cross_covariances_direct(
+                tree,
+                ordered_names,
+                node_labels,
+                depths,
+                root_depth,
+            )
+        except (AttributeError, KeyError, TypeError):
+            depths = None
+            root = tree.root
+            root_depth = None
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                continue
-            if id(clade) not in node_labels:
-                continue
+        if direct_cross_covariance is not None:
+            (
+                estimate_clades,
+                estimate_labels,
+                d_values,
+                cross_covariance_matrix,
+            ) = direct_cross_covariance
+        else:
+            cross_covariances = []
+            d_values = []
+            estimate_clades = []
+            estimate_labels = []
+            try:
+                if depths is None:
+                    raise AttributeError
+                terminal_by_name = {
+                    terminal.name: terminal for terminal in tree.get_terminals()
+                }
+                root_paths = build_root_path_map(tree, root)
+                if not root_paths:
+                    raise KeyError
+                tip_paths = {
+                    name: root_paths[terminal_by_name[name]]
+                    for name in ordered_names
+                }
+                fast_cross_covariance = True
+            except (AttributeError, KeyError, TypeError):
+                terminals = tree.get_terminals()
+                fast_cross_covariance = False
 
-            label = node_labels[id(clade)]
-            d_i = tree.distance(tree.root, clade)
+            for clade in tree.find_clades(order="preorder"):
+                if clade.is_terminal():
+                    continue
+                if id(clade) not in node_labels:
+                    continue
 
-            # Cross-covariance: c_i[j] = distance from root to MRCA(node_i, tip_j)
-            c_i = np.zeros(n)
-            for j, tip_name in enumerate(ordered_names):
-                tip_clade = None
-                for t in tree.get_terminals():
-                    if t.name == tip_name:
-                        tip_clade = t
-                        break
-                mrca = tree.common_ancestor(clade, tip_clade)
-                c_i[j] = tree.distance(tree.root, mrca)
+                label = node_labels[id(clade)]
+                estimate_clades.append(clade)
+                estimate_labels.append(label)
+                if fast_cross_covariance:
+                    d_i = depths[clade] - root_depth
+                else:
+                    d_i = tree.distance(tree.root, clade)
+                d_values.append(d_i)
 
-            # Conditional mean: E[x_i | x] = a_hat + c_i' C^{-1} (x - a_hat)
-            cond_mean = a_hat + float(c_i @ C_inv @ residuals)
+                # Cross-covariance: c_i[j] = distance from root to MRCA(node_i, tip_j)
+                c_i = np.zeros(n)
+                if fast_cross_covariance:
+                    clade_ancestors = set(root_paths[clade])
+                    for j, tip_name in enumerate(ordered_names):
+                        mrca = root
+                        for ancestor in reversed(tip_paths[tip_name]):
+                            if ancestor in clade_ancestors:
+                                mrca = ancestor
+                                break
+                        c_i[j] = depths[mrca] - root_depth
+                else:
+                    for j, tip_name in enumerate(ordered_names):
+                        tip_clade = None
+                        for terminal in terminals:
+                            if terminal.name == tip_name:
+                                tip_clade = terminal
+                                break
+                        mrca = tree.common_ancestor(clade, tip_clade)
+                        c_i[j] = tree.distance(tree.root, mrca)
+                cross_covariances.append(c_i)
+
+            if not cross_covariances:
+                return node_estimates, node_cis, sigma2_reml, float(ll)
+            cross_covariance_matrix = np.vstack(cross_covariances)
+            d_values = np.asarray(d_values, dtype=float)
+
+        if cross_covariance_matrix.size == 0:
+            return node_estimates, node_cis, sigma2_reml, float(ll)
+
+        cond_means = a_hat + cross_covariance_matrix @ C_inv_residuals
+        if self.ci:
+            # Batch the inverse products for all internal nodes to avoid one
+            # dense vector-matrix multiply per node.
+            cross_covariance_inv = cross_covariance_matrix @ C_inv
+            covariance_terms = np.einsum(
+                "ij,ij->i", cross_covariance_inv, cross_covariance_matrix
+            )
+        else:
+            covariance_terms = None
+
+        for idx, label in enumerate(estimate_labels):
+            cond_mean = float(cond_means[idx])
             node_estimates[label] = cond_mean
 
             if self.ci:
+                clade = estimate_clades[idx]
                 if clade == tree.root:
                     # Root variance from GLS estimation
                     cond_var = sigma2_reml * root_var
                 else:
                     # Conditional variance using REML sigma^2
-                    cond_var = sigma2_reml * (d_i - float(c_i @ C_inv @ c_i))
+                    cond_var = sigma2_reml * (
+                        d_values[idx] - float(covariance_terms[idx])
+                    )
                 if cond_var < 0:
                     cond_var = 0.0
                 se = math.sqrt(cond_var)
@@ -701,14 +1177,103 @@ class AncestralReconstruction(Tree):
 
         return node_estimates, node_cis, sigma2_reml, float(ll)
 
+    def _prepare_ml_cross_covariances_direct(
+        self,
+        tree,
+        ordered_names: List[str],
+        node_labels: Dict,
+        depths: Dict,
+        root_depth: float,
+    ):
+        try:
+            root = tree.root
+            preorder = list(self._iter_preorder(root))
+        except AttributeError:
+            return None
+
+        n = len(ordered_names)
+        name_to_index = {name: idx for idx, name in enumerate(ordered_names)}
+        if len(name_to_index) != n:
+            return None
+
+        descendant_indices = {}
+        seen_tips = set()
+        try:
+            for clade in reversed(preorder):
+                children = clade.clades
+                if children:
+                    indices = []
+                    for child in children:
+                        indices.extend(descendant_indices[id(child)])
+                else:
+                    idx = name_to_index.get(clade.name)
+                    if idx is None:
+                        indices = []
+                    elif idx in seen_tips:
+                        return None
+                    else:
+                        seen_tips.add(idx)
+                        indices = [idx]
+                descendant_indices[id(clade)] = np.asarray(indices, dtype=np.intp)
+        except (AttributeError, KeyError):
+            return None
+
+        if len(seen_tips) != n:
+            return None
+
+        cov_by_id = {id(root): np.zeros(n)}
+        estimate_clades = []
+        estimate_labels = []
+        d_values = []
+        cross_covariances = []
+
+        try:
+            for clade in preorder:
+                children = clade.clades
+                if not children:
+                    continue
+
+                clade_id = id(clade)
+                c_i = cov_by_id[clade_id]
+                if clade_id in node_labels:
+                    estimate_clades.append(clade)
+                    estimate_labels.append(node_labels[clade_id])
+                    d_values.append(depths[clade] - root_depth)
+                    cross_covariances.append(c_i)
+
+                for child in children:
+                    child_vec = c_i.copy()
+                    child_indices = descendant_indices[id(child)]
+                    if child_indices.size:
+                        child_vec[child_indices] = depths[child] - root_depth
+                    cov_by_id[id(child)] = child_vec
+        except (AttributeError, KeyError):
+            return None
+
+        if not cross_covariances:
+            return estimate_clades, estimate_labels, np.array([]), np.empty((0, n))
+
+        return (
+            estimate_clades,
+            estimate_labels,
+            np.asarray(d_values, dtype=float),
+            np.vstack(cross_covariances),
+        )
+
     def _format_result(
         self, *, method, trait_name, n_tips, sigma2, log_likelihood,
         node_estimates, node_cis, node_labels, tree, trait_values,
     ) -> Dict:
         ancestral_estimates = {}
         root_id = id(tree.root)
+        descendant_names = self._collect_descendant_tip_names(tree)
 
-        for clade in tree.find_clades(order="preorder"):
+        clade_iter = (
+            self._iter_preorder(tree.root)
+            if descendant_names is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in clade_iter:
             if clade.is_terminal():
                 continue
             if id(clade) not in node_labels:
@@ -719,7 +1284,11 @@ class AncestralReconstruction(Tree):
 
             entry = {
                 "estimate": float(node_estimates[label]),
-                "descendants": self._get_descendant_tips(tree, clade),
+                "descendants": (
+                    list(descendant_names[id(clade)])
+                    if descendant_names is not None
+                    else self._get_descendant_tips(tree, clade)
+                ),
                 "is_root": id(clade) == root_id,
             }
             if label in node_cis:
@@ -742,26 +1311,34 @@ class AncestralReconstruction(Tree):
         self, *, method, trait_name, n_tips, sigma2, log_likelihood,
         node_estimates, node_cis, node_labels, tree,
     ) -> None:
-        print("Ancestral State Reconstruction")
-
         method_desc = (
             "fast (Felsenstein's contrasts)" if method == "fast"
             else "ml (maximum likelihood, VCV-based)"
         )
-        print(f"\nMethod: {method_desc}")
-        print(f"Trait: {trait_name}")
-        print(f"Number of tips: {n_tips}")
-        print(f"\nLog-likelihood: {log_likelihood:.4f}")
-        print(f"Sigma-squared (BM rate): {sigma2:.6f}")
+        lines = [
+            "Ancestral State Reconstruction",
+            f"\nMethod: {method_desc}",
+            f"Trait: {trait_name}",
+            f"Number of tips: {n_tips}",
+            f"\nLog-likelihood: {log_likelihood:.4f}",
+            f"Sigma-squared (BM rate): {sigma2:.6f}",
+            "\nAncestral estimates:",
+        ]
+        append = lines.append
 
-        print("\nAncestral estimates:")
         root_id = id(tree.root)
+        descendant_counts = self._collect_descendant_tip_counts(tree)
 
         if node_cis:
-            print(
+            append(
                 f"  {'Node':<12s}{'Descendants':>12s}{'Estimate':>12s}{'95% CI':>24s}"
             )
-            for clade in tree.find_clades(order="preorder"):
+            clade_iter = (
+                self._iter_preorder(tree.root)
+                if descendant_counts is not None
+                else tree.find_clades(order="preorder")
+            )
+            for clade in clade_iter:
                 if clade.is_terminal():
                     continue
                 if id(clade) not in node_labels:
@@ -769,7 +1346,11 @@ class AncestralReconstruction(Tree):
                 label = node_labels[id(clade)]
                 if label not in node_estimates:
                     continue
-                n_desc = len(self._get_descendant_tips(tree, clade))
+                n_desc = (
+                    descendant_counts[id(clade)]
+                    if descendant_counts is not None
+                    else len(self._get_descendant_tips(tree, clade))
+                )
                 est = node_estimates[label]
                 root_tag = " (root)" if id(clade) == root_id else ""
                 if label in node_cis:
@@ -777,14 +1358,19 @@ class AncestralReconstruction(Tree):
                     ci_str = f"[{ci_lo:.4f}, {ci_hi:.4f}]"
                 else:
                     ci_str = ""
-                print(
+                append(
                     f"  {label + root_tag:<12s}{n_desc:>12d}{est:>12.4f}{ci_str:>24s}"
                 )
         else:
-            print(
+            append(
                 f"  {'Node':<12s}{'Descendants':>12s}{'Estimate':>12s}"
             )
-            for clade in tree.find_clades(order="preorder"):
+            clade_iter = (
+                self._iter_preorder(tree.root)
+                if descendant_counts is not None
+                else tree.find_clades(order="preorder")
+            )
+            for clade in clade_iter:
                 if clade.is_terminal():
                     continue
                 if id(clade) not in node_labels:
@@ -792,12 +1378,17 @@ class AncestralReconstruction(Tree):
                 label = node_labels[id(clade)]
                 if label not in node_estimates:
                     continue
-                n_desc = len(self._get_descendant_tips(tree, clade))
+                n_desc = (
+                    descendant_counts[id(clade)]
+                    if descendant_counts is not None
+                    else len(self._get_descendant_tips(tree, clade))
+                )
                 est = node_estimates[label]
                 root_tag = " (root)" if id(clade) == root_id else ""
-                print(
+                append(
                     f"  {label + root_tag:<12s}{n_desc:>12d}{est:>12.4f}"
                 )
+        print("\n".join(lines))
 
     def _plot_contmap(
         self, tree, node_estimates, node_labels, trait_values,
@@ -807,6 +1398,7 @@ class AncestralReconstruction(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.colors import Normalize
         except ImportError:
             print(
@@ -815,13 +1407,17 @@ class AncestralReconstruction(Tree):
             )
             raise SystemExit(2)
 
-        parent_map = self._build_parent_map(tree)
+        preorder_clades = list(self._iter_preorder(tree.root))
+        parent_map = {}
+        for clade in preorder_clades:
+            for child in clade.clades:
+                parent_map[id(child)] = clade
 
         # Build estimates dict keyed by id(clade) for all nodes
         all_estimates = {}
         node_labels_map = {}  # id(clade) → label string (for CI lookup)
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal():
+        for clade in preorder_clades:
+            if not clade.clades:
                 if clade.name in trait_values:
                     all_estimates[id(clade)] = trait_values[clade.name]
             else:
@@ -831,44 +1427,20 @@ class AncestralReconstruction(Tree):
                     if label in node_estimates:
                         all_estimates[id(clade)] = node_estimates[label]
 
-        tips = list(tree.get_terminals())
-        node_x = {}
-        node_y = {}
-
-        # Assign tip y-positions (evenly spaced)
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
-        # Assign x-positions via preorder traversal
+        tips = [clade for clade in preorder_clades if not clade.clades]
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                else:
-                    if id(clade) in parent_map:
-                        parent = parent_map[id(clade)]
-                        t = clade.branch_length if clade.branch_length else 0.0
-                        node_x[id(clade)] = node_x[id(parent)] + t
-
-        # Assign internal y-positions (mean of children)
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
         # Normalize trait values for colormap
-        all_vals = list(all_estimates.values())
-        if not all_vals:
+        value_range = _value_range(all_estimates.values())
+        if value_range is None:
             return
-        vmin, vmax = min(all_vals), max(all_vals)
+        vmin, vmax = value_range
         if vmin == vmax:
             vmax = vmin + 1.0
         norm = Normalize(vmin=vmin, vmax=vmax)
@@ -880,11 +1452,18 @@ class AncestralReconstruction(Tree):
 
         if self.plot_config.circular:
             # --- Circular mode ---
-            coords = compute_circular_coords(tree, node_x, parent_map)
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
-            for clade in tree.find_clades(order="preorder"):
+            gradient_branches = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 if id(clade) not in parent_map:
@@ -900,14 +1479,17 @@ class AncestralReconstruction(Tree):
                 parent_val = all_estimates[pid]
                 child_val = all_estimates[cid]
 
-                draw_circular_gradient_branch(
-                    ax, coords[pid], coords[cid],
-                    cmap, vmin, vmax, parent_val, child_val, lw=3,
+                gradient_branches.append(
+                    (coords[pid], coords[cid], parent_val, child_val)
                 )
+            draw_circular_gradient_branches(
+                ax, gradient_branches, cmap, vmin, vmax, lw=3,
+            )
 
             # Arcs at internal nodes colored by trait value
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or not clade.clades:
+            colored_arcs = []
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 cid = id(clade)
                 if cid not in coords or cid not in all_estimates:
@@ -918,10 +1500,10 @@ class AncestralReconstruction(Tree):
                 node_val = all_estimates[cid]
                 min_a = min(child_angles)
                 max_a = max(child_angles)
-                draw_circular_colored_arc(
-                    ax, 0, 0, coords[cid]["radius"],
-                    min_a, max_a, color=cmap(norm(node_val)), lw=3,
+                colored_arcs.append(
+                    (0, 0, coords[cid]["radius"], min_a, max_a, cmap(norm(node_val)))
                 )
+            draw_circular_colored_arcs(ax, colored_arcs, lw=3)
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
@@ -936,11 +1518,7 @@ class AncestralReconstruction(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_wedge(ax, tree, mrca, clr, coords)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
                 color_legend = build_color_legend_handles(color_data)
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
@@ -959,8 +1537,12 @@ class AncestralReconstruction(Tree):
         else:
             # --- Rectangular mode ---
             n_seg = 50
+            horizontal_segments = []
+            horizontal_colors = []
+            vertical_segments = []
+            vertical_colors = []
 
-            for clade in tree.find_clades(order="preorder"):
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 if id(clade) not in parent_map:
@@ -986,16 +1568,34 @@ class AncestralReconstruction(Tree):
                     xs = x0 + frac_s * (x1 - x0)
                     xe = x0 + frac_e * (x1 - x0)
                     v = val0 + ((frac_s + frac_e) / 2) * (val1 - val0)
-                    ax.plot(
-                        [xs, xe], [y1, y1],
-                        color=cmap(norm(v)), lw=3, solid_capstyle="butt",
-                    )
+                    horizontal_segments.append(((xs, y1), (xe, y1)))
+                    horizontal_colors.append(cmap(norm(v)))
 
                 # Vertical connector (at parent's x): parent's trait color
-                ax.plot(
-                    [x0, x0], [y0, y1],
-                    color=cmap(norm(val0)), lw=3, solid_capstyle="butt",
+                vertical_segments.append(((x0, y0), (x0, y1)))
+                vertical_colors.append(cmap(norm(val0)))
+
+            if horizontal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        horizontal_segments,
+                        colors=horizontal_colors,
+                        linewidths=3,
+                        capstyle="butt",
+                    ),
+                    autolim=True,
                 )
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors=vertical_colors,
+                        linewidths=3,
+                        capstyle="butt",
+                    ),
+                    autolim=True,
+                )
+            ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 0
@@ -1015,11 +1615,7 @@ class AncestralReconstruction(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
                 color_legend = build_color_legend_handles(color_data)
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
@@ -1045,13 +1641,15 @@ class AncestralReconstruction(Tree):
         if node_cis:
             ci_scale = self.ci_size
             # Build label→id mapping for looking up CI values
-            label_to_id = {}
-            for clade in tree.find_clades(order="preorder"):
-                if not clade.is_terminal() and id(clade) in node_labels_map:
-                    label_to_id[node_labels_map[id(clade)]] = id(clade)
+            label_to_id = {
+                label: cid for cid, label in node_labels_map.items()
+            }
 
             if config.circular:
                 # Circular: use data coordinates from coords dict
+                ci_segments = []
+                ci_x = []
+                ci_y = []
                 for label, (ci_lo, ci_hi) in node_cis.items():
                     cid = label_to_id.get(label)
                     if cid is None or cid not in coords:
@@ -1063,36 +1661,79 @@ class AncestralReconstruction(Tree):
                     bar_len = (ci_hi - ci_lo) * ci_scale * 0.3
                     dx = -np.sin(angle) * bar_len / 2
                     dy = np.cos(angle) * bar_len / 2
-                    # Main bar
-                    ax.plot([cx - dx, cx + dx], [cy - dy, cy + dy],
-                            color="black", lw=1.5 * ci_scale, zorder=8)
-                    # Point estimate dot
-                    ax.scatter(cx, cy, s=15 * ci_scale, c="black", zorder=9)
+                    ci_segments.append(((cx - dx, cy - dy), (cx + dx, cy + dy)))
+                    ci_x.append(cx)
+                    ci_y.append(cy)
+                if ci_segments:
+                    ax.add_collection(
+                        LineCollection(
+                            ci_segments,
+                            colors="black",
+                            linewidths=1.5 * ci_scale,
+                            zorder=8,
+                        ),
+                        autolim=True,
+                    )
+                    ax.autoscale_view()
+                if ci_x:
+                    ax.scatter(ci_x, ci_y, s=15 * ci_scale, c="black", zorder=9)
             else:
                 # Rectangular: vertical bars at node positions
                 max_x_val = max(node_x.values()) if node_x else 1.0
+                ci_vertical_segments = []
+                ci_cap_segments = []
+                ci_x = []
+                ci_y = []
                 for label, (ci_lo, ci_hi) in node_cis.items():
                     cid = label_to_id.get(label)
                     if cid is None or cid not in node_x or cid not in node_y:
                         continue
                     cx = node_x[cid]
                     cy = node_y[cid]
-                    est = all_estimates.get(cid, (ci_lo + ci_hi) / 2)
                     # Scale CI width relative to y-axis range
                     bar_half = (ci_hi - ci_lo) / (vmax - vmin) * 0.4 * ci_scale if vmax != vmin else 0.2 * ci_scale
                     cap_width = max_x_val * 0.008 * ci_scale
-                    # Vertical bar
-                    ax.plot([cx, cx], [cy - bar_half, cy + bar_half],
-                            color="black", lw=1.2 * ci_scale, zorder=8)
-                    # Caps
-                    ax.plot([cx - cap_width, cx + cap_width],
-                            [cy - bar_half, cy - bar_half],
-                            color="black", lw=1.0 * ci_scale, zorder=8)
-                    ax.plot([cx - cap_width, cx + cap_width],
-                            [cy + bar_half, cy + bar_half],
-                            color="black", lw=1.0 * ci_scale, zorder=8)
-                    # Point estimate dot
-                    ax.scatter(cx, cy, s=12 * ci_scale, c="black", zorder=9)
+                    ci_vertical_segments.append(
+                        ((cx, cy - bar_half), (cx, cy + bar_half))
+                    )
+                    ci_cap_segments.append(
+                        (
+                            (cx - cap_width, cy - bar_half),
+                            (cx + cap_width, cy - bar_half),
+                        )
+                    )
+                    ci_cap_segments.append(
+                        (
+                            (cx - cap_width, cy + bar_half),
+                            (cx + cap_width, cy + bar_half),
+                        )
+                    )
+                    ci_x.append(cx)
+                    ci_y.append(cy)
+                if ci_vertical_segments:
+                    ax.add_collection(
+                        LineCollection(
+                            ci_vertical_segments,
+                            colors="black",
+                            linewidths=1.2 * ci_scale,
+                            zorder=8,
+                        ),
+                        autolim=True,
+                    )
+                if ci_cap_segments:
+                    ax.add_collection(
+                        LineCollection(
+                            ci_cap_segments,
+                            colors="black",
+                            linewidths=1.0 * ci_scale,
+                            zorder=8,
+                        ),
+                        autolim=True,
+                    )
+                if ci_vertical_segments or ci_cap_segments:
+                    ax.autoscale_view()
+                if ci_x:
+                    ax.scatter(ci_x, ci_y, s=12 * ci_scale, c="black", zorder=9)
 
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
@@ -1107,8 +1748,23 @@ class AncestralReconstruction(Tree):
         self, path: str, tree_tips: List[str]
     ) -> Dict[str, str]:
         try:
+            traits: Dict[str, str] = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    taxon, sep, value = line.partition("\t")
+                    if not sep or "\t" in value:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                            code=2,
+                        )
+                    traits[taxon] = value
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -1118,25 +1774,15 @@ class AncestralReconstruction(Tree):
                 code=2,
             )
 
-        traits: Dict[str, str] = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value = parts
-            traits[taxon] = value
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -1171,7 +1817,59 @@ class AncestralReconstruction(Tree):
     ) -> Dict[str, str]:
         try:
             with open(path) as f:
-                lines = f.readlines()
+                header_parts = None
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    header_parts = stripped.split("\t")
+                    break
+
+                if header_parts is None:
+                    raise PhykitUserError(
+                        [
+                            "Multi-trait file must have a header row and at least one data row.",
+                        ],
+                        code=2,
+                    )
+
+                if len(header_parts) < 2:
+                    raise PhykitUserError(
+                        [
+                            "Header must have at least 2 columns (taxon + at least 1 trait).",
+                        ],
+                        code=2,
+                    )
+                trait_names = header_parts[1:]
+
+                if trait_column not in trait_names:
+                    raise PhykitUserError(
+                        [
+                            f"Column '{trait_column}' not found in trait file.",
+                            f"Available columns: {', '.join(trait_names)}",
+                        ],
+                        code=2,
+                    )
+
+                col_idx = trait_names.index(trait_column) + 1
+                n_cols = len(header_parts)
+                traits: Dict[str, str] = {}
+                data_line_idx = 2
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    parts = stripped.split("\t")
+                    if len(parts) != n_cols:
+                        raise PhykitUserError(
+                            [
+                                f"Line {data_line_idx} has {len(parts)} columns; expected {n_cols}.",
+                            ],
+                            code=2,
+                        )
+                    taxon = parts[0]
+                    traits[taxon] = parts[col_idx]
+                    data_line_idx += 1
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -1181,14 +1879,7 @@ class AncestralReconstruction(Tree):
                 code=2,
             )
 
-        data_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            data_lines.append(stripped)
-
-        if len(data_lines) < 2:
+        if not traits:
             raise PhykitUserError(
                 [
                     "Multi-trait file must have a header row and at least one data row.",
@@ -1196,42 +1887,15 @@ class AncestralReconstruction(Tree):
                 code=2,
             )
 
-        header_parts = data_lines[0].split("\t")
-        if len(header_parts) < 2:
-            raise PhykitUserError(
-                [
-                    "Header must have at least 2 columns (taxon + at least 1 trait).",
-                ],
-                code=2,
-            )
-        trait_names = header_parts[1:]
-
-        if trait_column not in trait_names:
-            raise PhykitUserError(
-                [
-                    f"Column '{trait_column}' not found in trait file.",
-                    f"Available columns: {', '.join(trait_names)}",
-                ],
-                code=2,
-            )
-
-        col_idx = trait_names.index(trait_column)
-
-        traits: Dict[str, str] = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != len(header_parts):
-                raise PhykitUserError(
-                    [
-                        f"Line {line_idx} has {len(parts)} columns; expected {len(header_parts)}.",
-                    ],
-                    code=2,
-                )
-            taxon = parts[0]
-            traits[taxon] = parts[1 + col_idx]
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -1300,13 +1964,34 @@ class AncestralReconstruction(Tree):
 
         # Build parent map
         parent_map = self._build_parent_map(tree)
+        try:
+            root = tree.root
+            root.clades
+            preorder_clades = list(self._iter_preorder(root))
+        except AttributeError:
+            root = tree.root
+            preorder_clades = None
+
+        transition_cache = {}
+
+        def transition_for(branch_length):
+            t = branch_length if branch_length else 1e-8
+            P = transition_cache.get(t)
+            if P is None:
+                P = self._matrix_exp(Q, t)
+                transition_cache[t] = P
+            return P
 
         # Upward pass (preorder)
         upward = {}
-        root = tree.root
         upward[id(root)] = pi.copy()
 
-        for clade in tree.find_clades(order="preorder"):
+        preorder_iter = (
+            preorder_clades
+            if preorder_clades is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in preorder_iter:
             if clade == root:
                 continue
             if id(clade) not in parent_map:
@@ -1320,13 +2005,11 @@ class AncestralReconstruction(Tree):
             for sibling in parent.clades:
                 if id(sibling) == id(clade):
                     continue
-                t_sib = sibling.branch_length if sibling.branch_length else 1e-8
-                P_sib = self._matrix_exp(Q, t_sib)
+                P_sib = transition_for(sibling.branch_length)
                 sibling_product *= P_sib @ cond_liks[id(sibling)]
 
             # Upward message for this node
-            t_v = clade.branch_length if clade.branch_length else 1e-8
-            P_v = self._matrix_exp(Q, t_v)
+            P_v = transition_for(clade.branch_length)
             upward[id(clade)] = P_v.T @ (U_parent * sibling_product)
 
             # Normalize to prevent underflow
@@ -1336,7 +2019,12 @@ class AncestralReconstruction(Tree):
 
         # Combine downward and upward for posteriors
         posteriors: Dict[int, np.ndarray] = {}
-        for clade in tree.find_clades(order="preorder"):
+        preorder_iter = (
+            preorder_clades
+            if preorder_clades is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in preorder_iter:
             if clade.is_terminal():
                 continue
             L = cond_liks[id(clade)]
@@ -1367,30 +2055,31 @@ class AncestralReconstruction(Tree):
             )
             trait_name = "trait"
 
-        # Prune tree to shared taxa
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in tip_states]
+        tips_to_prune = [t for t in tree_tips if t not in tip_states]
+        needs_working_copy = bool(tips_to_prune) or self.plot_config.ladderize
+        tree_for_analysis = self._fast_copy(tree) if needs_working_copy else tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
+            )
 
         if self.plot_config.ladderize:
-            tree_copy.ladderize()
+            tree_for_analysis.ladderize()
 
         # Label internal nodes
-        node_labels = self._label_internal_nodes(tree_copy)
+        node_labels = self._label_internal_nodes(tree_for_analysis)
 
         # Get sorted unique states
         states = sorted(set(tip_states.values()))
 
         # Fit Q matrix
         Q, log_likelihood = self._fit_q_matrix(
-            tree_copy, tip_states, states, self.model
+            tree_for_analysis, tip_states, states, self.model
         )
 
         # Compute marginal posteriors
         node_posteriors = self._discrete_marginal_posteriors(
-            tree_copy, tip_states, Q, states
+            tree_for_analysis, tip_states, Q, states
         )
 
         n_tips = len(tip_states)
@@ -1405,13 +2094,13 @@ class AncestralReconstruction(Tree):
             Q=Q,
             node_posteriors=node_posteriors,
             node_labels=node_labels,
-            tree=tree_copy,
+            tree=tree_for_analysis,
             tip_states=tip_states,
         )
 
         if self.plot_output:
             self._plot_discrete_asr(
-                tree_copy, node_posteriors, node_labels,
+                tree_for_analysis, node_posteriors, node_labels,
                 states, tip_states, self.plot_output
             )
             result["plot_output"] = self.plot_output
@@ -1428,7 +2117,7 @@ class AncestralReconstruction(Tree):
                 Q=Q,
                 node_posteriors=node_posteriors,
                 node_labels=node_labels,
-                tree=tree_copy,
+                tree=tree_for_analysis,
             )
 
     # ------------------------------------------------------------------
@@ -1441,16 +2130,22 @@ class AncestralReconstruction(Tree):
     ) -> Dict:
         k = len(states)
         q_matrix = {}
-        for i in range(k):
-            row = {}
-            for j in range(k):
-                row[states[j]] = float(Q[i, j])
-            q_matrix[states[i]] = row
+        for state, q_row in zip(states, Q):
+            q_matrix[state] = {
+                column_state: float(value)
+                for column_state, value in zip(states, q_row)
+            }
 
         ancestral_states = {}
         root_id = id(tree.root)
+        descendant_names = self._collect_descendant_tip_names(tree)
 
-        for clade in tree.find_clades(order="preorder"):
+        clade_iter = (
+            self._iter_preorder(tree.root)
+            if descendant_names is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in clade_iter:
             if clade.is_terminal():
                 continue
             if id(clade) not in node_labels:
@@ -1468,7 +2163,11 @@ class AncestralReconstruction(Tree):
             ancestral_states[label] = {
                 "map_state": states[map_idx],
                 "posteriors": state_probs,
-                "descendants": self._get_descendant_tips(tree, clade),
+                "descendants": (
+                    list(descendant_names[id(clade)])
+                    if descendant_names is not None
+                    else self._get_descendant_tips(tree, clade)
+                ),
                 "is_root": id(clade) == root_id,
             }
 
@@ -1489,35 +2188,50 @@ class AncestralReconstruction(Tree):
         states, Q, node_posteriors, node_labels, tree,
     ) -> None:
         k = len(states)
-        print("Ancestral State Reconstruction (Discrete)")
-        print(f"\nModel: Mk ({model})")
-        print(f"Trait: {trait_name}")
-        print(f"Number of tips: {n_tips}")
-        print(f"Number of states: {k}")
-        print(f"States: {', '.join(states)}")
-        print(f"\nLog-likelihood: {log_likelihood:.4f}")
+        lines = [
+            "Ancestral State Reconstruction (Discrete)",
+            f"\nModel: Mk ({model})",
+            f"Trait: {trait_name}",
+            f"Number of tips: {n_tips}",
+            f"Number of states: {k}",
+            f"States: {', '.join(states)}",
+            f"\nLog-likelihood: {log_likelihood:.4f}",
+        ]
+        append = lines.append
 
         # Q matrix table
-        print("\nRate matrix (Q):")
+        append("\nRate matrix (Q):")
         col_w = max(12, max(len(s) for s in states) + 2)
         header = f"  {'':>{col_w}}" + "".join(f"{s:>{col_w}}" for s in states)
-        print(header)
-        for i, si in enumerate(states):
-            row = f"  {si:>{col_w}}"
-            for j in range(k):
-                row += f"{Q[i, j]:>{col_w}.6f}"
-            print(row)
+        append(header)
+        q_row_format = "  %" + str(col_w) + "s" + (
+            "%" + str(col_w) + ".6f"
+        ) * k
+        for si, q_row in zip(states, Q):
+            append(q_row_format % ((si,) + tuple(q_row)))
 
         # Per-node table
-        print("\nAncestral state posteriors:")
+        append("\nAncestral state posteriors:")
         root_id = id(tree.root)
+        descendant_counts = self._collect_descendant_tip_counts(tree)
         col_w_state = max(10, max(len(s) for s in states) + 2)
         header = f"  {'Node':<12s}{'Desc':>6s}{'MAP':>{col_w_state}}"
         for s in states:
             header += f"{s:>{col_w_state}}"
-        print(header)
+        append(header)
+        posterior_row_format = (
+            "  %-12s%6d%"
+            + str(col_w_state)
+            + "s"
+            + ("%" + str(col_w_state) + ".4f") * k
+        )
 
-        for clade in tree.find_clades(order="preorder"):
+        clade_iter = (
+            self._iter_preorder(tree.root)
+            if descendant_counts is not None
+            else tree.find_clades(order="preorder")
+        )
+        for clade in clade_iter:
             if clade.is_terminal():
                 continue
             if id(clade) not in node_labels:
@@ -1527,14 +2241,21 @@ class AncestralReconstruction(Tree):
                 continue
 
             posterior = node_posteriors[id(clade)]
-            map_idx = int(np.argmax(posterior))
-            n_desc = len(self._get_descendant_tips(tree, clade))
+            map_idx = int(posterior.argmax())
+            n_desc = (
+                descendant_counts[id(clade)]
+                if descendant_counts is not None
+                else len(self._get_descendant_tips(tree, clade))
+            )
             root_tag = " (root)" if id(clade) == root_id else ""
 
-            row = f"  {label + root_tag:<12s}{n_desc:>6d}{states[map_idx]:>{col_w_state}}"
-            for i in range(k):
-                row += f"{posterior[i]:>{col_w_state}.4f}"
-            print(row)
+            append(
+                posterior_row_format % (
+                    (label + root_tag, n_desc, states[map_idx])
+                    + tuple(posterior)
+                )
+            )
+        print("\n".join(lines))
 
     # ------------------------------------------------------------------
     # Discrete ASR plot
@@ -1548,6 +2269,7 @@ class AncestralReconstruction(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection, PatchCollection
             from matplotlib.patches import Wedge
         except ImportError:
             print(
@@ -1556,8 +2278,12 @@ class AncestralReconstruction(Tree):
             )
             raise SystemExit(2)
 
-        parent_map = self._build_parent_map(tree)
-        tips = list(tree.get_terminals())
+        preorder_clades = list(self._iter_preorder(tree.root))
+        parent_map = {}
+        for clade in preorder_clades:
+            for child in clade.clades:
+                parent_map[id(child)] = clade
+        tips = [clade for clade in preorder_clades if not clade.clades]
         k = len(states)
 
         # Color palette for states
@@ -1569,37 +2295,13 @@ class AncestralReconstruction(Tree):
             colors = [cmap(i) for i in range(k)]
         state_colors = {states[i]: colors[i] for i in range(k)}
 
-        node_x = {}
-        node_y = {}
-
-        # Assign tip y-positions
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
-        # Assign x-positions via preorder traversal
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                else:
-                    if id(clade) in parent_map:
-                        parent = parent_map[id(clade)]
-                        t = clade.branch_length if clade.branch_length else 0.0
-                        node_x[id(clade)] = node_x[id(parent)] + t
-
-        # Internal y-positions (mean of children)
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
         config = self.plot_config
         config.resolve(n_rows=len(tips), n_cols=None)
@@ -1607,7 +2309,13 @@ class AncestralReconstruction(Tree):
 
         if self.plot_config.circular:
             # --- Circular mode ---
-            coords = compute_circular_coords(tree, node_x, parent_map)
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
@@ -1620,8 +2328,10 @@ class AncestralReconstruction(Tree):
             n_tips = len(tips)
             pie_radius = max_x * min(0.02, 0.15 / max(n_tips, 1))
 
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal():
+            pie_wedges = []
+            pie_colors = []
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 cid = id(clade)
                 if cid not in node_posteriors or cid not in coords:
@@ -1638,11 +2348,20 @@ class AncestralReconstruction(Tree):
                     sweep = posterior[i] * 360.0
                     wedge = Wedge(
                         (cx, cy), pie_radius, start_angle, start_angle + sweep,
-                        facecolor=state_colors[states[i]], edgecolor="black",
-                        linewidth=0.5,
                     )
-                    ax.add_patch(wedge)
+                    pie_wedges.append(wedge)
+                    pie_colors.append(state_colors[states[i]])
                     start_angle += sweep
+            if pie_wedges:
+                ax.add_collection(
+                    PatchCollection(
+                        pie_wedges,
+                        facecolors=pie_colors,
+                        edgecolors="black",
+                        linewidths=0.5,
+                        match_original=False,
+                    )
+                )
 
             # Tip labels
             label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
@@ -1660,16 +2379,35 @@ class AncestralReconstruction(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                        for cl in tree.find_clades(order="preorder"):
+                        radial_segments = []
+                        for cl in preorder_clades:
                             if cl == tree.root:
                                 continue
                             if id(cl) in clade_ids and id(cl) in parent_map:
-                                draw_circular_colored_branch(ax, coords[id(parent_map[id(cl)])], coords[id(cl)], clade_color, lw=1.5)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                                parent_coords = coords[id(parent_map[id(cl)])]
+                                child_coords = coords[id(cl)]
+                                angle = child_coords["angle"]
+                                r_parent = parent_coords["radius"]
+                                r_child = child_coords["radius"]
+                                cos_angle = math.cos(angle)
+                                sin_angle = math.sin(angle)
+                                radial_segments.append(
+                                    [
+                                        (r_parent * cos_angle, r_parent * sin_angle),
+                                        (r_child * cos_angle, r_child * sin_angle),
+                                    ]
+                                )
+                        if radial_segments:
+                            ax.add_collection(
+                                LineCollection(
+                                    radial_segments,
+                                    colors=clade_color,
+                                    linewidths=1.5,
+                                    capstyle="round",
+                                    zorder=2,
+                                )
+                            )
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             legend_handles = []
@@ -1692,7 +2430,9 @@ class AncestralReconstruction(Tree):
         else:
             # --- Rectangular mode ---
             # Draw branches (gray)
-            for clade in tree.find_clades(order="preorder"):
+            horizontal_segments = []
+            vertical_segments = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 if id(clade) not in parent_map:
@@ -1706,17 +2446,39 @@ class AncestralReconstruction(Tree):
                 y0 = node_y[id(parent)]
                 y1 = node_y[id(clade)]
 
-                # Horizontal segment
-                ax.plot([x0, x1], [y1, y1], color="gray", lw=2, solid_capstyle="butt")
-                # Vertical connector
-                ax.plot([x0, x0], [y0, y1], color="gray", lw=2, solid_capstyle="butt")
+                horizontal_segments.append([(x0, y1), (x1, y1)])
+                vertical_segments.append([(x0, y0), (x0, y1)])
+
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors="gray",
+                        linewidths=2,
+                        capstyle="butt",
+                    ),
+                    autolim=True,
+                )
+            if horizontal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        horizontal_segments,
+                        colors="gray",
+                        linewidths=2,
+                        capstyle="butt",
+                    ),
+                    autolim=True,
+                )
+            ax.autoscale_view()
 
             # Pie charts at internal nodes
             max_x = max(node_x.values()) if node_x else 1.0
             pie_radius = max_x * 0.015
 
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal():
+            pie_wedges = []
+            pie_colors = []
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 if id(clade) not in node_posteriors:
                     continue
@@ -1733,11 +2495,20 @@ class AncestralReconstruction(Tree):
                     sweep = posterior[i] * 360.0
                     wedge = Wedge(
                         (cx, cy), pie_radius, start_angle, start_angle + sweep,
-                        facecolor=state_colors[states[i]], edgecolor="black",
-                        linewidth=0.5,
                     )
-                    ax.add_patch(wedge)
+                    pie_wedges.append(wedge)
+                    pie_colors.append(state_colors[states[i]])
                     start_angle += sweep
+            if pie_wedges:
+                ax.add_collection(
+                    PatchCollection(
+                        pie_wedges,
+                        facecolors=pie_colors,
+                        edgecolors="black",
+                        linewidths=0.5,
+                        match_original=False,
+                    )
+                )
 
             # Tip labels with state color
             max_x_val = max(node_x.values()) if node_x else 0
@@ -1762,7 +2533,9 @@ class AncestralReconstruction(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                        for cl in tree.find_clades(order="preorder"):
+                        horizontal_segments = []
+                        vertical_segments = []
+                        for cl in preorder_clades:
                             if cl == tree.root:
                                 continue
                             if id(cl) in clade_ids and id(cl) in parent_map:
@@ -1771,13 +2544,27 @@ class AncestralReconstruction(Tree):
                                 x0, x1 = node_x[pid_val], node_x[cid_val]
                                 y0 = node_y.get(pid_val, 0)
                                 y1 = node_y.get(cid_val, 0)
-                                ax.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
-                                ax.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                                horizontal_segments.append([(x0, y1), (x1, y1)])
+                                vertical_segments.append([(x0, y0), (x0, y1)])
+                        if vertical_segments:
+                            ax.add_collection(
+                                LineCollection(
+                                    vertical_segments,
+                                    colors=clade_color,
+                                    linewidths=1.5,
+                                    zorder=2,
+                                )
+                            )
+                        if horizontal_segments:
+                            ax.add_collection(
+                                LineCollection(
+                                    horizontal_segments,
+                                    colors=clade_color,
+                                    linewidths=1.5,
+                                    zorder=2,
+                                )
+                            )
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             legend_handles = []

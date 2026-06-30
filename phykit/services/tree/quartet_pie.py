@@ -7,45 +7,18 @@ versus the two NNI alternative topologies (gDF1, gDF2). Supports
 both native computation from gene trees and parsing of ASTRAL -t 2
 or wASTRAL --support 3 annotations.
 """
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import (
-    PlotConfig,
-    compute_node_x_cladogram,
-    build_parent_map,
-    compute_node_positions,
-    draw_tree_branches,
-    draw_tip_labels,
-    cleanup_tree_axes,
-)
-from ...helpers.quartet_utils import (
-    compute_gcf_per_node,
-    parse_astral_annotations,
-    parse_astral_branch_info,
-)
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_branches,
-    draw_circular_tip_labels,
-    draw_circular_colored_branch,
-    draw_circular_colored_arc,
-    circular_branch_points,
-    radial_offset,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    get_clade_branch_ids,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class QuartetPie(Tree):
@@ -68,21 +41,26 @@ class QuartetPie(Tree):
         branch_info = {}  # clade id -> {"f1": ..., "pp1": ...}
 
         if self.gene_trees_path:
+            from ...helpers.quartet_utils import compute_gcf_per_node
+
             # Native mode: compute gCF from gene trees
             gene_trees = self._parse_gene_trees(self.gene_trees_path)
             proportions = compute_gcf_per_node(tree, gene_trees)
             input_mode = "native"
             n_gene_trees = len(gene_trees)
             # Build branch_info from raw counts + tree confidence
+            confidence_by_id = self._collect_branch_confidence(tree)
             for cid, props in proportions.items():
                 info = {"f1": props[3]}
-                # Check if node has a confidence/support value
-                for clade in tree.find_clades(order="preorder"):
-                    if id(clade) == cid and clade.confidence is not None:
-                        info["pp1"] = clade.confidence
-                        break
+                if cid in confidence_by_id:
+                    info["pp1"] = confidence_by_id[cid]
                 branch_info[cid] = info
         else:
+            from ...helpers.quartet_utils import (
+                parse_astral_annotations,
+                parse_astral_branch_info,
+            )
+
             # ASTRAL mode: parse q1/q2/q3 from node labels
             astral_props = parse_astral_annotations(tree)
             if not astral_props:
@@ -120,7 +98,9 @@ class QuartetPie(Tree):
             if self.csv_output:
                 print(f"Concordance table saved: {self.csv_output}")
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             gene_trees_path=getattr(args, "gene_trees", None),
@@ -146,24 +126,117 @@ class QuartetPie(Tree):
                 code=2,
             )
 
+    @staticmethod
+    def _collect_clade_tip_names(tree) -> dict[int, tuple[str, ...]]:
+        tip_names = {}
+        for clade in QuartetPie._iter_postorder(tree.root):
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 0:
+                tip_names[id(clade)] = (clade.name,)
+            elif child_count == 1:
+                tip_names[id(clade)] = tip_names.get(id(children[0]), ())
+            elif child_count == 2:
+                tip_names[id(clade)] = (
+                    tip_names.get(id(children[0]), ())
+                    + tip_names.get(id(children[1]), ())
+                )
+            else:
+                tip_names[id(clade)] = tuple(
+                    name
+                    for child in children
+                    for name in tip_names.get(id(child), ())
+                )
+        return tip_names
+
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append(children[index])
+
+    @staticmethod
+    def _iter_postorder(root):
+        clades = []
+        stack = [root]
+        pop = stack.pop
+        append_clade = clades.append
+        append_stack = stack.append
+        while stack:
+            clade = pop()
+            append_clade(clade)
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 2:
+                append_stack(children[0])
+                append_stack(children[1])
+            elif child_count:
+                for child in children:
+                    append_stack(child)
+        yield from reversed(clades)
+
+    @staticmethod
+    def _collect_branch_confidence(tree) -> dict[int, float]:
+        return {
+            id(clade): clade.confidence
+            for clade in QuartetPie._iter_preorder(tree.root)
+            if clade.confidence is not None
+        }
+
     def _plot_quartet_pie(
         self,
         tree,
-        proportions: Dict[int, Tuple],
+        proportions: dict[int, tuple],
         output_path: str,
-        branch_info: Dict[int, Dict[str, float]] = None,
+        branch_info: dict[int, dict[str, float]] = None,
     ) -> None:
         try:
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.patches import Patch
         except ImportError:
             print("matplotlib is required for quartet_pie. Install matplotlib and retry.")
             raise SystemExit(2)
 
+        from ...helpers.circular_layout import (
+            compute_circular_coords,
+            draw_circular_branches,
+            draw_circular_tip_labels,
+        )
+        from ...helpers.color_annotations import (
+            build_color_legend_handles,
+            apply_label_colors,
+            draw_range_rect,
+            draw_range_wedge,
+            get_clade_branch_ids,
+            parse_color_file,
+            resolve_mrca,
+        )
+        from ...helpers.plot_config import (
+            build_parent_map,
+            cleanup_tree_axes,
+            compute_node_positions,
+            draw_tip_labels,
+            draw_tree_branches,
+        )
+
         config = self.plot_config
-        tips = list(tree.get_terminals())
+        preorder_clades = list(self._iter_preorder(tree.root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
         config.resolve(n_rows=len(tips), n_cols=None)
 
         default_colors = ["#2b8cbe", "#d62728", "#969696"]
@@ -171,15 +244,26 @@ class QuartetPie(Tree):
 
         parent_map = build_parent_map(tree)
         node_x, node_y = compute_node_positions(
-            tree, parent_map, cladogram=self.plot_config.cladogram
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
         )
         root = tree.root
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         if self.plot_config.circular:
+            import math
+
             # --- Circular mode ---
-            coords = compute_circular_coords(tree, node_x, parent_map)
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
@@ -199,16 +283,35 @@ class QuartetPie(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                        for cl in tree.find_clades(order="preorder"):
+                        radial_segments = []
+                        for cl in preorder_clades:
                             if cl == tree.root:
                                 continue
                             if id(cl) in clade_ids and id(cl) in parent_map:
-                                draw_circular_colored_branch(ax, coords[id(parent_map[id(cl)])], coords[id(cl)], clade_color, lw=1.5)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                                parent_coords = coords[id(parent_map[id(cl)])]
+                                child_coords = coords[id(cl)]
+                                angle = child_coords["angle"]
+                                cos_angle = math.cos(angle)
+                                sin_angle = math.sin(angle)
+                                r_parent = parent_coords["radius"]
+                                r_child = child_coords["radius"]
+                                radial_segments.append(
+                                    [
+                                        (r_parent * cos_angle, r_parent * sin_angle),
+                                        (r_child * cos_angle, r_child * sin_angle),
+                                    ]
+                                )
+                        if radial_segments:
+                            ax.add_collection(
+                                LineCollection(
+                                    radial_segments,
+                                    colors=clade_color,
+                                    linewidths=1.5,
+                                    capstyle="round",
+                                    zorder=2,
+                                )
+                            )
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             legend_handles = [
@@ -242,8 +345,8 @@ class QuartetPie(Tree):
             n_tips = len(tips)
             pie_size = min(0.05, 0.6 / max(n_tips, 1)) * self.pie_size
 
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or clade == root:
+            for clade in preorder_clades:
+                if not clade.clades or clade == root:
                     continue
                 cid = id(clade)
                 if cid not in proportions:
@@ -290,8 +393,8 @@ class QuartetPie(Tree):
             # Branch labels in circular mode
             if self.branch_labels and branch_info:
                 label_fs = max(5, min(8, 80 / max(n_tips, 1)))
-                for clade in tree.find_clades(order="preorder"):
-                    if clade.is_terminal() or clade == root:
+                for clade in preorder_clades:
+                    if not clade.clades or clade == root:
                         continue
                     cid = id(clade)
                     if cid not in branch_info or cid not in coords:
@@ -340,7 +443,9 @@ class QuartetPie(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                        for cl in tree.find_clades(order="preorder"):
+                        horizontal_segments = []
+                        vertical_segments = []
+                        for cl in preorder_clades:
                             if cl == tree.root:
                                 continue
                             if id(cl) in clade_ids and id(cl) in parent_map:
@@ -349,13 +454,27 @@ class QuartetPie(Tree):
                                 x0, x1 = node_x[pid], node_x[cid]
                                 y0 = node_y.get(pid, 0)
                                 y1 = node_y.get(cid, 0)
-                                ax.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
-                                ax.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                                horizontal_segments.append([(x0, y1), (x1, y1)])
+                                vertical_segments.append([(x0, y0), (x0, y1)])
+                        if vertical_segments:
+                            ax.add_collection(
+                                LineCollection(
+                                    vertical_segments,
+                                    colors=clade_color,
+                                    linewidths=1.5,
+                                    zorder=2,
+                                )
+                            )
+                        if horizontal_segments:
+                            ax.add_collection(
+                                LineCollection(
+                                    horizontal_segments,
+                                    colors=clade_color,
+                                    linewidths=1.5,
+                                    zorder=2,
+                                )
+                            )
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             legend_handles = [
@@ -394,8 +513,8 @@ class QuartetPie(Tree):
             n_tips = len(tips)
             pie_size = min(0.06, 0.8 / max(n_tips, 1)) * self.pie_size
 
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or clade == root:
+            for clade in preorder_clades:
+                if not clade.clades or clade == root:
                     continue
                 cid = id(clade)
                 if cid not in proportions:
@@ -442,8 +561,8 @@ class QuartetPie(Tree):
             # Branch labels: concordant count above, LPP below each branch
             if self.branch_labels and branch_info:
                 label_fs = max(5, min(8, 80 / max(n_tips, 1)))
-                for clade in tree.find_clades(order="preorder"):
-                    if clade.is_terminal() or clade == root:
+                for clade in preorder_clades:
+                    if not clade.clades or clade == root:
                         continue
                     cid = id(clade)
                     if cid not in branch_info:
@@ -475,15 +594,16 @@ class QuartetPie(Tree):
             plt.close(fig)
 
     def _print_json(self, tree, proportions, input_mode, n_gene_trees):
+        clade_tip_names = self._collect_clade_tip_names(tree)
         nodes = []
-        for clade in tree.find_clades(order="preorder"):
+        for clade in self._iter_preorder(tree.root):
             if clade.is_terminal():
                 continue
             cid = id(clade)
             if cid not in proportions:
                 continue
             props = proportions[cid]
-            tip_names = sorted(t.name for t in clade.get_terminals())
+            tip_names = sorted(clade_tip_names.get(cid, ()))
             nodes.append({
                 "node_tips": tip_names,
                 "gCF": round(props[0], 4),
@@ -495,7 +615,7 @@ class QuartetPie(Tree):
             })
 
         payload = {
-            "n_taxa": tree.count_terminals(),
+            "n_taxa": len(clade_tip_names.get(id(tree.root), ())),
             "n_gene_trees": n_gene_trees,
             "input_mode": input_mode,
             "nodes": nodes,
@@ -505,16 +625,17 @@ class QuartetPie(Tree):
 
     def _write_csv(self, tree, proportions, csv_path):
         """Write per-branch gCF/gDF1/gDF2 values to a CSV file."""
+        clade_tip_names = self._collect_clade_tip_names(tree)
         with open(csv_path, "w") as f:
             f.write("node_tips,gCF,gDF1,gDF2,concordant_count,disc1_count,disc2_count\n")
-            for clade in tree.find_clades(order="preorder"):
+            for clade in self._iter_preorder(tree.root):
                 if clade.is_terminal():
                     continue
                 cid = id(clade)
                 if cid not in proportions:
                     continue
                 props = proportions[cid]
-                tip_names = ";".join(sorted(t.name for t in clade.get_terminals()))
+                tip_names = ";".join(sorted(clade_tip_names.get(cid, ())))
                 f.write(
                     f"{tip_names},"
                     f"{props[0]:.4f},{props[1]:.4f},{props[2]:.4f},"

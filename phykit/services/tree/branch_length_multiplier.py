@@ -1,10 +1,12 @@
-from typing import Dict
-import pickle
-
-from Bio.Phylo import Newick
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class BranchLengthMultiplier(Tree):
@@ -18,11 +20,15 @@ class BranchLengthMultiplier(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        # Make a deep copy to avoid modifying the cached tree
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        scaled_count = self.multiply_branch_lengths_by_factor(tree_copy, self.factor)
-        self.write_tree_file(tree_copy, self.output_file_path)
+        if self.factor == 1.0:
+            tree = self.read_tree_file_unmodified()
+            scaled_count = (
+                self.count_branch_lengths(tree) if self.json_output else None
+            )
+        else:
+            tree = self.read_tree_file()
+            scaled_count = self.multiply_branch_lengths_by_factor(tree, self.factor)
+        self.write_tree_file(tree, self.output_file_path)
 
         if self.json_output:
             print_json(
@@ -34,7 +40,7 @@ class BranchLengthMultiplier(Tree):
                 )
             )
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         output_file_path = \
             args.output or f"{args.tree}.factor_{args.factor}.tre"
         return dict(
@@ -49,9 +55,74 @@ class BranchLengthMultiplier(Tree):
         tree: Newick.Tree,
         factor: float,
     ) -> int:
+        scaled_count = self._multiply_standard_tree_branch_lengths(tree, factor)
+        if scaled_count is not None:
+            return scaled_count
+
         scaled_count = 0
-        for node in tree.get_nonterminals() + tree.get_terminals():
+        for node in tree.find_clades(order="preorder"):
             if node.branch_length is not None:
                 node.branch_length *= factor
                 scaled_count += 1
         return scaled_count
+
+    def count_branch_lengths(self, tree: Newick.Tree) -> int:
+        count = self._count_standard_tree_branch_lengths(tree)
+        if count is not None:
+            return count
+
+        branch_count = 0
+        for node in tree.find_clades(order="preorder"):
+            if node.branch_length is not None:
+                branch_count += 1
+        return branch_count
+
+    @staticmethod
+    def _multiply_standard_tree_branch_lengths(
+        tree: Newick.Tree,
+        factor: float,
+    ):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        stack = [root]
+        scaled_count = 0
+        try:
+            pop = stack.pop
+            extend = stack.extend
+            while stack:
+                node = pop()
+                if node.branch_length is not None:
+                    node.branch_length *= factor
+                    scaled_count += 1
+                extend(node.clades)
+        except AttributeError:
+            return None
+
+        return scaled_count
+
+    @staticmethod
+    def _count_standard_tree_branch_lengths(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        stack = [root]
+        branch_count = 0
+        try:
+            pop = stack.pop
+            extend = stack.extend
+            while stack:
+                node = pop()
+                if node.branch_length is not None:
+                    branch_count += 1
+                extend(node.clades)
+        except AttributeError:
+            return None
+
+        return branch_count

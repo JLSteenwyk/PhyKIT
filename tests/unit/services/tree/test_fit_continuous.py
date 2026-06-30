@@ -1,10 +1,19 @@
+import builtins
+import importlib
+import subprocess
+import sys
 import pytest
 import json
 import numpy as np
 from argparse import Namespace
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
+
+import phykit.services.tree.fit_continuous as fit_continuous_module
 from phykit.services.tree.fit_continuous import FitContinuous, ALL_MODELS
 from phykit.helpers.pgls_utils import max_lambda as compute_max_lambda
 from phykit.errors import PhykitUserError
@@ -14,6 +23,55 @@ here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_traits.tsv")
+
+
+def test_module_import_does_not_import_numpy_or_scipy():
+    code = """
+import sys
+import phykit.services.tree.fit_continuous as module
+assert callable(module.print_json)
+assert hasattr(module.np, "__getattr__")
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "numpy" not in sys.modules
+assert "scipy.linalg" not in sys.modules
+assert "scipy.optimize" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
+    module_name = "phykit.services.tree.fit_continuous"
+    previous = sys.modules.pop(module_name, None)
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if (
+            name == "scipy.linalg"
+            or name.startswith("scipy.linalg.")
+            or name == "scipy.optimize"
+            or name.startswith("scipy.optimize.")
+        ):
+            raise AssertionError(
+                "fit_continuous module import should not import SciPy linalg/optimize"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    try:
+        importlib.import_module(module_name)
+    finally:
+        imported = sys.modules.pop(module_name, None)
+        if previous is not None:
+            sys.modules[module_name] = previous
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            if previous is not None:
+                setattr(parent, child_name, previous)
+            elif getattr(parent, child_name, None) is imported:
+                delattr(parent, child_name)
 
 
 @pytest.fixture
@@ -67,10 +125,190 @@ class TestProcessArgs:
         assert svc.json_output is True
 
 
+class TestTraitParsing:
+    def test_comments_and_blanks(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "# comment\n\nraccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\n"
+            "seal\t4.0\nmonkey\t5.0\ncat\t6.0\nweasel\t7.0\ndog\t8.0\n"
+        )
+        svc = FitContinuous(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        traits = svc._parse_trait_file(str(trait_file), tree_tips)
+
+        assert len(traits) == 8
+        assert traits["raccoon"] == pytest.approx(1.0)
+
+    def test_all_shared_trait_file_emits_no_warnings(
+        self, tmp_path, default_args, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "raccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\nseal\t4.0\n"
+            "monkey\t5.0\ncat\t6.0\nweasel\t7.0\ndog\t8.0\n"
+        )
+        svc = FitContinuous(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        traits = svc._parse_trait_file(str(trait_file), tree_tips)
+
+        stderr = capsys.readouterr().err
+        assert set(traits) == set(tree_tips)
+        assert stderr == ""
+
+    def test_extra_columns_error(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "raccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\ndog\t4.0\nextra\t1.0\t2.0\n"
+        )
+        svc = FitContinuous(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trait_file(str(trait_file), tree_tips)
+
+        assert (
+            "Line 5 in trait file has 3 columns; expected 2."
+            in exc_info.value.messages
+        )
+
+    def test_non_numeric_trait_error(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("raccoon\t1.0\nbear\tbad\nsea_lion\t3.0\ndog\t4.0\n")
+        svc = FitContinuous(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trait_file(str(trait_file), tree_tips)
+
+        assert (
+            "Non-numeric trait value 'bad' for taxon 'bear' on line 2."
+            in exc_info.value.messages
+        )
+
+
+class TestTreeHelpers:
+    def test_build_parent_map_uses_direct_traversal(self, monkeypatch, svc):
+        tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6);"), "newick")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = svc._build_parent_map(tree)
+        root_children = tree.root.clades
+        left, right = root_children
+
+        assert parent_map[id(left)] is tree.root
+        assert parent_map[id(right)] is tree.root
+        assert parent_map[id(left.clades[0])] is left
+        assert parent_map[id(left.clades[1])] is left
+        assert parent_map[id(right.clades[0])] is right
+        assert parent_map[id(right.clades[1])] is right
+
+    def test_build_parent_map_handles_mixed_child_counts(self, monkeypatch, svc):
+        tree = Phylo.read(StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"), "newick")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = svc._build_parent_map(tree)
+        binary = tree.root.clades[1]
+        trifurcation = tree.root.clades[2]
+
+        assert parent_map[id(tree.root.clades[0])] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcation)] is tree.root
+        assert parent_map[id(binary.clades[0])] is binary
+        assert parent_map[id(binary.clades[1])] is binary
+        assert parent_map[id(trifurcation.clades[0])] is trifurcation
+        assert parent_map[id(trifurcation.clades[1])] is trifurcation
+        assert parent_map[id(trifurcation.clades[2])] is trifurcation
+
+
 # ── TestBMModel ──────────────────────────────────────────────────────
 
 
 class TestBMModel:
+    def test_concentrated_ll_cholesky_matches_inverse(self, svc):
+        rng = np.random.default_rng(20260623)
+        n = 16
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+
+        fast = svc._concentrated_ll_cholesky(x, C)
+        inverse = svc._concentrated_ll_inverse(x, C)
+
+        assert fast == pytest.approx(inverse)
+
+    def test_concentrated_ll_cholesky_uses_single_solve(self, svc, monkeypatch):
+        rng = np.random.default_rng(20260628)
+        n = 16
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+        original_cho_solve = fit_continuous_module.cho_solve
+        solve_calls = 0
+
+        def counting_cho_solve(*args, **kwargs):
+            nonlocal solve_calls
+            solve_calls += 1
+            return original_cho_solve(*args, **kwargs)
+
+        monkeypatch.setattr(fit_continuous_module, "cho_solve", counting_cho_solve)
+
+        fast = svc._concentrated_ll_cholesky(x, C)
+        inverse = svc._concentrated_ll_inverse(x, C)
+
+        assert solve_calls == 1
+        assert fast == pytest.approx(inverse)
+
+    def test_concentrated_ll_cholesky_reuses_cached_scipy_linalg(
+        self, svc, monkeypatch
+    ):
+        rng = np.random.default_rng(20260629)
+        n = 16
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+        previous_cho_factor = fit_continuous_module._CHO_FACTOR
+        previous_cho_solve = fit_continuous_module._CHO_SOLVE
+
+        fit_continuous_module._CHO_FACTOR = None
+        fit_continuous_module._CHO_SOLVE = None
+        try:
+            first = svc._concentrated_ll_cholesky(x, C)
+            assert fit_continuous_module._CHO_FACTOR is not None
+            assert fit_continuous_module._CHO_SOLVE is not None
+
+            original_import = builtins.__import__
+
+            def guarded_import(
+                name, globals=None, locals=None, fromlist=(), level=0
+            ):
+                if name == "scipy.linalg" or name.startswith("scipy.linalg."):
+                    raise AssertionError(
+                        "cached SciPy linalg callables should be reused"
+                    )
+                return original_import(name, globals, locals, fromlist, level)
+
+            monkeypatch.setattr(builtins, "__import__", guarded_import)
+            second = svc._concentrated_ll_cholesky(x, C)
+
+            np.testing.assert_allclose(second, first, rtol=0.0, atol=1e-12)
+        finally:
+            fit_continuous_module._CHO_FACTOR = previous_cho_factor
+            fit_continuous_module._CHO_SOLVE = previous_cho_solve
+
     def test_sigma2_positive(self, tree_vcv_data):
         d = tree_vcv_data
         res = d["svc"]._fit_bm(d["x"], d["vcv"])
@@ -88,6 +326,36 @@ class TestBMModel:
 
 
 class TestOUModel:
+    def test_vcv_ou_matches_scalar_formula(self, svc):
+        C = np.array(
+            [
+                [3.0, 1.0, 0.5],
+                [1.0, 2.5, 0.75],
+                [0.5, 0.75, 2.0],
+            ]
+        )
+        alpha = 0.7
+        expected = np.zeros_like(C)
+        for i in range(C.shape[0]):
+            for j in range(i, C.shape[1]):
+                shared = C[i, j]
+                unique_i = C[i, i] - shared
+                unique_j = C[j, j] - shared
+                value = np.exp(-alpha * (unique_i + unique_j)) * (
+                    1.0 - np.exp(-2.0 * alpha * shared)
+                ) / (2.0 * alpha)
+                expected[i, j] = value
+                expected[j, i] = value
+
+        np.testing.assert_allclose(svc._vcv_ou(C, alpha), expected)
+
+    def test_vcv_ou_near_zero_alpha_returns_copy(self, svc):
+        C = np.array([[1.0, 0.25], [0.25, 2.0]])
+        observed = svc._vcv_ou(C, 1e-12)
+
+        np.testing.assert_array_equal(observed, C)
+        assert observed is not C
+
     def test_ou_ll_ge_bm(self, tree_vcv_data):
         d = tree_vcv_data
         bm = d["svc"]._fit_bm(d["x"], d["vcv"])
@@ -249,6 +517,87 @@ class TestModelComparison:
 
 
 class TestVCVTransformations:
+    def test_build_transformed_vcv_matches_pairwise_reference(self, svc):
+        ordered_names = ["A", "B", "C"]
+        paths = {
+            "A": [(1, 1.0), (2, 0.5)],
+            "B": [(1, 1.0), (3, 0.75)],
+            "C": [(4, 1.25)],
+        }
+
+        def transform(bl, d_start, d_end):
+            return d_end ** 0.8 - d_start ** 0.8
+
+        transformed_paths = {}
+        for name in ordered_names:
+            cumulative = 0.0
+            transformed = []
+            for clade_id, branch_length in paths[name]:
+                d_start = cumulative
+                d_end = cumulative + branch_length
+                transformed.append(
+                    (clade_id, transform(branch_length, d_start, d_end))
+                )
+                cumulative = d_end
+            transformed_paths[name] = transformed
+
+        expected = np.zeros((3, 3))
+        for i, name_i in enumerate(ordered_names):
+            path_i = transformed_paths[name_i]
+            expected[i, i] = sum(branch_length for _, branch_length in path_i)
+            for j in range(i + 1, len(ordered_names)):
+                path_j = transformed_paths[ordered_names[j]]
+                shared = 0.0
+                for (clade_i, branch_i), (clade_j, _) in zip(path_i, path_j):
+                    if clade_i != clade_j:
+                        break
+                    shared += branch_i
+                expected[i, j] = shared
+                expected[j, i] = shared
+
+        observed = svc._build_transformed_vcv(ordered_names, paths, transform)
+
+        np.testing.assert_allclose(observed, expected)
+
+    def test_build_transformed_vcv_single_tip_branches_skip_block_indexing(
+        self, svc, monkeypatch
+    ):
+        ordered_names = ["A", "B", "C"]
+        paths = {
+            "A": [("A_tip", 1.0)],
+            "B": [("B_tip", 2.0)],
+            "C": [("C_tip", 3.0)],
+        }
+
+        def fail_ix(*_args, **_kwargs):
+            raise AssertionError("single-tip branches should update diagonals directly")
+
+        monkeypatch.setattr(fit_continuous_module.np, "ix_", fail_ix)
+
+        observed = svc._build_transformed_vcv(
+            ordered_names,
+            paths,
+            lambda bl, _d_start, _d_end: bl,
+        )
+
+        np.testing.assert_allclose(observed, np.diag([1.0, 2.0, 3.0]))
+
+    def test_root_to_tip_paths_fast_path_does_not_call_get_terminals(
+        self, svc, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:2):3,C:4);"), "newick")
+        parent_map = svc._build_parent_map(tree)
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard tree should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        paths = svc._build_root_to_tip_paths(tree, ["A", "C"], parent_map)
+
+        assert [branch_length for _, branch_length in paths["A"]] == [3.0, 1.0]
+        assert [branch_length for _, branch_length in paths["C"]] == [4.0]
+
     def test_ou_vcv_positive_definite(self, tree_vcv_data):
         d = tree_vcv_data
         V = d["svc"]._vcv_ou(d["vcv"], 0.5)
@@ -274,6 +623,68 @@ class TestVCVTransformations:
 
 
 class TestRun:
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        args = Namespace(
+            tree="dummy.tre",
+            trait_data="traits.tsv",
+            models="BM",
+            json=False,
+        )
+        tree = object()
+        svc = FitContinuous(args)
+        read_tree = mocker.patch.object(
+            svc, "read_tree_file_unmodified", return_value=tree
+        )
+        mocker.patch.object(
+            svc,
+            "read_tree_file",
+            side_effect=AssertionError("copying tree reader should not be used"),
+        )
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(svc, "get_tip_names_from_tree", return_value=["a", "b", "c"])
+        mocker.patch.object(
+            svc,
+            "_parse_trait_file",
+            return_value={"a": 1.0, "b": 2.0, "c": 3.0},
+        )
+        mocker.patch(
+            "phykit.services.tree.vcv_utils.build_vcv_matrix",
+            return_value=np.eye(3),
+        )
+        mocker.patch.object(svc, "_build_parent_map", return_value={})
+        mocker.patch.object(
+            svc,
+            "_build_root_to_tip_paths",
+            return_value={"a": [], "b": [], "c": []},
+        )
+        mocker.patch.object(
+            svc,
+            "_fit_model",
+            return_value={
+                "model": "BM",
+                "sigma2": 1.0,
+                "log_likelihood": -1.0,
+                "k_params": 2,
+            },
+        )
+        mocker.patch.object(
+            svc,
+            "_compute_model_comparison",
+            side_effect=lambda results, _n: results,
+        )
+        mocker.patch.object(svc, "_fit_white", return_value={"sigma2": 1.0})
+        mocker.patch.object(svc, "_print_text_output")
+
+        svc.run()
+
+        read_tree.assert_called_once_with()
+        svc.validate_tree.assert_called_once_with(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="model fitting",
+        )
+
     @patch("builtins.print")
     def test_text_output(self, mocked_print, default_args):
         svc = FitContinuous(default_args)
@@ -284,6 +695,75 @@ class TestRun:
         assert "Model Comparison (fitContinuous)" in all_output
         assert "BM" in all_output
         assert "Best model (AIC)" in all_output
+
+    @patch("builtins.print")
+    def test_print_text_output_batches_model_table(self, mocked_print):
+        svc = FitContinuous.__new__(FitContinuous)
+        results = [
+            {
+                "model": "BM",
+                "param_name": None,
+                "param_value": None,
+                "sigma2": 1.23456,
+                "z0": 2.34567,
+                "log_likelihood": -10.12345,
+                "aic": 24.2468,
+                "delta_aic": 0.0,
+                "aic_weight": 0.75,
+                "bic": 26.1357,
+                "delta_bic": 1.25,
+                "r_squared": 0.4321,
+            },
+            {
+                "model": "OU",
+                "param_name": "alpha",
+                "param_value": 0.98765,
+                "sigma2": 0.87654,
+                "z0": 1.76543,
+                "log_likelihood": -11.98765,
+                "aic": 27.9753,
+                "delta_aic": 3.7285,
+                "aic_weight": 0.25,
+                "bic": 25.2468,
+                "delta_bic": 0.0,
+                "r_squared": 0.5678,
+            },
+        ]
+        header = (
+            f"{'Model':<12}{'Param':<10}{'Value':<11}"
+            f"{'Sigma2':<10}{'z0':<10}{'LL':<11}"
+            f"{'AIC':<9}{'dAIC':<9}{'AICw':<9}"
+            f"{'BIC':<9}{'dBIC':<9}"
+            f"{'R2':<7}"
+        )
+        ou_param = f"{0.98765:.4f}"
+        expected = "\n".join(
+            [
+                "Model Comparison (fitContinuous)",
+                "\nNumber of tips: 8\n",
+                header,
+                (
+                    f"{'BM':<12}{'-':<10}{'-':<11}"
+                    f"{1.23456:<10.4f}{2.34567:<10.4f}{-10.12345:<11.3f}"
+                    f"{24.2468:<9.2f}{0.0:<9.2f}{0.75:<9.3f}"
+                    f"{26.1357:<9.2f}{1.25:<9.2f}"
+                    f"{0.4321:<7.3f}"
+                ),
+                (
+                    f"{'OU':<12}{'alpha':<10}{ou_param:<11}"
+                    f"{0.87654:<10.4f}{1.76543:<10.4f}{-11.98765:<11.3f}"
+                    f"{27.9753:<9.2f}{3.7285:<9.2f}{0.25:<9.3f}"
+                    f"{25.2468:<9.2f}{0.0:<9.2f}"
+                    f"{0.5678:<7.3f}"
+                ),
+                "\nBest model (AIC): BM",
+                "Best model (BIC): OU",
+            ]
+        )
+
+        svc._print_text_output(results, 8)
+
+        mocked_print.assert_called_once_with(expected)
 
     @patch("builtins.print")
     def test_json_output(self, mocked_print):

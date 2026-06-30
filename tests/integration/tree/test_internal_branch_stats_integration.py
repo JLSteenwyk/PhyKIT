@@ -65,11 +65,17 @@ class TestIBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call(0.846, "raccoon;bear"), 
-            call(3.8738, "sea_lion;seal;monkey;cat;weasel"),
-            call(7.5297, "sea_lion;seal"),
-            call(2.0946, "monkey;cat;weasel"),
-            call(20.592, "monkey;cat")
+            call(
+                "\n".join(
+                    [
+                        "0.846 raccoon;bear",
+                        "3.8738 sea_lion;seal;monkey;cat;weasel",
+                        "7.5297 sea_lion;seal",
+                        "2.0946 monkey;cat;weasel",
+                        "20.592 monkey;cat",
+                    ]
+                )
+            )
         ]
 
     @patch("builtins.print")
@@ -84,13 +90,19 @@ class TestIBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call(0.0002,"Aspergillus_fischeri_IBT_3007;Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
-            call(0.0002,"Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
-            call(0.0006,"Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
-            call(0.0158,"Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183"),
-            call(0.0337,"Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5"),
-            call(0.0008,"Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10"),
-            call(0.0007,"Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5"),
+            call(
+                "\n".join(
+                    [
+                        "0.0002 Aspergillus_fischeri_IBT_3007;Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183",
+                        "0.0002 Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1;Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183",
+                        "0.0006 Aspergillus_fischeri_NRRL4585;Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183",
+                        "0.0158 Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5;Aspergillus_oerlinghausenensis_CBS139183",
+                        "0.0337 Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10;Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5",
+                        "0.0008 Aspergillus_fumigatus_Af293;Aspergillus_fumigatus_CEA10",
+                        "0.0007 Aspergillus_fumigatus_HMR_AF_270;Aspergillus_fumigatus_Z5",
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")

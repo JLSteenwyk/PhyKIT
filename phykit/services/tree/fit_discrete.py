@@ -5,20 +5,47 @@ Fits ER (Equal Rates), SYM (Symmetric), and ARD (All Rates Different)
 Mk models and compares them using AIC/BIC. Analogous to R's
 geiger::fitDiscrete().
 """
-import math
-from typing import Dict, List
+from __future__ import annotations
 
-import numpy as np
+import math
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.discrete_models import (
-    VALID_DISCRETE_MODELS,
-    count_params,
-    fit_q_matrix,
-    parse_discrete_traits,
-)
 from ...errors import PhykitUserError
+
+
+VALID_DISCRETE_MODELS = frozenset(["ER", "SYM", "ARD"])
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _prepare_felsenstein_context(*args, **kwargs):
+    from ...helpers.discrete_models import (
+        _prepare_felsenstein_context as _prepare_context,
+    )
+
+    return _prepare_context(*args, **kwargs)
+
+
+def count_params(*args, **kwargs):
+    from ...helpers.discrete_models import count_params as _count_params
+
+    return _count_params(*args, **kwargs)
+
+
+def fit_q_matrix(*args, **kwargs):
+    from ...helpers.discrete_models import fit_q_matrix as _fit_q_matrix
+
+    return _fit_q_matrix(*args, **kwargs)
+
+
+def parse_discrete_traits(*args, **kwargs):
+    from ...helpers.discrete_models import parse_discrete_traits as _parse_traits
+
+    return _parse_traits(*args, **kwargs)
 
 
 class FitDiscrete(Tree):
@@ -31,7 +58,11 @@ class FitDiscrete(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
+        copied_tree = False
+        if self._needs_default_branch_lengths(tree):
+            tree = self._fast_copy(tree)
+            copied_tree = True
         self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="model fitting")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -43,14 +74,20 @@ class FitDiscrete(Tree):
         shared_taxa = set(tip_states.keys())
         tips_to_prune = [t for t in tree_tips if t not in shared_taxa]
         if tips_to_prune:
+            if not copied_tree:
+                tree = self._fast_copy(tree)
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
 
         states = sorted(set(tip_states.values()))
         n_obs = len(tip_states)
+        pruning_context = _prepare_felsenstein_context(tree, tip_states, states)
 
         results = []
         for model_name in self.selected_models:
-            result = self._fit_model(tree, tip_states, states, model_name, n_obs)
+            result = self._fit_model(
+                tree, tip_states, states, model_name, n_obs,
+                pruning_context=pruning_context,
+            )
             results.append(result)
 
         results = self._compute_model_comparison(results)
@@ -60,7 +97,31 @@ class FitDiscrete(Tree):
         else:
             self._print_text(results, n_obs, states)
 
-    def process_args(self, args) -> Dict:
+    @staticmethod
+    def _needs_default_branch_lengths(tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return True
+
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if clade is not root and clade.branch_length is None:
+                    return True
+                if children:
+                    extend(children)
+        except AttributeError:
+            return True
+
+        return False
+
+    def process_args(self, args) -> dict:
         models_str = getattr(args, "models", None)
         if models_str is None:
             models = ["ER", "SYM", "ARD"]
@@ -84,9 +145,14 @@ class FitDiscrete(Tree):
             json_output=getattr(args, "json", False),
         )
 
-    def _fit_model(self, tree, tip_states, states, model_name, n_obs):
+    def _fit_model(
+        self, tree, tip_states, states, model_name, n_obs, pruning_context=None
+    ):
         k = len(states)
-        Q, lnL = fit_q_matrix(tree, tip_states, states, model_name)
+        Q, lnL = fit_q_matrix(
+            tree, tip_states, states, model_name,
+            pruning_context=pruning_context,
+        )
         n_params = count_params(k, model_name)
         aic = -2.0 * lnL + 2.0 * n_params
         bic = -2.0 * lnL + n_params * math.log(n_obs)
@@ -121,16 +187,17 @@ class FitDiscrete(Tree):
         return results
 
     def _print_text(self, results, n_obs, states):
-        print(f"Number of taxa: {n_obs}")
-        print(f"Number of states: {len(states)}")
-        print(f"States: {', '.join(states)}")
-        print()
-
         header = f"{'Model':<8}{'lnL':>12}{'AIC':>12}{'dAIC':>10}{'AIC_w':>10}{'BIC':>12}{'dBIC':>10}{'n_params':>10}"
-        print(header)
-        print("-" * len(header))
+        lines = [
+            f"Number of taxa: {n_obs}",
+            f"Number of states: {len(states)}",
+            f"States: {', '.join(states)}",
+            "",
+            header,
+            "-" * len(header),
+        ]
         for r in results:
-            print(
+            lines.append(
                 f"{r['model']:<8}"
                 f"{r['lnL']:>12.4f}"
                 f"{r['aic']:>12.4f}"
@@ -140,6 +207,7 @@ class FitDiscrete(Tree):
                 f"{r['delta_bic']:>10.4f}"
                 f"{r['n_params']:>10d}"
             )
+        print("\n".join(lines))
 
     def _print_json(self, results, n_obs, states):
         # Remove q_matrix numpy arrays (already converted to lists in _fit_model)

@@ -1,3 +1,7 @@
+import builtins
+import importlib
+import subprocess
+import sys
 import pytest
 import json
 import numpy as np
@@ -16,6 +20,163 @@ SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_traits.tsv")
 MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
+
+
+def test_module_import_does_not_import_numpy_pgls_or_scipy():
+    code = """
+import sys
+import phykit.services.tree.phylogenetic_signal as module
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert callable(module.parse_multi_trait_file)
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.trait_parsing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "phykit.helpers.pgls_utils" not in sys.modules
+assert "scipy.linalg" not in sys.modules
+assert "scipy.optimize" not in sys.modules
+assert module._CHO_FACTOR is None
+assert module._CHO_SOLVE is None
+assert module._MINIMIZE_SCALAR is None
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
+    module_name = "phykit.services.tree.phylogenetic_signal"
+    previous = sys.modules.pop(module_name, None)
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if (
+            name == "scipy.linalg"
+            or name.startswith("scipy.linalg.")
+            or name == "scipy.optimize"
+            or name.startswith("scipy.optimize.")
+        ):
+            raise AssertionError(
+                "phylogenetic_signal module import should not import SciPy linalg/optimize"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    try:
+        importlib.import_module(module_name)
+    finally:
+        imported = sys.modules.pop(module_name, None)
+        if previous is not None:
+            sys.modules[module_name] = previous
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            if previous is not None:
+                setattr(parent, child_name, previous)
+            elif getattr(parent, child_name, None) is imported:
+                delattr(parent, child_name)
+
+
+def test_repeated_cholesky_calls_cache_scipy_linalg_imports(monkeypatch):
+    previous_cho_factor = ps_module._CHO_FACTOR
+    previous_cho_solve = ps_module._CHO_SOLVE
+    ps_module._CHO_FACTOR = None
+    ps_module._CHO_SOLVE = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        rng = np.random.default_rng(20260628)
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        n = 12
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+
+        svc._log_likelihood(x, C)
+        first_call_imports = scipy_linalg_imports
+        svc._log_likelihood(x, C)
+    finally:
+        ps_module._CHO_FACTOR = previous_cho_factor
+        ps_module._CHO_SOLVE = previous_cho_solve
+
+    assert first_call_imports > 0
+    assert scipy_linalg_imports == first_call_imports
+
+
+def test_repeated_minimize_scalar_calls_cache_scipy_optimize_imports(monkeypatch):
+    previous_minimize_scalar = ps_module._MINIMIZE_SCALAR
+    ps_module._MINIMIZE_SCALAR = None
+    original_import = builtins.__import__
+    scipy_optimize_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_optimize_imports
+        if name == "scipy.optimize":
+            scipy_optimize_imports += 1
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        first = ps_module.minimize_scalar(
+            lambda value: (value - 0.25) ** 2,
+            bounds=(0.0, 1.0),
+            method="bounded",
+        )
+        first_call_imports = scipy_optimize_imports
+        second = ps_module.minimize_scalar(
+            lambda value: (value - 0.75) ** 2,
+            bounds=(0.0, 1.0),
+            method="bounded",
+        )
+    finally:
+        ps_module._MINIMIZE_SCALAR = previous_minimize_scalar
+
+    assert first.x == pytest.approx(0.25, abs=1e-5)
+    assert second.x == pytest.approx(0.75, abs=1e-5)
+    assert first_call_imports > 0
+    assert scipy_optimize_imports == first_call_imports
+
+
+def test_inverse_from_spd_matrix_cholesky_matches_inverse():
+    rng = np.random.default_rng(20260628)
+    A = rng.normal(size=(8, 8))
+    matrix = A @ A.T + np.eye(8) * 0.25
+
+    observed = ps_module._inverse_from_spd_matrix(matrix)
+
+    np.testing.assert_allclose(observed, np.linalg.inv(matrix))
+
+
+def test_inverse_from_spd_matrix_avoids_inverse_for_spd_matrix(monkeypatch):
+    rng = np.random.default_rng(20260628)
+    A = rng.normal(size=(6, 6))
+    matrix = A @ A.T + np.eye(6)
+
+    def fail_inverse(_matrix):
+        raise AssertionError("SPD covariance inversion should use Cholesky")
+
+    monkeypatch.setattr(ps_module.np.linalg, "inv", fail_inverse)
+
+    observed = ps_module._inverse_from_spd_matrix(matrix)
+
+    assert observed.shape == matrix.shape
+    assert np.all(np.isfinite(observed))
+
+
+def test_inverse_from_spd_matrix_keeps_inverse_fallback():
+    matrix = np.array([[1.0, 2.0], [2.0, 1.0]])
+
+    observed = ps_module._inverse_from_spd_matrix(matrix)
+
+    np.testing.assert_allclose(observed, np.linalg.inv(matrix))
 
 
 @pytest.fixture
@@ -93,6 +254,21 @@ class TestParseTraitFile:
         svc = PhylogeneticSignal(default_args)
         traits = svc._parse_trait_file(str(trait_file), ["taxon1", "taxon2", "taxon3"])
         assert len(traits) == 3
+
+    def test_all_shared_trait_file_emits_no_warnings(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "good.tsv"
+        trait_file.write_text("taxon1\t1.0\ntaxon2\t2.0\ntaxon3\t3.0\n")
+        svc = PhylogeneticSignal(default_args)
+
+        traits = svc._parse_trait_file(
+            str(trait_file), ["taxon1", "taxon2", "taxon3"]
+        )
+
+        stderr = capsys.readouterr().err
+        assert traits == {"taxon1": 1.0, "taxon2": 2.0, "taxon3": 3.0}
+        assert stderr == ""
 
     def test_taxon_mismatch_warns(self, default_args, tmp_path, capsys):
         trait_file = tmp_path / "partial.tsv"
@@ -190,6 +366,39 @@ class TestBlombergsK:
         assert result["K"] == pytest.approx(0.584216, abs=1e-4)
         assert 0 <= result["p_value"] <= 1
 
+    def test_batched_permutations_match_scalar_loop(self):
+        rng = np.random.default_rng(20260622)
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        n_perm = 12
+        n = 8
+        A = rng.normal(size=(n, n))
+        vcv = A @ A.T + np.eye(n)
+        C_inv = np.linalg.inv(vcv)
+        x = rng.normal(size=n)
+        ones = np.ones(n)
+        sum_C_inv = float(ones @ C_inv @ ones)
+        expected_ratio = (np.trace(vcv) - n / sum_C_inv) / (n - 1)
+
+        scalar = np.empty(n_perm)
+        perm_rng = np.random.default_rng(seed=42)
+        for perm_i in range(n_perm):
+            x_perm = perm_rng.permutation(x)
+            a_p = float((ones @ C_inv @ x_perm) / sum_C_inv)
+            e_p = x_perm - a_p
+            obs_p = float(e_p @ e_p) / float(e_p @ C_inv @ e_p)
+            scalar[perm_i] = obs_p / expected_ratio
+
+        batched = svc._blombergs_k_permutations(
+            x,
+            C_inv,
+            sum_C_inv,
+            expected_ratio,
+            n_perm,
+            batch_size=5,
+        )
+
+        assert batched == pytest.approx(scalar)
+
 
 class TestPagelsLambda:
     def test_returns_expected_keys(self, default_args):
@@ -222,8 +431,125 @@ class TestPagelsLambda:
         assert result["p_value"] == pytest.approx(0.7166, abs=1e-2)
         assert 0 <= result["lambda"] <= 1
 
+    def test_lambda_p_value_does_not_import_scipy_stats(
+        self, default_args, monkeypatch
+    ):
+        svc = PhylogeneticSignal(default_args)
+        tree = svc.read_tree_file()
+        tips = sorted(svc.get_tip_names_from_tree(tree))
+        traits = svc._parse_trait_file(TRAITS_FILE, tips)
+        ordered = sorted(traits.keys())
+        x = np.array([traits[n] for n in ordered])
+        vcv = svc._build_vcv_matrix(tree, ordered)
+        real_import = __import__
+
+        def fail_scipy_stats_import(name, *args, **kwargs):
+            if name == "scipy.stats" or name.startswith("scipy.stats."):
+                raise AssertionError("lambda p-value should not import scipy.stats")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", fail_scipy_stats_import)
+
+        result = svc._pagels_lambda(x, vcv)
+
+        assert 0 <= result["p_value"] <= 1
+
+    def test_log_likelihood_cholesky_matches_inverse(self):
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        n = 12
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+
+        fast_ll, fast_a = svc._log_likelihood(x, C)
+        inverse_ll, inverse_a = svc._log_likelihood_inverse(x, C)
+
+        assert fast_ll == pytest.approx(inverse_ll)
+        assert fast_a == pytest.approx(inverse_a)
+
+    def test_log_likelihood_uses_single_cholesky_solve(self, monkeypatch):
+        rng = np.random.default_rng(20260628)
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        n = 12
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+        original_cho_solve = ps_module.cho_solve
+        solve_calls = 0
+
+        def counting_cho_solve(*args, **kwargs):
+            nonlocal solve_calls
+            solve_calls += 1
+            return original_cho_solve(*args, **kwargs)
+
+        monkeypatch.setattr(ps_module, "cho_solve", counting_cho_solve)
+
+        fast_ll, fast_a = svc._log_likelihood(x, C)
+        inverse_ll, inverse_a = svc._log_likelihood_inverse(x, C)
+
+        assert solve_calls == 1
+        assert fast_ll == pytest.approx(inverse_ll)
+        assert fast_a == pytest.approx(inverse_a)
+
+    def test_log_likelihood_singular_matrix_keeps_inverse_error(self):
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        C = np.ones((4, 4))
+        x = np.arange(4, dtype=float)
+
+        with pytest.raises(np.linalg.LinAlgError):
+            svc._log_likelihood(x, C)
+
 
 class TestRun:
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        args = Namespace(
+            tree="dummy.tre",
+            trait_data="traits.tsv",
+            method="blombergs_k",
+            permutations=100,
+            json=False,
+            gene_trees=None,
+            multivariate=False,
+        )
+        tree = object()
+        svc = PhylogeneticSignal(args)
+        read_tree = mocker.patch.object(
+            svc, "read_tree_file_unmodified", return_value=tree
+        )
+        mocker.patch.object(
+            svc,
+            "read_tree_file",
+            side_effect=AssertionError("copying tree reader should not be used"),
+        )
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(svc, "get_tip_names_from_tree", return_value=["a", "b", "c"])
+        mocker.patch.object(
+            svc,
+            "_parse_trait_file",
+            return_value={"a": 1.0, "b": 2.0, "c": 3.0},
+        )
+        mocker.patch(
+            "phykit.services.tree.vcv_utils.build_vcv_matrix",
+            return_value=np.eye(3),
+        )
+        mocker.patch.object(svc, "_compute_r2_phylo", return_value=0.5)
+        mocker.patch.object(
+            svc,
+            "_blombergs_k",
+            return_value={"K": 1.0, "p_value": 0.25, "permutations": 100},
+        )
+
+        svc.run()
+
+        read_tree.assert_called_once_with()
+        svc.validate_tree.assert_called_once_with(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylogenetic signal analysis",
+        )
+
     def test_blombergs_k_text_output(self, default_args, capsys):
         svc = PhylogeneticSignal(default_args)
         svc.run()
@@ -390,6 +716,47 @@ class TestDiscordanceVCV:
 
 
 class TestEffectSize:
+    def test_r2_phylo_cholesky_matches_inverse(self):
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        n = 12
+        A = rng.normal(size=(n, n))
+        vcv = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+
+        assert svc._compute_r2_phylo(x, vcv) == pytest.approx(
+            svc._compute_r2_phylo_inverse(x, vcv)
+        )
+
+    def test_r2_phylo_uses_single_cholesky_solve(self, monkeypatch):
+        rng = np.random.default_rng(20260628)
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        n = 12
+        A = rng.normal(size=(n, n))
+        vcv = A @ A.T + np.eye(n)
+        x = rng.normal(size=n)
+        original_cho_solve = ps_module.cho_solve
+        solve_calls = 0
+
+        def counting_cho_solve(*args, **kwargs):
+            nonlocal solve_calls
+            solve_calls += 1
+            return original_cho_solve(*args, **kwargs)
+
+        monkeypatch.setattr(ps_module, "cho_solve", counting_cho_solve)
+
+        assert svc._compute_r2_phylo(x, vcv) == pytest.approx(
+            svc._compute_r2_phylo_inverse(x, vcv)
+        )
+        assert solve_calls == 1
+
+    def test_r2_phylo_constant_trait_returns_nan(self):
+        svc = PhylogeneticSignal.__new__(PhylogeneticSignal)
+        vcv = np.eye(4)
+        x = np.ones(4)
+
+        assert np.isnan(svc._compute_r2_phylo(x, vcv))
+
     def test_r2_phylo_blombergs_k(self, capsys):
         """JSON output for blombergs_k contains r_squared_phylo as a finite float."""
         args = Namespace(
@@ -563,6 +930,41 @@ class TestKmult:
         Y = np.array([[traits_multi[name][j] for j in range(p)] for name in ordered])
         result = svc._kmult(Y, vcv, 100)
         assert 0 <= result["p_value"] <= 1
+
+    def test_kmult_batched_permutations_match_scalar_loop(self):
+        rng = np.random.default_rng(20260623)
+        n_perm = 11
+        n = 7
+        p = 3
+        A = rng.normal(size=(n, n))
+        vcv = A @ A.T + np.eye(n)
+        C_inv = np.linalg.inv(vcv)
+        Y = rng.normal(size=(n, p))
+        ones = np.ones(n)
+        sum_C_inv = float(ones @ C_inv @ ones)
+        expected_ratio = (np.trace(vcv) - n / sum_C_inv) / (n - 1)
+
+        scalar = np.empty(n_perm)
+        perm_rng = np.random.default_rng(seed=42)
+        for perm_i in range(n_perm):
+            Y_perm = Y[perm_rng.permutation(n)]
+            a_p = (ones @ C_inv @ Y_perm) / sum_C_inv
+            E_p = Y_perm - a_p
+            mse_obs_p = np.trace(E_p.T @ E_p)
+            mse_phylo_p = np.trace(E_p.T @ C_inv @ E_p)
+            obs_ratio_p = 0.0 if mse_phylo_p == 0 else mse_obs_p / mse_phylo_p
+            scalar[perm_i] = obs_ratio_p / expected_ratio
+
+        batched = PhylogeneticSignal._kmult_permutations(
+            Y,
+            C_inv,
+            sum_C_inv,
+            expected_ratio,
+            n_perm,
+            batch_size=4,
+        )
+
+        assert batched == pytest.approx(scalar)
 
     def test_kmult_single_trait_matches_k(self):
         """K_mult with 1 trait should approximately equal univariate K."""

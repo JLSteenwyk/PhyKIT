@@ -1,13 +1,53 @@
+from __future__ import annotations
+
 import math
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
-import numpy as np
-
+from ..alignment._fasta import read_fasta_first_token_upper_with_taxa
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _position_extent(positions):
+    iterator = iter(positions)
+    try:
+        min_x, min_y = next(iterator)
+    except StopIteration:
+        return 0
+    max_x = min_x
+    max_y = min_y
+    for x, y in iterator:
+        if x < min_x:
+            min_x = x
+        elif x > max_x:
+            max_x = x
+        if y < min_y:
+            min_y = y
+        elif y > max_y:
+            max_y = y
+    x_extent = max_x - min_x
+    y_extent = max_y - min_y
+    return x_extent if x_extent >= y_extent else y_extent
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+_DISTANCE_SKIP_BYTES = b"-NX?"
+_NO_SKIP_DIRECT_MIN_LENGTH = 2048
+_NO_SKIP_DIRECT_MAX_TAXA = 700
 
 
 class NeighborNet:
@@ -33,7 +73,9 @@ class NeighborNet:
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         aln = getattr(args, "alignment", None)
         dm = getattr(args, "distance_matrix", None)
         if aln is None and dm is None:
@@ -55,12 +97,10 @@ class NeighborNet:
     # Distance computation
     # ------------------------------------------------------------------
 
-    def _compute_distances_from_alignment(self) -> Tuple[List[str], np.ndarray]:
+    def _compute_distances_from_alignment(self) -> tuple[list[str], np.ndarray]:
         """Compute pairwise distance matrix from a FASTA alignment."""
-        from Bio import SeqIO
-
         try:
-            records = list(SeqIO.parse(self.alignment_path, "fasta"))
+            taxa, seqs = self._read_alignment(self.alignment_path)
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -70,13 +110,115 @@ class NeighborNet:
                 code=2,
             )
 
-        if len(records) == 0:
+        if len(taxa) == 0:
             raise PhykitUserError(
                 ["No sequences found in the alignment file."], code=2
             )
 
-        taxa = [r.id for r in records]
-        seqs = {r.id: str(r.seq).upper() for r in records}
+        return taxa, self._compute_distance_matrix_from_sequences(taxa, seqs)
+
+    @staticmethod
+    def _read_alignment(path: str) -> tuple[list[str], dict[str, str]]:
+        return read_fasta_first_token_upper_with_taxa(path)
+
+    def _compute_distance_matrix_from_sequences(
+        self, taxa: list[str], seqs: dict[str, str]
+    ) -> np.ndarray:
+        lengths = {len(seqs[taxon]) for taxon in taxa}
+        if len(lengths) == 1:
+            try:
+                return self._compute_distance_matrix_from_equal_length_sequences(
+                    taxa, seqs
+                )
+            except UnicodeEncodeError:
+                pass
+        return self._compute_distance_matrix_from_sequences_legacy(taxa, seqs)
+
+    def _compute_distance_matrix_from_equal_length_sequences(
+        self, taxa: list[str], seqs: dict[str, str]
+    ) -> np.ndarray:
+        n_taxa = len(taxa)
+        aln_len = len(seqs[taxa[0]]) if taxa else 0
+        seq_matrix = np.frombuffer(
+            "".join(seqs[taxon] for taxon in taxa).encode("ascii"),
+            dtype=np.uint8,
+        ).reshape(n_taxa, aln_len)
+        skip = np.frombuffer(_DISTANCE_SKIP_BYTES, dtype=np.uint8)
+        valid = ~np.isin(seq_matrix, skip)
+        if (
+            aln_len >= _NO_SKIP_DIRECT_MIN_LENGTH
+            and n_taxa <= _NO_SKIP_DIRECT_MAX_TAXA
+            and bool(valid.all())
+        ):
+            return self._compute_distance_matrix_from_no_skip_matrix(seq_matrix)
+
+        valid_float = valid.astype(np.float64, copy=False)
+        compared = valid_float @ valid_float.T
+
+        matches = np.zeros_like(compared, dtype=np.float64)
+        valid_symbols = np.unique(seq_matrix[valid])
+        for symbol in valid_symbols:
+            symbol_mask = seq_matrix == symbol
+            symbol_mask &= valid
+            symbol_float = symbol_mask.astype(np.float64, copy=False)
+            matches += symbol_float @ symbol_float.T
+
+        D = np.zeros(compared.shape, dtype=np.float64)
+        np.divide(
+            matches,
+            compared,
+            out=D,
+            where=compared > 0,
+        )
+        if self.metric == "identity":
+            np.fill_diagonal(D, 0.0)
+            return D
+
+        D = 1.0 - D
+        if self.metric == "jc":
+            jc = np.full_like(D, 10.0)
+            unsaturated = D < 0.75
+            jc[unsaturated] = -0.75 * np.log(1 - 4 / 3 * D[unsaturated])
+            D = jc
+
+        np.fill_diagonal(D, 0.0)
+        return D
+
+    def _compute_distance_matrix_from_no_skip_matrix(self, seq_matrix) -> np.ndarray:
+        n_taxa, aln_len = seq_matrix.shape
+        target_bytes = 16 * 1024 * 1024
+        block_size = max(
+            1,
+            min(64, target_bytes // max(1, n_taxa * max(1, aln_len))),
+        )
+        identities = np.empty((n_taxa, n_taxa), dtype=np.float64)
+        denominator = float(aln_len)
+        for start in range(0, n_taxa, block_size):
+            stop = min(n_taxa, start + block_size)
+            match_counts = (
+                seq_matrix[start:stop, None, :] == seq_matrix[None, :, :]
+            ).sum(axis=2, dtype=np.int32)
+            identities[start:stop] = match_counts / denominator
+
+        if self.metric == "identity":
+            np.fill_diagonal(identities, 0.0)
+            return identities
+
+        distances = 1.0 - identities
+        if self.metric == "jc":
+            jc = np.full_like(distances, 10.0)
+            unsaturated = distances < 0.75
+            jc[unsaturated] = -0.75 * np.log(
+                1 - 4 / 3 * distances[unsaturated]
+            )
+            distances = jc
+
+        np.fill_diagonal(distances, 0.0)
+        return distances
+
+    def _compute_distance_matrix_from_sequences_legacy(
+        self, taxa: list[str], seqs: dict[str, str]
+    ) -> np.ndarray:
         n = len(taxa)
         D = np.zeros((n, n))
 
@@ -110,12 +252,10 @@ class NeighborNet:
                     # p-distance (default)
                     D[i, j] = D[j, i] = p
 
-        return taxa, D
+        return D
 
-    def _read_distance_matrix(self) -> Tuple[List[str], np.ndarray]:
+    def _read_distance_matrix(self) -> tuple[list[str], np.ndarray]:
         """Read a pre-computed distance matrix from a CSV file."""
-        import csv
-
         path = Path(self.distance_matrix_path)
         if not path.exists():
             raise PhykitUserError(
@@ -127,21 +267,67 @@ class NeighborNet:
             )
 
         with open(path) as fh:
+            header_line = fh.readline()
+            if not header_line.strip() or '"' in header_line:
+                return self._read_distance_matrix_csv(path)
+
+            header = header_line.rstrip("\r\n").split(",")
+            # First cell may be empty or a label
+            first_cell = header[0].strip()
+            if first_cell == "" or first_cell.lower() in (
+                "taxon", "taxa", "label", "name",
+            ):
+                taxa = [h.strip() for h in header[1:]]
+            else:
+                taxa = [first_cell] + [h.strip() for h in header[1:]]
+
+            n = len(taxa)
+            D = np.zeros((n, n))
+            for i, line in enumerate(fh):
+                if '"' in line:
+                    return self._read_distance_matrix_csv(path)
+                stripped = line.strip()
+                if not stripped:
+                    parsed = np.fromstring("", sep=",", dtype=float)
+                else:
+                    field_count = stripped.count(",") + 1
+                    if field_count > n:
+                        values_text = stripped.split(",", 1)[1]
+                        expected_count = field_count - 1
+                    else:
+                        values_text = stripped
+                        expected_count = field_count
+                    parsed = np.fromstring(values_text, sep=",", dtype=float)
+                    if len(parsed) != expected_count:
+                        return self._read_distance_matrix_csv(path)
+                D[i, :len(parsed)] = parsed
+
+        return taxa, D
+
+    @staticmethod
+    def _read_distance_matrix_csv(path) -> tuple[list[str], np.ndarray]:
+        """Read distance matrices with Python's CSV parser fallback."""
+        import csv
+
+        with open(path) as fh:
             reader = csv.reader(fh)
             header = next(reader)
             # First cell may be empty or a label
-            if header[0].strip() == "" or header[0].strip().lower() in ("taxon", "taxa", "label", "name"):
+            first_cell = header[0].strip()
+            if first_cell == "" or first_cell.lower() in (
+                "taxon", "taxa", "label", "name",
+            ):
                 taxa = [h.strip() for h in header[1:]]
             else:
-                taxa = [h.strip() for h in header]
+                taxa = [first_cell] + [h.strip() for h in header[1:]]
 
             n = len(taxa)
             D = np.zeros((n, n))
             for i, row in enumerate(reader):
                 # Row may start with a taxon label
                 values = row[1:] if len(row) > n else row
-                for j, val in enumerate(values):
-                    D[i, j] = float(val.strip())
+                parsed = [float(val.strip()) for val in values]
+                D[i, :len(parsed)] = parsed
 
         return taxa, D
 
@@ -150,7 +336,35 @@ class NeighborNet:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _nj_circular_ordering(D: np.ndarray, taxa: List[str]) -> List[str]:
+    def _terminal_names_direct(tree) -> list[str] | None:
+        """Return terminal names from a standard Bio.Phylo tree, preserving order."""
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        names = []
+        stack = [root]
+        while stack:
+            clade = stack.pop()
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 0:
+                names.append(clade.name)
+            elif child_count == 2:
+                stack.append(children[1])
+                stack.append(children[0])
+            elif child_count == 1:
+                stack.append(children[0])
+            else:
+                for child in reversed(children):
+                    stack.append(child)
+
+        return names
+
+    @staticmethod
+    def _nj_circular_ordering(D: np.ndarray, taxa: list[str]) -> list[str]:
         """Build a NJ tree and extract a circular ordering from leaf traversal."""
         from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 
@@ -166,7 +380,9 @@ class NeighborNet:
         nj_tree = constructor.nj(dm)
 
         # Extract leaf ordering from the tree
-        ordering = [tip.name for tip in nj_tree.get_terminals()]
+        ordering = NeighborNet._terminal_names_direct(nj_tree)
+        if ordering is None:
+            ordering = [tip.name for tip in nj_tree.get_terminals()]
         return ordering
 
     # ------------------------------------------------------------------
@@ -174,33 +390,40 @@ class NeighborNet:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _enumerate_circular_splits(ordering: List[str]) -> List[frozenset]:
+    def _enumerate_circular_splits(ordering: list[str]) -> list[frozenset]:
         """Enumerate all non-trivial circular splits compatible with the ordering.
 
         A circular split divides the circular ordering into two contiguous arcs.
         We exclude trivial splits (single taxon or all-but-one).
         """
         n = len(ordering)
+        all_taxa = frozenset(ordering[i] for i in range(n))
         seen = set()
         splits = []
         for start in range(n):
+            side_set = {ordering[start], ordering[(start + 1) % n]}
             for size in range(2, n - 1):
-                indices = [(start + k) % n for k in range(size)]
-                side = frozenset(ordering[idx] for idx in indices)
-                complement = frozenset(ordering) - side
+                complement_size = n - size
                 # Canonical form: smaller side (or lexicographic tiebreak)
-                if len(side) < len(complement):
-                    canonical = side
-                elif len(side) > len(complement):
-                    canonical = complement
+                if size < complement_size:
+                    canonical = frozenset(side_set)
+                elif size > complement_size:
+                    canonical = all_taxa - side_set
                 else:
-                    if sorted(side) < sorted(complement):
+                    side = frozenset(side_set)
+                    complement = all_taxa - side_set
+                    # Disjoint equal-size sides differ at their smallest
+                    # sorted element, so this preserves the sorted-list
+                    # tiebreak without sorting both halves.
+                    if min(side) < min(complement):
                         canonical = side
                     else:
                         canonical = complement
                 if canonical not in seen:
                     seen.add(canonical)
                     splits.append(canonical)
+                if size != n - 2:
+                    side_set.add(ordering[(start + size) % n])
         return splits
 
     # ------------------------------------------------------------------
@@ -210,31 +433,32 @@ class NeighborNet:
     @staticmethod
     def _estimate_split_weights(
         D: np.ndarray,
-        splits: List[frozenset],
-        ordering: List[str],
-        taxa: List[str],
+        splits: list[frozenset],
+        ordering: list[str],
+        taxa: list[str],
     ) -> np.ndarray:
         """Estimate non-negative split weights via NNLS."""
         from scipy.optimize import nnls
 
         n = len(taxa)
-        name_to_idx = {name: i for i, name in enumerate(taxa)}
-
-        pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
-        n_pairs = len(pairs)
         n_splits = len(splits)
+        if n_splits == 0:
+            return np.zeros(0, dtype=float)
 
-        A = np.zeros((n_pairs, n_splits))
-        b = np.zeros(n_pairs)
+        membership = np.zeros((n, n_splits), dtype=bool)
+        taxon_to_idx = {name: i for i, name in enumerate(taxa)}
+        for split_idx, split in enumerate(splits):
+            for taxon in split:
+                idx = taxon_to_idx.get(taxon)
+                if idx is not None:
+                    membership[idx, split_idx] = True
 
-        for pair_idx, (i, j) in enumerate(pairs):
-            b[pair_idx] = D[i, j]
-            ti = taxa[i]
-            tj = taxa[j]
-            for split_idx, split in enumerate(splits):
-                # Does this split separate taxa i and j?
-                if (ti in split) != (tj in split):
-                    A[pair_idx, split_idx] = 1.0
+        pair_i, pair_j = np.triu_indices(n, k=1)
+        A = np.logical_xor(membership[pair_i], membership[pair_j]).astype(
+            np.float64,
+            copy=False,
+        )
+        b = D[pair_i, pair_j]
 
         weights, _residual = nnls(A, b)
         return weights
@@ -245,41 +469,59 @@ class NeighborNet:
 
     @staticmethod
     def _canonical_split(taxa_side: frozenset, all_taxa: frozenset) -> frozenset:
-        complement = all_taxa - taxa_side
-        if len(taxa_side) < len(complement):
+        taxa_side_len = len(taxa_side)
+        all_taxa_len = len(all_taxa)
+        if taxa_side_len * 2 < all_taxa_len:
             return taxa_side
-        if len(taxa_side) > len(complement):
+        complement = all_taxa - taxa_side
+        if taxa_side_len * 2 > all_taxa_len:
             return complement
-        if sorted(taxa_side) < sorted(complement):
+        if not taxa_side:
+            return taxa_side
+        if min(taxa_side) < min(complement):
             return taxa_side
         return complement
 
     @staticmethod
-    def _is_circular_split(split, ordering):
-        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+    def _circular_gap_positions(split, ordering):
+        """Return the two circular boundary gap positions, or None."""
         n = len(ordering)
-        gaps = 0
-        for i in range(n):
-            curr = ordering[i]
-            nxt = ordering[(i + 1) % n]
-            if (curr in split) != (nxt in split):
-                gaps += 1
-        return gaps == 2
+        if n == 0:
+            return None
+        gap_positions = []
+        first_in_split = ordering[0] in split
+        previous_in_split = first_in_split
+        for i in range(1, n):
+            current_in_split = ordering[i] in split
+            if previous_in_split != current_in_split:
+                gap_positions.append(i - 1)
+                if len(gap_positions) > 2:
+                    return None
+            previous_in_split = current_in_split
+        if previous_in_split != first_in_split:
+            gap_positions.append(n - 1)
+        if len(gap_positions) == 2:
+            return (gap_positions[0], gap_positions[1])
+        return None
 
     @staticmethod
-    def _compute_split_directions(ordering, circular_splits):
+    def _is_circular_split(split, ordering):
+        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+        return NeighborNet._circular_gap_positions(split, ordering) is not None
+
+    @staticmethod
+    def _compute_split_directions(ordering, circular_splits,
+                                  gap_positions_by_split=None):
         """Compute 2D direction vectors for each circular split."""
         n = len(ordering)
         angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
         directions = {}
         for split, weight in circular_splits:
-            gap_positions = []
-            for i in range(n):
-                curr = ordering[i]
-                nxt = ordering[(i + 1) % n]
-                if (curr in split) != (nxt in split):
-                    gap_positions.append(i)
-            if len(gap_positions) != 2:
+            if gap_positions_by_split is None:
+                gap_positions = NeighborNet._circular_gap_positions(split, ordering)
+            else:
+                gap_positions = gap_positions_by_split.get(split)
+            if gap_positions is None:
                 continue
             g1 = math.pi * (2 * gap_positions[0] + 1) / n
             g2 = math.pi * (2 * gap_positions[1] + 1) / n
@@ -332,51 +574,71 @@ class NeighborNet:
                 if fb:
                     forbidden[(i, j)] = fb
         valid_nodes = set()
-        for combo in range(2 ** n_splits):
-            signs = tuple(1 if (combo >> j) & 1 else -1 for j in range(n_splits))
-            valid = True
-            for (i, j), fb_pairs in forbidden.items():
-                if (signs[i], signs[j]) in fb_pairs:
-                    valid = False
-                    break
-            if valid:
-                valid_nodes.add(signs)
+        constraints_by_split = [[] for _ in range(n_splits)]
+        for (i, j), fb_pairs in forbidden.items():
+            constraints_by_split[j].append((i, fb_pairs))
+
+        signs = [-1] * n_splits
+
+        def add_valid_signs(split_idx):
+            if split_idx == n_splits:
+                valid_nodes.add(tuple(signs))
+                return
+            for sign in (-1, 1):
+                valid = True
+                for prev_idx, fb_pairs in constraints_by_split[split_idx]:
+                    if (signs[prev_idx], sign) in fb_pairs:
+                        valid = False
+                        break
+                if valid:
+                    signs[split_idx] = sign
+                    add_valid_signs(split_idx + 1)
+
+        add_valid_signs(0)
         for signs in taxon_signs.values():
             valid_nodes.add(signs)
         edges = []
-        valid_list = list(valid_nodes)
-        for i in range(len(valid_list)):
-            for j in range(i + 1, len(valid_list)):
-                s1 = valid_list[i]
-                s2 = valid_list[j]
-                diff = [k for k in range(n_splits) if s1[k] != s2[k]]
-                if len(diff) == 1:
-                    edges.append((s1, s2, diff[0]))
+        for node in valid_nodes:
+            for split_idx in range(n_splits):
+                flipped = (
+                    node[:split_idx]
+                    + (-node[split_idx],)
+                    + node[split_idx + 1:]
+                )
+                if flipped in valid_nodes and node < flipped:
+                    edges.append((node, flipped, split_idx))
         return taxon_signs, valid_nodes, edges, splits_list, weights
 
     def _draw_network(
         self,
-        ordering: List[str],
-        plot_splits: List[Tuple[frozenset, float]],
+        ordering: list[str],
+        plot_splits: list[tuple[frozenset, float]],
         all_taxa: frozenset,
     ):
         """Draw a planar splits graph using matplotlib."""
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
 
         n = len(ordering)
         angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
 
         # Filter to circular splits only
-        circular_splits = [
-            (split, weight)
-            for split, weight in plot_splits
-            if self._is_circular_split(split, ordering)
-        ]
+        circular_splits = []
+        gap_positions_by_split = {}
+        for split, weight in plot_splits:
+            gap_positions = self._circular_gap_positions(split, ordering)
+            if gap_positions is not None:
+                circular_splits.append((split, weight))
+                gap_positions_by_split[split] = gap_positions
 
         # Compute direction vectors
-        directions = self._compute_split_directions(ordering, circular_splits)
+        directions = self._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
 
         # Keep only splits that have computed directions
         circular_splits = [
@@ -411,6 +673,8 @@ class NeighborNet:
             label_fontsize = 10
 
         if not splits_list:
+            point_x = []
+            point_y = []
             for taxon in ordering:
                 angle = angles[taxon]
                 x = math.cos(angle)
@@ -423,7 +687,10 @@ class NeighborNet:
                             fontsize=label_fontsize, rotation=rotation,
                             rotation_mode="anchor")
                 else:
-                    ax.plot(x, y, "o", color="black", markersize=2)
+                    point_x.append(x)
+                    point_y.append(y)
+            if point_x:
+                ax.scatter(point_x, point_y, color="black", s=4)
         else:
             node_positions = {}
             for node in valid_nodes:
@@ -434,18 +701,24 @@ class NeighborNet:
                     y += node[i] * weights[i] * dy / 2
                 node_positions[node] = (x, y)
 
-            all_x = [p[0] for p in node_positions.values()]
-            all_y = [p[1] for p in node_positions.values()]
-            extent = max(
-                max(all_x) - min(all_x) if all_x else 0,
-                max(all_y) - min(all_y) if all_y else 0,
-            )
+            extent = _position_extent(node_positions.values())
             pendant_len = max(0.15, extent * 0.3)
 
+            internal_segments = []
             for s1, s2, split_idx in edges:
                 x1, y1 = node_positions[s1]
                 x2, y2 = node_positions[s2]
-                ax.plot([x1, x2], [y1, y2], "-", color="black", linewidth=1.5, zorder=2)
+                internal_segments.append(((x1, y1), (x2, y2)))
+            if internal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        internal_segments,
+                        colors="black",
+                        linewidths=1.5,
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
 
             boundary_taxa = set()
             for split, weight in circular_splits:
@@ -456,6 +729,9 @@ class NeighborNet:
                         boundary_taxa.add(curr)
                         boundary_taxa.add(nxt)
 
+            pendant_segments = []
+            pendant_widths = []
+            pendant_colors = []
             for taxon in ordering:
                 angle = angles[taxon]
                 if taxon in taxon_signs and taxon_signs[taxon] in node_positions:
@@ -470,10 +746,10 @@ class NeighborNet:
 
                 tx = nx + plen * math.cos(angle)
                 ty = ny + plen * math.sin(angle)
-                ax.plot([nx, tx], [ny, ty], "-", color="black",
-                        linewidth=0.8 if taxon not in boundary_taxa else 1.5,
-                        alpha=0.3 if taxon not in boundary_taxa else 1.0,
-                        zorder=2)
+                is_boundary = taxon in boundary_taxa
+                pendant_segments.append(((nx, ny), (tx, ty)))
+                pendant_widths.append(1.5 if is_boundary else 0.8)
+                pendant_colors.append((0.0, 0.0, 0.0, 1.0 if is_boundary else 0.3))
 
                 if label_fontsize > 0 and (taxon in boundary_taxa or n <= 50):
                     lx = tx + 0.03 * math.cos(angle)
@@ -484,6 +760,17 @@ class NeighborNet:
                     ax.text(lx, ly, taxon, ha=ha, va="center",
                             fontsize=label_fontsize, rotation=rotation,
                             rotation_mode="anchor", zorder=4)
+            if pendant_segments:
+                ax.add_collection(
+                    LineCollection(
+                        pendant_segments,
+                        colors=pendant_colors,
+                        linewidths=pendant_widths,
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
+            ax.autoscale_view()
 
             labeled_splits = set()
             for s1, s2, split_idx in edges:
@@ -591,11 +878,16 @@ class NeighborNet:
                 )
             )
         else:
-            print(f"NeighborNet Analysis")
-            print(f"Taxa: {n}")
-            print(f"Distance metric: {self.metric}")
-            print(f"Circular splits with positive weight: {len(positive)}")
-            print("---")
-            for split, weight in positive:
-                print(f"{self._format_split(split)}\t{weight:.6f}")
-            print(f"Output: {self.output_path}")
+            lines = [
+                "NeighborNet Analysis",
+                f"Taxa: {n}",
+                f"Distance metric: {self.metric}",
+                f"Circular splits with positive weight: {len(positive)}",
+                "---",
+            ]
+            lines.extend(
+                f"{self._format_split(split)}\t{weight:.6f}"
+                for split, weight in positive
+            )
+            lines.append(f"Output: {self.output_path}")
+            print("\n".join(lines))

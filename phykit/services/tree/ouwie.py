@@ -1,15 +1,88 @@
-import pickle
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize, minimize_scalar
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
 
 ALL_MODELS = ["BM1", "BMS", "OU1", "OUM", "OUMV", "OUMA", "OUMVA"]
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPickle:
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+pickle = _LazyPickle()
+np = _LazyNumpy()
+
+
+def cho_factor(*args, **kwargs):
+    from scipy.linalg import cho_factor as _cho_factor
+
+    return _cho_factor(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    from scipy.linalg import cho_solve as _cho_solve
+
+    return _cho_solve(*args, **kwargs)
+
+
+def minimize(*args, **kwargs):
+    from scipy.optimize import minimize as _minimize
+
+    return _minimize(*args, **kwargs)
+
+
+def minimize_scalar(*args, **kwargs):
+    from scipy.optimize import minimize_scalar as _minimize_scalar
+
+    return _minimize_scalar(*args, **kwargs)
+
+
+def _merge_nonempty_child_state_sets(state_sets, children):
+    intersection = None
+    union = None
+    for child in children:
+        child_set = state_sets.get(id(child))
+        if not child_set:
+            continue
+        if intersection is None:
+            intersection = child_set
+            union = child_set
+        else:
+            intersection = intersection & child_set
+            union = union | child_set
+
+    if intersection is None:
+        return set()
+    return intersection if intersection else union
 
 
 class OUwie(Tree):
@@ -22,7 +95,7 @@ class OUwie(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="OUwie model fitting")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -31,7 +104,7 @@ class OUwie(Tree):
             self.regime_data_path, tree_tips
         )
 
-        shared = set(traits.keys()) & set(regime_assignments.keys())
+        shared = self._shared_trait_regime_taxa(traits, regime_assignments)
         if len(shared) < 3:
             raise PhykitUserError(
                 [
@@ -44,13 +117,14 @@ class OUwie(Tree):
         traits = {k: traits[k] for k in shared}
         regime_assignments = {k: regime_assignments[k] for k in shared}
 
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in shared]
+        tips_to_prune = [t for t in tree_tips if t not in shared]
+        tree_for_analysis = self._fast_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
+            )
 
-        ordered_names = sorted(traits.keys())
+        ordered_names = sorted(shared)
         n = len(ordered_names)
         x = np.array([traits[name] for name in ordered_names])
 
@@ -63,24 +137,22 @@ class OUwie(Tree):
                 code=2,
             )
 
-        parent_map = self._build_parent_map(tree_copy)
-        branch_regimes = self._assign_branch_regimes(
-            tree_copy, regime_assignments, parent_map
+        parent_map = self._build_parent_map(tree_for_analysis)
+        branch_regimes, root_regime = self._assign_branch_regimes_and_root(
+            tree_for_analysis, regime_assignments, parent_map
         )
-
-        # Determine root regime
-        root_regime = branch_regimes.get(
-            id(tree_copy.root), regimes[0]
-        )
-        # Get root regime from Fitch parsimony node regimes
-        root_regime = self._get_root_regime(tree_copy, regime_assignments, parent_map)
 
         lineage_info = self._build_lineage_info(
-            tree_copy, ordered_names, parent_map, branch_regimes
+            tree_for_analysis, ordered_names, parent_map, branch_regimes
         )
 
         per_regime_vcv = self._build_per_regime_vcv(
-            tree_copy, ordered_names, regimes, branch_regimes, parent_map
+            tree_for_analysis,
+            ordered_names,
+            regimes,
+            branch_regimes,
+            parent_map,
+            lineage_info=lineage_info,
         )
 
         vcv_total = sum(per_regime_vcv.values())
@@ -104,7 +176,14 @@ class OUwie(Tree):
         else:
             self._print_text_output(results, n, regimes)
 
-    def process_args(self, args) -> Dict:
+    @staticmethod
+    def _shared_trait_regime_taxa(
+        traits: dict[str, float],
+        regime_assignments: dict[str, str],
+    ) -> set[str]:
+        return set(traits).intersection(regime_assignments)
+
+    def process_args(self, args) -> dict:
         models = ALL_MODELS[:]
         if hasattr(args, "models") and args.models:
             requested = [m.strip() for m in args.models.split(",")]
@@ -132,11 +211,35 @@ class OUwie(Tree):
     # ── Tree & data parsing ──────────────────────────────────────────
 
     def _parse_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Dict[str, float]:
+        self, path: str, tree_tips: list[str]
+    ) -> dict[str, float]:
         try:
+            traits = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                            code=2,
+                        )
+                    taxon, value_str = parts
+                    try:
+                        traits[taxon] = float(value_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -146,33 +249,15 @@ class OUwie(Tree):
                 code=2,
             )
 
-        traits = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value_str = parts
-            try:
-                traits[taxon] = float(value_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -203,11 +288,27 @@ class OUwie(Tree):
         return {taxon: traits[taxon] for taxon in shared}
 
     def _parse_regime_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Dict[str, str]:
+        self, path: str, tree_tips: list[str]
+    ) -> dict[str, str]:
         try:
+            regimes = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in regime file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>regime_label",
+                            ],
+                            code=2,
+                        )
+                    taxon, regime = parts
+                    regimes[taxon] = regime
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -217,25 +318,15 @@ class OUwie(Tree):
                 code=2,
             )
 
-        regimes = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in regime file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>regime_label",
-                    ],
-                    code=2,
-                )
-            taxon, regime = parts
-            regimes[taxon] = regime
-
         tree_tip_set = set(tree_tips)
-        regime_taxa_set = set(regimes.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(regimes)
+            and tree_tip_set == regimes.keys()
+        ):
+            return regimes
+
+        regime_taxa_set = set(regimes)
         shared = tree_tip_set & regime_taxa_set
 
         tree_only = tree_tip_set - regime_taxa_set
@@ -267,51 +358,94 @@ class OUwie(Tree):
 
     # ── Tree structure helpers ────────────────────────────────────────
 
-    def _build_parent_map(self, tree) -> Dict:
-        parent_map = {}
-        for clade in tree.find_clades(order="preorder"):
-            for child in clade.clades:
-                parent_map[id(child)] = clade
+    def _build_parent_map(self, tree) -> dict:
+        try:
+            stack = [tree.root]
+            parent_map = {}
+            pop = stack.pop
+            extend = stack.extend
+            while stack:
+                clade = pop()
+                children = clade.clades
+                for child in children:
+                    parent_map[id(child)] = clade
+                if children:
+                    extend(children)
+        except AttributeError:
+            parent_map = {}
+            for clade in tree.find_clades(order="preorder"):
+                for child in clade.clades:
+                    parent_map[id(child)] = clade
         return parent_map
 
     def _assign_branch_regimes(
-        self, tree, tip_regimes: Dict[str, str], parent_map: Dict
-    ) -> Dict:
+        self, tree, tip_regimes: dict[str, str], parent_map: dict
+    ) -> dict:
+        branch_regimes, _ = self._assign_branch_regimes_and_root(
+            tree, tip_regimes, parent_map
+        )
+        return branch_regimes
+
+    def _assign_branch_regimes_and_root(
+        self, tree, tip_regimes: dict[str, str], parent_map: dict
+    ) -> tuple[dict, str]:
         state_sets = {}
-        for clade in tree.find_clades(order="postorder"):
+        preorder = []
+        postorder = []
+        try:
+            root = tree.root
+            stack = [(root, False)]
+            while stack:
+                clade, visited = stack.pop()
+                if visited:
+                    postorder.append(clade)
+                    continue
+                preorder.append(clade)
+                stack.append((clade, True))
+                for child in reversed(clade.clades):
+                    stack.append((child, False))
+        except AttributeError:
+            root = tree.root
+            postorder = list(tree.find_clades(order="postorder"))
+            preorder = list(tree.find_clades(order="preorder"))
+
+        for clade in postorder:
             if clade.is_terminal():
                 if clade.name in tip_regimes:
                     state_sets[id(clade)] = {tip_regimes[clade.name]}
                 else:
                     state_sets[id(clade)] = set()
             else:
-                child_sets = [
-                    state_sets[id(c)] for c in clade.clades
-                    if id(c) in state_sets and state_sets[id(c)]
-                ]
-                if not child_sets:
-                    state_sets[id(clade)] = set()
-                else:
-                    intersection = child_sets[0]
-                    for cs in child_sets[1:]:
-                        intersection = intersection & cs
-                    if intersection:
-                        state_sets[id(clade)] = intersection
+                children = clade.clades
+                if len(children) == 2:
+                    left = state_sets.get(id(children[0]))
+                    right = state_sets.get(id(children[1]))
+                    if left and right:
+                        intersection = left & right
+                        state_sets[id(clade)] = (
+                            intersection if intersection else left | right
+                        )
+                    elif left:
+                        state_sets[id(clade)] = left
+                    elif right:
+                        state_sets[id(clade)] = right
                     else:
-                        union = set()
-                        for cs in child_sets:
-                            union = union | cs
-                        state_sets[id(clade)] = union
+                        state_sets[id(clade)] = set()
+                else:
+                    state_sets[id(clade)] = _merge_nonempty_child_state_sets(
+                        state_sets,
+                        children,
+                    )
 
-        node_regimes = {}
-        root = tree.root
         root_set = state_sets.get(id(root), set())
+        all_regimes = sorted(set(tip_regimes.values()))
         if root_set:
-            node_regimes[id(root)] = sorted(root_set)[0]
+            root_regime = sorted(root_set)[0]
         else:
-            node_regimes[id(root)] = sorted(set(tip_regimes.values()))[0]
+            root_regime = all_regimes[0] if all_regimes else "unknown"
 
-        for clade in tree.find_clades(order="preorder"):
+        node_regimes = {id(root): root_regime}
+        for clade in preorder:
             if clade == root:
                 continue
             clade_set = state_sets.get(id(clade), set())
@@ -332,52 +466,26 @@ class OUwie(Tree):
                 node_regimes[id(clade)] = sorted(clade_set)[0]
 
         branch_regimes = {}
-        for clade in tree.find_clades(order="preorder"):
+        for clade in preorder:
             if clade == root:
                 continue
             branch_regimes[id(clade)] = node_regimes.get(id(clade), "unknown")
 
-        return branch_regimes
+        return branch_regimes, root_regime
 
     def _get_root_regime(self, tree, tip_regimes, parent_map):
-        state_sets = {}
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
-                if clade.name in tip_regimes:
-                    state_sets[id(clade)] = {tip_regimes[clade.name]}
-                else:
-                    state_sets[id(clade)] = set()
-            else:
-                child_sets = [
-                    state_sets[id(c)] for c in clade.clades
-                    if id(c) in state_sets and state_sets[id(c)]
-                ]
-                if not child_sets:
-                    state_sets[id(clade)] = set()
-                else:
-                    intersection = child_sets[0]
-                    for cs in child_sets[1:]:
-                        intersection = intersection & cs
-                    if intersection:
-                        state_sets[id(clade)] = intersection
-                    else:
-                        union = set()
-                        for cs in child_sets:
-                            union = union | cs
-                        state_sets[id(clade)] = union
-
-        root = tree.root
-        root_set = state_sets.get(id(root), set())
-        if root_set:
-            return sorted(root_set)[0]
-        return sorted(set(tip_regimes.values()))[0]
+        _, root_regime = self._assign_branch_regimes_and_root(
+            tree, tip_regimes, parent_map
+        )
+        return root_regime
 
     def _build_root_to_tip_paths(
-        self, tree, ordered_names: List[str], parent_map: Dict
-    ) -> Dict[str, List]:
+        self, tree, ordered_names: list[str], parent_map: dict
+    ) -> dict[str, list]:
+        ordered_name_set = set(ordered_names)
         tip_map = {}
         for tip in tree.get_terminals():
-            if tip.name in ordered_names:
+            if tip.name in ordered_name_set:
                 tip_map[tip.name] = tip
 
         paths = {}
@@ -395,49 +503,87 @@ class OUwie(Tree):
         return paths
 
     def _build_per_regime_vcv(
-        self, tree, ordered_names: List[str], regimes: List[str],
-        branch_regimes: Dict, parent_map: Dict,
-    ) -> Dict[str, np.ndarray]:
+        self, tree, ordered_names: list[str], regimes: list[str],
+        branch_regimes: dict, parent_map: dict,
+        lineage_info: dict[str, list[tuple]] | None = None,
+    ) -> dict[str, np.ndarray]:
+        if lineage_info is not None:
+            return self._build_per_regime_vcv_from_lineage_info(
+                ordered_names, regimes, lineage_info
+            )
+
         n = len(ordered_names)
         paths = self._build_root_to_tip_paths(tree, ordered_names, parent_map)
 
         per_regime_vcv = {r: np.zeros((n, n)) for r in regimes}
+        branch_to_indices = {}
+        branch_lengths = {}
+        for idx, name in enumerate(ordered_names):
+            for clade_id, bl in paths[name]:
+                branch_to_indices.setdefault(clade_id, []).append(idx)
+                branch_lengths[clade_id] = bl
 
-        for i in range(n):
-            path_i = paths[ordered_names[i]]
-            for clade_id, bl in path_i:
-                r = branch_regimes.get(clade_id, regimes[0])
-                per_regime_vcv[r][i, i] += bl
+        for clade_id, indices in branch_to_indices.items():
+            regime = branch_regimes.get(clade_id, regimes[0])
+            if regime not in per_regime_vcv:
+                continue
+            branch_length = branch_lengths[clade_id]
+            if len(indices) == 1:
+                per_regime_vcv[regime][indices[0], indices[0]] += branch_length
+                continue
+            idx = np.asarray(indices, dtype=np.intp)
+            per_regime_vcv[regime][np.ix_(idx, idx)] += branch_length
 
-            for j in range(i + 1, n):
-                path_j = paths[ordered_names[j]]
-                min_len = min(len(path_i), len(path_j))
-                for s in range(min_len):
-                    if path_i[s][0] == path_j[s][0]:
-                        clade_id = path_i[s][0]
-                        bl = path_i[s][1]
-                        r = branch_regimes.get(clade_id, regimes[0])
-                        per_regime_vcv[r][i, j] += bl
-                        per_regime_vcv[r][j, i] += bl
-                    else:
-                        break
+        return per_regime_vcv
+
+    def _build_per_regime_vcv_from_lineage_info(
+        self,
+        ordered_names: list[str],
+        regimes: list[str],
+        lineage_info: dict[str, list[tuple]],
+    ) -> dict[str, np.ndarray]:
+        n = len(ordered_names)
+        per_regime_vcv = {r: np.zeros((n, n)) for r in regimes}
+        default_regime = regimes[0] if regimes else None
+        branch_to_indices = {}
+        branch_info = {}
+
+        for idx, name in enumerate(ordered_names):
+            for clade_id, bl, regime, _d_start, _d_end in lineage_info[name]:
+                branch_to_indices.setdefault(clade_id, []).append(idx)
+                branch_info[clade_id] = (bl, regime)
+
+        for clade_id, indices in branch_to_indices.items():
+            branch_length, regime = branch_info[clade_id]
+            matrix = per_regime_vcv.get(regime)
+            if matrix is None:
+                if regime == "unknown" and default_regime is not None:
+                    matrix = per_regime_vcv[default_regime]
+                else:
+                    continue
+            if len(indices) == 1:
+                matrix[indices[0], indices[0]] += branch_length
+                continue
+            idx = np.asarray(indices, dtype=np.intp)
+            matrix[np.ix_(idx, idx)] += branch_length
 
         return per_regime_vcv
 
     # ── Lineage info for OU weight/VCV matrices ──────────────────────
 
     def _build_lineage_info(
-        self, tree, ordered_names: List[str], parent_map: Dict,
-        branch_regimes: Dict,
-    ) -> Dict[str, List[Tuple]]:
+        self, tree, ordered_names: list[str], parent_map: dict,
+        branch_regimes: dict,
+    ) -> dict[str, list[tuple]]:
         """Build root-to-tip lineage info for each tip.
 
         Returns dict mapping tip_name -> list of tuples:
             (clade_id, branch_length, regime, dist_from_root_start, dist_from_root_end)
         """
+        ordered_name_set = set(ordered_names)
         tip_map = {}
         for tip in tree.get_terminals():
-            if tip.name in ordered_names:
+            if tip.name in ordered_name_set:
                 tip_map[tip.name] = tip
 
         lineage_info = {}
@@ -468,8 +614,8 @@ class OUwie(Tree):
     # ── Weight matrix construction ───────────────────────────────────
 
     def _build_weight_matrix_single_alpha(
-        self, ordered_names: List[str], lineage_info: Dict,
-        regimes: List[str], alpha: float, root_regime: str,
+        self, ordered_names: list[str], lineage_info: dict,
+        regimes: list[str], alpha: float, root_regime: str,
     ) -> np.ndarray:
         """Build W matrix for OUM/OUMV: single alpha, multiple optima.
 
@@ -506,9 +652,69 @@ class OUwie(Tree):
 
         return W
 
+    def _prepare_single_alpha_weight_cache(
+        self, ordered_names: list[str], lineage_info: dict,
+        regimes: list[str], root_regime: str,
+    ) -> dict[str, np.ndarray]:
+        """Cache alpha-invariant arrays for single-alpha OUM weight matrices."""
+        regime_idx = {r: j for j, r in enumerate(regimes)}
+        n = len(ordered_names)
+        rows = []
+        cols = []
+        branch_lengths = []
+        tail_lengths = []
+        bm_weights = []
+        tip_heights = np.empty(n, dtype=float)
+
+        for i, name in enumerate(ordered_names):
+            path = lineage_info[name]
+            tip_height = sum(bl for _, bl, _, _, _ in path)
+            tip_heights[i] = tip_height
+            inv_tip_height = 1.0 / tip_height if tip_height > 0 else 0.0
+
+            for _, bl, regime, _d_start, d_end in path:
+                col = regime_idx.get(regime)
+                if col is None:
+                    continue
+                rows.append(i)
+                cols.append(col)
+                branch_lengths.append(bl)
+                tail_lengths.append(tip_height - d_end)
+                bm_weights.append(bl * inv_tip_height)
+
+        return {
+            "rows": np.asarray(rows, dtype=np.intp),
+            "cols": np.asarray(cols, dtype=np.intp),
+            "branch_lengths": np.asarray(branch_lengths, dtype=float),
+            "tail_lengths": np.asarray(tail_lengths, dtype=float),
+            "bm_weights": np.asarray(bm_weights, dtype=float),
+            "tip_heights": tip_heights,
+            "root_col": regime_idx.get(root_regime),
+            "shape": (n, len(regimes)),
+        }
+
+    def _build_weight_matrix_single_alpha_from_cache(
+        self, cache: dict[str, np.ndarray], alpha: float,
+    ) -> np.ndarray:
+        W = np.zeros(cache["shape"])
+        if alpha < 1e-10:
+            weights = cache["bm_weights"]
+        else:
+            weights = (
+                1.0 - np.exp(-alpha * cache["branch_lengths"])
+            ) * np.exp(-alpha * cache["tail_lengths"])
+
+        np.add.at(W, (cache["rows"], cache["cols"]), weights)
+
+        root_col = cache["root_col"]
+        if root_col is not None and alpha >= 1e-10:
+            W[:, root_col] += np.exp(-alpha * cache["tip_heights"])
+
+        return W
+
     def _build_weight_matrix_multi_alpha(
-        self, ordered_names: List[str], lineage_info: Dict,
-        regimes: List[str], alphas_dict: Dict[str, float],
+        self, ordered_names: list[str], lineage_info: dict,
+        regimes: list[str], alphas_dict: dict[str, float],
         root_regime: str,
     ) -> np.ndarray:
         """Build W matrix for OUMA/OUMVA: per-regime alpha values."""
@@ -565,7 +771,7 @@ class OUwie(Tree):
     # ── OU VCV construction ──────────────────────────────────────────
 
     def _build_ou_vcv_single_alpha(
-        self, ordered_names: List[str], lineage_info: Dict,
+        self, ordered_names: list[str], lineage_info: dict,
         alpha: float, sigma2: float,
     ) -> np.ndarray:
         """Build OU VCV matrix (conditional on root value).
@@ -575,49 +781,64 @@ class OUwie(Tree):
         where d_i = T_i - s_ij (unique path for tip i), s_ij = shared path.
         For a single global alpha and sigma2. Uses Martins & Hansen (1997).
         """
+        cache = self._prepare_single_alpha_ou_cache(ordered_names, lineage_info)
+        return self._build_ou_vcv_single_alpha_from_cache(cache, alpha, sigma2)
+
+    def _prepare_single_alpha_ou_cache(
+        self, ordered_names: list[str], lineage_info: dict,
+    ) -> dict[str, np.ndarray]:
+        """Cache shared path lengths used by single-alpha OU VCV builders."""
         n = len(ordered_names)
-        V = np.zeros((n, n))
+        shared_paths = np.zeros((n, n))
+        paths = [lineage_info[name] for name in ordered_names]
+        tip_heights = np.array(
+            [sum(bl for _, bl, _, _, _ in path) for path in paths],
+            dtype=float,
+        )
 
-        tip_heights = {}
-        for name in ordered_names:
-            tip_heights[name] = sum(bl for _, bl, _, _, _ in lineage_info[name])
+        branch_to_indices = {}
+        branch_lengths = {}
+        for idx, path in enumerate(paths):
+            for clade_id, bl, _regime, _d_start, _d_end in path:
+                branch_to_indices.setdefault(clade_id, []).append(idx)
+                branch_lengths[clade_id] = bl
 
-        for i in range(n):
-            for j in range(i, n):
-                T_i = tip_heights[ordered_names[i]]
-                T_j = tip_heights[ordered_names[j]]
+        for clade_id, indices in branch_to_indices.items():
+            branch_length = branch_lengths[clade_id]
+            if len(indices) == 1:
+                shared_paths[indices[0], indices[0]] += branch_length
+                continue
+            idx = np.asarray(indices, dtype=np.intp)
+            shared_paths[np.ix_(idx, idx)] += branch_length
 
-                if i == j:
-                    s_ij = T_i
-                else:
-                    path_i = lineage_info[ordered_names[i]]
-                    path_j = lineage_info[ordered_names[j]]
-                    s_ij = 0.0
-                    min_len = min(len(path_i), len(path_j))
-                    for s in range(min_len):
-                        if path_i[s][0] == path_j[s][0]:
-                            s_ij += path_i[s][1]
-                        else:
-                            break
+        unique_paths = (
+            tip_heights[:, None] + tip_heights[None, :] - 2.0 * shared_paths
+        )
+        return {
+            "tip_heights": tip_heights,
+            "shared_paths": shared_paths,
+            "unique_paths": unique_paths,
+        }
 
-                if alpha < 1e-10:
-                    val = sigma2 * s_ij
-                else:
-                    d_i = T_i - s_ij
-                    d_j = T_j - s_ij
-                    val = (sigma2 / (2.0 * alpha)) * np.exp(
-                        -alpha * (d_i + d_j)
-                    ) * (1.0 - np.exp(-2.0 * alpha * s_ij))
+    def _build_ou_vcv_single_alpha_from_cache(
+        self, cache: dict[str, np.ndarray], alpha: float, sigma2: float,
+    ) -> np.ndarray:
+        shared_paths = cache["shared_paths"]
+        if alpha < 1e-10:
+            return sigma2 * shared_paths
 
-                V[i, j] = val
-                V[j, i] = val
-
-        return V
+        return (
+            sigma2 / (2.0 * alpha)
+        ) * np.exp(
+            -alpha * cache["unique_paths"]
+        ) * (
+            1.0 - np.exp(-2.0 * alpha * shared_paths)
+        )
 
     def _build_ou_H_matrices(
-        self, ordered_names: List[str], lineage_info: Dict,
-        regimes: List[str], alpha: float,
-    ) -> Dict[str, np.ndarray]:
+        self, ordered_names: list[str], lineage_info: dict,
+        regimes: list[str], alpha: float,
+    ) -> dict[str, np.ndarray]:
         """Build per-regime H_r(alpha) matrices for OUMV.
 
         V = sum_r sigma^2_r * H_r(alpha)
@@ -627,59 +848,47 @@ class OUwie(Tree):
         """
         n = len(ordered_names)
         H = {r: np.zeros((n, n)) for r in regimes}
+        tip_heights = np.array(
+            [
+                sum(bl for _, bl, _, _, _ in lineage_info[name])
+                for name in ordered_names
+            ],
+            dtype=float,
+        )
+        branch_to_indices = {}
+        branch_info = {}
+        for idx, name in enumerate(ordered_names):
+            for clade_id, bl, regime, _d_start, d_end in lineage_info[name]:
+                branch_to_indices.setdefault(clade_id, []).append(idx)
+                branch_info[clade_id] = (bl, regime, d_end)
 
-        tip_heights = {}
-        for name in ordered_names:
-            tip_heights[name] = sum(bl for _, bl, _, _, _ in lineage_info[name])
-
-        for i in range(n):
-            path_i = lineage_info[ordered_names[i]]
-            T_i = tip_heights[ordered_names[i]]
-
-            # Diagonal: contributions from each branch along this lineage
-            for _, bl, regime, d_start, d_end in path_i:
-                if regime not in H:
-                    continue
+        for clade_id, indices in branch_to_indices.items():
+            bl, regime, d_end = branch_info[clade_id]
+            if regime not in H:
+                continue
+            if len(indices) == 1:
+                tip_idx = indices[0]
                 if alpha < 1e-10:
-                    H[regime][i, i] += bl
+                    H[regime][tip_idx, tip_idx] += bl
                 else:
-                    # OU contribution of this branch segment to variance
-                    # = exp(-2*alpha*(T_i - d_end)) * (1 - exp(-2*alpha*bl)) / (2*alpha)
-                    contrib = np.exp(-2.0 * alpha * (T_i - d_end)) * (
-                        1.0 - np.exp(-2.0 * alpha * bl)
-                    ) / (2.0 * alpha)
-                    H[regime][i, i] += contrib
-
-            for j in range(i + 1, n):
-                path_j = lineage_info[ordered_names[j]]
-                T_j = tip_heights[ordered_names[j]]
-
-                # Shared branches
-                min_len = min(len(path_i), len(path_j))
-                for s in range(min_len):
-                    if path_i[s][0] == path_j[s][0]:
-                        _, bl, regime, d_start, d_end = path_i[s]
-                        if regime not in H:
-                            continue
-                        if alpha < 1e-10:
-                            H[regime][i, j] += bl
-                            H[regime][j, i] += bl
-                        else:
-                            # OU covariance contribution from shared branch in regime r
-                            contrib = np.exp(-alpha * (T_i + T_j - 2.0 * d_end)) * (
-                                1.0 - np.exp(-2.0 * alpha * bl)
-                            ) / (2.0 * alpha)
-                            H[regime][i, j] += contrib
-                            H[regime][j, i] += contrib
-                    else:
-                        break
+                    decay = np.exp(-alpha * (tip_heights[tip_idx] - d_end))
+                    coeff = (1.0 - np.exp(-2.0 * alpha * bl)) / (2.0 * alpha)
+                    H[regime][tip_idx, tip_idx] += coeff * decay * decay
+                continue
+            idx = np.asarray(indices, dtype=np.intp)
+            if alpha < 1e-10:
+                H[regime][np.ix_(idx, idx)] += bl
+            else:
+                decay = np.exp(-alpha * (tip_heights[idx] - d_end))
+                coeff = (1.0 - np.exp(-2.0 * alpha * bl)) / (2.0 * alpha)
+                H[regime][np.ix_(idx, idx)] += coeff * np.outer(decay, decay)
 
         return H
 
     def _build_ou_vcv_multi_alpha(
-        self, ordered_names: List[str], lineage_info: Dict,
-        regimes: List[str], alphas_dict: Dict[str, float],
-        sigmas_dict: Dict[str, float],
+        self, ordered_names: list[str], lineage_info: dict,
+        regimes: list[str], alphas_dict: dict[str, float],
+        sigmas_dict: dict[str, float],
     ) -> np.ndarray:
         """Build OU VCV for OUMA/OUMVA with per-regime alpha and sigma^2.
 
@@ -687,66 +896,46 @@ class OUwie(Tree):
         """
         n = len(ordered_names)
         V = np.zeros((n, n))
+        branch_to_indices = {}
+        branch_info = {}
+        branch_decays = {}
 
-        for i in range(n):
-            path_i = lineage_info[ordered_names[i]]
-
-            # Precompute cumulative decay factors from each branch end to tip i
-            n_i = len(path_i)
-            decay_i = np.ones(n_i)  # decay from end of branch b to tip
-            for b in range(n_i - 2, -1, -1):
-                _, bl_next, r_next, _, _ = path_i[b + 1]
+        for idx, name in enumerate(ordered_names):
+            path = lineage_info[name]
+            decay_to_tip = np.ones(len(path))
+            for b in range(len(path) - 2, -1, -1):
+                _, bl_next, r_next, _, _ = path[b + 1]
                 alpha_next = alphas_dict.get(r_next, 0.01)
-                decay_i[b] = decay_i[b + 1] * np.exp(-alpha_next * bl_next)
+                decay_to_tip[b] = decay_to_tip[b + 1] * np.exp(
+                    -alpha_next * bl_next
+                )
 
-            # Diagonal: variance for tip i
-            for b_idx, (_, bl, regime, d_start, d_end) in enumerate(path_i):
-                alpha_r = alphas_dict.get(regime, 0.01)
-                sigma2_r = sigmas_dict.get(regime, 0.01)
-                d_b = decay_i[b_idx]  # decay from end of branch b to tip
+            for branch_idx, (
+                clade_id, bl, regime, _d_start, _d_end,
+            ) in enumerate(path):
+                branch_to_indices.setdefault(clade_id, []).append(idx)
+                branch_info[clade_id] = (bl, regime)
+                branch_decays.setdefault(clade_id, []).append(
+                    decay_to_tip[branch_idx]
+                )
 
-                if alpha_r < 1e-10:
-                    contrib = sigma2_r * bl * d_b * d_b
-                else:
-                    contrib = sigma2_r / (2.0 * alpha_r) * (
-                        1.0 - np.exp(-2.0 * alpha_r * bl)
-                    ) * d_b * d_b
-                V[i, i] += contrib
-
-            for j in range(i + 1, n):
-                path_j = lineage_info[ordered_names[j]]
-
-                # Precompute decay factors for tip j
-                n_j = len(path_j)
-                decay_j = np.ones(n_j)
-                for b in range(n_j - 2, -1, -1):
-                    _, bl_next, r_next, _, _ = path_j[b + 1]
-                    alpha_next = alphas_dict.get(r_next, 0.01)
-                    decay_j[b] = decay_j[b + 1] * np.exp(-alpha_next * bl_next)
-
-                # Covariance: only shared branches contribute
-                min_len = min(n_i, n_j)
-                cov = 0.0
-                for s in range(min_len):
-                    if path_i[s][0] == path_j[s][0]:
-                        _, bl, regime, d_start, d_end = path_i[s]
-                        alpha_r = alphas_dict.get(regime, 0.01)
-                        sigma2_r = sigmas_dict.get(regime, 0.01)
-                        d_i_b = decay_i[s]
-                        d_j_b = decay_j[s]
-
-                        if alpha_r < 1e-10:
-                            contrib = sigma2_r * bl * d_i_b * d_j_b
-                        else:
-                            contrib = sigma2_r / (2.0 * alpha_r) * (
-                                1.0 - np.exp(-2.0 * alpha_r * bl)
-                            ) * d_i_b * d_j_b
-                        cov += contrib
-                    else:
-                        break
-
-                V[i, j] = cov
-                V[j, i] = cov
+        for clade_id, indices in branch_to_indices.items():
+            bl, regime = branch_info[clade_id]
+            alpha_r = alphas_dict.get(regime, 0.01)
+            sigma2_r = sigmas_dict.get(regime, 0.01)
+            if alpha_r < 1e-10:
+                coeff = sigma2_r * bl
+            else:
+                coeff = sigma2_r / (2.0 * alpha_r) * (
+                    1.0 - np.exp(-2.0 * alpha_r * bl)
+                )
+            if len(indices) == 1:
+                decay = branch_decays[clade_id][0]
+                V[indices[0], indices[0]] += coeff * decay * decay
+                continue
+            idx = np.asarray(indices, dtype=np.intp)
+            decay = np.asarray(branch_decays[clade_id], dtype=float)
+            V[np.ix_(idx, idx)] += coeff * np.outer(decay, decay)
 
         return V
 
@@ -785,8 +974,46 @@ class OUwie(Tree):
 
     def _concentrated_ll_bm(
         self, x: np.ndarray, C: np.ndarray
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Concentrated log-likelihood for BM (sigma^2 profiled out)."""
+        try:
+            return self._concentrated_ll_bm_cholesky(x, C)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._concentrated_ll_bm_inverse(x, C)
+
+    def _concentrated_ll_bm_cholesky(
+        self, x: np.ndarray, C: np.ndarray
+    ) -> tuple[float, float, float]:
+        """Cholesky-backed concentrated BM likelihood."""
+        n = len(x)
+        ones = np.ones(n)
+        factor = cho_factor(C, lower=True, check_finite=False)
+        solve_rhs = np.empty((n, 2), dtype=np.result_type(x, C))
+        solve_rhs[:, 0] = 1.0
+        solve_rhs[:, 1] = x
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_ones = solved[:, 0]
+        C_inv_x = solved[:, 1]
+
+        denom = float(ones @ C_inv_ones)
+        if abs(denom) < 1e-300:
+            return float("-inf"), 0.0, 0.0
+        z0 = float(ones @ C_inv_x) / denom
+
+        e = x - z0
+        C_inv_e = C_inv_x - C_inv_ones * z0
+        sig2 = float(e @ C_inv_e) / n
+        if sig2 <= 0:
+            return float("-inf"), 0.0, z0
+
+        logdet_C = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet_C + n)
+        return float(ll), float(sig2), float(z0)
+
+    def _concentrated_ll_bm_inverse(
+        self, x: np.ndarray, C: np.ndarray
+    ) -> tuple[float, float, float]:
+        """Inverse-based BM likelihood retained as a fallback."""
         n = len(x)
         ones = np.ones(n)
 
@@ -813,14 +1040,184 @@ class OUwie(Tree):
         ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet_C + n)
         return float(ll), float(sig2), float(z0)
 
+    def _bm_log_likelihood_from_vcv(
+        self, x: np.ndarray, V: np.ndarray, ones: np.ndarray
+    ) -> tuple[float, float]:
+        try:
+            return self._bm_log_likelihood_from_vcv_cholesky(x, V, ones)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._bm_log_likelihood_from_vcv_inverse(x, V, ones)
+
+    def _bm_log_likelihood_from_vcv_cholesky(
+        self, x: np.ndarray, V: np.ndarray, ones: np.ndarray
+    ) -> tuple[float, float]:
+        n = len(x)
+        factor = cho_factor(V, lower=True, check_finite=False)
+        solve_rhs = np.empty((n, 2), dtype=np.result_type(x, V))
+        solve_rhs[:, 0] = ones
+        solve_rhs[:, 1] = x
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        V_inv_ones = solved[:, 0]
+        V_inv_x = solved[:, 1]
+        denom = float(ones @ V_inv_ones)
+        if denom == 0:
+            return 0.0, float("-inf")
+
+        z0 = float(ones @ V_inv_x) / denom
+        e = x - z0
+        V_inv_e = V_inv_x - V_inv_ones * z0
+        quad = float(e @ V_inv_e)
+        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
+        return z0, float(ll)
+
+    def _bm_log_likelihood_from_vcv_inverse(
+        self, x: np.ndarray, V: np.ndarray, ones: np.ndarray
+    ) -> tuple[float, float]:
+        n = len(x)
+        try:
+            sign, logdet = np.linalg.slogdet(V)
+            if sign <= 0:
+                return 0.0, float("-inf")
+            V_inv = np.linalg.inv(V)
+        except np.linalg.LinAlgError:
+            return 0.0, float("-inf")
+
+        denom = float(ones @ V_inv @ ones)
+        if denom == 0:
+            return 0.0, float("-inf")
+        z0 = float(ones @ V_inv @ x) / denom
+        e = x - z0
+        quad = float(e @ V_inv @ e)
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
+        return z0, float(ll)
+
+    def _ou_profile_likelihood(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float, float]:
+        try:
+            return self._ou_profile_likelihood_cholesky(x, W, V)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._ou_profile_likelihood_inverse(x, W, V)
+
+    def _ou_profile_likelihood_cholesky(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float, float]:
+        n = len(x)
+        factor = cho_factor(V, lower=True, check_finite=False)
+        n_predictors = W.shape[1]
+        solve_rhs = np.empty(
+            (n, n_predictors + 1),
+            dtype=np.result_type(W, x, V),
+        )
+        solve_rhs[:, :n_predictors] = W
+        solve_rhs[:, n_predictors] = x
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        V_inv_W = solved[:, :n_predictors]
+        V_inv_x = solved[:, n_predictors]
+
+        info = W.T @ V_inv_W
+        rhs = W.T @ V_inv_x
+        try:
+            theta = np.linalg.solve(info, rhs)
+        except np.linalg.LinAlgError:
+            theta = np.linalg.lstsq(info, rhs, rcond=None)[0]
+
+        e = x - W @ theta
+        V_inv_e = V_inv_x - V_inv_W @ theta
+        sig2 = float(e @ V_inv_e) / n
+        if sig2 <= 0:
+            return theta, sig2, float("-inf")
+
+        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
+        return theta, float(sig2), float(ll)
+
+    def _ou_profile_likelihood_inverse(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float, float]:
+        n = len(x)
+        try:
+            sign, logdet = np.linalg.slogdet(V)
+            if sign <= 0:
+                return np.zeros(W.shape[1]), 0.0, float("-inf")
+            V_inv = np.linalg.inv(V)
+        except np.linalg.LinAlgError:
+            return np.zeros(W.shape[1]), 0.0, float("-inf")
+
+        theta = self._gls_theta_hat(x, W, V_inv)
+        e = x - W @ theta
+        sig2 = float(e @ V_inv @ e) / n
+        if sig2 <= 0:
+            return theta, sig2, float("-inf")
+
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
+        return theta, float(sig2), float(ll)
+
+    def _ou_gls_log_likelihood(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float]:
+        try:
+            return self._ou_gls_log_likelihood_cholesky(x, W, V)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._ou_gls_log_likelihood_inverse(x, W, V)
+
+    def _ou_gls_log_likelihood_cholesky(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float]:
+        n = len(x)
+        factor = cho_factor(V, lower=True, check_finite=False)
+        n_predictors = W.shape[1]
+        solve_rhs = np.empty(
+            (n, n_predictors + 1),
+            dtype=np.result_type(W, x, V),
+        )
+        solve_rhs[:, :n_predictors] = W
+        solve_rhs[:, n_predictors] = x
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        V_inv_W = solved[:, :n_predictors]
+        V_inv_x = solved[:, n_predictors]
+
+        info = W.T @ V_inv_W
+        rhs = W.T @ V_inv_x
+        try:
+            theta = np.linalg.solve(info, rhs)
+        except np.linalg.LinAlgError:
+            theta = np.linalg.lstsq(info, rhs, rcond=None)[0]
+
+        e = x - W @ theta
+        V_inv_e = V_inv_x - V_inv_W @ theta
+        quad = float(e @ V_inv_e)
+        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
+        return theta, float(ll)
+
+    def _ou_gls_log_likelihood_inverse(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float]:
+        n = len(x)
+        try:
+            sign, logdet = np.linalg.slogdet(V)
+            if sign <= 0:
+                return np.zeros(W.shape[1]), float("-inf")
+            V_inv = np.linalg.inv(V)
+        except np.linalg.LinAlgError:
+            return np.zeros(W.shape[1]), float("-inf")
+
+        theta = self._gls_theta_hat(x, W, V_inv)
+        e = x - W @ theta
+        quad = float(e @ V_inv @ e)
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
+        return theta, float(ll)
+
     # ── Model fitting ────────────────────────────────────────────────
 
     def _fit_model(
         self, name: str, x: np.ndarray, vcv_total: np.ndarray,
-        per_regime_vcv: Dict, ordered_names: List[str],
-        regimes: List[str], lineage_info: Dict,
+        per_regime_vcv: dict, ordered_names: list[str],
+        regimes: list[str], lineage_info: dict,
         root_regime: str, tree_height: float, n_regimes: int,
-    ) -> Dict:
+    ) -> dict:
         if name == "BM1":
             return self._fit_bm1(x, vcv_total)
         elif name == "BMS":
@@ -850,7 +1247,7 @@ class OUwie(Tree):
         else:
             raise PhykitUserError([f"Unknown model: {name}"], code=2)
 
-    def _fit_bm1(self, x: np.ndarray, C: np.ndarray) -> Dict:
+    def _fit_bm1(self, x: np.ndarray, C: np.ndarray) -> dict:
         """BM1: single-rate Brownian motion. k=2 (z0, sigma2)."""
         ll, sig2, z0 = self._concentrated_ll_bm(x, C)
         return dict(
@@ -859,13 +1256,14 @@ class OUwie(Tree):
         )
 
     def _fit_bms(
-        self, x: np.ndarray, per_regime_vcv: Dict[str, np.ndarray],
-        regimes: List[str],
-    ) -> Dict:
+        self, x: np.ndarray, per_regime_vcv: dict[str, np.ndarray],
+        regimes: list[str],
+    ) -> dict:
         """BMS: multi-rate BM. k = R+1 (z0, sigma2_1..R)."""
         n = len(x)
         k = len(regimes)
         regime_matrices = [per_regime_vcv[r] for r in regimes]
+        ones = np.ones(n)
 
         def neg_log_likelihood(log_sigma2s):
             sigma2s = np.exp(log_sigma2s)
@@ -873,23 +1271,9 @@ class OUwie(Tree):
             for i_r in range(k):
                 V += sigma2s[i_r] * regime_matrices[i_r]
 
-            try:
-                sign, logdet = np.linalg.slogdet(V)
-                if sign <= 0:
-                    return 1e20
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, ll = self._bm_log_likelihood_from_vcv(x, V, ones)
+            if not np.isfinite(ll):
                 return 1e20
-
-            ones = np.ones(n)
-            denom = float(ones @ V_inv @ ones)
-            if denom == 0:
-                return 1e20
-            z0 = float(ones @ V_inv @ x) / denom
-            e = x - z0
-            quad = float(e @ V_inv @ e)
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
             return -ll
 
         starting_scales = [0.001, 0.01, 0.1, 1.0, 10.0]
@@ -926,21 +1310,13 @@ class OUwie(Tree):
         for i_r in range(k):
             V += sigma2s[i_r] * regime_matrices[i_r]
 
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        z0, ll = self._bm_log_likelihood_from_vcv(x, V, ones)
+        if not np.isfinite(ll):
             return dict(
                 model="BMS", log_likelihood=float("-inf"),
                 k_params=k + 1,
                 params=dict(z0=0.0, sigma2={r: float(sigma2s[i]) for i, r in enumerate(regimes)}),
             )
-
-        ones = np.ones(n)
-        z0 = float(ones @ V_inv @ x) / float(ones @ V_inv @ ones)
-        e = x - z0
-        sign, logdet = np.linalg.slogdet(V)
-        quad = float(e @ V_inv @ e)
-        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
 
         sigma2_dict = {r: float(sigma2s[i]) for i, r in enumerate(regimes)}
         return dict(
@@ -949,113 +1325,82 @@ class OUwie(Tree):
         )
 
     def _fit_ou1(
-        self, x: np.ndarray, ordered_names: List[str],
-        lineage_info: Dict, tree_height: float,
-    ) -> Dict:
+        self, x: np.ndarray, ordered_names: list[str],
+        lineage_info: dict, tree_height: float,
+    ) -> dict:
         """OU1: single-regime OU. k=3 (theta, alpha, sigma2)."""
         n = len(x)
         upper = 100.0 / tree_height if tree_height > 0 else 100.0
+        ou_cache = self._prepare_single_alpha_ou_cache(
+            ordered_names, lineage_info
+        )
+        ones = np.ones(n)[:, None]
 
         def neg_ll(alpha):
-            V = self._build_ou_vcv_single_alpha(
-                ordered_names, lineage_info, alpha, 1.0
+            V = self._build_ou_vcv_single_alpha_from_cache(
+                ou_cache, alpha, 1.0
             )
-            # Profile sigma2 and theta (=z0 for single regime)
-            try:
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, _, ll = self._ou_profile_likelihood(x, ones, V)
+            if not np.isfinite(ll):
                 return 1e20
-
-            ones = np.ones(n)
-            denom = float(ones @ V_inv @ ones)
-            if abs(denom) < 1e-300:
-                return 1e20
-            theta = float(ones @ V_inv @ x) / denom
-            e = x - theta
-            sig2 = float(e @ V_inv @ e) / n
-            if sig2 <= 0:
-                return 1e20
-
-            sign, logdet = np.linalg.slogdet(V)
-            if sign <= 0:
-                return 1e20
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
             return -ll
 
         alpha_hat, _ = self._optimize_parameter(neg_ll, (1e-8, upper))
 
-        V = self._build_ou_vcv_single_alpha(
-            ordered_names, lineage_info, alpha_hat, 1.0
+        V = self._build_ou_vcv_single_alpha_from_cache(
+            ou_cache, alpha_hat, 1.0
         )
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        theta, sig2, ll = self._ou_profile_likelihood(x, ones, V)
+        if not np.isfinite(ll):
             return dict(
                 model="OU1", log_likelihood=float("-inf"), k_params=3,
                 params=dict(theta=0.0, alpha=float(alpha_hat), sigma2=0.0),
             )
 
-        ones = np.ones(n)
-        theta = float(ones @ V_inv @ x) / float(ones @ V_inv @ ones)
-        e = x - theta
-        sig2 = float(e @ V_inv @ e) / n
-
-        sign, logdet = np.linalg.slogdet(V)
-        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
-
         return dict(
             model="OU1", log_likelihood=float(ll), k_params=3,
-            params=dict(theta=float(theta), alpha=float(alpha_hat), sigma2=float(sig2)),
+            params=dict(theta=float(theta[0]), alpha=float(alpha_hat), sigma2=float(sig2)),
         )
 
     def _fit_oum(
-        self, x: np.ndarray, ordered_names: List[str],
-        lineage_info: Dict, regimes: List[str],
+        self, x: np.ndarray, ordered_names: list[str],
+        lineage_info: dict, regimes: list[str],
         root_regime: str, tree_height: float,
-    ) -> Dict:
+    ) -> dict:
         """OUM: multi-optimum OU. k = R+2 (theta_1..R, alpha, sigma2)."""
-        n = len(x)
         R = len(regimes)
         upper = 100.0 / tree_height if tree_height > 0 else 100.0
+        ou_cache = self._prepare_single_alpha_ou_cache(
+            ordered_names, lineage_info
+        )
+        weight_cache = self._prepare_single_alpha_weight_cache(
+            ordered_names, lineage_info, regimes, root_regime
+        )
 
         def neg_ll(alpha):
-            V = self._build_ou_vcv_single_alpha(
-                ordered_names, lineage_info, alpha, 1.0
+            V = self._build_ou_vcv_single_alpha_from_cache(
+                ou_cache, alpha, 1.0
             )
-            W = self._build_weight_matrix_single_alpha(
-                ordered_names, lineage_info, regimes, alpha, root_regime,
+            W = self._build_weight_matrix_single_alpha_from_cache(
+                weight_cache, alpha
             )
 
-            try:
-                sign, logdet = np.linalg.slogdet(V)
-                if sign <= 0:
-                    return 1e20
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, _, ll = self._ou_profile_likelihood(x, W, V)
+            if not np.isfinite(ll):
                 return 1e20
-
-            theta = self._gls_theta_hat(x, W, V_inv)
-            e = x - W @ theta
-            sig2 = float(e @ V_inv @ e) / n
-            if sig2 <= 0:
-                return 1e20
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
             return -ll
 
         alpha_hat, _ = self._optimize_parameter(neg_ll, (1e-8, upper))
 
-        V = self._build_ou_vcv_single_alpha(
-            ordered_names, lineage_info, alpha_hat, 1.0
+        V = self._build_ou_vcv_single_alpha_from_cache(
+            ou_cache, alpha_hat, 1.0
         )
-        W = self._build_weight_matrix_single_alpha(
-            ordered_names, lineage_info, regimes, alpha_hat, root_regime,
+        W = self._build_weight_matrix_single_alpha_from_cache(
+            weight_cache, alpha_hat
         )
 
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        theta, sig2, ll = self._ou_profile_likelihood(x, W, V)
+        if not np.isfinite(ll):
             return dict(
                 model="OUM", log_likelihood=float("-inf"), k_params=R + 2,
                 params=dict(
@@ -1063,13 +1408,6 @@ class OUwie(Tree):
                     alpha=float(alpha_hat), sigma2=0.0,
                 ),
             )
-
-        theta = self._gls_theta_hat(x, W, V_inv)
-        e = x - W @ theta
-        sig2 = float(e @ V_inv @ e) / n
-
-        sign, logdet = np.linalg.slogdet(V)
-        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
 
         theta_dict = {regimes[j]: float(theta[j]) for j in range(R)}
         return dict(
@@ -1081,13 +1419,16 @@ class OUwie(Tree):
         )
 
     def _fit_oumv(
-        self, x: np.ndarray, ordered_names: List[str],
-        lineage_info: Dict, regimes: List[str],
+        self, x: np.ndarray, ordered_names: list[str],
+        lineage_info: dict, regimes: list[str],
         root_regime: str, tree_height: float,
-    ) -> Dict:
+    ) -> dict:
         """OUMV: multi-optimum + per-regime sigma^2. k = 2R+1."""
         n = len(x)
         R = len(regimes)
+        weight_cache = self._prepare_single_alpha_weight_cache(
+            ordered_names, lineage_info, regimes, root_regime
+        )
 
         def neg_ll(params):
             log_alpha = params[0]
@@ -1102,23 +1443,13 @@ class OUwie(Tree):
             for r_idx, r in enumerate(regimes):
                 V += sigma2s[r_idx] * H[r]
 
-            W = self._build_weight_matrix_single_alpha(
-                ordered_names, lineage_info, regimes, alpha, root_regime,
+            W = self._build_weight_matrix_single_alpha_from_cache(
+                weight_cache, alpha
             )
 
-            try:
-                sign, logdet = np.linalg.slogdet(V)
-                if sign <= 0:
-                    return 1e20
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, ll = self._ou_gls_log_likelihood(x, W, V)
+            if not np.isfinite(ll):
                 return 1e20
-
-            theta = self._gls_theta_hat(x, W, V_inv)
-            e = x - W @ theta
-            quad = float(e @ V_inv @ e)
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
             return -ll
 
         starting_scales = [0.001, 0.01, 0.1, 1.0, 10.0]
@@ -1160,13 +1491,12 @@ class OUwie(Tree):
         for r_idx, r in enumerate(regimes):
             V += sigma2s[r_idx] * H[r]
 
-        W = self._build_weight_matrix_single_alpha(
-            ordered_names, lineage_info, regimes, alpha, root_regime,
+        W = self._build_weight_matrix_single_alpha_from_cache(
+            weight_cache, alpha
         )
 
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        theta, ll = self._ou_gls_log_likelihood(x, W, V)
+        if not np.isfinite(ll):
             sigma2_dict = {r: float(sigma2s[i]) for i, r in enumerate(regimes)}
             return dict(
                 model="OUMV", log_likelihood=float("-inf"), k_params=2 * R + 1,
@@ -1175,12 +1505,6 @@ class OUwie(Tree):
                     alpha=float(alpha), sigma2=sigma2_dict,
                 ),
             )
-
-        theta = self._gls_theta_hat(x, W, V_inv)
-        e = x - W @ theta
-        sign, logdet = np.linalg.slogdet(V)
-        quad = float(e @ V_inv @ e)
-        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
 
         theta_dict = {regimes[j]: float(theta[j]) for j in range(R)}
         sigma2_dict = {r: float(sigma2s[i]) for i, r in enumerate(regimes)}
@@ -1193,10 +1517,10 @@ class OUwie(Tree):
         )
 
     def _fit_ouma(
-        self, x: np.ndarray, ordered_names: List[str],
-        lineage_info: Dict, regimes: List[str],
+        self, x: np.ndarray, ordered_names: list[str],
+        lineage_info: dict, regimes: list[str],
         root_regime: str, tree_height: float,
-    ) -> Dict:
+    ) -> dict:
         """OUMA: multi-optimum + per-regime alpha. k = 2R+1."""
         n = len(x)
         R = len(regimes)
@@ -1214,21 +1538,9 @@ class OUwie(Tree):
                 ordered_names, lineage_info, regimes, alphas_dict, root_regime,
             )
 
-            try:
-                sign, logdet = np.linalg.slogdet(V)
-                if sign <= 0:
-                    return 1e20
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, _, ll = self._ou_profile_likelihood(x, W, V)
+            if not np.isfinite(ll):
                 return 1e20
-
-            theta = self._gls_theta_hat(x, W, V_inv)
-            e = x - W @ theta
-            sig2 = float(e @ V_inv @ e) / n
-            if sig2 <= 0:
-                return 1e20
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
             return -ll
 
         starting_scales = [0.001, 0.01, 0.1, 1.0, 10.0]
@@ -1270,9 +1582,8 @@ class OUwie(Tree):
             ordered_names, lineage_info, regimes, alphas_dict, root_regime,
         )
 
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        theta, sig2, ll = self._ou_profile_likelihood(x, W, V)
+        if not np.isfinite(ll):
             alpha_dict = {r: float(alphas[i]) for i, r in enumerate(regimes)}
             return dict(
                 model="OUMA", log_likelihood=float("-inf"), k_params=2 * R + 1,
@@ -1281,13 +1592,6 @@ class OUwie(Tree):
                     alpha=alpha_dict, sigma2=0.0,
                 ),
             )
-
-        theta = self._gls_theta_hat(x, W, V_inv)
-        e = x - W @ theta
-        sig2 = float(e @ V_inv @ e) / n
-
-        sign, logdet = np.linalg.slogdet(V)
-        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
 
         theta_dict = {regimes[j]: float(theta[j]) for j in range(R)}
         alpha_dict = {r: float(alphas[i]) for i, r in enumerate(regimes)}
@@ -1300,10 +1604,10 @@ class OUwie(Tree):
         )
 
     def _fit_oumva(
-        self, x: np.ndarray, ordered_names: List[str],
-        lineage_info: Dict, regimes: List[str],
+        self, x: np.ndarray, ordered_names: list[str],
+        lineage_info: dict, regimes: list[str],
         root_regime: str, tree_height: float,
-    ) -> Dict:
+    ) -> dict:
         """OUMVA: all regime-specific. k = 3R."""
         n = len(x)
         R = len(regimes)
@@ -1324,19 +1628,9 @@ class OUwie(Tree):
                 ordered_names, lineage_info, regimes, alphas_dict, root_regime,
             )
 
-            try:
-                sign, logdet = np.linalg.slogdet(V)
-                if sign <= 0:
-                    return 1e20
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, ll = self._ou_gls_log_likelihood(x, W, V)
+            if not np.isfinite(ll):
                 return 1e20
-
-            theta = self._gls_theta_hat(x, W, V_inv)
-            e = x - W @ theta
-            quad = float(e @ V_inv @ e)
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
             return -ll
 
         starting_scales = [0.001, 0.01, 0.1, 1.0, 10.0]
@@ -1383,9 +1677,8 @@ class OUwie(Tree):
             ordered_names, lineage_info, regimes, alphas_dict, root_regime,
         )
 
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        theta, ll = self._ou_gls_log_likelihood(x, W, V)
+        if not np.isfinite(ll):
             alpha_dict = {r: float(alphas[i]) for i, r in enumerate(regimes)}
             sigma2_dict = {r: float(sigma2s[i]) for i, r in enumerate(regimes)}
             return dict(
@@ -1395,12 +1688,6 @@ class OUwie(Tree):
                     alpha=alpha_dict, sigma2=sigma2_dict,
                 ),
             )
-
-        theta = self._gls_theta_hat(x, W, V_inv)
-        e = x - W @ theta
-        sign, logdet = np.linalg.slogdet(V)
-        quad = float(e @ V_inv @ e)
-        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
 
         theta_dict = {regimes[j]: float(theta[j]) for j in range(R)}
         alpha_dict = {r: float(alphas[i]) for i, r in enumerate(regimes)}
@@ -1446,10 +1733,10 @@ class OUwie(Tree):
     # ── Model comparison ─────────────────────────────────────────────
 
     def _compute_model_comparison(
-        self, results: List[Dict], n: int,
+        self, results: list[dict], n: int,
         x: np.ndarray = None, vcv_total: np.ndarray = None,
-        regime_assignments: Dict = None, ordered_names: List[str] = None,
-    ) -> List[Dict]:
+        regime_assignments: dict = None, ordered_names: list[str] = None,
+    ) -> list[dict]:
         for r in results:
             k = r["k_params"]
             ll = r["log_likelihood"]
@@ -1512,8 +1799,7 @@ class OUwie(Tree):
                         for rname, sv in sig2.items()
                     )
                 else:
-                    sig2_vals = list(sig2.values())
-                    sig2_model = sum(sig2_vals) / len(sig2_vals) if sig2_vals else 0
+                    sig2_model = sum(sig2.values()) / len(sig2) if sig2 else 0
             elif sig2 is not None:
                 sig2_model = sig2
             else:
@@ -1529,21 +1815,23 @@ class OUwie(Tree):
     # ── Output ───────────────────────────────────────────────────────
 
     def _print_text_output(
-        self, results: List[Dict], n: int, regimes: List[str]
+        self, results: list[dict], n: int, regimes: list[str]
     ) -> None:
-        print("OUwie Model Comparison (Multi-Regime OU)")
-        print(f"\nNumber of tips: {n}")
-        print(f"Regimes: {len(regimes)} ({', '.join(regimes)})\n")
+        lines = [
+            "OUwie Model Comparison (Multi-Regime OU)",
+            f"\nNumber of tips: {n}",
+            f"Regimes: {len(regimes)} ({', '.join(regimes)})\n",
+        ]
 
         header = (
             f"{'Model':<8}{'k':<5}{'LL':<12}"
             f"{'AIC':<10}{'AICc':<10}{'dAICc':<9}{'AICcW':<9}"
             f"{'BIC':<10}{'dBIC':<9}{'R2':<7}"
         )
-        print(header)
+        lines.append(header)
 
         for r in results:
-            print(
+            lines.append(
                 f"{r['model']:<8}{r['k_params']:<5}{r['log_likelihood']:<12.3f}"
                 f"{r['aic']:<10.2f}{r['aicc']:<10.2f}"
                 f"{r['delta_aicc']:<9.2f}{r['aicc_weight']:<9.3f}"
@@ -1551,40 +1839,38 @@ class OUwie(Tree):
                 f"{r['r_squared']:<7.3f}"
             )
 
-        print(f"\nBest model (AICc): {results[0]['model']}")
+        lines.append(f"\nBest model (AICc): {results[0]['model']}")
         best_bic = min(results, key=lambda r: r["bic"])["model"]
-        print(f"Best model (BIC):  {best_bic}")
+        lines.append(f"Best model (BIC):  {best_bic}")
 
         # Print parameter details for best model
         best = results[0]
-        print(f"\nParameter estimates ({best['model']}):")
+        lines.append(f"\nParameter estimates ({best['model']}):")
         params = best["params"]
 
         if isinstance(params.get("theta"), dict):
-            print("  Theta (trait optima):")
-            for r_name, val in params["theta"].items():
-                print(f"    {r_name}: {val:.4f}")
+            lines.append("  Theta (trait optima):")
+            lines.extend(f"    {r_name}: {val:.4f}" for r_name, val in params["theta"].items())
         elif "theta" in params:
-            print(f"  Theta: {params['theta']:.4f}")
+            lines.append(f"  Theta: {params['theta']:.4f}")
         if "z0" in params:
-            print(f"  z0: {params['z0']:.4f}")
+            lines.append(f"  z0: {params['z0']:.4f}")
 
         if isinstance(params.get("alpha"), dict):
-            print("  Alpha (selection strength):")
-            for r_name, val in params["alpha"].items():
-                print(f"    {r_name}: {val:.4f}")
+            lines.append("  Alpha (selection strength):")
+            lines.extend(f"    {r_name}: {val:.4f}" for r_name, val in params["alpha"].items())
         elif "alpha" in params:
-            print(f"  Alpha: {params['alpha']:.4f}")
+            lines.append(f"  Alpha: {params['alpha']:.4f}")
 
         if isinstance(params.get("sigma2"), dict):
-            print("  Sigma-squared (diffusion rate):")
-            for r_name, val in params["sigma2"].items():
-                print(f"    {r_name}: {val:.4f}")
+            lines.append("  Sigma-squared (diffusion rate):")
+            lines.extend(f"    {r_name}: {val:.4f}" for r_name, val in params["sigma2"].items())
         elif "sigma2" in params:
-            print(f"  Sigma-squared: {params['sigma2']:.4f}")
+            lines.append(f"  Sigma-squared: {params['sigma2']:.4f}")
+        print("\n".join(lines))
 
     def _print_json_output(
-        self, results: List[Dict], n: int, regimes: List[str]
+        self, results: list[dict], n: int, regimes: list[str]
     ) -> None:
         models = {}
         for r in results:

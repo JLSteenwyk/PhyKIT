@@ -1,10 +1,24 @@
-import statistics as stat
-from typing import Dict, List, Tuple
-
-from Bio.Phylo import Newick
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+_MEDIAN_NUMPY_THRESHOLD = 4096
 
 
 class SpuriousSequence(Tree):
@@ -14,41 +28,46 @@ class SpuriousSequence(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         name_and_branch_len, threshold, median = \
             self.identify_spurious_sequence(
                 tree, self.factor
             )
 
-        spurious_rows = []
-        counter = 0
-        for name, length in name_and_branch_len.items():
-            if length >= threshold:
-                spurious_rows.append(
-                    dict(
-                        taxon=name,
-                        branch_length=round(length, 4),
-                        threshold=round(threshold, 4),
-                        median=round(median, 4),
-                    )
-                )
-                if not self.json_output:
-                    try:
-                        print(
-                            f"{name}\t{round(length, 4)}\t{round(threshold, 4)}\t{round(median, 4)}"
-                        )
-                    except BrokenPipeError:
-                        pass
-                counter += 1
+        rounded_threshold = round(threshold, 4)
+        rounded_median = round(median, 4)
 
         if self.json_output:
+            spurious_rows = [
+                dict(
+                    taxon=name,
+                    branch_length=round(length, 4),
+                    threshold=rounded_threshold,
+                    median=rounded_median,
+                )
+                for name, length in name_and_branch_len.items()
+                if length >= threshold
+            ]
             print_json(dict(rows=spurious_rows, spurious_sequences=spurious_rows))
             return
 
-        if counter == 0:
-            print("None")
+        lines = []
+        for name, length in name_and_branch_len.items():
+            if length >= threshold:
+                lines.append(
+                    f"{name}\t{round(length, 4)}\t{rounded_threshold}\t{rounded_median}"
+                )
 
-    def process_args(self, args) -> Dict[str, str]:
+        if not lines:
+            print("None")
+            return
+
+        try:
+            print("\n".join(lines))
+        except BrokenPipeError:
+            pass
+
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             factor=args.factor or 20,
@@ -59,35 +78,83 @@ class SpuriousSequence(Tree):
         self,
         tree: Newick.Tree,
         factor: float,
-    ) -> Tuple[
-        Dict[str, float],
+    ) -> tuple[
+        dict[str, float],
         float,
-        float
+        float,
     ]:
         branch_lengths, name_and_branch_len = \
             self.get_branch_lengths_and_their_names(tree)
 
-        median = stat.median(branch_lengths)
+        median = self._median_branch_length(branch_lengths)
 
         threshold = median * factor
 
         return name_and_branch_len, threshold, median
 
+    @staticmethod
+    def _median_branch_length(branch_lengths: list[float]) -> float:
+        count = len(branch_lengths)
+        if count == 0:
+            raise ValueError("no median for empty data")
+
+        middle = count // 2
+        if count >= _MEDIAN_NUMPY_THRESHOLD:
+            values = np.asarray(branch_lengths, dtype=float)
+            if count % 2:
+                values.partition(middle)
+                return float(values[middle])
+            values.partition((middle - 1, middle))
+            return float((values[middle - 1] + values[middle]) / 2)
+
+        values = sorted(branch_lengths)
+        if count % 2:
+            return values[middle]
+        return (values[middle - 1] + values[middle]) / 2
+
     def get_branch_lengths_and_their_names(
         self,
         tree: Newick.Tree,
-    ) -> Tuple[
-        List[float],
-        Dict[str, float],
+    ) -> tuple[
+        list[float],
+        dict[str, float],
     ]:
         branch_lengths = []
         name_and_branch_len = {}
 
         # collect terminal branch lengths only for spurious sequence detection
         # (internal branches are not considered for spurious sequence detection)
-        for terminal in tree.get_terminals():
+        terminals = self._iter_terminal_clades(tree)
+        for terminal in terminals:
             if terminal.branch_length is not None:
                 branch_lengths.append(terminal.branch_length)
                 name_and_branch_len[terminal.name] = terminal.branch_length
 
         return branch_lengths, name_and_branch_len
+
+    @staticmethod
+    def _iter_terminal_clades(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return tree.get_terminals()
+
+        terminals = []
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        append_terminal = terminals.append
+        while stack:
+            clade = pop()
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 2:
+                append(children[1])
+                append(children[0])
+            elif child_count:
+                for idx in range(child_count - 1, -1, -1):
+                    append(children[idx])
+            else:
+                append_terminal(clade)
+        return terminals

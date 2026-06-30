@@ -1,11 +1,20 @@
+import builtins
+import importlib
 import os
 import json
+import subprocess
+import sys
 
 import pytest
 import numpy as np
 from argparse import Namespace
+from io import StringIO
 from pathlib import Path
 
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
+
+import phykit.services.tree.phylogenetic_ordination as phylogenetic_ordination_module
 from phykit.services.tree.phylogenetic_ordination import PhylogeneticOrdination
 from phykit.helpers.pgls_utils import max_lambda as compute_max_lambda
 from phykit.helpers.trait_parsing import parse_multi_trait_file
@@ -16,6 +25,60 @@ here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
+
+
+def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
+    module_name = "phykit.services.tree.phylogenetic_ordination"
+    previous = sys.modules.pop(module_name, None)
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if (
+            name == "scipy.linalg"
+            or name.startswith("scipy.linalg.")
+            or name == "scipy.optimize"
+            or name.startswith("scipy.optimize.")
+        ):
+            raise AssertionError(
+                "phylogenetic_ordination module import should not import SciPy linalg/optimize"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    try:
+        importlib.import_module(module_name)
+    finally:
+        imported = sys.modules.pop(module_name, None)
+        if previous is not None:
+            sys.modules[module_name] = previous
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            if previous is not None:
+                setattr(parent, child_name, previous)
+            elif getattr(parent, child_name, None) is imported:
+                delattr(parent, child_name)
+
+
+def test_module_import_does_not_import_numpy_scipy_or_pgls_helper():
+    code = """
+import sys
+import phykit.services.tree.phylogenetic_ordination as module
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert callable(module.parse_multi_trait_file)
+assert "pickle" not in sys.modules
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.trait_parsing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "scipy.linalg" not in sys.modules
+assert "scipy.optimize" not in sys.modules
+assert "phykit.helpers.pgls_utils" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.fixture
@@ -477,6 +540,45 @@ class TestPhylogeneticPCACorr:
                     f"computed={computed[pc]}, ref={ref[pc]}"
                 )
 
+    def test_run_pca_corr_mode_avoids_dense_diagonal_scaling(
+        self, corr_args, monkeypatch, capsys
+    ):
+        import phykit.services.tree.phylogenetic_ordination as po
+
+        svc = PhylogeneticOrdination(corr_args)
+        svc.json_output = True
+        rng = np.random.default_rng(20260623)
+        n = 12
+        p = 5
+        Z = rng.normal(size=(n, p))
+        C_inv_Z = Z.copy()
+
+        original_diag = po.np.diag
+
+        def diag_without_vector_to_matrix(a, *args, **kwargs):
+            arr = np.asarray(a)
+            if arr.ndim == 1:
+                raise AssertionError("corr-mode PCA should not allocate D_inv")
+            return original_diag(a, *args, **kwargs)
+
+        monkeypatch.setattr(po.np, "diag", diag_without_vector_to_matrix)
+
+        svc._run_pca(
+            Z,
+            C_inv_Z,
+            n,
+            p,
+            tree=None,
+            ordered_names=[f"taxon{i}" for i in range(n)],
+            trait_names=[f"trait{i}" for i in range(p)],
+            Y=Z,
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        payload = json.loads(capsys.readouterr().out)
+        assert set(payload["scores"]) == {f"taxon{i}" for i in range(n)}
+
 
 class TestPhylogeneticPCALambda:
     """Test lambda + cov mode against R phytools::phyl.pca reference values."""
@@ -484,6 +586,185 @@ class TestPhylogeneticPCALambda:
     REF_LAMBDA = 6.610696e-05
     REF_LOG_LIKELIHOOD = -6.016939
     REF_EIGENVALUES = [0.076301214816, 0.002241847818, 0.000315397635]
+
+    def test_multi_trait_log_likelihood_cholesky_matches_inverse(self, lambda_args):
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 16
+        p = 4
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+
+        fast = svc._multi_trait_log_likelihood_cholesky(Y, C)
+        inverse = svc._multi_trait_log_likelihood_inverse(Y, C)
+
+        assert fast == pytest.approx(inverse)
+
+    def test_multi_trait_log_likelihood_cholesky_uses_single_solve(
+        self, lambda_args, monkeypatch
+    ):
+        rng = np.random.default_rng(20260628)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 16
+        p = 4
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+        original = phylogenetic_ordination_module.cho_solve
+        calls = 0
+
+        def counting_cho_solve(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(
+            phylogenetic_ordination_module, "cho_solve", counting_cho_solve
+        )
+
+        fast = svc._multi_trait_log_likelihood_cholesky(Y, C)
+        inverse = svc._multi_trait_log_likelihood_inverse(Y, C)
+
+        assert calls == 1
+        assert fast == pytest.approx(inverse)
+
+    def test_center_traits_cholesky_matches_inverse(self, lambda_args):
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 16
+        p = 4
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+
+        Z_fast, C_inv_Z_fast = svc._center_traits_by_vcv_cholesky(
+            Y, C, include_weighted=True
+        )
+        Z_inv, C_inv_Z_inv = svc._center_traits_by_vcv_inverse(
+            Y, C, include_weighted=True
+        )
+
+        np.testing.assert_allclose(Z_fast, Z_inv)
+        np.testing.assert_allclose(C_inv_Z_fast, C_inv_Z_inv)
+
+    def test_center_traits_cholesky_uses_single_solve(self, lambda_args, monkeypatch):
+        rng = np.random.default_rng(20260628)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 16
+        p = 4
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+        original = phylogenetic_ordination_module.cho_solve
+        calls = 0
+
+        def counting_cho_solve(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(
+            phylogenetic_ordination_module, "cho_solve", counting_cho_solve
+        )
+
+        Z_fast, C_inv_Z_fast = svc._center_traits_by_vcv_cholesky(
+            Y, C, include_weighted=True
+        )
+        Z_inv, C_inv_Z_inv = svc._center_traits_by_vcv_inverse(
+            Y, C, include_weighted=True
+        )
+
+        assert calls == 1
+        np.testing.assert_allclose(Z_fast, Z_inv)
+        np.testing.assert_allclose(C_inv_Z_fast, C_inv_Z_inv)
+
+    def test_center_traits_inverse_matches_scalar_reference(self, lambda_args):
+        import phykit.services.tree.phylogenetic_ordination as po
+
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 9
+        p = 7
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+
+        C_inv = np.linalg.inv(C)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        expected_Z = Y - np.outer(ones, a_hat)
+        expected_C_inv_Z = C_inv @ expected_Z
+
+        def fail_outer(*args, **kwargs):
+            raise AssertionError("centering should use broadcasting, not np.outer")
+
+        original_outer = po.np.outer
+        po.np.outer = fail_outer
+        try:
+            observed_Z, observed_C_inv_Z = svc._center_traits_by_vcv_inverse(
+                Y, C, include_weighted=True
+            )
+        finally:
+            po.np.outer = original_outer
+
+        np.testing.assert_allclose(observed_Z, expected_Z)
+        np.testing.assert_allclose(observed_C_inv_Z, expected_C_inv_Z)
+
+    def test_center_traits_cholesky_uses_broadcast_centering(
+        self, lambda_args, monkeypatch
+    ):
+        import phykit.services.tree.phylogenetic_ordination as po
+
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 12
+        p = 6
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+
+        def fail_outer(*args, **kwargs):
+            raise AssertionError("centering should use broadcasting, not np.outer")
+
+        monkeypatch.setattr(po.np, "outer", fail_outer)
+        observed_Z, observed_C_inv_Z = svc._center_traits_by_vcv_inverse(
+            Y, C, include_weighted=True
+        )
+
+        assert observed_Z.shape == Y.shape
+        assert observed_C_inv_Z.shape == Y.shape
+        svc._center_traits_by_vcv_cholesky(Y, C, include_weighted=True)
+
+    def test_multi_trait_log_likelihood_inverse_matches_scalar_reference(
+        self, lambda_args
+    ):
+        rng = np.random.default_rng(20260623)
+        svc = PhylogeneticOrdination(lambda_args)
+        n = 9
+        p = 7
+        A = rng.normal(size=(n, n))
+        C = A @ A.T + np.eye(n)
+        Y = rng.normal(size=(n, p))
+
+        C_inv = np.linalg.inv(C)
+        ones = np.ones(n)
+        denom = ones @ C_inv @ ones
+        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        Z = Y - np.outer(ones, a_hat)
+        R_mle = (Z.T @ C_inv @ Z) / n
+        sign_C, logdet_C = np.linalg.slogdet(C)
+        sign_R, logdet_R = np.linalg.slogdet(R_mle)
+        expected = -0.5 * (
+            n * p * np.log(2 * np.pi) + p * logdet_C + n * logdet_R + n * p
+        )
+
+        assert sign_C > 0
+        assert sign_R > 0
+        assert svc._multi_trait_log_likelihood_inverse(Y, C) == pytest.approx(
+            expected
+        )
 
     def test_lambda_value(self, lambda_args):
         svc = PhylogeneticOrdination(lambda_args)
@@ -759,7 +1040,138 @@ class TestSmallSampleGuards:
             svc.run()
 
 
+class TestTreeColorTrait:
+    def test_resolve_tree_color_trait_streams_color_file_once(self, monkeypatch):
+        class StreamingOnlyFile:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def __iter__(self):
+                return iter(
+                    [
+                        "# ignored\n",
+                        "\n",
+                        "A\t1.0\textra\n",
+                        "B\t2.0\n",
+                        "C\t3.0\n",
+                    ]
+                )
+
+        open_calls = 0
+
+        def fake_open(path):
+            nonlocal open_calls
+            assert path == "colors.tsv"
+            open_calls += 1
+            return StreamingOnlyFile()
+
+        svc = PhylogeneticOrdination.__new__(PhylogeneticOrdination)
+        captured = {}
+
+        def reconstruct(tree, trait_col, taxon_names):
+            captured["trait_col"] = trait_col.copy()
+            captured["taxon_names"] = list(taxon_names)
+            return {0: np.array([trait_col[0, 0]])}, {}, tree
+
+        monkeypatch.setattr(os.path, "isfile", lambda path: path == "colors.tsv")
+        monkeypatch.setattr("builtins.open", fake_open)
+        monkeypatch.setattr(svc, "_reconstruct_ancestral_scores", reconstruct)
+
+        anc_vals, node_distances, tree_pruned = svc._resolve_tree_color_trait(
+            "colors.tsv",
+            ["x", "y"],
+            np.zeros((3, 2)),
+            ["B", "A", "C"],
+            "tree",
+        )
+
+        assert open_calls == 1
+        assert captured["taxon_names"] == ["B", "A", "C"]
+        np.testing.assert_allclose(captured["trait_col"].ravel(), [2.0, 1.0, 3.0])
+        assert anc_vals == {0: 2.0}
+        assert node_distances == {}
+        assert tree_pruned == "tree"
+
+
 class TestRun:
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        args = Namespace(
+            tree="/some/path/to/file.tre",
+            trait_data="/some/path/to/traits.tsv",
+            method="pca",
+            correction="BM",
+            mode="cov",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=None,
+            json=False,
+            plot=False,
+            plot_output="plot.png",
+            plot_tree=False,
+            no_plot_tree=True,
+            color_by=None,
+            tree_color_by=None,
+            gene_trees=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        tree = object()
+        mocked_read = mocker.patch.object(
+            PhylogeneticOrdination,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocker.patch.object(
+            PhylogeneticOrdination,
+            "read_tree_file",
+            side_effect=AssertionError("run should not copy cached trees"),
+        )
+        mocked_validate = mocker.patch.object(
+            PhylogeneticOrdination, "validate_tree"
+        )
+        mocker.patch.object(
+            PhylogeneticOrdination,
+            "get_tip_names_from_tree",
+            return_value=["a", "b", "c"],
+        )
+        mocker.patch(
+            "phykit.services.tree.phylogenetic_ordination.parse_multi_trait_file",
+            return_value=(
+                ["x", "y"],
+                {
+                    "a": [1.0, 2.0],
+                    "b": [2.0, 3.0],
+                    "c": [3.0, 4.0],
+                },
+            ),
+        )
+        mocked_vcv = mocker.patch(
+            "phykit.services.tree.vcv_utils.build_vcv_matrix",
+            return_value=np.eye(3),
+        )
+        mocker.patch.object(
+            PhylogeneticOrdination,
+            "_center_traits_by_vcv",
+            return_value=(np.zeros((3, 2)), np.zeros((3, 2))),
+        )
+        mocked_pca = mocker.patch.object(PhylogeneticOrdination, "_run_pca")
+
+        svc.run()
+
+        mocked_read.assert_called_once_with()
+        mocked_validate.assert_called_once_with(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylogenetic ordination",
+        )
+        mocked_vcv.assert_called_once_with(tree, ["a", "b", "c"])
+        assert mocked_pca.call_args.args[4] is tree
+
     def test_pca_cov_text_output(self, default_args, capsys):
         svc = PhylogeneticOrdination(default_args)
         svc.run()
@@ -785,6 +1197,75 @@ class TestRun:
         out, _ = capsys.readouterr()
         assert "Lambda:" in out
         assert "Log-likelihood:" in out
+
+    def test_pca_text_output_batches_rows(self, default_args, mocker):
+        svc = PhylogeneticOrdination(default_args)
+        printed = mocker.patch("builtins.print")
+
+        svc._print_pca_text_output(
+            eigenvalues=np.array([2.0, 1.0]),
+            proportions=np.array([0.6666667, 0.3333333]),
+            eigenvectors=np.array([[0.1, 0.2], [0.3, 0.4]]),
+            scores=np.array([[1.2, 1.3], [2.2, 2.3]]),
+            trait_names=["trait_a", "trait_b"],
+            taxon_names=["taxon_a", "taxon_b"],
+            pc_labels=["PC1", "PC2"],
+            lambda_val=0.5,
+            log_likelihood=-12.25,
+        )
+
+        printed.assert_called_once_with(
+            "Eigenvalues:\n"
+            "\tPC1\tPC2\n"
+            "eigenvalue\t2.000000\t1.000000\n"
+            "proportion\t0.666667\t0.333333\n"
+            "\n"
+            "Loadings:\n"
+            "\tPC1\tPC2\n"
+            "trait_a\t0.100000\t0.200000\n"
+            "trait_b\t0.300000\t0.400000\n"
+            "\n"
+            "Scores:\n"
+            "\tPC1\tPC2\n"
+            "taxon_a\t1.200000\t1.300000\n"
+            "taxon_b\t2.200000\t2.300000\n"
+            "\n"
+            "Lambda: 0.500000\n"
+            "Log-likelihood: -12.250000"
+        )
+
+    def test_format_pca_result_preserves_payload_shape(self, default_args):
+        svc = PhylogeneticOrdination(default_args)
+
+        result = svc._format_pca_result(
+            eigenvalues=np.array([2.0, 1.0]),
+            proportions=np.array([0.6666667, 0.3333333]),
+            eigenvectors=np.array([[0.1, 0.2], [0.3, 0.4]]),
+            scores=np.array([[1.2, 1.3], [2.2, 2.3]]),
+            trait_names=["trait_a", "trait_b"],
+            taxon_names=["taxon_a", "taxon_b"],
+            pc_labels=["PC1", "PC2"],
+            lambda_val=0.5,
+            log_likelihood=-12.25,
+        )
+
+        assert result == {
+            "eigenvalues": {"PC1": 2.0, "PC2": 1.0},
+            "proportion_of_variance": {
+                "PC1": 0.6666667,
+                "PC2": 0.3333333,
+            },
+            "loadings": {
+                "trait_a": {"PC1": 0.1, "PC2": 0.2},
+                "trait_b": {"PC1": 0.3, "PC2": 0.4},
+            },
+            "scores": {
+                "taxon_a": {"PC1": 1.2, "PC2": 1.3},
+                "taxon_b": {"PC1": 2.2, "PC2": 2.3},
+            },
+            "lambda": 0.5,
+            "log_likelihood": -12.25,
+        }
 
     def test_pca_json_output(self, capsys):
         args = Namespace(
@@ -859,6 +1340,33 @@ class TestRun:
         assert "Method: umap" in out
         assert "n_neighbors:" in out
         assert "Embedding:" in out
+
+    def test_dimreduce_text_output_batches_rows(self, tsne_args, mocker):
+        svc = PhylogeneticOrdination(tsne_args)
+        printed = mocker.patch("builtins.print")
+
+        svc._print_dimreduce_text_output(
+            embedding=np.array([[1.2, 1.3], [2.2, 2.3]]),
+            taxon_names=["taxon_a", "taxon_b"],
+            params={"perplexity": 3.5, "min_dist": 0.2},
+            lambda_val=0.5,
+            log_likelihood=-12.25,
+        )
+
+        printed.assert_called_once_with(
+            "Method: tsne\n"
+            "Correction: BM\n"
+            "Perplexity: 3.5\n"
+            "min_dist: 0.2\n"
+            "\n"
+            "Embedding:\n"
+            "\tDim1\tDim2\n"
+            "taxon_a\t1.200000\t1.300000\n"
+            "taxon_b\t2.200000\t2.300000\n"
+            "\n"
+            "Lambda: 0.500000\n"
+            "Log-likelihood: -12.250000"
+        )
 
     def test_tsne_json_output(self, capsys):
         args = Namespace(
@@ -1101,6 +1609,51 @@ class TestPlot:
 
 
 class TestReconstructAncestralScores:
+    def test_prune_setup_uses_fast_tip_names_and_set_membership(
+        self, default_args, mocker
+    ):
+        class ContainsFailList(list):
+            def __contains__(self, item):
+                raise AssertionError("ordered_names should be converted to a set")
+
+        svc = PhylogeneticOrdination(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ContainsFailList(["A", "C", "D"])
+        scores = np.array([[0.0, 0.0], [2.0, 2.0], [4.0, 4.0]])
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+        fast_copy = mocker.patch.object(svc, "_fast_copy", return_value=tree_copy)
+        prune = mocker.spy(svc, "prune_tree_using_taxa_list")
+
+        _, _, tree_pruned = svc._reconstruct_ancestral_scores(
+            tree, scores, ordered_names
+        )
+
+        assert spy.call_count == 1
+        fast_copy.assert_called_once_with(tree)
+        prune.assert_called_once_with(tree_copy, ["B"])
+        assert {tip.name for tip in tree_pruned.get_terminals()} == {"A", "C", "D"}
+
+    def test_reconstruct_skips_copy_when_all_tips_are_shared(
+        self, default_args, mocker
+    ):
+        svc = PhylogeneticOrdination(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        scores = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+        fast_copy = mocker.patch.object(
+            svc,
+            "_fast_copy",
+            side_effect=AssertionError("all-shared reconstruction should not copy tree"),
+        )
+
+        _, _, tree_pruned = svc._reconstruct_ancestral_scores(
+            tree, scores, ordered_names
+        )
+
+        fast_copy.assert_not_called()
+        assert tree_pruned is tree
+
     def test_all_nodes_get_scores(self, default_args):
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
@@ -1193,6 +1746,130 @@ class TestReconstructAncestralScores:
         tip_pc1 = scores[:, 0]
         assert root_scores[0] >= min(tip_pc1) - 0.5
         assert root_scores[0] <= max(tip_pc1) + 0.5
+
+    def test_node_distances_fast_path_does_not_call_distance(
+        self, default_args, monkeypatch
+    ):
+        svc = PhylogeneticOrdination(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        scores = np.array([[0.0, 0.0], [2.0, 2.0], [4.0, 4.0]])
+
+        def fail_distance(self, *args, **kwargs):
+            raise AssertionError("distance fallback should not be called")
+
+        monkeypatch.setattr(type(tree), "distance", fail_distance)
+        _, node_distances, tree_pruned = svc._reconstruct_ancestral_scores(
+            tree, scores, ordered_names
+        )
+
+        assert node_distances[id(tree_pruned.root)] == pytest.approx(0.0)
+        tip_distances = {
+            tip.name: node_distances[id(tip)]
+            for tip in tree_pruned.get_terminals()
+        }
+        assert tip_distances == pytest.approx({"A": 2.0, "B": 2.0, "C": 3.0})
+
+    def test_reconstruct_ancestral_scores_uses_direct_traversal(
+        self, default_args, monkeypatch
+    ):
+        svc = PhylogeneticOrdination(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        scores = np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]])
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "depths", fail_generic_traversal)
+        monkeypatch.setattr(type(tree), "distance", fail_generic_traversal)
+
+        node_estimates, node_distances, tree_pruned = (
+            svc._reconstruct_ancestral_scores(tree, scores, ordered_names)
+        )
+
+        root = tree_pruned.root
+        left_internal = root.clades[0]
+        tips = {
+            root.clades[0].clades[0].name: root.clades[0].clades[0],
+            root.clades[0].clades[1].name: root.clades[0].clades[1],
+            root.clades[1].name: root.clades[1],
+        }
+
+        np.testing.assert_allclose(node_estimates[id(left_internal)], [1.0, 0.0])
+        np.testing.assert_allclose(node_estimates[id(root)], [2.0, 0.0])
+        assert node_distances[id(root)] == pytest.approx(0.0)
+        assert node_distances[id(tips["A"])] == pytest.approx(2.0)
+        assert node_distances[id(tips["C"])] == pytest.approx(3.0)
+
+    def test_preorder_clades_direct_handles_mixed_child_counts(
+        self, default_args, monkeypatch
+    ):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("standard preorder traversal should be direct")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+
+        clades = PhylogeneticOrdination._preorder_clades_direct(tree)
+
+        assert [clade.name for clade in clades if not clade.clades] == [
+            "A", "B", "C", "D", "E", "F",
+        ]
+        assert clades[:3] == [
+            tree.root,
+            tree.root.clades[0],
+            tree.root.clades[1],
+        ]
+
+    def test_draw_tree_overlay_uses_direct_preorder(
+        self, default_args, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        svc = PhylogeneticOrdination(default_args)
+        svc.tree_color_by = None
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        clades = PhylogeneticOrdination._preorder_clades_direct(tree)
+        node_estimates = {
+            id(clade): np.array([float(index), float(index + 1)])
+            for index, clade in enumerate(clades)
+        }
+        node_distances = {id(clade): float(index) for index, clade in enumerate(clades)}
+
+        def fake_reconstruct(*_args, **_kwargs):
+            return node_estimates, node_distances, tree
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("tree overlay should use direct preorder traversal")
+
+        monkeypatch.setattr(svc, "_reconstruct_ancestral_scores", fake_reconstruct)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+
+        fig, ax = plt.subplots()
+        try:
+            svc._draw_tree_overlay(
+                ax,
+                fig,
+                tree,
+                np.zeros((3, 2)),
+                ["A", "B", "C"],
+                ["trait1", "trait2"],
+                np.zeros((3, 2)),
+            )
+            assert len(ax.collections) == 1
+        finally:
+            plt.close(fig)
 
 
 class TestParseColorBy:

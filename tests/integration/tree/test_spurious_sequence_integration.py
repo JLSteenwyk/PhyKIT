@@ -49,11 +49,10 @@ class TestSpuriousSequence(object):
 
     @patch("builtins.print")
     def test_spurious_sequence_custom_factor(self, mocked_print):
-        # With factor 2 and terminal branch median of ~19.04, both monkey and cat exceed threshold
-        expected_results = [
-            call("monkey\t100.8593\t38.0791\t19.0396"),
-            call("cat\t47.1407\t38.0791\t19.0396")
-        ]
+        expected_result = (
+            "monkey\t100.8593\t38.0791\t19.0396\n"
+            "cat\t47.1407\t38.0791\t19.0396"
+        )
         testargs = [
             "phykit",
             "spurious_sequence",
@@ -63,7 +62,7 @@ class TestSpuriousSequence(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == expected_results
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_spurious_sequence_incorrect_file_path(self, mocked_print):

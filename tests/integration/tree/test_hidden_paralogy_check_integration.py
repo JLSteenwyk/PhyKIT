@@ -1,7 +1,7 @@
 import pytest
 import sys
 import json
-from mock import patch, call
+from mock import patch
 from pathlib import Path
 
 from phykit.phykit import Phykit
@@ -23,10 +23,10 @@ class TestHiddenParalogyCheck(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("monophyletic"),
-            call("not_monophyletic"),
-            call("insufficient_taxon_representation"),
+        assert mocked_print.call_args.args[0].splitlines() == [
+            "monophyletic",
+            "not_monophyletic",
+            "insufficient_taxon_representation",
         ]
 
     @patch("builtins.print")
@@ -41,10 +41,10 @@ class TestHiddenParalogyCheck(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("monophyletic"),
-            call("not_monophyletic"),
-            call("insufficient_taxon_representation"),
+        assert mocked_print.call_args.args[0].splitlines() == [
+            "monophyletic",
+            "not_monophyletic",
+            "insufficient_taxon_representation",
         ]
 
     @patch("builtins.print")
@@ -59,10 +59,10 @@ class TestHiddenParalogyCheck(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("monophyletic"),
-            call("not_monophyletic"),
-            call("insufficient_taxon_representation"),
+        assert mocked_print.call_args.args[0].splitlines() == [
+            "monophyletic",
+            "not_monophyletic",
+            "insufficient_taxon_representation",
         ]
 
     @patch("builtins.print")

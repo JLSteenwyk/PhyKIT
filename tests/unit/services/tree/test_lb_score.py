@@ -1,10 +1,33 @@
 import pytest
+import subprocess
+import sys
 from argparse import Namespace
 from concurrent.futures import Future
 from itertools import combinations
 from math import isclose
+from Bio.Phylo.Newick import Clade, Tree
 
 from phykit.services.tree.lb_score import LBScore
+
+
+def test_module_import_defers_optional_progress_import():
+    code = (
+        "import sys; "
+        "import phykit.services.tree.lb_score; "
+        "assert 'typing' not in sys.modules; "
+        "assert 'tqdm' not in sys.modules; "
+        "assert 'Bio.Phylo' not in sys.modules; "
+        "assert 'numpy' not in sys.modules; "
+        "assert 'pickle' not in sys.modules; "
+        "assert 'json' not in sys.modules; "
+        "assert 'statistics' not in sys.modules; "
+        "assert 'phykit.helpers.stats_summary' not in sys.modules; "
+        "assert 'phykit.helpers.json_output' not in sys.modules; "
+        "assert 'concurrent.futures' not in sys.modules; "
+        "assert 'multiprocessing' not in sys.modules"
+    )
+
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class _IndexedDummyTree:
@@ -131,6 +154,32 @@ class TestLBScore(object):
         assert created_executors
         assert result == pytest.approx(expected)
 
+    def test_calculate_average_distance_between_tips_fast_path(self, mocker, args):
+        t = LBScore(args)
+        tips = ["tip0", "tip1", "tip2", "tip3"]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, clades=[
+                        Clade(branch_length=0.1, name="tip0"),
+                        Clade(branch_length=0.2, name="tip1"),
+                    ]),
+                    Clade(branch_length=2.0, clades=[
+                        Clade(branch_length=0.3, name="tip2"),
+                        Clade(branch_length=0.4, name="tip3"),
+                    ]),
+                ],
+            )
+        )
+        mocked_executor = mocker.patch("phykit.services.tree.lb_score.ProcessPoolExecutor")
+        pairs = list(combinations(tips, 2))
+        expected = sum(tree.distance(tip1, tip2) for tip1, tip2 in pairs) / len(pairs)
+
+        result = t.calculate_average_distance_between_tips(tips, tree)
+
+        assert result == pytest.approx(expected)
+        mocked_executor.assert_not_called()
+
     def test_calculate_average_distance_of_taxon_to_other_taxa_small_dataset(
         self, args
     ):
@@ -196,6 +245,266 @@ class TestLBScore(object):
         assert created_executors
         assert result == pytest.approx(expected)
 
+    def test_calculate_average_distance_of_taxon_to_other_taxa_fast_path_preserves_bug(
+        self, mocker, args
+    ):
+        t = LBScore(args)
+        tips = ["tip0", "tip1", "tip2", "tip3"]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, clades=[
+                        Clade(branch_length=0.1, name="tip0"),
+                        Clade(branch_length=0.2, name="tip1"),
+                    ]),
+                    Clade(branch_length=2.0, clades=[
+                        Clade(branch_length=0.3, name="tip2"),
+                        Clade(branch_length=0.4, name="tip3"),
+                    ]),
+                ],
+            )
+        )
+        mocked_executor = mocker.patch("phykit.services.tree.lb_score.ProcessPoolExecutor")
+        expected = []
+        for tip in tips:
+            tips_minus_i = list(set(tips) - set(tip))
+            distances = [tree.distance(tip, other) for other in tips_minus_i]
+            expected.append(sum(distances) / len(distances) if distances else 0)
+
+        result = t.calculate_average_distance_of_taxon_to_other_taxa(tips, tree)
+
+        assert result == pytest.approx(expected)
+        mocked_executor.assert_not_called()
+
+    def test_calculate_average_distance_of_taxon_to_other_taxa_fast_path_accumulates_pairwise_distances(
+        self, args
+    ):
+        t = LBScore(args)
+        tips = ["tip0", "tip1", "tip2"]
+        pairwise_distances = (
+            [("tip0", "tip1"), ("tip0", "tip2"), ("tip1", "tip2")],
+            [3.0, 6.0, 9.0],
+        )
+
+        result = t.calculate_average_distance_of_taxon_to_other_taxa(
+            tips,
+            _IndexedDummyTree(),
+            pairwise_distances,
+        )
+
+        assert result == pytest.approx([3.0, 4.0, 5.0])
+
+    def test_calculate_lb_score_uses_linear_tree_components(self, mocker, args):
+        t = LBScore(args)
+        tips = ["tip0", "tip1", "tip2", "tip3"]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, clades=[
+                        Clade(branch_length=0.1, name="tip0"),
+                        Clade(branch_length=0.2, name="tip1"),
+                    ]),
+                    Clade(branch_length=2.0, clades=[
+                        Clade(branch_length=0.3, name="tip2"),
+                        Clade(branch_length=0.4, name="tip3"),
+                    ]),
+                ],
+            )
+        )
+        pairwise_spy = mocker.patch.object(
+            t,
+            "calculate_pairwise_tip_distances_fast",
+            wraps=t.calculate_pairwise_tip_distances_fast,
+        )
+
+        result_tips, lb_scores = t.calculate_lb_score(tree)
+
+        assert result_tips == tips
+        assert len(lb_scores) == len(tips)
+        assert pairwise_spy.call_count == 0
+
+    def test_calculate_lb_components_fast_matches_pairwise_cache(self, args):
+        t = LBScore(args)
+        tips = ["tip0", "tip1", "tip2", "tip3"]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, clades=[
+                        Clade(branch_length=0.1, name="tip0"),
+                        Clade(branch_length=0.2, name="tip1"),
+                    ]),
+                    Clade(branch_length=2.0, clades=[
+                        Clade(branch_length=0.3, name="tip2"),
+                        Clade(branch_length=0.4, name="tip3"),
+                    ]),
+                ],
+            )
+        )
+        pairwise_distances = t.calculate_pairwise_tip_distances_fast(tree, tips)
+        expected_avg_dist = t.calculate_average_distance_between_tips(
+            tips,
+            tree,
+            pairwise_distances,
+        )
+        expected_avg_pdis = t.calculate_average_distance_of_taxon_to_other_taxa(
+            tips,
+            tree,
+            pairwise_distances,
+        )
+
+        result = LBScore._calculate_lb_components_fast(tree, tips)
+
+        assert result is not None
+        avg_dist, avg_pdis = result
+        assert avg_dist == pytest.approx(expected_avg_dist)
+        assert avg_pdis == pytest.approx(expected_avg_pdis)
+
+    def test_calculate_lb_components_fast_handles_mixed_child_counts_without_reversed(
+        self, args
+    ):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("LB component traversal should push children explicitly")
+
+        class DirectClade:
+            def __init__(self, branch_length=None, name=None, clades=None):
+                self.branch_length = branch_length
+                self.name = name
+                self.clades = NoReversedList(clades or [])
+
+        tips = ["A", "B", "C", "D", "E", "F"]
+        t = LBScore(args)
+        reference_tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="A"),
+                    Clade(
+                        branch_length=2.0,
+                        clades=[
+                            Clade(branch_length=3.0, name="B"),
+                            Clade(branch_length=4.0, name="C"),
+                        ],
+                    ),
+                    Clade(
+                        branch_length=5.0,
+                        clades=[
+                            Clade(branch_length=6.0, name="D"),
+                            Clade(branch_length=7.0, name="E"),
+                            Clade(branch_length=8.0, name="F"),
+                        ],
+                    ),
+                ],
+            )
+        )
+        direct_tree = type(
+            "Tree",
+            (),
+            {
+                "root": DirectClade(
+                    clades=[
+                        DirectClade(1.0, "A"),
+                        DirectClade(
+                            2.0,
+                            clades=[
+                                DirectClade(3.0, "B"),
+                                DirectClade(4.0, "C"),
+                            ],
+                        ),
+                        DirectClade(
+                            5.0,
+                            clades=[
+                                DirectClade(6.0, "D"),
+                                DirectClade(7.0, "E"),
+                                DirectClade(8.0, "F"),
+                            ],
+                        ),
+                    ],
+                )
+            },
+        )()
+        pairwise_distances = t.calculate_pairwise_tip_distances_fast(
+            reference_tree,
+            tips,
+        )
+        expected_avg_dist = t.calculate_average_distance_between_tips(
+            tips,
+            reference_tree,
+            pairwise_distances,
+        )
+        expected_avg_pdis = t.calculate_average_distance_of_taxon_to_other_taxa(
+            tips,
+            reference_tree,
+            pairwise_distances,
+        )
+
+        result = LBScore._calculate_lb_components_fast(direct_tree, tips)
+
+        assert result is not None
+        avg_dist, avg_pdis = result
+        assert avg_dist == pytest.approx(expected_avg_dist)
+        assert avg_pdis == pytest.approx(expected_avg_pdis)
+
+    def test_historical_denominator_quirk_preserved_without_set_copy(self, args):
+        t = LBScore(args)
+        tips = ["A", "B", "AB", "BA"]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, clades=[
+                        Clade(branch_length=0.1, name="A"),
+                        Clade(branch_length=0.2, name="B"),
+                    ]),
+                    Clade(branch_length=2.0, clades=[
+                        Clade(branch_length=0.3, name="AB"),
+                        Clade(branch_length=0.4, name="BA"),
+                    ]),
+                ],
+            )
+        )
+        pairwise_distances = t.calculate_pairwise_tip_distances_fast(tree, tips)
+        combos, distances = pairwise_distances
+        distance_sums = {tip: 0.0 for tip in tips}
+        for (tip_a, tip_b), distance in zip(combos, distances):
+            distance_sums[tip_a] += distance
+            distance_sums[tip_b] += distance
+        tip_set = set(tips)
+        expected_avg_pdis = [
+            distance_sums[tip] / len(tip_set - set(tip))
+            if len(tip_set - set(tip))
+            else 0
+            for tip in tips
+        ]
+
+        observed_pairwise = t.calculate_average_distance_of_taxon_to_other_taxa(
+            tips,
+            tree,
+            pairwise_distances,
+        )
+        observed_fast = LBScore._calculate_lb_components_fast(tree, tips)[1]
+
+        assert observed_pairwise == pytest.approx(expected_avg_pdis)
+        assert observed_fast == pytest.approx(expected_avg_pdis)
+
+    def test_calculate_lb_score_falls_back_for_nonstandard_tree(self, mocker, args):
+        t = LBScore(args)
+        tree = _IndexedDummyTree()
+        tips = ["tip0", "tip1", "tip2"]
+        mocker.patch.object(t, "get_tip_names_from_tree", return_value=tips)
+        pairwise_spy = mocker.patch.object(
+            t,
+            "calculate_pairwise_tip_distances_fast",
+            return_value=(
+                [("tip0", "tip1"), ("tip0", "tip2"), ("tip1", "tip2")],
+                [3.0, 6.0, 9.0],
+            ),
+        )
+
+        result_tips, lb_scores = t.calculate_lb_score(tree)
+
+        assert result_tips == tips
+        assert len(lb_scores) == len(tips)
+        pairwise_spy.assert_called_once_with(tree, tips)
+
     def test_calculate_lb_score_per_taxa_zero_avg_dist_exits(self, args):
         t = LBScore(args)
 
@@ -211,3 +520,71 @@ class TestLBScore(object):
         result = t.calculate_lb_score_per_taxa(avg_pdis, avg_dist)
 
         assert result == pytest.approx([0.0, 100.0])
+
+    def test_calculate_lb_score_per_taxa_does_not_import_numpy(self):
+        code = """
+from argparse import Namespace
+import sys
+from phykit.services.tree.lb_score import LBScore
+svc = LBScore(Namespace(tree="unused", verbose=False, json=False))
+assert svc.calculate_lb_score_per_taxa([10.0, 20.0], 10.0) == [0.0, 100.0]
+assert "numpy" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_run_verbose_batches_lb_score_rows(self, mocker, args, capsys):
+        args.verbose = True
+        args.json = False
+        t = LBScore(args)
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=object())
+        mocker.patch.object(
+            t,
+            "calculate_lb_score",
+            return_value=(["a", "b"], [1.23456, -2.0]),
+        )
+
+        t.run()
+
+        captured = capsys.readouterr()
+        assert captured.out == "a\t1.2346\nb\t-2.0\n"
+
+    def test_run_verbose_empty_rows_prints_nothing(self, mocker, args, capsys):
+        args.verbose = True
+        args.json = False
+        t = LBScore(args)
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=object())
+        mocker.patch.object(t, "calculate_lb_score", return_value=([], []))
+
+        t.run()
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+    def test_run_uses_unmodified_tree_read(self, mocker, args):
+        args.verbose = False
+        args.json = False
+        tree = object()
+        t = LBScore(args)
+        read_tree = mocker.patch.object(
+            t, "read_tree_file_unmodified", return_value=tree
+        )
+        mocker.patch.object(
+            t,
+            "read_tree_file",
+            side_effect=AssertionError("copying tree reader should not be used"),
+        )
+        calc = mocker.patch.object(
+            t,
+            "calculate_lb_score",
+            return_value=(["a", "b"], [1.0, 2.0]),
+        )
+        mocker.patch(
+            "phykit.services.tree.lb_score.calculate_summary_statistics_from_arr",
+            return_value={"mean": 1.5},
+        )
+        mocker.patch("phykit.services.tree.lb_score.print_summary_statistics")
+
+        t.run()
+
+        read_tree.assert_called_once_with()
+        calc.assert_called_once_with(tree)

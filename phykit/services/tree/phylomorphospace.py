@@ -1,14 +1,45 @@
-import os
-import pickle
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
+import os
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
-from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def parse_multi_trait_file(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        parse_multi_trait_file as _parse_multi_trait_file,
+    )
+
+    return _parse_multi_trait_file(*args, **kwargs)
+
+
+def trait_matrix_from_rows(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        trait_matrix_from_rows as _trait_matrix_from_rows,
+    )
+
+    return _trait_matrix_from_rows(*args, **kwargs)
+
+
+def _root_distance_max(values):
+    return max(values, default=1.0)
 
 
 class Phylomorphospace(Tree):
@@ -23,7 +54,9 @@ class Phylomorphospace(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -36,8 +69,13 @@ class Phylomorphospace(Tree):
         )
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phylomorphospace")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylomorphospace",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = parse_multi_trait_file(
@@ -51,15 +89,9 @@ class Phylomorphospace(Tree):
 
         ordered_names = sorted(traits.keys())
 
-        # Build 2-column data matrix for the selected traits
-        data = np.array(
-            [[traits[name][x_idx], traits[name][y_idx]] for name in ordered_names]
-        )
-
-        # Full data matrix for color-by column lookup
-        Y = np.array(
-            [[traits[name][j] for j in range(len(trait_names))] for name in ordered_names]
-        )
+        # Full data matrix for color-by column lookup, plus selected plot axes.
+        Y = trait_matrix_from_rows(traits, ordered_names)
+        data = Y[:, [x_idx, y_idx]]
 
         # Ancestral reconstruction on the 2-column matrix
         node_estimates, node_distances, tree_pruned = (
@@ -91,8 +123,8 @@ class Phylomorphospace(Tree):
             print(f"Saved phylomorphospace plot: {self.plot_output}")
 
     def _resolve_trait_axes(
-        self, trait_names: List[str]
-    ) -> Tuple[str, str, int, int]:
+        self, trait_names: list[str]
+    ) -> tuple[str, str, int, int]:
         if self.trait_x is None and self.trait_y is None:
             if len(trait_names) == 2:
                 return trait_names[0], trait_names[1], 0, 1
@@ -134,41 +166,61 @@ class Phylomorphospace(Tree):
         return self.trait_x, self.trait_y, x_idx, y_idx
 
     def _reconstruct_ancestral_scores(
-        self, tree, scores: np.ndarray, ordered_names: List[str]
-    ) -> Tuple[Dict, Dict, object]:
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in ordered_names]
+        self, tree, scores: np.ndarray, ordered_names: list[str]
+    ) -> tuple[dict, dict, object]:
+        ordered_name_set = set(ordered_names)
+        tip_names_in_tree = self.get_tip_names_from_tree(tree)
+        tips_to_prune = [t for t in tip_names_in_tree if t not in ordered_name_set]
+        tree_for_analysis = self._fast_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
+            )
 
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
 
+        root = tree_for_analysis.root
+        try:
+            preorder_clades = []
+            node_distances = {}
+            stack = [(root, 0.0)]
+            while stack:
+                clade, distance = stack.pop()
+                preorder_clades.append(clade)
+                node_distances[id(clade)] = distance
+                children = clade.clades
+                if children:
+                    for child in reversed(children):
+                        branch_length = (
+                            child.branch_length if child.branch_length else 0.0
+                        )
+                        stack.append((child, distance + branch_length))
+        except AttributeError:
+            node_distances = {}
+            for clade in tree_for_analysis.find_clades(order="postorder"):
+                if clade == root:
+                    node_distances[id(clade)] = 0.0
+                else:
+                    node_distances[id(clade)] = tree_for_analysis.distance(root, clade)
+            preorder_clades = list(tree_for_analysis.find_clades(order="preorder"))
+
         node_estimates = {}
         node_variances = {}
-        node_distances = {}
 
-        root = tree_copy.root
-        for clade in tree_copy.find_clades(order="postorder"):
-            if clade == root:
-                node_distances[id(clade)] = 0.0
-            else:
-                node_distances[id(clade)] = tree_copy.distance(root, clade)
-
-        for clade in tree_copy.find_clades(order="postorder"):
-            if clade.is_terminal():
+        for clade in reversed(preorder_clades):
+            children = clade.clades
+            if not children:
                 name = clade.name
                 if name in name_to_idx:
                     node_estimates[id(clade)] = scores[name_to_idx[name]]
                     node_variances[id(clade)] = 0.0
             else:
-                children = clade.clades
-                precisions = []
-                weighted_scores = []
+                total_prec = 0.0
+                weighted_score = None
                 for child in children:
                     child_id = id(child)
-                    if child_id not in node_estimates:
+                    child_estimate = node_estimates.get(child_id)
+                    if child_estimate is None:
                         continue
                     v_i = child.branch_length if child.branch_length else 0.0
                     child_var = node_variances[child_id]
@@ -176,24 +228,25 @@ class Phylomorphospace(Tree):
                     if denom == 0:
                         denom = 1e-10
                     prec = 1.0 / denom
-                    precisions.append(prec)
-                    weighted_scores.append(prec * node_estimates[child_id])
+                    if weighted_score is None:
+                        weighted_score = prec * child_estimate
+                    else:
+                        weighted_score += prec * child_estimate
+                    total_prec += prec
 
-                if precisions:
-                    total_prec = sum(precisions)
-                    est = sum(weighted_scores) / total_prec
-                    node_estimates[id(clade)] = est
+                if total_prec:
+                    node_estimates[id(clade)] = weighted_score / total_prec
                     node_variances[id(clade)] = 1.0 / total_prec
 
-        return node_estimates, node_distances, tree_copy
+        return node_estimates, node_distances, tree_for_analysis
 
     def _parse_color_by(
         self,
         color_by: str,
-        trait_names: List[str],
+        trait_names: list[str],
         Y: np.ndarray,
-        ordered_names: List[str],
-    ) -> Tuple[np.ndarray, List[str], str]:
+        ordered_names: list[str],
+    ) -> tuple[np.ndarray, list[str], str]:
         if color_by in trait_names:
             col_idx = trait_names.index(color_by)
             return Y[:, col_idx], [], "continuous"
@@ -249,12 +302,12 @@ class Phylomorphospace(Tree):
         self,
         tree,
         data: np.ndarray,
-        ordered_names: List[str],
-        node_estimates: Dict,
-        node_distances: Dict,
+        ordered_names: list[str],
+        node_estimates: dict,
+        node_distances: dict,
         trait_x_name: str,
         trait_y_name: str,
-        trait_names: List[str],
+        trait_names: list[str],
         Y: np.ndarray,
     ) -> None:
         try:
@@ -272,8 +325,7 @@ class Phylomorphospace(Tree):
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         # Collect all distances for normalization
-        all_dists = [d for d in node_distances.values()]
-        max_dist = max(all_dists) if all_dists else 1.0
+        max_dist = _root_distance_max(node_distances.values())
 
         # Draw tree edges colored by distance from root
         segments = []
@@ -281,7 +333,11 @@ class Phylomorphospace(Tree):
         norm = Normalize(vmin=0, vmax=max_dist)
         cmap = plt.get_cmap("coolwarm")
 
-        for clade in tree.find_clades(order="preorder"):
+        preorder_clades = self._preorder_clades_direct(tree)
+        if preorder_clades is None:
+            preorder_clades = tree.find_clades(order="preorder")
+
+        for clade in preorder_clades:
             parent_id = id(clade)
             if parent_id not in node_estimates:
                 continue
@@ -399,3 +455,32 @@ class Phylomorphospace(Tree):
         fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
+
+    @staticmethod
+    def _preorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            pop = stack.pop
+            append = stack.append
+            append_clade = clades.append
+            while stack:
+                clade = pop()
+                append_clade(clade)
+                children = clade.clades
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                elif child_count:
+                    for idx in range(child_count - 1, -1, -1):
+                        append(children[idx])
+        except AttributeError:
+            return None
+        return clades

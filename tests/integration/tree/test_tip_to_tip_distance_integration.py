@@ -113,12 +113,11 @@ class TestTipToTipDistance(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert len(mocked_print.mock_calls) == 45
-        assert any(
-            call_args.args[0] == (
-                "Aspergillus_fumigatus_Af293\tAspergillus_fumigatus_CEA10\t0.0021"
-            )
-            for call_args in mocked_print.mock_calls
+        lines = mocked_print.call_args.args[0].splitlines()
+        assert len(lines) == 45
+        assert (
+            "Aspergillus_fumigatus_Af293\tAspergillus_fumigatus_CEA10\t0.0021"
+            in lines
         )
 
     @patch("builtins.print")

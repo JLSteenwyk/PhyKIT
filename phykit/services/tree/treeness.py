@@ -1,7 +1,12 @@
-from typing import Dict
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class Treeness(Tree):
@@ -11,7 +16,7 @@ class Treeness(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         treeness = self.calculate_treeness(tree)
         treeness = round(treeness, 4)
         if self.json_output:
@@ -19,5 +24,5 @@ class Treeness(Tree):
             return
         print(treeness)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(tree_file_path=args.tree, json_output=getattr(args, "json", False))

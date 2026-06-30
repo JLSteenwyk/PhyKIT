@@ -1,13 +1,55 @@
-from io import StringIO
-from pathlib import Path
-from typing import Dict, List, Set
+from __future__ import annotations
 
-from Bio import Phylo
-from Bio.Phylo import Consensus
+from io import StringIO
+import os
+from pathlib import Path
 
 from .base import Tree
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
+
+
+_path_exists = os.path.exists
+_path_isabs = os.path.isabs
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.read(*args, **kwargs)
+
+
+class _LazyConsensus:
+    def strict_consensus(self, *args, **kwargs):
+        from Bio.Phylo import Consensus as _Consensus
+
+        return _Consensus.strict_consensus(*args, **kwargs)
+
+    def majority_consensus(self, *args, **kwargs):
+        from Bio.Phylo import Consensus as _Consensus
+
+        return _Consensus.majority_consensus(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
+Consensus = _LazyConsensus()
+
+
+def _all_tip_sets_identical(tip_sets) -> bool:
+    iterator = iter(tip_sets)
+    first_tip_set = next(iterator, None)
+    if first_tip_set is None:
+        return True
+    for tip_set in iterator:
+        if tip_set != first_tip_set:
+            return False
+    return True
 
 
 class ConsensusTree(Tree):
@@ -18,7 +60,7 @@ class ConsensusTree(Tree):
         self.missing_taxa = parsed["missing_taxa"]
         self.json_output = parsed["json_output"]
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             trees=args.trees,
             method=args.method,
@@ -29,7 +71,13 @@ class ConsensusTree(Tree):
     def _parse_trees_from_source(self, trees_path: str):
         source = Path(trees_path)
         try:
-            lines = source.read_text().splitlines()
+            with source.open() as handle:
+                cleaned = [
+                    stripped
+                    for line in handle
+                    if (stripped := line.strip())
+                    and not stripped.startswith("#")
+                ]
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -39,7 +87,6 @@ class ConsensusTree(Tree):
                 code=2,
             )
 
-        cleaned = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
         if not cleaned:
             raise PhykitUserError(["No trees found in input."], code=2)
 
@@ -55,11 +102,11 @@ class ConsensusTree(Tree):
 
         # Otherwise, treat as a file containing one tree path per line.
         trees = []
+        parent_str = str(source.parent)
+        parent_prefix = "" if parent_str == "." else parent_str + os.sep
         for line in cleaned:
-            tree_path = Path(line)
-            if not tree_path.is_absolute():
-                tree_path = source.parent / tree_path
-            if not tree_path.exists():
+            tree_path = line if _path_isabs(line) else parent_prefix + line
+            if not _path_exists(tree_path):
                 raise PhykitUserError(
                     [
                         f"{tree_path} corresponds to no such file or directory.",
@@ -67,28 +114,36 @@ class ConsensusTree(Tree):
                     ],
                     code=2,
                 )
-            trees.append(Phylo.read(str(tree_path), "newick"))
+            trees.append(Phylo.read(tree_path, "newick"))
 
         return trees
 
     @staticmethod
-    def _tips(tree) -> Set[str]:
+    def _tips(tree) -> set[str]:
+        tip_names = Tree.calculate_terminal_names_fast(tree)
+        if tip_names is not None:
+            return set(tip_names)
         return {tip.name for tip in tree.get_terminals()}
 
     @staticmethod
-    def _prune_to_taxa(tree, taxa: Set[str]):
-        remove = [tip.name for tip in tree.get_terminals() if tip.name not in taxa]
+    def _prune_to_taxa(tree, taxa: set[str]):
+        terminals = Tree.calculate_terminal_clades_fast(tree)
+        if terminals is None:
+            terminals = tree.get_terminals()
+        remove = [tip for tip in terminals if tip.name not in taxa]
+        if len(remove) < len(terminals):
+            target_ids = {id(tip) for tip in remove}
+            if Tree._prune_terminal_objects_batch_standard_tree(tree, target_ids):
+                return tree
         for tip in remove:
             tree.prune(tip)
         return tree
 
-    def _normalize_taxa(self, trees: List):
+    def _normalize_taxa(self, trees: list):
         tip_sets = [self._tips(tree) for tree in trees]
-        shared_taxa = set.intersection(*tip_sets)
-
-        identical = all(tip_set == tip_sets[0] for tip_set in tip_sets[1:])
-        if identical:
-            return trees, False, len(tip_sets[0])
+        first_tip_set = tip_sets[0]
+        if _all_tip_sets_identical(tip_sets):
+            return trees, False, len(first_tip_set)
 
         if self.missing_taxa == "error":
             raise PhykitUserError(
@@ -99,6 +154,7 @@ class ConsensusTree(Tree):
                 code=2,
             )
 
+        shared_taxa = set.intersection(*tip_sets)
         if len(shared_taxa) < 3:
             raise PhykitUserError(
                 [
@@ -111,7 +167,7 @@ class ConsensusTree(Tree):
         pruned = [self._prune_to_taxa(tree, shared_taxa) for tree in trees]
         return pruned, True, len(shared_taxa)
 
-    def _infer_consensus(self, trees: List):
+    def _infer_consensus(self, trees: list):
         if self.method == "strict":
             return Consensus.strict_consensus(trees)
         return Consensus.majority_consensus(trees, cutoff=0.5)

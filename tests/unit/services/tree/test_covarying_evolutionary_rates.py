@@ -4,14 +4,52 @@ Unit tests for CovaryingEvolutionaryRates class
 
 import unittest
 import builtins
+from io import StringIO
 from unittest.mock import Mock, MagicMock, patch
 from concurrent.futures import Future
 from argparse import Namespace
 import pytest
+import subprocess
 import types
 import sys
+import numpy as np
+
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
+import phykit.services.tree.covarying_evolutionary_rates as cer_module
+
+
+def test_module_import_does_not_import_numpy():
+    code = """
+import sys
+import phykit.services.tree.covarying_evolutionary_rates as module
+
+assert hasattr(module.np, "__getattr__")
+assert hasattr(module.pickle, "dumps")
+assert callable(module.print_json)
+assert "json" not in sys.modules
+assert "numpy" not in sys.modules
+assert "pickle" not in sys.modules
+assert "concurrent.futures" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_list_outlier_filter_does_not_import_numpy():
+    code = """
+import sys
+from argparse import Namespace
+from phykit.services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
+
+service = CovaryingEvolutionaryRates(Namespace(tree_zero="t0", tree_one="t1", reference="ref", verbose=False))
+assert service.remove_outliers_based_on_indices([[1], [2], [3]], [1]) == [[1], [3]]
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestCovaryingEvolutionaryRates(unittest.TestCase):
@@ -49,6 +87,59 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertEqual(processed["reference"], "test_ref.tre")
         self.assertTrue(processed["verbose"])
 
+    def test_tips_to_prune_for_shared_reuses_shared_set(self):
+        class CountingShared(list):
+            def __init__(self, values):
+                super().__init__(values)
+                self.iterations = 0
+
+            def __iter__(self):
+                self.iterations += 1
+                return super().__iter__()
+
+        shared = CountingShared(["B", "C"])
+
+        tree_zero, tree_one, tree_ref = self.cov_rates._tips_to_prune_for_shared(
+            ["A", "B", "C", "F"],
+            ["B", "C", "D", "G"],
+            ["B", "C", "E", "H"],
+            shared,
+        )
+
+        self.assertEqual(shared.iterations, 1)
+        self.assertEqual(tree_zero, ["A", "F"])
+        self.assertEqual(tree_one, ["D", "G"])
+        self.assertEqual(tree_ref, ["E", "H"])
+
+    def test_zscore_matches_scipy_default_formula(self):
+        result = cer_module._zscore([1.0, 2.0, 3.0])
+        self.assertTrue(np.allclose(result, [-1.2247448714, 0.0, 1.2247448714]))
+
+    def test_pearsonr_matches_expected_two_sided_p_value(self):
+        r_value, p_value = cer_module._pearsonr(
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 3.0, 2.0, 5.0],
+        )
+        self.assertAlmostEqual(r_value, 0.8315218406203)
+        self.assertAlmostEqual(p_value, 0.1684781593797)
+
+    def test_pearsonr_does_not_import_scipy_stats(self):
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "scipy.stats" or name.startswith("scipy.stats."):
+                raise AssertionError("covarying rates Pearson p-value should not import scipy.stats")
+            return original_import(name, globals, locals, fromlist, level)
+
+        with patch("builtins.__import__", side_effect=fake_import):
+            r_value, p_value = cer_module._pearsonr(
+                [1.0, 2.0, 3.0, 4.0],
+                [1.0, 3.0, 2.0, 5.0],
+            )
+
+        self.assertAlmostEqual(r_value, 0.8315218406203)
+        self.assertAlmostEqual(p_value, 0.1684781593797)
+
     def test_get_indices_of_outlier_branch_lengths(self):
         """Test outlier detection in branch lengths"""
         # Test with normal values
@@ -75,6 +166,18 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
             corr_branch_lengths, outlier_indices
         )
         self.assertIn(1, result)  # NaN value
+
+        # Test vector path avoids np.where index tuple allocation
+        with patch.object(
+            cer_module.np,
+            "where",
+            side_effect=AssertionError("outlier detection should use flat indices"),
+        ):
+            result = self.cov_rates.get_indices_of_outlier_branch_lengths(
+                [1.0, 9.0, float("nan"), 2.0],
+                [],
+            )
+        self.assertEqual(set(result), {1, 2})
 
         # Test with existing outlier indices
         corr_branch_lengths = [1.0, 2.0, 7.0, 4.0]
@@ -111,6 +214,27 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
             corr_branch_lengths, outlier_indices
         )
         self.assertEqual(result, [['a'], ['e', 'f']])
+
+    def test_remove_outliers_filters_numpy_arrays_directly(self):
+        result = self.cov_rates.remove_outliers_based_on_indices(
+            np.array([1.0, 2.0, 3.0, 4.0]),
+            [1, -1],
+        )
+
+        self.assertEqual(result, [1.0, 3.0])
+
+    def test_remove_outliers_list_path_does_not_allocate_numpy_mask(self):
+        with patch.object(
+            cer_module.np,
+            "ones",
+            side_effect=AssertionError("list filtering should use set membership"),
+        ):
+            result = self.cov_rates.remove_outliers_based_on_indices(
+                [["a"], ["b"], ["c"], ["d"]],
+                [1, -1],
+            )
+
+        self.assertEqual(result, [["a"], ["c"]])
 
     def test_prune_tips(self):
         """Test tree pruning"""
@@ -425,6 +549,176 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertEqual(len(l1), 0)
         self.assertEqual(len(tip_names), 1)  # tip_names was appended before exception
 
+    def test_correct_branch_lengths_exact_split_fast_path(self):
+        """Exact matching topologies should avoid repeated common_ancestor lookups."""
+        sp = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        t0 = Phylo.read(StringIO("((A:2,B:2):4,(C:2,D:2):6);"), "newick")
+        t1 = Phylo.read(StringIO("((A:3,B:3):6,(C:3,D:3):9);"), "newick")
+        t0.common_ancestor = Mock(side_effect=AssertionError("fast path expected"))
+        t1.common_ancestor = Mock(side_effect=AssertionError("fast path expected"))
+        sp.get_terminals = Mock(
+            side_effect=AssertionError("direct traversal expected")
+        )
+        sp.get_nonterminals = Mock(
+            side_effect=AssertionError("direct traversal expected")
+        )
+
+        with patch.object(
+            TreeMixin,
+            "find_clades",
+            side_effect=AssertionError("generic traversal should not be used"),
+        ):
+            l0, l1, tip_names = self.cov_rates.correct_branch_lengths(t0, t1, sp)
+
+        self.assertEqual(l0, [2.0] * 6)
+        self.assertEqual(l1, [3.0] * 6)
+        self.assertEqual(
+            tip_names,
+            [["A"], ["B"], ["C"], ["D"], ["A", "B"], ["C", "D"]],
+        )
+
+    def test_correct_branch_lengths_same_tree_reuses_branch_length_map(self):
+        sp = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        tree = Phylo.read(StringIO("((A:2,B:2):4,(C:2,D:2):6);"), "newick")
+        original = self.cov_rates._branch_lengths_by_tipset
+
+        with patch.object(
+            self.cov_rates,
+            "_branch_lengths_by_tipset",
+            wraps=original,
+        ) as branch_lengths:
+            l0, l1, tip_names = self.cov_rates.correct_branch_lengths(
+                tree,
+                tree,
+                sp,
+            )
+
+        self.assertEqual(branch_lengths.call_count, 1)
+        self.assertEqual(l0, [2.0] * 6)
+        self.assertEqual(l1, [2.0] * 6)
+        self.assertEqual(
+            tip_names,
+            [["A"], ["B"], ["C"], ["D"], ["A", "B"], ["C", "D"]],
+        )
+
+    def test_correct_branch_lengths_same_gene_and_reference_tree_skips_branch_map(self):
+        tree = Phylo.read(StringIO("((A:2,B:2):4,(C:2,D:2):6);"), "newick")
+
+        with patch.object(
+            self.cov_rates,
+            "_branch_lengths_by_tipset",
+            side_effect=AssertionError("same tree/reference should not build branch maps"),
+        ):
+            l0, l1, tip_names = self.cov_rates.correct_branch_lengths(
+                tree,
+                tree,
+                tree,
+            )
+
+        self.assertEqual(l0, [1.0] * 6)
+        self.assertEqual(l1, [1.0] * 6)
+        self.assertEqual(
+            tip_names,
+            [["A"], ["B"], ["C"], ["D"], ["A", "B"], ["C", "D"]],
+        )
+
+    def test_branch_lengths_by_tipset_uses_direct_traversal(self):
+        tree = Phylo.read(StringIO("((A:1,B:2):3,C:4);"), "newick")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic postorder traversal should not be used")
+
+        with patch.object(TreeMixin, "find_clades", fail_find_clades):
+            lengths = self.cov_rates._branch_lengths_by_tipset(tree)
+
+        self.assertEqual(lengths[frozenset(["A"])], 1.0)
+        self.assertEqual(lengths[frozenset(["B"])], 2.0)
+        self.assertEqual(lengths[frozenset(["A", "B"])], 3.0)
+        self.assertEqual(lengths[frozenset(["C"])], 4.0)
+        self.assertIsNone(lengths[frozenset(["A", "B", "C"])])
+
+    def test_branch_lengths_by_tipset_handles_multifurcating_nodes(self):
+        tree = Phylo.read(StringIO("(A:1,B:2,C:3):4;"), "newick")
+
+        lengths = self.cov_rates._branch_lengths_by_tipset(tree)
+
+        self.assertEqual(lengths[frozenset(["A"])], 1.0)
+        self.assertEqual(lengths[frozenset(["B"])], 2.0)
+        self.assertEqual(lengths[frozenset(["C"])], 3.0)
+        self.assertEqual(lengths[frozenset(["A", "B", "C"])], 4.0)
+
+    def test_reference_tipsets_and_order_uses_direct_traversal(self):
+        tree = Phylo.read(
+            StringIO("((A:1,B:2):3,(C:4,(D:5,E:6):7):8);"),
+            "newick",
+        )
+        expected_tips_by_id = {}
+        expected_tip_names_by_id = {}
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                tips = frozenset([clade.name])
+                tip_names = (clade.name,)
+            else:
+                tips = frozenset().union(
+                    *(expected_tips_by_id[id(child)] for child in clade.clades)
+                )
+                tip_names = tuple(
+                    name
+                    for child in clade.clades
+                    for name in expected_tip_names_by_id[id(child)]
+                )
+            expected_tips_by_id[id(clade)] = tips
+            expected_tip_names_by_id[id(clade)] = tip_names
+        expected_terminals = list(tree.get_terminals())
+        expected_nonterminals = list(tree.get_nonterminals(order="preorder"))
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("standard reference metadata should use direct traversal")
+
+        with patch.object(TreeMixin, "find_clades", fail_generic_traversal):
+            result = self.cov_rates._reference_tipsets_and_order_direct(tree)
+
+        tips_by_id, tip_names_by_id, terminals, nonterminals = result
+        self.assertEqual(tips_by_id, expected_tips_by_id)
+        self.assertEqual(tip_names_by_id, expected_tip_names_by_id)
+        self.assertEqual([id(clade) for clade in terminals], [
+            id(clade) for clade in expected_terminals
+        ])
+        self.assertEqual([id(clade) for clade in nonterminals], [
+            id(clade) for clade in expected_nonterminals
+        ])
+
+    def test_reference_tipsets_and_order_handles_mixed_child_counts(self):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:2,C:3):4,(D:5,E:6,F:7):8,G:9);"),
+            "newick",
+        )
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("standard reference metadata should use direct traversal")
+
+        with patch.object(TreeMixin, "find_clades", fail_generic_traversal):
+            result = self.cov_rates._reference_tipsets_and_order_direct(tree)
+
+        tips_by_id, tip_names_by_id, terminals, nonterminals = result
+
+        self.assertEqual(
+            [terminal.name for terminal in terminals],
+            ["A", "B", "C", "D", "E", "F", "G"],
+        )
+        self.assertEqual(
+            [tip_names_by_id[id(clade)] for clade in nonterminals],
+            [
+                ("A", "B", "C", "D", "E", "F", "G"),
+                ("B", "C"),
+                ("D", "E", "F"),
+            ],
+        )
+        self.assertEqual(
+            tips_by_id[id(tree.root)],
+            frozenset(["A", "B", "C", "D", "E", "F", "G"]),
+        )
+
     @patch('builtins.print')
     def test_run_non_verbose(self, mock_print):
         """Test run method in non-verbose mode"""
@@ -515,13 +809,13 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         # Run the method
         self.cov_rates.run()
 
-        # In verbose mode, should print each value pair
-        self.assertEqual(mock_print.call_count, 3)  # One for each pair
-
-        # Check that semicolon-separated tips are printed
-        for call_obj in mock_print.call_args_list:
-            printed = call_obj[0][0]
-            self.assertIn('\t', printed)  # Should have tab separators
+        # In verbose mode, branch rows should be batched into one print.
+        expected = (
+            "-1.2247\t-1.2247\ttip1\n"
+            "0.0\t0.0\ttip2\n"
+            "1.2247\t1.2247\ttip1;tip2"
+        )
+        mock_print.assert_called_once_with(expected)
 
     @patch('builtins.print')
     def test_run_with_outliers(self, mock_print):

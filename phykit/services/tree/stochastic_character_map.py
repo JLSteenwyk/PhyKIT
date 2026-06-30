@@ -1,34 +1,25 @@
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.linalg import expm
-from scipy.optimize import minimize
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
-from ...helpers.discrete_models import (
-    build_q_matrix,
-    matrix_exp,
-    felsenstein_pruning,
-    fit_q_matrix,
-    parse_discrete_traits,
-)
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_tip_labels,
-    draw_circular_colored_arc,
-    draw_circular_multi_segment_branch,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class StochasticCharacterMap(Tree):
@@ -44,7 +35,9 @@ class StochasticCharacterMap(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -58,7 +51,7 @@ class StochasticCharacterMap(Tree):
         )
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="stochastic character mapping")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -73,14 +66,16 @@ class StochasticCharacterMap(Tree):
                 code=2,
             )
 
-        # Prune tree to shared taxa
-        tips_in_tree = set(self.get_tip_names_from_tree(tree))
-        tips_to_prune = [t for t in tips_in_tree if t not in tip_states]
-        if tips_to_prune:
-            for tip_name in tips_to_prune:
-                tree.prune(tip_name)
+        copied_tree = False
+        missing_tip_state_count = self._count_missing_tip_states(tree, tip_states)
+        if missing_tip_state_count is None or missing_tip_state_count:
+            tree = self._fast_copy(tree)
+            copied_tree = True
+            self._prune_tree_to_tip_states(tree, tip_states)
 
         if self.plot_config.ladderize:
+            if not copied_tree:
+                tree = self._fast_copy(tree)
             tree.ladderize()
 
         # Fit Q matrix
@@ -95,14 +90,33 @@ class StochasticCharacterMap(Tree):
 
         # Build parent lookup dict once
         parent_map = self._build_parent_map(tree)
+        simulation_metadata = self._build_simulation_metadata(
+            tree, tip_states, states, parent_map
+        )
+        sampling_nodes = self._prepare_ancestral_sampling_nodes(
+            simulation_metadata[0],
+            Q,
+            cond_liks,
+            len(states),
+            transition_cache={},
+        )
+        branch_history_context = self._prepare_branch_history_context(
+            Q,
+            len(states),
+        )
 
         # Run stochastic mappings
         rng = np.random.default_rng(self.seed)
         mappings = []
+        transition_cache = {}
         for _ in range(self.nsim):
             mapping = self._run_single_simulation(
                 tree, tip_states, Q, pi, states, rng,
                 cond_liks=cond_liks, parent_map=parent_map,
+                transition_cache=transition_cache,
+                simulation_metadata=simulation_metadata,
+                sampling_nodes=sampling_nodes,
+                branch_history_context=branch_history_context,
             )
             mappings.append(mapping)
 
@@ -125,71 +139,350 @@ class StochasticCharacterMap(Tree):
             self._print_text_output(Q, loglik, states, summary)
 
     def _parse_discrete_trait_file(
-        self, path: str, column: str, tree_tips: List[str]
-    ) -> Dict[str, str]:
+        self, path: str, column: str, tree_tips: list[str]
+    ) -> dict[str, str]:
+        from ...helpers.discrete_models import parse_discrete_traits
+
         return parse_discrete_traits(path, tree_tips, trait_column=column)
 
+    @staticmethod
+    def _count_missing_tip_states(tree, tip_states: dict[str, str]) -> int | None:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        missing_tip_state_count = 0
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+        contains = tip_states.__contains__
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    extend(children)
+                elif not contains(clade.name):
+                    missing_tip_state_count += 1
+        except AttributeError:
+            return None
+
+        return missing_tip_state_count
+
+    @staticmethod
+    def _prune_tree_to_tip_states(tree, tip_states: dict[str, str]) -> int:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            tips_to_prune = []
+            target_ids = set()
+            terminal_count = 0
+            stack = [root]
+            pop = stack.pop
+            append = stack.append
+            append_prune = tips_to_prune.append
+            add_target = target_ids.add
+            contains = tip_states.__contains__
+            try:
+                while stack:
+                    clade = pop()
+                    children = clade.clades
+                    if children:
+                        child_count = len(children)
+                        if child_count == 2:
+                            append(children[1])
+                            append(children[0])
+                        else:
+                            for index in range(child_count - 1, -1, -1):
+                                append(children[index])
+                    else:
+                        terminal_count += 1
+                        if not contains(clade.name):
+                            append_prune(clade)
+                            add_target(id(clade))
+            except AttributeError:
+                tips_to_prune = None
+
+            if tips_to_prune is not None:
+                if (
+                    tips_to_prune
+                    and len(tips_to_prune) < terminal_count
+                    and Tree._prune_terminal_objects_batch_standard_tree(
+                        tree,
+                        target_ids,
+                    )
+                ):
+                    return len(tips_to_prune)
+                for tip in tips_to_prune:
+                    tree.prune(tip)
+                return len(tips_to_prune)
+
+        tips_to_prune = [
+            tip for tip in tree.get_terminals() if tip.name not in tip_states
+        ]
+        for tip in tips_to_prune:
+            tree.prune(tip)
+        return len(tips_to_prune)
+
     def _build_q_matrix(self, params, k, model):
+        from ...helpers.discrete_models import build_q_matrix
+
         return build_q_matrix(params, k, model)
 
     def _matrix_exp(self, Q, t):
+        from ...helpers.discrete_models import matrix_exp
+
         return matrix_exp(Q, t)
 
     def _felsenstein_pruning(self, tree, tip_states, Q, pi, states):
+        from ...helpers.discrete_models import felsenstein_pruning
+
         return felsenstein_pruning(tree, tip_states, Q, pi, states)
 
     def _fit_q_matrix(self, tree, tip_states, states, model):
+        from ...helpers.discrete_models import fit_q_matrix
+
         return fit_q_matrix(tree, tip_states, states, model)
 
+    @staticmethod
+    def _sample_categorical(probs: np.ndarray, rng) -> int:
+        return StochasticCharacterMap._sample_categorical_cdf(
+            np.cumsum(probs),
+            rng,
+        )
+
+    @staticmethod
+    def _sample_categorical_cdf(cdf: np.ndarray, rng) -> int:
+        value = rng.random()
+        length = len(cdf)
+        if length == 2:
+            if value < cdf[0]:
+                return 0
+            return 1
+        if length == 3:
+            if value < cdf[0]:
+                return 0
+            if value < cdf[1]:
+                return 1
+            return 2
+        if length == 4:
+            if value < cdf[0]:
+                return 0
+            if value < cdf[1]:
+                return 1
+            if value < cdf[2]:
+                return 2
+            return 3
+        if length == 5:
+            if value < cdf[2]:
+                if value < cdf[0]:
+                    return 0
+                if value < cdf[1]:
+                    return 1
+                return 2
+            if value < cdf[3]:
+                return 3
+            return 4
+        if length == 6:
+            if value < cdf[2]:
+                if value < cdf[0]:
+                    return 0
+                if value < cdf[1]:
+                    return 1
+                return 2
+            if value < cdf[4]:
+                if value < cdf[3]:
+                    return 3
+                return 4
+            return 5
+        if length == 7:
+            if value < cdf[3]:
+                if value < cdf[1]:
+                    if value < cdf[0]:
+                        return 0
+                    return 1
+                if value < cdf[2]:
+                    return 2
+                return 3
+            if value < cdf[5]:
+                if value < cdf[4]:
+                    return 4
+                return 5
+            return 6
+        if length == 8:
+            if value < cdf[3]:
+                if value < cdf[1]:
+                    if value < cdf[0]:
+                        return 0
+                    return 1
+                if value < cdf[2]:
+                    return 2
+                return 3
+            if value < cdf[5]:
+                if value < cdf[4]:
+                    return 4
+                return 5
+            if value < cdf[6]:
+                return 6
+            return 7
+
+        idx = int(np.searchsorted(cdf, value, side="right"))
+        if idx == length:
+            idx -= 1
+        return idx
+
     def _sample_ancestral_states(
-        self, tree, tip_states: Dict[str, str],
+        self, tree, tip_states: dict[str, str],
         Q: np.ndarray, pi: np.ndarray,
-        cond_liks: Dict, states: List[str], rng,
-        parent_map: Dict = None,
-    ) -> Dict:
+        cond_liks: dict, states: list[str], rng,
+        parent_map: dict = None, transition_cache: dict = None,
+        simulation_nodes=None, sampling_nodes=None,
+    ) -> dict:
         k = len(states)
-        state_idx = {s: i for i, s in enumerate(states)}
         node_states = {}
 
         # Sample root
         root_lik = cond_liks[id(tree.root)]
         root_probs = pi * root_lik
         root_probs /= root_probs.sum()
-        root_state_idx = rng.choice(k, p=root_probs)
+        root_state_idx = self._sample_categorical(root_probs, rng)
         node_states[id(tree.root)] = root_state_idx
 
-        # Pre-order traversal
-        for clade in tree.find_clades(order="preorder"):
-            if clade == tree.root:
-                continue
-            parent = self._get_parent(tree, clade, parent_map)
-            if parent is None:
-                continue
-            parent_state = node_states[id(parent)]
+        if simulation_nodes is None:
+            if parent_map is None:
+                parent_map = self._build_parent_map(tree)
+            simulation_nodes, _ = self._build_simulation_metadata(
+                tree, tip_states, states, parent_map
+            )
+        if sampling_nodes is None:
+            sampling_nodes = self._prepare_ancestral_sampling_nodes(
+                simulation_nodes,
+                Q,
+                cond_liks,
+                k,
+                transition_cache,
+            )
 
-            t = clade.branch_length if clade.branch_length else 1e-8
+        for clade_id, parent_id, tip_state_idx, cdfs_by_parent in sampling_nodes:
+            parent_state = node_states[parent_id]
 
-            if clade.is_terminal() and clade.name in tip_states:
-                node_states[id(clade)] = state_idx[tip_states[clade.name]]
+            if tip_state_idx is not None:
+                node_states[clade_id] = tip_state_idx
             else:
-                P = self._matrix_exp(Q, t)
-                child_lik = cond_liks[id(clade)]
-                probs = P[parent_state, :] * child_lik
-                total = probs.sum()
-                if total > 0:
-                    probs /= total
-                else:
-                    probs = np.ones(k) / k
-                node_states[id(clade)] = rng.choice(k, p=probs)
+                node_states[clade_id] = self._sample_categorical_cdf(
+                    cdfs_by_parent[parent_state],
+                    rng,
+                )
 
         return node_states
 
-    def _build_parent_map(self, tree) -> Dict:
+    def _prepare_ancestral_sampling_nodes(
+        self,
+        simulation_nodes,
+        Q: np.ndarray,
+        cond_liks: dict,
+        k: int,
+        transition_cache: dict = None,
+    ):
+        sampling_nodes = []
+        uniform = np.ones(k) / k
+        uniform_cdf = np.cumsum(uniform)
+        for clade_id, parent_id, branch_length, tip_state_idx in simulation_nodes:
+            if tip_state_idx is not None:
+                sampling_nodes.append((clade_id, parent_id, tip_state_idx, None))
+                continue
+
+            if transition_cache is None:
+                P = self._matrix_exp(Q, branch_length)
+            else:
+                P = transition_cache.get(branch_length)
+                if P is None:
+                    P = self._matrix_exp(Q, branch_length)
+                    transition_cache[branch_length] = P
+
+            child_lik = cond_liks[clade_id]
+            if k < 5:
+                cdfs_by_parent = np.empty((k, k), dtype=float)
+                for parent_state in range(k):
+                    probs = P[parent_state, :] * child_lik
+                    total = probs.sum()
+                    if total > 0:
+                        cdfs_by_parent[parent_state, :] = np.cumsum(probs / total)
+                    else:
+                        cdfs_by_parent[parent_state, :] = uniform_cdf
+            else:
+                weighted = P * child_lik
+                totals = weighted.sum(axis=1)
+                if np.all(totals > 0):
+                    cdfs_by_parent = np.cumsum(
+                        weighted / totals[:, None],
+                        axis=1,
+                    )
+                else:
+                    positive = totals > 0
+                    cdfs_by_parent = np.empty((k, k), dtype=float)
+                    if np.any(positive):
+                        cdfs_by_parent[positive] = np.cumsum(
+                            weighted[positive] / totals[positive, None],
+                            axis=1,
+                        )
+                    cdfs_by_parent[~positive] = uniform_cdf
+            sampling_nodes.append(
+                (clade_id, parent_id, tip_state_idx, cdfs_by_parent)
+            )
+        return sampling_nodes
+
+    def _build_parent_map(self, tree) -> dict:
         parent_map = {}
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            stack = [root]
+            try:
+                pop = stack.pop
+                extend = stack.extend
+                while stack:
+                    clade = pop()
+                    children = clade.clades
+                    for child in children:
+                        parent_map[id(child)] = clade
+                    if children:
+                        extend(children)
+                return parent_map
+            except AttributeError:
+                parent_map = {}
+
         for clade in tree.find_clades(order="preorder"):
             for child in clade.clades:
                 parent_map[id(child)] = clade
         return parent_map
+
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
 
     def _get_parent(self, tree, target, parent_map=None):
         if parent_map is not None:
@@ -199,14 +492,93 @@ class StochasticCharacterMap(Tree):
                 return clade
         return None
 
+    def _build_simulation_metadata(self, tree, tip_states, states, parent_map):
+        state_idx = {state: i for i, state in enumerate(states)}
+        simulation_nodes = []
+        branch_nodes = []
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            stack = [root]
+            try:
+                while stack:
+                    clade = stack.pop()
+                    children = clade.clades
+                    if clade is not root:
+                        parent = parent_map.get(id(clade))
+                        if parent is not None:
+                            clade_id = id(clade)
+                            parent_id = id(parent)
+                            branch_length = (
+                                clade.branch_length
+                                if clade.branch_length
+                                else 1e-8
+                            )
+                            tip_state_idx = (
+                                state_idx[tip_states[clade.name]]
+                                if not children and clade.name in tip_states
+                                else None
+                            )
+                            simulation_nodes.append(
+                                (
+                                    clade_id,
+                                    parent_id,
+                                    branch_length,
+                                    tip_state_idx,
+                                )
+                            )
+                            branch_nodes.append(
+                                (clade_id, parent_id, branch_length)
+                            )
+                    if children:
+                        stack.extend(reversed(children))
+                return simulation_nodes, branch_nodes
+            except AttributeError:
+                simulation_nodes = []
+                branch_nodes = []
+
+        for clade in tree.find_clades(order="preorder"):
+            if clade == tree.root:
+                continue
+            parent = parent_map.get(id(clade))
+            if parent is None:
+                continue
+            clade_id = id(clade)
+            parent_id = id(parent)
+            branch_length = clade.branch_length if clade.branch_length else 1e-8
+            tip_state_idx = (
+                state_idx[tip_states[clade.name]]
+                if clade.is_terminal() and clade.name in tip_states
+                else None
+            )
+            simulation_nodes.append(
+                (clade_id, parent_id, branch_length, tip_state_idx)
+            )
+            branch_nodes.append((clade_id, parent_id, branch_length))
+        return simulation_nodes, branch_nodes
+
     def _simulate_branch_history(
         self, Q: np.ndarray, start_state: int, end_state: int,
-        branch_length: float, k: int, rng, max_attempts: int = 1000
-    ) -> List[Tuple[float, int]]:
+        branch_length: float, k: int, rng, max_attempts: int = 1000,
+        rates: np.ndarray = None, transition_probs_by_state: list[np.ndarray] = None,
+        transition_cdfs_by_state: list[np.ndarray] = None,
+        deterministic_next_states: list[int] = None,
+    ) -> list[tuple[float, int]]:
         if branch_length <= 0:
             return [(0.0, start_state)]
 
-        rates = -np.diag(Q)
+        if rates is None:
+            rates = -np.diag(Q)
+        if transition_cdfs_by_state is None:
+            if transition_probs_by_state is None:
+                transition_probs_by_state = self._transition_probs_by_state(Q, k)
+            transition_cdfs_by_state = self._transition_cdfs_by_state(
+                transition_probs_by_state
+            )
 
         for _ in range(max_attempts):
             history = [(0.0, start_state)]
@@ -222,13 +594,17 @@ class StochasticCharacterMap(Tree):
                     break
                 current_time += wait_time
                 # Choose next state
-                trans_probs = Q[current_state, :].copy()
-                trans_probs[current_state] = 0.0
-                total = trans_probs.sum()
-                if total <= 0:
+                trans_cdf = transition_cdfs_by_state[current_state]
+                if trans_cdf is None:
                     break
-                trans_probs /= total
-                new_state = rng.choice(k, p=trans_probs)
+                if deterministic_next_states is not None:
+                    new_state = deterministic_next_states[current_state]
+                    if new_state >= 0:
+                        rng.random()
+                    else:
+                        new_state = self._sample_categorical_cdf(trans_cdf, rng)
+                else:
+                    new_state = self._sample_categorical_cdf(trans_cdf, rng)
                 current_state = new_state
                 history.append((current_time, current_state))
 
@@ -242,14 +618,59 @@ class StochasticCharacterMap(Tree):
             midpoint = branch_length / 2.0
             return [(0.0, start_state), (midpoint, end_state)]
 
+    @staticmethod
+    def _transition_probs_by_state(Q: np.ndarray, k: int) -> list[np.ndarray]:
+        transition_probs = []
+        for state in range(k):
+            probs = Q[state, :].copy()
+            probs[state] = 0.0
+            total = probs.sum()
+            transition_probs.append((probs / total) if total > 0 else None)
+        return transition_probs
+
+    @staticmethod
+    def _transition_cdfs_by_state(
+        transition_probs_by_state: list[np.ndarray],
+    ) -> list[np.ndarray]:
+        return [
+            np.cumsum(probs) if probs is not None else None
+            for probs in transition_probs_by_state
+        ]
+
+    def _prepare_branch_history_context(self, Q: np.ndarray, k: int):
+        transition_probs_by_state = self._transition_probs_by_state(Q, k)
+        return (
+            -np.diag(Q),
+            self._transition_cdfs_by_state(transition_probs_by_state),
+            self._deterministic_transition_targets(transition_probs_by_state),
+        )
+
+    @staticmethod
+    def _deterministic_transition_targets(
+        transition_probs_by_state: list[np.ndarray],
+    ) -> list[int]:
+        targets = []
+        for probs in transition_probs_by_state:
+            if probs is None:
+                targets.append(-1)
+                continue
+            nonzero = np.flatnonzero(probs > 0.0)
+            if len(nonzero) == 1:
+                targets.append(int(nonzero[0]))
+            else:
+                targets.append(-1)
+        return targets
+
     def _run_single_simulation(
-        self, tree, tip_states: Dict[str, str],
+        self, tree, tip_states: dict[str, str],
         Q: np.ndarray, pi: np.ndarray,
-        states: List[str], rng,
-        cond_liks: Dict = None, parent_map: Dict = None,
-    ) -> Dict:
+        states: list[str], rng,
+        cond_liks: dict = None, parent_map: dict = None,
+        transition_cache: dict = None,
+        simulation_metadata=None, sampling_nodes=None,
+        branch_history_context=None,
+    ) -> dict:
         k = len(states)
-        state_idx = {s: i for i, s in enumerate(states)}
 
         if cond_liks is None:
             cond_liks, _ = self._felsenstein_pruning(
@@ -257,27 +678,42 @@ class StochasticCharacterMap(Tree):
             )
         if parent_map is None:
             parent_map = self._build_parent_map(tree)
+        if simulation_metadata is None:
+            simulation_metadata = self._build_simulation_metadata(
+                tree, tip_states, states, parent_map
+            )
+        simulation_nodes, branch_nodes = simulation_metadata
         node_states = self._sample_ancestral_states(
             tree, tip_states, Q, pi, cond_liks, states, rng,
-            parent_map=parent_map,
+            parent_map=parent_map, transition_cache=transition_cache,
+            simulation_nodes=simulation_nodes,
+            sampling_nodes=sampling_nodes,
         )
 
         branch_histories = {}
-        for clade in tree.find_clades(order="preorder"):
-            if clade == tree.root:
-                continue
-            parent = self._get_parent(tree, clade, parent_map)
-            if parent is None:
-                continue
-
-            t = clade.branch_length if clade.branch_length else 1e-8
-            start_state = node_states[id(parent)]
-            end_state = node_states[id(clade)]
+        if branch_history_context is None:
+            branch_history_context = self._prepare_branch_history_context(
+                Q,
+                k,
+            )
+        if len(branch_history_context) == 2:
+            rates, transition_cdfs_by_state = branch_history_context
+            deterministic_next_states = None
+        else:
+            rates, transition_cdfs_by_state, deterministic_next_states = (
+                branch_history_context
+            )
+        for clade_id, parent_id, t in branch_nodes:
+            start_state = node_states[parent_id]
+            end_state = node_states[clade_id]
 
             history = self._simulate_branch_history(
-                Q, start_state, end_state, t, k, rng
+                Q, start_state, end_state, t, k, rng,
+                rates=rates,
+                transition_cdfs_by_state=transition_cdfs_by_state,
+                deterministic_next_states=deterministic_next_states,
             )
-            branch_histories[id(clade)] = history
+            branch_histories[clade_id] = history
 
         return {
             "node_states": node_states,
@@ -285,63 +721,89 @@ class StochasticCharacterMap(Tree):
         }
 
     def _summarize_simulations(
-        self, mappings: List[Dict], states: List[str], tree
-    ) -> Dict:
+        self, mappings: list[dict], states: list[str], tree
+    ) -> dict:
         k = len(states)
         nsim = len(mappings)
 
-        total_dwelling = np.zeros((nsim, k))
-        total_transitions = np.zeros((nsim, k, k))
+        total_dwelling = np.zeros(k)
+        total_transitions = np.zeros((k, k))
         node_posteriors = {}
 
-        # Collect node ids for internal nodes
+        branch_lengths = {}
         internal_nodes = []
-        for clade in tree.find_clades(order="preorder"):
-            if not clade.is_terminal():
-                internal_nodes.append(id(clade))
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
 
-        for sim_idx, mapping in enumerate(mappings):
+        if root is not None:
+            stack = [root]
+            try:
+                while stack:
+                    clade = stack.pop()
+                    children = clade.clades
+                    cid = id(clade)
+                    if clade is not root:
+                        branch_lengths[cid] = (
+                            clade.branch_length
+                            if clade.branch_length
+                            else 1e-8
+                        )
+                    if children:
+                        internal_nodes.append(cid)
+                        node_posteriors[cid] = np.zeros(k)
+                        stack.extend(reversed(children))
+            except AttributeError:
+                branch_lengths = {}
+                internal_nodes = []
+                node_posteriors = {}
+
+        if root is None or not internal_nodes:
+            for clade in tree.find_clades(order="preorder"):
+                cid = id(clade)
+                if clade != tree.root:
+                    branch_lengths[cid] = (
+                        clade.branch_length if clade.branch_length else 1e-8
+                    )
+                if clade.is_terminal():
+                    continue
+                internal_nodes.append(cid)
+                node_posteriors[cid] = np.zeros(k)
+
+        for mapping in mappings:
             histories = mapping["branch_histories"]
             node_states = mapping["node_states"]
 
-            for clade in tree.find_clades(order="preorder"):
-                if clade == tree.root:
-                    continue
-                clade_id = id(clade)
-                if clade_id not in histories:
+            for clade_id, history in histories.items():
+                t = branch_lengths.get(clade_id)
+                if t is None:
                     continue
 
-                history = histories[clade_id]
-                t = clade.branch_length if clade.branch_length else 1e-8
+                if len(history) == 1:
+                    total_dwelling[history[0][1]] += t
+                    continue
 
-                # Compute dwelling times for this branch
-                for h_idx in range(len(history)):
-                    state = history[h_idx][1]
-                    start_t = history[h_idx][0]
-                    if h_idx + 1 < len(history):
-                        end_t = history[h_idx + 1][0]
-                    else:
-                        end_t = t
-                    total_dwelling[sim_idx, state] += end_t - start_t
-
-                # Count transitions
+                prev_time, prev_state = history[0]
                 for h_idx in range(1, len(history)):
-                    from_state = history[h_idx - 1][1]
-                    to_state = history[h_idx][1]
-                    if from_state != to_state:
-                        total_transitions[sim_idx, from_state, to_state] += 1
+                    time_val, state = history[h_idx]
+                    total_dwelling[prev_state] += time_val - prev_time
+                    if prev_state != state:
+                        total_transitions[prev_state, state] += 1
+                    prev_time = time_val
+                    prev_state = state
+                total_dwelling[prev_state] += t - prev_time
 
             # Node posteriors
             for node_id in internal_nodes:
-                if node_id not in node_posteriors:
-                    node_posteriors[node_id] = np.zeros(k)
                 if node_id in node_states:
                     state = node_states[node_id]
                     node_posteriors[node_id][state] += 1
 
         # Average across simulations
-        mean_dwelling = total_dwelling.mean(axis=0)
-        mean_transitions = total_transitions.mean(axis=0)
+        mean_dwelling = total_dwelling / nsim
+        mean_transitions = total_transitions / nsim
 
         # Normalize node posteriors
         for node_id in node_posteriors:
@@ -355,76 +817,79 @@ class StochasticCharacterMap(Tree):
 
     def _print_text_output(
         self, Q: np.ndarray, loglik: float,
-        states: List[str], summary: Dict
+        states: list[str], summary: dict
     ) -> None:
-        k = len(states)
-        print("Stochastic Character Mapping (SIMMAP)")
-        print(f"\nModel: {self.model}")
-        print(f"Number of simulations: {self.nsim}")
+        lines = [
+            "Stochastic Character Mapping (SIMMAP)",
+            f"\nModel: {self.model}",
+            f"Number of simulations: {self.nsim}",
+        ]
+        append = lines.append
 
-        print("\nFitted Q matrix:")
+        append("\nFitted Q matrix:")
         # Header
         header = "              " + "".join(f"{s:>12s}" for s in states)
-        print(header)
-        for i, s in enumerate(states):
-            row = f"{s:14s}" + "".join(f"{Q[i, j]:12.4f}" for j in range(k))
-            print(row)
+        append(header)
+        q_row_format = "%-14s" + "%12.4f" * len(states)
+        for s, q_row in zip(states, Q):
+            append(q_row_format % ((s,) + tuple(q_row)))
 
-        print(f"\nLog-likelihood: {loglik:.4f}")
+        append(f"\nLog-likelihood: {loglik:.4f}")
 
         mean_dwelling = summary["mean_dwelling_times"]
         total_dwelling = mean_dwelling.sum()
-        print("\nMean dwelling times:")
-        for i, s in enumerate(states):
-            pct = 100.0 * mean_dwelling[i] / total_dwelling if total_dwelling > 0 else 0
-            print(f"  {s:14s} {mean_dwelling[i]:8.2f} ({pct:.1f}%)")
+        append("\nMean dwelling times:")
+        for s, value in zip(states, mean_dwelling):
+            pct = 100.0 * value / total_dwelling if total_dwelling > 0 else 0
+            append(f"  {s:14s} {value:8.2f} ({pct:.1f}%)")
 
         mean_trans = summary["mean_transitions"]
-        print("\nMean transitions:")
+        append("\nMean transitions:")
         total_trans = 0.0
-        for i in range(k):
-            for j in range(k):
-                if i != j and mean_trans[i, j] > 0:
-                    print(
-                        f"  {states[i]} -> {states[j]}:"
-                        f"  {mean_trans[i, j]:.2f}"
+        for si, trans_row in zip(states, mean_trans):
+            for sj, value in zip(states, trans_row):
+                if si != sj and value > 0:
+                    append(
+                        f"  {si} -> {sj}:"
+                        f"  {value:.2f}"
                     )
-                    total_trans += mean_trans[i, j]
-        print(f"  {'Total:':28s}{total_trans:.2f}")
+                    total_trans += value
+        append(f"  {'Total:':28s}{total_trans:.2f}")
+        print("\n".join(lines))
 
     def _format_result(
         self, Q: np.ndarray, loglik: float,
-        states: List[str], summary: Dict,
+        states: list[str], summary: dict,
         plot_output: str
-    ) -> Dict:
-        k = len(states)
+    ) -> dict:
         q_dict = {}
-        for i, si in enumerate(states):
-            q_dict[si] = {}
-            for j, sj in enumerate(states):
-                q_dict[si][sj] = float(Q[i, j])
+        for si, q_row in zip(states, Q):
+            q_dict[si] = {
+                sj: float(value) for sj, value in zip(states, q_row)
+            }
 
         mean_dwelling = summary["mean_dwelling_times"]
         total_dwelling = float(mean_dwelling.sum())
 
         dwelling_dict = {
-            states[i]: float(mean_dwelling[i]) for i in range(k)
+            state: float(value) for state, value in zip(states, mean_dwelling)
         }
         proportion_dict = {
-            states[i]: float(mean_dwelling[i] / total_dwelling)
+            state: float(value / total_dwelling)
             if total_dwelling > 0 else 0.0
-            for i in range(k)
+            for state, value in zip(states, mean_dwelling)
         }
 
         mean_trans = summary["mean_transitions"]
         trans_dict = {}
         total_trans = 0.0
-        for i in range(k):
-            for j in range(k):
-                if i != j:
-                    key = f"{states[i]} -> {states[j]}"
-                    trans_dict[key] = float(mean_trans[i, j])
-                    total_trans += float(mean_trans[i, j])
+        for si, trans_row in zip(states, mean_trans):
+            for sj, value in zip(states, trans_row):
+                if si != sj:
+                    scalar = float(value)
+                    key = f"{si} -> {sj}"
+                    trans_dict[key] = scalar
+                    total_trans += scalar
 
         result = {
             "model": self.model,
@@ -444,13 +909,16 @@ class StochasticCharacterMap(Tree):
         return result
 
     def _plot_stochastic_map(
-        self, tree, mapping: Dict, states: List[str],
-        output_path: str, parent_map: Dict = None,
+        self, tree, mapping: dict, states: list[str],
+        output_path: str, parent_map: dict = None,
     ) -> None:
+        from ...helpers.plot_config import compute_node_positions
+
         try:
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.lines import Line2D
         except ImportError:
             print(
@@ -468,38 +936,15 @@ class StochasticCharacterMap(Tree):
             i: cmap(i / max(k - 1, 1)) for i in range(k)
         }
 
-        # Compute node positions: x = distance from root, y = assigned by tips
-        node_x = {}
-        node_y = {}
-
-        tips = list(tree.get_terminals())
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
-        # Compute x positions (distance from root)
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                else:
-                    parent = self._get_parent(tree, clade, parent_map)
-                    if parent is not None:
-                        t = clade.branch_length if clade.branch_length else 0.0
-                        node_x[id(clade)] = node_x[id(parent)] + t
-
-        # Compute y positions for internal nodes (average of children)
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        preorder_clades = list(self._iter_preorder(root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
         config = self.plot_config
         config.resolve(n_rows=len(tips), n_cols=None)
@@ -509,14 +954,29 @@ class StochasticCharacterMap(Tree):
 
         if self.plot_config.circular:
             # --- Circular mode ---
-            coords = compute_circular_coords(tree, node_x, parent_map)
+            from ...helpers.circular_layout import (
+                _arc_fractions_array,
+                compute_circular_coords,
+                draw_circular_tip_labels,
+            )
+            import math as _math
+
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
-            for clade in tree.find_clades(order="preorder"):
+            branch_segments = []
+            branch_colors = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
-                parent = self._get_parent(tree, clade, parent_map)
+                parent = parent_map.get(id(clade))
                 if parent is None:
                     continue
 
@@ -526,11 +986,15 @@ class StochasticCharacterMap(Tree):
                     continue
 
                 t = clade.branch_length if clade.branch_length else 0.0
+                angle = coords[cid]["angle"]
+                r_p = coords[pid]["radius"]
+                r_c = coords[cid]["radius"]
+                radius_delta = r_c - r_p
+                cos_angle = _math.cos(angle)
+                sin_angle = _math.sin(angle)
 
                 if cid in histories:
                     history = histories[cid]
-                    # Convert history to fractional segments
-                    segments = []
                     for h_idx in range(len(history)):
                         state = history[h_idx][1]
                         seg_start = history[h_idx][0]
@@ -544,28 +1008,40 @@ class StochasticCharacterMap(Tree):
                         else:
                             start_frac = 0.0
                             end_frac = 1.0
-                        segments.append((start_frac, end_frac, state))
-
-                    draw_circular_multi_segment_branch(
-                        ax, coords[pid], coords[cid],
-                        segments, state_colors, lw=2.5,
-                    )
+                        r0 = r_p + radius_delta * start_frac
+                        r1 = r_p + radius_delta * end_frac
+                        branch_segments.append((
+                            (r0 * cos_angle, r0 * sin_angle),
+                            (r1 * cos_angle, r1 * sin_angle),
+                        ))
+                        branch_colors.append(state_colors[state])
                 else:
-                    import math as _math
-                    angle = coords[cid]["angle"]
-                    r_p = coords[pid]["radius"]
-                    r_c = coords[cid]["radius"]
-                    x0 = r_p * _math.cos(angle)
-                    y0 = r_p * _math.sin(angle)
-                    x1 = r_c * _math.cos(angle)
-                    y1 = r_c * _math.sin(angle)
-                    ax.plot([x0, x1], [y0, y1], color="gray",
-                            linewidth=2.5, solid_capstyle="butt")
+                    branch_segments.append((
+                        (r_p * cos_angle, r_p * sin_angle),
+                        (r_c * cos_angle, r_c * sin_angle),
+                    ))
+                    branch_colors.append("gray")
+
+            if branch_segments:
+                ax.add_collection(
+                    LineCollection(
+                        branch_segments,
+                        colors=branch_colors,
+                        linewidths=2.5,
+                        capstyle="butt",
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
 
             # Arcs at internal nodes
             node_states = mapping.get("node_states", {})
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or not clade.clades:
+            arc_segments = []
+            arc_colors = []
+            arc_fractions = _arc_fractions_array()
+            tau = 2.0 * _math.pi
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 cid = id(clade)
                 if cid not in coords:
@@ -579,10 +1055,32 @@ class StochasticCharacterMap(Tree):
                 arc_color = "gray"
                 if cid in node_states:
                     arc_color = state_colors[node_states[cid]]
-                draw_circular_colored_arc(
-                    ax, 0, 0, coords[cid]["radius"],
-                    min_a, max_a, color=arc_color, lw=0.8,
+
+                start = min_a % tau
+                end = max_a % tau
+                diff = (end - start) % tau
+                if diff > _math.pi:
+                    diff = diff - tau
+                angles = start + diff * arc_fractions
+                radius = coords[cid]["radius"]
+                arc_segments.append(
+                    np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
                 )
+                arc_colors.append(arc_color)
+
+            if arc_segments:
+                ax.add_collection(
+                    LineCollection(
+                        arc_segments,
+                        colors=arc_colors,
+                        linewidths=0.8,
+                        capstyle="round",
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if branch_segments or arc_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
@@ -592,16 +1090,20 @@ class StochasticCharacterMap(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_wedge,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_wedge(ax, tree, mrca, clr, coords)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             handles = [
@@ -618,10 +1120,13 @@ class StochasticCharacterMap(Tree):
                 ax.set_title(config.title or "Stochastic Character Map", fontsize=config.title_fontsize)
         else:
             # --- Rectangular mode ---
-            for clade in tree.find_clades(order="preorder"):
+            vertical_segments = []
+            branch_segments = []
+            branch_colors = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
-                parent = self._get_parent(tree, clade, parent_map)
+                parent = parent_map.get(id(clade))
                 if parent is None:
                     continue
 
@@ -631,11 +1136,7 @@ class StochasticCharacterMap(Tree):
                 child_y = node_y[id(clade)]
                 t = clade.branch_length if clade.branch_length else 0.0
 
-                # Draw vertical connector at parent x
-                ax.plot(
-                    [parent_x, parent_x], [parent_y, child_y],
-                    color="gray", linewidth=0.8, zorder=1
-                )
+                vertical_segments.append(((parent_x, parent_y), (parent_x, child_y)))
 
                 # Draw horizontal branch segments colored by history
                 clade_id = id(clade)
@@ -651,16 +1152,35 @@ class StochasticCharacterMap(Tree):
                         x0 = parent_x + seg_start
                         x1 = parent_x + seg_end
                         color = state_colors[state]
-                        ax.plot(
-                            [x0, x1], [child_y, child_y],
-                            color=color, linewidth=2.5, solid_capstyle="butt",
-                            zorder=2
-                        )
+                        branch_segments.append(((x0, child_y), (x1, child_y)))
+                        branch_colors.append(color)
                 else:
-                    ax.plot(
-                        [parent_x, child_x], [child_y, child_y],
-                        color="gray", linewidth=2.5, zorder=2
-                    )
+                    branch_segments.append(((parent_x, child_y), (child_x, child_y)))
+                    branch_colors.append("gray")
+
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors="gray",
+                        linewidths=0.8,
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if branch_segments:
+                ax.add_collection(
+                    LineCollection(
+                        branch_segments,
+                        colors=branch_colors,
+                        linewidths=2.5,
+                        capstyle="butt",
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
+            if vertical_segments or branch_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 0
@@ -675,16 +1195,20 @@ class StochasticCharacterMap(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_rect,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             handles = [

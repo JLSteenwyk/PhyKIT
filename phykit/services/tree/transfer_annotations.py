@@ -9,14 +9,33 @@ Typical use case: transfer wASTRAL support annotations onto a
 branch-length-optimized topology from RAxML-NG, IQ-TREE, or any
 other tool for use with quartet_pie or other visualization commands.
 """
-from io import StringIO
-from typing import Dict, List, Set, Tuple
+from __future__ import annotations
 
-from Bio import Phylo
+from io import StringIO
 
 from .base import Tree
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.read(*args, **kwargs)
+
+    def write(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.write(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
 
 
 class TransferAnnotations(Tree):
@@ -27,7 +46,7 @@ class TransferAnnotations(Tree):
         self.output_path = parsed["output_path"]
         self.json_output = parsed["json_output"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
         return dict(
             target_path=args.target,
             source_path=args.source,
@@ -38,20 +57,15 @@ class TransferAnnotations(Tree):
     def run(self) -> None:
         # Read both trees
         target = self.read_tree_file()
-        try:
-            source = Phylo.read(self.source_path, "newick")
-        except FileNotFoundError:
-            raise PhykitUserError(
-                [
-                    f"{self.source_path} corresponds to no such file or directory.",
-                    "Please check filename and pathing",
-                ],
-                code=2,
-            )
+        source = self._read_tree_with_error(
+            self.source_path,
+            "source_path",
+            copy_tree=False,
+        )
 
         # Validate taxa match
-        target_tips = {t.name for t in target.get_terminals()}
-        source_tips = {t.name for t in source.get_terminals()}
+        target_tips = set(self.get_tip_names_from_tree(target))
+        source_tips = set(self.get_tip_names_from_tree(source))
 
         if target_tips != source_tips:
             only_target = target_tips - source_tips
@@ -89,27 +103,121 @@ class TransferAnnotations(Tree):
             )
         else:
             try:
-                print(f"Annotations transferred: {n_transferred}")
-                print(f"Unmatched nodes: {n_unmatched}")
-                print(f"Output: {output_path}")
+                self._print_text_output(n_transferred, n_unmatched, output_path)
             except BrokenPipeError:
                 return
 
+    def _print_text_output(
+        self,
+        n_transferred: int,
+        n_unmatched: int,
+        output_path: str,
+    ) -> None:
+        print(
+            "\n".join(
+                [
+                    f"Annotations transferred: {n_transferred}",
+                    f"Unmatched nodes: {n_unmatched}",
+                    f"Output: {output_path}",
+                ]
+            )
+        )
+
     @staticmethod
-    def _get_bipartition(clade, all_taxa: frozenset) -> frozenset:
-        """Get canonical bipartition for a clade (smaller side)."""
-        tips = frozenset(t.name for t in clade.get_terminals())
-        complement = all_taxa - tips
+    def _collect_clade_taxa(tree) -> dict[int, frozenset]:
+        clade_taxa: dict[int, frozenset] = {}
+        postorder = TransferAnnotations._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
+
+        id_ = id
+        get = clade_taxa.__getitem__
+        for clade in postorder:
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 0:
+                clade_taxa[id_(clade)] = frozenset((clade.name,))
+            elif child_count == 1:
+                clade_taxa[id_(clade)] = get(id_(children[0]))
+            elif child_count == 2:
+                clade_taxa[id_(clade)] = (
+                    get(id_(children[0]))
+                    | get(id_(children[1]))
+                )
+            else:
+                taxa = set()
+                for child in children:
+                    taxa.update(get(id_(child)))
+                clade_taxa[id_(clade)] = frozenset(taxa)
+        return clade_taxa
+
+    @staticmethod
+    def _canonical_bipartition(tips: frozenset, all_taxa: frozenset) -> frozenset:
         # Use the smaller side as the canonical key
-        return tips if len(tips) <= len(complement) else complement
+        if len(tips) * 2 <= len(all_taxa):
+            return tips
+        return all_taxa - tips
+
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                stack.extend(clade.clades)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
+    @staticmethod
+    def _combine_child_taxa(children, clade_taxa: dict[int, frozenset]) -> frozenset:
+        if len(children) == 2:
+            return clade_taxa[id(children[0])] | clade_taxa[id(children[1])]
+
+        taxa = set()
+        for child in children:
+            taxa.update(clade_taxa.get(id(child), ()))
+        return frozenset(taxa)
+
+    @staticmethod
+    def _get_bipartition(clade, all_taxa: frozenset, clade_taxa=None) -> frozenset:
+        """Get canonical bipartition for a clade (smaller side)."""
+        if clade_taxa is None:
+            tips = frozenset(t.name for t in clade.get_terminals())
+        else:
+            tips = clade_taxa.get(id(clade), frozenset())
+        return TransferAnnotations._canonical_bipartition(tips, all_taxa)
 
     def _extract_annotations(
         self, tree, all_taxa: frozenset
-    ) -> Dict[frozenset, str]:
+    ) -> dict[frozenset, str]:
         """Extract bipartition -> annotation mapping from source tree."""
         annotations = {}
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal() or clade == tree.root:
+        clade_taxa: dict[int, frozenset] = {}
+        root = tree.root
+        postorder = self._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
+
+        for clade in postorder:
+            children = clade.clades
+            if not children:
+                clade_taxa[id(clade)] = frozenset({clade.name})
+                continue
+
+            tips = self._combine_child_taxa(children, clade_taxa)
+            clade_taxa[id(clade)] = tips
+
+            if clade is root:
                 continue
             annotation = clade.comment or clade.name or ""
             if not annotation:
@@ -120,23 +228,36 @@ class TransferAnnotations(Tree):
             # re-add proper brackets on output.
             if annotation.startswith("[") and annotation.endswith("]"):
                 annotation = annotation[1:-1]
-            bp = self._get_bipartition(clade, all_taxa)
+            bp = self._canonical_bipartition(tips, all_taxa)
             if bp:
                 annotations[bp] = annotation
         return annotations
 
     def _transfer(
-        self, target, source_annotations: Dict[frozenset, str],
+        self, target, source_annotations: dict[frozenset, str],
         all_taxa: frozenset,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Transfer annotations from source to target by bipartition matching."""
         transferred = 0
         unmatched = 0
+        clade_taxa: dict[int, frozenset] = {}
+        root = target.root
+        postorder = self._postorder_clades_direct(target)
+        if postorder is None:
+            postorder = target.find_clades(order="postorder")
 
-        for clade in target.find_clades(order="preorder"):
-            if clade.is_terminal() or clade == target.root:
+        for clade in postorder:
+            children = clade.clades
+            if not children:
+                clade_taxa[id(clade)] = frozenset({clade.name})
                 continue
-            bp = self._get_bipartition(clade, all_taxa)
+
+            tips = self._combine_child_taxa(children, clade_taxa)
+            clade_taxa[id(clade)] = tips
+
+            if clade is root:
+                continue
+            bp = self._canonical_bipartition(tips, all_taxa)
             if bp in source_annotations:
                 clade.comment = source_annotations[bp]
                 transferred += 1
@@ -148,11 +269,12 @@ class TransferAnnotations(Tree):
     @staticmethod
     def _write_annotated_tree(tree, output_path: str) -> None:
         """Write tree preserving comment annotations in brackets."""
-        Phylo.write(tree, output_path, "newick")
+        buffer = StringIO()
+        Phylo.write(tree, buffer, "newick")
+        content = buffer.getvalue()
+
         # BioPython writes comments as [&comment] but wASTRAL uses
-        # [comment]. Fix the format.
-        with open(output_path) as f:
-            content = f.read()
+        # [comment]. Fix the format before writing the output once.
         # Remove the & prefix that BioPython adds
         content = content.replace("[&", "[")
         # BioPython may also backslash-escape brackets inside comments

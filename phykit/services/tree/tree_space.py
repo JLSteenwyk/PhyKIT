@@ -1,16 +1,71 @@
-import math
-import pickle
-from io import StringIO
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from __future__ import annotations
 
-import numpy as np
-from Bio import Phylo
+import math
+from io import StringIO
+import os
+from pathlib import Path
 
 from .base import Tree
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+
+_path_exists = os.path.exists
+_path_isabs = os.path.isabs
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPickle:
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.read(*args, **kwargs)
+
+
+np = _LazyNumpy()
+Phylo = _LazyPhylo()
+pickle = _LazyPickle()
+
+
+def _condensed_distance_vector(dist_matrix):
+    from scipy.spatial.distance import squareform
+
+    return squareform(dist_matrix, checks=False)
+
+
+def _shared_gene_tree_taxa(gene_trees, get_tips):
+    shared = set(get_tips(gene_trees[0]))
+    for idx in range(1, len(gene_trees)):
+        shared &= set(get_tips(gene_trees[idx]))
+    return shared
 
 
 class TreeSpace(Tree):
@@ -28,7 +83,9 @@ class TreeSpace(Tree):
         self.distance_matrix_path = parsed["distance_matrix"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             trees=args.trees,
             output=args.output,
@@ -47,10 +104,45 @@ class TreeSpace(Tree):
     # Tree parsing
     # ------------------------------------------------------------------
 
-    def _parse_trees_from_source(self, trees_path: str) -> List:
+    def _parse_trees_from_source(self, trees_path: str) -> list:
         source = Path(trees_path)
+        trees = []
+        pending_newick = []
+        parent_prefix = None
+
+        def append_path_tree(line):
+            nonlocal parent_prefix
+            if parent_prefix is None:
+                parent_str = str(source.parent)
+                parent_prefix = "" if parent_str == "." else parent_str + os.sep
+            tree_path = line if _path_isabs(line) else parent_prefix + line
+            if not _path_exists(tree_path):
+                raise PhykitUserError(
+                    [
+                        f"{tree_path} corresponds to no such file or directory.",
+                        "Please check filename and pathing",
+                    ],
+                    code=2,
+                )
+            trees.append(Phylo.read(tree_path, "newick"))
+
         try:
-            lines = source.read_text().splitlines()
+            with source.open() as handle:
+                path_mode = False
+                for line in handle:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    if path_mode:
+                        append_path_tree(stripped)
+                    elif stripped.startswith("("):
+                        pending_newick.append(stripped)
+                    else:
+                        path_mode = True
+                        for pending in pending_newick:
+                            append_path_tree(pending)
+                        pending_newick = []
+                        append_path_tree(stripped)
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -60,39 +152,16 @@ class TreeSpace(Tree):
                 code=2,
             )
 
-        cleaned = [
-            line.strip()
-            for line in lines
-            if line.strip() and not line.strip().startswith("#")
-        ]
-        if not cleaned:
-            raise PhykitUserError(["No trees found in input."], code=2)
-
-        if all(line.startswith("(") for line in cleaned):
-            trees = []
+        if not trees:
+            if not pending_newick:
+                raise PhykitUserError(["No trees found in input."], code=2)
             try:
-                for line in cleaned:
+                for line in pending_newick:
                     trees.append(Phylo.read(StringIO(line), "newick"))
             except Exception as exc:
                 raise PhykitUserError(
                     [f"Failed to parse Newick trees: {exc}"], code=2
                 )
-            return trees
-
-        trees = []
-        for line in cleaned:
-            tree_path = Path(line)
-            if not tree_path.is_absolute():
-                tree_path = source.parent / tree_path
-            if not tree_path.exists():
-                raise PhykitUserError(
-                    [
-                        f"{tree_path} corresponds to no such file or directory.",
-                        "Please check filename and pathing",
-                    ],
-                    code=2,
-                )
-            trees.append(Phylo.read(str(tree_path), "newick"))
 
         return trees
 
@@ -101,27 +170,35 @@ class TreeSpace(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _tips(tree) -> Set[str]:
+    def _tips(tree) -> set[str]:
+        names = Tree.calculate_terminal_names_fast(tree)
+        if names is not None:
+            return set(names)
         return {tip.name for tip in tree.get_terminals()}
 
     @staticmethod
-    def _prune_to_taxa(tree, taxa: Set[str]):
-        remove = [
-            tip.name for tip in tree.get_terminals() if tip.name not in taxa
-        ]
+    def _prune_to_taxa(tree, taxa: set[str]):
+        terminals = Tree.calculate_terminal_clades_fast(tree)
+        if terminals is None:
+            terminals = tree.get_terminals()
+
+        remove = [tip for tip in terminals if tip.name not in taxa]
+        if len(remove) < len(terminals):
+            target_ids = {id(tip) for tip in remove}
+            if Tree._prune_terminal_objects_batch_standard_tree(tree, target_ids):
+                return tree
+
         for tip in remove:
             tree.prune(tip)
         return tree
 
     def _get_shared_taxa(
-        self, gene_trees: List, species_tree=None
-    ) -> Set[str]:
+        self, gene_trees: list, species_tree=None
+    ) -> set[str]:
         if not gene_trees:
             raise PhykitUserError(["No gene trees provided."], code=2)
 
-        shared = self._tips(gene_trees[0])
-        for gt in gene_trees[1:]:
-            shared &= self._tips(gt)
+        shared = _shared_gene_tree_taxa(gene_trees, self._tips)
 
         if species_tree is not None:
             shared &= self._tips(species_tree)
@@ -144,34 +221,70 @@ class TreeSpace(Tree):
 
     @staticmethod
     def _canonical_split(taxa_side: frozenset, all_taxa: frozenset) -> frozenset:
-        complement = all_taxa - taxa_side
-        if len(taxa_side) < len(complement):
+        taxa_side_len = len(taxa_side)
+        all_taxa_len = len(all_taxa)
+        if taxa_side_len * 2 < all_taxa_len:
             return taxa_side
-        if len(taxa_side) > len(complement):
+        complement = all_taxa - taxa_side
+        if taxa_side_len * 2 > all_taxa_len:
             return complement
-        if sorted(taxa_side) <= sorted(complement):
+        if not taxa_side:
+            return taxa_side
+        if min(taxa_side) <= min(complement):
             return taxa_side
         return complement
 
-    def _extract_splits(self, tree, all_taxa_fs: frozenset) -> Set[frozenset]:
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                stack.extend(clade.clades)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
+    def _extract_splits(self, tree, all_taxa_fs: frozenset) -> set[frozenset]:
         splits = set()
         clade_taxa: dict = {}
+        postorder = self._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
+        for clade in postorder:
+            children = clade.clades
+            if not children:
                 if clade.name in all_taxa_fs:
                     clade_taxa[id(clade)] = frozenset({clade.name})
                 else:
                     clade_taxa[id(clade)] = frozenset()
             else:
-                taxa = frozenset()
-                for child in clade.clades:
-                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                n_children = len(children)
+                if n_children == 2:
+                    taxa = (
+                        clade_taxa.get(id(children[0]), frozenset())
+                        | clade_taxa.get(id(children[1]), frozenset())
+                    )
+                elif n_children == 1:
+                    taxa = clade_taxa.get(id(children[0]), frozenset())
+                else:
+                    taxa = frozenset()
+                    for child in children:
+                        taxa = taxa | clade_taxa.get(id(child), frozenset())
                 clade_taxa[id(clade)] = taxa
 
-                n_children = len(clade.clades)
                 if n_children > 2:
-                    is_root = clade == tree.root
+                    is_root = clade is tree.root
                     if not (is_root and n_children == 3):
                         continue
 
@@ -196,25 +309,37 @@ class TreeSpace(Tree):
 
     def _extract_splits_with_lengths(
         self, tree, all_taxa_fs: frozenset
-    ) -> Dict[frozenset, float]:
-        split_lengths: Dict[frozenset, float] = {}
+    ) -> dict[frozenset, float]:
+        split_lengths: dict[frozenset, float] = {}
         clade_taxa: dict = {}
+        postorder = self._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
+        for clade in postorder:
+            children = clade.clades
+            if not children:
                 if clade.name in all_taxa_fs:
                     clade_taxa[id(clade)] = frozenset({clade.name})
                 else:
                     clade_taxa[id(clade)] = frozenset()
             else:
-                taxa = frozenset()
-                for child in clade.clades:
-                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                n_children = len(children)
+                if n_children == 2:
+                    taxa = (
+                        clade_taxa.get(id(children[0]), frozenset())
+                        | clade_taxa.get(id(children[1]), frozenset())
+                    )
+                elif n_children == 1:
+                    taxa = clade_taxa.get(id(children[0]), frozenset())
+                else:
+                    taxa = frozenset()
+                    for child in children:
+                        taxa = taxa | clade_taxa.get(id(child), frozenset())
                 clade_taxa[id(clade)] = taxa
 
-                n_children = len(clade.clades)
                 if n_children > 2:
-                    is_root = clade == tree.root
+                    is_root = clade is tree.root
                     if not (is_root and n_children == 3):
                         continue
 
@@ -241,8 +366,8 @@ class TreeSpace(Tree):
 
     def _compute_rf_distance(
         self,
-        splits_i: Set[frozenset],
-        splits_j: Set[frozenset],
+        splits_i: set[frozenset],
+        splits_j: set[frozenset],
         n_taxa: int,
     ) -> float:
         sym_diff = len(splits_i ^ splits_j)
@@ -253,8 +378,8 @@ class TreeSpace(Tree):
 
     def _compute_kf_distance(
         self,
-        splits_i: Dict[frozenset, float],
-        splits_j: Dict[frozenset, float],
+        splits_i: dict[frozenset, float],
+        splits_j: dict[frozenset, float],
     ) -> float:
         all_splits = set(splits_i.keys()) | set(splits_j.keys())
         kf_squared = 0.0
@@ -264,23 +389,126 @@ class TreeSpace(Tree):
             kf_squared += (b0 - b1) ** 2
         return math.sqrt(kf_squared)
 
-    def _build_distance_matrix(
-        self, trees: List, shared_taxa: Set[str], metric: str
+    def _build_rf_distance_matrix_from_splits(
+        self, split_sets: list[set[frozenset]], n_taxa: int
     ) -> np.ndarray:
-        n = len(trees)
+        n = len(split_sets)
+        max_splits = 2 * (n_taxa - 3)
+        if n == 0 or max_splits == 0:
+            return np.zeros((n, n))
+
+        all_splits = set().union(*split_sets) if split_sets else set()
+        if not all_splits:
+            return np.zeros((n, n))
+
+        split_index = {split: idx for idx, split in enumerate(all_splits)}
+        presence = np.zeros((n, len(split_index)), dtype=np.uint8)
+        for row, splits in enumerate(split_sets):
+            for split in splits:
+                presence[row, split_index[split]] = 1
+
+        presence_i = presence.astype(np.int32, copy=False)
+        counts = presence_i.sum(axis=1)
+        intersections = presence_i @ presence_i.T
+        sym_diff = counts[:, None] + counts[None, :] - 2 * intersections
+        dist = sym_diff.astype(np.float64) / max_splits
+        np.fill_diagonal(dist, 0.0)
+        return dist
+
+    def _build_kf_distance_matrix_from_splits(
+        self, split_lengths: list[dict[frozenset, float]]
+    ) -> np.ndarray:
+        n = len(split_lengths)
+        if n == 0:
+            return np.zeros((0, 0))
+
+        all_splits = set().union(*(splits.keys() for splits in split_lengths))
+        if not all_splits:
+            return np.zeros((n, n))
+
+        split_index = {split: idx for idx, split in enumerate(all_splits)}
+        lengths = np.zeros((n, len(split_index)), dtype=np.float64)
+        for row, splits in enumerate(split_lengths):
+            for split, branch_length in splits.items():
+                lengths[row, split_index[split]] = branch_length
+
+        squared_norms = np.einsum("ij,ij->i", lengths, lengths)
+        squared = (
+            squared_norms[:, None]
+            + squared_norms[None, :]
+            - 2 * (lengths @ lengths.T)
+        )
+        np.maximum(squared, 0.0, out=squared)
+        dist = np.sqrt(squared)
+        np.fill_diagonal(dist, 0.0)
+        return dist
+
+    def _build_distance_matrix(
+        self, trees: list, shared_taxa: set[str], metric: str
+    ) -> np.ndarray:
         all_taxa_fs = frozenset(shared_taxa)
 
         # Prune trees and extract splits
         tree_data = []
         for gt in trees:
-            pruned = pickle.loads(pickle.dumps(gt, protocol=pickle.HIGHEST_PROTOCOL))
-            tips_to_remove = [
-                tip.name
-                for tip in pruned.get_terminals()
-                if tip.name not in shared_taxa
-            ]
-            for tip_name in tips_to_remove:
-                pruned.prune(tip_name)
+            if metric != "kf":
+                tree_data.append(self._extract_splits(gt, all_taxa_fs))
+                continue
+
+            tip_names = self.calculate_terminal_names_fast(gt)
+            if tip_names is None:
+                tips_to_remove = [
+                    tip.name
+                    for tip in gt.get_terminals()
+                    if tip.name not in shared_taxa
+                ]
+            else:
+                tips_to_remove = [
+                    tip_name
+                    for tip_name in tip_names
+                    if tip_name not in shared_taxa
+                ]
+            if tips_to_remove:
+                pruned = pickle.loads(pickle.dumps(gt, protocol=pickle.HIGHEST_PROTOCOL))
+                target_ids = set()
+                remove = []
+                try:
+                    root = pruned.root
+                    root.clades
+                except AttributeError:
+                    root = None
+
+                if root is not None:
+                    stack = [root]
+                    try:
+                        while stack:
+                            clade = stack.pop()
+                            children = clade.clades
+                            if children:
+                                stack.extend(reversed(children))
+                            elif clade.name not in shared_taxa:
+                                remove.append(clade)
+                                target_ids.add(id(clade))
+                    except AttributeError:
+                        target_ids = set()
+                        remove = []
+
+                if target_ids:
+                    if not self._prune_terminal_objects_batch_standard_tree(
+                        pruned,
+                        target_ids,
+                    ):
+                        for tip in remove:
+                            pruned.prune(tip)
+                else:
+                    remove = [
+                        tip for tip in pruned.get_terminals()
+                        if tip.name not in shared_taxa
+                    ]
+                    for tip in remove:
+                        pruned.prune(tip)
+            else:
+                pruned = gt
 
             if metric == "kf":
                 tree_data.append(
@@ -290,26 +518,16 @@ class TreeSpace(Tree):
                 tree_data.append(self._extract_splits(pruned, all_taxa_fs))
 
         n_taxa = len(shared_taxa)
-        dist = np.zeros((n, n))
-        for i in range(n):
-            for j in range(i + 1, n):
-                if metric == "kf":
-                    d = self._compute_kf_distance(tree_data[i], tree_data[j])
-                else:
-                    d = self._compute_rf_distance(
-                        tree_data[i], tree_data[j], n_taxa
-                    )
-                dist[i, j] = d
-                dist[j, i] = d
-
-        return dist
+        if metric == "kf":
+            return self._build_kf_distance_matrix_from_splits(tree_data)
+        return self._build_rf_distance_matrix_from_splits(tree_data, n_taxa)
 
     # ------------------------------------------------------------------
     # Dimensionality reduction
     # ------------------------------------------------------------------
 
     def _reduce_dimensions(
-        self, dist_matrix: np.ndarray, method: str, seed: Optional[int]
+        self, dist_matrix: np.ndarray, method: str, seed: int | None
     ) -> np.ndarray:
         if method == "tsne":
             from sklearn.manifold import TSNE
@@ -356,8 +574,9 @@ class TreeSpace(Tree):
         n = affinity.shape[0]
         d = np.sum(affinity, axis=1)
         d_inv_sqrt = 1.0 / np.sqrt(np.maximum(d, 1e-10))
-        D_inv_sqrt = np.diag(d_inv_sqrt)
-        L_norm = np.eye(n) - D_inv_sqrt @ affinity @ D_inv_sqrt
+        L_norm = np.eye(n) - (
+            affinity * d_inv_sqrt[:, None]
+        ) * d_inv_sqrt[None, :]
 
         eigenvalues = np.sort(np.linalg.eigvalsh(L_norm))
 
@@ -374,12 +593,12 @@ class TreeSpace(Tree):
         return k
 
     def _spectral_cluster(
-        self, dist_matrix: np.ndarray, k: Optional[int], seed: Optional[int]
-    ) -> Tuple[np.ndarray, int]:
+        self, dist_matrix: np.ndarray, k: int | None, seed: int | None
+    ) -> tuple[np.ndarray, int]:
         from sklearn.cluster import SpectralClustering
 
         # Convert distance to affinity
-        upper_tri = dist_matrix[np.triu_indices(dist_matrix.shape[0], k=1)]
+        upper_tri = _condensed_distance_vector(dist_matrix)
         med = float(np.median(upper_tri))
         if med == 0:
             nonzero = upper_tri[upper_tri > 0]
@@ -409,7 +628,7 @@ class TreeSpace(Tree):
         coords: np.ndarray,
         labels: np.ndarray,
         k: int,
-        species_tree_idx: Optional[int],
+        species_tree_idx: int | None,
         output_path: str,
     ) -> None:
         import matplotlib
@@ -483,7 +702,7 @@ class TreeSpace(Tree):
     def _plot_heatmap(
         self,
         dist_matrix: np.ndarray,
-        tree_labels: List[str],
+        tree_labels: list[str],
         output_path: str,
     ) -> None:
         """Draw a clustered heatmap of pairwise tree distances."""
@@ -498,11 +717,7 @@ class TreeSpace(Tree):
         config.resolve(n_rows=n, n_cols=n)
 
         # Hierarchical clustering for row/column ordering
-        condensed = []
-        for i in range(n):
-            for j in range(i + 1, n):
-                condensed.append(dist_matrix[i, j])
-        condensed = np.array(condensed)
+        condensed = _condensed_distance_vector(dist_matrix)
 
         Z = linkage(condensed, method="average")
         dendro = dendrogram(Z, no_plot=True)
@@ -549,16 +764,37 @@ class TreeSpace(Tree):
     @staticmethod
     def _write_distance_matrix(
         dist_matrix: np.ndarray,
-        tree_labels: List[str],
+        tree_labels: list[str],
         output_path: str,
     ) -> None:
         """Write pairwise distance matrix as CSV."""
         with open(output_path, "w") as f:
             f.write("," + ",".join(tree_labels) + "\n")
-            for i, label in enumerate(tree_labels):
-                row_vals = ",".join(f"{dist_matrix[i, j]:.6f}"
-                                    for j in range(len(tree_labels)))
+            for label, row in zip(tree_labels, dist_matrix):
+                row_vals = ",".join(f"{value:.6f}" for value in row)
                 f.write(f"{label},{row_vals}\n")
+
+    def _print_text_output(
+        self, *, n_gene_trees, n_taxa, k, k_method, clusters_info,
+        species_tree_cluster, plot_mode,
+    ) -> None:
+        lines = [
+            "Tree Space Analysis",
+            f"Method: {self.method.upper()}",
+            f"Metric: {self.metric.upper()}",
+            f"Gene trees: {n_gene_trees}",
+            f"Shared taxa: {n_taxa}",
+            f"Clusters: {k} ({k_method})",
+        ]
+        lines.extend(
+            f"  Cluster {ci['id']}: {ci['n_trees']} trees" for ci in clusters_info
+        )
+        if species_tree_cluster is not None:
+            lines.append(f"Species tree: Cluster {species_tree_cluster}")
+        lines.extend([f"Plot mode: {plot_mode}", f"Output: {self.output}"])
+        if self.distance_matrix_path:
+            lines.append(f"Distance matrix: {self.distance_matrix_path}")
+        print("\n".join(lines))
 
     # ------------------------------------------------------------------
     # Main run
@@ -679,17 +915,12 @@ class TreeSpace(Tree):
                 result["species_tree_cluster"] = species_tree_cluster
             print_json(result)
         else:
-            print("Tree Space Analysis")
-            print(f"Method: {self.method.upper()}")
-            print(f"Metric: {self.metric.upper()}")
-            print(f"Gene trees: {n_gene_trees}")
-            print(f"Shared taxa: {n_taxa}")
-            print(f"Clusters: {k} ({k_method})")
-            for ci in clusters_info:
-                print(f"  Cluster {ci['id']}: {ci['n_trees']} trees")
-            if species_tree_cluster is not None:
-                print(f"Species tree: Cluster {species_tree_cluster}")
-            print(f"Plot mode: {plot_mode}")
-            print(f"Output: {self.output}")
-            if self.distance_matrix_path:
-                print(f"Distance matrix: {self.distance_matrix_path}")
+            self._print_text_output(
+                n_gene_trees=n_gene_trees,
+                n_taxa=n_taxa,
+                k=k,
+                k_method=k_method,
+                clusters_info=clusters_info,
+                species_tree_cluster=species_tree_cluster,
+                plot_mode=plot_mode,
+            )

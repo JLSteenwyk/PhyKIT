@@ -8,15 +8,43 @@ accounting for phylogenetic non-independence.
 Auto-detects univariate (ANOVA) vs multivariate (MANOVA) based on
 the number of response trait columns, with optional user override.
 """
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
+import sys
+from operator import itemgetter
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def solve_triangular(*args, **kwargs):
+    from scipy.linalg import solve_triangular as _solve_triangular
+
+    return _solve_triangular(*args, **kwargs)
+
+
+def _permutation_p_value_and_z(observed: float, permutations: np.ndarray) -> tuple[float, float]:
+    p_value = float(np.mean(permutations >= observed))
+    perm_mean = float(np.mean(permutations))
+    perm_std = float(np.std(permutations))
+    z_score = (observed - perm_mean) / perm_std if perm_std > 0 else 0.0
+    return p_value, float(z_score)
 
 
 class PhyloAnova(Tree):
@@ -34,7 +62,9 @@ class PhyloAnova(Tree):
         self.seed = parsed["seed"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.traits,
@@ -52,7 +82,9 @@ class PhyloAnova(Tree):
     def run(self) -> None:
         from .vcv_utils import build_vcv_matrix
 
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
+        if self._needs_default_branch_lengths(tree):
+            tree = self._fast_copy(tree)
         self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="phylogenetic ANOVA")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -97,16 +129,9 @@ class PhyloAnova(Tree):
         ordered_names = sorted(traits.keys())
         n = len(ordered_names)
 
-        groups = []
-        Y_list = []
-        for name in ordered_names:
-            row = traits[name]
-            groups.append(row[group_idx])
-            Y_list.append(
-                [row[i] for i in range(len(header)) if i != group_idx]
-            )
-
-        Y = np.array(Y_list, dtype=float)
+        groups, Y = self._groups_and_response_matrix(
+            traits, ordered_names, group_idx, len(header)
+        )
         unique_groups = sorted(set(groups))
         n_groups = len(unique_groups)
 
@@ -125,8 +150,9 @@ class PhyloAnova(Tree):
 
         # Cholesky transform
         try:
-            L = np.linalg.cholesky(vcv)
-            L_inv = np.linalg.inv(L)
+            Y_star, X_full_star, X_red_star = self._cholesky_transform(
+                vcv, Y, X_full, X_reduced
+            )
         except np.linalg.LinAlgError:
             raise PhykitUserError(
                 [
@@ -135,11 +161,6 @@ class PhyloAnova(Tree):
                 ],
                 code=2,
             )
-
-        # Transform data
-        Y_star = L_inv @ Y
-        X_full_star = L_inv @ X_full
-        X_red_star = L_inv @ X_reduced
 
         # Fit models
         if method == "anova":
@@ -186,70 +207,155 @@ class PhyloAnova(Tree):
                     response_names, self.plot_output,
                 )
 
+    @staticmethod
+    def _needs_default_branch_lengths(tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return True
+
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if clade is not root and clade.branch_length is None:
+                    return True
+                if children:
+                    extend(children)
+        except AttributeError:
+            return True
+
+        return False
+
+    @staticmethod
+    def _groups_and_response_matrix(
+        traits: dict[str, list],
+        ordered_names: list[str],
+        group_idx: int,
+        n_cols: int,
+    ) -> tuple[list[str], np.ndarray]:
+        response_indices = tuple(idx for idx in range(n_cols) if idx != group_idx)
+        n_taxa = len(ordered_names)
+        groups = []
+        groups_append = groups.append
+        local_traits = traits
+
+        if len(response_indices) == 1:
+            response_idx = response_indices[0]
+            Y = np.empty((n_taxa, 1), dtype=float)
+            for row_idx, name in enumerate(ordered_names):
+                row = local_traits[name]
+                groups_append(row[group_idx])
+                Y[row_idx, 0] = row[response_idx]
+            return groups, Y
+
+        get_response_values = itemgetter(*response_indices)
+        Y = np.empty((n_taxa, len(response_indices)), dtype=float)
+        for row_idx, name in enumerate(ordered_names):
+            row = local_traits[name]
+            groups_append(row[group_idx])
+            Y[row_idx] = get_response_values(row)
+
+        return groups, Y
+
     def _parse_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Tuple[List[str], Dict[str, list]]:
+        self, path: str, tree_tips: list[str]
+    ) -> tuple[list[str], dict[str, list]]:
         """Parse TSV with header. Group column kept as string; others as float."""
         try:
             with open(path) as f:
-                lines = f.readlines()
+                header_parts = None
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    header_parts = stripped.split("\t")
+                    break
+
+                if header_parts is None:
+                    raise PhykitUserError(
+                        ["Trait file must have a header row and at least one data row."],
+                        code=2,
+                    )
+
+                n_cols = len(header_parts)
+                if n_cols < 3:
+                    raise PhykitUserError(
+                        ["Header must have at least 3 columns (taxon + group + trait)."],
+                        code=2,
+                    )
+                header = header_parts[1:]
+
+                group_col_name = self.group_column or header[0]
+                group_idx = (
+                    header.index(group_col_name)
+                    if group_col_name in header
+                    else None
+                )
+                numeric_cols = [
+                    (i, col_name)
+                    for i, col_name in enumerate(header)
+                    if i != group_idx
+                ]
+                float_ = float
+
+                traits = {}
+                saw_data = False
+                line_idx = 2
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    saw_data = True
+                    parts = stripped.split("\t")
+                    if len(parts) != n_cols:
+                        raise PhykitUserError(
+                            [f"Line {line_idx} has {len(parts)} columns; expected {n_cols}."],
+                            code=2,
+                        )
+                    taxon = parts[0]
+                    values = [None] * len(header)
+                    if group_idx is not None:
+                        values[group_idx] = parts[group_idx + 1].strip()
+                    for i, col_name in numeric_cols:
+                        val_str = parts[i + 1]
+                        try:
+                            values[i] = float_(val_str)
+                        except ValueError:
+                            raise PhykitUserError(
+                                [
+                                    f"Non-numeric trait value '{val_str}' for taxon "
+                                    f"'{taxon}' (trait '{col_name}') on line {line_idx}.",
+                                ],
+                                code=2,
+                            )
+                    traits[taxon] = values
+                    line_idx += 1
+
+                if not saw_data:
+                    raise PhykitUserError(
+                        ["Trait file must have a header row and at least one data row."],
+                        code=2,
+                    )
         except FileNotFoundError:
             raise PhykitUserError(
                 [f"{path} corresponds to no such file or directory."],
                 code=2,
             )
 
-        data_lines = [
-            l.strip() for l in lines
-            if l.strip() and not l.strip().startswith("#")
-        ]
-        if len(data_lines) < 2:
-            raise PhykitUserError(
-                ["Trait file must have a header row and at least one data row."],
-                code=2,
-            )
-
-        header_parts = data_lines[0].split("\t")
-        n_cols = len(header_parts)
-        if n_cols < 3:
-            raise PhykitUserError(
-                ["Header must have at least 3 columns (taxon + group + trait)."],
-                code=2,
-            )
-        header = header_parts[1:]
-
-        # Detect which column is the group (categorical) column
-        group_col_name = self.group_column or header[0]
-
-        traits = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != n_cols:
-                raise PhykitUserError(
-                    [f"Line {line_idx} has {len(parts)} columns; expected {n_cols}."],
-                    code=2,
-                )
-            taxon = parts[0]
-            values = []
-            for i, val_str in enumerate(parts[1:]):
-                col_name = header[i]
-                if col_name == group_col_name:
-                    values.append(val_str.strip())
-                else:
-                    try:
-                        values.append(float(val_str))
-                    except ValueError:
-                        raise PhykitUserError(
-                            [
-                                f"Non-numeric trait value '{val_str}' for taxon "
-                                f"'{taxon}' (trait '{col_name}') on line {line_idx}.",
-                            ],
-                            code=2,
-                        )
-            traits[taxon] = values
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return header, traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         if tree_tip_set - trait_taxa_set:
@@ -279,21 +385,42 @@ class PhyloAnova(Tree):
 
     @staticmethod
     def _build_design_matrix(
-        groups: List[str], unique_groups: List[str], n: int
+        groups: list[str], unique_groups: list[str], n: int
     ) -> np.ndarray:
         """Build design matrix: intercept + (g-1) dummy columns."""
-        X = np.ones((n, len(unique_groups)))
-        for i, g in enumerate(groups):
-            col = unique_groups.index(g)
-            X[i, col] = 1.0
         # Use treatment coding: intercept + dummies for groups 1..g-1
         X = np.zeros((n, len(unique_groups)))
         X[:, 0] = 1.0  # intercept
+        group_to_idx = {
+            group: idx for idx, group in enumerate(unique_groups)
+        }
         for i, g in enumerate(groups):
-            idx = unique_groups.index(g)
+            idx = group_to_idx[g]
             if idx > 0:
                 X[i, idx] = 1.0
         return X
+
+    @staticmethod
+    def _cholesky_transform(
+        vcv: np.ndarray, Y: np.ndarray, X_full: np.ndarray, X_reduced: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Whiten response/design matrices without explicitly inverting L."""
+        L = np.linalg.cholesky(vcv)
+        return (
+            solve_triangular(L, Y, lower=True, check_finite=False),
+            solve_triangular(L, X_full, lower=True, check_finite=False),
+            solve_triangular(L, X_reduced, lower=True, check_finite=False),
+        )
+
+    @staticmethod
+    def _projection_basis(X: np.ndarray) -> np.ndarray:
+        """Return an orthonormal basis for repeated projections onto X."""
+        Q, _ = np.linalg.qr(X, mode="reduced")
+        return Q
+
+    @staticmethod
+    def _project(Q: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        return Q @ (Q.T @ Y)
 
     def _run_anova(
         self,
@@ -302,17 +429,20 @@ class PhyloAnova(Tree):
         X_red_star: np.ndarray,
         n: int,
         n_groups: int,
-    ) -> Dict:
+    ) -> dict:
         """Univariate phylogenetic ANOVA with RRPP."""
         y = Y_star.ravel() if Y_star.ndim > 1 else Y_star
         if Y_star.ndim > 1:
             y = Y_star[:, 0]
 
+        Q_red = self._projection_basis(X_red_star)
+        Q_full = self._projection_basis(X_full_star)
+
         # Fit models
-        hat_red = X_red_star @ np.linalg.lstsq(X_red_star, y, rcond=None)[0]
+        hat_red = self._project(Q_red, y)
         resid_red = y - hat_red
 
-        hat_full = X_full_star @ np.linalg.lstsq(X_full_star, y, rcond=None)[0]
+        hat_full = self._project(Q_full, y)
         resid_full = y - hat_full
 
         ss_total = float(resid_red @ resid_red)
@@ -333,23 +463,16 @@ class PhyloAnova(Tree):
             resid_perm = resid_red[perm_idx]
             y_perm = hat_red + resid_perm
 
-            hat_full_p = X_full_star @ np.linalg.lstsq(
-                X_full_star, y_perm, rcond=None
-            )[0]
-            resid_full_p = y_perm - hat_full_p
-
-            ss_resid_p = float(resid_full_p @ resid_full_p)
+            projected_coeffs = Q_full.T @ y_perm
+            ss_resid_p = float(
+                y_perm @ y_perm - projected_coeffs @ projected_coeffs
+            )
             ss_model_p = ss_total - ss_resid_p
             ms_model_p = ss_model_p / df_model if df_model > 0 else 0.0
             ms_resid_p = ss_resid_p / df_resid if df_resid > 0 else 0.0
             f_perms[p] = ms_model_p / ms_resid_p if ms_resid_p > 0 else 0.0
 
-        p_value = float(np.mean(f_perms >= f_obs))
-        z_score = (
-            (f_obs - np.mean(f_perms)) / np.std(f_perms)
-            if np.std(f_perms) > 0
-            else 0.0
-        )
+        p_value, z_score = _permutation_p_value_and_z(f_obs, f_perms)
 
         return dict(
             ss_model=ss_model,
@@ -373,15 +496,16 @@ class PhyloAnova(Tree):
         X_red_star: np.ndarray,
         n: int,
         n_groups: int,
-    ) -> Dict:
+    ) -> dict:
         """Multivariate phylogenetic MANOVA with RRPP using Pillai's trace."""
+        Q_red = self._projection_basis(X_red_star)
+        Q_full = self._projection_basis(X_full_star)
+
         # Fit models
-        beta_red = np.linalg.lstsq(X_red_star, Y_star, rcond=None)[0]
-        hat_red = X_red_star @ beta_red
+        hat_red = self._project(Q_red, Y_star)
         resid_red = Y_star - hat_red
 
-        beta_full = np.linalg.lstsq(X_full_star, Y_star, rcond=None)[0]
-        hat_full = X_full_star @ beta_full
+        hat_full = self._project(Q_full, Y_star)
         resid_full = Y_star - hat_full
 
         # SSCP matrices
@@ -423,11 +547,10 @@ class PhyloAnova(Tree):
             resid_perm = resid_red[perm_idx]
             Y_perm = hat_red + resid_perm
 
-            beta_full_p = np.linalg.lstsq(X_full_star, Y_perm, rcond=None)[0]
-            hat_full_p = X_full_star @ beta_full_p
-            resid_full_p = Y_perm - hat_full_p
-
-            SS_resid_p = resid_full_p.T @ resid_full_p
+            projected_coeffs = Q_full.T @ Y_perm
+            SS_resid_p = (
+                Y_perm.T @ Y_perm - projected_coeffs.T @ projected_coeffs
+            )
             SS_model_p = SS_total - SS_resid_p
 
             try:
@@ -440,12 +563,7 @@ class PhyloAnova(Tree):
             except np.linalg.LinAlgError:
                 pillai_perms[perm] = 0.0
 
-        p_value = float(np.mean(pillai_perms >= pillai))
-        z_score = (
-            (pillai - np.mean(pillai_perms)) / np.std(pillai_perms)
-            if np.std(pillai_perms) > 0
-            else 0.0
-        )
+        p_value, z_score = _permutation_p_value_and_z(pillai, pillai_perms)
 
         # Scalar SS for display (trace of SSCP)
         ss_model = float(np.trace(SS_model))
@@ -471,10 +589,10 @@ class PhyloAnova(Tree):
     def _run_pairwise(
         self,
         Y_star: np.ndarray,
-        groups: List[str],
-        unique_groups: List[str],
+        groups: list[str],
+        unique_groups: list[str],
         X_red_star: np.ndarray,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Pairwise group comparisons via RRPP."""
         rng = np.random.RandomState(self.seed)
         results = []
@@ -490,32 +608,49 @@ class PhyloAnova(Tree):
             for j in range(i + 1, len(unique_groups)):
                 g1, g2 = unique_groups[i], unique_groups[j]
                 mask = (groups_arr == g1) | (groups_arr == g2)
-                idx = np.where(mask)[0]
+                idx = np.flatnonzero(mask)
 
                 Y_sub = Y_star[idx]
                 groups_sub = groups_arr[idx]
+                pos1 = np.flatnonzero(groups_sub == g1)
+                pos2 = np.flatnonzero(groups_sub == g2)
 
                 # Observed distance between group means
-                mean1 = Y_sub[groups_sub == g1].mean(axis=0)
-                mean2 = Y_sub[groups_sub == g2].mean(axis=0)
+                mean1 = Y_sub[pos1].mean(axis=0)
+                mean2 = Y_sub[pos2].mean(axis=0)
                 d_obs = float(np.linalg.norm(mean1 - mean2))
 
                 # Permute residuals for pairwise test
                 resid_sub = resid_red[idx]
                 hat_sub = hat_red[idx]
-                d_perms = np.zeros(self.permutations)
+                hat_diff = (
+                    hat_sub[pos1].mean(axis=0) - hat_sub[pos2].mean(axis=0)
+                )
 
+                perm_indices = np.empty(
+                    (self.permutations, len(idx)), dtype=np.intp
+                )
                 for p in range(self.permutations):
-                    perm_idx = rng.permutation(len(idx))
-                    Y_perm = hat_sub + resid_sub[perm_idx]
-                    mean1_p = Y_perm[groups_sub == g1].mean(axis=0)
-                    mean2_p = Y_perm[groups_sub == g2].mean(axis=0)
-                    d_perms[p] = float(np.linalg.norm(mean1_p - mean2_p))
+                    perm_indices[p] = rng.permutation(len(idx))
+
+                contrast = np.zeros(len(idx), dtype=resid_sub.dtype)
+                contrast[pos1] = 1.0 / len(pos1)
+                contrast[pos2] = -1.0 / len(pos2)
+                weights = np.empty(
+                    (self.permutations, len(idx)), dtype=resid_sub.dtype
+                )
+                weights[np.arange(self.permutations)[:, None], perm_indices] = (
+                    contrast
+                )
+                resid_diffs = weights @ resid_sub
+                d_perms = np.linalg.norm(hat_diff + resid_diffs, axis=1)
 
                 p_val = float(np.mean(d_perms >= d_obs))
+                d_mean = np.mean(d_perms)
+                d_std = np.std(d_perms)
                 z_val = (
-                    (d_obs - np.mean(d_perms)) / np.std(d_perms)
-                    if np.std(d_perms) > 0
+                    (d_obs - d_mean) / d_std
+                    if d_std > 0
                     else 0.0
                 )
 
@@ -532,45 +667,53 @@ class PhyloAnova(Tree):
     ) -> None:
         method_label = "Phylogenetic ANOVA" if method == "anova" else "Phylogenetic MANOVA"
         try:
-            print(f"{method_label} (RRPP, {self.permutations} permutations)")
+            lines = [f"{method_label} (RRPP, {self.permutations} permutations)"]
+            append = lines.append
             if method == "anova":
-                print(f"Response: {response_names[0]}")
+                append(f"Response: {response_names[0]}")
             else:
-                print(f"Response traits: {', '.join(response_names)}")
-            print(f"Groups ({n_groups}): {', '.join(unique_groups)}")
-            print(f"N taxa: {n}")
-            print()
-            print(f"{'Source':<15} {'Df':>5} {'SS':>12} {'MS':>12} "
-                  f"{'F':>10} {'Z':>10} {'p-value':>10}")
-            print("-" * 76)
-            print(
+                append(f"Response traits: {', '.join(response_names)}")
+            append(f"Groups ({n_groups}): {', '.join(unique_groups)}")
+            append(f"N taxa: {n}")
+            append("")
+            append(
+                f"{'Source':<15} {'Df':>5} {'SS':>12} {'MS':>12} "
+                f"{'F':>10} {'Z':>10} {'p-value':>10}"
+            )
+            append("-" * 76)
+            append(
                 f"{'group':<15} {result['df_model']:>5d} "
                 f"{result['ss_model']:>12.4f} {result['ms_model']:>12.4f} "
                 f"{result['f_stat']:>10.4f} {result['z_score']:>10.4f} "
                 f"{result['p_value']:>10.4f}"
             )
-            print(
+            append(
                 f"{'residuals':<15} {result['df_resid']:>5d} "
                 f"{result['ss_resid']:>12.4f} {result['ms_resid']:>12.4f}"
             )
-            print(
+            append(
                 f"{'total':<15} {result['df_total']:>5d} "
                 f"{result['ss_total']:>12.4f}"
             )
 
             if "pillai_trace" in result:
-                print(f"\nPillai's trace: {result['pillai_trace']:.4f}")
+                append("")
+                append(f"Pillai's trace: {result['pillai_trace']:.4f}")
 
             if pairwise_results:
-                print("\nPairwise comparisons:")
-                print(f"  {'Comparison':<30} {'d':>10} {'Z':>10} {'p-value':>10}")
-                print("  " + "-" * 62)
+                append("")
+                append("Pairwise comparisons:")
+                append(
+                    f"  {'Comparison':<30} {'d':>10} {'Z':>10} {'p-value':>10}"
+                )
+                append("  " + "-" * 62)
                 for pw in pairwise_results:
                     label = f"{pw['group1']} vs {pw['group2']}"
-                    print(
+                    append(
                         f"  {label:<30} {pw['distance']:>10.4f} "
                         f"{pw['z_score']:>10.4f} {pw['p_value']:>10.4f}"
                     )
+            print("\n".join(lines))
         except BrokenPipeError:
             return
 
@@ -625,6 +768,7 @@ class PhyloAnova(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
         except ImportError:
             print("matplotlib is required for plotting.")
             return
@@ -642,9 +786,9 @@ class PhyloAnova(Tree):
         data_by_group = []
         group_labels = []
         group_colors = []
+        groups_arr = np.asarray(groups)
         for i, g in enumerate(unique_groups):
-            mask = [groups[j] == g for j in range(len(groups))]
-            vals = y[mask]
+            vals = y[groups_arr == g]
             data_by_group.append(vals)
             group_labels.append(g)
             group_colors.append(colors[i % len(colors)])
@@ -706,6 +850,7 @@ class PhyloAnova(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
         except ImportError:
             print("matplotlib is required for plotting.")
             return
@@ -733,7 +878,70 @@ class PhyloAnova(Tree):
             xlabel = f"PC1 ({var_explained[0]:.1f}%)"
             ylabel = f"PC2 ({var_explained[1]:.1f}%)"
 
-        # Build parent map and reconstruct ancestors for phylo overlay
+        parent_map, node_coords, preorder_clades = (
+            self._prepare_phylomorphospace_overlay(tree, ordered_names, pc)
+        )
+
+        # Draw phylogeny branches
+        branch_segments = []
+        for clade in preorder_clades:
+            if clade == tree.root:
+                continue
+            pid = parent_map.get(id(clade))
+            if pid is None or id(pid) not in node_coords or id(clade) not in node_coords:
+                continue
+            p_coord = node_coords[id(pid)]
+            c_coord = node_coords[id(clade)]
+            branch_segments.append([(p_coord[0], p_coord[1]), (c_coord[0], c_coord[1])])
+        if branch_segments:
+            ax.add_collection(
+                LineCollection(
+                    branch_segments,
+                    colors="gray",
+                    linewidths=0.5,
+                    alpha=0.5,
+                    zorder=1,
+                ),
+                autolim=True,
+        )
+
+        # Plot points colored by group
+        groups_arr = np.asarray(groups)
+        for i, g in enumerate(unique_groups):
+            mask = groups_arr == g
+            color = colors[i % len(colors)]
+            ax.scatter(
+                pc[mask, 0], pc[mask, 1],
+                c=color, label=g, s=50, edgecolors="black",
+                linewidths=0.5, zorder=3,
+            )
+
+        ax.set_xlabel(xlabel, fontsize=config.axis_fontsize or 10)
+        ax.set_ylabel(ylabel, fontsize=config.axis_fontsize or 10)
+        ax.legend(fontsize=8, frameon=True)
+
+        if config.show_title:
+            ax.set_title(
+                config.title or "Phylogenetic MANOVA — Phylomorphospace",
+                fontsize=config.title_fontsize,
+            )
+
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=config.dpi)
+        plt.close(fig)
+        print(f"Plot saved: {output_path}")
+
+    @staticmethod
+    def _prepare_phylomorphospace_overlay(tree, ordered_names, pc):
+        direct_result = PhyloAnova._prepare_phylomorphospace_overlay_direct(
+            tree, ordered_names, pc
+        )
+        if direct_result is not None:
+            return direct_result
+
         parent_map = {}
         for clade in tree.find_clades(order="preorder"):
             for child in clade.clades:
@@ -759,45 +967,53 @@ class PhyloAnova(Tree):
             if child_coords:
                 node_coords[id(clade)] = np.mean(child_coords, axis=0)
 
-        # Draw phylogeny branches
-        for clade in tree.find_clades(order="preorder"):
-            if clade == tree.root:
+        return parent_map, node_coords, list(tree.find_clades(order="preorder"))
+
+    @staticmethod
+    def _prepare_phylomorphospace_overlay_direct(tree, ordered_names, pc):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        preorder_clades = []
+        parent_map = {}
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                preorder_clades.append(clade)
+                children = clade.clades
+                if children:
+                    for child in children:
+                        parent_map[id(child)] = clade
+                    stack.extend(reversed(children))
+        except AttributeError:
+            return None
+
+        name_to_idx = {name: i for i, name in enumerate(ordered_names)}
+        node_coords = {}
+        for clade in reversed(preorder_clades):
+            children = clade.clades
+            if not children:
+                idx = name_to_idx.get(clade.name)
+                if idx is not None:
+                    node_coords[id(clade)] = pc[idx]
                 continue
-            pid = parent_map.get(id(clade))
-            if pid is None or id(pid) not in node_coords or id(clade) not in node_coords:
-                continue
-            p_coord = node_coords[id(pid)]
-            c_coord = node_coords[id(clade)]
-            ax.plot(
-                [p_coord[0], c_coord[0]],
-                [p_coord[1], c_coord[1]],
-                color="gray", lw=0.5, alpha=0.5, zorder=1,
-            )
 
-        # Plot points colored by group
-        for i, g in enumerate(unique_groups):
-            mask = np.array([groups[j] == g for j in range(len(groups))])
-            color = colors[i % len(colors)]
-            ax.scatter(
-                pc[mask, 0], pc[mask, 1],
-                c=color, label=g, s=50, edgecolors="black",
-                linewidths=0.5, zorder=3,
-            )
+            coord_sum = None
+            count = 0
+            for child in children:
+                coord = node_coords.get(id(child))
+                if coord is None:
+                    continue
+                if coord_sum is None:
+                    coord_sum = coord.copy()
+                else:
+                    coord_sum += coord
+                count += 1
+            if count:
+                node_coords[id(clade)] = coord_sum / count
 
-        ax.set_xlabel(xlabel, fontsize=config.axis_fontsize or 10)
-        ax.set_ylabel(ylabel, fontsize=config.axis_fontsize or 10)
-        ax.legend(fontsize=8, frameon=True)
-
-        if config.show_title:
-            ax.set_title(
-                config.title or "Phylogenetic MANOVA — Phylomorphospace",
-                fontsize=config.title_fontsize,
-            )
-
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-
-        fig.tight_layout()
-        fig.savefig(output_path, dpi=config.dpi)
-        plt.close(fig)
-        print(f"Plot saved: {output_path}")
+        return parent_map, node_coords, preorder_clades

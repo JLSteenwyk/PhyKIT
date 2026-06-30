@@ -1,11 +1,22 @@
-from typing import Dict
-import pickle
+from __future__ import annotations
+
 import re
 
 from .base import Tree
 
-from ...helpers.files import read_single_column_file_to_list
-from ...helpers.json_output import print_json
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def read_single_column_file_to_list(*args, **kwargs):
+    from ...helpers.files import (
+        read_single_column_file_to_list as _read_single_column_file_to_list,
+    )
+
+    return _read_single_column_file_to_list(*args, **kwargs)
 
 
 _BRANCH_LABEL_RE = re.compile(r"\{[^{}]*\}")
@@ -13,7 +24,7 @@ _BRANCH_LABEL_RE = re.compile(r"\{[^{}]*\}")
 
 def _strip_branch_label(name: str) -> str:
     """Remove HyPhy/aBSREL-style {…} branch labels from a tip name."""
-    return _BRANCH_LABEL_RE.sub("", name) if name else name
+    return _BRANCH_LABEL_RE.sub("", name) if name and "{" in name else name
 
 
 class PruneTree(Tree):
@@ -29,15 +40,13 @@ class PruneTree(Tree):
         self.ignore_branch_labels = parsed["ignore_branch_labels"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        # Make a deep copy to avoid modifying the cached tree
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
+        tree = self.read_tree_file_unmodified()
 
         taxa = read_single_column_file_to_list(self.list_of_taxa)
 
         if self.ignore_branch_labels:
             taxa_set = set(taxa)
-            tips_in_tree = [term.name for term in tree_copy.get_terminals()]
+            tips_in_tree = self.get_tip_names_from_tree(tree)
             if self.keep:
                 taxa = [
                     tip for tip in tips_in_tree
@@ -49,14 +58,20 @@ class PruneTree(Tree):
                     if _strip_branch_label(tip) in taxa_set
                 ]
         elif self.keep:
-            tips_in_tree = [term.name for term in tree_copy.get_terminals()]
-            taxa = [x for x in tips_in_tree if x not in taxa]
+            taxa_set = set(taxa)
+            tips_in_tree = self.get_tip_names_from_tree(tree)
+            taxa = [x for x in tips_in_tree if x not in taxa_set]
 
-        tree_copy = self.prune_tree_using_taxa_list(tree_copy, taxa)
+        if taxa:
+            tree = self._fast_copy(tree)
+            tree = self.prune_tree_using_taxa_list(tree, taxa)
 
-        self.write_tree_file(tree_copy, self.output_file_path)
+        self.write_tree_file(tree, self.output_file_path)
 
         if self.json_output:
+            remaining_tips = self.calculate_terminal_count_fast(tree)
+            if remaining_tips is None:
+                remaining_tips = tree.count_terminals()
             print_json(
                 dict(
                     input_tree=self.tree_file_path,
@@ -65,12 +80,12 @@ class PruneTree(Tree):
                     ignore_branch_labels=self.ignore_branch_labels,
                     taxa_pruned=sorted(taxa),
                     pruned_count=len(taxa),
-                    remaining_tips=tree_copy.count_terminals(),
+                    remaining_tips=remaining_tips,
                     output_file=self.output_file_path,
                 )
             )
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         tree_file_path = args.tree
         output_file_path = \
             f"{args.output}" if args.output else f"{tree_file_path}.pruned"

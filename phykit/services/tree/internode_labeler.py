@@ -1,10 +1,12 @@
-from typing import Dict
-import pickle
-
-from Bio.Phylo import Newick
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class InternodeLabeler(Tree):
@@ -18,10 +20,8 @@ class InternodeLabeler(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        # Make a deep copy to avoid modifying the cached tree
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        labeled_count = self.add_labels_to_tree(tree_copy)
-        self.write_tree_file(tree_copy, self.output_file_path)
+        labeled_count = self.add_labels_to_tree(tree)
+        self.write_tree_file(tree, self.output_file_path)
 
         if self.json_output:
             print_json(
@@ -32,7 +32,7 @@ class InternodeLabeler(Tree):
                 )
             )
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         output_file_path = args.output or f"{args.tree}.internode_labels.tre"
 
         return dict(
@@ -45,8 +45,42 @@ class InternodeLabeler(Tree):
         self,
         tree: Newick.Tree
     ) -> int:
+        count = self._add_labels_to_standard_tree(tree)
+        if count is not None:
+            return count
+
         labeled_count = 0
         for label, node in enumerate(tree.get_nonterminals(), start=1):
             node.confidence = label
             labeled_count += 1
+        return labeled_count
+
+    @staticmethod
+    def _add_labels_to_standard_tree(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        labeled_count = 0
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        try:
+            while stack:
+                node = pop()
+                children = node.clades
+                if children:
+                    labeled_count += 1
+                    node.confidence = labeled_count
+                    child_count = len(children)
+                    if child_count == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            append(children[idx])
+        except AttributeError:
+            return None
         return labeled_count

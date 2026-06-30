@@ -1,14 +1,42 @@
-import math
-import pickle
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
+import math
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _value_range(values):
+    iterator = iter(values)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return None
+
+    vmin = vmax = first
+    for value in iterator:
+        if value < vmin:
+            vmin = value
+        elif value > vmax:
+            vmax = value
+    return vmin, vmax
 
 
 class Phenogram(Tree):
@@ -21,8 +49,13 @@ class Phenogram(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phenogram visualization")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phenogram visualization",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_values = self._parse_single_trait_data(
@@ -34,31 +67,31 @@ class Phenogram(Tree):
         x = np.array([trait_values[name] for name in ordered_names])
 
         # Prune tree to shared taxa
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in trait_values]
+        tips_to_prune = [t for t in tree_tips if t not in trait_values]
+        tree_for_analysis = tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self._fast_copy(tree)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis,
+                tips_to_prune,
+            )
 
         # Label internal nodes
-        node_labels = self._label_internal_nodes(tree_copy)
+        node_labels = self._label_internal_nodes(tree_for_analysis)
 
         # Run fast ancestral reconstruction
         node_estimates, sigma2 = self._fast_anc(
-            tree_copy, x, ordered_names, node_labels
+            tree_for_analysis, x, ordered_names, node_labels
         )
 
         # Always produce phenogram plot
         self._plot_phenogram(
-            tree_copy, node_estimates, node_labels,
+            tree_for_analysis, node_estimates, node_labels,
             trait_values, "trait", self.output_path
         )
 
         # Text output (always printed)
-        print("Phenogram (Traitgram)")
-        print(f"\nNumber of tips: {n}")
-        print(f"Sigma-squared (BM rate): {sigma2:.4f}")
-        print(f"Saved phenogram plot: {self.output_path}")
+        self._print_text_output(n, sigma2)
 
         if self.json_output:
             result = {
@@ -73,7 +106,21 @@ class Phenogram(Tree):
             }
             print_json(result)
 
-    def process_args(self, args) -> Dict:
+    def _print_text_output(self, n: int, sigma2: float) -> None:
+        print(
+            "\n".join(
+                [
+                    "Phenogram (Traitgram)",
+                    f"\nNumber of tips: {n}",
+                    f"Sigma-squared (BM rate): {sigma2:.4f}",
+                    f"Saved phenogram plot: {self.output_path}",
+                ]
+            )
+        )
+
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -83,11 +130,35 @@ class Phenogram(Tree):
         )
 
     def _parse_single_trait_data(
-        self, path: str, tree_tips: List[str]
-    ) -> Dict[str, float]:
+        self, path: str, tree_tips: list[str]
+    ) -> dict[str, float]:
         try:
+            traits = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                            code=2,
+                        )
+                    taxon, value_str = parts
+                    try:
+                        traits[taxon] = float(value_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -97,33 +168,15 @@ class Phenogram(Tree):
                 code=2,
             )
 
-        traits = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value_str = parts
-            try:
-                traits[taxon] = float(value_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
-
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -153,14 +206,14 @@ class Phenogram(Tree):
 
         return {taxon: traits[taxon] for taxon in shared}
 
-    def _label_internal_nodes(self, tree) -> Dict:
+    def _label_internal_nodes(self, tree) -> dict:
         """Assign N1, N2, ... labels to unnamed internal nodes.
 
         Returns dict mapping id(clade) -> label for all internal nodes.
         """
         labels = {}
         counter = 1
-        for clade in tree.find_clades(order="preorder"):
+        for clade in self._iter_preorder(tree.root):
             if not clade.is_terminal():
                 if clade.name:
                     labels[id(clade)] = clade.name
@@ -169,17 +222,42 @@ class Phenogram(Tree):
                     counter += 1
         return labels
 
-    def _build_parent_map(self, tree) -> Dict:
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        while stack:
+            clade = stack.pop()
+            yield clade
+            stack.extend(reversed(clade.clades))
+
+    @staticmethod
+    def _iter_postorder(root):
+        clades = []
+        stack = [root]
+        while stack:
+            clade = stack.pop()
+            clades.append(clade)
+            stack.extend(clade.clades)
+        yield from reversed(clades)
+
+    def _build_parent_map(self, tree) -> dict:
         parent_map = {}
-        for clade in tree.find_clades(order="preorder"):
-            for child in clade.clades:
+        stack = [tree.root]
+        pop = stack.pop
+        extend = stack.extend
+        while stack:
+            clade = pop()
+            children = clade.clades
+            for child in children:
                 parent_map[id(child)] = clade
+            if children:
+                extend(children)
         return parent_map
 
     def _fast_anc(
-        self, tree, x: np.ndarray, ordered_names: List[str],
-        node_labels: Dict,
-    ) -> Tuple[Dict, float]:
+        self, tree, x: np.ndarray, ordered_names: list[str],
+        node_labels: dict,
+    ) -> tuple[dict, float]:
         """Two-pass ML ancestral reconstruction (Felsenstein's algorithm).
 
         Pass 1 (postorder): compute subtree estimates and variances.
@@ -189,25 +267,32 @@ class Phenogram(Tree):
         Returns (node_estimates, sigma2).
         """
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
-        parent_map = self._build_parent_map(tree)
+        preorder_clades = list(self._iter_preorder(tree.root))
+        postorder_clades = list(reversed(preorder_clades))
+        parent_map = {}
+        for clade in preorder_clades:
+            for child in clade.clades:
+                parent_map[id(child)] = clade
 
         # --- Pass 1: postorder (subtree estimates) ---
         est_down = {}
         var_down = {}
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
-                name = clade.name
-                if name in name_to_idx:
-                    est_down[id(clade)] = x[name_to_idx[name]]
-                    var_down[id(clade)] = 0.0
+        for clade in postorder_clades:
+            children = clade.clades
+            clade_id = id(clade)
+            if not children:
+                idx = name_to_idx.get(clade.name)
+                if idx is not None:
+                    est_down[clade_id] = x[idx]
+                    var_down[clade_id] = 0.0
             else:
-                children = clade.clades
-                precisions = []
-                weighted_vals = []
+                total_prec = 0.0
+                weighted_sum = 0.0
                 for child in children:
                     child_id = id(child)
-                    if child_id not in est_down:
+                    child_estimate = est_down.get(child_id)
+                    if child_estimate is None:
                         continue
                     v_i = child.branch_length if child.branch_length else 0.0
                     child_var = var_down[child_id]
@@ -215,13 +300,12 @@ class Phenogram(Tree):
                     if denom == 0:
                         denom = 1e-10
                     prec = 1.0 / denom
-                    precisions.append(prec)
-                    weighted_vals.append(prec * est_down[child_id])
+                    total_prec += prec
+                    weighted_sum += prec * child_estimate
 
-                if precisions:
-                    total_prec = sum(precisions)
-                    est_down[id(clade)] = sum(weighted_vals) / total_prec
-                    var_down[id(clade)] = 1.0 / total_prec
+                if total_prec:
+                    est_down[clade_id] = weighted_sum / total_prec
+                    var_down[clade_id] = 1.0 / total_prec
 
         # --- Pass 2: preorder (incorporate full-tree information) ---
         est_up = {}
@@ -230,59 +314,70 @@ class Phenogram(Tree):
         var_final = {}
 
         root = tree.root
+        root_id = id(root)
         # Root has no information from above
-        est_final[id(root)] = est_down[id(root)]
-        var_final[id(root)] = var_down[id(root)]
+        est_final[root_id] = est_down[root_id]
+        var_final[root_id] = var_down[root_id]
 
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
+        for clade in preorder_clades:
+            clade_id = id(clade)
+            if clade_id == root_id:
                 continue
-            if id(clade) not in parent_map:
+            parent = parent_map.get(clade_id)
+            if parent is None:
                 continue
-            parent = parent_map[id(clade)]
+            parent_id = id(parent)
             bl = clade.branch_length if clade.branch_length else 0.0
 
             # Gather precision from parent's "above" message
             prec_above = 0.0
             est_above_weighted = 0.0
-            if id(parent) in est_up:
-                v_up_parent = var_up[id(parent)]
+            parent_estimate = est_up.get(parent_id)
+            if parent_estimate is not None:
+                v_up_parent = var_up[parent_id]
                 if v_up_parent > 0:
                     p = 1.0 / v_up_parent
                     prec_above += p
-                    est_above_weighted += p * est_up[id(parent)]
-                elif v_up_parent == 0 and id(parent) != id(root):
+                    est_above_weighted += p * parent_estimate
+                elif v_up_parent == 0 and parent_id != root_id:
                     p = 1.0 / 1e-10
                     prec_above += p
-                    est_above_weighted += p * est_up[id(parent)]
+                    est_above_weighted += p * parent_estimate
 
             # Gather precision from siblings
             for sibling in parent.clades:
-                if id(sibling) == id(clade):
+                sibling_id = id(sibling)
+                if sibling_id == clade_id:
                     continue
-                if id(sibling) not in est_down:
+                sibling_estimate = est_down.get(sibling_id)
+                if sibling_estimate is None:
                     continue
                 sib_bl = sibling.branch_length if sibling.branch_length else 0.0
-                sib_var = var_down[id(sibling)] + sib_bl
+                sib_var = var_down[sibling_id] + sib_bl
                 if sib_var == 0:
                     sib_var = 1e-10
                 p = 1.0 / sib_var
                 prec_above += p
-                est_above_weighted += p * est_down[id(sibling)]
+                est_above_weighted += p * sibling_estimate
 
             # The "above" message for this node
             if prec_above > 0:
-                est_up[id(clade)] = est_above_weighted / prec_above
-                var_up[id(clade)] = bl + 1.0 / prec_above
+                up_estimate = est_above_weighted / prec_above
+                est_up[clade_id] = up_estimate
+                up_variance = bl + 1.0 / prec_above
+                var_up[clade_id] = up_variance
             else:
                 # No information from above (shouldn't happen in a valid tree)
-                est_up[id(clade)] = est_down.get(id(clade), 0.0)
-                var_up[id(clade)] = bl + 1e10
+                up_estimate = est_down.get(clade_id, 0.0)
+                est_up[clade_id] = up_estimate
+                up_variance = bl + 1e10
+                var_up[clade_id] = up_variance
 
             # Combine down and up for final estimate
-            if id(clade) in est_down:
-                vd = var_down[id(clade)]
-                vu = var_up[id(clade)]
+            down_estimate = est_down.get(clade_id)
+            if down_estimate is not None:
+                vd = var_down[clade_id]
+                vu = up_variance
                 if vd == 0:
                     vd = 1e-10
                 if vu == 0:
@@ -290,81 +385,92 @@ class Phenogram(Tree):
                 prec_d = 1.0 / vd
                 prec_u = 1.0 / vu
                 total = prec_d + prec_u
-                est_final[id(clade)] = (
-                    prec_d * est_down[id(clade)] + prec_u * est_up[id(clade)]
+                est_final[clade_id] = (
+                    prec_d * down_estimate + prec_u * up_estimate
                 ) / total
-                var_final[id(clade)] = 1.0 / total
+                var_final[clade_id] = 1.0 / total
 
         # Compute sigma^2 from phylogenetic independent contrasts
         sigma2 = self._compute_sigma2_from_contrasts(
-            tree, x, est_down, var_down, ordered_names
+            tree, x, est_down, var_down, ordered_names, postorder_clades
         )
 
         # Build output dicts keyed by node label
         node_estimates = {}
-        for clade in tree.find_clades(order="preorder"):
-            if not clade.is_terminal() and id(clade) in node_labels:
-                label = node_labels[id(clade)]
-                if id(clade) in est_final:
-                    node_estimates[label] = est_final[id(clade)]
+        for clade in preorder_clades:
+            if clade.clades:
+                clade_id = id(clade)
+                label = node_labels.get(clade_id)
+                final_estimate = est_final.get(clade_id)
+                if label is not None and final_estimate is not None:
+                    node_estimates[label] = final_estimate
 
         return node_estimates, sigma2
 
     def _compute_sigma2_from_contrasts(
-        self, tree, x: np.ndarray, node_estimates: Dict,
-        node_variances: Dict, ordered_names: List[str],
+        self, tree, x: np.ndarray, node_estimates: dict,
+        node_variances: dict, ordered_names: list[str], postorder_clades=None,
     ) -> float:
         """Compute BM rate (sigma^2) from phylogenetic independent contrasts."""
-        contrasts_sq = []
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
+        contrasts_sum = 0.0
+        contrast_count = 0
+        if postorder_clades is None:
+            postorder_clades = self._iter_postorder(tree.root)
+        for clade in postorder_clades:
+            if not clade.clades:
                 continue
             children = clade.clades
-            valid_children = [
-                c for c in children if id(c) in node_estimates
-            ]
-            if len(valid_children) < 2:
-                continue
+            first_child = None
+            combined_est = 0.0
+            combined_var = 0.0
+            valid_count = 0
 
-            # Process first two children
-            c1, c2 = valid_children[0], valid_children[1]
-            v1 = (c1.branch_length or 0.0) + node_variances[id(c1)]
-            v2 = (c2.branch_length or 0.0) + node_variances[id(c2)]
-            denom = v1 + v2
-            if denom > 0:
-                contrast = (
-                    node_estimates[id(c1)] - node_estimates[id(c2)]
-                ) / math.sqrt(denom)
-                contrasts_sq.append(contrast ** 2)
+            for child in children:
+                child_id = id(child)
+                child_estimate = node_estimates.get(child_id)
+                if child_estimate is None:
+                    continue
 
-            # Combined estimate and variance after first two children
-            if denom > 0:
-                combined_est = (
-                    v2 * node_estimates[id(c1)] + v1 * node_estimates[id(c2)]
-                ) / denom
-                combined_var = (v1 * v2) / denom
-            else:
-                combined_est = node_estimates[id(c1)]
-                combined_var = 0.0
+                if valid_count == 0:
+                    first_child = child
+                    valid_count = 1
+                    continue
 
-            # Process additional children (for polytomies)
-            for k in range(2, len(valid_children)):
-                ck = valid_children[k]
-                vk = (ck.branch_length or 0.0) + node_variances[id(ck)]
+                if valid_count == 1:
+                    first_id = id(first_child)
+                    v1 = (
+                        first_child.branch_length or 0.0
+                    ) + node_variances[first_id]
+                    v2 = (child.branch_length or 0.0) + node_variances[child_id]
+                    denom = v1 + v2
+                    if denom > 0:
+                        diff = node_estimates[first_id] - child_estimate
+                        contrasts_sum += (diff * diff) / denom
+                        contrast_count += 1
+                        combined_est = (
+                            v2 * node_estimates[first_id] + v1 * child_estimate
+                        ) / denom
+                        combined_var = (v1 * v2) / denom
+                    else:
+                        combined_est = node_estimates[first_id]
+                        combined_var = 0.0
+                    valid_count = 2
+                    continue
+
+                vk = (child.branch_length or 0.0) + node_variances[child_id]
                 vc = combined_var
                 denom_k = vk + vc
                 if denom_k > 0:
-                    contrast_k = (
-                        node_estimates[id(ck)] - combined_est
-                    ) / math.sqrt(denom_k)
-                    contrasts_sq.append(contrast_k ** 2)
+                    diff = child_estimate - combined_est
+                    contrasts_sum += (diff * diff) / denom_k
+                    contrast_count += 1
                     combined_est = (
-                        vc * node_estimates[id(ck)] + vk * combined_est
+                        vc * child_estimate + vk * combined_est
                     ) / denom_k
                     combined_var = (vk * vc) / denom_k
 
-        if contrasts_sq:
-            return sum(contrasts_sq) / len(contrasts_sq)
+        if contrast_count:
+            return contrasts_sum / contrast_count
         return 0.0
 
     def _plot_phenogram(
@@ -375,6 +481,7 @@ class Phenogram(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.colors import Normalize
         except ImportError:
             print(
@@ -384,38 +491,35 @@ class Phenogram(Tree):
             raise SystemExit(2)
 
         parent_map = self._build_parent_map(tree)
-
-        # Build estimates dict keyed by id(clade) for all nodes
-        all_estimates = {}
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                if clade.name in trait_values:
-                    all_estimates[id(clade)] = trait_values[clade.name]
-            else:
-                if id(clade) in node_labels:
-                    label = node_labels[id(clade)]
-                    if label in node_estimates:
-                        all_estimates[id(clade)] = node_estimates[label]
-
-        tips = list(tree.get_terminals())
-
-        # Compute x-positions (distance from root)
-        node_x = {}
         root = tree.root
-        for clade in tree.find_clades(order="preorder"):
-            if clade == root:
-                node_x[id(clade)] = 0.0
+        preorder_clades = list(self._iter_preorder(root))
+
+        # Build estimates, tip order, and x-coordinates in one preorder pass.
+        all_estimates = {}
+        tips = []
+        node_x = {}
+        for clade in preorder_clades:
+            cid = id(clade)
+            if clade.is_terminal():
+                tips.append(clade)
+                if clade.name in trait_values:
+                    all_estimates[cid] = trait_values[clade.name]
             else:
-                if id(clade) in parent_map:
-                    parent = parent_map[id(clade)]
-                    t = clade.branch_length if clade.branch_length else 0.0
-                    node_x[id(clade)] = node_x[id(parent)] + t
+                label = node_labels.get(cid)
+                if label in node_estimates:
+                    all_estimates[cid] = node_estimates[label]
+            if clade == root:
+                node_x[cid] = 0.0
+            elif cid in parent_map:
+                parent = parent_map[cid]
+                t = clade.branch_length if clade.branch_length else 0.0
+                node_x[cid] = node_x[id(parent)] + t
 
         # Normalize trait values for colormap
-        all_vals = list(all_estimates.values())
-        if not all_vals:
+        value_range = _value_range(all_estimates.values())
+        if value_range is None:
             return
-        vmin, vmax = min(all_vals), max(all_vals)
+        vmin, vmax = value_range
         if vmin == vmax:
             vmax = vmin + 1.0
         norm = Normalize(vmin=vmin, vmax=vmax)
@@ -430,22 +534,26 @@ class Phenogram(Tree):
 
         # Draw branches: for each parent->child pair, draw a line from
         # (parent_x, parent_trait) to (child_x, child_trait) with gradient color
-        for clade in tree.find_clades(order="preorder"):
+        branch_segments = []
+        branch_colors = []
+        for clade in preorder_clades:
             if clade == root:
                 continue
-            if id(clade) not in parent_map:
+            cid = id(clade)
+            if cid not in parent_map:
                 continue
 
-            parent = parent_map[id(clade)]
-            if id(parent) not in node_x or id(clade) not in node_x:
+            parent = parent_map[cid]
+            pid = id(parent)
+            if pid not in node_x or cid not in node_x:
                 continue
-            if id(parent) not in all_estimates or id(clade) not in all_estimates:
+            if pid not in all_estimates or cid not in all_estimates:
                 continue
 
-            x0 = node_x[id(parent)]
-            x1 = node_x[id(clade)]
-            y0 = all_estimates[id(parent)]
-            y1 = all_estimates[id(clade)]
+            x0 = node_x[pid]
+            x1 = node_x[cid]
+            y0 = all_estimates[pid]
+            y1 = all_estimates[cid]
 
             # Draw gradient line from (x0, y0) to (x1, y1)
             for s in range(n_seg):
@@ -456,10 +564,20 @@ class Phenogram(Tree):
                 ys = y0 + frac_s * (y1 - y0)
                 ye = y0 + frac_e * (y1 - y0)
                 v = (ys + ye) / 2.0
-                ax.plot(
-                    [xs, xe], [ys, ye],
-                    color=cmap(norm(v)), lw=2, solid_capstyle="butt",
-                )
+                branch_segments.append(((xs, ys), (xe, ye)))
+                branch_colors.append(cmap(norm(v)))
+
+        if branch_segments:
+            ax.add_collection(
+                LineCollection(
+                    branch_segments,
+                    colors=branch_colors,
+                    linewidths=2,
+                    capstyle="butt",
+                ),
+                autolim=True,
+            )
+            ax.autoscale_view()
 
         # Plot tip points as scatter dots
         tip_xs = []

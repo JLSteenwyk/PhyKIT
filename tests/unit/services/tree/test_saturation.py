@@ -4,18 +4,41 @@ Unit tests for Saturation class
 
 import unittest
 import builtins
-from unittest.mock import Mock, MagicMock, patch, call
+import subprocess
+import sys
+from unittest.mock import Mock, MagicMock, patch
 import numpy as np
 from argparse import Namespace
 from Bio import Align
+from Bio.Phylo.Newick import Clade, Tree
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+import phykit.services.tree.saturation as saturation_module
 from phykit.services.tree.saturation import Saturation
 
 
 class TestSaturation(unittest.TestCase):
     """Test Saturation class"""
+
+    def test_module_import_does_not_import_numpy_or_biopython_tree_modules(self):
+        code = """
+import sys
+import phykit.services.tree.saturation as module
+assert callable(module.print_json)
+assert callable(module.get_alignment_and_format_helper)
+assert hasattr(module.np, "__getattr__")
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.files" not in sys.modules
+assert "numpy" not in sys.modules
+assert "multiprocessing" not in sys.modules
+assert "Bio.Align" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
 
     def setUp(self):
         """Set up test fixtures"""
@@ -140,6 +163,66 @@ class TestSaturation(unittest.TestCase):
         self.assertEqual(pd, 0.2)
         self.assertTrue(np.isnan(ud))
 
+    def test_sequence_to_array_uppercases_ascii_bytes(self):
+        seq_arr = self.saturation._sequence_to_array("atgx-?")
+
+        self.assertEqual(seq_arr.dtype, np.uint8)
+        self.assertEqual(seq_arr.tolist(), [65, 84, 71, 88, 45, 63])
+
+    def test_sequence_to_array_falls_back_for_non_ascii(self):
+        seq_arr = self.saturation._sequence_to_array("aé")
+
+        self.assertEqual(seq_arr.dtype.kind, "U")
+        self.assertEqual(seq_arr.tolist(), ["A", "É"])
+
+    def test_gap_values_match_byte_arrays(self):
+        seq_arr = self.saturation._sequence_to_array("atgn")
+        gap_values = self.saturation._gap_values_for_array(seq_arr, {"n", "?"})
+
+        self.assertEqual(set(gap_values.tolist()), {78, 63})
+
+    def test_gap_mask_uses_byte_lookup(self):
+        seq_arr = self.saturation._sequence_to_array("AT-GN?")
+        with patch("phykit.services.tree.saturation.np.isin") as mock_isin:
+            gap_mask = self.saturation._gap_mask_for_array(
+                seq_arr, {"-", "N", "?"}
+            )
+
+        mock_isin.assert_not_called()
+        self.assertEqual(
+            gap_mask.tolist(),
+            [False, False, True, False, True, True],
+        )
+
+    def test_gap_mask_falls_back_for_non_ascii_arrays(self):
+        seq_arr = self.saturation._sequence_to_array("AÉ-")
+
+        gap_mask = self.saturation._gap_mask_for_array(seq_arr, {"-", "É"})
+
+        self.assertEqual(gap_mask.tolist(), [False, True, True])
+
+    def test_process_combo_batch_counts_byte_array_valid_positions(self):
+        mock_tree = Mock()
+        mock_tree.distance.return_value = 0.4
+        seq_arrays = {
+            "seq1": self.saturation._sequence_to_array("AT-GN"),
+            "seq2": self.saturation._sequence_to_array("ATCGT"),
+        }
+        gap_values = self.saturation._gap_values_for_array(
+            seq_arrays["seq1"], {"-", "N", "?"}
+        )
+        gap_mask = {
+            name: np.isin(seq_arr, gap_values)
+            for name, seq_arr in seq_arrays.items()
+        }
+
+        results = self.saturation._process_combo_batch(
+            mock_tree, seq_arrays, gap_mask, True, [("seq1", "seq2")]
+        )
+
+        self.assertEqual(results[0][0], 0.4)
+        self.assertEqual(results[0][1], 0.0)
+
     def test_loop_through_combos_sequential(self):
         """Test sequential processing of combinations (small dataset)"""
         # Create mock tree
@@ -174,6 +257,343 @@ class TestSaturation(unittest.TestCase):
         self.assertAlmostEqual(ud_list[0], 0.25, places=4)
         self.assertAlmostEqual(ud_list[1], 0.25, places=4)
         self.assertAlmostEqual(ud_list[2], 0.5, places=4)
+
+    @patch('multiprocessing.Pool')
+    def test_loop_through_combos_fast_tree_distances(self, mock_pool_class):
+        """Real trees should use cached patristic distances and preserve combo order."""
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="seq1"),
+                    Clade(
+                        branch_length=2.0,
+                        clades=[
+                            Clade(branch_length=3.0, name="seq2"),
+                            Clade(branch_length=4.0, name="seq3"),
+                        ],
+                    ),
+                ],
+            )
+        )
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("ATCG"), id="seq1", name="seq1"),
+            SeqRecord(Seq("ATGG"), id="seq2", name="seq2"),
+            SeqRecord(Seq("AACG"), id="seq3", name="seq3"),
+        ])
+        self.saturation.MP_MIN_COMBOS = 1
+        combos = [('seq2', 'seq3'), ('seq1', 'seq2'), ('seq1', 'seq3')]
+
+        pd_list, ud_list = self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+            combos, alignment, tree, False
+        )
+
+        mock_pool_class.assert_not_called()
+        self.assertEqual(pd_list, [tree.distance(*combo) for combo in combos])
+        self.assertAlmostEqual(ud_list[0], 0.5, places=4)
+        self.assertAlmostEqual(ud_list[1], 0.25, places=4)
+        self.assertAlmostEqual(ud_list[2], 0.25, places=4)
+
+    @patch('multiprocessing.Pool')
+    def test_loop_through_combos_uses_ordered_fast_tree_distances(
+        self, mock_pool_class
+    ):
+        """Ordered cached distances should be consumed directly in combo order."""
+        mock_tree = Mock()
+        mock_tree.distance.side_effect = AssertionError(
+            "cached distances should be used"
+        )
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("ATCG"), id="seq1", name="seq1"),
+            SeqRecord(Seq("ATGG"), id="seq2", name="seq2"),
+            SeqRecord(Seq("AACG"), id="seq3", name="seq3"),
+        ])
+        combos = [('seq1', 'seq2'), ('seq1', 'seq3'), ('seq2', 'seq3')]
+        self.saturation.calculate_pairwise_tip_distances_fast = Mock(
+            return_value=(combos, [0.1, 0.2, 0.3])
+        )
+        self.saturation.MP_MIN_COMBOS = 1
+
+        pd_list, ud_list = self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+            combos, alignment, mock_tree, False
+        )
+
+        mock_pool_class.assert_not_called()
+        self.assertEqual(pd_list, [0.1, 0.2, 0.3])
+        self.assertEqual(ud_list, [0.25, 0.25, 0.5])
+
+    def test_calculate_uncorrected_distances_matrix_with_gaps(self):
+        seq_arrays = {
+            "seq1": self.saturation._sequence_to_array("AT-G"),
+            "seq2": self.saturation._sequence_to_array("ATCG"),
+            "seq3": self.saturation._sequence_to_array("G--G"),
+            "seq4": self.saturation._sequence_to_array("----"),
+            "seq5": self.saturation._sequence_to_array("NNNN"),
+        }
+        gap_values = self.saturation._gap_values_for_array(
+            seq_arrays["seq1"], {"-", "N", "?"}
+        )
+        gap_mask = {
+            name: np.isin(seq_arr, gap_values)
+            for name, seq_arr in seq_arrays.items()
+        }
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq4", "seq5"),
+        ]
+
+        distances = self.saturation._calculate_uncorrected_distances_matrix(
+            ["seq1", "seq2", "seq3", "seq4", "seq5"],
+            combos,
+            seq_arrays,
+            gap_mask,
+            True,
+        )
+
+        self.assertEqual(distances[0], 0.0)
+        self.assertEqual(distances[1], 0.5)
+        self.assertTrue(np.isnan(distances[2]))
+
+    def test_standard_upper_triangle_values_preserve_pair_order(self):
+        combo_tips = ["seq1", "seq2", "seq3", "seq4"]
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq1", "seq4"),
+            ("seq2", "seq3"),
+            ("seq2", "seq4"),
+            ("seq3", "seq4"),
+        ]
+        values = np.arange(16, dtype=float).reshape(4, 4)
+
+        distances = self.saturation._standard_upper_triangle_values(
+            combo_tips,
+            combos,
+            values,
+        )
+
+        self.assertEqual(distances, [1.0, 2.0, 3.0, 6.0, 7.0, 11.0])
+
+    def test_standard_upper_triangle_values_reject_custom_pair_order(self):
+        combo_tips = ["seq1", "seq2", "seq3"]
+        combos = [("seq1", "seq3"), ("seq1", "seq2"), ("seq2", "seq3")]
+        values = np.arange(9, dtype=float).reshape(3, 3)
+
+        distances = self.saturation._standard_upper_triangle_values(
+            combo_tips,
+            combos,
+            values,
+        )
+
+        self.assertIsNone(distances)
+
+    def test_standard_upper_triangle_gappy_distances_preserve_nan_rows(self):
+        combo_tips = ["seq1", "seq2", "seq3"]
+        combos = [("seq1", "seq2"), ("seq1", "seq3"), ("seq2", "seq3")]
+        identity_counts = np.array(
+            [
+                [4.0, 2.0, 0.0],
+                [2.0, 4.0, 1.0],
+                [0.0, 1.0, 4.0],
+            ]
+        )
+        adjusted_lengths = np.array(
+            [
+                [4.0, 4.0, 0.0],
+                [4.0, 4.0, 2.0],
+                [0.0, 2.0, 4.0],
+            ]
+        )
+
+        distances = self.saturation._standard_upper_triangle_gappy_distances(
+            combo_tips,
+            combos,
+            identity_counts,
+            adjusted_lengths,
+        )
+
+        self.assertEqual(distances[0], 0.5)
+        self.assertTrue(np.isnan(distances[1]))
+        self.assertEqual(distances[2], 0.5)
+
+    def test_calculate_uncorrected_distances_matrix_no_gap_path_skips_valid_matrix(self):
+        seq_arrays = {
+            "seq1": self.saturation._sequence_to_array("ATCG"),
+            "seq2": self.saturation._sequence_to_array("ATGG"),
+            "seq3": self.saturation._sequence_to_array("AACG"),
+        }
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq2", "seq3"),
+        ]
+        with patch(
+            "phykit.services.tree.saturation.np.ones",
+            side_effect=AssertionError(
+                "no-gap saturation matrix path should not allocate a valid matrix"
+            ),
+        ):
+            distances = self.saturation._calculate_uncorrected_distances_matrix(
+                ["seq1", "seq2", "seq3"],
+                combos,
+                seq_arrays,
+                {},
+                False,
+            )
+
+        self.assertEqual(distances, [0.25, 0.25, 0.5])
+
+    def test_calculate_uncorrected_distances_exclude_gaps_clean_alignment_uses_no_gap_path(self):
+        seq_arrays = {
+            "seq1": self.saturation._sequence_to_array("ATCG"),
+            "seq2": self.saturation._sequence_to_array("ATGG"),
+            "seq3": self.saturation._sequence_to_array("AACG"),
+        }
+        gap_mask = {
+            name: np.zeros(len(seq_arr), dtype=bool)
+            for name, seq_arr in seq_arrays.items()
+        }
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq2", "seq3"),
+        ]
+        with patch(
+            "phykit.services.tree.saturation.np.vstack",
+            wraps=np.vstack,
+        ) as vstack_spy:
+            distances = self.saturation._calculate_uncorrected_distances_matrix(
+                ["seq1", "seq2", "seq3"],
+                combos,
+                seq_arrays,
+                gap_mask,
+                True,
+            )
+
+        self.assertEqual(distances, [0.25, 0.25, 0.5])
+        self.assertEqual(vstack_spy.call_count, 1)
+
+    @patch('multiprocessing.Pool')
+    def test_loop_through_combos_uses_matrix_uncorrected_distances(
+        self, mock_pool_class
+    ):
+        mock_tree = Mock()
+        mock_tree.distance.side_effect = AssertionError(
+            "cached distances should be used"
+        )
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("ATCG"), id="seq1", name="seq1"),
+            SeqRecord(Seq("ATGG"), id="seq2", name="seq2"),
+            SeqRecord(Seq("AACG"), id="seq3", name="seq3"),
+        ])
+        combos = [('seq1', 'seq2'), ('seq1', 'seq3'), ('seq2', 'seq3')]
+        self.saturation.calculate_pairwise_tip_distances_fast = Mock(
+            return_value=(combos, [0.1, 0.2, 0.3])
+        )
+        self.saturation._calculate_uncorrected_distances_matrix = Mock(
+            return_value=[0.11, 0.22, 0.33]
+        )
+        self.saturation.MP_MIN_COMBOS = 1
+
+        pd_list, ud_list = self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+            combos, alignment, mock_tree, False
+        )
+
+        mock_pool_class.assert_not_called()
+        self.saturation._calculate_uncorrected_distances_matrix.assert_called_once()
+        self.assertEqual(pd_list, [0.1, 0.2, 0.3])
+        self.assertEqual(ud_list, [0.11, 0.22, 0.33])
+
+    @patch('multiprocessing.Pool')
+    def test_loop_identical_sequences_skip_uncorrected_distance_arrays(
+        self, mock_pool_class
+    ):
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="seq1"),
+                    Clade(
+                        branch_length=2.0,
+                        clades=[
+                            Clade(branch_length=3.0, name="seq2"),
+                            Clade(branch_length=4.0, name="seq3"),
+                        ],
+                    ),
+                ],
+            )
+        )
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("ACGTN-?*X"), id="seq1", name="seq1"),
+            SeqRecord(Seq("acgtn-?*x"), id="seq2", name="seq2"),
+            SeqRecord(Seq("ACGTN-?*X"), id="seq3", name="seq3"),
+        ])
+        combos = [('seq1', 'seq2'), ('seq1', 'seq3'), ('seq2', 'seq3')]
+        self.saturation.MP_MIN_COMBOS = 1
+        with patch.object(
+            self.saturation,
+            "_sequence_to_array",
+            side_effect=AssertionError(
+                "identical sequences should skip uncorrected-distance arrays"
+            ),
+        ):
+            pd_list, ud_list = (
+                self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+                    combos,
+                    alignment,
+                    tree,
+                    True,
+                    is_protein=False,
+                )
+            )
+
+        mock_pool_class.assert_not_called()
+        self.assertEqual(pd_list, [tree.distance(*combo) for combo in combos])
+        self.assertEqual(ud_list, [0.0, 0.0, 0.0])
+
+    def test_identical_sequence_helper_does_not_slice_rows(self):
+        class NoSliceList(list):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("identical-sequence scan should not slice")
+                return super().__getitem__(key)
+
+        sequences = NoSliceList(["ACGT", "ACGT", "ACGT"])
+
+        self.assertTrue(saturation_module._all_sequences_identical(sequences))
+
+    def test_loop_identical_all_gap_sequences_return_nan_distances(self):
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="seq1"),
+                    Clade(branch_length=1.0, name="seq2"),
+                ],
+            )
+        )
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("NN--??"), id="seq1", name="seq1"),
+            SeqRecord(Seq("nn--??"), id="seq2", name="seq2"),
+        ])
+        combos = [('seq1', 'seq2')]
+        with patch.object(
+            self.saturation,
+            "_sequence_to_array",
+            side_effect=AssertionError(
+                "identical all-gap sequences should skip arrays"
+            ),
+        ):
+            pd_list, ud_list = (
+                self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+                    combos,
+                    alignment,
+                    tree,
+                    True,
+                    is_protein=False,
+                )
+            )
+
+        self.assertEqual(pd_list, [2.0])
+        self.assertTrue(np.isnan(ud_list[0]))
 
     @patch('multiprocessing.Pool')
     def test_loop_through_combos_parallel(self, mock_pool_class):
@@ -254,12 +674,10 @@ class TestSaturation(unittest.TestCase):
             True, combos, uncorrected_distances, patristic_distances, slope
         )
 
-        # In verbose mode, should print each combination
-        expected_calls = [
-            call("seq1\tseq2\t0.25\t0.1"),
-            call("seq1\tseq3\t0.33\t0.2")
-        ]
-        mock_print.assert_has_calls(expected_calls)
+        # In verbose mode, pair rows should be batched into one stdout write.
+        mock_print.assert_called_once_with(
+            "seq1\tseq2\t0.25\t0.1\nseq1\tseq3\t0.33\t0.2"
+        )
 
     @patch('builtins.print')
     def test_print_res_broken_pipe(self, mock_print):
@@ -291,7 +709,7 @@ class TestSaturation(unittest.TestCase):
         # Mock tree
         mock_tree = Mock()
         mock_tree.distance.return_value = 0.15
-        self.saturation.read_tree_file = Mock(return_value=mock_tree)
+        self.saturation.read_tree_file_unmodified = Mock(return_value=mock_tree)
         self.saturation.get_tip_names_from_tree = Mock(return_value=['seq1', 'seq2'])
 
         # Mock the distance calculation method to return patristic and uncorrected distances
@@ -307,7 +725,7 @@ class TestSaturation(unittest.TestCase):
 
         # Check that all methods were called
         mock_get_alignment.assert_called_once_with(self.saturation.alignment_file_path)
-        self.saturation.read_tree_file.assert_called_once()
+        self.saturation.read_tree_file_unmodified.assert_called_once()
         self.saturation.get_tip_names_from_tree.assert_called_once_with(mock_tree)
         self.saturation.print_res.assert_called_once()
         args = self.saturation.print_res.call_args.args
@@ -378,7 +796,7 @@ class TestSaturation(unittest.TestCase):
         mock_get_alignment.return_value = (alignment, None, False)
 
         mock_tree = Mock()
-        self.saturation.read_tree_file = Mock(return_value=mock_tree)
+        self.saturation.read_tree_file_unmodified = Mock(return_value=mock_tree)
         self.saturation.get_tip_names_from_tree = Mock(return_value=['seq1', 'seq2'])
         self.saturation.loop_through_combos_and_calculate_pds_and_pis = Mock(
             return_value=([0.15], [0.25])
@@ -387,6 +805,28 @@ class TestSaturation(unittest.TestCase):
 
         self.saturation.run()
         self.saturation._plot_saturation_scatter.assert_called_once()
+
+    @patch('phykit.services.tree.saturation.get_alignment_and_format_helper')
+    def test_run_uses_unmodified_tree_read(self, mock_get_alignment):
+        seq1 = SeqRecord(Seq("ATCG"), id="seq1", name="seq1")
+        seq2 = SeqRecord(Seq("ATGG"), id="seq2", name="seq2")
+        alignment = Align.MultipleSeqAlignment([seq1, seq2])
+        mock_get_alignment.return_value = (alignment, None, False)
+        mock_tree = Mock()
+        self.saturation.read_tree_file_unmodified = Mock(return_value=mock_tree)
+        self.saturation.read_tree_file = Mock(
+            side_effect=AssertionError("copying tree reader should not be used")
+        )
+        self.saturation.get_tip_names_from_tree = Mock(return_value=['seq1', 'seq2'])
+        self.saturation.loop_through_combos_and_calculate_pds_and_pis = Mock(
+            return_value=([0.15], [0.25])
+        )
+        self.saturation.print_res = Mock()
+
+        self.saturation.run()
+
+        self.saturation.read_tree_file_unmodified.assert_called_once_with()
+        self.saturation.loop_through_combos_and_calculate_pds_and_pis.assert_called_once()
 
     def test_loop_through_combos_with_gaps_sequential(self):
         """Test sequential processing with gap exclusion"""

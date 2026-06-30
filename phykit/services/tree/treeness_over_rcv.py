@@ -1,8 +1,13 @@
-from typing import Dict
+from __future__ import annotations
 
 from .base import Tree
-from ..alignment.base import Alignment
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
 
 class TreenessOverRCV(Tree):
     def __init__(self, args) -> None:
@@ -14,10 +19,10 @@ class TreenessOverRCV(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
-        treeness = self.calculate_treeness()
+        tree = self.read_tree_file_unmodified()
+        treeness = self.calculate_treeness(tree)
 
-        aln = Alignment(alignment_file_path=self.alignment_file_path)
-        relative_composition_variability = aln.calculate_rcv()
+        relative_composition_variability = self._calculate_rcv()
 
         treeness_over_rcv = treeness / relative_composition_variability
 
@@ -35,7 +40,13 @@ class TreenessOverRCV(Tree):
             f"{round(treeness_over_rcv, 4)}\t{round(treeness, 4)}\t{round(relative_composition_variability, 4)}"
         )
 
-    def process_args(self, args) -> Dict[str, str]:
+    def _calculate_rcv(self) -> float:
+        from ..alignment.base import Alignment
+
+        aln = Alignment(alignment_file_path=self.alignment_file_path)
+        return aln.calculate_rcv()
+
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             alignment_file_path=args.alignment,

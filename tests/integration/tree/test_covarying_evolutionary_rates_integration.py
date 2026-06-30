@@ -72,48 +72,102 @@ class TestCovaryingEvolutionaryRates(object):
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree0(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree1(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tx",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_reference(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tx",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_incorrect_tree_topology(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted_alt_topology.tree",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_no_common_tips(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_no_match_0.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_no_match_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_covarying_evolutionary_rates_tree_topologies_do_not_match(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "covarying_evolutionary_rates",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted_alt_topology.tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

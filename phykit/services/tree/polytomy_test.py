@@ -1,24 +1,97 @@
+from __future__ import annotations
+
 import sys
 import itertools
-import pickle
-from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, List, Tuple, Union
-import multiprocessing as mp
-from functools import partial, lru_cache
-from unittest.mock import Mock
+import math
+from functools import lru_cache
+from collections import namedtuple
 import os
 
-from Bio import Phylo
-from Bio.Phylo import Newick
-
 from .base import Tree
-from ...helpers.files import read_single_column_file_to_list
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def read_single_column_file_to_list(*args, **kwargs):
+    from ...helpers.files import (
+        read_single_column_file_to_list as _read_single_column_file_to_list,
+    )
+
+    return _read_single_column_file_to_list(*args, **kwargs)
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.read(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
+
+
+class _LazyMultiprocessing:
+    def cpu_count(self):
+        import multiprocessing as _mp
+
+        return _mp.cpu_count()
+
+    def Pool(self, *args, **kwargs):
+        import multiprocessing as _mp
+
+        return _mp.Pool(*args, **kwargs)
+
+
+mp = _LazyMultiprocessing()
+
+
+def ThreadPoolExecutor(*args, **kwargs):
+    from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor
+
+    return _ThreadPoolExecutor(*args, **kwargs)
+
+
+Power_divergenceResult = namedtuple(
+    "Power_divergenceResult",
+    ["statistic", "pvalue"],
+)
+
+
+def _is_unittest_mock(obj) -> bool:
+    return type(obj).__module__ == "unittest.mock"
+
+
+def _all_triplet_nodes_identical(nodes) -> bool:
+    first = nodes[0]
+    return nodes[1] is first and nodes[2] is first
 
 
 def chisquare(*args, **kwargs):
-    from scipy.stats import chisquare as _chisquare
-    return _chisquare(*args, **kwargs)
+    if kwargs:
+        from scipy.stats import chisquare as _chisquare
+        return _chisquare(*args, **kwargs)
+
+    observed = [float(value) for value in args[0]]
+    total = sum(observed)
+    if total == 0:
+        return Power_divergenceResult(float("nan"), float("nan"))
+
+    expected = total / len(observed)
+    statistic = sum((value - expected) ** 2 / expected for value in observed)
+    df = len(observed) - 1
+    if df == 2:
+        pvalue = math.exp(-statistic / 2.0)
+    elif df == 1:
+        pvalue = math.erfc(math.sqrt(statistic / 2.0))
+    else:
+        from scipy.stats import chi2
+        pvalue = float(chi2.sf(statistic, df=df))
+
+    return Power_divergenceResult(statistic, pvalue)
 
 
 class PolytomyTest(Tree):
@@ -70,7 +143,7 @@ class PolytomyTest(Tree):
         )
         # self.print_triplet_based_res(triplet_res, triplet_group_counts)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             trees=args.trees,
             groups=args.groups,
@@ -79,6 +152,8 @@ class PolytomyTest(Tree):
 
     @staticmethod
     def _safe_copy(obj):
+        import pickle
+
         try:
             return pickle.loads(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL))
         except (pickle.PicklingError, TypeError, AttributeError):
@@ -95,9 +170,9 @@ class PolytomyTest(Tree):
 
     def read_in_groups(
         self
-    ) -> List[
-        List[
-            Union[str, List[str]]
+    ) -> list[
+        list[
+            str | list[str]
         ]
     ]:
         groups_arr = []
@@ -142,13 +217,13 @@ class PolytomyTest(Tree):
 
     def _process_tree_batch(
         self,
-        tree_files_batch: List[str],
-        groups_of_groups: Dict[str, List[List[str]]],
-        outgroup_taxa: List[str],
-    ) -> Dict[str, Dict[str, Dict[str, int]]]:
+        tree_files_batch: list[str],
+        groups_of_groups: dict[str, list[list[str]]],
+        outgroup_taxa: list[str],
+    ) -> dict[str, dict[str, dict[str, int]]]:
         """Process a batch of trees in parallel."""
         batch_summary = {}
-        if isinstance(self.examine_all_triplets_and_sister_pairing, Mock):
+        if _is_unittest_mock(self.examine_all_triplets_and_sister_pairing):
             for tree_file in tree_files_batch:
                 try:
                     tree = self._read_tree_with_cache(tree_file)
@@ -180,7 +255,7 @@ class PolytomyTest(Tree):
                 continue
         return batch_summary
 
-    def _prepare_tree_for_triplets(self, tree: Newick.Tree, outgroup_taxa: List[str]) -> Newick.Tree:
+    def _prepare_tree_for_triplets(self, tree: Newick.Tree, outgroup_taxa: list[str]) -> Newick.Tree:
         prepared = self._safe_copy(tree)
         if outgroup_taxa:
             try:
@@ -190,31 +265,64 @@ class PolytomyTest(Tree):
         return prepared
 
     @staticmethod
-    def _build_clade_terminal_cache(tree: Newick.Tree) -> Dict[int, Tuple[str, ...]]:
-        cache: Dict[int, Tuple[str, ...]] = {}
+    def _build_clade_terminal_cache(tree: Newick.Tree) -> dict[int, frozenset]:
+        cache: dict[int, frozenset] = {}
         for clade in tree.find_clades(order="postorder"):
             if clade.is_terminal():
-                cache[id(clade)] = (clade.name,)
+                cache[id(clade)] = frozenset([clade.name])
             else:
-                names: List[str] = []
+                names = set()
                 for child in clade.clades:
-                    names.extend(cache.get(id(child), ()))
-                cache[id(clade)] = tuple(names)
+                    names.update(cache.get(id(child), frozenset()))
+                cache[id(clade)] = frozenset(names)
         return cache
+
+    @staticmethod
+    def _build_tip_path_cache(tree: Newick.Tree) -> dict[str, tuple]:
+        cache: dict[str, tuple] = {}
+
+        def visit(clade, path: tuple) -> None:
+            current_path = path + (clade,)
+            if clade.is_terminal():
+                cache[clade.name] = current_path
+                return
+            for child in clade.clades:
+                visit(child, current_path)
+
+        visit(tree.root, tuple())
+        return cache
+
+    @staticmethod
+    def _common_ancestor_from_path_cache(
+        triplet: tuple[str, str, str],
+        path_cache: dict[str, tuple],
+    ):
+        try:
+            paths = [path_cache[taxon] for taxon in triplet]
+        except KeyError:
+            return None
+
+        lca = None
+        for nodes in zip(*paths):
+            if _all_triplet_nodes_identical(nodes):
+                lca = nodes[0]
+            else:
+                break
+        return lca
 
     def _find_sister_pair(
         self,
         tree: Newick.Tree,
-        triplet: Tuple[str, str, str],
-        clade_cache: Dict[int, Tuple[str, ...]],
-    ) -> Union[Tuple[str, str], None]:
+        triplet: tuple[str, str, str],
+        clade_cache: dict[int, tuple[str, ...]],
+    ) -> tuple[str, str] | None:
         triplet_set = set(triplet)
         try:
             lca = tree.common_ancestor(triplet)
         except ValueError:
             return None
 
-        assignments: List[set] = []
+        assignments: list[set] = []
         for child in lca.clades:
             descendant = triplet_set.intersection(clade_cache.get(id(child), ()))
             if descendant:
@@ -229,11 +337,41 @@ class PolytomyTest(Tree):
 
         return None
 
+    def _find_sister_pair_from_path_cache(
+        self,
+        triplet: tuple[str, str, str],
+        clade_cache: dict[int, frozenset],
+        path_cache: dict[str, tuple],
+        triplet_set: set[str] | None = None,
+    ) -> tuple[str, str] | None:
+        if triplet_set is None:
+            triplet_set = set(triplet)
+        lca = self._common_ancestor_from_path_cache(triplet, path_cache)
+        if lca is None:
+            return None
+
+        assignments: list[set] = []
+        for child in lca.clades:
+            descendant = triplet_set.intersection(
+                clade_cache.get(id(child), frozenset())
+            )
+            if descendant:
+                assignments.append(descendant)
+
+        if len(assignments) != 2:
+            return None
+
+        for subset in assignments:
+            if len(subset) == 2:
+                return tuple(sorted(subset))  # type: ignore
+
+        return None
+
     @staticmethod
     def _guess_tips_from_groups(
-        groups_of_groups: Dict[str, List[List[str]]],
-        outgroup_taxa: List[str],
-    ) -> List[str]:
+        groups_of_groups: dict[str, list[list[str]]],
+        outgroup_taxa: list[str],
+    ) -> list[str]:
         tips = set(outgroup_taxa)
         for group_lists in groups_of_groups.values():
             for group in group_lists:
@@ -242,19 +380,18 @@ class PolytomyTest(Tree):
 
     def _legacy_triplet_pass(
         self,
-        tips: List[str],
+        tips: list[str],
         tree_file: str,
-        groups_of_groups: Dict[str, List[List[str]]],
-        outgroup_taxa: List[str],
-    ) -> Dict[str, int]:
-        identifier = list(groups_of_groups.keys())[0]
+        groups_of_groups: dict[str, list[list[str]]],
+        outgroup_taxa: list[str],
+    ) -> dict[str, int]:
+        identifier = next(iter(groups_of_groups))
         triplet_tips = list(itertools.product(*groups_of_groups[identifier]))
-        legacy_summary: Dict[str, int] = {}
+        legacy_summary: dict[str, int] = {}
         for triplet in triplet_tips:
             tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
             if tree and hasattr(tree, "get_terminals"):
-                terminal_count = len(list(tree.get_terminals()))
-                if terminal_count == 3:
+                if self._has_exactly_three_terminals(tree):
                     for _, groups in groups_of_groups.items():
                         represented = self.count_number_of_groups_in_triplet(triplet, groups)
                         if represented == 3:
@@ -271,27 +408,35 @@ class PolytomyTest(Tree):
     def _evaluate_tree_triplets_fast(
         self,
         tree: Newick.Tree,
-        groups_of_groups: Dict[str, List[List[str]]],
-    ) -> Dict[str, int]:
+        groups_of_groups: dict[str, list[list[str]]],
+    ) -> dict[str, int]:
         if not groups_of_groups:
             return {}
 
         tip_names_set = set(self.get_tip_names_from_tree(tree))
         clade_cache = self._build_clade_terminal_cache(tree)
-        tree_summary: Dict[str, int] = {}
+        path_cache = self._build_tip_path_cache(tree)
+        tree_summary: dict[str, int] = {}
 
         for groups in groups_of_groups.values():
             if not groups:
                 continue
+            groups_tuple = tuple(frozenset(group) for group in groups)
             for triplet in itertools.product(*groups):
-                if not set(triplet).issubset(tip_names_set):
+                triplet_set = set(triplet)
+                if not triplet_set.issubset(tip_names_set):
                     continue
 
-                sisters_pair = self._find_sister_pair(tree, triplet, clade_cache)
+                sisters_pair = self._find_sister_pair_from_path_cache(
+                    triplet,
+                    clade_cache,
+                    path_cache,
+                    triplet_set,
+                )
                 if not sisters_pair:
                     continue
 
-                sisters = self.determine_sisters_from_triplet(groups, sisters_pair)
+                sisters = self._determine_sisters_cached(groups_tuple, sisters_pair)
                 tree_summary[sisters] = tree_summary.get(sisters, 0) + 1
 
         return tree_summary
@@ -299,10 +444,10 @@ class PolytomyTest(Tree):
     def loop_through_trees_and_examine_sister_support_among_triplets(
         self,
         trees_file_path: str,
-        groups_of_groups: Dict[str, List[List[str]]],
-        outgroup_taxa: List[str],
-    ) -> Dict[
-        str, Dict[str, Dict[str, int]]
+        groups_of_groups: dict[str, list[list[str]]],
+        outgroup_taxa: list[str],
+    ) -> dict[
+        str, dict[str, dict[str, int]]
     ]:
         """
         go through all trees and all triplets of all trees. For each triplet,
@@ -325,6 +470,8 @@ class PolytomyTest(Tree):
                     sys.exit(2)
         else:
             # Use multiprocessing for larger datasets
+            from functools import partial
+
             num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
             batch_size = max(1, len(trees_file_path) // num_workers)
             tree_batches = [trees_file_path[i:i + batch_size]
@@ -356,10 +503,10 @@ class PolytomyTest(Tree):
 
     def determine_groups_of_groups(
         self,
-        groups_arr: List[Union[str, List[str]]],
-    ) -> Tuple[
-        Dict[str, List[List[str]]],
-        List[str],
+        groups_arr: list[str | list[str]],
+    ) -> tuple[
+        dict[str, list[list[str]]],
+        list[str],
     ]:
         groups_of_groups = {}
 
@@ -390,12 +537,12 @@ class PolytomyTest(Tree):
 
     def _process_triplet_batch(
         self,
-        triplet_batch: List[Tuple],
-        tips: List[str],
+        triplet_batch: list[tuple],
+        tips: list[str],
         tree_file: str,
-        groups_of_groups: Dict[str, List[List[str]]],
-        outgroup_taxa: List[str],
-    ) -> Dict[str, Dict[str, int]]:
+        groups_of_groups: dict[str, list[list[str]]],
+        outgroup_taxa: list[str],
+    ) -> dict[str, dict[str, int]]:
         """Process a batch of triplets."""
         batch_summary = {}
 
@@ -406,8 +553,7 @@ class PolytomyTest(Tree):
             )
 
             if tree and hasattr(tree, 'get_terminals'):
-                terminal_count = len(list(tree.get_terminals()))
-                if terminal_count == 3:
+                if self._has_exactly_three_terminals(tree):
                     for _, groups in groups_of_groups.items():
                         num_groups_represented = self.count_number_of_groups_in_triplet(
                             triplet, groups
@@ -424,20 +570,20 @@ class PolytomyTest(Tree):
 
     def examine_all_triplets_and_sister_pairing(
         self,
-        tips: List[str],
+        tips: list[str],
         tree_file: str,
-        summary: Dict[
-            str, Dict[str, Dict[str, int]]
+        summary: dict[
+            str, dict[str, dict[str, int]]
         ],
-        groups_of_groups: Dict[str, List[List[str]]],
-        outgroup_taxa: List[str],
-    ) -> Dict[str, Dict[str, int]]:
+        groups_of_groups: dict[str, list[list[str]]],
+        outgroup_taxa: list[str],
+    ) -> dict[str, dict[str, int]]:
         """
         evaluate all triplets for sister relationships. Polytomies
         in input trees are accounted for
         """
         # get all combinations of three tips
-        identifier = list(groups_of_groups.keys())[0]
+        identifier = next(iter(groups_of_groups))
         triplet_tips = list(itertools.product(*groups_of_groups[identifier]))
 
         # For small datasets, process sequentially
@@ -445,8 +591,7 @@ class PolytomyTest(Tree):
             for triplet in triplet_tips:
                 tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
                 if tree and hasattr(tree, 'get_terminals'):
-                    terminal_count = len(list(tree.get_terminals()))
-                    if terminal_count == 3:
+                    if self._has_exactly_three_terminals(tree):
                         for _, groups in groups_of_groups.items():
                             num_groups_represented = self.count_number_of_groups_in_triplet(
                                 triplet, groups
@@ -504,8 +649,8 @@ class PolytomyTest(Tree):
 
     def count_number_of_groups_in_triplet(
         self,
-        triplet: Tuple[str, str, str],
-        groups: List[List[str]]
+        triplet: tuple[str, str, str],
+        groups: list[list[str]]
     ) -> int:
         """
         determine how many groups are represented in a triplet
@@ -518,24 +663,89 @@ class PolytomyTest(Tree):
         self,
         tree: Newick.Tree
     ) -> None:
-        # Single pass through all clades
+        if self._set_standard_tree_branch_lengths_to_one(tree):
+            return
+
         for clade in tree.find_clades():
             clade.branch_length = 1
+
+    @staticmethod
+    def _set_standard_tree_branch_lengths_to_one(tree: Newick.Tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return False
+
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clade.branch_length = 1
+                stack.extend(clade.clades)
+        except AttributeError:
+            return False
+        return True
+
+    @staticmethod
+    def _has_exactly_three_terminals(tree: Newick.Tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return len(list(tree.get_terminals())) == 3
+
+        count = 0
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                children = clade.clades
+                if not isinstance(children, list):
+                    return len(list(tree.get_terminals())) == 3
+                if children:
+                    stack.extend(children)
+                else:
+                    count += 1
+                    if count > 3:
+                        return False
+        except AttributeError:
+            return len(list(tree.get_terminals())) == 3
+        return count == 3
 
     def check_if_triplet_is_a_polytomy(self, tree: Newick.Tree) -> bool:
         """
         count the number of internal branches. If 1, then the triplet is a polytomy
         """
-        # Direct check without intermediate list creation
-        nonterminal_count = sum(1 for _ in tree.get_nonterminals())
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return sum(1 for _ in tree.get_nonterminals()) == 1
+
+        nonterminal_count = 0
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                children = clade.clades
+                if not isinstance(children, list):
+                    return sum(1 for _ in tree.get_nonterminals()) == 1
+                if children:
+                    nonterminal_count += 1
+                    if nonterminal_count > 1:
+                        return False
+                    stack.extend(children)
+        except AttributeError:
+            return sum(1 for _ in tree.get_nonterminals()) == 1
         return nonterminal_count == 1
 
     def sister_relationship_counter(
         self,
         tree_file: str,
-        summary: Dict[str, Dict[str, int]],
+        summary: dict[str, dict[str, int]],
         sisters: str,
-    ) -> Dict[str, Dict[str, int]]:
+    ) -> dict[str, dict[str, int]]:
         """
         counter for how many times a particular sister relationship is observed
         """
@@ -552,16 +762,17 @@ class PolytomyTest(Tree):
 
     def get_triplet_tree(
         self,
-        tips: List[str],
-        triplet: Tuple[str, str, str],
+        tips: list[str],
+        triplet: tuple[str, str, str],
         tree_file: str,
-        outgroup_taxa: List[str],
+        outgroup_taxa: list[str],
     ) -> Newick.Tree:
         """
         get a tree object of only the triplet of interest
         """
         # determine tips that are not in the triplet of interest
-        tips_to_prune = list(set(tips) - set(list(triplet)))
+        triplet_taxa = set(triplet)
+        tips_to_prune = [tip for tip in tips if tip not in triplet_taxa]
         # determine tips that in the outgroup
         outgroup_present = [value for value in tips if value in outgroup_taxa]
         tree = Phylo.read(tree_file, "newick")
@@ -591,8 +802,8 @@ class PolytomyTest(Tree):
 
     def determine_sisters_from_triplet(
         self,
-        groups: List[List[str]],
-        pair: Tuple[str]
+        groups: list[list[str]],
+        pair: tuple[str]
     ) -> str:
         """
         determine sister taxa from a triplet
@@ -603,24 +814,27 @@ class PolytomyTest(Tree):
 
     def determine_sisters_and_add_to_counter(
         self,
-        tip_names: List[str],
+        tip_names: list[str],
         tree: Newick.Tree,
         tree_file: str,
-        groups: List[List[str]],
-        summary: Dict[str, Dict[str, int]],
-    ) -> Dict[str, Dict[str, int]]:
+        groups: list[list[str]],
+        summary: dict[str, dict[str, int]],
+    ) -> dict[str, dict[str, int]]:
         """
         determine which pair of taxa are sister to one another
         and add 1 to the counter for the sister pair
         """
+        is_polytomy = self.check_if_triplet_is_a_polytomy(tree)
+        if is_polytomy:
+            return summary
+
         # get pairs from tip names
         pairs = list(itertools.combinations(tip_names, 2))
         for pair in pairs:
-            is_polytomy = self.check_if_triplet_is_a_polytomy(tree)
             # if distance between pair is 2 and the triplet is
             # not a polytomy (i.e., having only 1 internal branch)
             # then report the sisters in the triplet
-            if tree.distance(pair[0], pair[1]) == 2 and not is_polytomy:
+            if tree.distance(pair[0], pair[1]) == 2:
                 # determine which two tips are sisters
                 sisters = self.determine_sisters_from_triplet(groups, pair)
                 # add to summary dictionary of how many times that sister
@@ -630,9 +844,9 @@ class PolytomyTest(Tree):
 
     def get_triplet_and_gene_support_freq_counts(
         self,
-        summary: Dict[str, Dict[str, int]]
-    ) -> Tuple[
-        Dict[str, int], Dict[str, int]
+        summary: dict[str, dict[str, int]]
+    ) -> tuple[
+        dict[str, int], dict[str, int]
     ]:
         """
         count how many triplets and genes support the various sister relationships
@@ -667,7 +881,7 @@ class PolytomyTest(Tree):
         self,
         triplet_group_counts: dict,
         gene_support_freq: dict
-    ) -> Tuple[
+    ) -> tuple[
         object,
         object,
     ]:
@@ -712,8 +926,8 @@ class PolytomyTest(Tree):
     def print_gene_support_freq_res(
         self,
         gene_support_freq_res,
-        gene_support_freq: Dict[str, int],
-        trees_file_path: List[str],
+        gene_support_freq: dict[str, int],
+        trees_file_path: list[str],
     ) -> None:
         """
         print results to stdout for user
@@ -740,15 +954,22 @@ class PolytomyTest(Tree):
             return
 
         try:
-            print("Gene Support Frequency Results")
-            print("==============================")
-            print(f"chi-squared: {round(gene_support_freq_res.statistic, 4)}")
-            print(f"p-value: {round(gene_support_freq_res.pvalue, 6)}")
             print(
-                f"total genes: {(gene_support_freq['0-1'] + gene_support_freq['0-2'] + gene_support_freq['1-2'])}"
+                "\n".join(
+                    [
+                        "Gene Support Frequency Results",
+                        "==============================",
+                        f"chi-squared: {round(gene_support_freq_res.statistic, 4)}",
+                        f"p-value: {round(gene_support_freq_res.pvalue, 6)}",
+                        (
+                            "total genes: "
+                            f"{gene_support_freq['0-1'] + gene_support_freq['0-2'] + gene_support_freq['1-2']}"
+                        ),
+                        f"0-1: {gene_support_freq['0-1']}",
+                        f"0-2: {gene_support_freq['0-2']}",
+                        f"1-2: {gene_support_freq['1-2']}",
+                    ]
+                )
             )
-            print(f"0-1: {gene_support_freq['0-1']}")
-            print(f"0-2: {gene_support_freq['0-2']}")
-            print(f"1-2: {gene_support_freq['1-2']}")
         except BrokenPipeError:
             pass

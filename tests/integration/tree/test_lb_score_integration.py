@@ -125,17 +125,17 @@ class TestLBScore(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call(expected_result0),
-            call(expected_result1),
-            call(expected_result2),
-            call(expected_result3),
-            call(expected_result4),
-            call(expected_result5),
-            call(expected_result6),
-            call(expected_result7),
-            call(expected_result8),
-            call(expected_result9),
+        assert mocked_print.call_args.args[0].splitlines() == [
+            expected_result0,
+            expected_result1,
+            expected_result2,
+            expected_result3,
+            expected_result4,
+            expected_result5,
+            expected_result6,
+            expected_result7,
+            expected_result8,
+            expected_result9,
         ]
 
     @patch("builtins.print")

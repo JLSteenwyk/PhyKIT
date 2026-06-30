@@ -1,16 +1,46 @@
-import re
-from typing import Dict, List, Optional, Tuple
-import pickle
+from __future__ import annotations
 
-from Bio import Phylo
-from Bio.Phylo import Newick
+import re
 
 from .base import Tree
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
 
 
-BranchSpec = Tuple[str, List[str]]
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPickle:
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+
+class _LazyPhylo:
+    def write(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.write(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
+pickle = _LazyPickle()
+
+
+BranchSpec = tuple[str, list[str]]
 
 
 class NearestNeighborInterchange(Tree):
@@ -52,7 +82,7 @@ class NearestNeighborInterchange(Tree):
                 payload["branches"] = branch_report
             print_json(payload)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         tree_file_path = args.tree
         output_file_path = \
             f"{args.output}" if args.output else f"{tree_file_path}.nnis"
@@ -80,8 +110,8 @@ class NearestNeighborInterchange(Tree):
             json_output=getattr(args, "json", False),
         )
 
-    def _resolve_branch_specs(self) -> List[BranchSpec]:
-        specs: List[BranchSpec] = []
+    def _resolve_branch_specs(self) -> list[BranchSpec]:
+        specs: list[BranchSpec] = []
         if self.branch:
             t1, t2 = self.branch
             specs.append((f"{t1}|{t2}", [t1, t2]))
@@ -111,11 +141,14 @@ class NearestNeighborInterchange(Tree):
     def _generate_targeted_nnis(
         self,
         tree: Newick.Tree,
-        branch_specs: List[BranchSpec],
-    ) -> Tuple[List[Newick.Tree], List[Dict]]:
-        tip_names = {term.name for term in tree.get_terminals()}
-        output_trees: List[Newick.Tree] = []
-        report: List[Dict] = []
+        branch_specs: list[BranchSpec],
+    ) -> tuple[list[Newick.Tree], list[dict]]:
+        tip_names = self.calculate_terminal_names_fast(tree)
+        if tip_names is None:
+            tip_names = [term.name for term in tree.get_terminals()]
+        tip_names = set(tip_names)
+        output_trees: list[Newick.Tree] = []
+        report: list[dict] = []
 
         for label, taxa in branch_specs:
             missing = [t for t in taxa if t not in tip_names]
@@ -161,23 +194,72 @@ class NearestNeighborInterchange(Tree):
         """Fast tree copying using pickle instead of deep copy."""
         return pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
-    def _build_parent_map(self, tree: Newick.Tree) -> Dict:
+    def _build_parent_map(self, tree: Newick.Tree) -> dict:
+        parents = self._build_parent_map_direct(tree)
+        if parents is not None:
+            return parents
+
         parents = {}
         for clade in tree.find_clades():
-            if clade != tree.root:
-                node_path = tree.get_path(clade)
-                if len(node_path) == 1:
-                    parents[clade] = tree.root
-                else:
-                    parents[clade] = node_path[-2]
+            for child in clade.clades:
+                parents[child] = clade
         return parents
+
+    @staticmethod
+    def _build_parent_map_direct(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        parents = {}
+        stack = [root]
+        try:
+            pop = stack.pop
+            extend = stack.extend
+            while stack:
+                clade = pop()
+                children = clade.clades
+                for child in children:
+                    parents[child] = clade
+                if children:
+                    extend(children)
+        except AttributeError:
+            return None
+        return parents
+
+    @staticmethod
+    def _nonterminals_level_order_direct(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        nonterminals = []
+        queue = [root]
+        index = 0
+        append = nonterminals.append
+        extend = queue.extend
+        try:
+            while index < len(queue):
+                clade = queue[index]
+                index += 1
+                children = clade.clades
+                if children:
+                    append(clade)
+                    extend(children)
+        except AttributeError:
+            return None
+        return nonterminals
 
     def _nnis_around_branch(
         self,
         tree: Newick.Tree,
         clade,
-        parents: Dict,
-    ) -> List[Newick.Tree]:
+        parents: dict,
+    ) -> list[Newick.Tree]:
         """Generate the 2 NNI rearrangements around the branch leading to clade.
 
         Mutates the tree in place but restores the original topology before
@@ -205,8 +287,8 @@ class NearestNeighborInterchange(Tree):
             return []
         return self._nnis_internal_edge(tree, clade, parent)
 
-    def _nnis_root_edge(self, tree: Newick.Tree) -> List[Newick.Tree]:
-        neighbors: List[Newick.Tree] = []
+    def _nnis_root_edge(self, tree: Newick.Tree) -> list[Newick.Tree]:
+        neighbors: list[Newick.Tree] = []
         left = tree.root.clades[0]
         right = tree.root.clades[1]
         left_right = left.clades[1]
@@ -239,8 +321,8 @@ class NearestNeighborInterchange(Tree):
         tree: Newick.Tree,
         clade,
         parent,
-    ) -> List[Newick.Tree]:
-        neighbors: List[Newick.Tree] = []
+    ) -> list[Newick.Tree]:
+        neighbors: list[Newick.Tree] = []
         left = clade.clades[0]
         right = clade.clades[1]
 
@@ -288,15 +370,18 @@ class NearestNeighborInterchange(Tree):
     def get_neighbors(
         self,
         tree: Newick.Tree
-    ) -> List[Newick.Tree]:
+    ) -> list[Newick.Tree]:
         ### This code is from BioPython (so is this comment)
         # Get all neighbor trees of the given tree (PRIVATE).
         # Currently only for binary rooted trees.
         ###
         parents = self._build_parent_map(tree)
-        neighbors: List[Newick.Tree] = []
+        neighbors: list[Newick.Tree] = []
         root_childs = []
-        for clade in tree.get_nonterminals(order="level"):
+        nonterminals = self._nonterminals_level_order_direct(tree)
+        if nonterminals is None:
+            nonterminals = tree.get_nonterminals(order="level")
+        for clade in nonterminals:
             if clade == tree.root:
                 left = clade.clades[0]
                 right = clade.clades[1]

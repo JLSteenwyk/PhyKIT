@@ -1,29 +1,58 @@
+from __future__ import annotations
+
 import math
-import pickle
+import os
 from io import StringIO
 from pathlib import Path
-from typing import Dict, Tuple
-
-import numpy as np
-from Bio import Phylo
 
 from .base import Tree
-from .ancestral_reconstruction import AncestralReconstruction
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_branches,
-    draw_circular_tip_labels,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+_path_isabs = os.path.isabs
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        return _Phylo.read(*args, **kwargs)
+
+
+np = _LazyNumpy()
+Phylo = _LazyPhylo()
+
+
+class _LazyPickle:
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+
+pickle = _LazyPickle()
 
 
 class ConcordanceAsr(Tree):
@@ -41,7 +70,9 @@ class ConcordanceAsr(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             gene_trees_path=args.gene_trees,
@@ -56,10 +87,29 @@ class ConcordanceAsr(Tree):
             plot_config=PlotConfig.from_args(args),
         )
 
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
+
     def run(self) -> None:
         species_tree = self.read_tree_file()
 
         # Create a helper ASR instance for reusing methods
+        from .ancestral_reconstruction import AncestralReconstruction
+
         self._asr = AncestralReconstruction.__new__(AncestralReconstruction)
         self._asr.ci = True  # always compute CIs internally
 
@@ -89,7 +139,7 @@ class ConcordanceAsr(Tree):
                     )
 
         # Get taxa and handle mismatches
-        species_tips = set(t.name for t in species_tree.get_terminals())
+        species_tips = set(self.get_tip_names_from_tree(species_tree))
         gene_trees, all_taxa = self._normalize_taxa(
             species_tree, gene_trees, species_tips
         )
@@ -106,9 +156,12 @@ class ConcordanceAsr(Tree):
             )
 
         # Prune species tree to shared taxa with trait data
-        species_copy = pickle.loads(pickle.dumps(species_tree, protocol=pickle.HIGHEST_PROTOCOL))
-        sp_tips = [t.name for t in species_copy.get_terminals()]
+        sp_tips = self.get_tip_names_from_tree(species_tree)
         tips_to_prune = [t for t in sp_tips if t not in trait_values]
+        needs_species_copy = bool(tips_to_prune) or self.plot_config.ladderize
+        species_copy = (
+            self._fast_tree_copy(species_tree) if needs_species_copy else species_tree
+        )
         if tips_to_prune:
             species_copy = self.prune_tree_using_taxa_list(
                 species_copy, tips_to_prune
@@ -148,8 +201,26 @@ class ConcordanceAsr(Tree):
     # ------------------------------------------------------------------
 
     def _parse_gene_trees(self, path: str) -> list:
+        source = Path(path)
+        trees = []
+        trees_append = trees.append
+        parent_str = str(source.parent)
+        parent_prefix = "" if parent_str == "." else parent_str + os.sep
         try:
-            lines = Path(path).read_text().splitlines()
+            with source.open() as handle:
+                for line in handle:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    if stripped.startswith("("):
+                        trees_append(Phylo.read(StringIO(stripped), "newick"))
+                    else:
+                        tree_path = (
+                            stripped
+                            if _path_isabs(stripped)
+                            else parent_prefix + stripped
+                        )
+                        trees_append(Phylo.read(tree_path, "newick"))
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -158,15 +229,6 @@ class ConcordanceAsr(Tree):
                 ],
                 code=2,
             )
-
-        cleaned = [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
-        trees = []
-        for line in cleaned:
-            if line.startswith("("):
-                trees.append(Phylo.read(StringIO(line), "newick"))
-            else:
-                tree_path = Path(path).parent / line
-                trees.append(Phylo.read(str(tree_path), "newick"))
         return trees
 
     # ------------------------------------------------------------------
@@ -176,7 +238,7 @@ class ConcordanceAsr(Tree):
     def _normalize_taxa(self, species_tree, gene_trees, species_tips):
         gene_tip_sets = []
         for gt in gene_trees:
-            gene_tip_sets.append(set(t.name for t in gt.get_terminals()))
+            gene_tip_sets.append(set(self.get_tip_names_from_tree(gt)))
 
         all_gene_taxa = set()
         for ts in gene_tip_sets:
@@ -207,8 +269,8 @@ class ConcordanceAsr(Tree):
 
         # Prune species tree
         sp_tips_to_prune = [
-            t.name for t in species_tree.get_terminals()
-            if t.name not in shared
+            name for name in self.get_tip_names_from_tree(species_tree)
+            if name not in shared
         ]
         if sp_tips_to_prune:
             species_tree = self.prune_tree_using_taxa_list(
@@ -219,8 +281,8 @@ class ConcordanceAsr(Tree):
         pruned_gene_trees = []
         for gt in gene_trees:
             gt_tips_to_prune = [
-                t.name for t in gt.get_terminals()
-                if t.name not in shared
+                name for name in self.get_tip_names_from_tree(gt)
+                if name not in shared
             ]
             if gt_tips_to_prune:
                 gt = self.prune_tree_using_taxa_list(gt, gt_tips_to_prune)
@@ -234,16 +296,85 @@ class ConcordanceAsr(Tree):
 
     @staticmethod
     def _canonical_split(taxa_side, all_taxa):
-        complement = all_taxa - taxa_side
-        if len(taxa_side) < len(complement):
+        taxa_side_len = len(taxa_side)
+        all_taxa_len = len(all_taxa)
+        if taxa_side_len * 2 < all_taxa_len:
             return frozenset(taxa_side)
-        elif len(taxa_side) > len(complement):
+        complement = all_taxa - taxa_side
+        if taxa_side_len * 2 > all_taxa_len:
             return frozenset(complement)
-        else:
-            return min(frozenset(taxa_side), frozenset(complement),
-                       key=lambda s: sorted(s))
+        if not taxa_side:
+            return frozenset(taxa_side)
+        if min(taxa_side) <= min(complement):
+            return frozenset(taxa_side)
+        return frozenset(complement)
 
-    def _get_four_groups(self, tree, node, parent_map, all_taxa_fs):
+    @staticmethod
+    def _collect_clade_tip_sets(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            preorder = []
+            stack = [root]
+            pop = stack.pop
+            append = stack.append
+            append_preorder = preorder.append
+            try:
+                while stack:
+                    clade = pop()
+                    append_preorder(clade)
+                    children = clade.clades
+                    if children:
+                        child_count = len(children)
+                        if child_count == 2:
+                            append(children[1])
+                            append(children[0])
+                        else:
+                            for idx in range(child_count - 1, -1, -1):
+                                append(children[idx])
+
+                clade_tips = {}
+                for clade in reversed(preorder):
+                    children = clade.clades
+                    if not children:
+                        clade_tips[id(clade)] = frozenset((clade.name,))
+                    elif len(children) == 2:
+                        clade_tips[id(clade)] = (
+                            clade_tips[id(children[0])]
+                            | clade_tips[id(children[1])]
+                        )
+                    else:
+                        tips = frozenset()
+                        for child in children:
+                            tips = tips | clade_tips.get(id(child), frozenset())
+                        clade_tips[id(clade)] = tips
+                return clade_tips
+            except AttributeError:
+                pass
+
+        clade_tips = {}
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                clade_tips[id(clade)] = frozenset({clade.name})
+            else:
+                tips = frozenset()
+                for child in clade.clades:
+                    tips = tips | clade_tips.get(id(child), frozenset())
+                clade_tips[id(clade)] = tips
+        return clade_tips
+
+    def _get_four_groups(
+        self,
+        tree,
+        node,
+        parent_map,
+        all_taxa_fs,
+        clade_tip_sets=None,
+    ):
         """Identify the four subtree groups around an internal branch.
 
         For the branch connecting node to its parent:
@@ -258,11 +389,14 @@ class ConcordanceAsr(Tree):
         if node.is_terminal() or len(node.clades) < 2:
             return None
 
-        C1 = frozenset(t.name for t in node.clades[0].get_terminals())
-        C2 = frozenset(t.name for t in node.clades[1].get_terminals())
+        if clade_tip_sets is None:
+            clade_tip_sets = self._collect_clade_tip_sets(tree)
+
+        C1 = clade_tip_sets.get(id(node.clades[0]), frozenset())
+        C2 = clade_tip_sets.get(id(node.clades[1]), frozenset())
         # If node has >2 children (polytomy), merge extras into C2
         for extra_child in node.clades[2:]:
-            C2 = C2 | frozenset(t.name for t in extra_child.get_terminals())
+            C2 = C2 | clade_tip_sets.get(id(extra_child), frozenset())
 
         parent = parent_map.get(id(node))
         if parent is None:
@@ -276,7 +410,7 @@ class ConcordanceAsr(Tree):
         if not siblings:
             return None
 
-        S = frozenset(t.name for t in siblings[0].get_terminals())
+        S = clade_tip_sets.get(id(siblings[0]), frozenset())
         # D = everything else (other siblings + above parent)
         D = all_taxa_fs - C1 - C2 - S
 
@@ -284,7 +418,7 @@ class ConcordanceAsr(Tree):
 
     def _compute_gcf_per_node(
         self, species_tree, gene_trees, all_taxa
-    ) -> Dict[int, Tuple[float, float, float]]:
+    ) -> dict[int, tuple[float, float, float]]:
         """For each internal node, compute (gCF, gDF1, gDF2).
 
         Uses the four-group decomposition (C1, C2, S, D) around each
@@ -296,25 +430,54 @@ class ConcordanceAsr(Tree):
         """
         all_taxa_fs = frozenset(all_taxa)
         parent_map = self._asr._build_parent_map(species_tree)
+        species_clade_tips = self._collect_clade_tip_sets(species_tree)
 
         # Extract bipartitions from all gene trees
         gene_tree_splits = []
         for gt in gene_trees:
+            gt_clade_tips = self._collect_clade_tip_sets(gt)
             splits = set()
-            for clade in gt.get_nonterminals():
-                tips = frozenset(t.name for t in clade.get_terminals())
+            try:
+                root = gt.root
+                root.clades
+                clade_iter = self._iter_preorder(root)
+                direct_clades = True
+            except AttributeError:
+                clade_iter = gt.get_nonterminals()
+                direct_clades = False
+
+            for clade in clade_iter:
+                if direct_clades and not clade.clades:
+                    continue
+                tips = gt_clade_tips.get(id(clade), frozenset())
                 if len(tips) <= 1 or tips == all_taxa_fs:
                     continue
                 splits.add(self._canonical_split(tips, all_taxa_fs))
             gene_tree_splits.append(splits)
 
         result = {}
-        for clade in species_tree.find_clades(order="preorder"):
-            if clade.is_terminal():
+        try:
+            root = species_tree.root
+            root.clades
+            species_clades = self._iter_preorder(root)
+            direct_species_clades = True
+        except AttributeError:
+            species_clades = species_tree.find_clades(order="preorder")
+            direct_species_clades = False
+
+        for clade in species_clades:
+            if direct_species_clades:
+                if not clade.clades:
+                    continue
+            elif clade.is_terminal():
                 continue
 
             groups = self._get_four_groups(
-                species_tree, clade, parent_map, all_taxa_fs
+                species_tree,
+                clade,
+                parent_map,
+                all_taxa_fs,
+                species_clade_tips,
             )
             if groups is None:
                 continue
@@ -416,15 +579,17 @@ class ConcordanceAsr(Tree):
 
     def _run_asr_on_tree(self, tree, trait_values):
         """Run _fast_anc on one tree, return results keyed by descendant frozensets."""
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-
-        # Prune to trait taxa
-        tip_names = [t.name for t in tree_copy.get_terminals()]
+        tip_names = self.get_tip_names_from_tree(tree)
         tips_to_prune = [t for t in tip_names if t not in trait_values]
+        tree_for_analysis = self._fast_tree_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
+            )
+            remaining_tips = self.get_tip_names_from_tree(tree_for_analysis)
+        else:
+            remaining_tips = tip_names
 
-        remaining_tips = [t.name for t in tree_copy.get_terminals()]
         if len(remaining_tips) < 3:
             return {}, {}, 0.0
 
@@ -433,23 +598,24 @@ class ConcordanceAsr(Tree):
             return {}, {}, 0.0
 
         x = np.array([trait_values[name] for name in ordered_names])
-        node_labels = self._asr._label_internal_nodes(tree_copy)
+        node_labels = self._asr._label_internal_nodes(tree_for_analysis)
 
         node_estimates, node_cis, sigma2, _ = self._asr._fast_anc(
-            tree_copy, x, ordered_names, node_labels
+            tree_for_analysis, x, ordered_names, node_labels
         )
 
         # Re-key by descendant frozensets
         estimates_by_desc = {}
         cis_by_desc = {}
-        for clade in tree_copy.find_clades(order="preorder"):
+        clade_tip_sets = self._collect_clade_tip_sets(tree_for_analysis)
+        for clade in tree_for_analysis.find_clades(order="preorder"):
             if clade.is_terminal():
                 continue
             if id(clade) not in node_labels:
                 continue
             label = node_labels[id(clade)]
             if label in node_estimates:
-                desc = frozenset(t.name for t in clade.get_terminals())
+                desc = clade_tip_sets.get(id(clade), frozenset())
                 estimates_by_desc[desc] = node_estimates[label]
                 if label in node_cis:
                     cis_by_desc[desc] = node_cis[label]
@@ -504,6 +670,7 @@ class ConcordanceAsr(Tree):
         gcf_per_node = self._compute_gcf_per_node(
             species_tree, gene_trees, all_taxa
         )
+        species_clade_tips = self._collect_clade_tip_sets(species_tree)
 
         # Build NNI alternatives and run ASR on them
         # nni_estimates[node_id] = list of (estimates_dict, cis_dict, sigma2, expected_desc)
@@ -534,8 +701,8 @@ class ConcordanceAsr(Tree):
                 continue
 
             label = node_labels[id(clade)]
-            desc = frozenset(t.name for t in clade.get_terminals())
-            descendants = sorted(t.name for t in clade.get_terminals())
+            desc = species_clade_tips.get(id(clade), frozenset())
+            descendants = sorted(desc)
 
             sp_est = sp_estimates.get(desc)
             if sp_est is None:
@@ -619,6 +786,7 @@ class ConcordanceAsr(Tree):
     def _run_distribution(self, species_tree, gene_trees, trait_values, all_taxa):
         """Reconstruct across gene tree distribution."""
         node_labels = self._asr._label_internal_nodes(species_tree)
+        species_clade_tips = self._collect_clade_tip_sets(species_tree)
 
         # Compute gCF
         gcf_per_node = self._compute_gcf_per_node(
@@ -642,8 +810,8 @@ class ConcordanceAsr(Tree):
                 continue
 
             label = node_labels[id(clade)]
-            desc = frozenset(t.name for t in clade.get_terminals())
-            descendants = sorted(t.name for t in clade.get_terminals())
+            desc = species_clade_tips.get(id(clade), frozenset())
+            descendants = sorted(desc)
 
             gcf, gdf1, gdf2 = gcf_per_node.get(id(clade), (1.0, 0.0, 0.0))
 
@@ -695,25 +863,26 @@ class ConcordanceAsr(Tree):
     # ------------------------------------------------------------------
 
     def _print_text_output(self, result) -> None:
-        print("Concordance-Aware Ancestral State Reconstruction")
-        print(f"\nMethod: {result['method']}")
-        print(f"Number of tips: {result['n_tips']}")
-        print(f"Number of gene trees: {result['n_gene_trees']}")
-        print(f"Sigma-squared (BM rate): {result['sigma2']:.6f}")
-
-        print("\nAncestral estimates:")
+        lines = [
+            "Concordance-Aware Ancestral State Reconstruction",
+            f"\nMethod: {result['method']}",
+            f"Number of tips: {result['n_tips']}",
+            f"Number of gene trees: {result['n_gene_trees']}",
+            f"Sigma-squared (BM rate): {result['sigma2']:.6f}",
+            "\nAncestral estimates:",
+        ]
         estimates = result["ancestral_estimates"]
 
         has_ci = any("ci_lower" in e for e in estimates.values())
 
         if has_ci:
-            print(
+            lines.append(
                 f"  {'Node':<12s}{'Desc':>6s}{'Estimate':>12s}"
                 f"{'gCF':>8s}{'95% CI':>24s}"
                 f"{'Var_topo':>12s}{'Var_param':>12s}"
             )
         else:
-            print(
+            lines.append(
                 f"  {'Node':<12s}{'Desc':>6s}{'Estimate':>12s}"
                 f"{'gCF':>8s}{'Var_topo':>12s}{'Var_param':>12s}"
             )
@@ -728,32 +897,49 @@ class ConcordanceAsr(Tree):
 
             if has_ci and "ci_lower" in entry:
                 ci_str = f"[{entry['ci_lower']:.4f}, {entry['ci_upper']:.4f}]"
-                print(
+                lines.append(
                     f"  {label + root_tag:<12s}{n_desc:>6d}{est:>12.4f}"
                     f"{gcf:>8.3f}{ci_str:>24s}"
                     f"{var_t:>12.6f}{var_p:>12.6f}"
                 )
             elif has_ci:
-                print(
+                lines.append(
                     f"  {label + root_tag:<12s}{n_desc:>6d}{est:>12.4f}"
                     f"{gcf:>8.3f}{'':>24s}"
                     f"{var_t:>12.6f}{var_p:>12.6f}"
                 )
             else:
-                print(
+                lines.append(
                     f"  {label + root_tag:<12s}{n_desc:>6d}{est:>12.4f}"
                     f"{gcf:>8.3f}{var_t:>12.6f}{var_p:>12.6f}"
                 )
+        print("\n".join(lines))
 
     # ------------------------------------------------------------------
     # Plotting
     # ------------------------------------------------------------------
 
     def _plot_concordance_contmap(self, tree, result, output_path) -> None:
+        from ...helpers.plot_config import compute_node_positions
+        from ...helpers.circular_layout import (
+            compute_circular_coords,
+            draw_circular_branches,
+            draw_circular_tip_labels,
+        )
+        from ...helpers.color_annotations import (
+            parse_color_file,
+            resolve_mrca,
+            draw_range_rect,
+            draw_range_wedge,
+            build_color_legend_handles,
+            apply_label_colors,
+        )
+
         try:
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.colors import Normalize
         except ImportError:
             print(
@@ -763,8 +949,22 @@ class ConcordanceAsr(Tree):
             raise SystemExit(2)
 
         estimates = result["ancestral_estimates"]
-        node_labels = self._asr._label_internal_nodes(tree)
-        parent_map = self._asr._build_parent_map(tree)
+        preorder_clades = list(self._iter_preorder(tree.root))
+        node_labels = {}
+        counter = 1
+        for clade in preorder_clades:
+            if not clade.clades:
+                continue
+            if clade.name:
+                node_labels[id(clade)] = clade.name
+            else:
+                node_labels[id(clade)] = f"N{counter}"
+                counter += 1
+
+        parent_map = {}
+        for clade in preorder_clades:
+            for child in clade.clades:
+                parent_map[id(child)] = clade
 
         # Map estimates back to tree nodes
         label_to_est = {}
@@ -776,46 +976,22 @@ class ConcordanceAsr(Tree):
         # Build estimates dict keyed by id(clade)
         all_estimates = {}
         gcf_values = {}
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                # Use trait values if available in result
-                pass
-            else:
-                if id(clade) in node_labels:
-                    label = node_labels[id(clade)]
-                    if label in label_to_est:
-                        all_estimates[id(clade)] = label_to_est[label]
-                        gcf_values[id(clade)] = label_to_gcf[label]
+        for clade in preorder_clades:
+            if not clade.clades or id(clade) not in node_labels:
+                continue
+            label = node_labels[id(clade)]
+            if label in label_to_est:
+                all_estimates[id(clade)] = label_to_est[label]
+                gcf_values[id(clade)] = label_to_gcf[label]
 
-        tips = list(tree.get_terminals())
-        node_x = {}
-        node_y = {}
-
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
+        tips = [clade for clade in preorder_clades if not clade.clades]
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                else:
-                    if id(clade) in parent_map:
-                        parent = parent_map[id(clade)]
-                        t = clade.branch_length if clade.branch_length else 0.0
-                        node_x[id(clade)] = node_x.get(id(parent), 0.0) + t
-
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
         config = self.plot_config
         config.resolve(n_rows=len(tips), n_cols=None)
@@ -823,7 +999,13 @@ class ConcordanceAsr(Tree):
 
         if self.plot_config.circular:
             # --- Circular mode ---
-            coords = compute_circular_coords(tree, node_x, parent_map)
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
@@ -831,19 +1013,22 @@ class ConcordanceAsr(Tree):
             draw_circular_branches(ax, tree, coords, parent_map, color="gray", lw=2)
 
             # Draw gCF-sized dots at internal nodes
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal():
+            gcf_x = []
+            gcf_y = []
+            gcf_sizes = []
+            gcf_colors = []
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 cid = id(clade)
                 if cid in gcf_values and cid in coords:
                     gcf = gcf_values[cid]
                     size = 50 + 200 * gcf
                     color = plt.cm.RdYlGn(gcf)
-                    ax.scatter(
-                        coords[cid]["x"], coords[cid]["y"],
-                        s=size, c=[color], zorder=5,
-                        edgecolors="black", linewidths=0.5,
-                    )
+                    gcf_x.append(coords[cid]["x"])
+                    gcf_y.append(coords[cid]["y"])
+                    gcf_sizes.append(size)
+                    gcf_colors.append(color)
                     ax.annotate(
                         f"{gcf:.2f}",
                         (coords[cid]["x"], coords[cid]["y"]),
@@ -851,6 +1036,12 @@ class ConcordanceAsr(Tree):
                         xytext=(5, 5),
                         fontsize=7,
                     )
+            if gcf_x:
+                ax.scatter(
+                    gcf_x, gcf_y,
+                    s=gcf_sizes, c=gcf_colors, zorder=5,
+                    edgecolors="black", linewidths=0.5,
+                )
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
@@ -865,11 +1056,7 @@ class ConcordanceAsr(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_wedge(ax, tree, mrca, clr, coords)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
                 color_legend = build_color_legend_handles(color_data)
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
@@ -887,7 +1074,9 @@ class ConcordanceAsr(Tree):
         else:
             # --- Rectangular mode ---
             # Draw branches
-            for clade in tree.find_clades(order="preorder"):
+            horizontal_segments = []
+            vertical_segments = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 if id(clade) not in parent_map:
@@ -901,21 +1090,48 @@ class ConcordanceAsr(Tree):
                 y0 = node_y.get(id(parent), 0)
                 y1 = node_y.get(id(clade), 0)
 
-                ax.plot([x0, x1], [y1, y1], color="gray", lw=2)
-                ax.plot([x0, x0], [y0, y1], color="gray", lw=2)
+                horizontal_segments.append(((x0, y1), (x1, y1)))
+                vertical_segments.append(((x0, y0), (x0, y1)))
+
+            if horizontal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        horizontal_segments,
+                        colors="gray",
+                        linewidths=2,
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors="gray",
+                        linewidths=2,
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if horizontal_segments or vertical_segments:
+                ax.autoscale_view()
 
             # Draw gCF-sized dots at internal nodes
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal():
+            gcf_x = []
+            gcf_y = []
+            gcf_sizes = []
+            gcf_colors = []
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 if id(clade) in gcf_values and id(clade) in node_x:
                     gcf = gcf_values[id(clade)]
                     size = 50 + 200 * gcf
                     color = plt.cm.RdYlGn(gcf)
-                    ax.scatter(
-                        node_x[id(clade)], node_y.get(id(clade), 0),
-                        s=size, c=[color], zorder=5, edgecolors="black", linewidths=0.5
-                    )
+                    gcf_x.append(node_x[id(clade)])
+                    gcf_y.append(node_y.get(id(clade), 0))
+                    gcf_sizes.append(size)
+                    gcf_colors.append(color)
                     ax.annotate(
                         f"{gcf:.2f}",
                         (node_x[id(clade)], node_y.get(id(clade), 0)),
@@ -923,6 +1139,12 @@ class ConcordanceAsr(Tree):
                         xytext=(5, 5),
                         fontsize=7,
                     )
+            if gcf_x:
+                ax.scatter(
+                    gcf_x, gcf_y,
+                    s=gcf_sizes, c=gcf_colors, zorder=5,
+                    edgecolors="black", linewidths=0.5,
+                )
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 0
@@ -942,11 +1164,7 @@ class ConcordanceAsr(Tree):
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
                 color_legend = build_color_legend_handles(color_data)
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
@@ -976,6 +1194,47 @@ class ConcordanceAsr(Tree):
     # Uncertainty plot
     # ------------------------------------------------------------------
 
+    def _collect_uncertainty_node_data(self, species_tree, result):
+        """Collect uncertainty plot rows matched by descendant labels."""
+        anc = result.get("ancestral_estimates", {})
+        method = result.get("method")
+
+        entries_by_desc = {}
+        for entry in anc.values():
+            desc = entry.get("descendants")
+            if desc is not None:
+                entries_by_desc.setdefault(tuple(desc), entry)
+
+        node_data = []
+        clade_tip_sets = self._collect_clade_tip_sets(species_tree)
+        for clade in species_tree.find_clades(order="preorder"):
+            if clade.is_terminal():
+                continue
+            desc = sorted(clade_tip_sets.get(id(clade), frozenset()))
+            entry = entries_by_desc.get(tuple(desc))
+            if entry is None:
+                continue
+
+            if method == "distribution":
+                estimates = entry.get("gene_tree_estimates", [])
+            else:
+                estimates = entry.get("source_estimates", [])
+            if len(estimates) < 2:
+                continue
+
+            if len(desc) <= 2:
+                short = f"({', '.join(desc)})"
+            else:
+                short = f"({desc[0]}, ..., {desc[-1]})"
+            node_data.append((
+                short,
+                estimates,
+                entry.get("gcf", 1.0),
+                entry.get("estimate", 0.0),
+            ))
+
+        return node_data
+
     def _plot_uncertainty(self, species_tree, result, output_path) -> None:
         """Violin + boxplot showing distribution of ancestral estimates.
 
@@ -997,30 +1256,7 @@ class ConcordanceAsr(Tree):
         config = self.plot_config
 
         # Collect data: (node_label, estimates_list, gcf, estimate)
-        node_data = []
-        for clade in species_tree.find_clades(order="preorder"):
-            if clade.is_terminal():
-                continue
-            # Match by descendants
-            desc = sorted(t.name for t in clade.get_terminals())
-            for label, entry in anc.items():
-                if entry.get("descendants") == desc:
-                    if result["method"] == "distribution":
-                        estimates = entry.get("gene_tree_estimates", [])
-                    else:
-                        estimates = entry.get("source_estimates", [])
-                    if len(estimates) >= 2:
-                        # Short label for display
-                        if len(desc) <= 2:
-                            short = f"({', '.join(desc)})"
-                        else:
-                            short = f"({desc[0]}, ..., {desc[-1]})"
-                        node_data.append((
-                            short, estimates,
-                            entry.get("gcf", 1.0),
-                            entry.get("estimate", 0.0),
-                        ))
-                    break
+        node_data = self._collect_uncertainty_node_data(species_tree, result)
 
         if not node_data:
             print("No nodes with enough estimates for uncertainty plot.")

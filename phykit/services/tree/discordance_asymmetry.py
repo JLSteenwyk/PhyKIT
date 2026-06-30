@@ -1,30 +1,37 @@
+from __future__ import annotations
+
+import os
 from io import StringIO
 from pathlib import Path
-from typing import Dict, List
-
-from Bio import Phylo
-from scipy.stats import binomtest
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_branches,
-    draw_circular_tip_labels,
-    draw_circular_colored_branch,
-    draw_circular_colored_arc,
-    circular_branch_points,
-    radial_offset,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+_path_isabs = os.path.isabs
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_FDR_VECTOR_MIN_LENGTH = 2048
+
+
+def _binomial_two_sided_p_value(successes: int, total: int) -> float:
+    from scipy.special import bdtr
+
+    tail_count = min(successes, total - successes)
+    return min(1.0, 2.0 * float(bdtr(tail_count, total, 0.5)))
 
 
 class DiscordanceAsymmetry(Tree):
@@ -38,7 +45,9 @@ class DiscordanceAsymmetry(Tree):
         self.plot_output = parsed["plot_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             gene_trees_path=args.gene_trees,
@@ -50,7 +59,7 @@ class DiscordanceAsymmetry(Tree):
         )
 
     def run(self) -> None:
-        species_tree = self.read_tree_file()
+        species_tree = self.read_tree_file_unmodified()
         gene_trees = self._parse_gene_trees(self.gene_trees_path)
 
         topology_counts, shared_taxa = self._count_topologies(species_tree, gene_trees)
@@ -103,9 +112,11 @@ class DiscordanceAsymmetry(Tree):
             self._output_text(branch_results, summary)
 
         if self.plot_output:
+            plot_tree = species_tree
             if self.plot_config.ladderize:
-                species_tree.ladderize()
-            self._plot(species_tree, branch_results, self.plot_output,
+                plot_tree = self.read_tree_file()
+                plot_tree.ladderize()
+            self._plot(plot_tree, branch_results, self.plot_output,
                        shared_taxa=shared_taxa)
 
     # ------------------------------------------------------------------
@@ -114,6 +125,8 @@ class DiscordanceAsymmetry(Tree):
 
     def _output_text(self, branch_results, summary) -> None:
         try:
+            lines = []
+            append = lines.append
             header = (
                 f"{'branch':<30}"
                 f"{'n_conc':>8}"
@@ -124,58 +137,74 @@ class DiscordanceAsymmetry(Tree):
                 f"{'fdr_p':>12}"
                 f"{'gene_flow':>12}"
             )
-            print(header)
-            print("-" * len(header))
+            append(header)
+            append("-" * len(header))
 
+            row_format = (
+                "{:<30}{:>8}{:>8}{:>8}{:>12}{:>12}{:>12}{:>12}"
+            ).format
+            verbose_lines = [] if self.verbose else None
+            verbose_append = (
+                verbose_lines.append if verbose_lines is not None else None
+            )
             for entry in branch_results:
                 branch_label = ",".join(entry["split"])
+                n_conc = entry["n_concordant"]
+                n_alt1 = entry["n_alt1"]
+                n_alt2 = entry["n_alt2"]
+                asymmetry_ratio = entry["asymmetry_ratio"]
+                p_value = entry["p_value"]
+                fdr_value = entry["fdr_p"]
                 asym = (
-                    f"{entry['asymmetry_ratio']:.3f}"
-                    if entry["asymmetry_ratio"] is not None
+                    f"{asymmetry_ratio:.3f}"
+                    if asymmetry_ratio is not None
                     else "NA"
                 )
                 binom_p = (
-                    f"{entry['p_value']:.4f}"
-                    if entry["p_value"] is not None
+                    f"{p_value:.4f}"
+                    if p_value is not None
                     else "NA"
                 )
                 fdr_p = (
-                    f"{entry['fdr_p']:.4f}"
-                    if entry["fdr_p"] is not None
+                    f"{fdr_value:.4f}"
+                    if fdr_value is not None
                     else "NA"
                 )
                 gene_flow = "-"
-                if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
+                if (fdr_value is not None and fdr_value < 0.05
                         and entry["favored_alt"] is not None):
                     gene_flow = entry["favored_alt"]
-                print(
-                    f"{branch_label:<30}"
-                    f"{entry['n_concordant']:>8}"
-                    f"{entry['n_alt1']:>8}"
-                    f"{entry['n_alt2']:>8}"
-                    f"{asym:>12}"
-                    f"{binom_p:>12}"
-                    f"{fdr_p:>12}"
-                    f"{gene_flow:>12}"
+                append(
+                    row_format(
+                        branch_label,
+                        n_conc,
+                        n_alt1,
+                        n_alt2,
+                        asym,
+                        binom_p,
+                        fdr_p,
+                        gene_flow,
+                    )
                 )
+                if verbose_append is not None:
+                    total = n_conc + n_alt1 + n_alt2
+                    gcf = n_conc / total if total > 0 else 1.0
+                    verbose_append(f"Branch: {branch_label}")
+                    verbose_append(
+                        f"  gCF={gcf:.3f}  gDF1={n_alt1}/{total}  "
+                        f"gDF2={n_alt2}/{total}"
+                    )
 
-            print("---")
-            print(
+            append("---")
+            append(
                 f"Summary: {summary['n_branches_tested']} branches tested, "
                 f"{summary['n_significant_fdr05']} significant (FDR<0.05)"
             )
 
-            if self.verbose:
-                print()
-                for entry in branch_results:
-                    branch_label = ",".join(entry["split"])
-                    total = entry["n_concordant"] + entry["n_alt1"] + entry["n_alt2"]
-                    gcf = entry["n_concordant"] / total if total > 0 else 1.0
-                    print(f"Branch: {branch_label}")
-                    print(
-                        f"  gCF={gcf:.3f}  gDF1={entry['n_alt1']}/{total}  "
-                        f"gDF2={entry['n_alt2']}/{total}"
-                    )
+            if verbose_lines is not None:
+                append("")
+                lines.extend(verbose_lines)
+            print("\n".join(lines))
         except BrokenPipeError:
             pass
 
@@ -193,6 +222,7 @@ class DiscordanceAsymmetry(Tree):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         from matplotlib.colors import Normalize
+        from matplotlib.collections import LineCollection
         import numpy as np
 
         # Build lookup from split label -> branch result
@@ -202,7 +232,9 @@ class DiscordanceAsymmetry(Tree):
             branch_lookup[key] = entry
 
         parent_map = self._build_parent_map(species_tree)
-        tips = list(species_tree.get_terminals())
+        tips = self._get_terminal_clades(species_tree)
+        preorder_clades = self._preorder_clades(species_tree)
+        postorder_clades = self._postorder_clades(species_tree)
         # Use shared taxa (intersection with gene trees) for split label
         # matching so labels are consistent with _count_topologies.
         all_taxa_fs = (shared_taxa if shared_taxa is not None
@@ -217,9 +249,11 @@ class DiscordanceAsymmetry(Tree):
 
         root = species_tree.root
         if self.plot_config.cladogram:
+            from ...helpers.plot_config import compute_node_x_cladogram
+
             node_x = compute_node_x_cladogram(species_tree, parent_map)
         else:
-            for clade in species_tree.find_clades(order="preorder"):
+            for clade in preorder_clades:
                 if clade == root:
                     node_x[id(clade)] = 0.0
                 else:
@@ -228,7 +262,7 @@ class DiscordanceAsymmetry(Tree):
                         t = clade.branch_length if clade.branch_length else 0.0
                         node_x[id(clade)] = node_x.get(id(parent), 0.0) + t
 
-        for clade in species_tree.find_clades(order="postorder"):
+        for clade in postorder_clades:
             if not clade.is_terminal() and id(clade) not in node_y:
                 child_ys = [
                     node_y[id(c)] for c in clade.clades if id(c) in node_y
@@ -239,11 +273,12 @@ class DiscordanceAsymmetry(Tree):
                     node_y[id(clade)] = 0.0
 
         # Map internal nodes to their branch result
+        clade_taxa = self._collect_clade_taxa(species_tree)
         node_to_result = {}
-        for clade in species_tree.find_clades(order="preorder"):
+        for clade in preorder_clades:
             if clade.is_terminal():
                 continue
-            node_tips = frozenset(t.name for t in clade.get_terminals()) & all_taxa_fs
+            node_tips = clade_taxa.get(id(clade), frozenset()) & all_taxa_fs
             split_label = (
                 sorted(node_tips)
                 if len(node_tips) <= len(all_taxa_fs) - len(node_tips)
@@ -262,13 +297,22 @@ class DiscordanceAsymmetry(Tree):
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         if self.plot_config.circular:
+            import math
+            from ...helpers.circular_layout import (
+                compute_circular_coords,
+                draw_circular_tip_labels,
+            )
+
             # --- Circular mode ---
             coords = compute_circular_coords(species_tree, node_x, parent_map)
             ax.set_aspect("equal")
             ax.axis("off")
 
-            # Draw each branch individually with its asymmetry color
-            for clade in species_tree.find_clades(order="preorder"):
+            radial_segments = []
+            radial_colors = []
+            radial_linewidths = []
+            ratio_color_cache = {}
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 cid = id(clade)
@@ -283,15 +327,45 @@ class DiscordanceAsymmetry(Tree):
                 lw = 2
                 if cid in node_to_result:
                     entry = node_to_result[cid]
-                    if entry["asymmetry_ratio"] is not None:
-                        color = cmap(norm(entry["asymmetry_ratio"]))
+                    ratio = entry["asymmetry_ratio"]
+                    if ratio is not None:
+                        color = ratio_color_cache.get(ratio)
+                        if color is None:
+                            color = cmap(norm(ratio))
+                            ratio_color_cache[ratio] = color
                         lw = 3
 
-                # Draw radial segment
-                draw_circular_colored_branch(ax, coords[id(parent)], coords[cid], color, lw=lw)
+                parent_coords = coords[id(parent)]
+                child_coords = coords[cid]
+                angle = child_coords["angle"]
+                cos_angle = math.cos(angle)
+                sin_angle = math.sin(angle)
+                r_parent = parent_coords["radius"]
+                r_child = child_coords["radius"]
+                radial_segments.append(
+                    [
+                        (r_parent * cos_angle, r_parent * sin_angle),
+                        (r_child * cos_angle, r_child * sin_angle),
+                    ]
+                )
+                radial_colors.append(color)
+                radial_linewidths.append(lw)
 
-            # Draw arcs at internal nodes
-            for clade in species_tree.find_clades(order="preorder"):
+            if radial_segments:
+                ax.add_collection(
+                    LineCollection(
+                        radial_segments,
+                        colors=radial_colors,
+                        linewidths=radial_linewidths,
+                        capstyle="round",
+                        zorder=2,
+                    )
+                )
+
+            arc_segments = []
+            arc_colors = []
+            arc_fractions = [idx / 60 for idx in range(61)]
+            for clade in preorder_clades:
                 if clade.is_terminal() or not clade.clades:
                     continue
                 cid = id(clade)
@@ -301,7 +375,6 @@ class DiscordanceAsymmetry(Tree):
                     continue
                 start_a = min(child_angles)
                 end_a = max(child_angles)
-                import math
                 span = (end_a - start_a) % (2.0 * math.pi)
                 if span > math.pi:
                     start_a, end_a = end_a, start_a
@@ -310,9 +383,41 @@ class DiscordanceAsymmetry(Tree):
                 arc_color = "gray"
                 if cid in node_to_result:
                     entry = node_to_result[cid]
-                    if entry["asymmetry_ratio"] is not None:
-                        arc_color = cmap(norm(entry["asymmetry_ratio"]))
-                draw_circular_colored_arc(ax, 0.0, 0.0, pc["radius"], start_a, end_a, arc_color, lw=1.5)
+                    ratio = entry["asymmetry_ratio"]
+                    if ratio is not None:
+                        arc_color = ratio_color_cache.get(ratio)
+                        if arc_color is None:
+                            arc_color = cmap(norm(ratio))
+                            ratio_color_cache[ratio] = arc_color
+                start = start_a % (2.0 * math.pi)
+                end = end_a % (2.0 * math.pi)
+                diff = (end - start) % (2.0 * math.pi)
+                if diff > math.pi:
+                    diff -= 2.0 * math.pi
+                arc_segments.append(
+                    [
+                        (
+                            pc["radius"] * math.cos(start + diff * fraction),
+                            pc["radius"] * math.sin(start + diff * fraction),
+                        )
+                        for fraction in arc_fractions
+                    ]
+                )
+                arc_colors.append(arc_color)
+
+            if arc_segments:
+                ax.add_collection(
+                    LineCollection(
+                        arc_segments,
+                        colors=arc_colors,
+                        linewidths=1.5,
+                        capstyle="round",
+                        zorder=1,
+                    )
+                )
+
+            if radial_segments or arc_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
@@ -322,22 +427,28 @@ class DiscordanceAsymmetry(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_wedge,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(species_tree, taxa_list)
                     if mrca is not None:
                         draw_range_wedge(ax, species_tree, mrca, clr, coords)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
                 color_legend = build_color_legend_handles(color_data)
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
 
             # Annotate internal nodes
-            for clade in species_tree.find_clades(order="preorder"):
+            star_x = []
+            star_y = []
+            for clade in preorder_clades:
                 if clade.is_terminal():
                     continue
                 cid = id(clade)
@@ -361,7 +472,10 @@ class DiscordanceAsymmetry(Tree):
 
                 if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
                         and entry["favored_alt"] is not None):
-                    ax.scatter(cx, cy, s=100, c="red", marker="*", zorder=5)
+                    star_x.append(cx)
+                    star_y.append(cy)
+            if star_x:
+                ax.scatter(star_x, star_y, s=100, c="red", marker="*", zorder=5)
 
             # Colorbar (hide if legend-position is none)
             legend_loc = config.legend_position or "upper right"
@@ -381,8 +495,12 @@ class DiscordanceAsymmetry(Tree):
 
         else:
             # --- Rectangular mode ---
-            # Draw branches
-            for clade in species_tree.find_clades(order="preorder"):
+            horizontal_segments = []
+            horizontal_colors = []
+            horizontal_linewidths = []
+            vertical_segments = []
+            ratio_color_cache = {}
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 if id(clade) not in parent_map:
@@ -401,15 +519,44 @@ class DiscordanceAsymmetry(Tree):
                 lw = 2
                 if id(clade) in node_to_result:
                     entry = node_to_result[id(clade)]
-                    if entry["asymmetry_ratio"] is not None:
-                        color = cmap(norm(entry["asymmetry_ratio"]))
+                    ratio = entry["asymmetry_ratio"]
+                    if ratio is not None:
+                        color = ratio_color_cache.get(ratio)
+                        if color is None:
+                            color = cmap(norm(ratio))
+                            ratio_color_cache[ratio] = color
                         lw = 3
 
-                ax.plot([x0, x1], [y1, y1], color=color, lw=lw)
-                ax.plot([x0, x0], [y0, y1], color="gray", lw=1.5)
+                horizontal_segments.append([(x0, y1), (x1, y1)])
+                horizontal_colors.append(color)
+                horizontal_linewidths.append(lw)
+                vertical_segments.append([(x0, y0), (x0, y1)])
+
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors="gray",
+                        linewidths=1.5,
+                        zorder=1,
+                    )
+                )
+            if horizontal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        horizontal_segments,
+                        colors=horizontal_colors,
+                        linewidths=horizontal_linewidths,
+                        zorder=2,
+                    )
+                )
+            if vertical_segments or horizontal_segments:
+                ax.autoscale_view()
 
             # Annotate internal nodes
-            for clade in species_tree.find_clades(order="preorder"):
+            star_x = []
+            star_y = []
+            for clade in preorder_clades:
                 if clade.is_terminal():
                     continue
                 if id(clade) not in node_to_result:
@@ -434,7 +581,10 @@ class DiscordanceAsymmetry(Tree):
                 # Mark significant branches (FDR < 0.05)
                 if (entry["fdr_p"] is not None and entry["fdr_p"] < 0.05
                         and entry["favored_alt"] is not None):
-                    ax.scatter(x, y, s=100, c="red", marker="*", zorder=5)
+                    star_x.append(x)
+                    star_y.append(y)
+            if star_x:
+                ax.scatter(star_x, star_y, s=100, c="red", marker="*", zorder=5)
 
             # Tip labels
             label_fontsize = config.ylabel_fontsize if config.ylabel_fontsize is not None else 9
@@ -449,16 +599,20 @@ class DiscordanceAsymmetry(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_rect,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(species_tree, taxa_list)
                     if mrca is not None:
                         draw_range_rect(ax, species_tree, mrca, clr, node_x, node_y)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
                 color_legend = build_color_legend_handles(color_data)
                 if color_legend:
                     ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
@@ -490,8 +644,17 @@ class DiscordanceAsymmetry(Tree):
     # ------------------------------------------------------------------
 
     def _parse_gene_trees(self, path: str) -> list:
+        from Bio import Phylo
+
+        source = Path(path)
         try:
-            lines = Path(path).read_text().splitlines()
+            with source.open() as handle:
+                cleaned = [
+                    stripped
+                    for line in handle
+                    if (stripped := line.strip())
+                    and not stripped.startswith("#")
+                ]
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -501,14 +664,15 @@ class DiscordanceAsymmetry(Tree):
                 code=2,
             )
 
-        cleaned = [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
         trees = []
+        parent_str = str(source.parent)
+        parent_prefix = "" if parent_str == "." else parent_str + os.sep
         for line in cleaned:
             if line.startswith("("):
                 trees.append(Phylo.read(StringIO(line), "newick"))
             else:
-                tree_path = Path(path).parent / line
-                trees.append(Phylo.read(str(tree_path), "newick"))
+                tree_path = line if _path_isabs(line) else parent_prefix + line
+                trees.append(Phylo.read(tree_path, "newick"))
         return trees
 
     # ------------------------------------------------------------------
@@ -522,23 +686,191 @@ class DiscordanceAsymmetry(Tree):
         Returns the smaller side as a frozenset; ties are broken
         lexicographically.
         """
-        complement = all_taxa - taxa_side
-        if len(taxa_side) < len(complement):
+        taxa_side_len = len(taxa_side)
+        all_taxa_len = len(all_taxa)
+        if taxa_side_len * 2 < all_taxa_len:
             return frozenset(taxa_side)
-        elif len(taxa_side) > len(complement):
+        complement = all_taxa - taxa_side
+        if taxa_side_len * 2 > all_taxa_len:
             return frozenset(complement)
-        else:
-            return min(frozenset(taxa_side), frozenset(complement),
-                       key=lambda s: sorted(s))
+        if not taxa_side:
+            return frozenset(taxa_side)
+        if min(taxa_side) <= min(complement):
+            return frozenset(taxa_side)
+        return frozenset(complement)
 
     @staticmethod
-    def _build_parent_map(tree) -> Dict:
+    def _build_parent_map(tree) -> dict:
         """Build a dict mapping child id -> parent clade."""
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
         parent_map = {}
+        if root is not None:
+            stack = [root]
+            pop = stack.pop
+            extend = stack.extend
+            try:
+                while stack:
+                    clade = pop()
+                    children = clade.clades
+                    for child in children:
+                        parent_map[id(child)] = clade
+                    if children:
+                        extend(children)
+            except AttributeError:
+                parent_map = {}
+            else:
+                return parent_map
+
         for clade in tree.find_clades(order="preorder"):
             for child in clade.clades:
                 parent_map[id(child)] = clade
         return parent_map
+
+    @staticmethod
+    def _preorder_clades(tree) -> list:
+        direct_clades = DiscordanceAsymmetry._preorder_clades_direct(tree)
+        if direct_clades is not None:
+            return direct_clades
+        return list(tree.find_clades(order="preorder"))
+
+    @staticmethod
+    def _preorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                children = clade.clades
+                if children:
+                    stack.extend(reversed(children))
+        except AttributeError:
+            return None
+        return clades
+
+    @staticmethod
+    def _postorder_clades(tree) -> list:
+        direct_clades = DiscordanceAsymmetry._postorder_clades_direct(tree)
+        if direct_clades is not None:
+            return direct_clades
+        return list(tree.find_clades(order="postorder"))
+
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                children = clade.clades
+                if children:
+                    stack.extend(children)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
+    @staticmethod
+    def _collect_clade_taxa(tree) -> dict[int, frozenset]:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        clade_taxa: dict[int, frozenset] = {}
+        if root is not None:
+            preorder = []
+            stack = [root]
+            try:
+                while stack:
+                    clade = stack.pop()
+                    preorder.append(clade)
+                    children = clade.clades
+                    if children:
+                        stack.extend(children)
+
+                for clade in reversed(preorder):
+                    children = clade.clades
+                    if children:
+                        child_count = len(children)
+                        if child_count == 2:
+                            taxa = (
+                                clade_taxa[id(children[0])]
+                                | clade_taxa[id(children[1])]
+                            )
+                        elif child_count == 1:
+                            taxa = clade_taxa[id(children[0])]
+                        else:
+                            taxa = frozenset().union(
+                                *(clade_taxa[id(child)] for child in children)
+                            )
+                    else:
+                        taxa = frozenset({clade.name})
+                    clade_taxa[id(clade)] = taxa
+            except (AttributeError, KeyError, TypeError):
+                clade_taxa = {}
+            else:
+                return clade_taxa
+
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                clade_taxa[id(clade)] = frozenset({clade.name})
+            else:
+                taxa = frozenset()
+                for child in clade.clades:
+                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                clade_taxa[id(clade)] = taxa
+        return clade_taxa
+
+    @staticmethod
+    def _get_terminal_clades(tree) -> list:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return list(tree.get_terminals())
+
+        terminals = []
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        append_terminal = terminals.append
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    if len(children) == 2:
+                        left, right = children
+                        append(right)
+                        append(left)
+                    else:
+                        for index in range(len(children) - 1, -1, -1):
+                            append(children[index])
+                else:
+                    append_terminal(clade)
+        except AttributeError:
+            return list(tree.get_terminals())
+        return terminals
 
     @staticmethod
     def _collect_taxa(trees) -> set:
@@ -585,7 +917,7 @@ class DiscordanceAsymmetry(Tree):
                     stack.append((child, False))
         return splits
 
-    def _get_four_groups(self, tree, node, parent_map, all_taxa_fs):
+    def _get_four_groups(self, tree, node, parent_map, all_taxa_fs, clade_taxa=None):
         """Identify the four subtree groups around an internal branch.
 
         For the branch connecting *node* to its parent:
@@ -600,11 +932,14 @@ class DiscordanceAsymmetry(Tree):
         if node.is_terminal() or len(node.clades) < 2:
             return None
 
-        C1 = frozenset(t.name for t in node.clades[0].get_terminals()) & all_taxa_fs
-        C2 = frozenset(t.name for t in node.clades[1].get_terminals()) & all_taxa_fs
+        if clade_taxa is None:
+            clade_taxa = self._collect_clade_taxa(tree)
+
+        C1 = clade_taxa.get(id(node.clades[0]), frozenset()) & all_taxa_fs
+        C2 = clade_taxa.get(id(node.clades[1]), frozenset()) & all_taxa_fs
         # If node has >2 children (polytomy), merge extras into C2
         for extra_child in node.clades[2:]:
-            C2 = C2 | (frozenset(t.name for t in extra_child.get_terminals()) & all_taxa_fs)
+            C2 = C2 | (clade_taxa.get(id(extra_child), frozenset()) & all_taxa_fs)
 
         parent = parent_map.get(id(node))
         if parent is None:
@@ -621,7 +956,7 @@ class DiscordanceAsymmetry(Tree):
         chosen_sib = None
         S = frozenset()
         for sib in siblings:
-            candidate = frozenset(t.name for t in sib.get_terminals()) & all_taxa_fs
+            candidate = clade_taxa.get(id(sib), frozenset()) & all_taxa_fs
             if candidate:
                 S = candidate
                 chosen_sib = sib
@@ -639,10 +974,10 @@ class DiscordanceAsymmetry(Tree):
         if not D:
             if chosen_sib.is_terminal() or len(chosen_sib.clades) < 2:
                 return None
-            S = frozenset(t.name for t in chosen_sib.clades[0].get_terminals()) & all_taxa_fs
-            D = frozenset(t.name for t in chosen_sib.clades[1].get_terminals()) & all_taxa_fs
+            S = clade_taxa.get(id(chosen_sib.clades[0]), frozenset()) & all_taxa_fs
+            D = clade_taxa.get(id(chosen_sib.clades[1]), frozenset()) & all_taxa_fs
             for extra in chosen_sib.clades[2:]:
-                D = D | (frozenset(t.name for t in extra.get_terminals()) & all_taxa_fs)
+                D = D | (clade_taxa.get(id(extra), frozenset()) & all_taxa_fs)
 
         # Skip if any group is empty (branch is degenerate after taxon filtering)
         if not C1 or not C2 or not S:
@@ -650,7 +985,7 @@ class DiscordanceAsymmetry(Tree):
 
         return C1, C2, S, D
 
-    def _count_topologies(self, species_tree, gene_trees) -> Dict:
+    def _count_topologies(self, species_tree, gene_trees) -> dict:
         """Count concordant and two NNI-alternative topologies for each
         internal branch of the species tree across gene trees.
 
@@ -661,10 +996,11 @@ class DiscordanceAsymmetry(Tree):
           n_alt1: int
           n_alt2: int
         """
-        species_taxa = set(t.name for t in species_tree.get_terminals())
+        species_taxa = set(self.get_tip_names_from_tree(species_tree))
         gene_taxa = self._collect_taxa(gene_trees)
         all_taxa_fs = frozenset(sorted(species_taxa & gene_taxa))
         parent_map = self._build_parent_map(species_tree)
+        species_clade_taxa = self._collect_clade_taxa(species_tree)
 
         # Extract bipartitions from all gene trees (topology only, no lengths).
         # Builds tip sets bottom-up in a single postorder pass per gene tree,
@@ -679,7 +1015,7 @@ class DiscordanceAsymmetry(Tree):
             if clade.is_terminal():
                 continue
             groups = self._get_four_groups(
-                species_tree, clade, parent_map, all_taxa_fs
+                species_tree, clade, parent_map, all_taxa_fs, species_clade_taxa
             )
             if groups is None:
                 continue
@@ -689,11 +1025,14 @@ class DiscordanceAsymmetry(Tree):
             nni_alt1_bp = self._canonical_split(S | C2, all_taxa_fs)
             nni_alt2_bp = self._canonical_split(C1 | S, all_taxa_fs)
 
-            n_concordant = sum(1 for splits in gene_tree_splits if concordant_bp in splits)
-            n_alt1 = sum(1 for splits in gene_tree_splits if nni_alt1_bp in splits)
-            n_alt2 = sum(1 for splits in gene_tree_splits if nni_alt2_bp in splits)
+            n_concordant, n_alt1, n_alt2 = self._count_split_matches(
+                gene_tree_splits,
+                concordant_bp,
+                nni_alt1_bp,
+                nni_alt2_bp,
+            )
 
-            node_tips = frozenset(t.name for t in clade.get_terminals()) & all_taxa_fs
+            node_tips = species_clade_taxa.get(id(clade), frozenset()) & all_taxa_fs
             split_label = (
                 sorted(node_tips)
                 if len(node_tips) <= len(all_taxa_fs) - len(node_tips)
@@ -708,11 +1047,28 @@ class DiscordanceAsymmetry(Tree):
             )
         return result, all_taxa_fs
 
+    @staticmethod
+    def _count_split_matches(
+        gene_tree_splits,
+        concordant_bp,
+        nni_alt1_bp,
+        nni_alt2_bp,
+    ) -> tuple[int, int, int]:
+        n_concordant = n_alt1 = n_alt2 = 0
+        for splits in gene_tree_splits:
+            if concordant_bp in splits:
+                n_concordant += 1
+            if nni_alt1_bp in splits:
+                n_alt1 += 1
+            if nni_alt2_bp in splits:
+                n_alt2 += 1
+        return n_concordant, n_alt1, n_alt2
+
     # ------------------------------------------------------------------
     # Statistical testing
     # ------------------------------------------------------------------
 
-    def _test_asymmetry(self, n_alt1: int, n_alt2: int) -> Dict:
+    def _test_asymmetry(self, n_alt1: int, n_alt2: int) -> dict:
         """Run a two-sided binomial test on the two NNI alternatives.
 
         Returns a dict with asymmetry_ratio, p_value, and favored_alt.
@@ -726,8 +1082,7 @@ class DiscordanceAsymmetry(Tree):
             )
 
         asymmetry_ratio = max(n_alt1, n_alt2) / total
-        result = binomtest(n_alt1, total, p=0.5, alternative='two-sided')
-        p_value = result.pvalue
+        p_value = _binomial_two_sided_p_value(n_alt1, total)
 
         if n_alt1 > n_alt2:
             favored_alt = "alt1"
@@ -743,19 +1098,29 @@ class DiscordanceAsymmetry(Tree):
         )
 
     @staticmethod
-    def _fdr(p_values: List[float]) -> List[float]:
+    def _fdr(p_values: list[float]) -> list[float]:
         """Benjamini-Hochberg FDR correction."""
         n = len(p_values)
         if n == 0:
             return []
-        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
-        corrected = [0.0] * n
-        prev = 1.0
-        for rank_minus_1 in range(n - 1, -1, -1):
-            orig_idx, p = indexed[rank_minus_1]
-            rank = rank_minus_1 + 1
-            adjusted = min(p * n / rank, prev)
-            adjusted = min(adjusted, 1.0)
-            corrected[orig_idx] = adjusted
-            prev = adjusted
-        return corrected
+        if n < _FDR_VECTOR_MIN_LENGTH:
+            indexed = sorted(enumerate(p_values), key=lambda item: item[1])
+            corrected = [0.0] * n
+            previous = 1.0
+            for rank_index in range(n - 1, -1, -1):
+                original_index, p_value = indexed[rank_index]
+                rank = rank_index + 1
+                adjusted = min(p_value * n / rank, previous)
+                adjusted = min(adjusted, 1.0)
+                corrected[original_index] = adjusted
+                previous = adjusted
+            return corrected
+        p_arr = np.asarray(p_values, dtype=float)
+        order = np.argsort(p_arr)
+        sorted_p = p_arr[order]
+        ranks = np.arange(1, n + 1, dtype=float)
+        adjusted = np.minimum.accumulate((sorted_p * n / ranks)[::-1])[::-1]
+        adjusted = np.minimum(adjusted, 1.0)
+        corrected = np.empty(n, dtype=float)
+        corrected[order] = adjusted
+        return corrected.tolist()

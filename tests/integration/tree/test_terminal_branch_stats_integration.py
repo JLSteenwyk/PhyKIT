@@ -55,6 +55,16 @@ class TestTBS(object):
 
     @patch("builtins.print")
     def test_terminal_branch_stats_verbose0(self, mocked_print):
+        expected_result = (
+            "19.1996 raccoon\n"
+            "6.8004 bear\n"
+            "11.997 sea_lion\n"
+            "12.003 seal\n"
+            "100.8593 monkey\n"
+            "47.1407 cat\n"
+            "18.8795 weasel\n"
+            "25.4615 dog"
+        )
         testargs = [
             "phykit",
             "terminal_branch_stats",
@@ -64,19 +74,22 @@ class TestTBS(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call(19.1996,"raccoon"),
-            call(6.8004,"bear"),
-            call(11.997,"sea_lion"),
-            call(12.003,"seal"),
-            call(100.8593,"monkey"),
-            call(47.1407,"cat"),
-            call(18.8795,"weasel"),
-            call(25.4615,"dog"),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_terminal_branch_verbose1(self, mocked_print):
+        expected_result = (
+            "0.0003 Aspergillus_fischeri_IBT_3003\n"
+            "0.0005 Aspergillus_fischeri_IBT_3007\n"
+            "0.0003 Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1\n"
+            "0.0008 Aspergillus_fischeri_NRRL4585\n"
+            "0.0017 Aspergillus_fumigatus_Af293\n"
+            "0.0005 Aspergillus_fumigatus_CEA10\n"
+            "0.0029 Aspergillus_fumigatus_HMR_AF_270\n"
+            "0.0006 Aspergillus_fumigatus_Z5\n"
+            "0.0075 Aspergillus_oerlinghausenensis_CBS139183\n"
+            "0.0004 Aspergillus_fischeri_NRRL4161"
+        )
         testargs = [
             "phykit",
             "terminal_branch_stats",
@@ -86,18 +99,7 @@ class TestTBS(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call(0.0003,"Aspergillus_fischeri_IBT_3003"),
-            call(0.0005,"Aspergillus_fischeri_IBT_3007"),
-            call(0.0003,"Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1"),
-            call(0.0008,"Aspergillus_fischeri_NRRL4585"),
-            call(0.0017,"Aspergillus_fumigatus_Af293"),
-            call(0.0005,"Aspergillus_fumigatus_CEA10"),
-            call(0.0029,"Aspergillus_fumigatus_HMR_AF_270"),
-            call(0.0006,"Aspergillus_fumigatus_Z5"),
-            call(0.0075,"Aspergillus_oerlinghausenensis_CBS139183"),
-            call(0.0004,"Aspergillus_fischeri_NRRL4161"),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_terminal_branch_stats_missing_args(self, mocked_print):

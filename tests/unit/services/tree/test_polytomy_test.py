@@ -3,11 +3,38 @@ Unit tests for PolytomyTest class
 """
 
 import unittest
+import subprocess
+import sys
 from unittest.mock import Mock, MagicMock, patch, mock_open
 from argparse import Namespace
+from io import StringIO
+from Bio import Phylo
 from Bio.Phylo import Newick
+from Bio.Phylo.BaseTree import TreeMixin
 
+import phykit.services.tree.polytomy_test as module
 from phykit.services.tree.polytomy_test import PolytomyTest
+
+
+def test_module_import_does_not_import_biopython_phylo():
+    code = """
+import sys
+import phykit.services.tree.polytomy_test as module
+assert callable(module.print_json)
+assert callable(module.read_single_column_file_to_list)
+assert hasattr(module.Phylo, "read")
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.files" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "Bio.Align" not in sys.modules
+assert "concurrent.futures" not in sys.modules
+assert "multiprocessing" not in sys.modules
+assert "pickle" not in sys.modules
+assert "unittest.mock" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestPolytomyTest(unittest.TestCase):
@@ -135,6 +162,27 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(mock_clade2.branch_length, 1)
         self.assertEqual(mock_clade3.branch_length, 1)
 
+    def test_set_branch_lengths_in_standard_tree_uses_direct_traversal(self):
+        tree = Phylo.read(StringIO("((A:2,B:3):5,C:7);"), "newick")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError(
+                "standard tree branch reset should use direct traversal"
+            )
+
+        original_find_clades = TreeMixin.find_clades
+        try:
+            TreeMixin.find_clades = fail_find_clades
+            self.polytomy.set_branch_lengths_in_tree_to_one(tree)
+        finally:
+            TreeMixin.find_clades = original_find_clades
+
+        self.assertEqual(tree.root.branch_length, 1)
+        self.assertEqual(tree.root.clades[0].branch_length, 1)
+        self.assertEqual(tree.root.clades[0].clades[0].branch_length, 1)
+        self.assertEqual(tree.root.clades[0].clades[1].branch_length, 1)
+        self.assertEqual(tree.root.clades[1].branch_length, 1)
+
     def test_check_if_triplet_is_a_polytomy(self):
         """Test checking if triplet is a polytomy"""
         mock_tree = Mock(spec=Newick.Tree)
@@ -148,6 +196,48 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         mock_tree.get_nonterminals.return_value = [Mock(), Mock()]
         is_polytomy = self.polytomy.check_if_triplet_is_a_polytomy(mock_tree)
         self.assertFalse(is_polytomy)
+
+    def test_check_if_triplet_is_a_polytomy_uses_direct_traversal(self):
+        polytomy_tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        resolved_tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        def fail_get_nonterminals(*_args, **_kwargs):
+            raise AssertionError("standard tree should use direct internal count")
+
+        original_get_nonterminals = TreeMixin.get_nonterminals
+        try:
+            TreeMixin.get_nonterminals = fail_get_nonterminals
+            self.assertTrue(
+                self.polytomy.check_if_triplet_is_a_polytomy(polytomy_tree)
+            )
+            self.assertFalse(
+                self.polytomy.check_if_triplet_is_a_polytomy(resolved_tree)
+            )
+        finally:
+            TreeMixin.get_nonterminals = original_get_nonterminals
+
+    def test_has_exactly_three_terminals_uses_direct_traversal(self):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("standard tree should use direct terminal count")
+
+        original_get_terminals = TreeMixin.get_terminals
+        try:
+            TreeMixin.get_terminals = fail_get_terminals
+            self.assertTrue(self.polytomy._has_exactly_three_terminals(tree))
+        finally:
+            TreeMixin.get_terminals = original_get_terminals
+
+    def test_has_exactly_three_terminals_falls_back_for_nonstandard_tree(self):
+        mock_tree = Mock()
+        type(mock_tree).root = property(
+            lambda _self: (_ for _ in ()).throw(AttributeError)
+        )
+        mock_tree.get_terminals.return_value = [Mock(), Mock(), Mock()]
+
+        self.assertTrue(self.polytomy._has_exactly_three_terminals(mock_tree))
+        mock_tree.get_terminals.assert_called_once()
 
     def test_sister_relationship_counter(self):
         """Test counting sister relationships"""
@@ -185,7 +275,9 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.assertEqual(result, mock_tree)
         mock_tree.root_with_outgroup.assert_called_once_with(["out1"])
-        self.polytomy.prune_tree_using_taxa_list.assert_called_once()
+        self.polytomy.prune_tree_using_taxa_list.assert_called_once_with(
+            mock_tree, ["seq4", "out1"]
+        )
 
     @patch('phykit.services.tree.polytomy_test.Phylo.read')
     def test_get_triplet_tree_root_error(self, mock_phylo_read):
@@ -249,6 +341,7 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         # Should have found sister relationships
         self.assertIn("test.tre", summary)
         self.assertTrue(len(summary["test.tre"]) > 0)
+        self.polytomy.check_if_triplet_is_a_polytomy.assert_called_once_with(mock_tree)
 
     def test_determine_sisters_polytomy_case(self):
         """Test that polytomies are not counted"""
@@ -267,6 +360,8 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         # Should not add anything for polytomy
         self.assertEqual(summary, {})
+        self.polytomy.check_if_triplet_is_a_polytomy.assert_called_once_with(mock_tree)
+        mock_tree.distance.assert_not_called()
 
     def test_get_triplet_and_gene_support_freq_counts(self):
         """Test counting triplet and gene support frequencies"""
@@ -315,6 +410,27 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(calls[0][0][0], [10, 12, 8])
         self.assertEqual(calls[1][0][0], [5, 6, 4])
 
+    def test_chisquare_tests_do_not_import_scipy_stats(self):
+        triplet_counts = {"g0g1_count": 2, "g0g2_count": 2, "g1g2_count": 0}
+        gene_support = {"0-1": 2, "0-2": 2, "1-2": 0}
+        real_import = __import__
+
+        def fail_scipy_stats_import(name, *args, **kwargs):
+            if name == "scipy.stats" or name.startswith("scipy.stats."):
+                raise AssertionError("polytomy chi-square tests should not import scipy.stats")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", fail_scipy_stats_import):
+            triplet_res, gene_res = self.polytomy.chisquare_tests(
+                triplet_counts,
+                gene_support,
+            )
+
+        self.assertEqual(triplet_res.statistic, 2.0)
+        self.assertAlmostEqual(triplet_res.pvalue, 0.36787944117144233)
+        self.assertEqual(gene_res.statistic, 2.0)
+        self.assertAlmostEqual(gene_res.pvalue, 0.36787944117144233)
+
     @patch('builtins.print')
     def test_print_gene_support_freq_res(self, mock_print):
         """Test printing gene support frequency results"""
@@ -328,14 +444,16 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.polytomy.print_gene_support_freq_res(mock_result, gene_support_freq, trees_file_path)
 
         # Check that results were printed
-        mock_print.assert_any_call("Gene Support Frequency Results")
-        mock_print.assert_any_call("==============================")
-        mock_print.assert_any_call("chi-squared: 3.4567")
-        mock_print.assert_any_call("p-value: 0.012345")
-        mock_print.assert_any_call("total genes: 15")
-        mock_print.assert_any_call("0-1: 5")
-        mock_print.assert_any_call("0-2: 6")
-        mock_print.assert_any_call("1-2: 4")
+        mock_print.assert_called_once_with(
+            "Gene Support Frequency Results\n"
+            "==============================\n"
+            "chi-squared: 3.4567\n"
+            "p-value: 0.012345\n"
+            "total genes: 15\n"
+            "0-1: 5\n"
+            "0-2: 6\n"
+            "1-2: 4"
+        )
 
     @patch('builtins.print')
     def test_print_gene_support_freq_res_broken_pipe(self, mock_print):
@@ -373,6 +491,50 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         tree.common_ancestor.side_effect = ValueError("bad")
         pair = self.polytomy._find_sister_pair(tree, ("a", "b", "c"), {})
         self.assertIsNone(pair)
+
+    def test_find_sister_pair_from_path_cache_matches_tree_topology(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((a:1,b:1):1,c:1);"), "newick")
+        clade_cache = self.polytomy._build_clade_terminal_cache(tree)
+        path_cache = self.polytomy._build_tip_path_cache(tree)
+
+        pair = self.polytomy._find_sister_pair_from_path_cache(
+            ("a", "b", "c"),
+            clade_cache,
+            path_cache,
+        )
+
+        self.assertEqual(pair, ("a", "b"))
+
+    def test_common_ancestor_from_path_cache_missing_tip_returns_none(self):
+        self.assertIsNone(
+            self.polytomy._common_ancestor_from_path_cache(
+                ("a", "b", "missing"),
+                {"a": (object(),), "b": (object(),)},
+            )
+        )
+
+    def test_all_triplet_nodes_identical_does_not_slice(self):
+        class NoSliceList(list):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("triplet node scan should not slice")
+                return super().__getitem__(key)
+
+        node = object()
+        other = object()
+
+        self.assertTrue(
+            module._all_triplet_nodes_identical(NoSliceList([node, node, node]))
+        )
+        self.assertFalse(
+            module._all_triplet_nodes_identical(NoSliceList([node, other, node]))
+        )
+        self.assertFalse(
+            module._all_triplet_nodes_identical(NoSliceList([node, node, other]))
+        )
 
     @patch('phykit.services.tree.polytomy_test.Phylo.read')
     def test_process_tree_batch(self, mock_phylo_read):
@@ -535,6 +697,31 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         # Should process sequentially for small dataset
         self.polytomy.get_triplet_tree.assert_called()
 
+    def test_triplet_identifier_lookup_does_not_materialize_keys(self):
+        class NoMaterializedKeysDict(dict):
+            def keys(self):
+                raise AssertionError("first identifier lookup should not list keys")
+
+        groups_of_groups = NoMaterializedKeysDict(
+            {"test": [["seq1"], ["seq2"], ["seq3"]]}
+        )
+        self.polytomy.get_triplet_tree = Mock(return_value=None)
+
+        self.polytomy.examine_all_triplets_and_sister_pairing(
+            ["seq1", "seq2", "seq3"],
+            "test.tre",
+            {},
+            groups_of_groups,
+            [],
+        )
+
+        self.polytomy._legacy_triplet_pass(
+            ["seq1", "seq2", "seq3"],
+            "test.tre",
+            groups_of_groups,
+            [],
+        )
+
     def test_examine_all_triplets_large_uses_fast_summary(self):
         tips = ["a", "b", "c", "d"]
         tree_file = "big.tre"
@@ -592,12 +779,14 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.polytomy.get_tip_names_from_tree = Mock(return_value=["a", "b", "c"])
         self.polytomy._build_clade_terminal_cache = Mock(return_value={})
-        self.polytomy._find_sister_pair = Mock(return_value=("a", "b"))
+        self.polytomy._build_tip_path_cache = Mock(return_value={})
+        self.polytomy._find_sister_pair_from_path_cache = Mock(return_value=("a", "b"))
         self.polytomy.determine_sisters_from_triplet = Mock(return_value="0-1")
 
         result = self.polytomy._evaluate_tree_triplets_fast(tree, groups_of_groups)
 
         self.assertEqual(result, {"0-1": 1})
+        self.polytomy.determine_sisters_from_triplet.assert_not_called()
 
     def test_process_triplet_batch(self):
         """Test processing a batch of triplets"""
@@ -663,7 +852,10 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.polytomy.chisquare_tests.assert_called_once()
 
         # Check that results were printed
-        mock_print.assert_any_call("Gene Support Frequency Results")
+        self.assertIn(
+            "Gene Support Frequency Results",
+            mock_print.call_args.args[0],
+        )
 
     def test_cached_methods(self):
         """Test that cached methods work correctly"""

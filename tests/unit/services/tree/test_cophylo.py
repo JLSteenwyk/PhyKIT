@@ -1,12 +1,40 @@
 import json
 import os
+import subprocess
+import sys
 import tempfile
 
 import pytest
 from argparse import Namespace
 from pathlib import Path
 
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
+from io import StringIO
+
+import phykit.services.tree.cophylo as module
 from phykit.services.tree.cophylo import Cophylo
+from phykit.errors import PhykitUserError
+
+
+def test_module_import_does_not_import_numpy_or_biophylo():
+    code = """
+import sys
+import phykit.services.tree.cophylo as module
+assert callable(module.print_json)
+assert callable(module.compute_circular_coords)
+assert callable(module.draw_circular_branches)
+assert callable(module.draw_circular_tip_labels)
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.circular_layout" not in sys.modules
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "phykit.helpers.color_annotations" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 here = Path(__file__)
@@ -45,7 +73,558 @@ class TestProcessArgs:
         assert parsed["json_output"] is True
 
 
+class TestMappingParsing:
+    def test_mapping_file_skips_comments_and_blanks(self, tmp_path):
+        svc = Cophylo.__new__(Cophylo)
+        mapping_file = tmp_path / "mapping.tsv"
+        mapping_file.write_text(
+            "# comment\n"
+            "\n"
+            "A\tA_prime\n"
+            "B\tB_prime\n"
+            "C\tC_prime\n"
+        )
+
+        mapping = svc._parse_mapping_file(str(mapping_file))
+
+        assert mapping == {
+            "A": "A_prime",
+            "B": "B_prime",
+            "C": "C_prime",
+        }
+
+    def test_mapping_file_skips_whitespace_prefixed_comments(self, tmp_path):
+        svc = Cophylo.__new__(Cophylo)
+        mapping_file = tmp_path / "mapping.tsv"
+        mapping_file.write_text(
+            "   # comment\n"
+            "\n"
+            "A\tA_prime\n"
+            "B\tB_prime\n"
+        )
+
+        mapping = svc._parse_mapping_file(str(mapping_file))
+
+        assert mapping == {
+            "A": "A_prime",
+            "B": "B_prime",
+        }
+
+    def test_mapping_file_rejects_wrong_column_count(self, tmp_path):
+        svc = Cophylo.__new__(Cophylo)
+        mapping_file = tmp_path / "mapping.tsv"
+        mapping_file.write_text("A\tA_prime\nB\tB_prime\textra\n")
+
+        with pytest.raises(PhykitUserError):
+            svc._parse_mapping_file(str(mapping_file))
+
+
 class TestRun:
+    def test_run_reads_tree2_through_cached_reader(self, mocker):
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output="out.png",
+            mapping=None,
+            json=False,
+        )
+        svc = Cophylo(args)
+        tree1 = object()
+        tree2 = object()
+        tips = ["A", "B"]
+
+        mocker.patch.object(svc, "read_tree_file", return_value=tree1)
+        read_tree2 = mocker.patch.object(
+            svc, "_read_tree_with_error", return_value=tree2
+        )
+        mocker.patch.object(svc, "_validate_tree")
+        mocker.patch.object(
+            svc, "get_tip_names_from_tree", side_effect=[tips, tips]
+        )
+        mocker.patch.object(
+            svc,
+            "_optimize_tip_order",
+            return_value=({"A": 0, "B": 1}, {"A": 0, "B": 1}),
+        )
+        mocker.patch.object(svc, "_plot_cophylo")
+        mocker.patch("builtins.print")
+
+        svc.run()
+
+        read_tree2.assert_called_once_with(TREE2, "tree2_file_path")
+
+    def test_validate_tree_uses_direct_standard_tree_traversal(self, monkeypatch):
+        svc = Cophylo.__new__(Cophylo)
+        tree = Phylo.read(StringIO("((A,B),(C,D));"), "newick")
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard tree validation should not collect terminals")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard tree validation should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(tree, "find_clades", fail_find_clades)
+
+        svc._validate_tree(tree, "tree")
+
+        assert tree.root.branch_length is None
+        assert all(
+            clade.branch_length == 1.0
+            for clade in tree.root.clades
+        )
+
+    def test_validate_standard_tree_handles_mixed_child_counts(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard tree validation should not collect terminals")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard tree validation should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(tree, "find_clades", fail_find_clades)
+
+        assert Cophylo._validate_standard_tree(tree) == 6
+        assert tree.root.branch_length is None
+        assert tree.root.clades[1].clades[1].branch_length == 1.0
+
+    def test_get_tip_order_uses_fast_terminal_names_for_parsed_tree(
+        self, monkeypatch
+    ):
+        svc = Cophylo.__new__(Cophylo)
+        tree = Phylo.read(StringIO("((A,B),(C,D));"), "newick")
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("parsed trees should use fast terminal names")
+
+        monkeypatch.setattr(tree, "get_terminals", fail_get_terminals)
+
+        assert svc._get_tip_order(tree) == ["A", "B", "C", "D"]
+
+    def test_print_text_output_batches_summary(self, mocker):
+        svc = Cophylo.__new__(Cophylo)
+        svc.output_path = "out.png"
+        printed = mocker.patch("builtins.print")
+
+        svc._print_text_output(12, 10, 8)
+
+        printed.assert_called_once_with(
+            "Cophylogenetic Plot (Tanglegram)\n"
+            "\nTree 1 tips: 12\n"
+            "Tree 2 tips: 10\n"
+            "Matched taxa: 8\n"
+            "Saved cophylo plot: out.png"
+        )
+
+    def test_draw_phylogram_uses_direct_standard_tree_traversal(self, monkeypatch):
+        svc = Cophylo.__new__(Cophylo)
+        svc.plot_config = Namespace(cladogram=False, color_file=None)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tip_order = {"A": 0, "B": 1, "C": 2, "D": 3}
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard phylogram drawing should not collect terminals")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard phylogram drawing should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        class Ax:
+            spines = {
+                key: type("Spine", (), {"set_visible": lambda self, value: None})()
+                for key in ("top", "right", "left")
+            }
+
+            def plot(self, *args, **kwargs):
+                return None
+
+            def text(self, *args, **kwargs):
+                return None
+
+            def set_ylim(self, *args, **kwargs):
+                return None
+
+            def set_yticks(self, *args, **kwargs):
+                return None
+
+            def set_xlabel(self, *args, **kwargs):
+                return None
+
+        svc._draw_phylogram(Ax(), tree, tip_order, direction="right")
+
+    def test_draw_phylogram_batches_real_matplotlib_branches(self, monkeypatch):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.axes
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        svc = Cophylo.__new__(Cophylo)
+        svc.plot_config = Namespace(cladogram=False, color_file=None)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tip_order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        fig, ax = plt.subplots()
+
+        def fail_plot(*args, **kwargs):
+            raise AssertionError("real phylogram branches should be batched")
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_plot)
+
+        try:
+            svc._draw_phylogram(ax, tree, tip_order, direction="right")
+            assert len(ax.collections) == 2
+        finally:
+            plt.close(fig)
+
+    def test_plot_cophylo_rect_batches_association_lines(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.axes
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
+
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output=str(tmp_path / "cophylo.png"),
+            mapping=None,
+            json=False,
+            circular=False,
+            color_file=None,
+            no_title=True,
+            ylabel_fontsize=0,
+        )
+        svc = Cophylo(args)
+        tree1 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree2 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        mapping = {name: name for name in order}
+        output_path = tmp_path / "cophylo_associations.png"
+
+        original_plot = matplotlib.axes.Axes.plot
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        line_collections = []
+
+        def fail_association_plot(self, *args, **kwargs):
+            if kwargs.get("color") == "gray" and kwargs.get("zorder") == 1:
+                raise AssertionError("association lines should use LineCollection")
+            return original_plot(self, *args, **kwargs)
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_association_plot)
+        monkeypatch.setattr(matplotlib.axes.Axes, "add_collection", capture_collection)
+
+        try:
+            svc._plot_cophylo(tree1, tree2, mapping, order, order, str(output_path))
+            assert any(
+                len(collection.get_segments()) == len(mapping)
+                for collection in line_collections
+            )
+            assert output_path.exists()
+        finally:
+            plt.close("all")
+
+    def test_circular_plot_reuses_clade_lists_for_layout_helpers(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output=str(tmp_path / "cophylo.png"),
+            mapping=None,
+            json=False,
+            circular=True,
+            color_file=None,
+            no_title=True,
+            ylabel_fontsize=0,
+        )
+        svc = Cophylo(args)
+        tree1 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree2 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        mapping = {name: name for name in order}
+        output_path = tmp_path / "cophylo_layout_lists.png"
+        layout_calls = []
+        original_circular_coords = module.compute_circular_coords
+
+        def spy_circular_coords(*args, **kwargs):
+            layout_calls.append(
+                (
+                    args[0],
+                    kwargs.get("preorder_clades"),
+                    kwargs.get("terminal_clades"),
+                )
+            )
+            return original_circular_coords(*args, **kwargs)
+
+        monkeypatch.setattr(module, "compute_circular_coords", spy_circular_coords)
+
+        try:
+            svc._plot_cophylo(tree1, tree2, mapping, order, order, str(output_path))
+        finally:
+            plt.close("all")
+
+        assert output_path.exists()
+        assert len(layout_calls) == 2
+        for tree, preorder_clades, terminal_clades in layout_calls:
+            expected_preorder = svc._preorder_clades(tree)
+            expected_terminals = [
+                clade for clade in expected_preorder if not clade.clades
+            ]
+            assert len(preorder_clades) == len(expected_preorder)
+            assert len(terminal_clades) == len(expected_terminals)
+            assert all(
+                actual is expected
+                for actual, expected in zip(preorder_clades, expected_preorder)
+            )
+            assert all(
+                actual is expected
+                for actual, expected in zip(terminal_clades, expected_terminals)
+            )
+
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_plot_batches_color_clade_overlay(self, monkeypatch, tmp_path, circular):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.axes
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
+
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text("A,B\tclade\t#ff0000\tAB\n")
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output=str(tmp_path / "cophylo.png"),
+            mapping=None,
+            json=False,
+            circular=circular,
+            color_file=str(color_file),
+            no_title=True,
+            ylabel_fontsize=0,
+        )
+        svc = Cophylo(args)
+        tree1 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree2 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        mapping = {name: name for name in order}
+
+        original_plot = matplotlib.axes.Axes.plot
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        line_collections = []
+
+        def fail_overlay_plot(self, *args, **kwargs):
+            if kwargs.get("zorder") == 2:
+                raise AssertionError("clade overlay branches should use LineCollection")
+            return original_plot(self, *args, **kwargs)
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_overlay_plot)
+        monkeypatch.setattr(matplotlib.axes.Axes, "add_collection", capture_collection)
+
+        output_path = tmp_path / f"cophylo_color_{circular}.png"
+        try:
+            svc._plot_cophylo(tree1, tree2, mapping, order, order, str(output_path))
+            assert len(line_collections) >= 4
+            assert output_path.exists()
+        finally:
+            plt.close("all")
+
+    def test_rotate_tree_matches_terminal_scan_reference(self):
+        svc = Cophylo.__new__(Cophylo)
+        tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,(D:1,E:1):1):1);"),
+            "newick",
+        )
+        target_order = {"a": 4, "b": 3, "c": 2, "d": 1, "e": 0}
+        reverse_mapping = {
+            "A": "a",
+            "B": "b",
+            "C": "c",
+            "D": "d",
+            "E": "e",
+        }
+
+        def reference_rotate(clade):
+            if clade.is_terminal():
+                return
+            for child in clade.clades:
+                reference_rotate(child)
+            if len(clade.clades) != 2:
+                return
+
+            means = []
+            for child in clade.clades:
+                positions = [
+                    target_order[reverse_mapping[tip.name]]
+                    for tip in child.get_terminals()
+                    if tip.name in reverse_mapping
+                ]
+                means.append(sum(positions) / len(positions) if positions else 0.0)
+
+            if means[0] > means[1]:
+                clade.clades[0], clade.clades[1] = clade.clades[1], clade.clades[0]
+
+        expected = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,(D:1,E:1):1):1);"),
+            "newick",
+        )
+        reference_rotate(expected.root)
+
+        svc._rotate_tree(tree, target_order, reverse_mapping)
+
+        assert [tip.name for tip in tree.get_terminals()] == [
+            tip.name for tip in expected.get_terminals()
+        ]
+
+    def test_rotate_tree_handles_unmapped_descendants(self):
+        svc = Cophylo.__new__(Cophylo)
+        tree = Phylo.read(
+            StringIO("((A:1,X:1):1,(B:1,(C:1,Y:1):1):1);"),
+            "newick",
+        )
+        target_order = {"a": 2, "b": 1, "c": 0}
+        reverse_mapping = {"A": "a", "B": "b", "C": "c"}
+
+        svc._rotate_tree(tree, target_order, reverse_mapping)
+
+        assert [tip.name for tip in tree.get_terminals()] == [
+            "C", "Y", "B", "X", "A",
+        ]
+
+    def test_rotate_tree_uses_direct_postorder_traversal(self, monkeypatch):
+        svc = Cophylo.__new__(Cophylo)
+        tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        target_order = {"A": 3, "B": 2, "C": 1, "D": 0}
+        reverse_mapping = {name: name for name in target_order}
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree rotation should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        svc._rotate_tree(tree, target_order, reverse_mapping)
+
+        assert svc._get_tip_order(tree) == ["D", "C", "B", "A"]
+
+    def test_postorder_clades_preserves_biophylo_order(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,(D:1,E:1):1):1);"),
+            "newick",
+        )
+        expected_ids = [
+            id(clade) for clade in tree.find_clades(order="postorder")
+        ]
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree helper should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        observed_ids = [id(clade) for clade in Cophylo._postorder_clades(tree)]
+
+        assert observed_ids == expected_ids
+
+    def test_postorder_clades_does_not_use_generic_traversal(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree helper should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        assert Cophylo._postorder_clades(tree)
+
+    def test_preorder_clades_preserves_biophylo_order(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+        expected_ids = [
+            id(clade) for clade in tree.find_clades(order="preorder")
+        ]
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree helper should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        observed_ids = [id(clade) for clade in Cophylo._preorder_clades(tree)]
+
+        assert observed_ids == expected_ids
+
+    def test_terminal_clades_preserves_biophylo_order(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+        expected_ids = [id(clade) for clade in tree.get_terminals()]
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("standard tree helper should not use get_terminals")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        observed_ids = [id(clade) for clade in Cophylo._terminal_clades(tree)]
+
+        assert observed_ids == expected_ids
+
+    def test_build_parent_map_handles_mixed_child_counts(self, monkeypatch):
+        svc = Cophylo.__new__(Cophylo)
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("parent map should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = svc._build_parent_map(tree)
+
+        terminal, binary, trifurcating = tree.root.clades
+        assert id(tree.root) not in parent_map
+        assert parent_map[id(terminal)] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcating)] is tree.root
+        assert all(parent_map[id(child)] is binary for child in binary.clades)
+        assert all(
+            parent_map[id(child)] is trifurcating for child in trifurcating.clades
+        )
+
     def test_plot_created(self):
         try:
             import matplotlib

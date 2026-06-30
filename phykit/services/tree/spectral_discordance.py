@@ -1,16 +1,80 @@
-import pickle
+from __future__ import annotations
+
+import os
 import sys
 from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Tuple
-
-import numpy as np
-from Bio import Phylo
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
+
+
+_path_exists = os.path.exists
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPickle:
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+pickle = _LazyPickle()
+np = _LazyNumpy()
+
+
+def _squared_distances_to_centers(X: np.ndarray, centers: np.ndarray) -> np.ndarray:
+    x_norms = np.einsum("ij,ij->i", X, X)
+    center_norms = np.einsum("ij,ij->i", centers, centers)
+    distances = x_norms[:, None] + center_norms[None, :] - 2.0 * (X @ centers.T)
+    np.maximum(distances, 0.0, out=distances)
+    return distances
+
+
+def _update_kmeans_centers(
+    X: np.ndarray,
+    labels: np.ndarray,
+    centers: np.ndarray,
+) -> np.ndarray:
+    K = centers.shape[0]
+    counts = np.bincount(labels, minlength=K)
+    sums = np.zeros((K, X.shape[1]), dtype=X.dtype)
+    np.add.at(sums, labels, X)
+
+    new_centers = centers.copy()
+    nonempty = counts > 0
+    new_centers[nonempty] = sums[nonempty] / counts[nonempty, None]
+    return new_centers
+
+
+def _shared_gene_tree_taxa(gene_trees, get_tip_names):
+    shared = set(get_tip_names(gene_trees[0]))
+    for idx in range(1, len(gene_trees)):
+        shared &= set(get_tip_names(gene_trees[idx]))
+    return shared
 
 
 class SpectralDiscordance(Tree):
@@ -30,7 +94,9 @@ class SpectralDiscordance(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=getattr(args, "tree", None),
             gene_trees_path=args.gene_trees,
@@ -48,7 +114,7 @@ class SpectralDiscordance(Tree):
 
         species_tree = None
         if self.tree_file_path is not None:
-            species_tree = self.read_tree_file()
+            species_tree = self.read_tree_file_unmodified()
 
         shared = self._get_shared_taxa(gene_trees, species_tree)
 
@@ -97,11 +163,11 @@ class SpectralDiscordance(Tree):
 
     def _get_top_loadings(
         self, loadings, bip_index, sp_flags, n_pcs, top_n,
-    ) -> Dict[str, list]:
+    ) -> dict[str, list]:
         result = {}
         for pc in range(min(n_pcs, loadings.shape[0])):
             pc_loadings = loadings[pc]
-            top_idx = np.argsort(np.abs(pc_loadings))[::-1][:top_n]
+            top_idx = self._top_loading_indices(pc_loadings, top_n)
             entries = []
             for idx in top_idx:
                 bip = bip_index[idx]
@@ -113,18 +179,48 @@ class SpectralDiscordance(Tree):
             result[f"PC{pc + 1}"] = entries
         return result
 
+    @staticmethod
+    def _top_loading_indices(pc_loadings, top_n):
+        abs_loadings = np.abs(pc_loadings)
+        n_loadings = abs_loadings.size
+        if top_n <= 0:
+            return np.empty(0, dtype=np.intp)
+        if top_n >= n_loadings:
+            return np.argsort(abs_loadings)[::-1]
+
+        top_idx = np.argpartition(abs_loadings, -top_n)[-top_n:]
+        selected = abs_loadings[top_idx]
+
+        # Preserve the exact full-sort result whenever ties could affect
+        # membership or ordering of the reported top loadings.
+        if np.unique(selected).size != selected.size:
+            return np.argsort(abs_loadings)[::-1][:top_n]
+        cutoff = float(np.min(selected))
+        if np.count_nonzero(abs_loadings >= cutoff) != top_n:
+            return np.argsort(abs_loadings)[::-1][:top_n]
+
+        return top_idx[selected.argsort()[::-1]]
+
     def _format_json(
         self, scores, var_explained, top_loadings, labels, K,
         eigengaps, n_pcs, bip_index, sp_flags,
-    ) -> Dict:
+    ) -> dict:
         G = scores.shape[0]
+        show_pcs = min(n_pcs, scores.shape[1])
+        pc_labels = [f"PC{pc + 1}" for pc in range(show_pcs)]
+        variance_pcs = min(n_pcs, len(var_explained))
+        variance_pc_labels = [
+            f"PC{pc + 1}"
+            for pc in range(variance_pcs)
+        ]
         score_dict = {}
-        for g in range(G):
-            row = {}
-            for pc in range(min(n_pcs, scores.shape[1])):
-                row[f"PC{pc + 1}"] = float(scores[g, pc])
-            row["cluster"] = int(labels[g])
-            score_dict[f"gene_tree_{g + 1}"] = row
+        for g, (score_row, label) in enumerate(zip(scores, labels), 1):
+            row = {
+                pc_label: float(value)
+                for pc_label, value in zip(pc_labels, score_row[:show_pcs])
+            }
+            row["cluster"] = int(label)
+            score_dict[f"gene_tree_{g}"] = row
 
         return {
             "metric": self.metric,
@@ -133,8 +229,11 @@ class SpectralDiscordance(Tree):
             "n_clusters": int(K),
             "scores": score_dict,
             "variance_explained": {
-                f"PC{i + 1}": float(var_explained[i])
-                for i in range(min(n_pcs, len(var_explained)))
+                pc_label: float(value)
+                for pc_label, value in zip(
+                    variance_pc_labels,
+                    var_explained[:variance_pcs],
+                )
             },
             "top_loadings": top_loadings,
             "cluster_assignments": [int(l) for l in labels],
@@ -145,37 +244,54 @@ class SpectralDiscordance(Tree):
         self, scores, var_explained, top_loadings, labels, K,
         eigengaps, n_pcs, n_trees, n_taxa, n_bips,
     ) -> None:
-        print("Spectral Discordance Decomposition")
-        print(f"\nMetric: {self.metric}")
-        print(f"Gene trees: {n_trees}")
-        print(f"Shared taxa: {n_taxa}")
-        print(f"Unique bipartitions: {n_bips}")
-        print(f"Clusters detected: {K}")
+        lines = [
+            "Spectral Discordance Decomposition",
+            f"\nMetric: {self.metric}",
+            f"Gene trees: {n_trees}",
+            f"Shared taxa: {n_taxa}",
+            f"Unique bipartitions: {n_bips}",
+            f"Clusters detected: {K}",
+        ]
 
-        print("\nVariance explained:")
+        lines.append("\nVariance explained:")
         for i in range(min(n_pcs, len(var_explained))):
             bar = "#" * int(var_explained[i] * 50)
-            print(f"  PC{i + 1:<3d} {var_explained[i]:>8.4f}  {bar}")
+            lines.append(f"  PC{i + 1:<3d} {var_explained[i]:>8.4f}  {bar}")
 
         for pc_name, entries in top_loadings.items():
-            print(f"\nTop loadings for {pc_name}:")
+            lines.append(f"\nTop loadings for {pc_name}:")
             for e in entries:
                 flag = " *" if e["in_species_tree"] else ""
-                print(f"  {e['loading']:>8.4f}  {e['bipartition']}{flag}")
+                lines.append(f"  {e['loading']:>8.4f}  {e['bipartition']}{flag}")
 
         show_pcs = min(n_pcs, scores.shape[1], 5)
         header = f"  {'Gene tree':<14s}"
         for pc in range(show_pcs):
             header += f"{'PC' + str(pc + 1):>10s}"
         header += f"{'Cluster':>10s}"
-        print(f"\nPC scores:")
-        print(header)
-        for g in range(scores.shape[0]):
-            row = f"  {'gene_tree_' + str(g + 1):<14s}"
-            for pc in range(show_pcs):
-                row += f"{scores[g, pc]:>10.4f}"
-            row += f"{labels[g]:>10d}"
-            print(row)
+        lines.append("\nPC scores:")
+        lines.append(header)
+        if show_pcs == 5:
+            for g, row_scores in enumerate(scores):
+                gene_tree = "gene_tree_" + str(g + 1)
+                lines.append(
+                    f"  {gene_tree:<14s}"
+                    f"{row_scores[0]:>10.4f}"
+                    f"{row_scores[1]:>10.4f}"
+                    f"{row_scores[2]:>10.4f}"
+                    f"{row_scores[3]:>10.4f}"
+                    f"{row_scores[4]:>10.4f}"
+                    f"{labels[g]:>10d}"
+                )
+        else:
+            for g in range(scores.shape[0]):
+                row = f"  {'gene_tree_' + str(g + 1):<14s}"
+                for pc in range(show_pcs):
+                    row += f"{scores[g, pc]:>10.4f}"
+                row += f"{labels[g]:>10d}"
+                lines.append(row)
+
+        print("\n".join(lines))
 
     def _plot_scatter(self, scores, labels, K, output_path) -> None:
         try:
@@ -254,6 +370,8 @@ class SpectralDiscordance(Tree):
     # ------------------------------------------------------------------
 
     def _parse_gene_trees(self, path: str) -> list:
+        from Bio import Phylo
+
         """Read a file of gene trees (one Newick string per line, or
         file-of-filenames where each line is a path to a single-tree file).
 
@@ -261,7 +379,7 @@ class SpectralDiscordance(Tree):
         Raises PhykitUserError if the file is not found or contains < 2 trees.
         """
         p = Path(path)
-        if not p.exists():
+        if not _path_exists(path):
             raise PhykitUserError(
                 [
                     f"{path} corresponds to no such file or directory.",
@@ -282,8 +400,7 @@ class SpectralDiscordance(Tree):
                     trees.append(tree)
                 else:
                     # Treat as a file path (file-of-filenames)
-                    tree_path = Path(line)
-                    if not tree_path.exists():
+                    if not _path_exists(line):
                         raise PhykitUserError(
                             [
                                 f"{line} corresponds to no such file or directory.",
@@ -291,7 +408,7 @@ class SpectralDiscordance(Tree):
                             ],
                             code=2,
                         )
-                    tree = Phylo.read(str(tree_path), "newick")
+                    tree = Phylo.read(line, "newick")
                     trees.append(tree)
 
         if len(trees) < 2:
@@ -317,12 +434,10 @@ class SpectralDiscordance(Tree):
                 code=2,
             )
 
-        shared = set(tip.name for tip in gene_trees[0].get_terminals())
-        for gt in gene_trees[1:]:
-            shared &= set(tip.name for tip in gt.get_terminals())
+        shared = _shared_gene_tree_taxa(gene_trees, self.get_tip_names_from_tree)
 
         if species_tree is not None:
-            sp_taxa = set(tip.name for tip in species_tree.get_terminals())
+            sp_taxa = set(self.get_tip_names_from_tree(species_tree))
             shared &= sp_taxa
 
         if len(shared) < 4:
@@ -346,17 +461,18 @@ class SpectralDiscordance(Tree):
         Ties (equal-sized sides) are broken lexicographically: the side
         whose sorted tuple is lexicographically smaller is chosen.
         """
-        complement = all_taxa - taxa_side
-        if len(taxa_side) < len(complement):
+        taxa_side_len = len(taxa_side)
+        all_taxa_len = len(all_taxa)
+        if taxa_side_len * 2 < all_taxa_len:
             return frozenset(taxa_side)
-        elif len(taxa_side) > len(complement):
+        complement = all_taxa - taxa_side
+        if taxa_side_len * 2 > all_taxa_len:
             return frozenset(complement)
-        else:
-            # Tie-breaking: pick the lexicographically smaller side
-            if sorted(taxa_side) <= sorted(complement):
-                return frozenset(taxa_side)
-            else:
-                return frozenset(complement)
+        # Disjoint equal-size sides differ at their smallest sorted element,
+        # so this preserves the sorted-tuple tiebreak without sorting both.
+        if min(taxa_side) < min(complement):
+            return frozenset(taxa_side)
+        return frozenset(complement)
 
     def _extract_splits(self, tree, all_taxa_fs) -> set:
         """Extract canonical bipartitions from a tree via postorder traversal.
@@ -368,21 +484,26 @@ class SpectralDiscordance(Tree):
         # Map terminal clades to their single-taxon sets
         clade_taxa: dict = {}
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
+        postorder = self._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
+
+        for clade in postorder:
+            children = clade.clades
+            if not children:
                 if clade.name in all_taxa_fs:
                     clade_taxa[id(clade)] = frozenset({clade.name})
                 else:
                     clade_taxa[id(clade)] = frozenset()
             else:
                 taxa = frozenset()
-                for child in clade.clades:
+                for child in children:
                     taxa = taxa | clade_taxa.get(id(child), frozenset())
                 clade_taxa[id(clade)] = taxa
 
                 # Skip polytomous nodes (>2 children = unresolved branching),
                 # but allow trifurcating roots (standard unrooted Newick).
-                n_children = len(clade.clades)
+                n_children = len(children)
                 if n_children > 2:
                     is_root = (clade == tree.root)
                     if not (is_root and n_children == 3):
@@ -415,30 +536,35 @@ class SpectralDiscordance(Tree):
 
         return splits
 
-    def _extract_splits_with_lengths(self, tree, all_taxa_fs) -> Dict[frozenset, float]:
+    def _extract_splits_with_lengths(self, tree, all_taxa_fs) -> dict[frozenset, float]:
         """Extract canonical bipartitions with their branch lengths.
 
         Same traversal as _extract_splits but returns a dict mapping
         canonical split -> branch length (for the wrf metric).
         """
-        split_lengths: Dict[frozenset, float] = {}
+        split_lengths: dict[frozenset, float] = {}
         clade_taxa: dict = {}
 
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
+        postorder = self._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
+
+        for clade in postorder:
+            children = clade.clades
+            if not children:
                 if clade.name in all_taxa_fs:
                     clade_taxa[id(clade)] = frozenset({clade.name})
                 else:
                     clade_taxa[id(clade)] = frozenset()
             else:
                 taxa = frozenset()
-                for child in clade.clades:
+                for child in children:
                     taxa = taxa | clade_taxa.get(id(child), frozenset())
                 clade_taxa[id(clade)] = taxa
 
                 # Skip polytomous nodes (>2 children = unresolved branching),
                 # but allow trifurcating roots (standard unrooted Newick).
-                n_children = len(clade.clades)
+                n_children = len(children)
                 if n_children > 2:
                     is_root = (clade == tree.root)
                     if not (is_root and n_children == 3):
@@ -461,13 +587,111 @@ class SpectralDiscordance(Tree):
 
         return split_lengths
 
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                stack.extend(clade.clades)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
+    @staticmethod
+    def _copy_prune_if_needed(tree, shared_taxa):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            if all(tip.name in shared_taxa for tip in tree.get_terminals()):
+                return tree
+
+            pruned = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
+            terminals = pruned.get_terminals()
+            tips_to_remove = [tip for tip in terminals if tip.name not in shared_taxa]
+            if len(tips_to_remove) < len(terminals):
+                target_ids = {id(tip) for tip in tips_to_remove}
+                if Tree._prune_terminal_objects_batch_standard_tree(pruned, target_ids):
+                    return pruned
+            for tip in tips_to_remove:
+                pruned.prune(tip)
+            return pruned
+
+        try:
+            stack = [root]
+            pop = stack.pop
+            extend = stack.extend
+            contains = shared_taxa.__contains__
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    extend(children)
+                elif not contains(clade.name):
+                    break
+            else:
+                return tree
+        except AttributeError:
+            if all(tip.name in shared_taxa for tip in tree.get_terminals()):
+                return tree
+
+        pruned = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
+        try:
+            tips_to_remove = []
+            target_ids = set()
+            terminal_count = 0
+            stack = [pruned.root]
+            pop = stack.pop
+            append = stack.append
+            append_remove = tips_to_remove.append
+            add_target = target_ids.add
+            contains = shared_taxa.__contains__
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    child_count = len(children)
+                    if child_count == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for index in range(child_count - 1, -1, -1):
+                            append(children[index])
+                else:
+                    terminal_count += 1
+                    if not contains(clade.name):
+                        append_remove(clade)
+                        add_target(id(clade))
+        except AttributeError:
+            terminals = pruned.get_terminals()
+            tips_to_remove = [tip for tip in terminals if tip.name not in shared_taxa]
+            target_ids = {id(tip) for tip in tips_to_remove}
+            terminal_count = len(terminals)
+
+        if tips_to_remove and len(tips_to_remove) < terminal_count:
+            if Tree._prune_terminal_objects_batch_standard_tree(pruned, target_ids):
+                return pruned
+        for tip in tips_to_remove:
+            pruned.prune(tip)
+        return pruned
+
     def _build_bipartition_matrix(
         self,
         gene_trees,
         shared_taxa,
         metric="nrf",
         species_tree=None,
-    ) -> Tuple[np.ndarray, List[frozenset], Dict[frozenset, bool]]:
+    ) -> tuple[np.ndarray, list[frozenset], dict[frozenset, bool]]:
         """Build the gene-tree x bipartition matrix.
 
         Parameters
@@ -500,14 +724,7 @@ class SpectralDiscordance(Tree):
         all_bipartitions: set = set()
 
         for gt in gene_trees:
-            pruned = pickle.loads(pickle.dumps(gt, protocol=pickle.HIGHEST_PROTOCOL))
-            tips_to_remove = [
-                tip.name
-                for tip in pruned.get_terminals()
-                if tip.name not in shared_taxa
-            ]
-            for tip_name in tips_to_remove:
-                pruned.prune(tip_name)
+            pruned = self._copy_prune_if_needed(gt, shared_taxa)
 
             if metric == "wrf":
                 split_data = self._extract_splits_with_lengths(pruned, all_taxa_fs)
@@ -532,29 +749,21 @@ class SpectralDiscordance(Tree):
         n_bips = len(bip_index)
         X = np.zeros((n_genes, n_bips), dtype=float)
 
+        bip_lookup = {bip: j for j, bip in enumerate(bip_index)}
         for i, tree_data in enumerate(per_tree_data):
-            for j, bip in enumerate(bip_index):
-                if metric == "wrf":
-                    # tree_data is a dict: split -> branch_length
-                    if bip in tree_data:
-                        X[i, j] = tree_data[bip]
-                else:
-                    # tree_data is a set of splits
-                    if bip in tree_data:
-                        X[i, j] = 1.0
+            if metric == "wrf":
+                # tree_data is a dict: split -> branch_length
+                for bip, branch_length in tree_data.items():
+                    X[i, bip_lookup[bip]] = branch_length
+            else:
+                # tree_data is a set of splits
+                for bip in tree_data:
+                    X[i, bip_lookup[bip]] = 1.0
 
         # Species tree flags
-        sp_flags: Dict[frozenset, bool] = {}
+        sp_flags: dict[frozenset, bool] = {}
         if species_tree is not None:
-            sp_pruned = pickle.loads(pickle.dumps(species_tree, protocol=pickle.HIGHEST_PROTOCOL))
-            sp_tips_to_remove = [
-                tip.name
-                for tip in sp_pruned.get_terminals()
-                if tip.name not in shared_taxa
-            ]
-            for tip_name in sp_tips_to_remove:
-                sp_pruned.prune(tip_name)
-
+            sp_pruned = self._copy_prune_if_needed(species_tree, shared_taxa)
             sp_splits = self._extract_splits(sp_pruned, all_taxa_fs)
             for bip in bip_index:
                 sp_flags[bip] = bip in sp_splits
@@ -567,7 +776,7 @@ class SpectralDiscordance(Tree):
 
     def _run_pca(
         self, X: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """PCA via SVD on centered bipartition matrix.
 
         Returns (scores, variance_explained, loadings).
@@ -599,27 +808,26 @@ class SpectralDiscordance(Tree):
 
     def _spectral_cluster(
         self, X_centered: np.ndarray, n_clusters: int = None,
-    ) -> Tuple[np.ndarray, int, np.ndarray]:
+    ) -> tuple[np.ndarray, int, np.ndarray]:
         """Spectral clustering with eigengap auto-K detection."""
         from scipy.spatial.distance import pdist, squareform
 
         G = X_centered.shape[0]
 
-        dists = squareform(pdist(X_centered, metric="euclidean"))
+        condensed_dists = pdist(X_centered, metric="euclidean")
+        dists = squareform(condensed_dists)
 
-        upper_tri = dists[np.triu_indices(G, k=1)]
-        sigma = float(np.median(upper_tri))
+        sigma = float(np.median(condensed_dists))
         if sigma == 0:
-            nonzero = upper_tri[upper_tri > 0]
-            sigma = float(np.mean(nonzero)) if len(nonzero) > 0 else 1.0
+            nonzero = condensed_dists[condensed_dists > 0]
+            sigma = float(np.mean(nonzero)) if nonzero.size > 0 else 1.0
 
         W = np.exp(-dists ** 2 / (2 * sigma ** 2))
         np.fill_diagonal(W, W.diagonal() + 1e-10)
 
         d = np.sum(W, axis=1)
         d_inv_sqrt = 1.0 / np.sqrt(d)
-        D_inv_sqrt = np.diag(d_inv_sqrt)
-        L_norm = np.eye(G) - D_inv_sqrt @ W @ D_inv_sqrt
+        L_norm = np.eye(G) - (W * d_inv_sqrt[:, None]) * d_inv_sqrt[None, :]
 
         eigenvalues, eigenvectors = np.linalg.eigh(L_norm)
 
@@ -650,25 +858,22 @@ class SpectralDiscordance(Tree):
         rng = np.random.RandomState(42)
 
         centers = [X[rng.randint(G)]]
+        closest_dists = np.sum((X - centers[0]) ** 2, axis=1)
         for _ in range(1, K):
-            dists = np.array([
-                min(np.sum((x - c) ** 2) for c in centers)
-                for x in X
-            ])
-            probs = dists / dists.sum() if dists.sum() > 0 else np.ones(G) / G
-            centers.append(X[rng.choice(G, p=probs)])
+            total = closest_dists.sum()
+            probs = closest_dists / total if total > 0 else np.ones(G) / G
+            next_center = X[rng.choice(G, p=probs)]
+            centers.append(next_center)
+            new_dists = np.sum((X - next_center) ** 2, axis=1)
+            np.minimum(closest_dists, new_dists, out=closest_dists)
         centers = np.array(centers)
+        labels = np.zeros(G, dtype=np.intp)
 
         for _ in range(max_iter):
-            dists_to_centers = np.array([
-                np.sum((X - c) ** 2, axis=1) for c in centers
-            ]).T
+            dists_to_centers = _squared_distances_to_centers(X, centers)
             labels = np.argmin(dists_to_centers, axis=1)
 
-            new_centers = np.array([
-                X[labels == k].mean(axis=0) if np.any(labels == k) else centers[k]
-                for k in range(K)
-            ])
+            new_centers = _update_kmeans_centers(X, labels, centers)
             if np.allclose(new_centers, centers):
                 break
             centers = new_centers

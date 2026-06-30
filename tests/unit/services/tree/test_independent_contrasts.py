@@ -11,10 +11,28 @@ See tests/r_validation/validate_pic.R for the R validation script.
 """
 import pytest
 import numpy as np
+import subprocess
+import sys
+import builtins
 from argparse import Namespace
 from pathlib import Path
+from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.independent_contrasts import IndependentContrasts
+
+
+def test_module_import_does_not_import_numpy():
+    code = """
+import sys
+import phykit.services.tree.independent_contrasts as module
+
+assert callable(module._json_dumps)
+assert hasattr(module.np, "__getattr__")
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.fixture
@@ -127,8 +145,263 @@ class TestPICComputation:
         for c in contrasts:
             assert abs(c) < 1e-10
 
+    def test_resolve_polytomies_uses_direct_standard_tree_traversal(self, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic clade traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        ic._resolve_polytomies(tree)
+
+        assert all(len(clade.clades) <= 2 for clade in ic._postorder_clades_fast(tree))
+
+    def test_resolve_polytomies_binary_tree_does_not_import_newick(
+        self, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+        original_import = builtins.__import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "Bio.Phylo.Newick" or (
+                name == "Bio.Phylo" and fromlist and "Newick" in fromlist
+            ):
+                raise AssertionError("binary trees should not import Newick helpers")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+        ic._resolve_polytomies(tree)
+
+        assert all(len(clade.clades) <= 2 for clade in ic._postorder_clades_fast(tree))
+
+    def test_resolve_polytomies_matches_previous_traversal_output(self):
+        from Bio import Phylo
+        from Bio.Phylo import Newick
+        from io import StringIO
+
+        newick = "((A:1,B:1,C:1):1,(D:1,E:1,F:1):1,G:1);"
+        expected = Phylo.read(StringIO(newick), "newick")
+        actual = Phylo.read(StringIO(newick), "newick")
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+
+        stack = [expected.root]
+        while stack:
+            clade = stack.pop()
+            children = clade.clades
+            if children:
+                stack.extend(reversed(children))
+            while len(children) > 2:
+                child1 = children.pop()
+                child2 = children.pop()
+                new_internal = Newick.Clade(branch_length=0.0)
+                new_internal.clades = [child1, child2]
+                children.append(new_internal)
+
+        ic._resolve_polytomies(actual)
+
+        expected_out = StringIO()
+        actual_out = StringIO()
+        Phylo.write(expected, expected_out, "newick")
+        Phylo.write(actual, actual_out, "newick")
+        assert actual_out.getvalue() == expected_out.getvalue()
+
+    def test_boolean_tree_scans_handle_mixed_child_counts(self, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+
+        mixed = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+        binary = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree scan should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        assert IndependentContrasts._needs_default_branch_lengths(mixed) is False
+        mixed.root.clades[2].clades[1].branch_length = None
+        assert IndependentContrasts._needs_default_branch_lengths(mixed) is True
+        assert IndependentContrasts._has_polytomies(binary) is False
+        assert IndependentContrasts._has_polytomies(mixed) is True
+
+    def test_compute_pic_does_not_rewalk_internal_terminals(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+
+        def fail_get_terminals():
+            raise AssertionError("internal get_terminals should not be called")
+
+        for clade in tree.find_clades():
+            if not clade.is_terminal():
+                clade.get_terminals = fail_get_terminals
+
+        contrasts, node_labels = ic._compute_pic(tree, tip_traits)
+
+        assert len(contrasts) == 3
+        assert frozenset(node_labels[-1]) == {"A", "B", "C", "D"}
+
+    def test_compute_pic_uses_direct_postorder_traversal(self, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+
+        newick = "((A:1,B:1):1,(C:1,D:1):1);"
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+        expected = ic._compute_pic(Phylo.read(StringIO(newick), "newick"), tip_traits)
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_traversal(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+
+        assert ic._compute_pic(tree, tip_traits) == expected
+
+    def test_direct_postorder_preserves_left_to_right_order(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+
+        observed = [
+            clade.name if clade.name is not None else "internal"
+            for clade in ic._postorder_clades_fast(tree)
+        ]
+
+        assert observed == [
+            "A", "B", "internal", "C", "D", "internal", "internal",
+        ]
+
+    def test_merge_sorted_labels_preserves_sorted_descendant_order(self, args):
+        ic = IndependentContrasts(args)
+
+        assert ic._merge_sorted_labels(
+            ["A", "C", "E"],
+            ["B", "D", "F"],
+        ) == ["A", "B", "C", "D", "E", "F"]
+        assert ic._merge_sorted_labels(["A", "B"], ["C"]) == ["A", "B", "C"]
+        assert ic._merge_sorted_labels(["D"], ["A", "C"]) == ["A", "C", "D"]
+
+    def test_limited_label_merge_preserves_sorted_preview_and_count(self, args):
+        ic = IndependentContrasts(args)
+
+        assert ic._merge_limited_sorted_labels(
+            ["B", "D", "F"],
+            10,
+            ["A", "C", "E"],
+            8,
+            3,
+        ) == (["A", "B", "C"], 18)
+        assert ic._merge_limited_sorted_labels(
+            ["A", "B", "C"],
+            20,
+            ["D", "E", "F"],
+            12,
+            3,
+        ) == (["A", "B", "C"], 32)
+
+    def test_compute_pic_text_summaries_match_full_label_output(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((D:1,B:1):1,(C:1,A:1):1);"), "newick")
+        args = Namespace(tree="dummy", trait_data="dummy")
+        ic = IndependentContrasts(args)
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+
+        full_contrasts, node_labels = ic._compute_pic(tree, tip_traits)
+        summary_contrasts, node_summaries = ic._compute_pic_text_summaries(
+            tree, tip_traits
+        )
+
+        assert summary_contrasts == full_contrasts
+        assert node_summaries == [(tips[:3], len(tips)) for tips in node_labels]
+
+    def test_parse_trait_data_streams_and_preserves_tree_tip_order(
+        self, monkeypatch, args
+    ):
+        from io import StringIO
+
+        class StreamingTraits(StringIO):
+            def readlines(self, *_args, **_kwargs):
+                raise AssertionError("trait parser should stream input lines")
+
+        def open_stream(*_args, **_kwargs):
+            return StreamingTraits("C\t3\nA\t1\nB\t2\nD\t4\n")
+
+        monkeypatch.setattr("builtins.open", open_stream)
+        ic = IndependentContrasts(args)
+
+        tip_traits = ic._parse_trait_data("traits.tsv", ["B", "A", "C"])
+
+        assert list(tip_traits) == ["B", "A", "C"]
+        assert tip_traits == {"B": 2.0, "A": 1.0, "C": 3.0}
+
+    def test_parse_trait_data_preserves_exact_tree_tip_order(
+        self, monkeypatch, args
+    ):
+        from io import StringIO
+
+        def open_stream(*_args, **_kwargs):
+            return StringIO("A\t1\nB\t2\nC\t3\n")
+
+        monkeypatch.setattr("builtins.open", open_stream)
+        ic = IndependentContrasts(args)
+
+        tip_traits = ic._parse_trait_data("traits.tsv", ["A", "B", "C"])
+
+        assert list(tip_traits) == ["A", "B", "C"]
+        assert tip_traits == {"A": 1.0, "B": 2.0, "C": 3.0}
 
 class TestPICRun:
+    @staticmethod
+    def _stub_run_tail(monkeypatch, ic, tip_traits, captured):
+        monkeypatch.setattr(ic, "_parse_trait_data", lambda *_args: tip_traits)
+        monkeypatch.setattr(ic, "_should_use_text_summary_path", lambda _tree: False)
+
+        def compute_pic(tree, traits):
+            captured["tree"] = tree
+            captured["traits"] = traits
+            return [0.0], [["A", "B"]]
+
+        monkeypatch.setattr(ic, "_compute_pic", compute_pic)
+        monkeypatch.setattr(ic, "_print_text", lambda *_args, **_kwargs: None)
+
+    def test_run_uses_fast_tip_name_helper_for_setup(self, mocker, args):
+        ic = IndependentContrasts(args)
+        tip_name_spy = mocker.spy(ic, "get_tip_names_from_tree")
+
+        ic.run()
+
+        tip_name_spy.assert_called_once()
+
     def test_run_text_output(self, args, capsys):
         ic = IndependentContrasts(args)
         ic.run()
@@ -137,14 +410,192 @@ class TestPICRun:
         assert "Mean absolute contrast:" in captured.out
         assert "Variance of contrasts:" in captured.out
 
-    def test_run_json_output(self, mocker, args):
+    def test_run_all_shared_binary_tree_uses_read_only_tree_without_copy_or_resolve(
+        self, monkeypatch, args, capsys
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ic = IndependentContrasts(args)
+        captured = {}
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+
+        monkeypatch.setattr(ic, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(
+            ic,
+            "read_tree_file",
+            lambda: (_ for _ in ()).throw(
+                AssertionError("mutable tree read should not be used")
+            ),
+        )
+        monkeypatch.setattr(
+            ic,
+            "_fast_copy",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("binary all-shared tree should not be copied")
+            ),
+        )
+        monkeypatch.setattr(
+            ic,
+            "_resolve_polytomies",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("binary all-shared tree should not be resolved")
+            ),
+        )
+        monkeypatch.setattr(
+            ic,
+            "prune_tree_using_taxa_list",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("all-shared tree should not be pruned")
+            ),
+        )
+        self._stub_run_tail(monkeypatch, ic, tip_traits, captured)
+
+        ic.run()
+
+        capsys.readouterr()
+        assert captured["tree"] is tree
+        assert captured["traits"] == tip_traits
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
+
+    def test_run_missing_branch_lengths_copies_before_validation(
+        self, monkeypatch, args, capsys
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A,B):1,(C:1,D:1):1);"), "newick")
+        ic = IndependentContrasts(args)
+        original_fast_copy = ic._fast_copy
+        copied_trees = []
+        captured = {}
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+
+        def copy_spy(tree_to_copy):
+            copied_tree = original_fast_copy(tree_to_copy)
+            copied_trees.append(copied_tree)
+            return copied_tree
+
+        monkeypatch.setattr(ic, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(ic, "_fast_copy", copy_spy)
+        self._stub_run_tail(monkeypatch, ic, tip_traits, captured)
+
+        ic.run()
+
+        capsys.readouterr()
+        assert len(copied_trees) == 1
+        assert captured["tree"] is copied_trees[0]
+        assert tree.root.clades[0].clades[0].branch_length is None
+        assert copied_trees[0].root.clades[0].clades[0].branch_length == 1e-8
+
+    def test_run_missing_trait_taxa_copies_before_pruning(
+        self, monkeypatch, args, capsys
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ic = IndependentContrasts(args)
+        original_fast_copy = ic._fast_copy
+        copied_trees = []
+        captured = {}
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+
+        def copy_spy(tree_to_copy):
+            copied_tree = original_fast_copy(tree_to_copy)
+            copied_trees.append(copied_tree)
+            return copied_tree
+
+        monkeypatch.setattr(ic, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(ic, "_fast_copy", copy_spy)
+        self._stub_run_tail(monkeypatch, ic, tip_traits, captured)
+
+        ic.run()
+
+        capsys.readouterr()
+        assert len(copied_trees) == 1
+        assert captured["tree"] is copied_trees[0]
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
+        assert {tip.name for tip in copied_trees[0].get_terminals()} == {
+            "A",
+            "B",
+            "C",
+        }
+
+    def test_run_polytomy_copies_before_resolving(
+        self, monkeypatch, args, capsys
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+        ic = IndependentContrasts(args)
+        original_fast_copy = ic._fast_copy
+        copied_trees = []
+        captured = {}
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+
+        def copy_spy(tree_to_copy):
+            copied_tree = original_fast_copy(tree_to_copy)
+            copied_trees.append(copied_tree)
+            return copied_tree
+
+        monkeypatch.setattr(ic, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(ic, "_fast_copy", copy_spy)
+        self._stub_run_tail(monkeypatch, ic, tip_traits, captured)
+
+        ic.run()
+
+        capsys.readouterr()
+        assert len(copied_trees) == 1
+        assert captured["tree"] is copied_trees[0]
+        assert len(tree.root.clades) == 4
+        assert all(
+            len(clade.clades) <= 2
+            for clade in ic._postorder_clades_fast(copied_trees[0])
+        )
+
+    def test_run_text_output_uses_summary_label_path(self, monkeypatch, args):
+        ic = IndependentContrasts(args)
+
+        def fail_compute_pic(*_args, **_kwargs):
+            raise AssertionError("text output should not build full labels")
+
+        monkeypatch.setattr(ic, "_should_use_text_summary_path", lambda _tree: True)
+        monkeypatch.setattr(ic, "_compute_pic", fail_compute_pic)
+
+        ic.run()
+
+    def test_print_text_batches_contrast_rows(self, args, capsys):
+        ic = IndependentContrasts(args)
+
+        ic._print_text(
+            [1.0, -3.0],
+            [["A", "B"], ["C", "D", "E", "F"]],
+        )
+
+        captured = capsys.readouterr()
+        assert captured.out == (
+            "Number of contrasts: 2\n"
+            "\n"
+            "Node      Contrast  Tips\n"
+            "------------------------------------------------------------\n"
+            "1         1.000000  A, B\n"
+            "2        -3.000000  C, D, E, ... (4 total)\n"
+            "\n"
+            "Mean absolute contrast: 2.000000\n"
+            "Variance of contrasts:  8.000000\n"
+        )
+
+    def test_run_json_output(self, capsys, args):
         args.json = True
         ic = IndependentContrasts(args)
-        mocked_json = mocker.patch(
-            "phykit.services.tree.independent_contrasts.print_json"
-        )
         ic.run()
-        payload = mocked_json.call_args.args[0]
+        captured = capsys.readouterr()
+        import json
+
+        payload = json.loads(captured.out)
         assert payload["n_taxa"] == 8
         assert payload["n_contrasts"] == 7
         assert len(payload["contrasts"]) == 7

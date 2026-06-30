@@ -1,15 +1,43 @@
 import copy
 import json
 import math
+import subprocess
+import sys
 from argparse import Namespace
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import pytest
+from Bio import Phylo
+from Bio.Phylo.BaseTree import Clade, TreeMixin
 
 from phykit.services.tree.concordance_asr import ConcordanceAsr
 from phykit.errors import PhykitUserError
+
+
+def test_module_import_does_not_import_numpy_or_biophylo():
+    code = """
+import sys
+import phykit.services.tree.concordance_asr as module
+assert callable(module.print_json)
+assert hasattr(module.np, "__getattr__")
+assert hasattr(module.Phylo, "read")
+assert hasattr(module.pickle, "dumps")
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "pickle" not in sys.modules
+assert "phykit.services.tree.ancestral_reconstruction" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.circular_layout" not in sys.modules
+assert "phykit.helpers.color_annotations" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
 
 here = Path(__file__).resolve().parent
 sample = here.parent.parent.parent / "sample_files"
@@ -79,6 +107,23 @@ def json_args():
     )
 
 
+class TestCanonicalSplit:
+    def test_equal_size_returns_lexicographically_smaller_side(self):
+        all_taxa = frozenset({"A", "B", "C", "D"})
+
+        assert (
+            ConcordanceAsr._canonical_split(frozenset({"C", "D"}), all_taxa)
+            == frozenset({"A", "B"})
+        )
+        assert (
+            ConcordanceAsr._canonical_split(frozenset({"A", "B"}), all_taxa)
+            == frozenset({"A", "B"})
+        )
+
+    def test_empty_split_still_canonicalizes_to_empty_set(self):
+        assert ConcordanceAsr._canonical_split(frozenset(), frozenset()) == frozenset()
+
+
 class TestProcessArgs:
     def test_defaults(self, default_args):
         svc = ConcordanceAsr(default_args)
@@ -110,6 +155,136 @@ class TestProcessArgs:
         assert svc.trait_column == "body_mass"
 
 
+class TestGeneTreeParsing:
+    def test_parse_gene_trees_skips_comments_blanks_and_whitespace(
+        self, tmp_path, default_args
+    ):
+        gene_trees = tmp_path / "gene_trees.nwk"
+        gene_trees.write_text(
+            "# ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n# also ignored\n"
+        )
+        svc = ConcordanceAsr(default_args)
+
+        trees = svc._parse_gene_trees(str(gene_trees))
+
+        assert len(trees) == 1
+
+    def test_parse_gene_trees_streams_rows(self, default_args, monkeypatch):
+        import phykit.services.tree.concordance_asr as module
+
+        class StreamingOnlyFile:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def __iter__(self):
+                return iter(
+                    [
+                        "# ignored\n",
+                        "\n",
+                        "  (A:1.0,B:2.0);  \n",
+                        "relative.nwk\n",
+                    ]
+                )
+
+            def read(self):
+                raise AssertionError("gene-tree parser should stream rows")
+
+            def readlines(self):
+                raise AssertionError("gene-tree parser should stream rows")
+
+        class FakeParent:
+            def __str__(self):
+                return "/tmp"
+
+        class FakePath:
+            parent = FakeParent()
+
+            def __init__(self, path):
+                assert path == "gene_trees.txt"
+
+            def open(self, *args, **kwargs):
+                return StreamingOnlyFile()
+
+        parsed_sources = []
+
+        def fake_read(source, fmt):
+            parsed_sources.append(source)
+            return source
+
+        monkeypatch.setattr(module, "Path", FakePath)
+        monkeypatch.setattr(module.Phylo, "read", fake_read)
+        svc = ConcordanceAsr(default_args)
+
+        trees = svc._parse_gene_trees("gene_trees.txt")
+
+        assert trees == parsed_sources
+        assert len(trees) == 2
+        assert isinstance(parsed_sources[0], StringIO)
+        assert parsed_sources[1] == "/tmp/relative.nwk"
+
+    def test_parse_gene_tree_path_list_avoids_per_row_path_objects(
+        self, tmp_path, default_args, monkeypatch
+    ):
+        import phykit.services.tree.concordance_asr as module
+
+        (tmp_path / "one.nwk").write_text("(A:1,B:1);\n")
+        (tmp_path / "two.nwk").write_text("(A:1,C:1);\n")
+        gene_trees = tmp_path / "gene_tree_paths.txt"
+        gene_trees.write_text("one.nwk\ntwo.nwk\n")
+        parent_joins = 0
+
+        class CountingParent:
+            def __init__(self, path):
+                self._path = path
+
+            def __str__(self):
+                return str(self._path)
+
+            def __truediv__(self, other):
+                nonlocal parent_joins
+                parent_joins += 1
+                return self._path / other
+
+        class CountingPath:
+            def __init__(self, path):
+                self._path = Path(path)
+
+            @property
+            def parent(self):
+                return CountingParent(self._path.parent)
+
+            def open(self, *args, **kwargs):
+                return self._path.open(*args, **kwargs)
+
+        monkeypatch.setattr(module, "Path", CountingPath)
+        svc = ConcordanceAsr(default_args)
+
+        trees = svc._parse_gene_trees(str(gene_trees))
+
+        assert len(trees) == 2
+        assert parent_joins == 0
+
+
+class TestTaxaNormalization:
+    def test_normalize_taxa_uses_fast_tip_name_helper(self, default_args, mocker):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        species_tips = set(svc.get_tip_names_from_tree(species_tree))
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+
+        pruned_trees, shared = svc._normalize_taxa(
+            species_tree, gene_trees, species_tips
+        )
+
+        assert len(pruned_trees) == len(gene_trees)
+        assert len(shared) == 8
+        assert spy.call_count == (2 * len(gene_trees)) + 1
+
+
 def _make_asr_helper():
     """Create a minimal AncestralReconstruction helper for testing."""
     from phykit.services.tree.ancestral_reconstruction import AncestralReconstruction
@@ -119,6 +294,23 @@ def _make_asr_helper():
 
 
 class TestGCFComputation:
+    def test_collect_clade_tip_sets_standard_tree_avoids_find_clades(
+        self, default_args, mocker
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        mocker.patch.object(
+            species_tree,
+            "find_clades",
+            side_effect=AssertionError("standard tree path should avoid find_clades"),
+        )
+
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+
+        assert clade_tip_sets[id(species_tree.root)] == frozenset(
+            svc.get_tip_names_from_tree(species_tree)
+        )
+
     def test_gcf_fractions(self, default_args):
         svc = ConcordanceAsr(default_args)
         svc._asr = _make_asr_helper()
@@ -140,6 +332,26 @@ class TestGCFComputation:
             assert 0.0 <= g <= 1.0
             assert 0.0 <= d1 <= 1.0
             assert 0.0 <= d2 <= 1.0
+
+    def test_gcf_computation_uses_direct_tree_traversal(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        all_taxa = set(t.name for t in species_tree.get_terminals())
+        expected = svc._compute_gcf_per_node(species_tree, gene_trees, all_taxa)
+
+        def fail_traversal(*_args, **_kwargs):
+            raise AssertionError("standard gCF path should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_traversal)
+
+        observed = svc._compute_gcf_per_node(species_tree, gene_trees, all_taxa)
+
+        assert observed == expected
 
     def test_all_concordant_gcf_is_one(self, default_args):
         """When all gene trees have the same topology, gCF should be 1.0."""
@@ -186,6 +398,139 @@ class TestGCFComputation:
             # C1 and C2 should be non-empty
             assert len(C1) >= 1
             assert len(C2) >= 1
+
+    def test_cached_four_groups_match_uncached(self, default_args):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        species_tree = svc.read_tree_file()
+        all_taxa = frozenset(t.name for t in species_tree.get_terminals())
+        parent_map = svc._asr._build_parent_map(species_tree)
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+
+        for clade in species_tree.find_clades(order="preorder"):
+            uncached = svc._get_four_groups(
+                species_tree,
+                clade,
+                parent_map,
+                all_taxa,
+            )
+            cached = svc._get_four_groups(
+                species_tree,
+                clade,
+                parent_map,
+                all_taxa,
+                clade_tip_sets,
+            )
+            assert cached == uncached
+
+
+class TestCachedDescendantAssembly:
+    def test_distribution_result_assembly_uses_cached_descendants(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        svc.ci = False
+        species_tree = svc.read_tree_file()
+
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+        all_taxa = set(clade_tip_sets[id(species_tree.root)])
+        trait_values = {name: 1.0 for name in all_taxa}
+        gcf = {
+            id(clade): (1.0, 0.0, 0.0)
+            for clade in species_tree.find_clades(order="preorder")
+            if not clade.is_terminal()
+        }
+        estimates = {
+            tips: 2.0
+            for tips in clade_tip_sets.values()
+            if len(tips) > 1
+        }
+
+        svc._compute_gcf_per_node = lambda tree, gene_trees, taxa: gcf
+        svc._run_asr_on_tree = lambda tree, values: (estimates, {}, 1.0)
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached descendant sets should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        result = svc._run_distribution(
+            species_tree, [object()], trait_values, all_taxa
+        )
+
+        assert len(result["ancestral_estimates"]) == len(gcf)
+        assert all(
+            entry["descendants"] == sorted(entry["descendants"])
+            for entry in result["ancestral_estimates"].values()
+        )
+
+    def test_uncertainty_node_data_uses_descendant_lookup(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+
+        class NoItemsDict(dict):
+            def items(self):
+                raise AssertionError("nested items scan should not be used")
+
+        anc = NoItemsDict()
+        for idx, clade in enumerate(species_tree.find_clades(order="preorder")):
+            if clade.is_terminal():
+                continue
+            anc[f"N{idx}"] = {
+                "descendants": sorted(clade_tip_sets[id(clade)]),
+                "source_estimates": [1.0, 2.0],
+                "gcf": 0.8,
+                "estimate": float(idx),
+            }
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached descendant sets should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        node_data = svc._collect_uncertainty_node_data(
+            species_tree,
+            {"method": "weighted", "ancestral_estimates": anc},
+        )
+
+        assert len(node_data) == len(anc)
+        assert all(len(row[1]) == 2 for row in node_data)
+
+    def test_uncertainty_node_data_preserves_first_duplicate_match(
+        self, default_args
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        root_desc = sorted(
+            svc._collect_clade_tip_sets(species_tree)[id(species_tree.root)]
+        )
+        result = {
+            "method": "weighted",
+            "ancestral_estimates": {
+                "first": {
+                    "descendants": root_desc,
+                    "source_estimates": [1.0, 2.0],
+                    "gcf": 0.1,
+                    "estimate": 1.0,
+                },
+                "second": {
+                    "descendants": root_desc,
+                    "source_estimates": [3.0, 4.0],
+                    "gcf": 0.9,
+                    "estimate": 2.0,
+                },
+            },
+        }
+
+        node_data = svc._collect_uncertainty_node_data(species_tree, result)
+
+        assert len(node_data) == 1
+        assert node_data[0][1] == [1.0, 2.0]
+        assert node_data[0][2] == 0.1
 
 
 class TestNNIAlternatives:
@@ -326,6 +671,55 @@ class TestLawOfTotalVariance:
 
 
 class TestWeightedMethod:
+    def test_run_asr_on_tree_uses_fast_tip_name_helper_without_pruning(
+        self, default_args, mocker
+    ):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        tree = svc.read_tree_file()
+        all_taxa = set(svc.get_tip_names_from_tree(tree))
+        trait_values = svc._asr._parse_single_trait_data(TRAITS_FILE, sorted(all_taxa))
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+        fast_copy = mocker.patch.object(
+            svc,
+            "_fast_tree_copy",
+            side_effect=AssertionError("all-shared ASR should not copy tree"),
+        )
+        fast_anc = mocker.spy(svc._asr, "_fast_anc")
+
+        estimates, _, _ = svc._run_asr_on_tree(tree, trait_values)
+
+        assert estimates
+        assert spy.call_count == 1
+        fast_copy.assert_not_called()
+        assert fast_anc.call_args.args[0] is tree
+
+    def test_run_asr_on_tree_uses_fast_tip_name_helper_after_pruning(
+        self, default_args, mocker
+    ):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        tree = svc.read_tree_file()
+        tree_copy = svc.read_tree_file()
+        pruned_tree = svc.read_tree_file()
+        all_taxa = set(svc.get_tip_names_from_tree(tree))
+        trait_values = svc._asr._parse_single_trait_data(TRAITS_FILE, sorted(all_taxa))
+        trait_values.pop("dog")
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+        fast_copy = mocker.patch.object(svc, "_fast_tree_copy", return_value=tree_copy)
+        prune = mocker.patch.object(
+            svc, "prune_tree_using_taxa_list", return_value=pruned_tree
+        )
+        fast_anc = mocker.spy(svc._asr, "_fast_anc")
+
+        estimates, _, _ = svc._run_asr_on_tree(tree, trait_values)
+
+        assert estimates
+        assert spy.call_count == 2
+        fast_copy.assert_called_once_with(tree)
+        prune.assert_called_once_with(tree_copy, ["dog"])
+        assert fast_anc.call_args.args[0] is pruned_tree
+
     def test_basic_run(self, default_args):
         svc = ConcordanceAsr(default_args)
         svc._asr = _make_asr_helper()
@@ -428,6 +822,79 @@ class TestDistributionMethod:
 
 
 class TestRun:
+    def test_run_uses_fast_tip_name_helper_for_species_prune_setup(
+        self, default_args, mocker
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        all_taxa = set(svc.get_tip_names_from_tree(species_tree))
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+        mocker.patch.object(svc, "read_tree_file", return_value=species_tree)
+        mocker.patch.object(svc, "_parse_gene_trees", return_value=gene_trees)
+        mocker.patch.object(
+            svc, "_normalize_taxa", return_value=(gene_trees, all_taxa)
+        )
+        run_weighted = mocker.patch.object(
+            svc,
+            "_run_weighted",
+            return_value={"method": "weighted", "ancestral_estimates": {}},
+        )
+        mocker.patch.object(svc, "_print_text_output")
+        fast_copy = mocker.patch.object(
+            svc,
+            "_fast_tree_copy",
+            side_effect=AssertionError("all-shared species tree should not copy"),
+        )
+
+        svc.run()
+
+        assert spy.call_count == 2
+        fast_copy.assert_not_called()
+        assert run_weighted.call_args.args[0] is species_tree
+
+    def test_run_copies_species_tree_before_trait_pruning(self, default_args, mocker):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        species_copy = svc.read_tree_file()
+        pruned_species = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        all_taxa = set(svc.get_tip_names_from_tree(species_tree))
+        trait_values = {
+            taxon: float(index)
+            for index, taxon in enumerate(sorted(all_taxa))
+            if taxon != "dog"
+        }
+
+        mocker.patch.object(svc, "read_tree_file", return_value=species_tree)
+        mocker.patch.object(svc, "_parse_gene_trees", return_value=gene_trees)
+        mocker.patch.object(
+            svc, "_normalize_taxa", return_value=(gene_trees, all_taxa)
+        )
+        mocker.patch(
+            "phykit.services.tree.ancestral_reconstruction."
+            "AncestralReconstruction._parse_single_trait_data",
+            return_value=trait_values,
+        )
+        fast_copy = mocker.patch.object(
+            svc, "_fast_tree_copy", return_value=species_copy
+        )
+        prune = mocker.patch.object(
+            svc, "prune_tree_using_taxa_list", return_value=pruned_species
+        )
+        run_weighted = mocker.patch.object(
+            svc,
+            "_run_weighted",
+            return_value={"method": "weighted", "ancestral_estimates": {}},
+        )
+        mocker.patch.object(svc, "_print_text_output")
+
+        svc.run()
+
+        fast_copy.assert_called_once_with(species_tree)
+        prune.assert_called_once_with(species_copy, ["dog"])
+        assert run_weighted.call_args.args[0] is pruned_species
+
     def test_text_output(self, default_args):
         svc = ConcordanceAsr(default_args)
         with patch("builtins.print") as mock_print:
@@ -437,6 +904,46 @@ class TestRun:
         assert "Concordance-Aware" in printed
         assert "weighted" in printed
         assert "gCF" in printed
+
+    def test_print_text_output_batches_estimate_rows(self, default_args):
+        svc = ConcordanceAsr(default_args)
+        result = {
+            "method": "weighted",
+            "n_tips": 8,
+            "n_gene_trees": 3,
+            "sigma2": 1.25,
+            "ancestral_estimates": {
+                "N1": {
+                    "descendants": ["A", "B"],
+                    "estimate": 2.5,
+                    "gcf": 0.75,
+                    "var_topology": 0.01,
+                    "var_parameter": 0.02,
+                    "ci_lower": 2.0,
+                    "ci_upper": 3.0,
+                    "is_root": True,
+                },
+                "N2": {
+                    "descendants": ["C", "D", "E"],
+                    "estimate": -1.5,
+                    "gcf": 0.5,
+                    "var_topology": 0.03,
+                    "var_parameter": 0.04,
+                },
+            },
+        }
+
+        with patch("builtins.print") as mock_print:
+            svc._print_text_output(result)
+
+        mock_print.assert_called_once()
+        output = mock_print.call_args.args[0]
+        assert "Concordance-Aware Ancestral State Reconstruction" in output
+        assert "Method: weighted" in output
+        assert "N1 (root)" in output
+        assert "[2.0000, 3.0000]" in output
+        assert "N2" in output
+        assert "Var_topo" in output
 
     def test_json_output(self, json_args):
         svc = ConcordanceAsr(json_args)
@@ -463,6 +970,266 @@ class TestRun:
 
 
 class TestCircularPlot:
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_concordance_plot_uses_direct_tree_traversal(
+        self, default_args, monkeypatch, tmp_path, circular
+    ):
+        default_args.circular = circular
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        estimates = {}
+        counter = 1
+        for clade in svc._iter_preorder(tree.root):
+            if not clade.clades:
+                continue
+            label = clade.name or f"N{counter}"
+            if not clade.name:
+                counter += 1
+            estimates[label] = {"estimate": float(counter), "gcf": 0.7}
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("plot setup should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_traversal)
+
+        output_path = tmp_path / f"concordance_asr_direct_{circular}.png"
+        svc._plot_concordance_contmap(
+            tree, {"ancestral_estimates": estimates}, str(output_path)
+        )
+
+        assert output_path.exists()
+
+    def test_iter_preorder_preserves_order_without_reversed(self, default_args):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("_iter_preorder should push children directly")
+
+        svc = ConcordanceAsr(default_args)
+        root = Clade(name="root")
+        left = Clade(name="left")
+        middle = Clade(name="middle")
+        right = Clade(name="right")
+        left.clades = NoReversedList([Clade(name="left_a"), Clade(name="left_b")])
+        middle.clades = NoReversedList([Clade(name="middle_a")])
+        right.clades = NoReversedList()
+        root.clades = NoReversedList([left, middle, right])
+
+        order = [clade.name for clade in svc._iter_preorder(root)]
+
+        assert order == [
+            "root",
+            "left",
+            "left_a",
+            "left_b",
+            "middle",
+            "middle_a",
+            "right",
+        ]
+
+    def test_concordance_plot_reuses_preorder_for_node_positions(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import phykit.helpers.plot_config as plot_config
+
+        default_args.circular = False
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        preorder_clades = list(svc._iter_preorder(tree.root))
+        estimates = {}
+        counter = 1
+        for clade in preorder_clades:
+            if not clade.clades:
+                continue
+            label = clade.name or f"N{counter}"
+            if not clade.name:
+                counter += 1
+            estimates[label] = {"estimate": float(counter), "gcf": 0.7}
+        expected_preorder_ids = [id(clade) for clade in preorder_clades]
+        original_compute_node_positions = plot_config.compute_node_positions
+        calls = []
+
+        def assert_preorder_reused(
+            tree_arg, parent_map_arg, cladogram=False, preorder_clades=None
+        ):
+            assert preorder_clades is not None
+            calls.append([id(clade) for clade in preorder_clades])
+            return original_compute_node_positions(
+                tree_arg,
+                parent_map_arg,
+                cladogram=cladogram,
+                preorder_clades=preorder_clades,
+            )
+
+        monkeypatch.setattr(
+            plot_config, "compute_node_positions", assert_preorder_reused
+        )
+
+        output_path = tmp_path / "concordance_asr_preorder_positions.png"
+        svc._plot_concordance_contmap(
+            tree, {"ancestral_estimates": estimates}, str(output_path)
+        )
+
+        assert calls == [expected_preorder_ids]
+        assert output_path.exists()
+
+    def test_concordance_plot_reuses_clade_lists_for_circular_coords(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import phykit.helpers.circular_layout as circular_layout
+
+        default_args.circular = True
+        default_args.ylabel_fontsize = 0
+        default_args.no_title = True
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        preorder_clades = list(svc._iter_preorder(tree.root))
+        estimates = {}
+        counter = 1
+        for clade in preorder_clades:
+            if not clade.clades:
+                continue
+            label = clade.name or f"N{counter}"
+            if not clade.name:
+                counter += 1
+            estimates[label] = {"estimate": float(counter), "gcf": 0.7}
+        expected_preorder_ids = [id(clade) for clade in preorder_clades]
+        expected_terminal_ids = [
+            id(clade) for clade in preorder_clades if not clade.clades
+        ]
+        original_compute_circular_coords = circular_layout.compute_circular_coords
+        calls = []
+
+        def assert_clade_lists_reused(
+            tree_arg,
+            node_x_arg,
+            parent_map_arg,
+            preorder_clades=None,
+            terminal_clades=None,
+        ):
+            assert preorder_clades is not None
+            assert terminal_clades is not None
+            calls.append(
+                (
+                    [id(clade) for clade in preorder_clades],
+                    [id(clade) for clade in terminal_clades],
+                )
+            )
+            return original_compute_circular_coords(
+                tree_arg,
+                node_x_arg,
+                parent_map_arg,
+                preorder_clades=preorder_clades,
+                terminal_clades=terminal_clades,
+            )
+
+        monkeypatch.setattr(
+            circular_layout, "compute_circular_coords", assert_clade_lists_reused
+        )
+
+        output_path = tmp_path / "concordance_asr_circular_precomputed_coords.png"
+        svc._plot_concordance_contmap(
+            tree, {"ancestral_estimates": estimates}, str(output_path)
+        )
+
+        assert calls == [(expected_preorder_ids, expected_terminal_ids)]
+        assert output_path.exists()
+
+    def test_rectangular_concordance_plot_batches_base_branches(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.axes
+        from matplotlib.collections import LineCollection
+
+        default_args.circular = False
+        default_args.ylabel_fontsize = 0
+        default_args.no_title = True
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        estimates = {}
+        counter = 1
+        for clade in svc._iter_preorder(tree.root):
+            if not clade.clades:
+                continue
+            label = clade.name or f"N{counter}"
+            if not clade.name:
+                counter += 1
+            estimates[label] = {"estimate": float(counter), "gcf": 0.7}
+
+        output_path = tmp_path / "concordance_asr_batched.png"
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        line_collections = []
+
+        def fail_plot(*args, **kwargs):
+            raise AssertionError("Concordance-ASR branches should be batched")
+
+        def count_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_plot)
+        monkeypatch.setattr(
+            matplotlib.axes.Axes, "add_collection", count_collection
+        )
+
+        svc._plot_concordance_contmap(
+            tree, {"ancestral_estimates": estimates}, str(output_path)
+        )
+
+        assert len(line_collections) >= 2
+        assert output_path.exists()
+
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_concordance_plot_batches_gcf_markers(
+        self, default_args, monkeypatch, tmp_path, circular
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.axes
+
+        default_args.circular = circular
+        default_args.ylabel_fontsize = 0
+        default_args.no_title = True
+        default_args.legend_position = "none"
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        estimates = {}
+        counter = 1
+        for clade in svc._iter_preorder(tree.root):
+            if not clade.clades:
+                continue
+            label = clade.name or f"N{counter}"
+            if not clade.name:
+                counter += 1
+            estimates[label] = {
+                "estimate": float(counter),
+                "gcf": 0.25 + 0.1 * counter,
+            }
+
+        original_scatter = matplotlib.axes.Axes.scatter
+        gcf_marker_counts = []
+
+        def capture_scatter(self, x, y, *args, **kwargs):
+            if kwargs.get("zorder") == 5 and kwargs.get("edgecolors") == "black":
+                try:
+                    gcf_marker_counts.append(len(x))
+                except TypeError:
+                    gcf_marker_counts.append(1)
+            return original_scatter(self, x, y, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "scatter", capture_scatter)
+
+        output_path = tmp_path / f"concordance_asr_gcf_markers_{circular}.png"
+        svc._plot_concordance_contmap(
+            tree, {"ancestral_estimates": estimates}, str(output_path)
+        )
+
+        assert gcf_marker_counts == [len(estimates)]
+        assert output_path.exists()
+
     def test_concordance_asr_circular(self):
         """--circular flag produces a circular layout concordance ASR plot."""
         try:

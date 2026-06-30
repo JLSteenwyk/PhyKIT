@@ -1,11 +1,38 @@
-from typing import Dict, List, Tuple
-from concurrent.futures import ProcessPoolExecutor
-import pickle
-
-from Bio.Phylo import Newick
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPickle:
+    def dumps(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        import pickle as _pickle
+
+        return _pickle.loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        import pickle as _pickle
+
+        return getattr(_pickle, name)
+
+
+def ProcessPoolExecutor(*args, **kwargs):
+    from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
+
+    return _ProcessPoolExecutor(*args, **kwargs)
+
+
+pickle = _LazyPickle()
 
 
 class RobinsonFouldsDistance(Tree):
@@ -36,7 +63,7 @@ class RobinsonFouldsDistance(Tree):
             tree_one = self.prune_tree_using_taxa_list(tree_one, tree_one_tips_to_prune)
 
         # Get first terminal for rooting
-        tip_for_rooting = tree_zero.get_terminals()[0].name
+        tip_for_rooting = self._first_terminal_name(tree_zero)
         tree_zero.root_with_outgroup(tip_for_rooting)
         tree_one.root_with_outgroup(tip_for_rooting)
 
@@ -55,7 +82,7 @@ class RobinsonFouldsDistance(Tree):
 
         print(f"{plain_rf}\t{round(normalized_rf, 4)}")
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree_zero,
             tree1_file_path=args.tree_one,
@@ -63,14 +90,203 @@ class RobinsonFouldsDistance(Tree):
         )
 
     def calculate_robinson_foulds_distance(self, tree_zero, tree_one):
-        plain_rf = 0
-        plain_rf = self.compare_trees_optimized(plain_rf, tree_zero, tree_one)
-        plain_rf = self.compare_trees_optimized(plain_rf, tree_one, tree_zero)
+        if tree_zero is tree_one:
+            tip_count = self._terminal_count_direct(tree_zero)
+            if tip_count is None:
+                tip_count = tree_zero.count_terminals()
+            return 0, 0 / (2 * (tip_count - 3))
 
-        tip_count = tree_zero.count_terminals()
+        try:
+            id_result_zero = self._get_all_bipartition_id_sets_direct(tree_zero)
+            if id_result_zero is None:
+                bipartitions_zero = self.get_all_bipartitions(tree_zero)
+                bipartitions_one = self.get_all_bipartitions(tree_one)
+                plain_rf = len(bipartitions_zero ^ bipartitions_one)
+            else:
+                bipartitions_zero, tip_index = id_result_zero
+                id_result_one = self._get_all_bipartition_id_sets_direct(
+                    tree_one,
+                    tip_index,
+                )
+                if id_result_one is None:
+                    bipartitions_zero = self.get_all_bipartitions(tree_zero)
+                    bipartitions_one = self.get_all_bipartitions(tree_one)
+                    plain_rf = len(bipartitions_zero ^ bipartitions_one)
+                else:
+                    bipartitions_one, _ = id_result_one
+                    plain_rf = len(bipartitions_zero ^ bipartitions_one)
+        except (AttributeError, TypeError):
+            plain_rf = 0
+            plain_rf = self.compare_trees_optimized(plain_rf, tree_zero, tree_one)
+            plain_rf = self.compare_trees_optimized(plain_rf, tree_one, tree_zero)
+
+        tip_count = self._terminal_count_direct(tree_zero)
+        if tip_count is None:
+            tip_count = tree_zero.count_terminals()
         normalized_rf = plain_rf / (2 * (tip_count - 3))
 
         return plain_rf, normalized_rf
+
+    @staticmethod
+    def _terminal_count_direct(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        count = 0
+        stack = [root]
+        try:
+            pop = stack.pop
+            extend = stack.extend
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    extend(children)
+                else:
+                    count += 1
+        except AttributeError:
+            return None
+        return count
+
+    def get_all_bipartitions(self, tree: Newick.Tree) -> set[frozenset]:
+        """Return rooted non-root internal descendant tip sets.
+
+        This intentionally matches the historical RF calculation, which compares
+        descendant taxa below each non-root internal clade rather than canonical
+        unrooted splits.
+        """
+        bipartitions = self._get_all_bipartitions_direct(tree)
+        if bipartitions is not None:
+            return bipartitions
+
+        clade_tips: dict[int, frozenset] = {}
+        bipartitions: set[frozenset] = set()
+
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                tip_set = frozenset([clade.name])
+            else:
+                child_sets = [clade_tips[id(child)] for child in clade.clades]
+                tip_set = frozenset().union(*child_sets) if child_sets else frozenset()
+                if clade is not tree.root:
+                    bipartitions.add(tip_set)
+            clade_tips[id(clade)] = tip_set
+
+        return bipartitions
+
+    @staticmethod
+    def _get_all_bipartitions_direct(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clade_tips: dict[int, frozenset] = {}
+        bipartitions: set[frozenset] = set()
+        preorder = []
+        stack = [root]
+
+        try:
+            while stack:
+                clade = stack.pop()
+                preorder.append(clade)
+                stack.extend(clade.clades)
+
+            for clade in reversed(preorder):
+                children = clade.clades
+                if children:
+                    child_count = len(children)
+                    if child_count == 2:
+                        tip_set = (
+                            clade_tips[id(children[0])]
+                            | clade_tips[id(children[1])]
+                        )
+                    elif child_count == 1:
+                        tip_set = clade_tips[id(children[0])]
+                    else:
+                        tip_set = frozenset().union(
+                            *(clade_tips[id(child)] for child in children)
+                        )
+                    if clade is not root:
+                        bipartitions.add(tip_set)
+                else:
+                    tip_set = frozenset([clade.name])
+                clade_tips[id(clade)] = tip_set
+        except (AttributeError, TypeError):
+            return None
+
+        return bipartitions
+
+    @staticmethod
+    def _get_all_bipartition_id_sets_direct(tree: Newick.Tree, tip_index=None):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        if tip_index is None:
+            tip_index = {}
+        clade_tips: dict[int, frozenset] = {}
+        bipartitions: set[frozenset] = set()
+        preorder = []
+        stack = [root]
+
+        try:
+            while stack:
+                clade = stack.pop()
+                preorder.append(clade)
+                stack.extend(clade.clades)
+
+            for clade in reversed(preorder):
+                children = clade.clades
+                if children:
+                    child_count = len(children)
+                    if child_count == 2:
+                        tip_set = (
+                            clade_tips[id(children[0])]
+                            | clade_tips[id(children[1])]
+                        )
+                    elif child_count == 1:
+                        tip_set = clade_tips[id(children[0])]
+                    else:
+                        tip_set = frozenset().union(
+                            *(clade_tips[id(child)] for child in children)
+                        )
+                    if clade is not root:
+                        bipartitions.add(tip_set)
+                else:
+                    tip_id = tip_index.get(clade.name)
+                    if tip_id is None:
+                        tip_id = len(tip_index)
+                        tip_index[clade.name] = tip_id
+                    tip_set = frozenset([tip_id])
+                clade_tips[id(clade)] = tip_set
+        except (AttributeError, TypeError):
+            return None
+
+        return bipartitions, tip_index
+
+    @staticmethod
+    def _first_terminal_name(tree: Newick.Tree) -> str:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return tree.get_terminals()[0].name
+
+        clade = root
+        while True:
+            children = getattr(clade, "clades", None)
+            if not isinstance(children, list):
+                return tree.get_terminals()[0].name
+            if not children:
+                return clade.name
+            clade = children[0]
 
     def compare_trees_optimized(
         self,
@@ -111,20 +327,18 @@ class RobinsonFouldsDistance(Tree):
             rf_calc = RobinsonFouldsDistance.__new__(RobinsonFouldsDistance)
             rf_calc.__dict__.update({'tree_format': 'newick'})
 
-            # Calculate bipartitions
-            bipartitions_zero = rf_calc.get_all_bipartitions(tree_zero)
-            bipartitions_one = rf_calc.get_all_bipartitions(tree_one)
-
-            # Calculate RF distance
-            plain_rf = len(bipartitions_zero ^ bipartitions_one)  # Symmetric difference
-            tip_count = tree_zero.count_terminals()
-            normalized_rf = plain_rf / (2 * (tip_count - 3))
-
+            plain_rf, normalized_rf = rf_calc.calculate_robinson_foulds_distance(
+                tree_zero,
+                tree_one,
+            )
             results.append((plain_rf, normalized_rf))
 
         return results
 
-    def calculate_multiple_rf_distances(self, tree_pairs: List[Tuple]) -> List[Tuple[int, float]]:
+    def calculate_multiple_rf_distances(
+        self,
+        tree_pairs: list[tuple],
+    ) -> list[tuple[int, float]]:
         """Calculate RF distances for multiple tree pairs in parallel."""
         if len(tree_pairs) < 5:
             # Sequential for small datasets

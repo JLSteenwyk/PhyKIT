@@ -1,8 +1,29 @@
 from argparse import Namespace
+from io import StringIO
+import subprocess
+import sys
 
 import pytest
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.tip_to_tip_node_distance import TipToTipNodeDistance
+
+
+def test_module_import_does_not_import_biophylo_or_numpy():
+    code = """
+import sys
+import phykit.services.tree.tip_to_tip_node_distance as module
+
+assert hasattr(module.TreeMixin, "find_any")
+assert hasattr(module.TreeMixin, "trace")
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.fixture
@@ -12,6 +33,15 @@ def args():
 
 class _Tree:
     pass
+
+
+class _ChildListClade:
+    def __init__(self, name=None, clades=None):
+        self.name = name
+        self.clades = clades or []
+
+    def is_terminal(self):
+        raise AssertionError("fast path should inspect clades directly")
 
 
 class TestTipToTipNodeDistance:
@@ -35,7 +65,7 @@ class TestTipToTipNodeDistance:
     def test_run_text_output(self, mocker):
         args = Namespace(tree_zero="/some/path/to/file.tre", tip_1="a", tip_2="b", json=False)
         service = TipToTipNodeDistance(args)
-        mocker.patch.object(TipToTipNodeDistance, "read_tree_file", return_value=_Tree())
+        mocker.patch.object(TipToTipNodeDistance, "read_tree_file_unmodified", return_value=_Tree())
         mocker.patch.object(TipToTipNodeDistance, "check_leaves")
         mocker.patch("phykit.services.tree.tip_to_tip_node_distance.TreeMixin.trace", return_value=[1, 2, 3, 4])
         mocked_print = mocker.patch("builtins.print")
@@ -45,7 +75,7 @@ class TestTipToTipNodeDistance:
     def test_run_json_output(self, mocker):
         args = Namespace(tree_zero="/some/path/to/file.tre", tip_1="a", tip_2="b", json=True)
         service = TipToTipNodeDistance(args)
-        mocker.patch.object(TipToTipNodeDistance, "read_tree_file", return_value=_Tree())
+        mocker.patch.object(TipToTipNodeDistance, "read_tree_file_unmodified", return_value=_Tree())
         mocker.patch.object(TipToTipNodeDistance, "check_leaves")
         mocker.patch("phykit.services.tree.tip_to_tip_node_distance.TreeMixin.trace", return_value=[1, 2, 3])
         mocked_json = mocker.patch("phykit.services.tree.tip_to_tip_node_distance.print_json")
@@ -56,3 +86,102 @@ class TestTipToTipNodeDistance:
             "taxon_b": "b",
             "tip_to_tip_node_distance": 3,
         }
+
+    def test_fast_node_distance_matches_biopython_trace(self, args):
+        tree = Phylo.read(StringIO("(((A:1,B:1):1,C:2):1,D:3);"), "newick")
+        service = TipToTipNodeDistance(args)
+
+        assert service.calculate_tip_to_tip_node_distance(
+            tree, "A", "D"
+        ) == len(TreeMixin.trace(tree, "A", "D"))
+
+    def test_fast_node_distance_uses_child_lists_for_terminal_checks(self, args):
+        leaf_a = _ChildListClade("A")
+        leaf_b = _ChildListClade("B")
+        leaf_c = _ChildListClade("C")
+        internal = _ChildListClade(clades=[leaf_a, leaf_b])
+        tree = _Tree()
+        tree.root = _ChildListClade(clades=[internal, leaf_c])
+        service = TipToTipNodeDistance(args)
+
+        assert service.calculate_tip_to_tip_node_distance(tree, "A", "C") == 3
+
+    def test_fast_node_distance_does_not_build_root_paths(self, args, mocker):
+        tree = Phylo.read(StringIO("(((A:1,B:1):1,C:2):1,D:3);"), "newick")
+        service = TipToTipNodeDistance(args)
+        mocker.patch.object(
+            TipToTipNodeDistance,
+            "_path_to_root",
+            side_effect=AssertionError("fast path should use ancestor distances"),
+        )
+
+        assert service.calculate_tip_to_tip_node_distance(tree, "A", "D") == 4
+
+    def test_fast_node_distance_same_tip_returns_zero_without_trace(
+        self,
+        args,
+        mocker,
+    ):
+        tree = Phylo.read(StringIO("(((A:1,B:1):1,C:2):1,D:3);"), "newick")
+        service = TipToTipNodeDistance(args)
+        mocker.patch(
+            "phykit.services.tree.tip_to_tip_node_distance.TreeMixin.trace",
+            side_effect=AssertionError("same-tip standard tree path should return directly"),
+        )
+
+        assert service.calculate_tip_to_tip_node_distance(tree, "A", "A") == 0
+
+    def test_fast_node_distance_same_tip_skips_parent_map(self, args, mocker):
+        leaf_a = _ChildListClade("A")
+        leaf_b = _ChildListClade("B")
+        leaf_c = _ChildListClade("C")
+        internal = _ChildListClade(clades=[leaf_a, leaf_b])
+        tree = _Tree()
+        tree.root = _ChildListClade(clades=[internal, leaf_c])
+        service = TipToTipNodeDistance(args)
+        mocker.patch.object(
+            TipToTipNodeDistance,
+            "_path_to_root",
+            side_effect=AssertionError("same-tip path should not build root paths"),
+        )
+
+        assert service.calculate_tip_to_tip_node_distance(tree, "C", "C") == 0
+
+    def test_run_standard_tree_avoids_trace(self, mocker):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        expected = len(TreeMixin.trace(tree, "A", "C"))
+        args = Namespace(tree_zero="/some/path/to/file.tre", tip_1="A", tip_2="C", json=False)
+        service = TipToTipNodeDistance(args)
+        mocker.patch.object(TipToTipNodeDistance, "read_tree_file_unmodified", return_value=tree)
+        mocked_trace = mocker.patch(
+            "phykit.services.tree.tip_to_tip_node_distance.TreeMixin.trace",
+            side_effect=AssertionError("standard tree should use fast path"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        mocked_trace.assert_not_called()
+        mocked_print.assert_called_once_with(expected)
+
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        tree = _Tree()
+        args = Namespace(tree_zero="/some/path/to/file.tre", tip_1="a", tip_2="b", json=False)
+        service = TipToTipNodeDistance(args)
+        read_tree = mocker.patch.object(
+            service, "read_tree_file_unmodified", return_value=tree
+        )
+        mocker.patch.object(
+            service,
+            "read_tree_file",
+            side_effect=AssertionError("copying tree reader should not be used"),
+        )
+        calc = mocker.patch.object(
+            service, "calculate_tip_to_tip_node_distance", return_value=3
+        )
+        mocker.patch("builtins.print")
+
+        service.run()
+
+        read_tree.assert_called_once_with()
+        calc.assert_called_once_with(tree, "a", "b")

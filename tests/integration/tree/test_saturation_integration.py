@@ -43,18 +43,34 @@ class TestSaturation(object):
 
     @patch("builtins.print")
     def test_saturation_incorrect_tree_path(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefil",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_saturation_incorrect_alignment_path(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipki",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

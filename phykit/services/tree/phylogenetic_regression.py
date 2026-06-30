@@ -1,21 +1,110 @@
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.stats import t as t_dist
-from scipy.stats import f as f_dist
+import math
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.trait_parsing import parse_multi_trait_file
-from ...helpers.pgls_utils import (
-    max_lambda as compute_max_lambda,
-    estimate_lambda,
-    pgls_log_likelihood,
-    fit_gls,
-    apply_lambda,
-)
 from ...errors import PhykitUserError
+
+
+_STDTR = None
+_FDTRC = None
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def parse_multi_trait_file(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        parse_multi_trait_file as _parse_multi_trait_file,
+    )
+
+    return _parse_multi_trait_file(*args, **kwargs)
+
+
+def response_predictor_arrays(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        response_predictor_arrays as _response_predictor_arrays,
+    )
+
+    return _response_predictor_arrays(*args, **kwargs)
+
+
+def subset_traits_to_ordered_shared_taxa(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        subset_traits_to_ordered_shared_taxa as _subset_traits_to_ordered_shared_taxa,
+    )
+
+    return _subset_traits_to_ordered_shared_taxa(*args, **kwargs)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def _stdtr(df: int, values):
+    global _STDTR
+
+    if _STDTR is None:
+        from scipy.special import stdtr as _stdtr
+
+        _STDTR = _stdtr
+
+    return _STDTR(df, values)
+
+
+def _t_two_tailed_p_values(t_stats: np.ndarray, df: int) -> np.ndarray:
+    return 2.0 * _stdtr(df, -np.abs(t_stats))
+
+
+def _t_two_tailed_p_value(t_stat: float, df: int) -> float:
+    return float(2.0 * _stdtr(df, -abs(t_stat)))
+
+
+def _f_sf(f_stat: float, dfn: int, dfd: int) -> float:
+    if dfn == 1 and f_stat >= 0:
+        return _t_two_tailed_p_value(math.sqrt(f_stat), dfd)
+
+    global _FDTRC
+
+    if _FDTRC is None:
+        from scipy.special import fdtrc as _fdtrc
+
+        _FDTRC = _fdtrc
+
+    return float(_FDTRC(dfn, dfd, f_stat))
 
 
 class PhylogeneticRegression(Tree):
@@ -30,20 +119,34 @@ class PhylogeneticRegression(Tree):
         self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
-        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+        from .vcv_utils import (
+            build_discordance_vcv,
+            build_vcv_matrix,
+            parse_gene_trees,
+        )
 
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phylogenetic regression")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylogenetic regression",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = parse_multi_trait_file(
             self.trait_data_path, tree_tips
         )
 
+        trait_name_to_idx = {}
+        for idx, name in enumerate(trait_names):
+            if name not in trait_name_to_idx:
+                trait_name_to_idx[name] = idx
+
         # Validate column names
         all_columns = [self.response] + list(self.predictors)
         for col in all_columns:
-            if col not in trait_names:
+            if col not in trait_name_to_idx:
                 raise PhykitUserError(
                     [
                         f"Column '{col}' not found in trait file.",
@@ -66,9 +169,9 @@ class PhylogeneticRegression(Tree):
             gene_trees = parse_gene_trees(self.gene_trees_path)
             vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
             shared = vcv_meta["shared_taxa"]
-            if set(shared) != set(ordered_names):
-                traits = {k: traits[k] for k in shared}
-                ordered_names = shared
+            traits, ordered_names = subset_traits_to_ordered_shared_taxa(
+                traits, ordered_names, shared
+            )
         else:
             vcv = build_vcv_matrix(tree, ordered_names)
             vcv_meta = None
@@ -86,61 +189,52 @@ class PhylogeneticRegression(Tree):
             )
 
         # Build response vector y and design matrix X (with intercept)
-        resp_idx = trait_names.index(self.response)
-        pred_indices = [trait_names.index(p) for p in self.predictors]
+        resp_idx = trait_name_to_idx[self.response]
+        pred_indices = [trait_name_to_idx[p] for p in self.predictors]
 
-        y = np.array([traits[name][resp_idx] for name in ordered_names])
-        X_pred = np.array(
-            [[traits[name][j] for j in pred_indices] for name in ordered_names]
+        y, X = response_predictor_arrays(
+            traits, ordered_names, resp_idx, pred_indices
         )
-        # Design matrix: intercept + predictors
-        X = np.column_stack([np.ones(n), X_pred])
 
         lambda_val = None
         log_likelihood_lambda = None
 
         if self.method == "lambda":
+            from ...helpers.pgls_utils import (
+                apply_lambda,
+                estimate_lambda,
+                max_lambda as compute_max_lambda,
+            )
+
             max_lam = compute_max_lambda(tree)
             lambda_val, log_likelihood_lambda = estimate_lambda(
                 y, X, vcv, max_lam
             )
             vcv = apply_lambda(vcv, lambda_val)
 
-        try:
-            C_inv = np.linalg.inv(vcv)
-        except np.linalg.LinAlgError:
-            raise PhykitUserError(
-                [
-                    "Singular VCV matrix: cannot invert.",
-                    "Check that the tree has valid branch lengths.",
-                ],
-                code=2,
-            )
-
-        # GLS estimation
-        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
+        (
+            beta_hat,
+            residuals,
+            sigma2,
+            var_beta,
+            r_squared,
+            adj_r_squared,
+            f_stat,
+            f_p_value,
+            r2_total,
+            r2_phylo,
+            ll,
+            aic,
+        ) = self._fit_model(y, X, vcv, k, n)
 
         # Standard errors, t-stats, p-values
         se = np.sqrt(np.diag(var_beta))
         df_resid = n - k - 1
         t_stats = beta_hat / se
-        p_values = 2.0 * t_dist.sf(np.abs(t_stats), df=df_resid)
+        p_values = _t_two_tailed_p_values(t_stats, df_resid)
 
         # Fitted values
         fitted = X @ beta_hat
-
-        # Model statistics
-        r_squared, adj_r_squared, f_stat, f_p_value, r2_total, r2_phylo = self._compute_model_stats(
-            y, fitted, residuals, C_inv, k, n
-        )
-
-        # Log-likelihood and AIC
-        sign, logdet_C = np.linalg.slogdet(vcv)
-        sigma2_ml = float(residuals @ C_inv @ residuals) / n
-        ll = -0.5 * (
-            n * np.log(2 * np.pi) + n * np.log(sigma2_ml) + logdet_C + n
-        )
-        aic = -2.0 * ll + 2.0 * (k + 2)  # k predictors + intercept + sigma2
 
         # Build result
         coef_names = ["(Intercept)"] + list(self.predictors)
@@ -199,7 +293,7 @@ class PhylogeneticRegression(Tree):
                 r2_phylo=r2_phylo,
             )
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -211,10 +305,123 @@ class PhylogeneticRegression(Tree):
         )
 
     def _build_vcv_matrix(
-        self, tree, ordered_names: List[str]
+        self, tree, ordered_names: list[str]
     ) -> np.ndarray:
         from .vcv_utils import build_vcv_matrix
         return build_vcv_matrix(tree, ordered_names)
+
+    def _fit_model(
+        self,
+        y: np.ndarray,
+        X: np.ndarray,
+        vcv: np.ndarray,
+        k: int,
+        n: int,
+    ):
+        try:
+            factor = cho_factor(vcv, lower=True, check_finite=False)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._fit_model_inverse(y, X, vcv, k, n)
+
+        n_predictors = X.shape[1]
+        solve_rhs = np.empty(
+            (n, n_predictors + 2),
+            dtype=np.result_type(X, y, vcv),
+        )
+        solve_rhs[:, :n_predictors] = X
+        solve_rhs[:, n_predictors] = y
+        solve_rhs[:, n_predictors + 1] = 1.0
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_X = solved[:, :n_predictors]
+        C_inv_y = solved[:, n_predictors]
+        C_inv_ones = solved[:, n_predictors + 1]
+
+        XtCiX = X.T @ C_inv_X
+        try:
+            normal_rhs = np.empty(
+                (n_predictors, n_predictors + 1),
+                dtype=XtCiX.dtype,
+            )
+            normal_rhs[:, 0] = X.T @ C_inv_y
+            normal_rhs[:, 1:] = np.eye(n_predictors, dtype=XtCiX.dtype)
+            normal_solved = np.linalg.solve(XtCiX, normal_rhs)
+        except np.linalg.LinAlgError:
+            raise PhykitUserError(
+                [
+                    "Singular design matrix: cannot estimate coefficients.",
+                    "Check that predictors are not collinear.",
+                ],
+                code=2,
+            )
+
+        beta_hat = normal_solved[:, 0]
+        XtCiX_inv = normal_solved[:, 1:]
+        residuals = y - X @ beta_hat
+        C_inv_residuals = C_inv_y - C_inv_X @ beta_hat
+
+        df_resid = n - X.shape[1]
+        sigma2 = float(residuals @ C_inv_residuals) / max(df_resid, 1)
+        var_beta = sigma2 * XtCiX_inv
+
+        ones = np.ones(n)
+        y_bar_gls = float(ones @ C_inv_y) / float(ones @ C_inv_ones)
+        y_centered = y - y_bar_gls
+        C_inv_y_centered = C_inv_y - y_bar_gls * C_inv_ones
+
+        ss_tot = float(y_centered @ C_inv_y_centered)
+        ss_res = float(residuals @ C_inv_residuals)
+        stats = self._compute_model_stats_from_sums(
+            ss_tot,
+            ss_res,
+            y,
+            residuals,
+            C_inv_residuals,
+            k,
+            n,
+        )
+
+        sigma2_ml = float(residuals @ C_inv_residuals) / n
+        logdet_C = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        ll = -0.5 * (
+            n * np.log(2 * np.pi) + n * np.log(sigma2_ml) + logdet_C + n
+        )
+        aic = -2.0 * ll + 2.0 * (k + 2)  # k predictors + intercept + sigma2
+
+        return beta_hat, residuals, sigma2, var_beta, *stats, ll, aic
+
+    def _fit_model_inverse(
+        self,
+        y: np.ndarray,
+        X: np.ndarray,
+        vcv: np.ndarray,
+        k: int,
+        n: int,
+    ):
+        try:
+            C_inv = np.linalg.inv(vcv)
+        except np.linalg.LinAlgError:
+            raise PhykitUserError(
+                [
+                    "Singular VCV matrix: cannot invert.",
+                    "Check that the tree has valid branch lengths.",
+                ],
+                code=2,
+            )
+
+        from ...helpers.pgls_utils import fit_gls
+
+        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
+        fitted = X @ beta_hat
+        stats = self._compute_model_stats(y, fitted, residuals, C_inv, k, n)
+
+        sign, logdet_C = np.linalg.slogdet(vcv)
+        sigma2_ml = float(residuals @ C_inv @ residuals) / n
+        ll = -0.5 * (
+            n * np.log(2 * np.pi) + n * np.log(sigma2_ml) + logdet_C + n
+        )
+        aic = -2.0 * ll + 2.0 * (k + 2)  # k predictors + intercept + sigma2
+
+        return beta_hat, residuals, sigma2, var_beta, *stats, ll, aic
 
     def _compute_model_stats(
         self,
@@ -224,7 +431,7 @@ class PhylogeneticRegression(Tree):
         C_inv: np.ndarray,
         k: int,
         n: int,
-    ) -> Tuple[float, float, float, float, float, float]:
+    ) -> tuple[float, float, float, float, float, float]:
         """Compute R², adjusted R², F-statistic, F p-value, R²_total, R²_phylo.
 
         Uses GLS-weighted sums of squares:
@@ -244,6 +451,26 @@ class PhylogeneticRegression(Tree):
         ss_tot = float(y_centered @ C_inv @ y_centered)
         ss_res = float(residuals @ C_inv @ residuals)
 
+        return self._compute_model_stats_from_sums(
+            ss_tot,
+            ss_res,
+            y,
+            residuals,
+            C_inv @ residuals,
+            k,
+            n,
+        )
+
+    def _compute_model_stats_from_sums(
+        self,
+        ss_tot: float,
+        ss_res: float,
+        y: np.ndarray,
+        residuals: np.ndarray,
+        C_inv_residuals: np.ndarray,
+        k: int,
+        n: int,
+    ) -> tuple[float, float, float, float, float, float]:
         if ss_tot == 0:
             r_squared = 0.0
         else:
@@ -264,10 +491,10 @@ class PhylogeneticRegression(Tree):
             ms_reg = ss_reg / k
             ms_res = ss_res / df_resid
             f_stat = ms_reg / ms_res
-            f_p_value = float(f_dist.sf(f_stat, dfn=k, dfd=df_resid))
+            f_p_value = _f_sf(f_stat, k, df_resid)
 
         # Three-way R² variance decomposition
-        sig2_gls_ml = float(residuals @ C_inv @ residuals) / n
+        sig2_gls_ml = float(residuals @ C_inv_residuals) / n
         sig2_ols_ml = float(np.var(y))
         if sig2_ols_ml == 0:
             r2_total = 0.0
@@ -296,44 +523,57 @@ class PhylogeneticRegression(Tree):
         f_stat, f_p_value, ll, aic, formula, k, n, lambda_val,
         r2_total, r2_phylo,
     ) -> None:
-        print("Phylogenetic Generalized Least Squares (PGLS)")
-        print(f"\nFormula: {formula}")
+        lines = [
+            "Phylogenetic Generalized Least Squares (PGLS)",
+            f"\nFormula: {formula}",
+        ]
 
         if lambda_val is not None:
-            print(f"\nEstimated lambda: {lambda_val:.4f}")
+            lines.append(f"\nEstimated lambda: {lambda_val:.4f}")
 
-        print("\nCoefficients:")
         # Header
-        print(
-            f"{'':20s}{'Estimate':>12s}{'Std.Error':>12s}"
-            f"{'t-value':>12s}{'p-value':>12s}"
+        lines.extend(
+            [
+                "\nCoefficients:",
+                (
+                    f"{'':20s}{'Estimate':>12s}{'Std.Error':>12s}"
+                    f"{'t-value':>12s}{'p-value':>12s}"
+                ),
+            ]
         )
 
-        for i, name in enumerate(coef_names):
-            sig = self._signif_code(p_values[i])
-            print(
-                f"{name:20s}{beta_hat[i]:12.4f}{se[i]:12.4f}"
-                f"{t_stats[i]:12.4f}{p_values[i]:12.6f}    {sig}"
+        for name, beta, std_error, t_stat, p_value in zip(
+            coef_names, beta_hat, se, t_stats, p_values
+        ):
+            sig = self._signif_code(p_value)
+            lines.append(
+                f"{name:20s}{beta:12.4f}{std_error:12.4f}"
+                f"{t_stat:12.4f}{p_value:12.6f}    {sig}"
             )
 
-        print("---")
-        print("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1")
-
         rse = np.sqrt(sigma2)
-        print(
-            f"\nResidual standard error: {rse:.4f} on {df_resid} degrees of freedom"
+        lines.extend(
+            [
+                "---",
+                "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1",
+                (
+                    f"\nResidual standard error: {rse:.4f} on {df_resid} "
+                    "degrees of freedom"
+                ),
+                (
+                    f"Multiple R-squared: {r_squared:.4f}    "
+                    f"Adjusted R-squared: {adj_r_squared:.4f}"
+                ),
+                f"R-squared (total):   {r2_total:.4f}   (phylo + predictor)",
+                f"R-squared (phylo):   {r2_phylo:.4f}   (phylogeny contribution)",
+                (
+                    f"F-statistic: {f_stat:.2f} on {k} and {df_resid} DF    "
+                    f"p-value: {f_p_value:.6f}"
+                ),
+                f"Log-likelihood: {ll:.4f}    AIC: {aic:.4f}",
+            ]
         )
-        print(
-            f"Multiple R-squared: {r_squared:.4f}    "
-            f"Adjusted R-squared: {adj_r_squared:.4f}"
-        )
-        print(f"R-squared (total):   {r2_total:.4f}   (phylo + predictor)")
-        print(f"R-squared (phylo):   {r2_phylo:.4f}   (phylogeny contribution)")
-        print(
-            f"F-statistic: {f_stat:.2f} on {k} and {df_resid} DF    "
-            f"p-value: {f_p_value:.6f}"
-        )
-        print(f"Log-likelihood: {ll:.4f}    AIC: {aic:.4f}")
+        print("\n".join(lines))
 
     def _format_result(
         self, *, coef_names, beta_hat, se, t_stats, p_values,
@@ -341,15 +581,18 @@ class PhylogeneticRegression(Tree):
         f_stat, f_p_value, ll, aic, formula, k, n,
         residuals, fitted, ordered_names, lambda_val,
         r2_total, r2_phylo,
-    ) -> Dict:
-        coefficients = {}
-        for i, name in enumerate(coef_names):
-            coefficients[name] = {
-                "estimate": float(beta_hat[i]),
-                "std_error": float(se[i]),
-                "t_value": float(t_stats[i]),
-                "p_value": float(p_values[i]),
+    ) -> dict:
+        coefficients = {
+            name: {
+                "estimate": float(beta),
+                "std_error": float(std_error),
+                "t_value": float(t_stat),
+                "p_value": float(p_value),
             }
+            for name, beta, std_error, t_stat, p_value in zip(
+                coef_names, beta_hat, se, t_stats, p_values
+            )
+        }
 
         result = {
             "formula": formula,
@@ -366,14 +609,8 @@ class PhylogeneticRegression(Tree):
             "aic": float(aic),
             "n_observations": n,
             "n_predictors": k,
-            "residuals": {
-                ordered_names[i]: float(residuals[i])
-                for i in range(len(ordered_names))
-            },
-            "fitted_values": {
-                ordered_names[i]: float(fitted[i])
-                for i in range(len(ordered_names))
-            },
+            "residuals": dict(zip(ordered_names, residuals.tolist())),
+            "fitted_values": dict(zip(ordered_names, fitted.tolist())),
         }
 
         if lambda_val is not None:

@@ -1,4 +1,6 @@
 from argparse import Namespace
+import subprocess
+import sys
 
 import pytest
 
@@ -16,6 +18,40 @@ def args():
 
 class _Tree:
     pass
+
+
+def test_tree_manipulation_modules_defer_heavy_imports():
+    modules = [
+        "phykit.services.tree.prune_tree",
+        "phykit.services.tree.rename_tree_tips",
+        "phykit.services.tree.root_tree",
+        "phykit.services.tree.nearest_neighbor_interchange",
+    ]
+    code = f"""
+import sys
+modules = {modules!r}
+for module_name in modules:
+    module = __import__(module_name, fromlist=["*"])
+    assert callable(module.print_json)
+
+import phykit.services.tree.root_tree as root_module
+assert hasattr(root_module.Phylo.BaseTree.Tree, "root_with_outgroup")
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_root_tree_import_defers_file_helper():
+    code = """
+import sys
+import phykit.services.tree.root_tree as module
+assert callable(module.read_single_column_file_to_list)
+assert "phykit.helpers.files" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestRootTree:
@@ -46,7 +82,6 @@ class TestRootTree:
         )
         tree = _Tree()
         mocker.patch.object(RootTree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.root_tree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.root_tree.read_single_column_file_to_list",
             return_value=["sea_lion", "seal"],
@@ -69,7 +104,6 @@ class TestRootTree:
         )
         tree = _Tree()
         mocker.patch.object(RootTree, "read_tree_file", return_value=tree)
-        mocker.patch("phykit.services.tree.root_tree.pickle.loads", return_value=tree)
         mocker.patch(
             "phykit.services.tree.root_tree.read_single_column_file_to_list",
             return_value=["sea_lion", "seal"],

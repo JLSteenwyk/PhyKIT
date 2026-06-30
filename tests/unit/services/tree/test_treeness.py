@@ -1,9 +1,23 @@
 import pytest
+import subprocess
+import sys
 from argparse import Namespace
 from math import isclose
 
 from phykit.services.tree.treeness import Treeness
 import phykit.services.tree.treeness as treeness_module
+
+
+def test_module_import_does_not_import_json_or_typing():
+    code = """
+import sys
+import phykit.services.tree.treeness as module
+assert callable(module.print_json)
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.fixture
@@ -47,15 +61,30 @@ class TestTreeness(object):
 
     def test_run_prints_value(self, mocker, capsys):
         t = Treeness(Namespace(tree="x.tre", json=False))
-        mocker.patch.object(Treeness, "read_tree_file", return_value=object())
+        mocker.patch.object(Treeness, "read_tree_file_unmodified", return_value=object())
         mocker.patch.object(Treeness, "calculate_treeness", return_value=0.987654)
         t.run()
         out, _ = capsys.readouterr()
         assert out.strip() == "0.9877"
 
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        tree = object()
+        t = Treeness(Namespace(tree="x.tre", json=False))
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocker.patch.object(t, "calculate_treeness", return_value=0.987654)
+        mocker.patch("builtins.print")
+
+        t.run()
+
+        read_tree.assert_called_once_with()
+
     def test_run_json(self, mocker):
         t = Treeness(Namespace(tree="x.tre", json=True))
-        mocker.patch.object(Treeness, "read_tree_file", return_value=object())
+        mocker.patch.object(Treeness, "read_tree_file_unmodified", return_value=object())
         mocker.patch.object(Treeness, "calculate_treeness", return_value=0.11111)
         mocked_json = mocker.patch.object(treeness_module, "print_json")
         t.run()

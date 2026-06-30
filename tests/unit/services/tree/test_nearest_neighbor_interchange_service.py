@@ -1,8 +1,11 @@
 from argparse import Namespace
 from io import StringIO
+import subprocess
+import sys
 
 import pytest
 from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.nearest_neighbor_interchange import (
     NearestNeighborInterchange,
@@ -12,6 +15,20 @@ from phykit.services.tree.nearest_neighbor_interchange import (
 @pytest.fixture
 def args():
     return Namespace(tree="/some/path/to/file.tre", output=None)
+
+
+def test_module_import_does_not_import_biophylo_or_numpy():
+    code = """
+import sys
+import phykit.services.tree.nearest_neighbor_interchange as module
+
+assert hasattr(module.Phylo, "write")
+assert "typing" not in sys.modules
+assert "pickle" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestNearestNeighborInterchange:
@@ -33,6 +50,77 @@ class TestNearestNeighborInterchange:
         copied = service._fast_tree_copy(tree)
         assert copied is not tree
         assert copied.format("newick") == tree.format("newick")
+
+    def test_build_parent_map_uses_single_traversal(self, args, monkeypatch):
+        service = NearestNeighborInterchange(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard parent map should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parents = service._build_parent_map(tree)
+
+        assert len(parents) == 6
+        assert parents[tree.root.clades[0]] is tree.root
+        assert parents[tree.root.clades[0].clades[0]] is tree.root.clades[0]
+
+    def test_build_parent_map_handles_mixed_child_counts(self, args, monkeypatch):
+        service = NearestNeighborInterchange(args)
+        tree = Phylo.read(StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"), "newick")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard parent map should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parents = service._build_parent_map(tree)
+        binary = tree.root.clades[1]
+        trifurcation = tree.root.clades[2]
+
+        assert parents[tree.root.clades[0]] is tree.root
+        assert parents[binary] is tree.root
+        assert parents[trifurcation] is tree.root
+        assert parents[binary.clades[0]] is binary
+        assert parents[binary.clades[1]] is binary
+        assert parents[trifurcation.clades[0]] is trifurcation
+        assert parents[trifurcation.clades[1]] is trifurcation
+        assert parents[trifurcation.clades[2]] is trifurcation
+
+    def test_nonterminals_level_order_handles_mixed_child_counts(self, args, monkeypatch):
+        tree = Phylo.read(StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"), "newick")
+
+        def fail_get_nonterminals(*args, **kwargs):
+            raise AssertionError("standard nonterminal scan should be direct")
+
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        nonterminals = NearestNeighborInterchange._nonterminals_level_order_direct(
+            tree
+        )
+
+        assert nonterminals == [
+            tree.root,
+            tree.root.clades[1],
+            tree.root.clades[2],
+        ]
+
+    def test_get_neighbors_uses_direct_level_order_nonterminals(
+        self, args, monkeypatch
+    ):
+        service = NearestNeighborInterchange(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        service._fast_tree_copy = lambda tree: tree
+
+        def fail_get_nonterminals(*args, **kwargs):
+            raise AssertionError("standard NNI generation should not use get_nonterminals")
+
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        neighbors = service.get_neighbors(tree)
+
+        assert len(neighbors) == 2
 
     def test_get_neighbors_returns_list(self, args):
         service = NearestNeighborInterchange(args)
@@ -56,6 +144,23 @@ class TestNearestNeighborInterchange:
         tree = Phylo.read(StringIO("((((A:1,B:1):1,C:1):1,D:1):1,(E:1,F:1):1);"), "newick")
         neighbors = service.get_neighbors(tree)
         assert len(neighbors) >= 1
+
+    def test_generate_targeted_nnis_uses_direct_tip_name_lookup(self, args, monkeypatch):
+        service = NearestNeighborInterchange(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("targeted NNI setup should use fast terminal names")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        output_trees, report = service._generate_targeted_nnis(
+            tree,
+            [("A|B", ["A", "B"])],
+        )
+
+        assert len(output_trees) == 2
+        assert report == [{"label": "A|B", "taxa": ["A", "B"], "n_nnis": 2}]
 
     def test_run_json_payload(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", output="/tmp/nnis.tre", json=True)
