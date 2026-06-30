@@ -2164,6 +2164,7 @@ Results:
 | `ThresholdModel._run_mcmc` cached truncated-normal float bounds | 180 taxa SPD VCV, discrete/continuous traits, 700 generations, sample every 10 | 0.558707s | 0.498435s | 1.12x |
 | `ThresholdModel._run_mcmc` cached proposal scales/log sigma | 180 taxa SPD VCV, discrete/continuous traits, 700 generations, sample every 10 | 0.927273s | 0.860394s | 1.08x |
 | `ThresholdModel._run_mcmc` scalar math and cached Gibbs context fast path | 180 taxa SPD VCV, discrete/continuous traits, 700 generations, sample every 10 | 0.860394s | 0.433986s | 1.98x |
+| `ThresholdModel._run_mcmc` continuous-trait initial variance reuse | 4 / 10 / 100 / 1000 / 10k / 100k liability values, side-by-side previous duplicate `np.var` expression | 0.000022695s / 0.000014483s / 0.000016306s / 0.000016240s / 0.000034778s / 0.000212574s | 0.000010199s / 0.000010521s / 0.000009156s / 0.000010178s / 0.000019218s / 0.000071040s | 2.23x / 1.38x / 1.78x / 1.60x / 1.81x / 2.99x |
 | `ThresholdModel._sample_liabilities_gibbs` inline one-sided inverse-CDF draws | 700 dense 180-tip Gibbs sweeps, alternating binary states, cached Gibbs context | 0.252991s | 0.239303s | 1.06x |
 | `ThresholdModel._sample_truncated_normal` cached float bounds | 126k one-sided inverse-CDF draws | 0.202700s | 0.138897s | 1.46x |
 | `ThresholdModel._sample_truncated_normal` cached lazy SciPy special helpers | 126k one-sided inverse-CDF draws | 0.227829s | 0.172824s | 1.32x |
@@ -7335,6 +7336,8 @@ Profiling summary:
   non-Cholesky cases. Cached bivariate quadratic statistics now sum the
   precomputed `C^-1x` product vectors through each ndarray's `sum()` method,
   avoiding lazy NumPy proxy dispatch in repeated MCMC setup/proposal paths.
+  Continuous-trait initialization now computes each liability variance once and
+  reuses it for the positive-variance fallback.
   `ThresholdModel.run` now
   reads the cached tree directly for validation and copies only when parsed
   trait taxa omit one or more tree tips before pruning, so all-shared trait
