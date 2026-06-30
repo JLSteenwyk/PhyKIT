@@ -158,6 +158,7 @@ Results:
 | `AlignmentEntropy._entropy_from_ascii_codes` all-valid protein blocks | 1200 taxa x 12000 sites, 20 amino-acid symbols, side-by-side previous boolean-index path | 0.100458s | 0.090770s | 1.11x |
 | `AlignmentEntropy._entropy_from_ascii_codes` array-to-list conversion | 12 taxa x 800k clean DNA sites, full helper output conversion with identical Python float list | 0.750628s | 0.476712s | 1.57x |
 | `AlignmentEntropy._entropy_from_counts` masked log terms | 20 x 200k sparse protein count matrix, side-by-side previous `np.where(probs > 0, probs * log2(probs), 0)` terms | 0.040059s | 0.027744s | 1.44x |
+| `AlignmentEntropy.calculate_site_entropies` ASCII DNA entropy counts | 3000 taxa x 8000 sites, four observed DNA symbols, side-by-side previous boolean `np.sum(..., axis=0)` counts | 0.306331s | 0.138240s | 2.22x |
 | `AlignmentEntropy.calculate_site_entropies` gap-code mask construction | 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous lookup-mask gather | 0.392355s | 0.335875s | 1.17x |
 | `AlignmentEntropy.calculate_site_entropies` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/probability path | 0.088211s | 0.072725s | 1.21x |
 | `AlignmentEntropy.calculate_site_entropies` identical-sequence shortcut | 1200 taxa x 12000 sites, identical ASCII DNA alignment, side-by-side previous byte-matrix path | 0.092795s | 0.005340s | 17.38x |
@@ -2478,7 +2479,9 @@ Profiling summary:
   clean 1200 x 12000 protein helper time from 0.100458s to 0.090770s.
   Entropy term calculation now uses masked `np.log2` into a scratch array
   instead of `np.where`, so sparse protein count matrices avoid computing logs
-  for zero-probability symbols while preserving exact entropy values.
+  for zero-probability symbols while preserving exact entropy values. DNA-sized
+  ASCII entropy counts now use `np.count_nonzero` instead of summing boolean
+  equality masks while preserving the faster `np.sum` path for Unicode matrices.
   Conserved alignments with one valid observed symbol now return zero site
   entropies directly after the existing `np.unique` check, skipping count,
   probability, and log calculations while leaving multi-symbol inputs on the

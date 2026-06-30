@@ -285,9 +285,12 @@ class AlignmentEntropy(Alignment):
                 all_valid=bool(valid_mask.all()),
             )
 
+        count_reducer = (
+            np.count_nonzero if alignment_array.dtype == np.uint8 else np.sum
+        )
         counts = np.vstack(
             [
-                np.sum(alignment_array == char, axis=0)
+                count_reducer(alignment_array == char, axis=0)
                 for char in valid_chars
             ]
         ).astype(np.float64)

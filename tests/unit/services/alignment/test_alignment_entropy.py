@@ -128,6 +128,32 @@ assert "Bio.AlignIO" not in sys.modules
         assert isclose(entropies[0], 0.918295, rel_tol=0.001)
         assert isclose(entropies[1], 1.0, rel_tol=0.001)
 
+    def test_site_entropies_ascii_small_alphabet_counts_with_count_nonzero(
+        self, mocker
+    ):
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        entropy = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False))
+        alignment = [
+            SeqRecord(Seq("ACGT"), id="t1"),
+            SeqRecord(Seq("ATGT"), id="t2"),
+            SeqRecord(Seq("TCGT"), id="t3"),
+        ]
+        count_nonzero_spy = mocker.spy(
+            alignment_entropy_module.np,
+            "count_nonzero",
+        )
+
+        entropies = entropy.calculate_site_entropies(alignment, is_protein=False)
+
+        assert len(entropies) == 4
+        assert isclose(entropies[0], 0.918295, rel_tol=0.001)
+        assert any(
+            call.kwargs.get("axis") == 0
+            for call in count_nonzero_spy.call_args_list
+        )
+
     def test_site_entropies_ascii_path_uses_gap_code_reduction(self, mocker):
         from Bio.Seq import Seq
         from Bio.SeqRecord import SeqRecord
