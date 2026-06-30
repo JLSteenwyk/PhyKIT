@@ -2093,6 +2093,7 @@ Results:
 | `PhyloAnova._prepare_phylomorphospace_overlay` single-pass parent map and child means | balanced 32768-tip tree, parent map and ancestral coordinate setup | 0.198770s | 0.067740s | 2.93x |
 | `PhyloAnova._plot_boxplot` vectorized group masks | 500k taxa across 12 groups, univariate plot group-value preparation, side-by-side previous per-group Python list masks | 0.377527s | 0.053611s | 7.04x |
 | `PhyloAnova._plot_phylomorphospace` branch rendering | 4096 phylomorphospace branch segments, real Matplotlib Agg line render | 0.699849s | 0.032767s | 21.36x |
+| `PhyloAnova._plot_phylomorphospace` PCA variance total | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 singular values, side-by-side previous `np.sum(S ** 2)` | 0.000005887s / 0.000006054s / 0.000005545s / 0.000005994s / 0.000006021s / 0.000006877s / 0.000004525s / 0.000006631s | 0.000001281s / 0.000001132s / 0.000001423s / 0.000001156s / 0.000001312s / 0.000001259s / 0.000000879s / 0.000001432s | 4.60x / 5.35x / 3.90x / 5.19x / 4.59x / 5.46x / 5.15x / 4.63x |
 | `PhyloAnova._plot_phylomorphospace` vectorized group masks | 500k taxa across 12 groups, scatter coordinate preparation, side-by-side previous per-group Python list masks | 0.396877s | 0.075103s | 5.28x |
 | `PhyloAnova._print_results` batched pairwise text output | 100k pairwise comparison rows, captured stdout and identical text | 0.094132s | 0.077935s | 1.21x |
 | `PhyloAnova.run` cached read-only setup | balanced 32768-tip cached tree, one response trait for every tip, VCV/cholesky/RRPP/output mocked | 0.463085s | 0.176876s | 2.62x |
@@ -6974,6 +6975,9 @@ Profiling summary:
   Pillai trace calculation. Pillai trace reductions now use the ndarray
   reduction method directly for the observed and permuted eigenvalue vectors,
   avoiding generic `np.sum` dispatch in the MANOVA permutation loop.
+  Phylomorphospace PCA axis-label variance setup now uses a dot product for the
+  singular-value total variance, avoiding a temporary squared array reduction
+  after SVD while preserving the reported PC percentages.
   `_run_pairwise` now
   preserves the legacy `RandomState.permutation` sequence while computing
   permuted group residual means and distances in bulk for each group pair. A

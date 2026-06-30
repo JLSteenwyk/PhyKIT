@@ -568,6 +568,22 @@ class TestPhyloAnova:
             eigenvalues
         ) == pytest.approx(expected)
 
+    def test_singular_value_total_variance_uses_dot_product(self, monkeypatch):
+        singular_values = np.array([1.0, 2.0, 4.0, 8.0])
+        expected = float(np.sum(singular_values ** 2))
+
+        monkeypatch.setattr(
+            phylo_anova_module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "phylomorphospace PCA variance should use np.dot"
+            ),
+        )
+
+        assert phylo_anova_module._singular_value_total_variance(
+            singular_values
+        ) == pytest.approx(expected)
+
     def test_manova_rrpp_projection_sscp_matches_materialized_residuals(self):
         rng = np.random.default_rng(20260628)
         n = 36

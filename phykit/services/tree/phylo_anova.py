@@ -51,6 +51,10 @@ def _pillai_trace_from_eigenvalues(eigenvalues) -> float:
     return float((eigenvalues / (1.0 + eigenvalues)).sum())
 
 
+def _singular_value_total_variance(singular_values) -> float:
+    return float(np.dot(singular_values, singular_values))
+
+
 class PhyloAnova(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -876,7 +880,8 @@ class PhyloAnova(Tree):
             Y_centered = Y - Y.mean(axis=0)
             U, S, Vt = np.linalg.svd(Y_centered, full_matrices=False)
             pc = Y_centered @ Vt[:2].T
-            var_explained = S[:2] ** 2 / np.sum(S ** 2) * 100
+            total_var = _singular_value_total_variance(S)
+            var_explained = S[:2] ** 2 / total_var * 100
             xlabel = f"PC1 ({var_explained[0]:.1f}%)"
             ylabel = f"PC2 ({var_explained[1]:.1f}%)"
 
