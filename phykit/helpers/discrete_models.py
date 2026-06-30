@@ -7,6 +7,7 @@ stochastic_character_map, ancestral_reconstruction, and fit_discrete.
 """
 from __future__ import annotations
 
+import math
 import sys
 
 from ..errors import PhykitUserError
@@ -142,7 +143,7 @@ def _matrix_exp_two_state(Q: np.ndarray, t: float):
     if total_rate == 0.0:
         return np.eye(2, dtype=float)
 
-    decay = float(np.exp(-total_rate * t))
+    decay = math.exp(-total_rate * t)
     stay0 = (rate10 / total_rate) + (rate01 / total_rate) * decay
     to1 = (rate01 / total_rate) * (1.0 - decay)
     to0 = (rate10 / total_rate) * (1.0 - decay)
@@ -191,7 +192,7 @@ def felsenstein_pruning(
     if total_lik <= 0:
         loglik = -1e20
     else:
-        loglik = np.log(total_lik)
+        loglik = math.log(total_lik)
 
     return cond_liks, loglik
 
@@ -302,7 +303,7 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
                     if total_rate == 0.0:
                         transition = (1.0, 0.0, 0.0, 1.0)
                     else:
-                        decay = float(np.exp(-total_rate * t))
+                        decay = math.exp(-total_rate * t)
                         transition = (
                             (rate10 / total_rate)
                             + (rate01 / total_rate) * decay,
@@ -326,7 +327,7 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
         )
         if total_lik <= 0:
             return -1e20
-        return float(np.log(total_lik))
+        return math.log(total_lik)
 
     for idx, children, lengths in internal_entries:
         lik = np.ones(k)
@@ -341,7 +342,7 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
     total_lik = np.sum(pi * cond_liks[context["root_index"]])
     if total_lik <= 0:
         return -1e20
-    return float(np.log(total_lik))
+    return math.log(total_lik)
 
 
 def _felsenstein_loglik_two_state_er_rate(
@@ -361,7 +362,7 @@ def _felsenstein_loglik_two_state_er_rate(
         for child_idx, t in zip(children, lengths):
             transition = transition_cache.get(t)
             if transition is None:
-                decay = float(np.exp(-2.0 * rate * t))
+                decay = math.exp(-2.0 * rate * t)
                 same = 0.5 + (0.5 * decay)
                 different = 0.5 - (0.5 * decay)
                 transition = (same, different)
@@ -380,7 +381,7 @@ def _felsenstein_loglik_two_state_er_rate(
     total_lik = (pi[0] * root_lik[0]) + (pi[1] * root_lik[1])
     if total_lik <= 0:
         return -1e20
-    return float(np.log(total_lik))
+    return math.log(total_lik)
 
 
 def _two_state_ctmc_rates(Q):

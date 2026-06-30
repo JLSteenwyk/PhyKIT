@@ -7,6 +7,7 @@ stochastic_character_map, ancestral_reconstruction, and fit_discrete.
 """
 import builtins
 import importlib
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -173,11 +174,19 @@ class TestMatrixExp:
             raise AssertionError("two-state ER should not call scipy expm")
 
         monkeypatch.setattr(discrete_models, "expm", fail_expm)
+        monkeypatch.setattr(
+            discrete_models.np,
+            "exp",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state matrix exponential should use math.exp")
+            ),
+            raising=False,
+        )
 
         rate = 0.5
         Q = build_q_matrix(np.array([rate]), 2, "ER")
         observed = discrete_models.matrix_exp(Q, 1.0)
-        decay = np.exp(-2.0 * rate)
+        decay = math.exp(-2.0 * rate)
         expected = np.array(
             [
                 [0.5 + 0.5 * decay, 0.5 - 0.5 * decay],
@@ -469,6 +478,22 @@ class TestFelsensteinPruning:
             raise AssertionError("two-state ER prepared pruning should be scalar")
 
         monkeypatch.setattr(discrete_models, "matrix_exp", fail_matrix_exp)
+        monkeypatch.setattr(
+            discrete_models.np,
+            "exp",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state ER prepared pruning should use math.exp")
+            ),
+            raising=False,
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "log",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state ER prepared pruning should use math.log")
+            ),
+            raising=False,
+        )
 
         assert _felsenstein_loglik_prepared(context, Q, pi) == pytest.approx(
             expected
@@ -505,13 +530,30 @@ class TestFelsensteinPruning:
             raise AssertionError("two-state ARD prepared pruning should be scalar")
 
         monkeypatch.setattr(discrete_models, "matrix_exp", fail_matrix_exp)
+        monkeypatch.setattr(
+            discrete_models.np,
+            "exp",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state ARD prepared pruning should use math.exp")
+            ),
+            raising=False,
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "log",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state ARD prepared pruning should use math.log")
+            ),
+            raising=False,
+        )
 
         assert _felsenstein_loglik_prepared(context, Q, pi) == pytest.approx(
             expected
         )
 
-    def test_two_state_er_rate_loglik_matches_prepared_q_likelihood(self):
+    def test_two_state_er_rate_loglik_matches_prepared_q_likelihood(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
         from phykit.helpers.discrete_models import (
             _felsenstein_loglik_two_state_er_rate,
         )
@@ -536,12 +578,30 @@ class TestFelsensteinPruning:
         rate = 0.17
         pi = np.ones(2) / 2.0
         Q = build_q_matrix(np.array([rate]), 2, "ER")
+        expected = _felsenstein_loglik_prepared(context, Q, pi)
+
+        monkeypatch.setattr(
+            discrete_models.np,
+            "exp",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state ER rate objective should use math.exp")
+            ),
+            raising=False,
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "log",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("two-state ER rate objective should use math.log")
+            ),
+            raising=False,
+        )
 
         assert _felsenstein_loglik_two_state_er_rate(
             context,
             rate,
             pi,
-        ) == pytest.approx(_felsenstein_loglik_prepared(context, Q, pi))
+        ) == pytest.approx(expected)
 
     def test_two_state_er_fit_avoids_objective_q_rebuilds(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
