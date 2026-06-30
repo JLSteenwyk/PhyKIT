@@ -791,8 +791,8 @@ class PhylogeneticOrdination(Tree):
         append("")
         append("Embedding:")
         append("\t" + "\t".join(dim_labels))
-        for k, taxon in enumerate(taxon_names):
-            row = "\t".join(fmt(embedding[k, i]) for i in range(self.n_components))
+        for taxon, values in zip(taxon_names, embedding.tolist()):
+            row = "\t".join(fmt(value) for value in values)
             append(f"{taxon}\t{row}")
 
         if lambda_val is not None:

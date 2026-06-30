@@ -1368,6 +1368,28 @@ class TestRun:
             "Log-likelihood: -12.250000"
         )
 
+    def test_dimreduce_text_output_formats_converted_rows(self, tsne_args, mocker):
+        svc = PhylogeneticOrdination(tsne_args)
+        svc.n_components = 3
+        printed = mocker.patch("builtins.print")
+
+        svc._print_dimreduce_text_output(
+            embedding=np.array([[1.2345678, 2.0, -3.5]]),
+            taxon_names=["taxon_a"],
+            params={},
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        printed.assert_called_once_with(
+            "Method: tsne\n"
+            "Correction: BM\n"
+            "\n"
+            "Embedding:\n"
+            "\tDim1\tDim2\tDim3\n"
+            "taxon_a\t1.234568\t2.000000\t-3.500000"
+        )
+
     def test_tsne_json_output(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,

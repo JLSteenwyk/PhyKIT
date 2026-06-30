@@ -1731,6 +1731,7 @@ Results:
 | `PhylogeneticOrdination._print_pca_text_output` batched text output | 100k taxa x 4 PC scores plus 8 trait loadings, captured stdout and identical text | 0.183670s | 0.169344s | 1.08x |
 | `PhylogeneticOrdination._format_pca_result` row-slice JSON payload | 100k taxa x 4 PC scores plus 8 trait loadings, identical nested payload | 0.072574s | 0.058033s | 1.25x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` batched text output | 100k taxa x 2 embedding dimensions, captured stdout and identical text | 0.111761s | 0.099769s | 1.12x |
+| `PhylogeneticOrdination._print_dimreduce_text_output` embedding row conversion | 100k taxa x 2 embedding dimensions, identical captured text while avoiding per-cell NumPy indexing | 0.692168s | 0.517560s | 1.34x |
 | `PhylogeneticOrdination._resolve_tree_color_trait` single-pass color file | 300k-row external tree-color TSV, all taxa covered, reconstruction stubbed to isolate parsing | 0.934379s | 0.522889s | 1.79x |
 | `phylogenetic_ordination` module import without eager SciPy linalg/optimize | cold process import for phylogenetic-ordination command module | 0.440223s | 0.168008s | 2.6x |
 | `phylogenetic_ordination` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS import | 0.168008s | 0.032468s | 5.17x |
