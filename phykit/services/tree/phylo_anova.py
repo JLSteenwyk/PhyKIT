@@ -41,8 +41,8 @@ def solve_triangular(*args, **kwargs):
 
 def _permutation_p_value_and_z(observed: float, permutations: np.ndarray) -> tuple[float, float]:
     p_value = float(np.count_nonzero(permutations >= observed) / permutations.size)
-    perm_mean = float(np.mean(permutations))
-    perm_std = float(np.std(permutations))
+    perm_mean = float(permutations.mean())
+    perm_std = float(permutations.std())
     z_score = (observed - perm_mean) / perm_std if perm_std > 0 else 0.0
     return p_value, float(z_score)
 

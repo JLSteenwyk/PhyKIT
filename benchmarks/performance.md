@@ -2090,6 +2090,7 @@ Results:
 | `PhyloAnova._run_pairwise` flat group-pair mask indices | 120 sparse boolean masks over 500k observations, side-by-side previous `np.where(mask)[0]` extraction used in pairwise setup | 0.208942s | 0.113959s | 1.83x |
 | `PhyloAnova._build_design_matrix` cached group lookup | 500k taxa, 12 groups, treatment-coded design matrix | 0.152966s | 0.047562s | 3.22x |
 | `PhyloAnova._run_manova` Pillai trace reduction | 2 / 3 / 4 / 8 / 16 trait eigenvalue vectors, side-by-side previous `np.sum` wrapper used in observed and permuted Pillai statistics | 0.000008343s / 0.000007664s / 0.000007563s / 0.000007925s / 0.000007421s | 0.000005759s / 0.000005310s / 0.000003918s / 0.000004917s / 0.000004665s | 1.45x / 1.44x / 1.93x / 1.61x / 1.59x |
+| `PhyloAnova._permutation_p_value_and_z` ndarray mean/std reductions | 10 / 100 / 1000 / 10k / 100k permutation statistics, side-by-side previous `np.mean` and `np.std` wrappers | 0.000021215s / 0.000020485s / 0.000020951s / 0.000030437s / 0.000162023s | 0.000015491s / 0.000016347s / 0.000019552s / 0.000025833s / 0.000142907s | 1.37x / 1.25x / 1.07x / 1.18x / 1.13x |
 | `PhyloAnova._prepare_phylomorphospace_overlay` direct traversal | balanced 65536-tip tree, parent map and ancestral coordinate setup | 0.958097s | 0.304198s | 3.15x |
 | `PhyloAnova._prepare_phylomorphospace_overlay` single-pass parent map and child means | balanced 32768-tip tree, parent map and ancestral coordinate setup | 0.198770s | 0.067740s | 2.93x |
 | `PhyloAnova._plot_boxplot` vectorized group masks | 500k taxa across 12 groups, univariate plot group-value preparation, side-by-side previous per-group Python list masks | 0.377527s | 0.053611s | 7.04x |
@@ -6977,6 +6978,9 @@ Profiling summary:
   Pillai trace calculation. Pillai trace reductions now use the ndarray
   reduction method directly for the observed and permuted eigenvalue vectors,
   avoiding generic `np.sum` dispatch in the MANOVA permutation loop.
+  Permutation p-value/z-score summaries now compute permutation means and
+  standard deviations through ndarray reductions, avoiding lazy NumPy proxy
+  dispatch in the shared ANOVA/MANOVA summary helper.
   Phylomorphospace PCA axis-label variance setup now uses a dot product for the
   singular-value total variance, avoiding a temporary squared array reduction
   after SVD while preserving the reported PC percentages.

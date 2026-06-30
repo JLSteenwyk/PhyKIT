@@ -79,23 +79,19 @@ def test_permutation_p_value_and_z_matches_legacy_reductions():
     )
 
 
-def test_permutation_p_value_and_z_computes_std_once(monkeypatch):
+def test_permutation_p_value_and_z_uses_array_reductions(monkeypatch):
     permutations = np.array([1.0, 2.0, 3.0, 4.0])
-    original_std = phylo_anova_module.np.std
-    std_calls = 0
 
-    def counting_std(*args, **kwargs):
-        nonlocal std_calls
-        std_calls += 1
-        return original_std(*args, **kwargs)
+    def fail_generic_reduction(*_args, **_kwargs):
+        raise AssertionError("permutation summaries should use ndarray reductions")
 
-    monkeypatch.setattr(phylo_anova_module.np, "std", counting_std)
+    monkeypatch.setattr(phylo_anova_module.np, "mean", fail_generic_reduction)
+    monkeypatch.setattr(phylo_anova_module.np, "std", fail_generic_reduction)
 
     p_value, z_score = phylo_anova_module._permutation_p_value_and_z(
         2.5, permutations
     )
 
-    assert std_calls == 1
     assert p_value == pytest.approx(0.5)
     assert np.isfinite(z_score)
 
