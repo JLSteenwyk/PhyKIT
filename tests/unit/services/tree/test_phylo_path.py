@@ -1,5 +1,6 @@
 import builtins
 import importlib
+import math
 import subprocess
 import sys
 from argparse import Namespace
@@ -87,6 +88,19 @@ class TestPhyloPath:
             np.exp(-3.0) * (1.0 + 3.0 + 4.5)
         )
         assert phylo_path_module._t_two_tailed_p_value(2.2281388519649385, 10) == pytest.approx(0.05)
+
+    def test_fishers_c_uses_scalar_math_log(self, monkeypatch):
+        def fail_np_log(*_args, **_kwargs):
+            raise AssertionError("Fisher's C scalar p-values should use math.log")
+
+        monkeypatch.setattr(phylo_path_module.np, "log", fail_np_log, raising=False)
+
+        p_values = [0.5, 0.25, 0.125, 0.75]
+        expected = -2.0 * sum(math.log(p_value) for p_value in p_values)
+
+        assert phylo_path_module._fishers_c_from_p_values(p_values) == pytest.approx(
+            expected
+        )
 
     def test_probability_helpers_do_not_import_scipy_stats(self, monkeypatch):
         original_import = __import__
