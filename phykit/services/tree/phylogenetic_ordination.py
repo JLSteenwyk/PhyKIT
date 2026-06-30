@@ -16,6 +16,10 @@ class _LazyNumpy:
 np = _LazyNumpy()
 
 
+def _eigenvalue_total_variance(eigenvalues) -> float:
+    return float(eigenvalues.sum())
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -171,7 +175,7 @@ class PhylogeneticOrdination(Tree):
 
         pc_labels = [f"PC{i+1}" for i in range(p)]
 
-        total_var = np.sum(eigenvalues)
+        total_var = _eigenvalue_total_variance(eigenvalues)
         proportions = eigenvalues / total_var
 
         if self.mode == "corr":

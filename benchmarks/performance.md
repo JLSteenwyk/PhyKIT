@@ -1755,6 +1755,7 @@ Results:
 | `PhylogeneticOrdination._multi_trait_log_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV x 10-trait likelihood evaluations, SciPy already warm | 0.066843s | 0.053844s | 1.24x |
 | `PhylogeneticOrdination` PCA GLS centering/covariance setup | 420 taxa SPD VCV x 8 traits | 0.005137s | 0.000454s | 11.3x |
 | `PhylogeneticOrdination` PCA corr-mode diagonal scaling | 420 taxa x 700 traits, synthetic covariance and centered scores | 0.023722s | 0.001051s | 22.6x |
+| `PhylogeneticOrdination._run_pca` eigenvalue total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 eigenvalues, side-by-side previous `np.sum(eigenvalues)` | 0.000005367s / 0.000005370s / 0.000004776s / 0.000004082s / 0.000004451s / 0.000004098s / 0.000004246s / 0.000005265s | 0.000001938s / 0.000002333s / 0.000001965s / 0.000002455s / 0.000002093s / 0.000002365s / 0.000002326s / 0.000002696s | 2.77x / 2.30x / 2.43x / 1.66x / 2.13x / 1.73x / 1.83x / 1.95x |
 | `PhylogeneticOrdination._center_traits_by_vcv_inverse` combined RHS multiply | 420 taxa SPD VCV x 700 traits, weighted inverse fallback path | 0.043051s | 0.012594s | 3.4x |
 | `PhylogeneticOrdination._center_traits_by_vcv_cholesky` residual solve reuse | 120 repeated 420-taxon SPD VCV x 10-trait weighted centering calls, SciPy already warm | 0.056996s | 0.050926s | 1.12x |
 | `PhylogeneticOrdination` broadcast centering products | 420 taxa x 700 traits, centered traits plus weighted centered traits | 0.000867s | 0.000635s | 1.37x |
@@ -6170,6 +6171,9 @@ Profiling summary:
   ordination tree overlays now use the same direct preorder branch traversal for
   segment and edge-color setup, and the tree plot now computes the maximum root
   distance directly from the values view without materializing a temporary list.
+  PCA proportion setup now totals eigenvalues with the ndarray reduction method,
+  avoiding generic `np.sum` dispatch for the bounded component vector while
+  preserving the same variance proportions.
   A later `phylomorphospace` startup pass defers NumPy behind a module-level
   proxy, leaving array startup until trait matrices, ancestral estimates, or
   plotting color arrays are built. A follow-up startup pass localizes pickle to

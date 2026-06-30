@@ -1234,6 +1234,22 @@ class TestRun:
             "Log-likelihood: -12.250000"
         )
 
+    def test_eigenvalue_total_variance_uses_array_sum(self, monkeypatch):
+        eigenvalues = np.array([3.0, 2.0, 1.0])
+        expected = float(np.sum(eigenvalues))
+
+        monkeypatch.setattr(
+            phylogenetic_ordination_module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "PCA total variance should use ndarray.sum"
+            ),
+        )
+
+        assert phylogenetic_ordination_module._eigenvalue_total_variance(
+            eigenvalues
+        ) == pytest.approx(expected)
+
     def test_pca_text_output_formats_converted_rows(self, default_args, mocker):
         svc = PhylogeneticOrdination(default_args)
         printed = mocker.patch("builtins.print")
