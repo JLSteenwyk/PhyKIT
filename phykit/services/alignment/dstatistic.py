@@ -58,6 +58,11 @@ def print_json(*args, **kwargs):
     return _print_json(*args, **kwargs)
 
 
+def _sum_squared_deviations(values, center) -> float:
+    centered = values - center
+    return float(np.dot(centered, centered))
+
+
 def _normal_two_tailed_p_value(z_score: float) -> float:
     return math.erfc(abs(z_score) / math.sqrt(2.0))
 
@@ -622,7 +627,8 @@ class Dstatistic(Alignment):
         if n_blocks >= 2:
             jackknife_d = self._jackknife_d_values(block_abba, block_baba)
             mean_d = np.mean(jackknife_d)
-            se = float(np.sqrt((n_blocks - 1) / n_blocks * np.sum((jackknife_d - mean_d) ** 2)))
+            sum_sq = _sum_squared_deviations(jackknife_d, mean_d)
+            se = float(np.sqrt((n_blocks - 1) / n_blocks * sum_sq))
 
             if se > 0:
                 z_score = d_stat / se

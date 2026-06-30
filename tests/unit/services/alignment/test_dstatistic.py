@@ -346,6 +346,23 @@ class TestDstatistic:
 
         np.testing.assert_allclose(observed, np.zeros(4))
 
+    def test_sum_squared_deviations_uses_dot_product(self, monkeypatch):
+        values = np.array([0.1, 0.3, 0.4, 0.8])
+        center = float(values.mean())
+        expected = float(np.sum((values - center) ** 2))
+
+        monkeypatch.setattr(
+            module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "jackknife variance should use a dot product"
+            ),
+        )
+
+        assert module._sum_squared_deviations(values, center) == pytest.approx(
+            expected
+        )
+
     def test_abba_counted_correctly(self, tmp_path):
         """4 ABBA sites, 0 BABA, rest invariant."""
         aln = tmp_path / "test.fa"

@@ -587,6 +587,7 @@ Results:
 | `Dstatistic._normal_two_tailed_p_value` | cold process, alignment-mode jackknife z-score p-value | 0.556567s | 0.000003125s | 178101.4x |
 | `Dstatistic._jackknife_d_values` | 300k ABBA/BABA jackknife blocks | 0.0972s | 0.0022s | 43.3x |
 | `Dstatistic._jackknife_d_values` block total reductions | 300k ABBA/BABA jackknife blocks, side-by-side previous `np.sum` totals | 0.000460071s | 0.000216358s | 2.13x |
+| `Dstatistic` jackknife standard-error sum of squares | 10 / 20 / 50 / 100 / 1000 / 4000 / 10000 jackknife D values, side-by-side previous `np.sum((x - mean) ** 2)` | 0.000008163s / 0.000007648s / 0.000007759s / 0.000007694s / 0.000008656s / 0.000017993s / 0.000020941s | 0.000002708s / 0.000002864s / 0.000002712s / 0.000003855s / 0.000003504s / 0.000004506s / 0.000017397s | 3.01x / 2.67x / 2.86x / 2.00x / 2.47x / 3.99x / 1.20x |
 | `Dstatistic._read_fasta` / `Dfoil._read_fasta` | 50k FASTA records, lowercase 120 bp each | 0.0638s | 0.0360s | 1.8x |
 | `Dstatistic._read_fasta` / `Dfoil._read_fasta` shared first-token parser | 50k FASTA records, lowercase 120 bp each, legacy `SimpleFastaParser` baseline | 0.047871s | 0.040750s | 1.17x |
 | `Dfoil._count_site_patterns` | 475k sites, DFOIL informative/invariant/ambiguous/non-biallelic synthetic alignment | 0.3978s | 0.0073s | 54.5x |
@@ -3543,6 +3544,9 @@ Profiling summary:
   ABBA/BABA totals and D values with vectorized NumPy arithmetic, preserving
   zero-denominator blocks as zero. The helper now totals each block vector with
   the ndarray `sum()` method, avoiding two lazy NumPy reduction dispatches.
+  Alignment-mode jackknife standard-error setup now computes the centered
+  sum-of-squares with a dot product, avoiding the temporary squared deviation
+  reduction while preserving the same standard-error formula.
 - `Dstatistic._read_fasta` and `Dfoil._read_fasta` baseline time materialized
   `SeqRecord` objects while alignment mode only needed IDs and uppercase
   sequences. The optimized path uses `SimpleFastaParser`, preserving first-token
