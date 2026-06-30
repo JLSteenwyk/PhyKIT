@@ -328,6 +328,7 @@ Results:
 | `AlignmentOutlierTaxa.calculate_outliers` comparable-pair row counts | 2000 x 2000 comparable-pair boolean matrix, side-by-side previous `np.sum(..., axis=1)` row counts | 0.001769s | 0.001283s | 1.38x |
 | `AlignmentOutlierTaxa.calculate_outliers` constant-composition shortcut | 1000 taxa x 5000 sites, conserved ASCII DNA alignment, side-by-side previous full feature pipeline | 0.429936s | 0.042515s | 10.11x |
 | `AlignmentOutlierTaxa.calculate_outliers` identical multi-symbol shortcut | 1000 taxa x 5000 mixed-symbol DNA sites, lowercase/uppercase variants, side-by-side previous full feature pipeline | 8.073867s | 0.014392s | 561.01x |
+| `AlignmentOutlierTaxa` identical Unicode valid length | 100k-site uppercase Unicode identical-sequence helper, DNA / protein, side-by-side previous Python character-membership loop | 0.006644s / 0.005970s | 0.000494s / 0.000388s | 13.45x / 15.38x |
 | `AlignmentOutlierTaxa.calculate_outliers` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.081116s / 0.008015s / 0.090683s | 0.046170s / 0.000001s / 0.059985s | 1.76x / 12036.36x / 1.51x |
 | `AlignmentOutlierTaxa.calculate_outliers` all-valid ASCII shortcut | 400 taxa x 1200 sites, variable-composition ASCII DNA alignment without invalid symbols | 0.143346s | 0.103475s | 1.39x |
 | `AlignmentOutlierTaxa` ASCII symbol count setup | five repeated 1000-taxon x 5000-site protein row/site count builds, side-by-side previous per-symbol equality reductions | 3.406926s | 0.871172s | 3.91x |
@@ -2863,7 +2864,9 @@ Profiling summary:
   existing normal path to preserve `None` no-overlap distance rows. That
   identical-sequence guard now uses the shared index-based scanner instead of
   allocating `sequences[1:]`, preserving early mismatch short-circuiting without
-  list-copy overhead.
+  list-copy overhead. The identical-sequence Unicode valid-length fallback now
+  counts invalid characters with `str.count` instead of looping over every
+  character in Python.
   Variable-composition ASCII alignments with no invalid symbols now use a
   byte-scan guard to skip invalid lookup construction, validity-mask allocation,
   and validity-weighted entropy averaging while preserving the existing mask

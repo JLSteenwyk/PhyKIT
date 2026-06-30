@@ -150,7 +150,7 @@ class AlignmentOutlierTaxa(Alignment):
             invalid_bytes = bytes(ord(char) for char in invalid_chars)
             return len(sequence_bytes.translate(None, invalid_bytes))
         except UnicodeEncodeError:
-            return sum(character not in invalid_chars for character in sequence)
+            return len(sequence) - sum(sequence.count(char) for char in invalid_chars)
 
     @staticmethod
     def _symbol_counts_by_row(alignment_array, symbols):

@@ -292,6 +292,18 @@ class TestAlignmentOutlierTaxa:
 
         assert alignment_outlier_taxa_module._all_sequences_identical(sequences) is True
 
+    def test_valid_length_for_identical_unicode_sequence_counts_invalid_chars(self):
+        sequence = "ACGT\u03a9N-X?"
+
+        assert AlignmentOutlierTaxa._valid_length_for_identical_sequence(
+            sequence,
+            ["-", "?", "*", "X", "N"],
+        ) == 5
+        assert AlignmentOutlierTaxa._valid_length_for_identical_sequence(
+            sequence,
+            ["-", "?", "*", "X"],
+        ) == 6
+
     def test_calculate_outliers_single_symbol_uneven_lengths_uses_normal_path(self):
         service = self._service()
         alignment = MultipleSeqAlignment(
