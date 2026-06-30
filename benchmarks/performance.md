@@ -1898,6 +1898,7 @@ Results:
 | `PhyloPath._topological_order` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.099320s | 0.014319s | 6.94x |
 | `PhyloPath._basis_set` precomputed parent sets | 350-variable sparse DAG, 60,782 d-separation basis statements | 1.211617s | 0.057178s | 21.19x |
 | `PhyloPath._model_average` edge-indexed coefficient accumulation | 8k candidate models, 4k unique path coefficients, 12 coefficients per model | 1.562250s | 0.034478s | 45.31x |
+| `PhyloPath._model_average` combined weight/coefficient sums | 12 coefficient entries for one edge, side-by-side previous three generator passes | 0.000007119s | 0.000002185s | 3.26x |
 | `PhyloPath.run` model-variable trait-name index resolution | 40k parsed trait columns, 1200 model variables, first duplicate index preserved | 0.684638s | 0.002820s | 242.76x |
 | `PhyloPath.run` multi-variable trait setup | 120k taxa x 12 parsed trait columns, five model variables extracted and copied | 0.062919s | 0.038572s | 1.63x |
 | `PhyloPath.run` selected-variable standardization | 120k taxa x 64 parsed trait columns, 40 model variables, side-by-side previous raw-data dict and duplicate mean pass | 0.030258s | 0.025553s | 1.18x |
@@ -6535,7 +6536,9 @@ Profiling summary:
   parent scans for every non-adjacent variable pair. Conditional model averaging
   now accumulates coefficients by edge in one pass over candidate models,
   preserving sorted coefficient output and the same weighted standard-error
-  formula while avoiding one model scan per unique edge.
+  formula while avoiding one model scan per unique edge. A follow-up averaging
+  pass combines weight and weighted-coefficient accumulation for each edge,
+  avoiding one generator scan before the standard-error pass.
 - `PhylogeneticSignal._blombergs_k` baseline time recomputed each permutation's
   GLS-centered residual ratio one shuffle at a time. The optimized path still
   uses the same seeded permutation stream, but evaluates batches of permutations

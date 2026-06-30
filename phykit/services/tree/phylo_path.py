@@ -703,20 +703,21 @@ class PhyloPath(Tree):
         avg_coefs = {}
         for edge in sorted(edge_entries):
             entries = edge_entries[edge]
-            w_sum = sum(weight for _, _, weight in entries)
+            w_sum = 0.0
+            coef_sum = 0.0
+            for coef, _se, weight in entries:
+                w_sum += weight
+                coef_sum += weight * coef
             if w_sum <= 0:
                 continue
 
-            avg_coef = (
-                sum(weight * coef for coef, _, weight in entries) / w_sum
-            )
+            avg_coef = coef_sum / w_sum
             # Combined SE: within-model + between-model variance
-            avg_se = math.sqrt(
-                sum(
-                    weight * (se * se + (coef - avg_coef) ** 2)
-                    for coef, se, weight in entries
-                ) / w_sum
-            )
+            se_sum = 0.0
+            for coef, se, weight in entries:
+                coef_diff = coef - avg_coef
+                se_sum += weight * (se * se + coef_diff * coef_diff)
+            avg_se = math.sqrt(se_sum / w_sum)
 
             avg_coefs[edge] = {
                 "coef": float(avg_coef),
