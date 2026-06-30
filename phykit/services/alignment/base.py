@@ -175,7 +175,7 @@ class Alignment(BaseService):
             where=denom > 0,
         )
 
-        return float(np.sum(indiv_rcv_values))
+        return float(indiv_rcv_values.sum())
 
     @staticmethod
     def get_gap_chars(is_protein: bool = False) -> list[str]:

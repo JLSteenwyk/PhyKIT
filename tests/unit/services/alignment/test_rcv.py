@@ -140,6 +140,26 @@ assert "numpy" not in sys.modules
             for call in count_nonzero_spy.call_args_list
         )
 
+    def test_relative_composition_variability_final_total_uses_array_sum(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("AGGT"), id="t2"),
+            ]
+        )
+        rcv = RelativeCompositionVariability(args)
+        mocker.patch.object(
+            RelativeCompositionVariability,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", True),
+        )
+        sum_spy = mocker.spy(alignment_base_module.np, "sum")
+
+        assert rcv.calculate_rcv() > 0.0
+        assert all("axis" in call.kwargs for call in sum_spy.call_args_list)
+
     def test_relative_composition_variability_protein_ascii_uses_bincount(
         self, mocker, args
     ):
