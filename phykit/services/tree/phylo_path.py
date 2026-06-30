@@ -90,6 +90,10 @@ def _fishers_c_from_p_values(p_values: list[float]) -> float:
     return -2.0 * sum(math.log(p_value) for p_value in p_values)
 
 
+def _relative_likelihood_from_delta(delta: float) -> float:
+    return math.exp(-0.5 * delta)
+
+
 def _t_two_tailed_p_value(t_stat: float, df: int) -> float:
     global _STDTR
 
@@ -234,7 +238,7 @@ class PhyloPath(Tree):
         min_CICc = min(r["CICc"] for r in model_results.values())
         for r in model_results.values():
             r["delta"] = r["CICc"] - min_CICc
-            r["rel_lik"] = np.exp(-0.5 * r["delta"])
+            r["rel_lik"] = _relative_likelihood_from_delta(r["delta"])
 
         sum_lik = sum(r["rel_lik"] for r in model_results.values())
         for r in model_results.values():

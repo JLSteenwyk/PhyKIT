@@ -102,6 +102,16 @@ class TestPhyloPath:
             expected
         )
 
+    def test_relative_likelihood_uses_scalar_math_exp(self, monkeypatch):
+        def fail_np_exp(*_args, **_kwargs):
+            raise AssertionError("model weights should use scalar math.exp")
+
+        monkeypatch.setattr(phylo_path_module.np, "exp", fail_np_exp, raising=False)
+
+        assert phylo_path_module._relative_likelihood_from_delta(
+            2.5
+        ) == pytest.approx(math.exp(-1.25))
+
     def test_probability_helpers_do_not_import_scipy_stats(self, monkeypatch):
         original_import = __import__
 
