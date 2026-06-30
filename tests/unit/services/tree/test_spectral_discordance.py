@@ -368,6 +368,22 @@ class TestPCA:
         _, ve, _, _ = self._get_pca(default_args)
         assert pytest.approx(np.sum(ve), abs=1e-6) == 1.0
 
+    def test_singular_value_total_variance_uses_dot_product(self, monkeypatch):
+        singular_values = np.array([1.0, 2.0, 4.0, 8.0])
+        expected = float(np.sum(singular_values ** 2))
+
+        monkeypatch.setattr(
+            spectral_discordance_module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "singular value variance should use np.dot"
+            ),
+        )
+
+        assert spectral_discordance_module._singular_value_total_variance(
+            singular_values
+        ) == pytest.approx(expected)
+
     def test_variance_explained_descending(self, default_args):
         _, ve, _, _ = self._get_pca(default_args)
         for i in range(len(ve) - 1):

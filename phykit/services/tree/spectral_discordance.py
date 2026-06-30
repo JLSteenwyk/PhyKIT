@@ -70,6 +70,10 @@ def _update_kmeans_centers(
     return new_centers
 
 
+def _singular_value_total_variance(singular_values: np.ndarray) -> float:
+    return float(np.dot(singular_values, singular_values))
+
+
 def _shared_gene_tree_taxa(gene_trees, get_tip_names):
     shared = set(get_tip_names(gene_trees[0]))
     for idx in range(1, len(gene_trees)):
@@ -796,7 +800,7 @@ class SpectralDiscordance(Tree):
 
         U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
         scores = U * S
-        total_var = np.sum(S ** 2)
+        total_var = _singular_value_total_variance(S)
         var_explained = S ** 2 / total_var if total_var > 0 else np.zeros_like(S)
         loadings = Vt
 

@@ -735,6 +735,7 @@ Results:
 | `SpectralDiscordance._spectral_cluster` condensed distance reuse | 2500 gene-tree PCA score rows x 8 dimensions, side-by-side previous squareform plus triangular-index distance gather for bandwidth median | 0.303434s | 0.091461s | 3.32x |
 | `SpectralDiscordance._kmeans` vectorized distance and center updates | 80k rows x 8 dimensions, 12 clusters, fixed RandomState seed and identical labels | 12.232717s | 0.789952s | 15.49x |
 | `SpectralDiscordance._get_top_loadings` partial top-N selection | 20 PCs x 300k bipartitions, top 10 loadings per PC, identical reported entries | 0.442687s | 0.050885s | 8.70x |
+| `SpectralDiscordance._run_pca` singular-value total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 singular values, side-by-side previous `np.sum(S ** 2)` | 0.000005887s / 0.000006054s / 0.000005545s / 0.000005994s / 0.000006021s / 0.000006877s / 0.000004525s / 0.000006631s | 0.000001281s / 0.000001132s / 0.000001423s / 0.000001156s / 0.000001312s / 0.000001259s / 0.000000879s / 0.000001432s | 4.60x / 5.35x / 3.90x / 5.19x / 4.59x / 5.46x / 5.15x / 4.63x |
 | `SpectralDiscordance._parse_gene_trees` path-list existence guard | 50k existing absolute tree paths, tree parsing mocked | 0.263681s | 0.121357s | 2.17x |
 | `spectral_discordance` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized gene-tree parser import | 0.142026s | 0.031427s | 4.52x |
 | `spectral_discordance` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.015141s | 0.007166s | 2.11x |
@@ -3831,7 +3832,9 @@ Profiling summary:
   bipartition canonicalization now compares the smallest taxon on each disjoint
   half instead of sorting both halves, preserving the documented sorted
   lexicographic tiebreak. Spectral clustering uses the same direct
-  normalized-Laplacian scaling as TreeSpace. Gene-tree file-list rows now use
+  normalized-Laplacian scaling as TreeSpace. PCA variance explained now computes
+  singular-value total variance with a dot product, avoiding the temporary
+  squared array reduction after SVD. Gene-tree file-list rows now use
   a bound string existence check before `Phylo.read`, preserving the parser's
   current path interpretation while avoiding a `Path` object per listed file.
   Top-loading reporting now uses guarded partial selection for the common
