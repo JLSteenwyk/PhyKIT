@@ -116,9 +116,10 @@ class ResultCache:
 
     def clear(self) -> None:
         """Clear all cached results."""
-        for file in os.listdir(self.cache_dir):
-            if file.endswith('.pkl'):
-                os.remove(os.path.join(self.cache_dir, file))
+        with os.scandir(self.cache_dir) as entries:
+            for entry in entries:
+                if entry.name.endswith('.pkl'):
+                    os.remove(entry.path)
 
 
 def cached_computation(cache_instance: ResultCache = None):

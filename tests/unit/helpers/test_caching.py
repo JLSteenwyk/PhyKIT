@@ -196,6 +196,36 @@ class TestResultCache(TestCase):
         cache_files = [f for f in os.listdir(self.cache.cache_dir) if f.endswith('.pkl')]
         self.assertEqual(len(cache_files), 0)
 
+    def test_clear_uses_scandir_entry_paths(self):
+        class FakeEntry:
+            def __init__(self, name, path):
+                self.name = name
+                self.path = path
+
+        class FakeScandir:
+            def __init__(self, entries):
+                self.entries = entries
+
+            def __enter__(self):
+                return iter(self.entries)
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+        entries = [
+            FakeEntry("a.pkl", "/cache/a.pkl"),
+            FakeEntry("b.txt", "/cache/b.txt"),
+            FakeEntry("c.pkl", "/cache/c.pkl"),
+        ]
+        removed = []
+
+        with patch("os.listdir", side_effect=AssertionError("clear should use scandir")):
+            with patch("os.scandir", return_value=FakeScandir(entries)):
+                with patch("os.remove", side_effect=removed.append):
+                    self.cache.clear()
+
+        self.assertEqual(removed, ["/cache/a.pkl", "/cache/c.pkl"])
+
 
 class TestCachedComputation(TestCase):
     """Test cached_computation decorator"""
