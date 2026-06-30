@@ -290,7 +290,7 @@ class NumpyParallel:
             # Process columns
             results = ParallelProcessor.parallel_map(
                 lambda col: func(array[:, col]),
-                list(range(array.shape[1])),
+                range(array.shape[1]),
                 num_workers
             )
             return np.array(results).T
@@ -298,7 +298,7 @@ class NumpyParallel:
             # Process rows
             results = ParallelProcessor.parallel_map(
                 lambda row: func(array[row, :]),
-                list(range(array.shape[0])),
+                range(array.shape[0]),
                 num_workers
             )
             return np.array(results)

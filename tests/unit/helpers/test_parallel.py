@@ -348,6 +348,7 @@ class TestNumpyParallel(unittest.TestCase):
                 col_sum, 0, array
             )
 
+            self.assertIsInstance(mock_map.call_args.args[1], range)
             # Result should be transposed back
             expected = np.array([12, 15, 18])
             np.testing.assert_array_equal(result, expected)
@@ -368,6 +369,7 @@ class TestNumpyParallel(unittest.TestCase):
                 row_sum, 1, array
             )
 
+            self.assertIsInstance(mock_map.call_args.args[1], range)
             expected = np.array([6, 15, 24])
             np.testing.assert_array_equal(result, expected)
 

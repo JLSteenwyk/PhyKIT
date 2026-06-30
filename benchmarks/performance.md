@@ -383,6 +383,7 @@ Results:
 | `ParallelProcessor.get_optimal_workers` cached CPU count | 500k repeated worker-selection calls with varying data sizes, identical worker counts | 2.401188s | 0.699817s | 3.43x |
 | `NumpyParallel.parallel_pairwise_operation` explicit sequential symmetric path | 1200 items, symmetric pairwise absolute-difference matrix, `num_workers=1`, identical matrix output | 0.328311s | 0.157943s | 2.08x |
 | `ParallelProcessor.parallel_reduce` no-initial iterator reduction | 1M-item sequential identity map plus additive reduce, side-by-side previous `results[1:]` slice | 0.209717s | 0.151342s | 1.39x |
+| `NumpyParallel.parallel_apply_along_axis` lazy index range | 1 x 1M array, column-wise sequential apply with identical output, side-by-side previous eager `list(range(...))` index stream | 1.033323s | 0.788665s | 1.31x |
 | `CreateConcatenationMatrix._process_alignment_file` | 2500-record FASTA, 2750 requested taxa, 120 sites | 0.0566s | 0.0017s | 33.3x |
 | `CreateConcatenationMatrix._process_alignment_file` all-present FASTA return | 8000-record FASTA, all requested taxa present, 120 sites | 0.008992s | 0.006960s | 1.29x |
 | `CreateConcatenationMatrix._process_alignment_file` lightweight FASTA parser | 8000-record FASTA, all requested taxa present, 20 sites split across two lines | 0.005270s | 0.004516s | 1.17x |
@@ -3007,6 +3008,9 @@ Profiling summary:
   repeated batch setup. `ParallelProcessor.parallel_reduce` without an initial
   value now consumes the mapped results through an iterator after taking the
   first value, avoiding a near-full-list `results[1:]` copy before reduction.
+  `NumpyParallel.parallel_apply_along_axis` now passes `range` index streams to
+  `parallel_map` instead of eagerly materializing `list(range(...))`, preserving
+  ordered row/column application while avoiding large temporary index lists.
 - `CreateConcatenationMatrix._compute_effective_occupancy` baseline time
   checked every concatenated character in Python when threshold filtering was
   enabled. The optimized path counts each fixed invalid symbol with C-level
