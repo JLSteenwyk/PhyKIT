@@ -2099,6 +2099,13 @@ class TestDiscreteMarginalPosteriors:
             Q,
             states,
         )
+        monkeypatch.setattr(
+            ancestral_module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "discrete posterior normalization should use ndarray.sum"
+            ),
+        )
         calls = []
         original_matrix_exp = svc._matrix_exp
 

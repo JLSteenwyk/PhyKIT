@@ -2013,7 +2013,7 @@ class AncestralReconstruction(Tree):
             upward[id(clade)] = P_v.T @ (U_parent * sibling_product)
 
             # Normalize to prevent underflow
-            s = np.sum(upward[id(clade)])
+            s = upward[id(clade)].sum()
             if s > 0:
                 upward[id(clade)] /= s
 
@@ -2030,7 +2030,7 @@ class AncestralReconstruction(Tree):
             L = cond_liks[id(clade)]
             U = upward.get(id(clade), pi)
             raw = L * U
-            total = np.sum(raw)
+            total = raw.sum()
             if total > 0:
                 posteriors[id(clade)] = raw / total
             else:

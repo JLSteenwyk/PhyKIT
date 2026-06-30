@@ -1780,6 +1780,7 @@ Results:
 | `AncestralReconstruction._build_parent_map` unordered child push | balanced 65536-tip tree, parent-map setup, optimized helper baseline | 0.023996s | 0.017968s | 1.34x |
 | `AncestralReconstruction._get_descendant_tips` direct clade traversal | balanced 32768-tip tree, descendant-tip lists for every internal node | 0.935165s | 0.117913s | 7.93x |
 | `AncestralReconstruction._discrete_marginal_posteriors` transition cache | balanced 2048-tip tree, 3 states, repeated unit branch length | 0.310393s | 0.104882s | 2.96x |
+| `AncestralReconstruction._discrete_marginal_posteriors` ndarray normalization sums | 3-state posterior vectors, per-node upward/posterior normalization reductions | 0.000006715s | 0.000002635s | 2.55x |
 | `AncestralReconstruction._format_discrete_result` Q-matrix row iteration | 32-state synthetic Q matrix, nested JSON payload | 0.000128s | 0.000086s | 1.48x |
 | `AncestralReconstruction._print_text_output` batched continuous table output | synthetic tree with 100k internal-node estimate rows, captured stdout and identical text | 0.188848s | 0.175623s | 1.08x |
 | `AncestralReconstruction._print_discrete_text_output` descendant counts | balanced 32768-tip tree, precomputed posteriors, stdout stubbed | 0.323206s | 0.131654s | 2.45x |
@@ -6291,7 +6292,9 @@ Profiling summary:
   materialization for each internal output row. Discrete text output now batches
   the Q matrix and posterior rows into one newline-joined print, and uses each
   posterior array's own `argmax()` to avoid repeated lazy NumPy proxy lookups in
-  the per-node MAP-state loop. Multi-trait parsing now finds the first
+  the per-node MAP-state loop. Discrete marginal-posterior normalization now
+  uses each state vector's own `sum()` method, avoiding repeated lazy NumPy
+  proxy lookups in the per-node upward and posterior reductions. Multi-trait parsing now finds the first
   non-comment header and parses subsequent data rows in one file pass instead
   of building both a full `readlines()` list and a stripped `data_lines` list,
   preserving comment skipping, missing-column validation order, and data-row
