@@ -453,6 +453,68 @@ class TestPhyloImpute:
                 f"SE for {entry['taxon']}:{entry['trait']} = {entry['se']} <= 0"
             )
 
+    def test_run_counts_complete_cases_with_count_nonzero(
+        self, tmp_path, monkeypatch
+    ):
+        svc = PhyloImpute.__new__(PhyloImpute)
+        svc.trait_data_path = "traits.tsv"
+        svc.output_path = str(tmp_path / "imputed.tsv")
+        svc.gene_trees_path = None
+        svc.json_output = True
+
+        tree = object()
+        svc.read_tree_file_unmodified = lambda: tree
+        svc.validate_tree = lambda *_args, **_kwargs: None
+        svc.get_tip_names_from_tree = lambda _tree: ["a", "b", "c"]
+        svc._parse_trait_file_with_na = lambda _path, _tips: (
+            ["trait_1", "trait_2"],
+            {
+                "a": [1.0, 2.0],
+                "b": [3.0, 4.0],
+                "c": [5.0, float("nan")],
+            },
+            [{"taxon": "c", "trait": "trait_2", "line": 4}],
+        )
+        svc._estimate_complete_case_stats = lambda _Y, _C: (
+            np.array([2.0, 3.0]),
+            np.eye(2),
+        )
+        svc._impute_taxon = lambda *_args: (
+            np.array([5.0, 6.0]),
+            np.array([0.1, 0.2]),
+        )
+        svc._write_output_tsv = lambda *_args: None
+        svc._print_json = lambda *_args: None
+
+        monkeypatch.setattr(
+            "phykit.services.tree.vcv_utils.build_vcv_matrix",
+            lambda _tree, names: np.eye(len(names)),
+        )
+
+        observed_masks = []
+        original_count_nonzero = np.count_nonzero
+
+        def count_nonzero_spy(values, *args, **kwargs):
+            if getattr(values, "shape", None) == (3,):
+                observed_masks.append(values.copy())
+            return original_count_nonzero(values, *args, **kwargs)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("complete-case mask should use count_nonzero")
+
+        monkeypatch.setattr(
+            phylo_impute_module.np,
+            "count_nonzero",
+            count_nonzero_spy,
+            raising=False,
+        )
+        monkeypatch.setattr(phylo_impute_module.np, "sum", fail_sum, raising=False)
+
+        svc.run()
+
+        assert len(observed_masks) == 1
+        assert observed_masks[0].tolist() == [True, True, False]
+
     def test_ci_contains_estimate(self, tmp_path, capsys):
         """CI lower < estimate < CI upper for all imputed values."""
         out = str(tmp_path / "imputed.tsv")

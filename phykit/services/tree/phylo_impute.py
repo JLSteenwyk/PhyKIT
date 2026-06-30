@@ -81,7 +81,7 @@ class PhyloImpute(Tree):
         # Find complete cases (taxa with no missing values)
         missing_mask = np.isnan(Y)
         complete_mask = ~np.any(missing_mask, axis=1)
-        n_complete = int(np.sum(complete_mask))
+        n_complete = int(np.count_nonzero(complete_mask))
 
         if n_complete < 2:
             raise PhykitUserError(

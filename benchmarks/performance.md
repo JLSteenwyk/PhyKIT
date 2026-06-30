@@ -1927,6 +1927,7 @@ Results:
 | `PhyloImpute._other_taxon_indices` vectorized index construction | 140 repeated all-but-one index vectors over 40k taxa, side-by-side previous list comprehension plus `np.asarray` setup | 2.176238s | 0.010129s | 214.86x |
 | `PhyloImpute.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, VCV build, complete-case stats, and output mocked | 0.395725s | 0.000771s | 513.26x |
 | `PhyloImpute.run` missing-trait row scan | 80k taxa x 80 traits, 2% rows with 3 missing traits, side-by-side previous per-row `np.isnan` scans and list conversions | 0.124522s | 0.010385s | 11.99x |
+| `PhyloImpute.run` complete-case mask count | 80k-taxon complete-case boolean mask after missing-trait scan | 0.000053595s | 0.000005332s | 10.05x |
 | `PhyloImpute._build_data_matrix` direct NumPy construction | 250k taxa x 12 traits with ordered row lookup and preserved `NaN` missing values | 0.479432s | 0.177250s | 2.70x |
 | `PhyloImpute._parse_trait_file_with_na` single-pass parser | 200k-row multi-trait TSV, 8 numeric/NA trait columns, 100k shared taxa | 1.289345s | 1.186224s | 1.09x |
 | `PhyloImpute._parse_trait_file_with_na` off-tree row retention skip | 200k-row multi-trait TSV, 8 numeric/NA trait columns, 100k shared taxa and 100k off-tree taxa | 0.780822s | 0.605037s | 1.29x |
@@ -6621,7 +6622,9 @@ Profiling summary:
   repeated two-dimensional indexing. The run loop now reuses its initial
   missing-value mask for complete-case detection and per-taxon trait index
   selection, iterating only taxa with missing values and passing NumPy index
-  arrays through to imputation instead of rebuilding scans and lists per row. A
+  arrays through to imputation instead of rebuilding scans and lists per row.
+  The complete-case total now uses `np.count_nonzero` on that boolean mask
+  instead of reducing booleans through `np.sum`. A
   follow-up writer pass formats bounded mixed string/numeric chunks through
   `np.savetxt`, preserving the exact TSV text while reducing per-float Python
   formatting overhead without materializing one object array for the full table.
