@@ -418,6 +418,23 @@ class TestBuildShiftWeightMatrix:
         row_sums = W.sum(axis=1)
         np.testing.assert_allclose(row_sums, 1.0, atol=1e-10)
 
+    def test_baseline_weight_uses_array_sum(self, precomputed, monkeypatch):
+        svc = precomputed["svc"]
+        ordered_names = precomputed["ordered_names"]
+        lineage_info = precomputed["lineage_info"]
+        edges = precomputed["edges"]
+        tree_height = precomputed["tree_height"]
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("baseline shift weights should use ndarray.sum")
+
+        monkeypatch.setattr(ou_shift_detection_module.np, "sum", fail_sum)
+
+        W = svc._build_shift_weight_matrix(
+            ordered_names, lineage_info, edges, 1.0, tree_height
+        )
+        np.testing.assert_allclose(W.sum(axis=1), 1.0, atol=1e-10)
+
     def test_all_weights_nonnegative(self, precomputed):
         svc = precomputed["svc"]
         ordered_names = precomputed["ordered_names"]

@@ -2063,6 +2063,7 @@ Results:
 | `OUShiftDetection._gls_profile_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV x 6-column design matrix GLS likelihood evaluations, SciPy already warm | 0.062531s | 0.058617s | 1.07x |
 | `OUShiftDetection` cached SciPy numerical wrappers | 1k Cholesky factor/solve calls, 1k triangular solves, and 100 bounded `minimize_scalar` calls, SciPy already warm, side-by-side previous import-on-call wrappers | 0.020695s | 0.016566s | 1.25x |
 | `OUShiftDetection._build_indicator_design_matrix` lineage-row cache | 2048-tip balanced synthetic lineage, 80 eight-shift configs | 0.161885s | 0.001258s | 128.6x |
+| `OUShiftDetection._build_shift_weight_matrix` baseline weight total | per-row shifted-regime weight vector with 2 / 3 / 4 / 8 / 16 / 32 / 128 columns, side-by-side previous `np.sum` wrapper | 0.000005610s / 0.000005376s / 0.000005409s / 0.000005934s / 0.000005992s / 0.000005708s / 0.000005718s | 0.000003521s / 0.000003595s / 0.000002428s / 0.000003187s / 0.000002629s / 0.000003032s / 0.000002396s | 1.59x / 1.50x / 2.23x / 1.86x / 2.28x / 1.88x / 2.39x |
 | `OUShiftDetection._extract_lasso_configs` flat coefficient indices | 5000 shift coefficients x 1200 LASSO-path steps, sparse nonzero coefficients, side-by-side previous `np.where(...)[0]` extraction | 0.051099s | 0.034082s | 1.50x |
 | `OUShiftDetection._compute_pbic_from_vcv` Cholesky information matrix | 520 taxa SPD VCV x 7-column indicator design | 0.003160s | 0.000817s | 3.9x |
 | `OUShiftDetection._compute_pbic_from_info` determinant-only correction | 120-parameter SPD information matrix, side-by-side previous scaled inverse determinant | 0.001747838s | 0.000093647s | 18.66x |
@@ -6920,8 +6921,10 @@ Profiling summary:
   residual solve from those columns, avoiding two duplicate triangular solves
   per positive-definite GLS likelihood evaluation. The LASSO
   whitening transform also avoids explicitly inverting the Cholesky factor and
-  instead applies triangular solves. Indicator design matrix construction now
-  caches the tip row indices under each lineage clade id and fills selected
+  instead applies triangular solves. Shift-weight matrix construction now uses
+  the row ndarray reduction for the baseline-regime weight, avoiding generic
+  `np.sum` dispatch on every taxon row. Indicator design matrix construction
+  now caches the tip row indices under each lineage clade id and fills selected
   shift columns from those rows, avoiding a full root-to-tip path scan for every
   LASSO candidate configuration. A later pass deferred scikit-learn's
   `lars_path` import until LASSO path extraction, preserving the fitting path

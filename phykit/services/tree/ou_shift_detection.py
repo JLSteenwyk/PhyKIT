@@ -849,7 +849,7 @@ class OUShiftDetection(Tree):
                         )
                     W[i, col] = w
 
-            W[i, 0] = 1.0 - np.sum(W[i, 1:])
+            W[i, 0] = 1.0 - W[i, 1:].sum()
 
         return W
 
