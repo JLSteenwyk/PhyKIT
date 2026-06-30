@@ -341,7 +341,7 @@ class AlignmentOutlierTaxa(Alignment):
 
             comparable = overlap_counts > 0
             np.fill_diagonal(comparable, False)
-            comparable_counts = np.sum(comparable, axis=1)
+            comparable_counts = np.count_nonzero(comparable, axis=1)
             np.subtract(overlap_counts, match_counts, out=match_counts)
             match_counts[~comparable] = 0.0
             np.divide(

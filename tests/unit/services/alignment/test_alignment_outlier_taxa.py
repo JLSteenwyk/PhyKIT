@@ -351,6 +351,10 @@ class TestAlignmentOutlierTaxa:
             call.kwargs.get("axis") == 1
             for call in count_nonzero_spy.call_args_list
         )
+        assert any(
+            call.kwargs.get("axis") == 1 and call.args[0].shape == (3, 3)
+            for call in count_nonzero_spy.call_args_list
+        )
 
     def test_all_valid_ascii_path_skips_invalid_lookup(self, mocker):
         service = self._service()
