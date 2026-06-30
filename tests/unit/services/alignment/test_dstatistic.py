@@ -313,11 +313,11 @@ class TestDstatistic:
         assert block_abba.tolist() == [1.0, 0.0]
         assert block_baba.tolist() == [0.0, 1.0]
 
-    def test_jackknife_d_values_match_leave_one_out_loop(self):
+    def test_jackknife_d_values_match_leave_one_out_loop(self, monkeypatch):
         block_abba = np.array([4.0, 0.0, 3.0, 1.0, 0.0])
         block_baba = np.array([1.0, 2.0, 0.0, 1.0, 0.0])
-        total_abba = np.sum(block_abba)
-        total_baba = np.sum(block_baba)
+        total_abba = block_abba.sum()
+        total_baba = block_baba.sum()
         expected = []
         for idx in range(len(block_abba)):
             loo_abba = total_abba - block_abba[idx]
@@ -327,6 +327,13 @@ class TestDstatistic:
                 (loo_abba - loo_baba) / denom if denom > 0 else 0.0
             )
 
+        monkeypatch.setattr(
+            module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "jackknife block totals should use ndarray.sum"
+            ),
+        )
         observed = Dstatistic._jackknife_d_values(block_abba, block_baba)
 
         np.testing.assert_allclose(observed, expected)

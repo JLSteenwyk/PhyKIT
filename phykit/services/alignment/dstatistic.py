@@ -552,8 +552,8 @@ class Dstatistic(Alignment):
         if n_blocks == 0:
             return np.zeros(0, dtype=float)
 
-        total_abba = np.sum(block_abba)
-        total_baba = np.sum(block_baba)
+        total_abba = block_abba.sum()
+        total_baba = block_baba.sum()
         loo_abba = total_abba - block_abba
         loo_baba = total_baba - block_baba
         denom = loo_abba + loo_baba

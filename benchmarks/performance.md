@@ -585,6 +585,7 @@ Results:
 | `Dstatistic._count_site_patterns_scalar` direct skip checks | 1M Unicode-containing scalar fallback sites, block size 1000, identical ABBA/BABA totals and block arrays | 0.967857s | 0.443901s | 2.18x |
 | `Dstatistic._normal_two_tailed_p_value` | cold process, alignment-mode jackknife z-score p-value | 0.556567s | 0.000003125s | 178101.4x |
 | `Dstatistic._jackknife_d_values` | 300k ABBA/BABA jackknife blocks | 0.0972s | 0.0022s | 43.3x |
+| `Dstatistic._jackknife_d_values` block total reductions | 300k ABBA/BABA jackknife blocks, side-by-side previous `np.sum` totals | 0.000460071s | 0.000216358s | 2.13x |
 | `Dstatistic._read_fasta` / `Dfoil._read_fasta` | 50k FASTA records, lowercase 120 bp each | 0.0638s | 0.0360s | 1.8x |
 | `Dstatistic._read_fasta` / `Dfoil._read_fasta` shared first-token parser | 50k FASTA records, lowercase 120 bp each, legacy `SimpleFastaParser` baseline | 0.047871s | 0.040750s | 1.17x |
 | `Dfoil._count_site_patterns` | 475k sites, DFOIL informative/invariant/ambiguous/non-biallelic synthetic alignment | 0.3978s | 0.0073s | 54.5x |
@@ -3535,7 +3536,8 @@ Profiling summary:
 - `Dstatistic._jackknife_d_values` baseline time computed every leave-one-block
   D value in a Python loop. The optimized helper computes all leave-one-out
   ABBA/BABA totals and D values with vectorized NumPy arithmetic, preserving
-  zero-denominator blocks as zero.
+  zero-denominator blocks as zero. The helper now totals each block vector with
+  the ndarray `sum()` method, avoiding two lazy NumPy reduction dispatches.
 - `Dstatistic._read_fasta` and `Dfoil._read_fasta` baseline time materialized
   `SeqRecord` objects while alignment mode only needed IDs and uppercase
   sequences. The optimized path uses `SimpleFastaParser`, preserving first-token
