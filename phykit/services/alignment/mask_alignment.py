@@ -261,9 +261,10 @@ class MaskAlignment(Alignment):
                         valid_symbols,
                     )
                 else:
+                    count_reducer = np.count_nonzero if ascii_matrix else np.sum
                     counts = np.array(
                         [
-                            np.sum(alignment_array == symbol, axis=0)
+                            count_reducer(alignment_array == symbol, axis=0)
                             for symbol in valid_symbols
                         ],
                         dtype=np.float64,

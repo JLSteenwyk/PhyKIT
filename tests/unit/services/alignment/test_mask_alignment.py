@@ -53,6 +53,26 @@ assert "Bio.AlignIO" not in sys.modules
         keep_mask = masker.calculate_keep_mask(alignment_simple, is_protein=False)
         assert keep_mask.tolist() == [True, False, False, True, False, False]
 
+    def test_keep_mask_ascii_entropy_counts_with_count_nonzero(self, mocker, args):
+        args.max_entropy = 1.0
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("ATGT"), id="b"),
+                SeqRecord(Seq("TCGT"), id="c"),
+            ]
+        )
+        masker = MaskAlignment(args)
+        count_nonzero_spy = mocker.spy(mask_alignment_module.np, "count_nonzero")
+
+        keep_mask = masker.calculate_keep_mask(alignment, is_protein=False)
+
+        assert keep_mask.tolist() == [True, True, True, True]
+        assert any(
+            call.kwargs.get("axis") == 0
+            for call in count_nonzero_spy.call_args_list
+        )
+
     def test_keep_mask_by_entropy_handles_lowercase_and_all_invalid(self, args):
         args.max_entropy = 0.0
         alignment = MultipleSeqAlignment(

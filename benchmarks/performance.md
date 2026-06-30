@@ -248,6 +248,7 @@ Results:
 | `MaskAlignment.calculate_keep_mask` protein entropy column-major indexing | 1200 taxa x 6000 sites, alphabet `ACDEFGHIKLMNPQRSTVWY-X?*`, entropy threshold enabled | 0.151865s | 0.125777s | 1.21x |
 | `MaskAlignment.calculate_keep_mask` clean protein entropy mask elision | 1200 taxa x 6000 clean protein sites, entropy threshold enabled, side-by-side previous occupancy and valid-mask entropy path | 0.072934s | 0.052166s | 1.40x |
 | `MaskAlignment._column_entropies_from_ascii_codes` masked log terms | 1000 taxa x 12000 clean protein sites with two symbols per site, side-by-side previous boolean-indexed `log2` terms | 0.141908s | 0.124990s | 1.14x |
+| `MaskAlignment.calculate_keep_mask` ASCII DNA entropy counts | 3000 taxa x 8000 sites, four observed DNA symbols, side-by-side previous boolean `np.sum(..., axis=0)` counts | 0.125266s | 0.109594s | 1.14x |
 | `MaskAlignment.calculate_keep_mask` single-symbol entropy shortcut | 2000 taxa x 12000 conserved clean DNA sites, entropy threshold enabled, side-by-side previous count/probability path | 0.104621s | 0.080733s | 1.30x |
 | `MaskAlignment.calculate_keep_mask` all-pass threshold shortcut | DNA 2000 taxa x 12000 sites, alphabet `ACGT-?NX*` / protein 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, `max_gap=1`, `min_occupancy=0`, no entropy | 0.065244s / 0.035698s | 0.013126s / 0.006714s | 4.97x / 5.32x |
 | `MaskAlignment.calculate_keep_mask` clean no-entropy shortcut | 2000 taxa x 12000 clean DNA sites, `max_gap=0.2`, `min_occupancy=0.8`, no entropy threshold, side-by-side previous occupancy mask path | 0.060156s | 0.017106s | 3.52x |
@@ -2666,9 +2667,12 @@ Profiling summary:
   feed unmasked blocks into the entropy counter, preserving the validity-mask
   path for gap-bearing entropy filters. Entropy block calculations now use
   masked `np.log2` with `out`/`where` instead of boolean-indexing the
-  probability array, avoiding temporary positive-probability slices. When only
-  one valid symbol is observed, entropy-filtered runs now keep the zero-entropy
-  columns directly instead of constructing count and probability arrays.
+  probability array, avoiding temporary positive-probability slices. DNA-sized
+  ASCII entropy counts now use `np.count_nonzero` instead of summing boolean
+  equality masks while preserving the faster `np.sum` fallback for Unicode
+  matrices. When only one valid symbol is observed, entropy-filtered runs now
+  keep the zero-entropy columns directly instead of constructing count and
+  probability arrays.
   Fully identical normalized alignments now derive occupancy and zero entropy
   from one sequence before matrix construction, preserving gap, occupancy, and
   entropy thresholds for conserved multi-symbol inputs. A follow-up pass uses
