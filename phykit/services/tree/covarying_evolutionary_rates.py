@@ -323,6 +323,8 @@ class CovaryingEvolutionaryRates(Tree):
 
         # Find outliers using vectorized operations
         new_outliers = np.flatnonzero((np.abs(arr) > 5) | np.isnan(arr))
+        if not outlier_indices:
+            return new_outliers.tolist()
 
         # Combine with existing outliers
         all_outliers = set(outlier_indices)

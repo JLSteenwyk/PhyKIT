@@ -1076,6 +1076,7 @@ Results:
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` order-preserving child push | balanced 32768-tip reference tree metadata, optimized helper baseline | 0.105540s | 0.092782s | 1.14x |
 | `CovaryingEvolutionaryRates._tips_to_prune_for_shared` ordered prune-list scan | 400k tree-zero tips, tree-one tips, reference tips, and 300k shared tips | 0.277122s | 0.069708s | 3.98x |
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` flat outlier indices | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, side-by-side previous `np.where(...)[0]` extraction | 0.012458s | 0.005730s | 2.17x |
+| `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` empty-prior direct return | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, no existing outlier indices | 0.105751s | 0.063676s | 1.66x |
 | `CovaryingEvolutionaryRates.remove_outliers_based_on_indices` direct array filter | 1M corrected branch lengths with 10 outlier indices, side-by-side previous NumPy mask plus Python enumerate filter | 0.128672s | 0.031693s | 4.06x |
 | `covarying_evolutionary_rates` module import | cold subprocess import, avoid eager `scipy.stats` import | 0.780821s | 0.191193s | 4.1x |
 | `covarying_evolutionary_rates` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.108575s | 0.048410s | 2.24x |

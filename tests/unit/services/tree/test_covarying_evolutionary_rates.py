@@ -177,7 +177,7 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
                 [1.0, 9.0, float("nan"), 2.0],
                 [],
             )
-        self.assertEqual(set(result), {1, 2})
+        self.assertEqual(result, [1, 2])
 
         # Test with existing outlier indices
         corr_branch_lengths = [1.0, 2.0, 7.0, 4.0]
