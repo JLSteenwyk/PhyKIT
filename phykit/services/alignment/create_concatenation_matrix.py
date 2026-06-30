@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 import os
-from textwrap import dedent
 from collections import defaultdict
 
 from ._fasta import (
@@ -27,6 +26,12 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+
+
+def _dedent(*args, **kwargs):
+    from textwrap import dedent
+
+    return dedent(*args, **kwargs)
 
 
 class _LazyMultiprocessing:
@@ -334,7 +339,7 @@ class CreateConcatenationMatrix(Alignment):
         fasta_output: str,
         file_occupancy: str,
     ) -> None:
-        start_message = dedent(f"""
+        start_message = _dedent(f"""
             --------------------
             | General features |
             --------------------

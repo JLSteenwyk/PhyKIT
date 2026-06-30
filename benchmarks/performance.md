@@ -434,6 +434,7 @@ Results:
 | `create_concatenation_matrix` module import without eager NumPy/concurrency helpers | cold subprocess import after lazy NumPy occupancy lookup, concurrency, JSON, and plot config helpers | 0.096497s | 0.025028s | 3.86x |
 | `create_concatenation_matrix` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.035103s | 0.033782s | 1.04x |
 | `create_concatenation_matrix` module import without eager file helper | median cold subprocess import, interleaved lazy import vs eager-equivalent `phykit.helpers.files` preload | 0.028115s | 0.028138s | 1.00x |
+| `create_concatenation_matrix` module import without eager `textwrap` | median cold subprocess import after lazy verbose-message dedent helper | 0.047605s | 0.041895s | 1.14x |
 | `TaxonGroups._extract_taxa` FASTA mode | 50k FASTA records, 12 bp each | 0.0808s | 0.0182s | 4.4x |
 | `TaxonGroups._extract_taxa` FASTA header-only parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.039226s | 0.022543s | 1.74x |
 | `TaxonGroups._extract_taxa` tree terminal-name extraction | parsed balanced 65536-tip Newick tree, collect terminal names | 0.1344s | 0.0129s | 10.4x |
@@ -3148,7 +3149,8 @@ Profiling summary:
   occupancy rows into one newline-joined print while preserving exact stdout
   text. FASTA output now accumulates bounded row chunks and writes each chunk as
   one string, preserving record order and text while reducing per-record file
-  write overhead without materializing the full output.
+  write overhead without materializing the full output. Command-module import now
+  defers `textwrap.dedent` until the verbose start-message path is used.
 - `CreateConcatenationMatrix._get_taxa_from_alignment` baseline time
   materialized `SeqRecord` objects while collecting only FASTA IDs for the
   global taxon list. The optimized path uses `SimpleFastaParser` and preserves

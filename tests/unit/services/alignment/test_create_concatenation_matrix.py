@@ -29,6 +29,7 @@ assert "numpy" not in sys.modules
 assert "concurrent.futures" not in sys.modules
 assert "multiprocessing" not in sys.modules
 assert "json" not in sys.modules
+assert "textwrap" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 assert "phykit.helpers.plot_config" not in sys.modules
 assert "phykit.helpers.files" not in sys.modules
