@@ -12,7 +12,12 @@ from unittest.mock import Mock
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
-from phykit.services.tree.ltt import LTT, _ltt_from_internal_depths, _max_tip_height
+from phykit.services.tree.ltt import (
+    LTT,
+    _gamma_st_and_stat_sum,
+    _ltt_from_internal_depths,
+    _max_tip_height,
+)
 from phykit.errors import PhykitUserError
 
 
@@ -34,6 +39,22 @@ def test_max_tip_height_scans_tips_once():
 
     assert _max_tip_height(iterable, depths, 0.5) == 4.0
     assert iterable.iterations == 1
+
+
+def test_gamma_st_and_stat_sum_matches_explicit_formula():
+    g = [0.7, 0.5, 0.25, 0.125]
+    n_tips = len(g) + 1
+    expected_st = sum((k + 2) * g[k] for k in range(n_tips - 1))
+    running = 0.0
+    expected_stat_sum = 0.0
+    for k in range(n_tips - 2):
+        running += (k + 2) * g[k]
+        expected_stat_sum += running
+
+    st, stat_sum = _gamma_st_and_stat_sum(g, n_tips)
+
+    assert st == pytest.approx(expected_st)
+    assert stat_sum == pytest.approx(expected_stat_sum)
 
 
 def test_ltt_from_internal_depths_does_not_slice_rows():

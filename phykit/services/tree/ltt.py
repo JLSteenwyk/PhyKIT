@@ -37,6 +37,15 @@ def _ltt_from_internal_depths(internal_depths, max_height):
     return ltt
 
 
+def _gamma_st_and_stat_sum(g, n_tips):
+    running = 0.0
+    stat_sum = 0.0
+    for k in range(n_tips - 2):
+        running += (k + 2) * g[k]
+        stat_sum += running
+    return running + n_tips * g[n_tips - 2], stat_sum
+
+
 class LTT(Tree):
     _DEPTH_DATA_UNSET = object()
 
@@ -241,16 +250,8 @@ class LTT(Tree):
         g_unreversed = [bt[0]] + [bt[i] - bt[i - 1] for i in range(1, len(bt))]
         g = list(reversed(g_unreversed))
 
-        # ST = sum((2:N) * g)
-        ST = sum((k + 2) * g[k] for k in range(N - 1))
-
-        # stat = sum(cumsum((2:(N-1)) * g[-(N-1)])) / (N-2)
-        # g[-(N-1)] in R removes the last element
-        running = 0.0
-        stat_sum = 0.0
-        for k in range(N - 2):
-            running += (k + 2) * g[k]
-            stat_sum += running
+        # ST = sum((2:N) * g); stat uses the cumulative sum up to N - 1.
+        ST, stat_sum = _gamma_st_and_stat_sum(g, N)
 
         stat = stat_sum / (N - 2)
 
@@ -308,13 +309,7 @@ class LTT(Tree):
         g_unreversed = [bt[0]] + [bt[i] - bt[i - 1] for i in range(1, len(bt))]
         g = list(reversed(g_unreversed))
 
-        ST = sum((k + 2) * g[k] for k in range(N - 1))
-
-        running = 0.0
-        stat_sum = 0.0
-        for k in range(N - 2):
-            running += (k + 2) * g[k]
-            stat_sum += running
+        ST, stat_sum = _gamma_st_and_stat_sum(g, N)
 
         stat = stat_sum / (N - 2)
         m = ST / 2

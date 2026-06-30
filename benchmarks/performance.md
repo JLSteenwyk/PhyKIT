@@ -1201,6 +1201,7 @@ Results:
 | `LTT._depths_from_root` direct stack traversal | balanced 32768-tip tree, root-depth map setup | 0.014824s | 0.010569s | 1.40x |
 | `LTT._compute_gamma` + `_compute_ltt` internal-depth scans | balanced 32768-tip tree, shared terminal list and depth map | 0.1966s | 0.0398s | 4.9x |
 | `LTT._compute_gamma` cumulative-stat loop | balanced 65536-tip tree, shared terminal list and depth map, identical gamma, p-value, branching times, and intervals | 0.039136s | 0.034603s | 1.13x |
+| `LTT._compute_gamma` combined ST/stat accumulation | 65536 internode intervals, side-by-side previous separate `ST` generator pass plus cumulative-stat loop | 0.021182s | 0.006768s | 3.13x |
 | `LTT._compute_gamma` p-value calculation | cold process, two-tailed standard-normal p-value for gamma statistic | 0.557722s | 0.000003708s | 150410.5x |
 | `LTT._compute_gamma` / `_compute_ltt` streaming tip-height max | 1M terminal depths, identical root-relative tree height from shared depth map | 0.070200s | 0.044918s | 1.56x |
 | `LTT.run` cached read-only tree path | balanced 16384-tip cached tree, text output mocked | 0.171729s | 0.034802s | 4.93x |
@@ -4763,10 +4764,13 @@ Profiling summary:
   binary children right-then-left and indexing multifurcations backward. The
   standalone gamma helper now accumulates the cumulative-statistic sum directly,
   avoiding temporary partial and cumsum lists while preserving the returned
-  gamma, p-value, branching times, and internode intervals. The combined
-  gamma/LTT helper now builds LTT rows with an iterator helper instead of
-  slicing `internal_depths[1:]`, preserving the same row sequence without
-  copying the sorted internal-depth tail.
+  gamma, p-value, branching times, and internode intervals. A follow-up gamma
+  pass combines the `ST` total and cumulative-statistic accumulation in one
+  shared helper, avoiding a second pass over the internode intervals in both
+  standalone and combined gamma/LTT paths. The combined gamma/LTT helper now
+  builds LTT rows with an iterator helper instead of slicing
+  `internal_depths[1:]`, preserving the same row sequence without copying the
+  sorted internal-depth tail.
 - `CollapseBranches.run` baseline time counted internal nodes before and after
   collapsing even for normal text output, where the collapsed branch count is
   not reported. The optimized path performs those count traversals only for
