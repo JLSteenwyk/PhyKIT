@@ -1677,6 +1677,7 @@ Results:
 | `FitContinuous._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.471328s | 0.458778s | 1.03x |
 | `FitContinuous._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.433228s | 0.238331s | 1.82x |
 | `FitContinuous._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.239696s | 0.223276s | 1.07x |
+| `FitContinuous._compute_model_comparison` scalar AIC weights | seven synthetic model-result dictionaries, identical normalized weights | 0.000018015s | 0.000006892s | 2.61x |
 | `FitContinuous._print_text_output` batched model table | three captured text reports with 100k model rows each, identical stdout text | 0.776887s | 0.714921s | 1.09x |
 | `FitContinuous._print_text_output` row-template formatting | 100k model rows, captured stdout and identical text, side-by-side previous f-string row formatter comparison | 0.235230s | 0.205315s | 1.15x |
 | `FitContinuous._print_text_output` percent row formatting | 100k model rows, captured stdout and identical text, side-by-side previous `.format()` row formatter comparison | 0.192132s | 0.140039s | 1.37x |
@@ -2189,6 +2190,7 @@ Results:
 | `OUwie._build_root_to_tip_paths` set-backed tip filter | balanced 8192-tip tree, all ordered tips included in lineage setup | 0.299838s | 0.033505s | 8.95x |
 | `OUwie._build_lineage_info` set-backed tip filter | balanced 8192-tip tree, all ordered tips included in lineage setup, identical lineage output | 0.491299s | 0.072740s | 6.75x |
 | `OUwie._print_text_output` batched model and parameter rows | 100k regimes, 300k best-model parameter rows, captured stdout and identical text | 0.093383s | 0.061903s | 1.51x |
+| `OUwie._compute_model_comparison` scalar AICc weights | seven synthetic model-result dictionaries, identical normalized weights | 0.000018015s | 0.000006892s | 2.61x |
 | `OUwie._compute_model_comparison` unweighted multi-regime sigma2 average | 25 model-result dictionaries x 100k regime sigma2 values, no regime-tip weights, identical R2 inputs | 0.023221s | 0.014002s | 1.66x |
 | `OUwie._concentrated_ll_bm` | 220 taxa SPD VCV, single continuous trait | 0.0021s | 0.0002s | 10.5x |
 | `OUwie._concentrated_ll_bm_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV concentrated BM1 likelihood evaluations, SciPy already warm | 0.053318s | 0.042459s | 1.26x |
@@ -5987,9 +5989,11 @@ Profiling summary:
   separate BIC pass. A follow-up text-output pass reuses one row-format
   template and tracks the best BIC scalar separately, reducing per-row
   formatting and dictionary lookup overhead while preserving identical stdout
-  text. A later formatter pass switches the fixed-width model rows from
-  `.format()` to percent formatting, preserving the same padded text with less
-  per-row formatter overhead. Trait parsing now streams directly over the file handle,
+  text. A later model-comparison pass computes the tiny AIC weight vector with
+  scalar `math.exp` calls, avoiding a NumPy array allocation for the fixed
+  seven-model comparison. A later formatter pass switches the fixed-width model
+  rows from `.format()` to percent formatting, preserving the same padded text
+  with less per-row formatter overhead. Trait parsing now streams directly over the file handle,
   validates two-column rows with a single tab partition, and builds the trait
   taxa set directly from the parsed dictionary, avoiding full-file
   materialization and temporary split lists on valid rows. A later parser pass
@@ -7318,6 +7322,8 @@ Profiling summary:
   computes branch regime assignments and the root regime from one direct
   state-set traversal instead of running the same Fitch-style pass twice.
   A later state-set pass merges the common two-child case directly; a follow-up
+  model-comparison pass computes the small AICc weight vector with scalar
+  `math.exp` calls instead of allocating a NumPy array. A follow-up
   shares the same direct non-binary child state-set merge as
   `RateHeterogeneity`, avoiding a temporary child-set list and slice for
   multifurcations.

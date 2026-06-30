@@ -471,7 +471,7 @@ class TestWhiteNoise:
 
 
 class TestModelComparison:
-    def test_aic_weights_sum_to_one(self, tree_vcv_data):
+    def test_aic_weights_sum_to_one(self, tree_vcv_data, monkeypatch):
         d = tree_vcv_data
         svc = d["svc"]
         results = []
@@ -481,6 +481,11 @@ class TestModelComparison:
                 d["paths"], d["max_lam"], d["tree_height"],
             )
             results.append(res)
+        monkeypatch.setattr(
+            fit_continuous_module.np,
+            "exp",
+            lambda *args, **kwargs: pytest.fail("AIC weights should use math.exp"),
+        )
         results = svc._compute_model_comparison(results, len(d["x"]))
         weights = [r["aic_weight"] for r in results]
         assert sum(weights) == pytest.approx(1.0, abs=1e-6)

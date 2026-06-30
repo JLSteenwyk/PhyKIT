@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import sys
 
 from .base import Tree
@@ -659,13 +660,14 @@ class FitContinuous(Tree):
             r["delta_bic"] = r["bic"] - min_bic
 
         # AIC weights
-        delta_aics = np.array([r["delta_aic"] for r in results])
-        raw_weights = np.exp(-0.5 * delta_aics)
-        total = raw_weights.sum()
-        aic_weights = raw_weights / total if total > 0 else raw_weights
-
-        for r, w in zip(results, aic_weights):
-            r["aic_weight"] = float(w)
+        raw_weights = [math.exp(-0.5 * r["delta_aic"]) for r in results]
+        total = sum(raw_weights)
+        if total > 0.0:
+            for r, w in zip(results, raw_weights):
+                r["aic_weight"] = w / total
+        else:
+            for r in results:
+                r["aic_weight"] = 0.0
 
         return results
 

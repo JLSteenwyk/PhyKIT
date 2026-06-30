@@ -1490,7 +1490,7 @@ class TestModelNesting:
 # ── TestModelComparison ──────────────────────────────────────────────
 
 class TestModelComparison:
-    def test_aicc_weights_sum_to_one(self, precomputed):
+    def test_aicc_weights_sum_to_one(self, precomputed, monkeypatch):
         d = precomputed
         results = []
         results.append(d["svc"]._fit_bm1(d["x"], d["vcv_total"]))
@@ -1502,6 +1502,11 @@ class TestModelComparison:
             d["regimes"], d["root_regime"], d["tree_height"],
         ))
         n = len(d["x"])
+        monkeypatch.setattr(
+            ouwie_module.np,
+            "exp",
+            lambda *args, **kwargs: pytest.fail("AICc weights should use math.exp"),
+        )
         results = d["svc"]._compute_model_comparison(results, n)
         weights = [r["aicc_weight"] for r in results]
         np.testing.assert_allclose(sum(weights), 1.0, atol=1e-10)

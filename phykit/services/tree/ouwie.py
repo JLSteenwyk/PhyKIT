@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import sys
 
 from .base import Tree
@@ -1760,13 +1761,14 @@ class OUwie(Tree):
             r["delta_bic"] = r["bic"] - min_bic
 
         # AICc weights
-        delta_aiccs = np.array([r["delta_aicc"] for r in results])
-        raw_weights = np.exp(-0.5 * delta_aiccs)
-        total = raw_weights.sum()
-        aicc_weights = raw_weights / total if total > 0 else raw_weights
-
-        for r, w in zip(results, aicc_weights):
-            r["aicc_weight"] = float(w)
+        raw_weights = [math.exp(-0.5 * r["delta_aicc"]) for r in results]
+        total = sum(raw_weights)
+        if total > 0.0:
+            for r, w in zip(results, raw_weights):
+                r["aicc_weight"] = w / total
+        else:
+            for r in results:
+                r["aicc_weight"] = 0.0
 
         # Compute R² = 1 - (σ²_model / σ²_BM1)
         bm1_sig2 = None
