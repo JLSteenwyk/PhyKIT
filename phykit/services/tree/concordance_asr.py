@@ -633,21 +633,26 @@ class ConcordanceAsr(Tree):
         Returns (total_variance, within_variance, between_variance).
         total = E[Var(X|T)] + Var(E[X|T])
         """
-        weights = np.array(weights, dtype=float)
-        means = np.array(means, dtype=float)
-        variances = np.array(variances, dtype=float)
-
-        if weights.sum() == 0:
+        total_weight = float(sum(weights))
+        if total_weight == 0.0:
             return 0.0, 0.0, 0.0
 
-        weights = weights / weights.sum()
+        inv_total_weight = 1.0 / total_weight
 
         # Within-group variance: E[Var(X|T)]
-        within_var = float(np.sum(weights * variances))
+        within_var = 0.0
 
         # Between-group variance: Var(E[X|T])
-        weighted_mean = float(np.sum(weights * means))
-        between_var = float(np.sum(weights * (means - weighted_mean) ** 2))
+        weighted_mean = 0.0
+        for weight, mean, variance in zip(weights, means, variances):
+            normalized_weight = weight * inv_total_weight
+            within_var += normalized_weight * variance
+            weighted_mean += normalized_weight * mean
+
+        between_var = 0.0
+        for weight, mean in zip(weights, means):
+            diff = mean - weighted_mean
+            between_var += weight * inv_total_weight * diff * diff
 
         total_var = within_var + between_var
         return total_var, within_var, between_var

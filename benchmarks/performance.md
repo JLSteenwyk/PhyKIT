@@ -782,6 +782,7 @@ Results:
 | `ConcordanceAsr.run` species-copy prune setup | balanced 32768-tip species tree, all tips shared with trait data | 0.0693s | 0.0076s | 9.2x |
 | `ConcordanceAsr.run` all-shared species-copy skip | balanced 32768-tip cached species tree, all species tips have trait values, gene/ASR/output mocked | 0.652220s | 0.238411s | 2.74x |
 | `ConcordanceAsr._run_distribution` result assembly | balanced 2048-tip species tree, ASR/gCF stubs, 20 gene-tree result dictionaries | 0.1196s | 0.0494s | 2.4x |
+| `ConcordanceAsr._law_of_total_variance` scalar small-list path | three weighted topology estimates, identical total/within/between variances | 0.000039046s | 0.000004145s | 9.42x |
 | `ConcordanceAsr._collect_uncertainty_node_data` | balanced 2048-tip species tree, uncertainty entries for every internal node | 0.1004s | 0.0149s | 6.7x |
 | `ConcordanceAsr._plot_concordance_contmap` rectangular setup | balanced 32768-tip tree, precomputed ancestral estimates and gCF values | 1.3490s | 0.1657s | 8.1x |
 | `ConcordanceAsr._plot_concordance_contmap` circular setup | balanced 32768-tip tree, precomputed ancestral estimates and gCF values | 0.9902s | 0.1985s | 5.0x |
@@ -3932,7 +3933,9 @@ Profiling summary:
   of materializing `splitlines()`, preserving inline-Newick and path-list
   behavior. The path-list branch now resolves relative rows with a precomputed
   parent string prefix and a bound absolute-path check instead of constructing
-  `Path` objects per listed tree.
+  `Path` objects per listed tree. Weighted-ASR variance decomposition now uses
+  scalar accumulation for the usual small topology-weight lists instead of
+  allocating NumPy arrays.
 - `ConcordanceAsr._collect_uncertainty_node_data` baseline time then scanned
   every ancestral-estimate entry for every species-tree internal node while
   preparing uncertainty plots. The optimized path indexes entries once by their

@@ -13,6 +13,7 @@ import pytest
 from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
+import phykit.services.tree.concordance_asr as concordance_asr_module
 from phykit.services.tree.concordance_asr import ConcordanceAsr
 from phykit.errors import PhykitUserError
 
@@ -625,11 +626,18 @@ class TestNNIAlternatives:
 
 
 class TestLawOfTotalVariance:
-    def test_known_values(self):
+    def test_known_values(self, monkeypatch):
         weights = [0.5, 0.5]
         means = [10.0, 20.0]
         variances = [1.0, 1.0]
 
+        monkeypatch.setattr(
+            concordance_asr_module.np,
+            "array",
+            lambda *args, **kwargs: pytest.fail(
+                "law of total variance should use scalar loops"
+            ),
+        )
         total, within, between = ConcordanceAsr._law_of_total_variance(
             weights, means, variances
         )
