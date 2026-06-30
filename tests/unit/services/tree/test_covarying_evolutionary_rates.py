@@ -227,11 +227,11 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         with patch.object(
             cer_module.np,
             "ones",
-            side_effect=AssertionError("list filtering should use set membership"),
+            side_effect=AssertionError("list filtering should not use a NumPy mask"),
         ):
             result = self.cov_rates.remove_outliers_based_on_indices(
                 [["a"], ["b"], ["c"], ["d"]],
-                [1, -1],
+                [1, -1, 1],
             )
 
         self.assertEqual(result, [["a"], ["c"]])

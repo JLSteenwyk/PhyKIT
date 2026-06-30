@@ -347,16 +347,22 @@ class CovaryingEvolutionaryRates(Tree):
             return corr_branch_lengths[mask].tolist()
 
         length = len(corr_branch_lengths)
-        outlier_set = set()
+        normalized_indices = []
+        append = normalized_indices.append
         for index in outlier_indices:
             normalized_index = index if index >= 0 else length + index
             if normalized_index < 0 or normalized_index >= length:
                 raise IndexError("outlier index out of range")
-            outlier_set.add(normalized_index)
+            append(normalized_index)
 
-        return [
-            item for i, item in enumerate(corr_branch_lengths) if i not in outlier_set
-        ]
+        result = []
+        extend = result.extend
+        start = 0
+        for index in sorted(set(normalized_indices)):
+            extend(corr_branch_lengths[start:index])
+            start = index + 1
+        extend(corr_branch_lengths[start:])
+        return result
 
     def prune_tips(self, tree, tips):
         """

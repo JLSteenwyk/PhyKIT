@@ -1078,6 +1078,7 @@ Results:
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` flat outlier indices | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, side-by-side previous `np.where(...)[0]` extraction | 0.012458s | 0.005730s | 2.17x |
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` empty-prior direct return | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, no existing outlier indices | 0.105751s | 0.063676s | 1.66x |
 | `CovaryingEvolutionaryRates.remove_outliers_based_on_indices` direct array filter | 1M corrected branch lengths with 10 outlier indices, side-by-side previous NumPy mask plus Python enumerate filter | 0.128672s | 0.031693s | 4.06x |
+| `CovaryingEvolutionaryRates.remove_outliers_based_on_indices` sparse list slices | 1M branch-length list with 10 outlier indices, preserving order and negative-index handling | 0.047255s | 0.007984s | 5.92x |
 | `covarying_evolutionary_rates` module import | cold subprocess import, avoid eager `scipy.stats` import | 0.780821s | 0.191193s | 4.1x |
 | `covarying_evolutionary_rates` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.108575s | 0.048410s | 2.24x |
 | `covarying_evolutionary_rates` module import without eager concurrent futures | cold subprocess import after lazy executor and completion proxies | 0.048199s | 0.031029s | 1.55x |
