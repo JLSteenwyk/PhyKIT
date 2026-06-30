@@ -552,6 +552,22 @@ class TestPhyloAnova:
         assert tab["ss_resid"] == pytest.approx(0.415777, abs=1e-4)
         assert tab["pillai_trace"] == pytest.approx(0.794354, abs=1e-3)
 
+    def test_pillai_trace_uses_array_sum(self, monkeypatch):
+        eigenvalues = np.array([0.2, 0.5, 1.0, 1.5])
+        expected = float(np.sum(eigenvalues / (1.0 + eigenvalues)))
+
+        monkeypatch.setattr(
+            phylo_anova_module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "Pillai trace should use ndarray.sum"
+            ),
+        )
+
+        assert phylo_anova_module._pillai_trace_from_eigenvalues(
+            eigenvalues
+        ) == pytest.approx(expected)
+
     def test_manova_rrpp_projection_sscp_matches_materialized_residuals(self):
         rng = np.random.default_rng(20260628)
         n = 36

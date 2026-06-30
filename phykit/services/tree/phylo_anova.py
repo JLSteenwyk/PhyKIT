@@ -47,6 +47,10 @@ def _permutation_p_value_and_z(observed: float, permutations: np.ndarray) -> tup
     return p_value, float(z_score)
 
 
+def _pillai_trace_from_eigenvalues(eigenvalues) -> float:
+    return float((eigenvalues / (1.0 + eigenvalues)).sum())
+
+
 class PhyloAnova(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -521,7 +525,7 @@ class PhyloAnova(Tree):
             SS_resid_inv = np.linalg.inv(SS_resid)
             H_E_inv = SS_model @ SS_resid_inv
             eigenvalues = np.real(np.linalg.eigvals(H_E_inv))
-            pillai = float(np.sum(eigenvalues / (1.0 + eigenvalues)))
+            pillai = _pillai_trace_from_eigenvalues(eigenvalues)
         except np.linalg.LinAlgError:
             pillai = 0.0
             eigenvalues = np.array([0.0])
@@ -557,9 +561,7 @@ class PhyloAnova(Tree):
                 SS_resid_inv_p = np.linalg.inv(SS_resid_p)
                 H_E_inv_p = SS_model_p @ SS_resid_inv_p
                 eig_p = np.real(np.linalg.eigvals(H_E_inv_p))
-                pillai_perms[perm] = float(
-                    np.sum(eig_p / (1.0 + eig_p))
-                )
+                pillai_perms[perm] = _pillai_trace_from_eigenvalues(eig_p)
             except np.linalg.LinAlgError:
                 pillai_perms[perm] = 0.0
 
