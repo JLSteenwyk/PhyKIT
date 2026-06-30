@@ -295,6 +295,30 @@ class TestIdentityMatrixUnit:
 
         np.testing.assert_allclose(fast, legacy)
 
+    def test_identity_matrix_pairwise_fallback_counts_matches_with_count_nonzero(
+        self, tmp_path, mocker
+    ):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        sequences = {
+            "taxon_A": "ACGTΩ-",
+            "taxon_B": "ACCTΩ?",
+            "taxon_C": "TCGTΩN",
+        }
+        taxa_names = list(sequences)
+        args = _make_args(aln_path, out_path)
+        service = IdentityMatrix(args)
+        count_nonzero_spy = mocker.spy(identity_matrix_module.np, "count_nonzero")
+
+        matrix = service._compute_identity_matrix_pairwise(sequences, taxa_names)
+
+        assert matrix[0, 1] == pytest.approx(4 / 5)
+        assert matrix[0, 2] == pytest.approx(4 / 5)
+        assert any(
+            call.args[0].dtype == bool
+            for call in count_nonzero_spy.call_args_list
+        )
+
     def test_identity_matrix_clean_ascii_direct_path_skips_validity_mask(
         self, tmp_path, mocker, monkeypatch
     ):
@@ -440,6 +464,37 @@ class TestIdentityMatrixUnit:
                 [0.0, 2 / 3],
                 [1.0, 2 / 3],
             ]),
+        )
+
+    def test_partition_identity_pairwise_fallback_counts_with_count_nonzero(
+        self, tmp_path, mocker
+    ):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        sequences = {
+            "taxon_A": "ACGTΩ-",
+            "taxon_B": "ACCTΩ?",
+            "taxon_C": "TCGTΩN",
+        }
+        taxa_names = list(sequences)
+        args = _make_args(aln_path, out_path)
+        service = IdentityMatrix(args)
+        count_nonzero_spy = mocker.spy(identity_matrix_module.np, "count_nonzero")
+
+        part_names, identities = service._compute_partition_identities_pairwise(
+            sequences,
+            taxa_names,
+            [("all", 0, 6)],
+        )
+
+        assert part_names == ["all"]
+        np.testing.assert_allclose(
+            identities[:, 0],
+            np.array([4 / 5, 4 / 5, 3 / 5]),
+        )
+        assert any(
+            call.args[0].dtype == bool
+            for call in count_nonzero_spy.call_args_list
         )
 
     def test_partition_identities_fast_path_matches_pairwise_fallback(

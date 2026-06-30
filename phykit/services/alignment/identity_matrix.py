@@ -410,8 +410,10 @@ class IdentityMatrix(Alignment):
             part_valid_masks = valid_masks[:, start:end]
             for pair_idx, (i, j) in enumerate(pairs):
                 valid = part_valid_masks[i] & part_valid_masks[j]
-                compared = int(np.sum(valid))
-                matches = int(np.sum((part_seq_matrix[i] == part_seq_matrix[j]) & valid))
+                compared = int(np.count_nonzero(valid))
+                matches = int(
+                    np.count_nonzero((part_seq_matrix[i] == part_seq_matrix[j]) & valid)
+                )
                 result[pair_idx, p_idx] = matches / compared if compared > 0 else 0.0
 
         return part_names, result
@@ -525,9 +527,11 @@ class IdentityMatrix(Alignment):
             for j in range(i + 1, n):
                 valid = valid_i & valid_masks[j]
 
-                compared = int(np.sum(valid))
+                compared = int(np.count_nonzero(valid))
                 if compared > 0:
-                    matches = int(np.sum((seq_i == seq_matrix[j]) & valid))
+                    matches = int(
+                        np.count_nonzero((seq_i == seq_matrix[j]) & valid)
+                    )
                     identity = matches / compared
                 else:
                     identity = 0.0

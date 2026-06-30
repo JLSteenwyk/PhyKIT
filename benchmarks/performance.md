@@ -78,6 +78,7 @@ Results:
 | `IdentityMatrix._all_sequences_identical` no-slice taxon scan | 1M taxon-name sequence dictionary, identical / early-different / late-different cases, side-by-side previous `taxa_names[1:]` shortcut predicate | 1.024048s / 0.011813s / 0.659557s | 0.581272s / 0.000000167s / 0.630424s | 1.76x / 70736.53x / 1.05x |
 | `IdentityMatrix._identical_sequence_identity_value` late valid character | 20 repeated 3.5M-site identical DNA sequences with final valid site, side-by-side previous per-character membership scan | 18.405654s | 0.083401s | 220.69x |
 | `IdentityMatrix._identical_sequence_identity_value` all invalid characters | 20 repeated 3.5M-site identical DNA sequences with only invalid symbols, side-by-side previous per-character membership scan | 20.856280s | 0.428930s | 48.62x |
+| `IdentityMatrix` pairwise fallback boolean counts | 100k-site Unicode fallback pair comparison, side-by-side previous boolean `np.sum` valid/match counts | 0.000246s | 0.000206s | 1.19x |
 | `IdentityMatrix._partition_identity_strip` | 350 taxa x 24 partitions, 61075 pairwise partition identities | 2.2786s | 0.0229s | 99.7x |
 | `IdentityMatrix._partition_identity_strip` condensed row scan | 1200 taxa x 32 partitions, 719400 pairwise partition identities, side-by-side previous `np.triu_indices` plus `np.add.at` accumulation | 2.144036s | 0.117468s | 18.25x |
 | `IdentityMatrix._parse_partitions` partition parser | 500k RAxML-style partition rows with comments/blanks, comma/no-comma forms, and whitespace tolerance | 0.644653s | 0.564478s | 1.14x |
@@ -2303,7 +2304,9 @@ Profiling summary:
   identity when no valid sites are available. The identical-sequence dictionary
   guard now scans taxon names with an iterator instead of allocating
   `taxa_names[1:]`, preserving early mismatch exits without copying the taxon
-  name tail.
+  name tail. The non-ASCII pairwise fallback now counts valid and matching
+  boolean masks with `np.count_nonzero` instead of summing booleans, preserving
+  Unicode fallback behavior while avoiding a general reduction.
 - `IdentityMatrix` clustered heatmap setup baseline time computed the same
   hierarchical linkage once for taxon ordering and again for dendrogram
   plotting. The optimized run path returns the linkage from ordering and passes
