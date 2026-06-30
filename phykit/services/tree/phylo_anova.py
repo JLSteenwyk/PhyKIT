@@ -40,7 +40,7 @@ def solve_triangular(*args, **kwargs):
 
 
 def _permutation_p_value_and_z(observed: float, permutations: np.ndarray) -> tuple[float, float]:
-    p_value = float(np.mean(permutations >= observed))
+    p_value = float(np.count_nonzero(permutations >= observed) / permutations.size)
     perm_mean = float(np.mean(permutations))
     perm_std = float(np.std(permutations))
     z_score = (observed - perm_mean) / perm_std if perm_std > 0 else 0.0
@@ -645,7 +645,7 @@ class PhyloAnova(Tree):
                 resid_diffs = weights @ resid_sub
                 d_perms = np.linalg.norm(hat_diff + resid_diffs, axis=1)
 
-                p_val = float(np.mean(d_perms >= d_obs))
+                p_val = float(np.count_nonzero(d_perms >= d_obs) / d_perms.size)
                 d_mean = np.mean(d_perms)
                 d_std = np.std(d_perms)
                 z_val = (

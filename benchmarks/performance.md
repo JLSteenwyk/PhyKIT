@@ -2052,6 +2052,7 @@ Results:
 | `PhyloAnova._run_manova` | 500 taxa x 6 responses, 4 groups, 1000 RRPP permutations | 0.0652s | 0.0386s | 1.7x |
 | `PhyloAnova._run_manova` projection residual SSCP | 500 taxa x 6 responses, 4 groups, 1000 RRPP permutations, side-by-side previous materialized full-model residual matrices | 0.054512s | 0.048688s | 1.12x |
 | `PhyloAnova` permutation summary reductions | 1M permutation statistics, side-by-side previous duplicate `std` reduction | 0.003426s | 0.002183s | 1.57x |
+| `PhyloAnova` permutation p-value counts | 1M permutation statistics, side-by-side previous `np.mean(permutations >= observed)` reduction | 0.000991s | 0.000390s | 2.54x |
 | `PhyloAnova._run_pairwise` residual mean permutations | 600 taxa x 5 responses, 6 groups, 1000 RRPP permutations | 0.2743s | 0.2302s | 1.2x |
 | `PhyloAnova._run_pairwise` vectorized residual mean permutations | 600 taxa x 5 responses, 6 groups, 1000 RRPP permutations | 0.2299s | 0.1177s | 2.0x |
 | `PhyloAnova._run_pairwise` contrast-weight residual permutations | 600 taxa x 5 responses, 6 groups, 1000 RRPP permutations | 0.119985s | 0.062728s | 1.9x |
@@ -6881,7 +6882,9 @@ Profiling summary:
   search for every taxon while preserving treatment coding. ANOVA and MANOVA
   summary calculation now share a helper that computes permutation p-values,
   means, and standard deviations once, avoiding the duplicate `std` pass in
-  z-score calculation.
+  z-score calculation. Permutation p-values now count extreme simulations with
+  `np.count_nonzero` before dividing by the permutation count, avoiding boolean
+  mean reductions in ANOVA/MANOVA summaries and pairwise tests.
   A subsequent startup pass replaced the eager `scipy.linalg.solve_triangular`
   import with a same-name lazy wrapper, so import-only callers avoid linalg
   startup while whitening still calls SciPy's triangular solve. A follow-up

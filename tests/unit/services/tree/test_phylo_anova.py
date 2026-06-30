@@ -100,6 +100,32 @@ def test_permutation_p_value_and_z_computes_std_once(monkeypatch):
     assert np.isfinite(z_score)
 
 
+def test_permutation_p_value_and_z_counts_extreme_permutations(monkeypatch):
+    permutations = np.array([0.5, 1.5, 2.5, 3.5])
+    original_count_nonzero = phylo_anova_module.np.count_nonzero
+    calls = []
+
+    def counting_count_nonzero(values):
+        calls.append(values.copy())
+        return original_count_nonzero(values)
+
+    monkeypatch.setattr(
+        phylo_anova_module.np,
+        "count_nonzero",
+        counting_count_nonzero,
+    )
+
+    p_value, z_score = phylo_anova_module._permutation_p_value_and_z(
+        2.0,
+        permutations,
+    )
+
+    assert p_value == pytest.approx(0.5)
+    assert np.isfinite(z_score)
+    assert len(calls) == 1
+    np.testing.assert_array_equal(calls[0], np.array([False, False, True, True]))
+
+
 def test_permutation_p_value_and_z_zero_variance_returns_zero_z():
     p_value, z_score = phylo_anova_module._permutation_p_value_and_z(
         1.0, np.ones(4)
