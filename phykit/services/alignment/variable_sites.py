@@ -111,7 +111,7 @@ class VariableSites(Alignment):
         for char in valid_chars:
             valid_symbol_counts += np.any(alignment_array == char, axis=0)
 
-        var_sites = int(np.sum(valid_symbol_counts > 1))
+        var_sites = int(np.count_nonzero(valid_symbol_counts > 1))
         var_sites_per = (var_sites / aln_len) * 100
 
         return var_sites, aln_len, var_sites_per

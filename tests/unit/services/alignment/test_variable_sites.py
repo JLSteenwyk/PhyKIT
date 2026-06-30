@@ -259,7 +259,7 @@ assert "typing" not in sys.modules
 
         assert variable_sites_module._all_sequences_identical(sequences) is True
 
-    def test_variable_sites_unicode_fallback(self, args):
+    def test_variable_sites_unicode_fallback(self, args, mocker):
         class DummyAlignment(list):
             def get_alignment_length(self):
                 return 2
@@ -270,6 +270,7 @@ assert "typing" not in sys.modules
             SimpleNamespace(seq="T\u00d1", id="t3"),
         ])
         vs = VariableSites(args)
+        count_nonzero_spy = mocker.spy(variable_sites_module.np, "count_nonzero")
 
         var_sites, aln_len, var_sites_per = vs.calculate_variable_sites(
             alignment,
@@ -279,3 +280,7 @@ assert "typing" not in sys.modules
         assert var_sites == 1
         assert aln_len == 2
         assert isclose(var_sites_per, 50.0, rel_tol=0.001)
+        assert any(
+            call.args[0].dtype == bool
+            for call in count_nonzero_spy.call_args_list
+        )
