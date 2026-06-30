@@ -114,7 +114,7 @@ class CompositionPerTaxon(Alignment):
             if not symbols:
                 return [], []
 
-            freqs = counts.astype(np.float64) / float(np.sum(counts))
+            freqs = counts.astype(np.float64) / float(counts.sum())
             return symbols, [
                 (record_id, freqs.copy())
                 for record_id in record_ids

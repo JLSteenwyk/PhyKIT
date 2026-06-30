@@ -242,6 +242,12 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
                 "identical sequences should not build per-row histograms"
             ),
         )
+        mocker.patch(
+            "phykit.services.alignment.composition_per_taxon.np.sum",
+            side_effect=AssertionError(
+                "identical sequence frequencies should use counts.sum"
+            ),
+        )
 
         symbols, rows = svc.calculate_composition_per_taxon(
             alignment,

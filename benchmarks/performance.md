@@ -203,6 +203,7 @@ Results:
 | `CompositionPerTaxon.calculate_composition_per_taxon` no-gap protein valid lengths | 2000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.069665s | 0.047561s | 1.46x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` single valid-symbol shortcut | 3000 taxa x 10000 sites, conserved ASCII DNA alignment, side-by-side previous count/frequency path | 0.109004s | 0.099306s | 1.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical multi-symbol shortcut | 1200 taxa x 12000 identical protein sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.055857s | 0.006509s | 8.58x |
+| `CompositionPerTaxon.calculate_composition_per_taxon` identical frequency sum | 20-symbol identical-sequence count vector, side-by-side previous `np.sum` normalization | 0.000007918s | 0.000003764s | 2.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical-row no-slice scan | 300k conserved 20-symbol protein records, side-by-side previous `sequences[1:]` equality scan | 0.614861s | 0.460860s | 1.33x |
 | `CompositionPerTaxon.run` text output formatting | 100k taxon rows x 4 composition symbols, mocked alignment/read and identical stdout text | 0.853874s | 0.194774s | 4.38x |
 | `CompositionPerTaxon.run` JSON payload formatting | 100k taxon rows x 4 composition symbols, mocked calculation rows, side-by-side previous index lookup loop | 0.147151s | 0.137843s | 1.07x |
@@ -2593,7 +2594,9 @@ Profiling summary:
   Identical alignments with multiple valid symbols now compute one composition
   vector from the normalized first sequence and copy it for each taxon, avoiding
   full alignment-matrix counting while preserving per-row arrays and output
-  ordering. A follow-up identical-row pass scans the existing sequence list
+  ordering. The identical-frequency normalization now uses the count vector's
+  ndarray `sum()` method, avoiding a lazy NumPy reduction dispatch on that
+  shortcut. A follow-up identical-row pass scans the existing sequence list
   directly instead of materializing `sequences[1:]`, reducing temporary
   allocation for high-taxon conserved alignments.
   Conserved alignments with one valid observed symbol now fill the one-column
