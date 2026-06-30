@@ -172,7 +172,7 @@ class ParsimonyInformative(Alignment):
         for char in valid_chars:
             chars_appearing_twice += np.sum(alignment_array == char, axis=0) >= 2
 
-        pi_sites = int(np.sum(chars_appearing_twice >= 2))
+        pi_sites = int(np.count_nonzero(chars_appearing_twice >= 2))
         pi_sites_per = (pi_sites / aln_len) * 100
 
         return pi_sites, aln_len, pi_sites_per

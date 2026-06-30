@@ -146,6 +146,7 @@ Results:
 | `ParsimonyInformative.calculate_parsimony_informative_sites` clean ASCII gap-byte precheck | 80 taxa x 1M clean DNA sites, side-by-side previous full invalid-mask setup | 15.602653s | 14.708943s | 1.06x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous block-count path | 0.142054s | 0.005836s | 24.34x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` identical-row no-slice scan | 1M identical ASCII DNA rows, side-by-side previous `sequences[1:]` equality scan | 0.390887s | 0.279042s | 1.40x |
+| `ParsimonyInformative.calculate_parsimony_informative_sites` Unicode final PI-site count | 1M-site fallback recurrent-state count vector, side-by-side previous boolean `np.sum` final count | 0.000235s | 0.000063s | 3.73x |
 | `ParsimonyInformative.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 0.834731s | 0.524695s | 1.59x |
 | `ParsimonyInformative.is_parsimony_informative` early recurrent-state exit | 20k repeated checks over 1000 recurrent and 1000 singleton states, identical truth value | 0.930823s | 0.002989s | 311.41x |
 | `parsimony_informative_sites` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.101964s | 0.023527s | 4.33x |
@@ -2447,6 +2448,8 @@ Profiling summary:
   helper now counts directly from records, avoiding BioPython column-slice
   construction while preserving `Counter` output, and the predicate exits as
   soon as two recurrent states are found instead of scanning every state count.
+  The Unicode fallback now counts final recurrent-state columns with
+  `np.count_nonzero` instead of summing a boolean vector.
   A follow-up parsimony-informative startup pass applies the same lazy lookup
   construction and Bio.Align annotation deferral while preserving its
   module-level `np.isin` patch point. A later alignment-entropy

@@ -271,7 +271,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln_len == 4
         assert pi_sites_per == 0.0
 
-    def test_parsimony_informative_sites_unicode_fallback(self, args):
+    def test_parsimony_informative_sites_unicode_fallback(self, args, mocker):
         class DummyAlignment(list):
             def get_alignment_length(self):
                 return 2
@@ -283,6 +283,7 @@ assert "Bio.AlignIO" not in sys.modules
             SimpleNamespace(seq="T\u00dd", id="t4"),
         ])
         pi = ParsimonyInformative(args)
+        count_nonzero_spy = mocker.spy(pi_module.np, "count_nonzero")
 
         pi_sites, aln_len, pi_sites_per = pi.calculate_parsimony_informative_sites(
             alignment,
@@ -292,3 +293,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert pi_sites == 2
         assert aln_len == 2
         assert isclose(pi_sites_per, 100.0, rel_tol=0.001)
+        assert any(
+            call.args[0].dtype == bool
+            for call in count_nonzero_spy.call_args_list
+        )
