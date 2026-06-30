@@ -1026,6 +1026,7 @@ Results:
 | `NeighborNet._compute_distance_matrix_from_equal_length_sequences` clean ASCII direct comparison | 260 taxa x 6000 sites, alphabet `ACGT`, p-distance matrix | 0.161045s | 0.120611s | 1.34x |
 | `NeighborNet._read_distance_matrix` row-slice CSV fill | 800 x 800 labeled CSV distance matrix, identical taxa and matrix values | 0.124120s | 0.094420s | 1.31x |
 | `NeighborNet._read_distance_matrix` simple CSV `fromstring` parser | 1200 x 1200 labeled CSV distance matrix, identical taxa and matrix values, quoted-field fallback preserved | 0.215591s | 0.126250s | 1.71x |
+| `NeighborNet._nj_circular_ordering` lower-triangle row conversion | 1500 x 1500 symmetric distance matrix, identical BioPython lower-triangle payload | 0.186708s | 0.035887s | 5.20x |
 | `NeighborNet._estimate_split_weights` | 80 taxa, 3080 circular splits, dense NNLS design matrix | 3.5731s | 2.9731s | 1.2x |
 | `NeighborNet._build_splits_graph` | 80 taxa, first 20 circular splits, 21-node Buneman graph | 3.3135s | 0.0010s | 3262.5x |
 | `NeighborNet` / `ConsensusNetwork` / `QuartetNetwork` split-graph extent helper | 500k node positions, identical maximum x/y extent without temporary coordinate lists | 0.070550s | 0.029240s | 2.41x |

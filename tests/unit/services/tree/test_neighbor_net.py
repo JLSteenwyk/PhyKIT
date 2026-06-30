@@ -434,6 +434,40 @@ class TestCircularOrdering:
 
         assert NeighborNet._nj_circular_ordering(D, taxa) == ["A", "B", "C", "D"]
 
+    def test_nj_circular_ordering_uses_lower_triangle_rows(self, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo import TreeConstruction
+
+        captured = {}
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+
+        class FakeDistanceMatrix:
+            def __init__(self, names, matrix):
+                captured["names"] = names
+                captured["matrix"] = matrix
+
+        monkeypatch.setattr(TreeConstruction, "DistanceMatrix", FakeDistanceMatrix)
+        monkeypatch.setattr(
+            TreeConstruction.DistanceTreeConstructor,
+            "nj",
+            lambda self, dm: tree,
+        )
+
+        taxa = ["A", "B", "C"]
+        D = np.array(
+            [
+                [0.0, 1.5, 2.5],
+                [1.5, 0.0, 3.5],
+                [2.5, 3.5, 0.0],
+            ]
+        )
+
+        assert NeighborNet._nj_circular_ordering(D, taxa) == taxa
+        assert captured == {
+            "names": taxa,
+            "matrix": [[0.0], [1.5, 0.0], [2.5, 3.5, 0.0]],
+        }
+
     def test_contains_all_taxa(self):
         taxa, D = _make_simple_distance_matrix()
         ordering = NeighborNet._nj_circular_ordering(D, taxa)

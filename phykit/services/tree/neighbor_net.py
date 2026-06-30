@@ -371,9 +371,8 @@ class NeighborNet:
         n = len(taxa)
         # Convert to BioPython DistanceMatrix (lower triangle including diagonal)
         matrix = []
-        for i in range(n):
-            row = [D[i, j] for j in range(i + 1)]
-            matrix.append(row)
+        for i, row in enumerate(D):
+            matrix.append(row[:i + 1].tolist())
 
         dm = DistanceMatrix(taxa, matrix)
         constructor = DistanceTreeConstructor()
