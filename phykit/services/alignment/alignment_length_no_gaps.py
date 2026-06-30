@@ -24,6 +24,8 @@ _DNA_GAP_BYTES = b"-?*XNxn"
 _PROTEIN_GAP_BYTES = b"-?*Xx"
 _DNA_GAP_CHARS = {"-", "?", "*", "X", "N"}
 _PROTEIN_GAP_CHARS = {"-", "?", "*", "X"}
+_DNA_GAP_COUNT_CHARS = "-?*XNxn"
+_PROTEIN_GAP_COUNT_CHARS = "-?*Xx"
 
 
 def _get_gap_codes(is_protein: bool):
@@ -46,8 +48,7 @@ def _count_no_gap_sites_in_identical_sequence(sequence: str, is_protein: bool) -
             return len(sequence)
         return len(sequence_bytes.translate(None, gap_bytes))
     except UnicodeEncodeError:
-        gap_chars = _PROTEIN_GAP_CHARS if is_protein else _DNA_GAP_CHARS
-        sequence = sequence.upper()
+        gap_chars = _PROTEIN_GAP_COUNT_CHARS if is_protein else _DNA_GAP_COUNT_CHARS
         return len(sequence) - sum(sequence.count(char) for char in gap_chars)
 
 

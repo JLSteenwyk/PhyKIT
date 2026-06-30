@@ -191,6 +191,18 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=True) == 3
 
+    def test_get_sites_no_gaps_count_identical_unicode_lowercase_gap_codes(
+        self, args
+    ):
+        alignment = [
+            SimpleNamespace(seq="A\u03a9xN-?", id="a"),
+            SimpleNamespace(seq="A\u03a9xN-?", id="b"),
+        ]
+        aln = AlignmentLengthNoGaps(args)
+
+        assert aln.get_sites_no_gaps_count(alignment, 6, is_protein=False) == 2
+        assert aln.get_sites_no_gaps_count(alignment, 6, is_protein=True) == 3
+
     def test_get_sites_no_gaps_count_unicode_fallback(self, args):
         alignment = [
             SimpleNamespace(seq="A\u03a9nT", id="a"),

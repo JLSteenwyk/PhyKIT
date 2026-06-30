@@ -240,6 +240,7 @@ Results:
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` gap-code column reduction | 1200 taxa x 12000 sites, alphabet `ACGT-?NX*`, side-by-side previous lookup-mask gather | 0.040526s | 0.014469s | 2.80x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` no-gap byte short-circuit | 2000 taxa x 12000 sites DNA `ACGT` / 1200 taxa x 12000 sites 20 amino-acid symbols, side-by-side previous column-reduction path | 0.019192s / 0.008347s | 0.011522s / 0.005520s | 1.67x / 1.51x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` identical-sequence shortcut | 2000 taxa x 12000 DNA sites, identical no-gap/gappy sequences; 1200 taxa x 12000 identical protein sites, side-by-side previous alignment-wide byte path | 0.032510s / 0.063387s / 0.008216s | 0.000157s / 0.000284s / 0.000088s | 207.13x / 223.03x / 93.32x |
+| `AlignmentLengthNoGaps` identical Unicode fallback counts | 100k-site mixed-case Unicode identical sequence helper, DNA / protein, side-by-side previous `upper()` plus uppercase gap counts | 0.000486s / 0.000401s | 0.000379s / 0.000251s | 1.28x / 1.60x |
 | `AlignmentLengthNoGaps` identical-row no-slice scan | see shared `PairwiseIdentity` row above for the common helper benchmark | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
 | `alignment_length_no_gaps` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.116950s | 0.024571s | 4.76x |
 | `alignment_length_no_gaps` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007086s | 0.006015s | 1.18x |
@@ -2644,7 +2645,9 @@ Profiling summary:
   DNA/protein gap and ambiguity semantics while avoiding alignment-wide byte
   joins and matrix construction for unchanged inputs. The identical-sequence
   guard now uses the same index-based scan as `PairwiseIdentity`, avoiding
-  `sequences[1:]` allocation while retaining early mismatch exits.
+  `sequences[1:]` allocation while retaining early mismatch exits. The
+  identical-sequence Unicode fallback now counts uppercase and lowercase gap
+  codes directly instead of allocating an uppercased copy before counting.
   A subsequent startup pass builds those lookup tables lazily and defers the
   annotation-only Bio.Align import. The shared `alignment.base` RCV lookup
   tables now use the same lazy NumPy construction, preserving the module-level
