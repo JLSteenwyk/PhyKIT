@@ -1892,6 +1892,7 @@ Results:
 | `PhylogeneticSignal._blombergs_k` | 420 taxa SPD VCV, 1000 permutations | 0.1134s | 0.0338s | 3.4x |
 | `PhylogeneticSignal._blombergs_k` Cholesky inverse construction | 450 taxa SPD VCV, 16 seeded permutations, side-by-side previous explicit inverse | 0.007445s | 0.003480s | 2.14x |
 | `PhylogeneticSignal._kmult_permutations` | 320 taxa x 5 traits SPD VCV, 1000 permutations | 0.143512s | 0.049227s | 2.9x |
+| `PhylogeneticSignal`/`NetworkSignal` permutation p-value counts | 1M permutation statistics, side-by-side previous `np.mean(permutations >= observed)` reduction | 0.000991s | 0.000390s | 2.54x |
 | `PhylogeneticSignal._compute_r2_phylo` | 420 taxa SPD VCV, single continuous trait | 0.0047s | 0.0015s | 3.2x |
 | `PhylogeneticSignal._compute_r2_phylo` combined RHS solve | 120 repeated 420-taxon SPD VCV R2 effect-size evaluations, SciPy already warm | 0.052471s | 0.039279s | 1.34x |
 | `PhylogeneticSignal._log_likelihood` | 420 taxa SPD VCV, single continuous trait | 0.0074s | 0.0005s | 14.5x |
@@ -6500,7 +6501,9 @@ Profiling summary:
   matrices while preserving the explicit inverse fallback for non-Cholesky
   cases. `_kmult_permutations` applies the same batching to multivariate K,
   preserving trait-row correlations within each shuffled taxon order while
-  evaluating the GLS-centered residual ratios in bulk.
+  evaluating the GLS-centered residual ratios in bulk. K and K_mult p-values
+  now count extreme permutation statistics with `np.count_nonzero` before
+  dividing by the permutation count, avoiding boolean mean reductions.
 - `PhylogeneticSignal._compute_r2_phylo` baseline time formed an explicit
   inverse of the phylogenetic VCV matrix before estimating the Brownian Motion
   residual variance. The optimized path uses Cholesky factorization and
@@ -6659,7 +6662,9 @@ Profiling summary:
   later permutation-core pass uses invariant permutation sums to compute the
   centered numerator algebraically and derives the denominator from the
   uncentered quadratic form, avoiding the centered residual matrix allocation
-  while preserving the fixed-seed permutation stream. K setup now builds the
+  while preserving the fixed-seed permutation stream. K p-values now count
+  extreme permutation statistics with `np.count_nonzero` before dividing by the
+  permutation count, avoiding boolean mean reductions. K setup now builds the
   required covariance inverse from a Cholesky identity solve for
   positive-definite network VCVs while preserving the explicit inverse fallback
   for non-Cholesky cases.

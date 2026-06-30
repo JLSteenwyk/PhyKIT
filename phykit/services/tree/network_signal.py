@@ -33,6 +33,12 @@ _CHO_SOLVE = None
 _MINIMIZE_SCALAR = None
 
 
+def _permutation_p_value_ge(permutations: np.ndarray, observed: float) -> float:
+    if permutations.size == 0:
+        return float("nan")
+    return float(np.count_nonzero(permutations >= observed) / permutations.size)
+
+
 def cho_factor(*args, **kwargs):
     global _CHO_FACTOR
 
@@ -544,7 +550,7 @@ class NetworkSignal(Tree):
             n_perm,
         )
 
-        p_value = float(np.mean(k_perm >= K))
+        p_value = _permutation_p_value_ge(k_perm, K)
 
         return dict(
             K=float(K),

@@ -77,6 +77,25 @@ def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
                 delattr(parent, child_name)
 
 
+def test_permutation_p_value_ge_counts_extreme_permutations(monkeypatch):
+    permutations = np.array([0.5, 1.5, 2.5, 3.5])
+    original_count_nonzero = ps_module.np.count_nonzero
+    calls = []
+
+    def counting_count_nonzero(values):
+        calls.append(values.copy())
+        return original_count_nonzero(values)
+
+    monkeypatch.setattr(ps_module.np, "count_nonzero", counting_count_nonzero)
+
+    p_value = ps_module._permutation_p_value_ge(permutations, 2.0)
+
+    assert p_value == pytest.approx(0.5)
+    assert len(calls) == 1
+    np.testing.assert_array_equal(calls[0], np.array([False, False, True, True]))
+    assert np.isnan(ps_module._permutation_p_value_ge(np.array([]), 2.0))
+
+
 def test_repeated_cholesky_calls_cache_scipy_linalg_imports(monkeypatch):
     previous_cho_factor = ps_module._CHO_FACTOR
     previous_cho_solve = ps_module._CHO_SOLVE
