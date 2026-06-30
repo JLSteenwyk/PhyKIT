@@ -173,6 +173,7 @@ Results:
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` | 180 taxa x 1200 sites, complete equal-length pair set, alphabet `ACGT-` | 0.1360s | 0.0025s | 54.4x |
 | `SumOfPairsScore.run` complete equal-length setup | 1200 taxa x 300 sites, complete equal-length pair set from reference IDs | 0.447407s | 0.000721s | 620.5x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` identical records | 1200 taxa x 1000 sites, complete equal-length query/reference records, side-by-side previous matrix stack path | 0.001236s | 0.000309s | 4.00x |
+| `SumOfPairsScore._calculate_equal_length_complete_records` matching taxa count | 4000 taxa x 2000 sites, 2% changed residues, side-by-side previous boolean `np.sum(..., axis=0)` | 0.008258s | 0.005935s | 1.39x |
 | `SumOfPairsScore._calculate_equal_length_complete_pairs` ordered pair-set check | 1400 taxa x 300 sites, complete ordered `itertools.combinations` pair list, side-by-side previous full expected-set comparison | 0.528270s | 0.059062s | 8.94x |
 | `SumOfPairsScore._has_complete_pair_set` streamed ordered validation | 2400 taxa, 2878800 ordered pair IDs, side-by-side previous nested slice validation | 0.355139s | 0.165752s | 2.14x |
 | `sum_of_pairs_score` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.212225s | 0.119312s | 1.78x |
@@ -2492,7 +2493,8 @@ Profiling summary:
   compared every taxon pair independently. The optimized complete equal-length
   path counts taxa whose query and reference residues match at each site, then
   converts those per-site counts to matching pair counts with `n choose 2`;
-  current code builds byte-backed alignment matrices for ASCII FASTA content.
+  current code builds byte-backed alignment matrices for ASCII FASTA content
+  and uses `np.count_nonzero` for the per-site matching-taxon counts.
   `run` now tries that complete-record path before materializing the full
   `n choose 2` reference pair list, preserving the mixed-length and incomplete
   pair-list fallback while avoiding quadratic setup for ordinary FASTA inputs.

@@ -8,6 +8,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.sum_of_pairs_score import SumOfPairsScore
+import phykit.services.alignment.sum_of_pairs_score as module
 
 
 def test_module_import_does_not_import_biopython_fasta_parser():
@@ -217,6 +218,37 @@ class TestSumOfPairsScore:
         assert matches == 4 * (matching_taxa * (matching_taxa - 1) // 2)
         assert pairs == 4 * len(record_id_pairs)
         mocked_pool.assert_not_called()
+
+    def test_complete_equal_lengths_counts_site_matches_with_count_nonzero(
+        self, monkeypatch
+    ):
+        reference_records = _make_records({
+            "id1": "AAAA",
+            "id2": "ACAC",
+            "id3": "GCAT",
+        })
+        query_records = _make_records({
+            "id1": "AATA",
+            "id2": "ATAC",
+            "id3": "GCAA",
+        })
+        original_count_nonzero = module.np.count_nonzero
+        count_nonzero_axes = []
+
+        def counting_count_nonzero(values, axis=None):
+            count_nonzero_axes.append(axis)
+            return original_count_nonzero(values, axis=axis)
+
+        monkeypatch.setattr(module.np, "count_nonzero", counting_count_nonzero)
+
+        matches, pairs = SumOfPairsScore._calculate_equal_length_complete_records(
+            reference_records,
+            query_records,
+        )
+
+        assert matches == 6
+        assert pairs == 12
+        assert count_nonzero_axes == [0]
 
     def test_complete_equal_lengths_identical_records_skip_matrix_stack(
         self, mocker, args

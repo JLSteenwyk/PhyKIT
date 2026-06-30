@@ -186,7 +186,7 @@ class SumOfPairsScore(Alignment):
             query_seqs,
             seq_len,
         )
-        matching_taxa_per_site = np.sum(ref_array == query_array, axis=0)
+        matching_taxa_per_site = np.count_nonzero(ref_array == query_array, axis=0)
         matches_per_site = (
             matching_taxa_per_site * (matching_taxa_per_site - 1)
         ) // 2
