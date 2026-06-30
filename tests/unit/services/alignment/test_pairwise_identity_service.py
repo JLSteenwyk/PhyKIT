@@ -1,4 +1,7 @@
 from argparse import Namespace
+import importlib
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -8,6 +11,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.pairwise_identity import PairwiseIdentity
+from phykit.services.alignment.pairwise_identity import _identity_for_identical_sequence
 import phykit.services.alignment.pairwise_identity as pairwise_identity_module
 
 
@@ -24,6 +28,91 @@ def _simple_alignment():
             SeqRecord(Seq("TCGT"), id="c"),
         ]
     )
+
+
+def test_identity_for_identical_sequence_counts_dna_gap_characters():
+    assert _identity_for_identical_sequence("ACGTN-?*X", False, True) == pytest.approx(
+        4 / 9
+    )
+
+
+def test_identity_for_identical_sequence_keeps_protein_n_as_nongap():
+    assert _identity_for_identical_sequence("ACGTN-?*X", True, True) == pytest.approx(
+        5 / 9
+    )
+
+
+def test_all_sequences_identical_does_not_slice():
+    class NoSliceList(list):
+        def __getitem__(self, key):
+            if isinstance(key, slice):
+                raise AssertionError("identical sequence scan should not slice")
+            return super().__getitem__(key)
+
+    assert pairwise_identity_module._all_sequences_identical(
+        NoSliceList(["ACGT", "ACGT", "ACGT"])
+    )
+    assert not pairwise_identity_module._all_sequences_identical(
+        NoSliceList(["ACGT", "TGCA", "ACGT"])
+    )
+    assert not pairwise_identity_module._all_sequences_identical(
+        NoSliceList(["ACGT", "ACGT", "TGCA"])
+    )
+
+
+def test_module_import_does_not_import_scipy_clustering(monkeypatch):
+    module_name = "phykit.services.alignment.pairwise_identity"
+    previous = sys.modules.pop(module_name, None)
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if (
+            name == "scipy.cluster.hierarchy"
+            or name.startswith("scipy.cluster.hierarchy.")
+            or name == "scipy.spatial.distance"
+            or name.startswith("scipy.spatial.distance.")
+        ):
+            raise AssertionError(
+                "pairwise_identity module import should not import SciPy clustering"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    try:
+        importlib.import_module(module_name)
+    finally:
+        imported = sys.modules.pop(module_name, None)
+        if previous is not None:
+            sys.modules[module_name] = previous
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            if previous is not None:
+                setattr(parent, child_name, previous)
+            elif getattr(parent, child_name, None) is imported:
+                delattr(parent, child_name)
+
+
+def test_module_import_does_not_import_biopython_align_or_tqdm():
+    code = """
+import sys
+import phykit.services.alignment.pairwise_identity as module
+assert hasattr(module.np, "__getattr__")
+assert hasattr(module.mp, "__getattr__")
+assert callable(module.print_json)
+assert callable(module.print_summary_statistics)
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "multiprocessing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.stats_summary" not in sys.modules
+assert "Bio.Align" not in sys.modules
+assert "tqdm" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestPairwiseIdentity:
@@ -54,6 +143,52 @@ class TestPairwiseIdentity:
         # denominator is still full length by implementation
         assert identity == 0.75
 
+    def test_sequence_to_array_uppercases_ascii_bytes(self, args):
+        service = PairwiseIdentity(args)
+
+        seq_array = service._sequence_to_array("ac-g")
+
+        assert seq_array.dtype.kind == "S"
+        assert seq_array.tolist() == [b"A", b"C", b"-", b"G"]
+
+    def test_sequence_to_array_falls_back_for_non_ascii(self, args):
+        service = PairwiseIdentity(args)
+
+        seq_array = service._sequence_to_array("A\u00d1")
+
+        assert seq_array.dtype.kind == "U"
+        assert seq_array.tolist() == ["A", "\u00d1"]
+
+    def test_gap_chars_array_matches_byte_sequences(self, args):
+        service = PairwiseIdentity(args)
+        seq_array = service._sequence_to_array("AC-T")
+
+        gap_chars_array = service._gap_chars_array_for_sequence(seq_array, {"-"})
+
+        assert gap_chars_array.dtype.kind == "S"
+        assert np.isin(seq_array, gap_chars_array).tolist() == [
+            False,
+            False,
+            True,
+            False,
+        ]
+
+    def test_calculate_identity_vectorized_counts_masked_matches(self, args):
+        service = PairwiseIdentity(args)
+        seq_one = np.array(list("AC-T"), dtype="U1")
+        seq_two = np.array(list("ACGT"), dtype="U1")
+        gap_mask_one = np.array([False, False, True, False])
+        gap_mask_two = np.array([False, False, False, False])
+
+        identity = service._calculate_identity_vectorized(
+            seq_one,
+            seq_two,
+            gap_mask=(gap_mask_one, gap_mask_two),
+            exclude_gaps=True,
+        )
+
+        assert identity == 0.75
+
     def test_process_pair_batch(self, args):
         service = PairwiseIdentity(args)
         alignment_data = [
@@ -69,6 +204,35 @@ class TestPairwiseIdentity:
         assert results[0]["pair_id"] == ["a", "b"]
         assert round(results[0]["identity"], 4) == 0.75
 
+    def test_process_pair_batch_uses_precomputed_gap_masks(self, args, mocker):
+        service = PairwiseIdentity(args)
+        alignment_data = [
+            {
+                "id": "a",
+                "seq": np.array(list("AC-T"), dtype="U1"),
+                "gap_mask": np.array([False, False, True, False]),
+            },
+            {
+                "id": "b",
+                "seq": np.array(list("ACGT"), dtype="U1"),
+                "gap_mask": np.array([False, False, False, False]),
+            },
+        ]
+        mocked_isin = mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.isin"
+        )
+
+        results = service._process_pair_batch(
+            alignment_data,
+            pair_indices=[(0, 1)],
+            exclude_gaps=True,
+            gap_chars=set(["-"]),
+        )
+
+        mocked_isin.assert_not_called()
+        assert results[0]["pair_id"] == ["a", "b"]
+        assert round(results[0]["identity"], 4) == 0.75
+
     def test_calculate_pairwise_identities_sequential(self, mocker, args):
         service = PairwiseIdentity(args)
         mocker.patch.object(PairwiseIdentity, "_should_use_multiprocessing", return_value=False)
@@ -79,6 +243,353 @@ class TestPairwiseIdentity:
         assert "a-b" in identities
         assert round(identities["a-b"], 4) == 0.75
         assert "mean" in stats
+
+    def test_calculate_pairwise_identities_sequential_streams_pairs(
+        self, mocker, args
+    ):
+        service = PairwiseIdentity(args)
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_calculate_pairwise_identities_matrix",
+            return_value=None,
+        )
+        should_use_mp = mocker.patch.object(
+            PairwiseIdentity, "_should_use_multiprocessing", return_value=False
+        )
+
+        def process_batch(_alignment_data, pair_indices, _exclude_gaps, _gap_chars):
+            assert not isinstance(pair_indices, list)
+            return [
+                {"pair_id": ["a", "b"], "identity": 0.75},
+                {"pair_id": ["a", "c"], "identity": 0.5},
+                {"pair_id": ["b", "c"], "identity": 0.25},
+            ]
+
+        process_spy = mocker.patch.object(
+            PairwiseIdentity,
+            "_process_pair_batch",
+            side_effect=process_batch,
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            _simple_alignment(), exclude_gaps=False, is_protein=False
+        )
+
+        should_use_mp.assert_called_once_with(3)
+        process_spy.assert_called_once()
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.25}
+        assert stats["mean"] == pytest.approx(0.5)
+
+    def test_calculate_pairwise_identities_exclude_gaps_matrix_path(self, mocker, args):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AC-T"), id="a"),
+                SeqRecord(Seq("ACGT"), id="b"),
+                SeqRecord(Seq("TCGT"), id="c"),
+            ]
+        )
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_process_pair_batch",
+            side_effect=AssertionError("matrix path should avoid pair batches"),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.75}
+        assert stats["mean"] == pytest.approx(2 / 3)
+
+    def test_calculate_pairwise_identities_default_matrix_path(self, mocker, args):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--T"), id="a"),
+                SeqRecord(Seq("A--G"), id="b"),
+                SeqRecord(Seq("N--G"), id="c"),
+            ]
+        )
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_process_pair_batch",
+            side_effect=AssertionError("matrix path should avoid pair batches"),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.75}
+        assert stats["mean"] == pytest.approx(2 / 3)
+
+    def test_calculate_pairwise_identities_identical_sequences_skip_matrix(
+        self, mocker, args
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--T"), id="a"),
+                SeqRecord(Seq("a--t"), id="b"),
+                SeqRecord(Seq("A--T"), id="c"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.frombuffer",
+            side_effect=AssertionError("identical alignments should skip matrix setup"),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.5, "a-c": 0.5, "b-c": 0.5}
+        assert stats == {
+            "mean": 0.5,
+            "median": 0.5,
+            "twenty_fifth": 0.5,
+            "seventy_fifth": 0.5,
+            "minimum": 0.5,
+            "maximum": 0.5,
+            "standard_deviation": 0.0,
+            "variance": 0.0,
+        }
+
+    def test_calculate_pairwise_identity_stats_identical_sequences_skip_matrix(
+        self, mocker, args
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--T"), id="a"),
+                SeqRecord(Seq("a--t"), id="b"),
+                SeqRecord(Seq("A--T"), id="c"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.frombuffer",
+            side_effect=AssertionError("identical alignments should skip matrix setup"),
+        )
+
+        stats = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert stats == {
+            "mean": 1.0,
+            "median": 1.0,
+            "twenty_fifth": 1.0,
+            "seventy_fifth": 1.0,
+            "minimum": 1.0,
+            "maximum": 1.0,
+            "standard_deviation": 0.0,
+            "variance": 0.0,
+        }
+
+    def test_exclude_gaps_clean_ascii_matrix_path_skips_gap_lookup(self, mocker, args):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("ACGA"), id="b"),
+                SeqRecord(Seq("TCGT"), id="c"),
+            ]
+        )
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_get_gap_lookup",
+            side_effect=AssertionError(
+                "clean ASCII exclude-gaps matrix path should skip gap lookup"
+            ),
+        )
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_process_pair_batch",
+            side_effect=AssertionError("matrix path should avoid pair batches"),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+        stats_only = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.75, "b-c": 0.5}
+        assert stats_only == pytest.approx(stats)
+
+    def test_calculate_pairwise_identity_stats_matrix_matches_full_result(self, args):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--T"), id="a"),
+                SeqRecord(Seq("A--G"), id="b"),
+                SeqRecord(Seq("N--G"), id="c"),
+                SeqRecord(Seq("A--T"), id="d"),
+            ]
+        )
+
+        full_stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )[2]
+        stats_only = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert stats_only == pytest.approx(full_stats)
+
+    def test_calculate_pairwise_identity_stats_gappy_matrix_uses_squareform(
+        self, args, mocker
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--TN"), id="a"),
+                SeqRecord(Seq("A--GN"), id="b"),
+                SeqRecord(Seq("N--GA"), id="c"),
+                SeqRecord(Seq("A--TA"), id="d"),
+            ]
+        )
+        full_stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )[2]
+        mocked_squareform = mocker.spy(pairwise_identity_module, "squareform")
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.triu_indices",
+            side_effect=AssertionError(
+                "gappy stats-only matrix path should use condensed squareform"
+            ),
+        )
+
+        stats_only = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+
+        mocked_squareform.assert_called()
+        assert stats_only == pytest.approx(full_stats)
+
+    def test_calculate_pairwise_identity_stats_matrix_matches_full_result_multiblock(
+        self, args
+    ):
+        service = PairwiseIdentity(args)
+        alphabet = "ACGT"
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(
+                    Seq(
+                        "".join(
+                            alphabet[(idx + pos) % len(alphabet)]
+                            for pos in range(16)
+                        )
+                    ),
+                    id=f"taxon{idx}",
+                )
+                for idx in range(70)
+            ]
+        )
+
+        full_stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )[2]
+        stats_only = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert stats_only == pytest.approx(full_stats)
+
+    def test_run_summary_uses_stats_only_path(self, mocker):
+        args = Namespace(
+            alignment="/some/path/to/file.fa",
+            verbose=False,
+            exclude_gaps=False,
+            json=False,
+            plot=False,
+        )
+        service = PairwiseIdentity(args)
+        alignment = _simple_alignment()
+        mocker.patch.object(
+            PairwiseIdentity,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
+        )
+        stats_only = mocker.patch.object(
+            service,
+            "calculate_pairwise_identity_stats",
+            return_value={"mean": 0.75},
+        )
+        full_result = mocker.patch.object(
+            service,
+            "calculate_pairwise_identities",
+            side_effect=AssertionError("summary run should not build pair rows"),
+        )
+        mocked_summary = mocker.patch(
+            "phykit.services.alignment.pairwise_identity.print_summary_statistics"
+        )
+
+        service.run()
+
+        stats_only.assert_called_once_with(alignment, False, False)
+        full_result.assert_not_called()
+        mocked_summary.assert_called_once_with({"mean": 0.75})
+
+    def test_matrix_pairwise_identity_matches_batch_reference(self, mocker, args):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AnXT"), id="a"),
+                SeqRecord(Seq("ACxT"), id="b"),
+                SeqRecord(Seq("AG-T"), id="c"),
+            ]
+        )
+        mocker.patch.object(PairwiseIdentity, "_should_use_multiprocessing", return_value=False)
+
+        matrix_result = service._calculate_pairwise_identities_matrix(
+            alignment,
+            is_protein=False,
+            exclude_gaps=True,
+        )
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_calculate_pairwise_identities_matrix",
+            return_value=None,
+        )
+        batch_result = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+
+        assert matrix_result == batch_result
 
     def test_run_json_verbose_and_plot(self, mocker):
         args = Namespace(
@@ -154,6 +665,38 @@ class TestPairwiseIdentity:
         mocked_summary.assert_called_once_with({"mean": 0.75})
         mocked_print.assert_called_once_with("Saved pairwise identity heatmap: out.png")
 
+    def test_run_verbose_batches_text_output(self, mocker, capsys):
+        args = Namespace(
+            alignment="/some/path/to/file.fa",
+            verbose=True,
+            exclude_gaps=False,
+            json=False,
+            plot=True,
+            plot_output="out.png",
+        )
+        service = PairwiseIdentity(args)
+        alignment = _simple_alignment()
+        mocker.patch.object(
+            PairwiseIdentity,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
+        )
+        mocker.patch.object(
+            PairwiseIdentity,
+            "calculate_pairwise_identities",
+            return_value=(
+                [["a", "b"], ["a", "c"]],
+                {"a-b": 0.75, "a-c": 0.5},
+                {"mean": 0.625},
+            ),
+        )
+        mocker.patch.object(PairwiseIdentity, "_plot_pairwise_identity_heatmap")
+
+        service.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "a\tb\t0.75\na\tc\t0.5\nSaved pairwise identity heatmap: out.png\n"
+
     def test_should_use_multiprocessing_respects_env(self, args, monkeypatch):
         service = PairwiseIdentity(args)
         monkeypatch.setenv("PHYKIT_DISABLE_MP", "1")
@@ -185,6 +728,64 @@ class TestPairwiseIdentity:
         assert payload["verbose"] is False
         assert payload["exclude_gaps"] is True
         assert payload["summary"] == {"mean": 0.5}
+
+    def test_pairwise_identity_matrix_from_canonical_pairs_uses_squareform(self, mocker):
+        taxa = ["a", "b", "c"]
+        pair_ids = [["a", "b"], ["a", "c"], ["b", "c"]]
+        identities = {"a-b": 0.8, "a-c": 0.5, "b-c": 0.6}
+        mocked_squareform = mocker.spy(pairwise_identity_module, "squareform")
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.triu_indices",
+            side_effect=AssertionError(
+                "canonical pair order should use condensed squareform fill"
+            ),
+        )
+
+        matrix = pairwise_identity_module._pairwise_identity_matrix_from_pairs(
+            taxa,
+            pair_ids,
+            identities,
+        )
+
+        mocked_squareform.assert_called_once()
+        np.testing.assert_allclose(
+            matrix,
+            np.array(
+                [
+                    [1.0, 0.8, 0.5],
+                    [0.8, 1.0, 0.6],
+                    [0.5, 0.6, 1.0],
+                ],
+                dtype=np.float32,
+            ),
+        )
+
+    def test_pairwise_identity_matrix_from_arbitrary_pairs_uses_fallback_order(self, mocker):
+        taxa = ["a", "b", "c"]
+        pair_ids = [["b", "c"], ["a", "b"], ["a", "c"]]
+        identities = {"b-c": 0.6, "a-b": 0.8, "a-c": 0.5}
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.triu_indices",
+            side_effect=AssertionError("arbitrary pair order should use fallback fill"),
+        )
+
+        matrix = pairwise_identity_module._pairwise_identity_matrix_from_pairs(
+            taxa,
+            pair_ids,
+            identities,
+        )
+
+        np.testing.assert_allclose(
+            matrix,
+            np.array(
+                [
+                    [1.0, 0.8, 0.5],
+                    [0.8, 1.0, 0.6],
+                    [0.5, 0.6, 1.0],
+                ],
+                dtype=np.float32,
+            ),
+        )
 
     def test_plot_pairwise_identity_heatmap_creates_file(self, tmp_path):
         pytest.importorskip("matplotlib")

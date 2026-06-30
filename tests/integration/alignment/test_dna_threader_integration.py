@@ -40,10 +40,16 @@ class TestDNAThreader(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
+            call(
+                "\n".join(
+                    [
+                        expected_result_0,
+                        expected_result_1,
+                        expected_result_2,
+                        expected_result_3,
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")
@@ -74,10 +80,16 @@ class TestDNAThreader(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
+            call(
+                "\n".join(
+                    [
+                        expected_result_0,
+                        expected_result_1,
+                        expected_result_2,
+                        expected_result_3,
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")
@@ -108,10 +120,16 @@ class TestDNAThreader(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
+            call(
+                "\n".join(
+                    [
+                        expected_result_0,
+                        expected_result_1,
+                        expected_result_2,
+                        expected_result_3,
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")
@@ -140,10 +158,16 @@ class TestDNAThreader(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
+            call(
+                "\n".join(
+                    [
+                        expected_result_0,
+                        expected_result_1,
+                        expected_result_2,
+                        expected_result_3,
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")

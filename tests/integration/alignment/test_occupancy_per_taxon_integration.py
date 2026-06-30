@@ -13,11 +13,13 @@ here = Path(__file__)
 class TestOccupancyPerTaxon(object):
     @patch("builtins.print")
     def test_occupancy_per_taxon0(self, mocked_print):
-        expected_result_0 = "1\t0.8333"
-        expected_result_1 = "2\t0.6667"
-        expected_result_2 = "3\t0.6667"
-        expected_result_3 = "4\t0.8333"
-        expected_result_4 = "5\t0.6667"
+        expected_result = (
+            "1\t0.8333\n"
+            "2\t0.6667\n"
+            "3\t0.6667\n"
+            "4\t0.8333\n"
+            "5\t0.6667"
+        )
         testargs = [
             "phykit",
             "occupancy_per_taxon",
@@ -25,21 +27,17 @@ class TestOccupancyPerTaxon(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_occupancy_per_taxon_alias(self, mocked_print):
-        expected_result_0 = "1\t0.8333"
-        expected_result_1 = "2\t0.6667"
-        expected_result_2 = "3\t0.6667"
-        expected_result_3 = "4\t0.8333"
-        expected_result_4 = "5\t0.6667"
+        expected_result = (
+            "1\t0.8333\n"
+            "2\t0.6667\n"
+            "3\t0.6667\n"
+            "4\t0.8333\n"
+            "5\t0.6667"
+        )
         testargs = [
             "phykit",
             "occ_tax",
@@ -47,13 +45,7 @@ class TestOccupancyPerTaxon(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_occupancy_per_taxon_incorrect_input_file(self, mocked_print):

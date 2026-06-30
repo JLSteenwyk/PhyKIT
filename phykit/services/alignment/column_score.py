@@ -1,11 +1,32 @@
-from typing import Dict, List, Tuple
-import numpy as np
-
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
+from __future__ import annotations
 
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+class _LazyAlignIO:
+    def read(self, *args, **kwargs):
+        from Bio import AlignIO as _AlignIO
+
+        return _AlignIO.read(*args, **kwargs)
+
+
+AlignIO = _LazyAlignIO()
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class ColumnScore(Alignment):
@@ -16,18 +37,22 @@ class ColumnScore(Alignment):
 
     def run(self) -> None:
         query_records = AlignIO.read(self.fasta, "fasta")
-        reference_records = AlignIO.read(self.reference, "fasta")
+        if self.reference == self.fasta:
+            reference_records = query_records
+        else:
+            reference_records = AlignIO.read(self.reference, "fasta")
 
-        # create lists with strings of every columns
-        ref_columns, query_columns = self.get_columns_from_alignments(
+        direct_result = self._calculate_matches_between_alignments_direct(
             reference_records, query_records
         )
-
-        # count the number of matches and total pairs
-        number_of_matches, number_of_total_columns = \
-            self.calculate_matches_between_ref_and_query_columns(
+        if direct_result is None:
+            ref_columns, query_columns = self.get_columns_from_alignments(
+                reference_records, query_records
+            )
+            direct_result = self.calculate_matches_between_ref_and_query_columns(
                 ref_columns, query_columns
             )
+        number_of_matches, number_of_total_columns = direct_result
 
         score = round(number_of_matches / number_of_total_columns, 4)
 
@@ -37,7 +62,7 @@ class ColumnScore(Alignment):
 
         print(score)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             fasta=args.fasta,
             reference=args.reference,
@@ -48,32 +73,132 @@ class ColumnScore(Alignment):
         self,
         reference_records: MultipleSeqAlignment,
         query_records: MultipleSeqAlignment,
-    ) -> Tuple[List[str], List[str]]:
-        # Convert alignments to numpy arrays for faster column extraction
-        ref_array = np.array([
-            [c.upper() for c in str(record.seq)]
-            for record in reference_records
-        ], dtype='U1')
+    ) -> tuple[list[str], list[str]]:
+        ref_sequences = [str(record.seq).upper() for record in reference_records]
+        query_sequences = [str(record.seq).upper() for record in query_records]
 
-        query_array = np.array([
-            [c.upper() for c in str(record.seq)]
-            for record in query_records
-        ], dtype='U1')
-
-        # Extract columns as strings
-        ref_columns = [''.join(ref_array[:, i]) for i in range(ref_array.shape[1])]
-        query_columns = [''.join(query_array[:, i]) for i in range(query_array.shape[1])]
+        ref_columns = ["".join(column) for column in zip(*ref_sequences)]
+        query_columns = ["".join(column) for column in zip(*query_sequences)]
 
         return ref_columns, query_columns
 
     def calculate_matches_between_ref_and_query_columns(
         self,
-        ref_columns: List[str],
-        query_columns: List[str],
-    ) -> Tuple[int, int]:
+        ref_columns: list[str],
+        query_columns: list[str],
+    ) -> tuple[int, int]:
         set1 = set(ref_columns)
         set2 = set(query_columns)
 
         matches = set1.intersection(set2)
 
         return len(matches), len(query_columns)
+
+    @staticmethod
+    def _unique_column_count_ascii(sequences: list[str], seq_len: int) -> int | None:
+        try:
+            sequence_matrix = np.frombuffer(
+                "".join(sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(len(sequences), seq_len)
+        except UnicodeEncodeError:
+            return None
+
+        column_dtype = np.dtype((np.void, len(sequences)))
+        unique_columns = np.unique(
+            np.ascontiguousarray(sequence_matrix.T).view(column_dtype).ravel()
+        )
+        return int(unique_columns.size)
+
+    @staticmethod
+    def _repeated_sequence_symbols_ascii(sequences: list[str]) -> frozenset[str] | None:
+        first_sequence = sequences[0]
+        for sequence in sequences:
+            if sequence != first_sequence:
+                return None
+        try:
+            first_sequence.encode("ascii")
+        except UnicodeEncodeError:
+            return None
+        return frozenset(first_sequence)
+
+    @staticmethod
+    def _calculate_matches_between_alignments_direct(
+        reference_records: MultipleSeqAlignment,
+        query_records: MultipleSeqAlignment,
+    ) -> tuple[int, int] | None:
+        if reference_records is query_records:
+            query_sequences = [str(record.seq).upper() for record in query_records]
+            if not query_sequences:
+                return None
+
+            query_len = len(query_sequences[0])
+            if any(len(seq) != query_len for seq in query_sequences):
+                return None
+
+            query_symbols = ColumnScore._repeated_sequence_symbols_ascii(
+                query_sequences
+            )
+            if query_symbols is not None:
+                return len(query_symbols), query_len
+
+            unique_column_count = ColumnScore._unique_column_count_ascii(
+                query_sequences,
+                query_len,
+            )
+            if unique_column_count is None:
+                return None
+            return unique_column_count, query_len
+
+        ref_sequences = [str(record.seq).upper() for record in reference_records]
+        query_sequences = [str(record.seq).upper() for record in query_records]
+        if not ref_sequences or not query_sequences:
+            return None
+
+        ref_len = len(ref_sequences[0])
+        query_len = len(query_sequences[0])
+        if (
+            any(len(seq) != ref_len for seq in ref_sequences)
+            or any(len(seq) != query_len for seq in query_sequences)
+        ):
+            return None
+
+        if len(ref_sequences) != len(query_sequences):
+            return 0, query_len
+
+        ref_symbols = ColumnScore._repeated_sequence_symbols_ascii(ref_sequences)
+        query_symbols = ColumnScore._repeated_sequence_symbols_ascii(query_sequences)
+        if ref_symbols is not None and query_symbols is not None:
+            return len(ref_symbols.intersection(query_symbols)), query_len
+
+        if ref_sequences == query_sequences:
+            unique_column_count = ColumnScore._unique_column_count_ascii(
+                query_sequences,
+                query_len,
+            )
+            if unique_column_count is None:
+                return None
+            return unique_column_count, query_len
+
+        n_taxa = len(ref_sequences)
+        try:
+            ref_matrix = np.frombuffer(
+                "".join(ref_sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(n_taxa, ref_len)
+            query_matrix = np.frombuffer(
+                "".join(query_sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(n_taxa, query_len)
+        except UnicodeEncodeError:
+            return None
+
+        column_dtype = np.dtype((np.void, n_taxa))
+        ref_unique = np.unique(
+            np.ascontiguousarray(ref_matrix.T).view(column_dtype).ravel()
+        )
+        query_unique = np.unique(
+            np.ascontiguousarray(query_matrix.T).view(column_dtype).ravel()
+        )
+        matches = np.intersect1d(ref_unique, query_unique, assume_unique=True)
+        return int(matches.size), query_len

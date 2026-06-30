@@ -5,15 +5,65 @@ Supports two modes:
 2) Quartet topologies from gene trees (-g)
 """
 
-from io import StringIO
-from typing import Dict, List, Optional, Tuple
+from __future__ import annotations
 
-import numpy as np
-from Bio import Phylo, SeqIO
+import math
 
+from ._fasta import read_fasta_first_token_upper
 from .base import Alignment
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_SKIP_CODES = (ord("-"), ord("N"), ord("?"), ord("X"), ord("n"), ord("x"))
+_SKIP_BYTES = b"-N?Xnx"
+_SKIP_SCAN_BYTES = 4096
+
+
+def _same_sequence(seq_a: str, seq_b: str) -> bool:
+    if seq_a is seq_b:
+        return True
+    if len(seq_a) != len(seq_b):
+        return False
+    if not seq_a:
+        return True
+    if seq_a[0] != seq_b[0] or seq_a[-1] != seq_b[-1]:
+        return False
+    seq_len = len(seq_a)
+    if seq_len > 3 and (
+        seq_a[1] != seq_b[1]
+        or seq_a[seq_len // 2] != seq_b[seq_len // 2]
+        or seq_a[-2] != seq_b[-2]
+    ):
+        return False
+    if len(seq_a) > _SKIP_SCAN_BYTES:
+        return (
+            seq_a[:_SKIP_SCAN_BYTES] == seq_b[:_SKIP_SCAN_BYTES]
+            and seq_a[-_SKIP_SCAN_BYTES:] == seq_b[-_SKIP_SCAN_BYTES:]
+            and seq_a == seq_b
+        )
+    return seq_a == seq_b
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _normal_two_tailed_p_value(z_score: float) -> float:
+    return math.erfc(abs(z_score) / math.sqrt(2.0))
+
+
+def _chi2_sf_df1(chi2_stat: float) -> float:
+    return math.erfc(math.sqrt(chi2_stat / 2.0))
 
 
 class Dstatistic(Alignment):
@@ -29,7 +79,7 @@ class Dstatistic(Alignment):
         self.support_threshold = parsed["support_threshold"]
         self.json_output = parsed["json_output"]
 
-    def process_args(self, args) -> Dict[str, object]:
+    def process_args(self, args) -> dict[str, object]:
         aln = getattr(args, "alignment", None)
         gt = getattr(args, "gene_trees", None)
         if aln is None and gt is None:
@@ -99,15 +149,12 @@ class Dstatistic(Alignment):
         else:
             d_stat = (abba_count - baba_count) / n_informative
 
-        # Chi-squared test: are ABBA and BABA equally frequent?
-        from scipy.stats import chi2
-
         p_value = None
         chi2_stat = None
         if n_informative > 0:
             expected = n_informative / 2.0
             chi2_stat = ((abba_count - expected) ** 2 + (baba_count - expected) ** 2) / expected
-            p_value = float(chi2.sf(chi2_stat, df=1))
+            p_value = _chi2_sf_df1(chi2_stat)
 
         # Output
         if self.json_output:
@@ -130,36 +177,70 @@ class Dstatistic(Alignment):
             print_json(payload, sort_keys=False)
             return
 
+        self._print_gene_tree_text_output(
+            n_total,
+            concordant,
+            abba_count,
+            baba_count,
+            unresolved,
+            d_stat,
+            chi2_stat,
+            p_value,
+        )
+
+    def _print_gene_tree_text_output(
+        self,
+        n_total,
+        concordant,
+        abba_count,
+        baba_count,
+        unresolved,
+        d_stat,
+        chi2_stat,
+        p_value,
+    ):
+        threshold_line = (
+            f"Support threshold: {self.support_threshold}\n"
+            if self.support_threshold is not None
+            else ""
+        )
+        if chi2_stat is not None:
+            tail = (
+                f"Chi-squared: {chi2_stat:.4f}\n"
+                f"p-value: {p_value:.6f}\n"
+                f"\n"
+                f"Interpretation: {self._interpret(d_stat, p_value)}"
+            )
+        else:
+            tail = "\nNo informative (discordant) gene trees found."
+
         try:
-            print("Patterson's D-statistic (Gene Tree Mode)")
-            print("=========================================")
-            print(f"Topology: ((({self.p1}, {self.p2}), {self.p3}), {self.outgroup})")
-            print(f"P1: {self.p1}")
-            print(f"P2: {self.p2}")
-            print(f"P3: {self.p3}")
-            print(f"Outgroup: {self.outgroup}")
-            print()
-            print(f"Gene trees: {n_total}")
-            if self.support_threshold is not None:
-                print(f"Support threshold: {self.support_threshold}")
-            print(f"Concordant ((P1,P2),P3): {concordant}")
-            print(f"ABBA ((P2,P3),P1): {abba_count}")
-            print(f"BABA ((P1,P3),P2): {baba_count}")
-            print(f"Unresolved: {unresolved}")
-            print(f"D-statistic: {d_stat:.4f}")
-            if chi2_stat is not None:
-                print(f"Chi-squared: {chi2_stat:.4f}")
-                print(f"p-value: {p_value:.6f}")
-                print()
-                print(f"Interpretation: {self._interpret(d_stat, p_value)}")
-            else:
-                print()
-                print("No informative (discordant) gene trees found.")
+            print(
+                f"Patterson's D-statistic (Gene Tree Mode)\n"
+                f"=========================================\n"
+                f"Topology: ((({self.p1}, {self.p2}), "
+                f"{self.p3}), {self.outgroup})\n"
+                f"P1: {self.p1}\n"
+                f"P2: {self.p2}\n"
+                f"P3: {self.p3}\n"
+                f"Outgroup: {self.outgroup}\n"
+                f"\n"
+                f"Gene trees: {n_total}\n"
+                f"{threshold_line}"
+                f"Concordant ((P1,P2),P3): {concordant}\n"
+                f"ABBA ((P2,P3),P1): {abba_count}\n"
+                f"BABA ((P1,P3),P2): {baba_count}\n"
+                f"Unresolved: {unresolved}\n"
+                f"D-statistic: {d_stat:.4f}\n"
+                f"{tail}"
+            )
         except BrokenPipeError:
             pass
 
     def _parse_gene_trees(self, path: str) -> list:
         """Parse gene trees from a file (one Newick per line)."""
+        from Bio import Phylo
+
         try:
             return list(Phylo.parse(path, "newick"))
         except Exception:
@@ -167,6 +248,73 @@ class Dstatistic(Alignment):
                 [f"Could not parse gene trees from {path}."],
                 code=2,
             )
+
+    @staticmethod
+    def _collect_clade_taxa(tree) -> dict[int, frozenset]:
+        clade_taxa, _ = Dstatistic._collect_clade_taxa_and_nonterminals(tree)
+        return clade_taxa
+
+    @staticmethod
+    def _collect_clade_taxa_and_nonterminals(
+        tree,
+    ) -> tuple[dict[int, frozenset], list]:
+        direct_result = Dstatistic._collect_clade_taxa_and_nonterminals_direct(tree)
+        if direct_result is not None:
+            return direct_result
+
+        clade_taxa: dict[int, frozenset] = {}
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                clade_taxa[id(clade)] = frozenset({clade.name})
+            else:
+                taxa = frozenset()
+                for child in clade.clades:
+                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                clade_taxa[id(clade)] = taxa
+        return clade_taxa, list(tree.get_nonterminals())
+
+    @staticmethod
+    def _collect_clade_taxa_and_nonterminals_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        preorder = []
+        stack = [root]
+        append = preorder.append
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                append(clade)
+                children = clade.clades
+                if children:
+                    extend(reversed(children))
+        except AttributeError:
+            return None
+
+        clade_taxa: dict[int, frozenset] = {}
+        empty_taxa = frozenset()
+        for clade in reversed(preorder):
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 0:
+                clade_taxa[id(clade)] = frozenset({clade.name})
+            elif child_count == 2:
+                clade_taxa[id(clade)] = (
+                    clade_taxa[id(children[0])] | clade_taxa[id(children[1])]
+                )
+            else:
+                taxa = empty_taxa
+                for child in children:
+                    taxa = taxa | clade_taxa.get(id(child), empty_taxa)
+                clade_taxa[id(clade)] = taxa
+
+        nonterminals = [clade for clade in preorder if clade.clades]
+        return clade_taxa, nonterminals
 
     def _get_quartet_topology(self, tree, quartet) -> str:
         """Determine quartet topology from a (possibly multi-taxon) gene tree.
@@ -178,8 +326,8 @@ class Dstatistic(Alignment):
         """
         p1, p2, p3, outgroup = quartet
 
-        # Get all taxa in the tree
-        tree_taxa = {t.name for t in tree.get_terminals()}
+        clade_taxa, nonterminals = self._collect_clade_taxa_and_nonterminals(tree)
+        tree_taxa = clade_taxa.get(id(tree.root), frozenset())
 
         # Check all four taxa are present
         if not all(t in tree_taxa for t in quartet):
@@ -187,39 +335,46 @@ class Dstatistic(Alignment):
 
         # Extract bipartitions from the gene tree
         # Skip branches with support below threshold
-        all_taxa = frozenset(tree_taxa)
-        bipartitions = []
-        for clade in tree.get_nonterminals():
+        all_taxa = tree_taxa
+        quartet_set = frozenset((p1, p2, p3, outgroup))
+        concordant_pairs = (
+            frozenset((p1, p2)),
+            frozenset((p3, outgroup)),
+        )
+        abba_pairs = (
+            frozenset((p2, p3)),
+            frozenset((p1, outgroup)),
+        )
+        baba_pairs = (
+            frozenset((p1, p3)),
+            frozenset((p2, outgroup)),
+        )
+        for clade in nonterminals:
             # Check support threshold
             if self.support_threshold is not None:
                 support = clade.confidence
                 if support is not None and support < self.support_threshold:
                     continue  # collapse this branch (skip its bipartition)
 
-            tips = frozenset(t.name for t in clade.get_terminals())
+            tips = clade_taxa.get(id(clade), frozenset())
             if len(tips) <= 1 or tips == all_taxa:
                 continue
-            complement = all_taxa - tips
-            if len(complement) <= 0:
-                continue
-            bipartitions.append((tips, complement))
 
-        # Check which quartet topology the bipartitions support
-        quartet_set = {p1, p2, p3, outgroup}
-        for side_a, side_b in bipartitions:
-            in_a = quartet_set & side_a
-            in_b = quartet_set & side_b
-            if len(in_a) == 2 and len(in_b) == 2:
-                pair = frozenset(in_a)
-                # Concordant: P1+P2 on one side
-                if pair == frozenset({p1, p2}) or pair == frozenset({p3, outgroup}):
-                    return "concordant"
-                # ABBA: P2+P3 on one side
-                if pair == frozenset({p2, p3}) or pair == frozenset({p1, outgroup}):
-                    return "abba"
-                # BABA: P1+P3 on one side
-                if pair == frozenset({p1, p3}) or pair == frozenset({p2, outgroup}):
-                    return "baba"
+            # Check which quartet topology the bipartition supports.
+            in_a = quartet_set & tips
+            if len(in_a) != 2:
+                continue
+
+            pair = frozenset(in_a)
+            # Concordant: P1+P2 on one side
+            if pair == concordant_pairs[0] or pair == concordant_pairs[1]:
+                return "concordant"
+            # ABBA: P2+P3 on one side
+            if pair == abba_pairs[0] or pair == abba_pairs[1]:
+                return "abba"
+            # BABA: P1+P3 on one side
+            if pair == baba_pairs[0] or pair == baba_pairs[1]:
+                return "baba"
 
         return "unresolved"
 
@@ -227,12 +382,195 @@ class Dstatistic(Alignment):
     # Alignment mode
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _read_fasta(path: str) -> dict[str, str]:
+        return read_fasta_first_token_upper(path)
+
+    @staticmethod
+    def _count_site_patterns(seq_p1, seq_p2, seq_p3, seq_outgroup, block_size):
+        """Count ABBA/BABA site patterns and per-block counts."""
+        if (
+            len(seq_p1)
+            == len(seq_p2)
+            == len(seq_p3)
+            == len(seq_outgroup)
+            and (
+                _same_sequence(seq_p1, seq_p2)
+                or _same_sequence(seq_p3, seq_outgroup)
+            )
+        ):
+            n_blocks = len(seq_p1) // block_size
+            return 0, 0, np.zeros(n_blocks), np.zeros(n_blocks)
+
+        try:
+            p1_bytes = seq_p1.encode("ascii")
+            p2_bytes = seq_p2.encode("ascii")
+            p3_bytes = seq_p3.encode("ascii")
+            out_bytes = seq_outgroup.encode("ascii")
+            p1 = np.frombuffer(p1_bytes, dtype=np.uint8)
+            p2 = np.frombuffer(p2_bytes, dtype=np.uint8)
+            p3 = np.frombuffer(p3_bytes, dtype=np.uint8)
+            out = np.frombuffer(out_bytes, dtype=np.uint8)
+        except UnicodeEncodeError:
+            return Dstatistic._count_site_patterns_scalar(
+                seq_p1,
+                seq_p2,
+                seq_p3,
+                seq_outgroup,
+                block_size,
+            )
+
+        has_skip_code = any(
+            code in p1_bytes[:_SKIP_SCAN_BYTES]
+            or code in p2_bytes[:_SKIP_SCAN_BYTES]
+            or code in p3_bytes[:_SKIP_SCAN_BYTES]
+            or code in out_bytes[:_SKIP_SCAN_BYTES]
+            or code in p1_bytes[-_SKIP_SCAN_BYTES:]
+            or code in p2_bytes[-_SKIP_SCAN_BYTES:]
+            or code in p3_bytes[-_SKIP_SCAN_BYTES:]
+            or code in out_bytes[-_SKIP_SCAN_BYTES:]
+            for code in _SKIP_BYTES
+        )
+        if not has_skip_code:
+            has_skip_code = any(
+                code in p1_bytes
+                or code in p2_bytes
+                or code in p3_bytes
+                or code in out_bytes
+                for code in _SKIP_BYTES
+            )
+
+        if has_skip_code:
+            valid = np.ones(len(p1), dtype=bool)
+            for code in _SKIP_CODES:
+                valid &= (p1 != code) & (p2 != code) & (p3 != code) & (out != code)
+
+            if _same_sequence(seq_p2, seq_p3) or _same_sequence(
+                seq_p1,
+                seq_outgroup,
+            ):
+                abba_mask = valid & (p1 == out) & (p2 == p3) & (p2 != out)
+                baba_mask = None
+            elif _same_sequence(seq_p1, seq_p3) or _same_sequence(
+                seq_p2,
+                seq_outgroup,
+            ):
+                abba_mask = None
+                baba_mask = valid & (p2 == out) & (p1 == p3) & (p1 != out)
+            else:
+                abba_mask = valid & (p1 == out) & (p2 == p3) & (p2 != out)
+                baba_mask = valid & (p2 == out) & (p1 == p3) & (p1 != out)
+        else:
+            if _same_sequence(seq_p2, seq_p3) or _same_sequence(
+                seq_p1,
+                seq_outgroup,
+            ):
+                abba_mask = (p1 == out) & (p2 == p3) & (p2 != out)
+                baba_mask = None
+            elif _same_sequence(seq_p1, seq_p3) or _same_sequence(
+                seq_p2,
+                seq_outgroup,
+            ):
+                abba_mask = None
+                baba_mask = (p2 == out) & (p1 == p3) & (p1 != out)
+            else:
+                abba_mask = (p1 == out) & (p2 == p3) & (p2 != out)
+                baba_mask = (p2 == out) & (p1 == p3) & (p1 != out)
+
+        abba_count = (
+            int(np.count_nonzero(abba_mask))
+            if abba_mask is not None
+            else 0
+        )
+        baba_count = (
+            int(np.count_nonzero(baba_mask))
+            if baba_mask is not None
+            else 0
+        )
+
+        n_blocks = len(p1) // block_size
+        block_abba = np.zeros(n_blocks)
+        block_baba = np.zeros(n_blocks)
+        if n_blocks:
+            n_block_sites = n_blocks * block_size
+            if abba_mask is not None:
+                block_abba = (
+                    abba_mask[:n_block_sites]
+                    .reshape(n_blocks, block_size)
+                    .sum(axis=1)
+                    .astype(float)
+                )
+            if baba_mask is not None:
+                block_baba = (
+                    baba_mask[:n_block_sites]
+                    .reshape(n_blocks, block_size)
+                    .sum(axis=1)
+                    .astype(float)
+                )
+
+        return abba_count, baba_count, block_abba, block_baba
+
+    @staticmethod
+    def _count_site_patterns_scalar(seq_p1, seq_p2, seq_p3, seq_outgroup, block_size):
+        skip_chars = {"-", "N", "?", "X", "n", "x"}
+        aln_length = len(seq_p1)
+        n_blocks = aln_length // block_size
+        n_block_sites = n_blocks * block_size
+        block_abba = np.zeros(n_blocks)
+        block_baba = np.zeros(n_blocks)
+        abba_count = 0
+        baba_count = 0
+
+        for site in range(aln_length):
+            p1 = seq_p1[site]
+            p2 = seq_p2[site]
+            p3 = seq_p3[site]
+            o = seq_outgroup[site]
+
+            if (
+                p1 in skip_chars
+                or p2 in skip_chars
+                or p3 in skip_chars
+                or o in skip_chars
+            ):
+                continue
+
+            if p1 == o and p2 != o and p3 != o and p2 == p3:
+                abba_count += 1
+                if site < n_block_sites:
+                    block_abba[site // block_size] += 1
+            elif p2 == o and p1 != o and p3 != o and p1 == p3:
+                baba_count += 1
+                if site < n_block_sites:
+                    block_baba[site // block_size] += 1
+
+        return abba_count, baba_count, block_abba, block_baba
+
+    @staticmethod
+    def _jackknife_d_values(block_abba, block_baba) -> np.ndarray:
+        n_blocks = len(block_abba)
+        if n_blocks == 0:
+            return np.zeros(0, dtype=float)
+
+        total_abba = np.sum(block_abba)
+        total_baba = np.sum(block_baba)
+        loo_abba = total_abba - block_abba
+        loo_baba = total_baba - block_baba
+        denom = loo_abba + loo_baba
+
+        jackknife_d = np.zeros(n_blocks, dtype=float)
+        np.divide(
+            loo_abba - loo_baba,
+            denom,
+            out=jackknife_d,
+            where=denom > 0,
+        )
+        return jackknife_d
+
     def _run_alignment_mode(self):
         """Count ABBA/BABA site patterns from an alignment."""
         # Read alignment sequences
-        sequences = {}
-        for record in SeqIO.parse(self.alignment_file_path, "fasta"):
-            sequences[record.id] = str(record.seq).upper()
+        sequences = self._read_fasta(self.alignment_file_path)
 
         # Validate taxa are present
         required = {"p1": self.p1, "p2": self.p2, "p3": self.p3, "outgroup": self.outgroup}
@@ -258,33 +596,14 @@ class Dstatistic(Alignment):
             )
 
         aln_length = len(seq_p1)
-        skip_chars = {"-", "N", "?", "X", "n", "x"}
 
-        # Count site patterns
-        abba_count = 0
-        baba_count = 0
-
-        for site in range(aln_length):
-            p1 = seq_p1[site]
-            p2 = seq_p2[site]
-            p3 = seq_p3[site]
-            o = seq_outgroup[site]
-
-            # Skip sites with gaps or ambiguous characters
-            if any(c in skip_chars for c in [p1, p2, p3, o]):
-                continue
-
-            # Skip sites that are not biallelic
-            alleles = {p1, p2, p3, o}
-            if len(alleles) != 2:
-                continue
-
-            # ABBA: P1=ancestral, P2=derived, P3=derived, O=ancestral
-            if p1 == o and p2 != o and p3 != o and p2 == p3:
-                abba_count += 1
-            # BABA: P1=derived, P2=ancestral, P3=derived, O=ancestral
-            elif p2 == o and p1 != o and p3 != o and p1 == p3:
-                baba_count += 1
+        abba_count, baba_count, block_abba, block_baba = self._count_site_patterns(
+            seq_p1,
+            seq_p2,
+            seq_p3,
+            seq_outgroup,
+            self.block_size,
+        )
 
         informative_sites = abba_count + baba_count
 
@@ -301,50 +620,13 @@ class Dstatistic(Alignment):
         p_value = None
 
         if n_blocks >= 2:
-            block_abba = np.zeros(n_blocks)
-            block_baba = np.zeros(n_blocks)
-
-            for site in range(aln_length):
-                block_idx = site // self.block_size
-                if block_idx >= n_blocks:
-                    break
-
-                p1 = seq_p1[site]
-                p2 = seq_p2[site]
-                p3 = seq_p3[site]
-                o = seq_outgroup[site]
-
-                if any(c in skip_chars for c in [p1, p2, p3, o]):
-                    continue
-                alleles = {p1, p2, p3, o}
-                if len(alleles) != 2:
-                    continue
-
-                if p1 == o and p2 != o and p3 != o and p2 == p3:
-                    block_abba[block_idx] += 1
-                elif p2 == o and p1 != o and p3 != o and p1 == p3:
-                    block_baba[block_idx] += 1
-
-            total_abba = np.sum(block_abba)
-            total_baba = np.sum(block_baba)
-
-            jackknife_d = np.zeros(n_blocks)
-            for i in range(n_blocks):
-                loo_abba = total_abba - block_abba[i]
-                loo_baba = total_baba - block_baba[i]
-                denom = loo_abba + loo_baba
-                if denom > 0:
-                    jackknife_d[i] = (loo_abba - loo_baba) / denom
-                else:
-                    jackknife_d[i] = 0.0
-
+            jackknife_d = self._jackknife_d_values(block_abba, block_baba)
             mean_d = np.mean(jackknife_d)
             se = float(np.sqrt((n_blocks - 1) / n_blocks * np.sum((jackknife_d - mean_d) ** 2)))
 
             if se > 0:
                 z_score = d_stat / se
-                from scipy.stats import norm
-                p_value = float(2.0 * norm.sf(abs(z_score)))
+                p_value = _normal_two_tailed_p_value(z_score)
             else:
                 z_score = float('inf') if d_stat != 0 else 0.0
                 p_value = 0.0 if d_stat != 0 else 1.0
@@ -370,34 +652,59 @@ class Dstatistic(Alignment):
             print_json(payload, sort_keys=False)
             return
 
-        try:
-            print("Patterson's D-statistic (ABBA-BABA Test)")
-            print("=========================================")
-            print(f"Topology: ((({self.p1}, {self.p2}), {self.p3}), {self.outgroup})")
-            print(f"P1: {self.p1}")
-            print(f"P2: {self.p2}")
-            print(f"P3: {self.p3}")
-            print(f"Outgroup: {self.outgroup}")
-            print()
-            print(f"Alignment length: {aln_length}")
-            print(f"Informative sites: {informative_sites}")
-            print(f"ABBA sites: {abba_count}")
-            print(f"BABA sites: {baba_count}")
-            print(f"D-statistic: {d_stat:.4f}")
+        self._print_alignment_text_output(
+            aln_length,
+            informative_sites,
+            abba_count,
+            baba_count,
+            d_stat,
+            se,
+            z_score,
+            p_value,
+        )
 
-            if se is not None:
-                print(f"Block jackknife (block size: {self.block_size}):")
-                print(f"  Standard error: {se:.4f}")
-                if z_score == float('inf'):
-                    print("  Z-score: inf")
-                else:
-                    print(f"  Z-score: {z_score:.2f}")
-                print(f"  p-value: {p_value:.6f}")
-                print()
-                print(f"Interpretation: {self._interpret(d_stat, p_value)}")
-            else:
-                print()
-                print("Not enough blocks for jackknife significance test.")
+    def _print_alignment_text_output(
+        self,
+        aln_length,
+        informative_sites,
+        abba_count,
+        baba_count,
+        d_stat,
+        se,
+        z_score,
+        p_value,
+    ):
+        if se is not None:
+            z_text = "inf" if z_score == float('inf') else f"{z_score:.2f}"
+            tail = (
+                f"Block jackknife (block size: {self.block_size}):\n"
+                f"  Standard error: {se:.4f}\n"
+                f"  Z-score: {z_text}\n"
+                f"  p-value: {p_value:.6f}\n"
+                f"\n"
+                f"Interpretation: {self._interpret(d_stat, p_value)}"
+            )
+        else:
+            tail = "\nNot enough blocks for jackknife significance test."
+
+        try:
+            print(
+                f"Patterson's D-statistic (ABBA-BABA Test)\n"
+                f"=========================================\n"
+                f"Topology: ((({self.p1}, {self.p2}), "
+                f"{self.p3}), {self.outgroup})\n"
+                f"P1: {self.p1}\n"
+                f"P2: {self.p2}\n"
+                f"P3: {self.p3}\n"
+                f"Outgroup: {self.outgroup}\n"
+                f"\n"
+                f"Alignment length: {aln_length}\n"
+                f"Informative sites: {informative_sites}\n"
+                f"ABBA sites: {abba_count}\n"
+                f"BABA sites: {baba_count}\n"
+                f"D-statistic: {d_stat:.4f}\n"
+                f"{tail}"
+            )
         except BrokenPipeError:
             pass
 

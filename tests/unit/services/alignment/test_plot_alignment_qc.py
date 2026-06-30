@@ -1,13 +1,241 @@
 from argparse import Namespace
 import builtins
+import subprocess
+import sys
 
+import numpy as np
 import pytest
 
 from phykit.services.alignment.plot_alignment_qc import PlotAlignmentQC
 import phykit.services.alignment.plot_alignment_qc as plot_alignment_qc_module
 
 
+def test_module_import_defers_heavy_helpers():
+    code = """
+import sys
+import phykit.services.alignment.plot_alignment_qc as module
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert callable(module.AlignmentOutlierTaxa)
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.services.alignment.alignment_outlier_taxa" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 class TestPlotAlignmentQC:
+    def test_prepare_plot_arrays_reuses_row_values(self):
+        rows = [
+            {
+                "taxon": "t1",
+                "occupancy": 1.0,
+                "gap_rate": 0.0,
+                "composition_distance": 0.1,
+                "long_branch_proxy": 0.2,
+                "rcvt": 0.01,
+                "entropy_burden": 0.02,
+            },
+            {
+                "taxon": "t2",
+                "occupancy": 0.7,
+                "gap_rate": 0.3,
+                "composition_distance": 0.6,
+                "long_branch_proxy": None,
+                "rcvt": 0.1,
+                "entropy_burden": 0.2,
+            },
+        ]
+
+        arrays = PlotAlignmentQC._prepare_plot_arrays(
+            rows,
+            [{"taxon": "t2"}],
+            ["gap_rate", "long_branch_proxy"],
+        )
+
+        assert arrays["taxa"] == ["t1", "t2"]
+        np.testing.assert_allclose(arrays["occupancies"], np.array([1.0, 0.7]))
+        np.testing.assert_allclose(arrays["gap_rates"], np.array([0.0, 0.3]))
+        np.testing.assert_allclose(
+            arrays["composition_distances"],
+            np.array([0.1, 0.6]),
+        )
+        np.testing.assert_allclose(
+            arrays["long_branch_proxies"],
+            np.array([0.2, np.nan]),
+            equal_nan=True,
+        )
+        np.testing.assert_array_equal(arrays["flagged_mask"], np.array([False, True]))
+        assert arrays["flagged_taxa"] == {"t2"}
+        assert set(arrays["feature_vals"]) == {"gap_rate", "long_branch_proxy"}
+        assert arrays["feature_vals"]["gap_rate"] is arrays["gap_rates"]
+        assert arrays["feature_vals"]["long_branch_proxy"] is arrays["long_branch_proxies"]
+
+    def test_prepare_plot_arrays_fills_flagged_mask_in_row_pass(self, monkeypatch):
+        rows = [
+            {
+                "taxon": "t1",
+                "occupancy": 1.0,
+                "gap_rate": 0.0,
+                "composition_distance": 0.1,
+                "long_branch_proxy": 0.2,
+                "rcvt": 0.01,
+                "entropy_burden": 0.02,
+            },
+            {
+                "taxon": "t2",
+                "occupancy": 0.7,
+                "gap_rate": 0.3,
+                "composition_distance": 0.6,
+                "long_branch_proxy": None,
+                "rcvt": 0.1,
+                "entropy_burden": 0.2,
+            },
+        ]
+
+        def fail_fromiter(*_args, **_kwargs):
+            raise AssertionError("flagged mask should be filled in the row pass")
+
+        monkeypatch.setattr(plot_alignment_qc_module.np, "fromiter", fail_fromiter)
+
+        arrays = PlotAlignmentQC._prepare_plot_arrays(
+            rows,
+            [{"taxon": "t2"}],
+            ["gap_rate"],
+        )
+
+        np.testing.assert_array_equal(arrays["flagged_mask"], np.array([False, True]))
+
+    def test_prepare_plot_arrays_empty_outliers_prefills_false_mask(self):
+        rows = [
+            {
+                "taxon": "t1",
+                "occupancy": 0.9,
+                "gap_rate": 0.1,
+                "composition_distance": 0.2,
+                "long_branch_proxy": 0.3,
+                "rcvt": 0.04,
+                "entropy_burden": 0.05,
+            },
+            {
+                "taxon": "t2",
+                "occupancy": 0.8,
+                "gap_rate": 0.2,
+                "composition_distance": 0.3,
+                "long_branch_proxy": None,
+                "rcvt": 0.06,
+                "entropy_burden": 0.07,
+            },
+        ]
+
+        arrays = PlotAlignmentQC._prepare_plot_arrays(
+            rows,
+            [],
+            ["occupancy", "entropy_burden"],
+        )
+
+        assert arrays["taxa"] == ["t1", "t2"]
+        assert arrays["flagged_taxa"] == set()
+        np.testing.assert_array_equal(arrays["flagged_mask"], np.array([False, False]))
+        np.testing.assert_allclose(arrays["occupancies"], np.array([0.9, 0.8]))
+        np.testing.assert_allclose(
+            arrays["long_branch_proxies"],
+            np.array([0.3, np.nan]),
+            equal_nan=True,
+        )
+        assert arrays["feature_vals"]["occupancy"] is arrays["occupancies"]
+        np.testing.assert_allclose(
+            arrays["feature_vals"]["entropy_burden"],
+            np.array([0.05, 0.07]),
+        )
+
+    def test_composition_distance_panel_batches_scatter_calls(self):
+        class FakeAxes:
+            def __init__(self):
+                self.scatter_calls = []
+                self.text_calls = []
+
+            def scatter(self, x, y, **kwargs):
+                self.scatter_calls.append((list(x), list(y), kwargs))
+
+            def text(self, x, y, label, **kwargs):
+                self.text_calls.append((x, y, label, kwargs))
+
+            def axvline(self, *args, **kwargs):
+                pass
+
+            def axvspan(self, *args, **kwargs):
+                pass
+
+            def axhline(self, *args, **kwargs):
+                pass
+
+            def axhspan(self, *args, **kwargs):
+                pass
+
+            def set_title(self, *args, **kwargs):
+                pass
+
+            def set_xlabel(self, *args, **kwargs):
+                pass
+
+            def set_ylabel(self, *args, **kwargs):
+                pass
+
+            def legend(self, *args, **kwargs):
+                pass
+
+        rows = [
+            {
+                "taxon": "t1",
+                "composition_distance": 0.1,
+                "long_branch_proxy": 0.2,
+            },
+            {
+                "taxon": "t2",
+                "composition_distance": 0.6,
+                "long_branch_proxy": None,
+            },
+            {
+                "taxon": "t3",
+                "composition_distance": 0.5,
+                "long_branch_proxy": 0.4,
+            },
+        ]
+        thresholds = {
+            "composition_distance": 0.4,
+            "long_branch_proxy": 0.3,
+        }
+        ax = FakeAxes()
+
+        PlotAlignmentQC._plot_composition_distance_panel(
+            ax,
+            rows,
+            {"t2"},
+            thresholds,
+            normal_color="#636363",
+            flagged_color="#ca0020",
+            legend_handles=[],
+        )
+
+        assert len(ax.scatter_calls) == 2
+        assert ax.scatter_calls[0][0] == [0.1, 0.5]
+        assert ax.scatter_calls[1][0] == [0.6]
+        assert [call[2] for call in ax.text_calls] == ["t2"]
+
+    def test_flag_colors_uses_ordered_mask(self):
+        colors = PlotAlignmentQC._flag_colors(
+            np.array([False, True, False, True]),
+            "#636363",
+            "#ca0020",
+        )
+
+        assert colors.tolist() == ["#636363", "#ca0020", "#636363", "#ca0020"]
+
     def test_init(self):
         args = Namespace(
             alignment="x.fa",

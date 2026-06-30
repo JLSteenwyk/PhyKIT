@@ -1,13 +1,31 @@
 import io
 import json
+import subprocess
 import sys
 
 import pytest
 from argparse import Namespace
 from math import isclose
 
-from phykit.services.alignment.dfoil import Dfoil
+from phykit.services.alignment.dfoil import Dfoil, PATTERNS
+import phykit.services.alignment.dfoil as dfoil_module
 from phykit.errors import PhykitUserError
+
+
+def test_module_import_does_not_import_biopython_fasta_parser():
+    code = """
+import sys
+import phykit.services.alignment.dfoil as module
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "Bio.SeqIO.FastaIO" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def _write_alignment(path, seqs):
@@ -62,6 +80,111 @@ def _run_and_capture(svc):
 
 
 class TestDfoilPatternCounting:
+    def test_read_fasta_uses_first_header_token_uppercases_and_keeps_last_duplicate(
+        self, tmp_path
+    ):
+        aln = tmp_path / "test.fa"
+        aln.write_text(
+            ">P1 description\nac gt\nn-\n"
+            ">P2 second description\ncc gg\nn-\n"
+            ">P1 replacement\ntttt\n"
+        )
+        assert Dfoil._read_fasta(str(aln)) == {
+            "P1": "TTTT",
+            "P2": "CCGGN-",
+        }
+
+    def test_vectorized_counting_matches_scalar_reference(self):
+        """Fast pattern counting must preserve the original scalar semantics."""
+        columns = [
+            ("A", "A", "A", "C", "A"),  # AAABA
+            ("C", "A", "A", "A", "A"),  # BAAAA
+            ("C", "C", "C", "C", "A"),  # BBBBA, biallelic but uninformative
+            ("A", "A", "A", "A", "A"),  # invariant, skipped by scalar code
+            ("A", "C", "G", "A", "A"),  # non-biallelic
+            ("C", "G", "A", "A", "A"),  # two derived alleles, skipped
+            ("T", "T", "G", "T", "T"),  # AABAA with a non-A outgroup
+            ("T", "G", "T", "G", "T"),  # ABABA with a non-A outgroup
+            ("?", "A", "A", "C", "A"),  # skipped character
+        ]
+        seqs = ["".join(column[i] for column in columns) for i in range(5)]
+
+        fast_counts = Dfoil._count_site_patterns(*seqs)
+        scalar_counts = Dfoil._count_site_patterns_scalar(*seqs)
+
+        assert fast_counts == scalar_counts
+        assert fast_counts["AAABA"] == 1
+        assert fast_counts["BAAAA"] == 1
+        assert fast_counts["BBBBA"] == 1
+        assert fast_counts["AABAA"] == 1
+        assert fast_counts["ABABA"] == 1
+        assert fast_counts["AAAAA"] == 0
+
+    def test_scalar_counting_handles_unicode_and_biallelic_semantics(self):
+        columns = [
+            ("Ω", "A", "A", "A", "A"),  # BAAAA
+            ("Ω", "Ω", "Ω", "Ω", "A"),  # BBBBA
+            ("A", "A", "A", "A", "A"),  # invariant, skipped
+            ("Ω", "B", "A", "A", "A"),  # non-biallelic, skipped
+            ("-", "Ω", "A", "A", "A"),  # skipped character
+        ]
+        seqs = ["".join(column[i] for column in columns) for i in range(5)]
+
+        counts = Dfoil._count_site_patterns_scalar(*seqs)
+
+        assert counts["BAAAA"] == 1
+        assert counts["BBBBA"] == 1
+        assert counts["AAAAA"] == 0
+        for pattern in PATTERNS:
+            if pattern not in {"BAAAA", "BBBBA"}:
+                assert counts[pattern] == 0
+
+    def test_all_valid_ascii_counting_skips_validity_mask(self, mocker):
+        mocker.patch.object(
+            dfoil_module.np,
+            "ones",
+            side_effect=AssertionError(
+                "all-valid ASCII DFOIL counts should not build a valid mask"
+            ),
+        )
+        seqs = _build_alignment_from_patterns(
+            ["AAABA", "AABAA", "ABABA", "BABAA", "BBBBA"]
+        )
+
+        counts = Dfoil._count_site_patterns(
+            seqs["P1"],
+            seqs["P2"],
+            seqs["P3"],
+            seqs["P4"],
+            seqs["Outgroup"],
+        )
+
+        assert counts["AAABA"] == 1
+        assert counts["AABAA"] == 1
+        assert counts["ABABA"] == 1
+        assert counts["BABAA"] == 1
+        assert counts["BBBBA"] == 1
+        assert counts["AAAAA"] == 0
+
+    def test_all_invariant_sequences_skip_numpy_counting(self, mocker):
+        mocker.patch.object(
+            dfoil_module.np,
+            "frombuffer",
+            side_effect=AssertionError(
+                "all-invariant DFOIL counts should return before NumPy setup"
+            ),
+        )
+
+        counts = Dfoil._count_site_patterns(
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+        )
+
+        assert counts == {pattern: 0 for pattern in PATTERNS}
+
     def test_pattern_counting(self, tmp_path):
         """Verify correct pattern counts for a known alignment."""
         # Create an alignment with specific patterns
@@ -212,6 +335,27 @@ class TestDfoilComputation:
         # First character of sign pattern should be '+'
         assert payload["sign_pattern"][0] == '+'
 
+    def test_chi_square_p_values_do_not_import_scipy(self, tmp_path, monkeypatch):
+        patterns = ['AAABA'] * 50 + ['AABAA'] * 5
+        seqs = _build_alignment_from_patterns(patterns)
+        aln = tmp_path / "test.fa"
+        _write_alignment(str(aln), seqs)
+        args = _make_args(str(aln), json_output=True)
+        svc = Dfoil(args)
+        real_import = __import__
+
+        def fail_scipy_import(name, *args, **kwargs):
+            if name == "scipy" or name.startswith("scipy."):
+                raise AssertionError("DFOIL chi-square p-values should not import scipy")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", fail_scipy_import)
+
+        output = _run_and_capture(svc)
+        payload = json.loads(output)
+
+        assert payload["dfo"]["p_value"] < 0.05
+
     def test_sign_pattern_zero_when_equal(self, tmp_path):
         """Equal left/right counts should produce sign '0'."""
         # Equal DFO-left and DFO-right
@@ -337,3 +481,61 @@ class TestDfoilOutput:
         assert "DOL:" in output
         assert "Sign pattern:" in output
         assert "Interpretation:" in output
+
+    def test_print_text_output_batches_report(self, monkeypatch):
+        """Text report output should be emitted in a single print call."""
+        svc = Dfoil.__new__(Dfoil)
+        svc.p1 = "P1"
+        svc.p2 = "P2"
+        svc.p3 = "P3"
+        svc.p4 = "P4"
+        svc.outgroup = "Outgroup"
+        counts = {pattern: i for i, pattern in enumerate(PATTERNS)}
+        printed = []
+
+        def fake_print(*args, **kwargs):
+            printed.append((args, kwargs))
+
+        monkeypatch.setattr("builtins.print", fake_print)
+
+        svc._print_text_output(
+            1000,
+            120,
+            counts,
+            0.1234,
+            -0.2345,
+            0.0,
+            0.6789,
+            0.0004,
+            0.007,
+            0.04,
+            0.5,
+            "+-00",
+            "Ambiguous or complex introgression pattern",
+        )
+
+        expected = "\n".join([
+            "DFOIL Test (Pease & Hahn 2015)",
+            "================================",
+            "Topology: ((P1, P2), (P3, P4), Outgroup)",
+            "P1: P1, P2: P2, P3: P3, P4: P4, Outgroup: Outgroup",
+            "",
+            "Alignment length: 1000",
+            "Informative sites: 120",
+            "",
+            "Site pattern counts:",
+            "  AAABA: 1  AABAA: 2  AABBA: 3  ABAAA: 4",
+            "  ABABA: 5  ABBAA: 6  ABBBA: 7  BAAAA: 8",
+            "  BAABA: 9  BABAA: 10  BABBA: 11  BBAAA: 12",
+            "  BBABA: 13  BBBAA: 14",
+            "",
+            "D-statistics:",
+            "  DFO:  0.1234  (p = 0.000400 ***)",
+            "  DIL:  -0.2345  (p = 0.007000 **)",
+            "  DFI:  0.0000  (p = 0.040000 *)",
+            "  DOL:  0.6789  (p = 0.500000)",
+            "",
+            "Sign pattern: +-00",
+            "Interpretation: Ambiguous or complex introgression pattern",
+        ])
+        assert printed == [((expected,), {})]

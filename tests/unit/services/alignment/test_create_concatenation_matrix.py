@@ -1,13 +1,41 @@
 from argparse import Namespace
 from collections import defaultdict
 from pathlib import Path
+import subprocess
+import sys
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import numpy as np
 import pytest
 
-from phykit.services.alignment.create_concatenation_matrix import CreateConcatenationMatrix
+from phykit.services.alignment.create_concatenation_matrix import (
+    CreateConcatenationMatrix,
+    _ParsedFastaRecord,
+)
 import phykit.services.alignment.create_concatenation_matrix as ccm_module
+
+
+def test_module_import_does_not_import_biopython_fasta_parser():
+    code = """
+import sys
+import phykit.services.alignment.create_concatenation_matrix as module
+assert hasattr(module.np, "__getattr__")
+assert hasattr(module.mp, "cpu_count")
+assert callable(module.read_single_column_file_to_list)
+assert module._OCCUPANCY_STATE_LOOKUP is None
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "concurrent.futures" not in sys.modules
+assert "multiprocessing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.files" not in sys.modules
+assert "Bio.SeqIO.FastaIO" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def _write_fasta(path: Path, records):
@@ -70,6 +98,15 @@ class TestCreateConcatenationMatrix:
         taxa = ccm._get_taxa_from_alignment(str(fasta))
         assert taxa == {"A", "B"}
 
+    def test_get_taxa_from_alignment_uses_first_header_token(self, tmp_path, args):
+        fasta = tmp_path / "gene.fa"
+        fasta.write_text(
+            ">A description text\nAC GT\n>B another description\nA- GT\n"
+        )
+        ccm = CreateConcatenationMatrix(args)
+        taxa = ccm._get_taxa_from_alignment(str(fasta))
+        assert taxa == {"A", "B"}
+
     def test_get_taxa_names_sequential(self, tmp_path, args):
         fastas = []
         for idx, entries in enumerate(
@@ -109,6 +146,24 @@ class TestCreateConcatenationMatrix:
         taxa = ccm.get_taxa_names(paths)
         assert len(taxa) == 11
 
+    def test_get_list_of_taxa_and_records_uses_first_header_token_and_keeps_duplicates(
+        self, tmp_path, args
+    ):
+        fasta = tmp_path / "gene.fa"
+        fasta.write_text(
+            ">A description\nACGT\n"
+            ">A duplicate\nTT TT\nAA\n"
+            ">B other text\nCC\nCC\n"
+        )
+        ccm = CreateConcatenationMatrix(args)
+
+        taxa, records = ccm.get_list_of_taxa_and_records(str(fasta))
+
+        assert taxa == {"A", "B"}
+        assert [record.id for record in records] == ["A", "A", "B"]
+        assert [str(record.seq) for record in records] == ["ACGT", "TTTTAA", "CCCC"]
+        assert not hasattr(records[0], "__dict__")
+
     def test_create_missing_seq_str(self, args):
         ccm = CreateConcatenationMatrix(args)
         missing_seq, og_len = ccm.create_missing_seq_str([SeqRecord(Seq("ACGT"), id="A")])
@@ -129,9 +184,188 @@ class TestCreateConcatenationMatrix:
         assert concatenated_seqs["A"] == ["ACGT"]
         assert concatenated_seqs["B"] == ["????"]
 
+    def test_process_taxa_sequences_uses_cached_taxa_set(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        records = [SeqRecord(Seq("ACGT"), id="A")]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["????"]
+
+    def test_process_taxa_sequences_reuses_present_taxa(self, args):
+        class NoAddSet(set):
+            def add(self, item):
+                raise AssertionError("present taxa should not be rebuilt")
+
+        ccm = CreateConcatenationMatrix(args)
+        records = [SeqRecord(Seq("ACGT"), id="A")]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+            present_taxa=NoAddSet({"A"}),
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["????"]
+
+    def test_process_taxa_sequences_all_present_skips_missing_scan(self, args):
+        class NoIterTaxa(list):
+            def __iter__(self):
+                raise AssertionError("complete present taxa should skip missing scan")
+
+        ccm = CreateConcatenationMatrix(args)
+        records = [
+            SeqRecord(Seq("ACGT"), id="A"),
+            SeqRecord(Seq("TGCA"), id="B"),
+        ]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            NoIterTaxa(["A", "B"]),
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+            present_taxa={"A", "B"},
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["TGCA"]
+
+    def test_process_taxa_sequences_preserves_duplicate_records(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        records = [
+            SeqRecord(Seq("ACGT"), id="A"),
+            SeqRecord(Seq("TGCA"), id="A"),
+        ]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT", "TGCA"]
+        assert concatenated_seqs["B"] == ["????"]
+
+    def test_process_taxa_sequences_converts_mixed_external_records(self, args):
+        class Record:
+            def __init__(self, record_id, sequence):
+                self.id = record_id
+                self.seq = sequence
+
+        ccm = CreateConcatenationMatrix(args)
+        records = [
+            Record("A", "ACGT"),
+            Record("B", Seq("TGCA")),
+        ]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["TGCA"]
+
+    def test_process_taxa_sequences_accepts_parsed_fasta_records(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        records = [_ParsedFastaRecord("A", "ACGT")]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["????"]
+
+    def test_process_taxa_sequences_adds_missing_in_taxa_order(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        records = [SeqRecord(Seq("ACGT"), id="B")]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B", "C"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B", "C"},
+        )
+
+        assert list(concatenated_seqs.keys()) == ["B", "A", "C"]
+        assert concatenated_seqs["A"] == ["????"]
+        assert concatenated_seqs["B"] == ["ACGT"]
+        assert concatenated_seqs["C"] == ["????"]
+
+    def test_process_taxa_sequences_duplicate_taxa_list_adds_missing_once(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        records = [SeqRecord(Seq("ACGT"), id="A")]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            ["A", "B", "B"],
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B"},
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["????"]
+
+    def test_process_taxa_sequences_uses_precomputed_missing_taxa(self, args):
+        class NoIterTaxa(list):
+            def __iter__(self):
+                raise AssertionError("precomputed missing taxa should avoid taxa scan")
+
+        ccm = CreateConcatenationMatrix(args)
+        records = [_ParsedFastaRecord("A", "ACGT")]
+        concatenated_seqs = defaultdict(list)
+
+        ccm.process_taxa_sequences(
+            records,
+            NoIterTaxa(["A", "B", "C"]),
+            concatenated_seqs,
+            "????",
+            taxa_set={"A", "B", "C"},
+            present_taxa={"A"},
+            missing_taxa=["B", "C"],
+        )
+
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["????"]
+        assert concatenated_seqs["C"] == ["????"]
+
     def test_add_to_partition_info(self, args):
         ccm = CreateConcatenationMatrix(args)
-        partition_info, first_len, second_len = ccm.add_to_partition_info([], 10, "AUTO", "g1.fa", 1, 0)
+        partition_info, first_len, second_len = ccm.add_to_partition_info(
+            [], 10, "AUTO", "g1.fa", 1, 0
+        )
         assert partition_info == ["AUTO, g1.fa=1-10\n"]
         assert first_len == 11
         assert second_len == 10
@@ -140,6 +374,45 @@ class TestCreateConcatenationMatrix:
         ccm = CreateConcatenationMatrix(args)
         occ = ccm.add_to_occupancy_info([], {"A"}, ["A", "B"], "g1.fa")
         assert occ == ["g1.fa\t1\t1\t0.5000\tB\n"]
+
+    def test_add_to_occupancy_info_preserves_sorted_unique_missing_taxa(self, args):
+        ccm = CreateConcatenationMatrix(args)
+
+        occ = ccm.add_to_occupancy_info([], {"A"}, ["B", "A", "B", "C"], "g1.fa")
+
+        assert occ == ["g1.fa\t1\t2\t0.2500\tB;C\n"]
+
+    def test_add_to_occupancy_info_uses_cached_sorted_taxa(self, args):
+        ccm = CreateConcatenationMatrix(args)
+
+        occ = ccm.add_to_occupancy_info(
+            [],
+            {"A", "C"},
+            ["A", "B", "C", "D"],
+            "g1.fa",
+            sorted_taxa=["A", "B", "C", "D"],
+            total_taxa_count=4,
+        )
+
+        assert occ == ["g1.fa\t2\t2\t0.5000\tB;D\n"]
+
+    def test_add_to_occupancy_info_uses_precomputed_missing_taxa(self, args):
+        class NoIterTaxa(list):
+            def __iter__(self):
+                raise AssertionError("precomputed missing taxa should avoid taxa scan")
+
+        ccm = CreateConcatenationMatrix(args)
+
+        occ = ccm.add_to_occupancy_info(
+            [],
+            {"A", "C"},
+            NoIterTaxa(["A", "B", "C", "D"]),
+            "g1.fa",
+            total_taxa_count=4,
+            missing_taxa=["B", "D"],
+        )
+
+        assert occ == ["g1.fa\t2\t2\t0.5000\tB;D\n"]
 
     def test_fasta_and_text_file_writers(self, tmp_path, args):
         ccm = CreateConcatenationMatrix(args)
@@ -150,6 +423,52 @@ class TestCreateConcatenationMatrix:
         text_out = tmp_path / "out.txt"
         ccm.write_occupancy_or_partition_file(["x\n", "y\n"], str(text_out))
         assert text_out.read_text() == "x\ny\n"
+
+    def test_fasta_file_write_uses_chunked_writes(self, monkeypatch, args):
+        ccm = CreateConcatenationMatrix(args)
+
+        class TrackingHandle:
+            def __init__(self):
+                self.chunks = []
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def write(self, text):
+                self.chunks.append(text)
+
+            def writelines(self, rows):
+                raise AssertionError("FASTA output should use chunked writes")
+
+        handle = TrackingHandle()
+
+        def fake_open(path, mode, buffering=None):
+            assert path == "out.fa"
+            assert mode == "w"
+            assert buffering == 8192
+            return handle
+
+        monkeypatch.setattr(ccm_module, "open", fake_open, raising=False)
+        monkeypatch.setattr(ccm_module, "_FASTA_WRITE_CHUNK_ROWS", 1)
+
+        ccm.fasta_file_write("out.fa", {"A": ["AA", "CC"], "B": ["GG"]})
+
+        assert handle.chunks == [">A\nAACC\n", ">B\nGG\n"]
+
+    def test_append_ordered_sequences_uses_cached_taxon_lists(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        taxon_seq_lists = [[], []]
+
+        ccm._append_ordered_sequences(
+            ["B", "A"],
+            {"A": "AAAA", "B": "BBBB"},
+            taxon_seq_lists,
+        )
+
+        assert taxon_seq_lists == [["BBBB"], ["AAAA"]]
 
     def test_process_alignment_file_populates_missing_taxa(self, tmp_path):
         fasta = tmp_path / "gene.fa"
@@ -163,6 +482,48 @@ class TestCreateConcatenationMatrix:
         assert seq_dict["A"] == "ACGT"
         assert seq_dict["B"] == "????"
         assert seq_dict["C"] == "AAGT"
+
+    def test_process_alignment_file_preserves_first_duplicate_record(self, tmp_path):
+        fasta = tmp_path / "gene.fa"
+        _write_fasta(fasta, [("A", "ACGT"), ("A", "TTTT"), ("B", "CCCC")])
+        _, seq_dict, present_taxa, og_len = CreateConcatenationMatrix._process_alignment_file(
+            str(fasta),
+            ["A", "B", "C"],
+        )
+        assert present_taxa == {"A", "B"}
+        assert og_len == 4
+        assert seq_dict["A"] == "ACGT"
+        assert seq_dict["B"] == "CCCC"
+        assert seq_dict["C"] == "????"
+
+    def test_process_alignment_file_all_present_returns_parsed_sequences(self, tmp_path):
+        fasta = tmp_path / "gene.fa"
+        _write_fasta(fasta, [("A", "ACGT"), ("B", "CCCC")])
+
+        _, seq_dict, present_taxa, og_len = CreateConcatenationMatrix._process_alignment_file(
+            str(fasta),
+            ["A", "B"],
+        )
+
+        assert present_taxa == {"A", "B"}
+        assert og_len == 4
+        assert seq_dict == {"A": "ACGT", "B": "CCCC"}
+
+    def test_process_alignment_file_uses_first_header_token(self, tmp_path):
+        fasta = tmp_path / "gene.fa"
+        fasta.write_text(
+            ">A description here\nAC GT\nAA\n"
+            ">B another description\nCC\nCC\n"
+        )
+        _, seq_dict, present_taxa, og_len = CreateConcatenationMatrix._process_alignment_file(
+            str(fasta),
+            ["A", "B", "C"],
+        )
+        assert present_taxa == {"A", "B"}
+        assert og_len == 6
+        assert seq_dict["A"] == "ACGTAA"
+        assert seq_dict["B"] == "CCCC"
+        assert seq_dict["C"] == "??????"
 
     def test_create_concatenation_matrix_sequential(self, tmp_path):
         gene1 = tmp_path / "g1.fa"
@@ -232,6 +593,92 @@ class TestCreateConcatenationMatrix:
         assert Path(f"{prefix}.occupancy").exists()
         assert Path(f"{prefix}.partition").exists()
 
+    def test_sequence_occupancy_states_ascii_and_unicode(self):
+        ascii_states = CreateConcatenationMatrix._sequence_occupancy_states(
+            "ACGT-?*XxNn"
+        )
+        unicode_states = CreateConcatenationMatrix._sequence_occupancy_states(
+            "A\u03a9-N"
+        )
+
+        np.testing.assert_array_equal(
+            ascii_states,
+            np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1], dtype=np.uint8),
+        )
+        np.testing.assert_array_equal(
+            unicode_states,
+            np.array([2, 2, 1, 1], dtype=np.uint8),
+        )
+
+    def test_build_occupancy_state_matrix(self):
+        state_matrix, gene_boundaries = (
+            CreateConcatenationMatrix._build_occupancy_state_matrix(
+                taxa=["A", "B"],
+                concatenated_seqs={"A": ["AC", "N?"], "B": ["--", "TT"]},
+                present_taxa_by_gene=[{"A", "B"}, {"A"}],
+                gene_lengths=[2, 2],
+            )
+        )
+
+        np.testing.assert_array_equal(
+            state_matrix,
+            np.array(
+                [
+                    [2, 2, 1, 1],
+                    [1, 1, 0, 0],
+                ],
+                dtype=np.uint8,
+            ),
+        )
+        assert gene_boundaries == [2, 4]
+
+    def test_build_occupancy_state_matrix_uses_batched_ascii_path(self, monkeypatch):
+        def fail_sequence_path(_sequence):
+            raise AssertionError("per-sequence path should not be used")
+
+        monkeypatch.setattr(
+            CreateConcatenationMatrix,
+            "_sequence_occupancy_states",
+            staticmethod(fail_sequence_path),
+        )
+
+        state_matrix, gene_boundaries = (
+            CreateConcatenationMatrix._build_occupancy_state_matrix(
+                taxa=["A", "B"],
+                concatenated_seqs={"A": ["AC", "N?"], "B": ["--", "TT"]},
+                present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+                gene_lengths=[2, 2],
+            )
+        )
+
+        np.testing.assert_array_equal(
+            state_matrix,
+            np.array(
+                [
+                    [2, 2, 1, 1],
+                    [1, 1, 2, 2],
+                ],
+                dtype=np.uint8,
+            ),
+        )
+        assert gene_boundaries == [2, 4]
+
+    def test_build_occupancy_state_matrix_ignores_unrequested_present_taxa(self):
+        state_matrix, gene_boundaries = (
+            CreateConcatenationMatrix._build_occupancy_state_matrix(
+                taxa=["A"],
+                concatenated_seqs={"A": ["AΩ"]},
+                present_taxa_by_gene=[{"A", "Z"}],
+                gene_lengths=[2],
+            )
+        )
+
+        np.testing.assert_array_equal(
+            state_matrix,
+            np.array([[2, 2]], dtype=np.uint8),
+        )
+        assert gene_boundaries == [2]
+
     def test_plot_concatenation_occupancy(self, tmp_path, args):
         pytest.importorskip("matplotlib")
         ccm = CreateConcatenationMatrix(args)
@@ -245,6 +692,54 @@ class TestCreateConcatenationMatrix:
             output_file=str(output_file),
         )
         assert output_file.exists()
+
+    def test_plot_concatenation_occupancy_batches_gene_boundaries(
+        self, tmp_path, args, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.axes
+        from matplotlib.collections import LineCollection
+
+        ccm = CreateConcatenationMatrix(args)
+        output_file = tmp_path / "occ_boundaries.png"
+        line_collections = []
+        original_add_collection = matplotlib.axes.Axes.add_collection
+
+        def tracking_add_collection(self, collection, *call_args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *call_args, **kwargs)
+
+        def fail_axvline(*call_args, **kwargs):
+            raise AssertionError("gene boundaries should be batched")
+
+        monkeypatch.setattr(
+            matplotlib.axes.Axes,
+            "add_collection",
+            tracking_add_collection,
+        )
+        monkeypatch.setattr(matplotlib.axes.Axes, "axvline", fail_axvline)
+
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B"],
+            alignment_paths=["g1.fa", "g2.fa", "g3.fa", "g4.fa"],
+            concatenated_seqs={
+                "A": ["AC", "GT", "AA", "CC"],
+                "B": ["A-", "G?", "TT", "NN"],
+            },
+            present_taxa_by_gene=[
+                {"A", "B"},
+                {"A", "B"},
+                {"A", "B"},
+                {"A", "B"},
+            ],
+            gene_lengths=[2, 2, 2, 2],
+            output_file=str(output_file),
+        )
+
+        assert output_file.exists()
+        assert len(line_collections) == 1
+        assert len(line_collections[0].get_segments()) == 3
 
     def test_plot_concatenation_occupancy_pdf_output(self, tmp_path, args):
         pytest.importorskip("matplotlib")
@@ -349,6 +844,35 @@ class TestCreateConcatenationMatrix:
         # 0.5 is not < 0.5, so not excluded
         assert excluded == set()
 
+    def test_compute_effective_occupancy_counts_all_invalid_symbols(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        seqs = {"A": ["ACGT-?*XxNn", "AA"]}
+        occupancy, excluded = ccm._compute_effective_occupancy(seqs, 0.5)
+        assert occupancy["A"] == pytest.approx(6 / 13)
+        assert excluded == {"A"}
+
+    def test_compute_effective_occupancy_unicode_fallback(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        seqs = {"A": ["A\u03a9-N", "??"]}
+
+        occupancy, excluded = ccm._compute_effective_occupancy(seqs, 0.5)
+
+        assert occupancy["A"] == pytest.approx(2 / 6)
+        assert excluded == {"A"}
+
+    def test_compute_effective_occupancy_counts_across_many_parts(self, args):
+        ccm = CreateConcatenationMatrix(args)
+        seqs = {
+            "A": ["AC", "", "GT", "NN"],
+            "B": ["--", "??", "*X", "xn"],
+        }
+
+        occupancy, excluded = ccm._compute_effective_occupancy(seqs, 0.5)
+
+        assert occupancy["A"] == pytest.approx(4 / 6)
+        assert occupancy["B"] == 0.0
+        assert excluded == {"B"}
+
     def test_threshold_excludes_low_occupancy_taxon(self, tmp_path):
         gene1 = tmp_path / "g1.fa"
         gene2 = tmp_path / "g2.fa"
@@ -375,6 +899,44 @@ class TestCreateConcatenationMatrix:
         fasta_text = Path(f"{prefix}.fa").read_text()
         assert ">A\n" in fasta_text
         assert ">B\n" not in fasta_text
+
+    def test_threshold_report_batches_excluded_taxa(self, tmp_path, mocker):
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list="alignments.txt",
+                prefix=str(tmp_path / "concat"),
+                json=False,
+                plot_occupancy=False,
+                threshold=0.5,
+            )
+        )
+        records = [
+            _ParsedFastaRecord("A", "ACGT"),
+            _ParsedFastaRecord("B", "----"),
+            _ParsedFastaRecord("C", "NNNN"),
+        ]
+
+        mocker.patch.object(ccm, "read_alignment_paths", return_value=["g1.fa"])
+        mocker.patch.object(ccm, "get_taxa_names", return_value=["A", "B", "C"])
+        mocker.patch.object(
+            ccm,
+            "get_list_of_taxa_and_records",
+            return_value=({"A", "B", "C"}, records),
+        )
+        mocker.patch.object(ccm, "print_start_message")
+        mocker.patch.object(ccm, "fasta_file_write")
+        mocker.patch.object(ccm, "write_occupancy_or_partition_file")
+        printed = mocker.patch("builtins.print")
+
+        ccm.create_concatenation_matrix("alignments.txt", str(tmp_path / "concat"))
+
+        assert printed.call_args_list[0].args == (
+            "Threshold (0.5): excluded 2 taxa\n"
+            "  B: effective occupancy = 0.0\n"
+            "  C: effective occupancy = 0.0",
+        )
+        assert printed.call_args_list[1].args == ("Complete!\n",)
+        assert printed.call_count == 2
 
     def test_threshold_zero_disables_filtering(self, tmp_path):
         gene1 = tmp_path / "g1.fa"

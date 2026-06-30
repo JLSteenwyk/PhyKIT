@@ -1,10 +1,37 @@
-from typing import Dict, Tuple
-import numpy as np
+from __future__ import annotations
 
-from Bio.Align import MultipleSeqAlignment
+from .base import Alignment, _all_sequences_identical
 
-from .base import Alignment
-from ...helpers.json_output import print_json
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_DNA_GAP_CODES = None
+_PROTEIN_GAP_CODES = None
+_DNA_GAP_BYTES = b"-?*XN"
+_PROTEIN_GAP_BYTES = b"-?*X"
+
+
+def _get_gap_codes(is_protein: bool):
+    global _DNA_GAP_CODES, _PROTEIN_GAP_CODES
+    if is_protein:
+        if _PROTEIN_GAP_CODES is None:
+            _PROTEIN_GAP_CODES = np.frombuffer(b"-?*X", dtype=np.uint8)
+        return _PROTEIN_GAP_CODES
+
+    if _DNA_GAP_CODES is None:
+        _DNA_GAP_CODES = np.frombuffer(b"-?*XN", dtype=np.uint8)
+    return _DNA_GAP_CODES
 
 
 class VariableSites(Alignment):
@@ -30,7 +57,7 @@ class VariableSites(Alignment):
 
         print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),
@@ -40,32 +67,51 @@ class VariableSites(Alignment):
         self,
         alignment: MultipleSeqAlignment,
         is_protein: bool = False,
-    ) -> Tuple[int, int, float]:
+    ) -> tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
-        gap_chars = self.get_gap_chars(is_protein)
+        sequences = [str(record.seq).upper() for record in alignment]
+        if not sequences:
+            return 0, aln_len, 0.0
+        if aln_len == 0:
+            return 0, aln_len, 0.0
+        if _all_sequences_identical(sequences):
+            return 0, aln_len, 0.0
 
-        # Convert alignment to numpy array for vectorized operations
-        alignment_array = np.array([
-            [c.upper() for c in str(record.seq)]
-            for record in alignment
-        ], dtype='U1')
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(len(sequences), aln_len)
+            gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
+            if not any(code in alignment_bytes for code in gap_bytes):
+                variable_columns = (
+                    alignment_array.min(axis=0) != alignment_array.max(axis=0)
+                )
+            else:
+                invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)
+                for gap_code in _get_gap_codes(is_protein):
+                    invalid_mask |= alignment_array == gap_code
+                valid_min = np.where(invalid_mask, 255, alignment_array).min(axis=0)
+                valid_max = np.where(invalid_mask, 0, alignment_array).max(axis=0)
+                variable_columns = (valid_min != 255) & (valid_min != valid_max)
+            var_sites = int(np.count_nonzero(variable_columns))
+            var_sites_per = (var_sites / aln_len) * 100
+            return var_sites, aln_len, var_sites_per
+        except UnicodeEncodeError:
+            gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            gap_chars_array = np.array(list(gap_chars), dtype="U1")
+            valid_mask = ~np.isin(alignment_array, gap_chars_array)
+        if alignment_array.size == 0:
+            return 0, aln_len, 0.0
 
-        var_sites = 0
+        valid_chars = np.unique(alignment_array[valid_mask])
+        valid_symbol_counts = np.zeros(aln_len, dtype=np.uint16)
+        for char in valid_chars:
+            valid_symbol_counts += np.any(alignment_array == char, axis=0)
 
-        # Process each column
-        for col in range(aln_len):
-            column = alignment_array[:, col]
-
-            # Filter out gap characters
-            non_gap_mask = ~np.isin(column, list(gap_chars))
-            filtered_column = column[non_gap_mask]
-
-            # Check if variable (more than one unique character)
-            if len(filtered_column) > 0:
-                unique_chars = np.unique(filtered_column)
-                if len(unique_chars) > 1:
-                    var_sites += 1
-
+        var_sites = int(np.sum(valid_symbol_counts > 1))
         var_sites_per = (var_sites / aln_len) * 100
 
         return var_sites, aln_len, var_sites_per

@@ -69,8 +69,7 @@ class TestFaidx(object):
 
     @patch("builtins.print")
     def test_faidx_multiple_entries(self, mocked_print):
-        expected_result0 = ">1\nA-GTAT"
-        expected_result1 = ">2\nA-G-AT"
+        expected_result = ">1\nA-GTAT\n>2\nA-G-AT"
         testargs = [
             "phykit",
             "faidx",
@@ -80,10 +79,7 @@ class TestFaidx(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result0),
-            call(expected_result1)
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_faidx_json(self, mocked_print):

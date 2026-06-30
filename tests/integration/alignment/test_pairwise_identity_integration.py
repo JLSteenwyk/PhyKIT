@@ -106,6 +106,18 @@ class TestPairwiseIdentity(object):
 
     @patch("builtins.print")
     def test_pairwise_identity_verbose(self, mocked_print):
+        expected_result = (
+            "1\t2\t0.8333\n"
+            "1\t3\t0.5\n"
+            "1\t4\t0.1667\n"
+            "1\t5\t0.1667\n"
+            "2\t3\t0.6667\n"
+            "2\t4\t0.3333\n"
+            "2\t5\t0.3333\n"
+            "3\t4\t0.6667\n"
+            "3\t5\t0.5\n"
+            "4\t5\t0.6667"
+        )
         testargs = [
             "phykit",
             "pairwise_identity",
@@ -115,18 +127,7 @@ class TestPairwiseIdentity(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("1\t2\t0.8333"),
-            call("1\t3\t0.5"),
-            call("1\t4\t0.1667"),
-            call("1\t5\t0.1667"),
-            call("2\t3\t0.6667"),
-            call("2\t4\t0.3333"),
-            call("2\t5\t0.3333"),
-            call("3\t4\t0.6667"),
-            call("3\t5\t0.5"),
-            call("4\t5\t0.6667"),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_pairwise_identity_10009at7524_aa_exclude_gaps(self, mocked_print):

@@ -1,9 +1,105 @@
-from typing import Dict
-
-import numpy as np
+from __future__ import annotations
 
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_DNA_VALID_LOOKUP = None
+_PROTEIN_VALID_LOOKUP = None
+_DNA_INVALID_BYTES = b"-?*XNxn"
+_PROTEIN_INVALID_BYTES = b"-?*Xx"
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _get_valid_lookup(is_protein: bool):
+    global _DNA_VALID_LOOKUP, _PROTEIN_VALID_LOOKUP
+
+    if is_protein:
+        if _PROTEIN_VALID_LOOKUP is None:
+            lookup = np.ones(256, dtype=np.bool_)
+            lookup[np.frombuffer("-?*Xx".encode("ascii"), dtype=np.uint8)] = False
+            _PROTEIN_VALID_LOOKUP = lookup
+        return _PROTEIN_VALID_LOOKUP
+
+    if _DNA_VALID_LOOKUP is None:
+        lookup = np.ones(256, dtype=np.bool_)
+        lookup[np.frombuffer("-?*XNxn".encode("ascii"), dtype=np.uint8)] = False
+        _DNA_VALID_LOOKUP = lookup
+    return _DNA_VALID_LOOKUP
+
+
+def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
+    if not record_data:
+        return []
+
+    sequences = [sequence for _, sequence in record_data]
+    seq_len = len(sequences[0])
+    if any(len(sequence) != seq_len for sequence in sequences):
+        return None
+
+    first_sequence = sequences[0]
+    for sequence in sequences:
+        if sequence != first_sequence:
+            break
+    else:
+        try:
+            sequence_bytes = first_sequence.encode("ascii")
+        except UnicodeEncodeError:
+            return None
+        invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
+        occupancy = (
+            0.0
+            if seq_len == 0
+            else len(sequence_bytes.translate(None, invalid_bytes)) / seq_len
+        )
+        return [
+            (record_id, occupancy)
+            for record_id, _ in record_data
+        ]
+
+    try:
+        alignment_bytes = "".join(sequences).encode("ascii")
+    except UnicodeEncodeError:
+        return None
+
+    invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
+    if not any(code in alignment_bytes for code in invalid_bytes):
+        occupancy = 0.0 if seq_len == 0 else 1.0
+        return [
+            (record_id, occupancy)
+            for record_id, _ in record_data
+        ]
+
+    try:
+        alignment_array = np.frombuffer(
+            alignment_bytes,
+            dtype=np.uint8,
+        ).reshape(len(sequences), seq_len)
+    except ValueError:
+        return None
+
+    valid_lookup = _get_valid_lookup(is_protein)
+    valid_counts = np.count_nonzero(valid_lookup[alignment_array], axis=1)
+    if seq_len == 0:
+        occupancies = np.zeros(len(sequences), dtype=np.float64)
+    else:
+        occupancies = valid_counts / seq_len
+    return [
+        (record_id, float(occupancy))
+        for (record_id, _), occupancy in zip(record_data, occupancies)
+    ]
 
 
 class OccupancyPerTaxon(Alignment):
@@ -29,25 +125,42 @@ class OccupancyPerTaxon(Alignment):
             )
             return
 
-        for taxon, occupancy in occupancies:
-            print(f"{taxon}\t{round(occupancy, 4)}")
+        lines = [
+            f"{taxon}\t{round(occupancy, 4)}"
+            for taxon, occupancy in occupancies
+        ]
+        if lines:
+            print("\n".join(lines))
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),
         )
 
     def calculate_occupancy_per_taxon(self, alignment, is_protein: bool):
+        record_data = [(record.id, str(record.seq)) for record in alignment]
+        matrix_result = _occupancy_from_ascii_matrix(record_data, is_protein)
+        if matrix_result is not None:
+            return matrix_result
+
         if is_protein:
-            invalid_chars = np.array(["-", "?", "*", "X"], dtype="U1")
+            invalid_chars = {"-", "?", "*", "X"}
+            invalid_bytes = _PROTEIN_INVALID_BYTES
         else:
-            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype="U1")
+            invalid_chars = {"-", "?", "*", "X", "N"}
+            invalid_bytes = _DNA_INVALID_BYTES
 
         output = []
-        for record in alignment:
-            seq_arr = np.array(list(str(record.seq).upper()), dtype="U1")
-            valid_count = int(np.sum(~np.isin(seq_arr, invalid_chars)))
-            occupancy = (valid_count / len(seq_arr)) if len(seq_arr) > 0 else 0.0
-            output.append((record.id, occupancy))
+        for record_id, seq in record_data:
+            try:
+                seq_bytes = seq.encode("ascii")
+                valid_count = len(seq_bytes.translate(None, invalid_bytes))
+            except UnicodeEncodeError:
+                seq = seq.upper()
+                valid_count = len(seq) - sum(
+                    seq.count(char) for char in invalid_chars
+                )
+            occupancy = (valid_count / len(seq)) if len(seq) > 0 else 0.0
+            output.append((record_id, occupancy))
         return output

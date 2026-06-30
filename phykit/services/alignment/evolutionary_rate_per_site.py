@@ -1,12 +1,97 @@
+from __future__ import annotations
+
 from collections import Counter
-from typing import List, Dict
-import numpy as np
 
-from Bio.Align import MultipleSeqAlignment
+from .base import Alignment, _all_sequences_identical
 
-from .base import Alignment
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_DNA_GAP_LOOKUP = None
+_PROTEIN_GAP_LOOKUP = None
+_GAP_DELETE_TABLES = {}
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _get_gap_lookup(is_protein: bool):
+    global _DNA_GAP_LOOKUP, _PROTEIN_GAP_LOOKUP
+    if is_protein:
+        if _PROTEIN_GAP_LOOKUP is None:
+            lookup = np.zeros(256, dtype=np.bool_)
+            lookup[np.frombuffer("-?*X".encode("ascii"), dtype=np.uint8)] = True
+            _PROTEIN_GAP_LOOKUP = lookup
+        return _PROTEIN_GAP_LOOKUP
+
+    if _DNA_GAP_LOOKUP is None:
+        lookup = np.zeros(256, dtype=np.bool_)
+        lookup[np.frombuffer("-?*XN".encode("ascii"), dtype=np.uint8)] = True
+        _DNA_GAP_LOOKUP = lookup
+    return _DNA_GAP_LOOKUP
+
+
+def _column_totals_and_sum_squares_from_ascii_codes(
+    alignment_array,
+    valid_mask,
+    valid_symbols,
+    block_size: int = 8192,
+):
+    aln_len = alignment_array.shape[1]
+    totals = np.zeros(aln_len, dtype=np.float64)
+    sum_squares = np.zeros(aln_len, dtype=np.float64)
+    symbol_codes = valid_symbols.astype(np.intp, copy=False)
+
+    for start in range(0, aln_len, block_size):
+        stop = min(start + block_size, aln_len)
+        width = stop - start
+        block = alignment_array[:, start:stop]
+
+        block_by_site = block.T.astype(np.intp, copy=False)
+        site_offsets = np.arange(width, dtype=np.intp)[:, None] * 256
+        if valid_mask is None:
+            count_index = (block_by_site + site_offsets).ravel()
+        else:
+            block_valid = valid_mask[:, start:stop]
+            if not np.any(block_valid):
+                continue
+            count_index = (block_by_site + site_offsets)[block_valid.T]
+        counts = np.bincount(
+            count_index,
+            minlength=width * 256,
+        ).reshape(width, 256)[:, symbol_codes].T
+
+        slc = slice(start, stop)
+        totals[slc] = counts.sum(axis=0, dtype=np.float64)
+        sum_squares[slc] = (counts * counts).sum(axis=0, dtype=np.float64)
+
+    return totals, sum_squares
+
+
+def _prepare_evolutionary_rate_plot_series(pic_values):
+    count = len(pic_values)
+    sites = np.arange(1, count + 1, dtype=np.int32)
+    rates = np.fromiter(
+        (round(value, 4) for value in pic_values),
+        dtype=np.float64,
+        count=count,
+    )
+    return sites, rates
+
+
+def _prepare_evolutionary_rate_row_plot_series(rows):
+    sites = np.array([row["site"] for row in rows], dtype=np.int32)
+    rates = np.array([row["evolutionary_rate"] for row in rows], dtype=np.float64)
+    return sites, rates
 
 
 class EvolutionaryRatePerSite(Alignment):
@@ -21,28 +106,42 @@ class EvolutionaryRatePerSite(Alignment):
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
         pic_values = self.calculate_evolutionary_rate_per_site(alignment, is_protein)
-        rows = [
-            dict(site=idx + 1, evolutionary_rate=round(value, 4))
-            for idx, value in enumerate(pic_values)
-        ]
+        rows = None
 
-        if self.plot:
+        if self.plot and self.json_output:
+            rows = [
+                dict(site=idx + 1, evolutionary_rate=round(value, 4))
+                for idx, value in enumerate(pic_values)
+            ]
             self._plot_evolutionary_rate_per_site(rows)
+        elif self.plot:
+            self._plot_evolutionary_rate_values(pic_values)
 
         if self.json_output:
+            if rows is None:
+                rows = [
+                    dict(site=idx + 1, evolutionary_rate=round(value, 4))
+                    for idx, value in enumerate(pic_values)
+                ]
             payload = dict(rows=rows, sites=rows)
             if self.plot:
                 payload["plot_output"] = self.plot_output
             print_json(payload)
             return
 
-        for row in rows:
-            print(f"{row['site']}\t{row['evolutionary_rate']}")
+        lines = [
+            f"{idx}\t{round(value, 4)}"
+            for idx, value in enumerate(pic_values, start=1)
+        ]
+        if lines:
+            print("\n".join(lines))
 
         if self.plot:
             print(f"Saved evolutionary-rate plot: {self.plot_output}")
 
     def process_args(self, args):
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),
@@ -63,9 +162,25 @@ class EvolutionaryRatePerSite(Alignment):
         if not rows:
             return
 
-        sites = np.array([row["site"] for row in rows], dtype=np.int32)
-        rates = np.array([row["evolutionary_rate"] for row in rows], dtype=np.float64)
+        sites, rates = _prepare_evolutionary_rate_row_plot_series(rows)
+        self._render_evolutionary_rate_plot(sites, rates, plt)
 
+    def _plot_evolutionary_rate_values(self, pic_values):
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print("matplotlib is required for --plot in evolutionary_rate_per_site. Install matplotlib and retry.")
+            raise SystemExit(2)
+
+        if not pic_values:
+            return
+
+        sites, rates = _prepare_evolutionary_rate_plot_series(pic_values)
+        self._render_evolutionary_rate_plot(sites, rates, plt)
+
+    def _render_evolutionary_rate_plot(self, sites, rates, plt):
         config = self.plot_config
         config.resolve(n_rows=len(sites), n_cols=None)
         default_colors = ["#2b8cbe"]
@@ -89,15 +204,32 @@ class EvolutionaryRatePerSite(Alignment):
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
-    def remove_gap_characters(self, seq: str, gap_chars: List[str]) -> str:
-        return ''.join([char for char in seq if char not in gap_chars]).upper()
+    def remove_gap_characters(self, seq: str, gap_chars: list[str]) -> str:
+        key = tuple(gap_chars)
+        table = _GAP_DELETE_TABLES.get(key)
+        if table is None:
+            if not all(len(char) == 1 for char in gap_chars):
+                return ''.join([char for char in seq if char not in gap_chars]).upper()
+            table = str.maketrans("", "", "".join(gap_chars))
+            _GAP_DELETE_TABLES[key] = table
+        return seq.translate(table).upper()
 
     def get_number_of_occurrences_per_character(
         self,
         alignment: MultipleSeqAlignment,
         idx: int,
-        gap_chars: List[str]
-    ) -> Dict[str, int]:
+        gap_chars: list[str]
+    ) -> dict[str, int]:
+        if all(len(char) == 1 for char in gap_chars):
+            gap_chars_set = set(gap_chars)
+            counts = {}
+            for record in alignment:
+                char = record.seq[idx]
+                if char not in gap_chars_set:
+                    char = char.upper()
+                    counts[char] = counts.get(char, 0) + 1
+            return Counter(counts)
+
         seq_at_position = alignment[:, idx]
         clean_seq = self.remove_gap_characters(seq_at_position, gap_chars)
 
@@ -105,7 +237,7 @@ class EvolutionaryRatePerSite(Alignment):
 
     def calculate_pic(
         self,
-        num_occurrences: Dict[str, int],
+        num_occurrences: dict[str, int],
     ) -> float:
         total_frequencies = sum(num_occurrences.values())
         sum_of_frequencies = sum(
@@ -118,37 +250,69 @@ class EvolutionaryRatePerSite(Alignment):
         self,
         alignment: MultipleSeqAlignment,
         is_protein: bool = False,
-    ) -> List[float]:
+    ) -> list[float]:
         aln_len = alignment.get_alignment_length()
-        gap_chars = set(self.get_gap_chars(is_protein))
+        sequences = [str(record.seq).upper() for record in alignment]
 
-        # Convert alignment to numpy array for vectorized operations
-        alignment_array = np.array([
-            [c.upper() for c in str(record.seq)]
-            for record in alignment
-        ], dtype='U1')
+        if not sequences:
+            return []
+        if _all_sequences_identical(sequences):
+            return [0.0] * aln_len
 
-        pic_values = []
-
-        # Process each column
-        for col_idx in range(aln_len):
-            column = alignment_array[:, col_idx]
-
-            # Filter out gaps
-            non_gap_mask = ~np.isin(column, list(gap_chars))
-            filtered_column = column[non_gap_mask]
-
-            if len(filtered_column) > 0:
-                # Count occurrences using numpy
-                unique_chars, counts = np.unique(filtered_column, return_counts=True)
-                total_frequencies = len(filtered_column)
-
-                # Calculate PIC (Probability of Identical Characters)
-                sum_of_frequencies = np.sum((counts / total_frequencies) ** 2)
-                pic = 1 - sum_of_frequencies
+        gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
+        ascii_matrix = False
+        valid_mask = None
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(len(sequences), aln_len)
+            gap_lookup = _get_gap_lookup(is_protein)
+            if is_protein:
+                if any(alignment_bytes.find(gap_code) != -1 for gap_code in b"-?*X"):
+                    valid_mask = ~gap_lookup[alignment_array]
+                    valid_symbols = np.unique(alignment_array[valid_mask])
+                else:
+                    valid_symbols = np.unique(alignment_array)
             else:
-                pic = 0
+                observed_symbols = np.unique(alignment_array)
+                valid_symbols = observed_symbols[~gap_lookup[observed_symbols]]
+                if valid_symbols.size > 8 and valid_symbols.size != observed_symbols.size:
+                    valid_mask = ~gap_lookup[alignment_array]
+            ascii_matrix = True
+        except UnicodeEncodeError:
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            gap_chars_array = np.array(list(gap_chars), dtype="U1")
+            valid_mask = ~np.isin(alignment_array, gap_chars_array)
+            valid_symbols = np.unique(alignment_array[valid_mask])
 
-            pic_values.append(pic)
+        if valid_symbols.size == 0:
+            return [0] * aln_len
+        if valid_symbols.size == 1:
+            return [0.0] * aln_len
 
-        return pic_values
+        if ascii_matrix and valid_symbols.size > 8:
+            totals, sum_squares = _column_totals_and_sum_squares_from_ascii_codes(
+                alignment_array,
+                valid_mask,
+                valid_symbols,
+            )
+        else:
+            counts = np.array(
+                [
+                    np.sum(alignment_array == symbol, axis=0)
+                    for symbol in valid_symbols
+                ],
+                dtype=np.float64,
+            )
+            totals = np.sum(counts, axis=0)
+            sum_squares = np.sum(counts * counts, axis=0)
+        squared_frequency_sums = np.divide(
+            sum_squares,
+            totals * totals,
+            out=np.ones(aln_len, dtype=np.float64),
+            where=totals > 0,
+        )
+        pic_values = 1.0 - squared_frequency_sums
+        return pic_values.tolist()

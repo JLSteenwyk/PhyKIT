@@ -1,5 +1,10 @@
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class RelativeCompositionVariability(Alignment):

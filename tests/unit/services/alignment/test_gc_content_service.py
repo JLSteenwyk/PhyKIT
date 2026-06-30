@@ -1,4 +1,7 @@
 from argparse import Namespace
+import subprocess
+import sys
+from types import SimpleNamespace
 
 import pytest
 from Bio.Align import MultipleSeqAlignment
@@ -6,6 +9,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.gc_content import GCContent
+import phykit.services.alignment.gc_content as gc_content_module
 
 
 def _alignment(records):
@@ -18,11 +22,32 @@ def args():
 
 
 class TestGCContent:
+    def test_module_import_does_not_import_numpy_or_biopython_align(self):
+        code = """
+import sys
+import phykit.services.alignment.gc_content as module
+assert hasattr(module.np, "__getattr__")
+assert callable(module.get_alignment_and_format)
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Align" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+assert "phykit.helpers.files" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_init_sets_expected_attrs(self, args):
         service = GCContent(args)
         assert service.fasta == args.fasta
         assert service.verbose is False
         assert service.json_output is False
+
+    def test_common_upper_sequence_matches_case_insensitive_rows(self):
+        assert (
+            gc_content_module._common_upper_sequence(["acgt", "ACGT", "acgt"])
+            == "ACGT"
+        )
+        assert gc_content_module._common_upper_sequence(["acgt", "ACGA"]) is None
 
     def test_calculate_gc_total_value(self, args):
         service = GCContent(args)
@@ -33,6 +58,16 @@ class TestGCContent:
             ]
         )
         assert service.calculate_gc_total_value(records, is_protein=False) == 0.5
+
+    def test_calculate_gc_total_value_ignores_ambiguous_sites_and_uppercases(self, args):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("acgn"), id="a"),
+                SeqRecord(Seq("G-C?"), id="b"),
+            ]
+        )
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(4 / 5, 4)
 
     def test_calculate_gc_total_value_exits_for_empty_cleaned_seq(self, mocker, args):
         service = GCContent(args)
@@ -55,6 +90,233 @@ class TestGCContent:
             ("a", 1.0),
             ("b", 0.0),
         ]
+
+    def test_calculate_gc_per_sequence_data_ignores_ambiguous_sites_and_uppercases(self, args):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("gcn"), id="a"),
+                SeqRecord(Seq("a-t"), id="b"),
+            ]
+        )
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 1.0),
+            ("b", 0.0),
+        ]
+
+    def test_calculate_gc_per_sequence_data_uses_ascii_matrix_path(self, args, mocker):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("gcN-"), id="a"),
+                SeqRecord(Seq("AT??"), id="b"),
+            ]
+        )
+        mocker.patch.object(
+            gc_content_module.np,
+            "sum",
+            side_effect=AssertionError("ASCII matrix path should avoid row sums"),
+        )
+
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 1.0),
+            ("b", 0.0),
+        ]
+
+    def test_calculate_gc_per_sequence_data_no_gap_ascii_skips_valid_lookup(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("GCGT"), id="a"),
+                SeqRecord(Seq("ATAT"), id="b"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content._get_valid_lookup",
+            side_effect=AssertionError(
+                "All-valid ASCII GC rows should not build valid lookup counts"
+            ),
+        )
+
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 0.75),
+            ("b", 0.0),
+        ]
+
+    def test_calculate_gc_per_sequence_data_identical_sequences_skip_matrix(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("acgtGCNN--??XX"), id="a"),
+                SeqRecord(Seq("ACGTGCNN--??XX"), id="b"),
+                SeqRecord(Seq("acgtGCNN--??XX"), id="c"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content.np.frombuffer",
+            side_effect=AssertionError(
+                "identical GC rows should not build a byte matrix"
+            ),
+        )
+
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 4 / 6),
+            ("b", 4 / 6),
+            ("c", 4 / 6),
+        ]
+
+    def test_calculate_gc_per_sequence_data_variable_length_uses_count_nonzero(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = [
+            SimpleNamespace(seq="GCN-", id="a"),
+            SimpleNamespace(seq="A-C", id="b"),
+        ]
+        mocker.patch.object(
+            gc_content_module.np,
+            "sum",
+            side_effect=AssertionError("ASCII fallback should use count_nonzero"),
+        )
+
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 1.0),
+            ("b", 0.5),
+        ]
+
+    def test_calculate_gc_total_value_uses_ascii_flat_path(self, args, mocker):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("gcN-"), id="a"),
+                SeqRecord(Seq("AT??"), id="b"),
+            ]
+        )
+        mocker.patch.object(
+            gc_content_module.np,
+            "sum",
+            side_effect=AssertionError("ASCII total path should avoid row sums"),
+        )
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            2 / 4,
+            4,
+        )
+
+    def test_calculate_gc_total_value_no_gap_ascii_skips_valid_lookup(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("GCGT"), id="a"),
+                SeqRecord(Seq("ATAT"), id="b"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content._get_valid_lookup",
+            side_effect=AssertionError(
+                "All-valid ASCII GC totals should not build valid lookup counts"
+            ),
+        )
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            3 / 8,
+            4,
+        )
+
+    def test_calculate_gc_total_value_identical_sequences_skip_flat_matrix(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("acgtGCNN--??XX"), id="a"),
+                SeqRecord(Seq("ACGTGCNN--??XX"), id="b"),
+                SeqRecord(Seq("acgtGCNN--??XX"), id="c"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content.np.frombuffer",
+            side_effect=AssertionError(
+                "identical GC totals should not build a flat byte matrix"
+            ),
+        )
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            4 / 6,
+            4,
+        )
+
+    def test_calculate_gc_per_sequence_batches_text_output(self, args, capsys):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("G-C"), id="a"),
+                SeqRecord(Seq("A-T"), id="b"),
+            ]
+        )
+
+        service.calculate_gc_per_sequence(records, is_protein=False)
+
+        out, _ = capsys.readouterr()
+        assert out == "a\t1.0\nb\t0.0\n"
+
+    def test_calculate_gc_values_unicode_fallback(self, args):
+        service = GCContent(args)
+        records = [
+            SimpleNamespace(seq="G\u03a9N-", id="a"),
+            SimpleNamespace(seq="c?", id="b"),
+        ]
+
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 0.5),
+            ("b", 1.0),
+        ]
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            2 / 3,
+            4,
+        )
+
+    def test_calculate_gc_total_value_mixed_unicode_uses_count_nonzero(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = [
+            SimpleNamespace(seq="G\u03a9N-", id="a"),
+            SimpleNamespace(seq="GC?", id="b"),
+        ]
+        mocker.patch.object(
+            gc_content_module.np,
+            "sum",
+            side_effect=AssertionError("mixed fallback should use count_nonzero"),
+        )
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            3 / 4,
+            4,
+        )
+
+    def test_calculate_gc_total_value_mixed_unicode_batches_ascii_fallback(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = [
+            SimpleNamespace(seq="GCN-", id="a"),
+            SimpleNamespace(seq="A-C?", id="b"),
+            SimpleNamespace(seq="G\u03a9N-", id="c"),
+        ]
+        count_nonzero = mocker.spy(gc_content_module.np, "count_nonzero")
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            4 / 6,
+            4,
+        )
+        assert count_nonzero.call_count == 2
 
     def test_run_json_summary(self, mocker):
         args = Namespace(fasta="/some/path/to/file.fa", verbose=False, json=True)

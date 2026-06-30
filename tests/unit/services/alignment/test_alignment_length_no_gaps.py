@@ -1,8 +1,16 @@
 import pytest
+import subprocess
+import sys
 from argparse import Namespace
 from math import isclose
+from types import SimpleNamespace
+
+from Bio.Align import MultipleSeqAlignment
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.alignment_length_no_gaps import AlignmentLengthNoGaps
+import phykit.services.alignment.alignment_length_no_gaps as alg_module
 
 
 @pytest.fixture
@@ -12,6 +20,35 @@ def args():
 
 
 class TestAlignmentLengthNoGaps(object):
+    def test_module_import_does_not_import_numpy_or_biopython_align(self):
+        code = """
+import sys
+import phykit.services.alignment.alignment_length_no_gaps as module
+assert hasattr(module.np, "__getattr__")
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Align" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_all_sequences_identical_does_not_slice(self):
+        class NoSliceList(list):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("identical sequence scan should not slice")
+                return super().__getitem__(key)
+
+        assert alg_module._all_sequences_identical(
+            NoSliceList(["ACGT", "ACGT", "ACGT"])
+        )
+        assert not alg_module._all_sequences_identical(
+            NoSliceList(["ACGT", "TGCA", "ACGT"])
+        )
+        assert not alg_module._all_sequences_identical(
+            NoSliceList(["ACGT", "ACGT", "TGCA"])
+        )
+
     def test_init_sets_alignment_file_path(self, args):
         aln = AlignmentLengthNoGaps(args)
         assert aln.alignment_file_path == args.alignment
@@ -58,4 +95,109 @@ class TestAlignmentLengthNoGaps(object):
         expected_aln_len_no_gaps = 901
         res = aln.get_sites_no_gaps_count(alignment_complex, expected_length, is_protein)
         assert res == expected_aln_len_no_gaps
-    
+
+    def test_get_sites_no_gaps_count_handles_lowercase_ambiguity(self, args):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AcGtA"), id="a"),
+                SeqRecord(Seq("AnG-A"), id="b"),
+                SeqRecord(Seq("aCGtx"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+
+        dna_count = aln.get_sites_no_gaps_count(alignment, 5, is_protein=False)
+        protein_count = aln.get_sites_no_gaps_count(alignment, 5, is_protein=True)
+
+        assert dna_count == 2
+        assert protein_count == 3
+
+    def test_get_sites_no_gaps_count_ascii_path_avoids_isin(self, mocker, args):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AcGtA"), id="a"),
+                SeqRecord(Seq("AnG-A"), id="b"),
+                SeqRecord(Seq("aCGtx"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps.np.isin",
+            side_effect=AssertionError("ASCII path should use the lookup table"),
+        )
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
+
+    def test_get_sites_no_gaps_count_ascii_path_uses_gap_code_reduction(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTA"), id="a"),
+                SeqRecord(Seq("ANG-A"), id="b"),
+                SeqRecord(Seq("ACGTx"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        gap_codes_spy = mocker.spy(alg_module, "_get_gap_codes")
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
+        gap_codes_spy.assert_called_once_with(False)
+
+    def test_get_sites_no_gaps_count_no_gap_ascii_returns_length(self, mocker, args):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTA"), id="a"),
+                SeqRecord(Seq("ACGTT"), id="b"),
+                SeqRecord(Seq("ACGTC"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps.np.any",
+            side_effect=AssertionError("no-gap ASCII path should not reduce columns"),
+        )
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 5
+
+    def test_get_sites_no_gaps_count_identical_sequences_skip_matrix(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTNn-?*Xx"), id="a"),
+                SeqRecord(Seq("ACGTNn-?*Xx"), id="b"),
+                SeqRecord(Seq("ACGTNn-?*Xx"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps.np.frombuffer",
+            side_effect=AssertionError(
+                "Identical sequences should avoid alignment matrix construction"
+            ),
+        )
+
+        assert aln.get_sites_no_gaps_count(alignment, 11, is_protein=False) == 4
+        assert aln.get_sites_no_gaps_count(alignment, 11, is_protein=True) == 6
+
+    def test_get_sites_no_gaps_count_identical_unicode_sequence(self, args):
+        alignment = [
+            SimpleNamespace(seq="A\u03a9n-?", id="a"),
+            SimpleNamespace(seq="A\u03a9n-?", id="b"),
+        ]
+        aln = AlignmentLengthNoGaps(args)
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=True) == 3
+
+    def test_get_sites_no_gaps_count_unicode_fallback(self, args):
+        alignment = [
+            SimpleNamespace(seq="A\u03a9nT", id="a"),
+            SimpleNamespace(seq="ACGT", id="b"),
+            SimpleNamespace(seq="ATGT", id="c"),
+        ]
+        aln = AlignmentLengthNoGaps(args)
+
+        assert aln.get_sites_no_gaps_count(alignment, 4, is_protein=False) == 3
+        assert aln.get_sites_no_gaps_count(alignment, 4, is_protein=True) == 4

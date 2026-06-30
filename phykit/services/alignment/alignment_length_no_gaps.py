@@ -1,11 +1,65 @@
-from argparse import Namespace
-from typing import Dict, Tuple
-import numpy as np
+from __future__ import annotations
 
-from Bio.Align import MultipleSeqAlignment
+from argparse import Namespace
 
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+class _LazyNumpy:
+    def __getattr__(self, name):
+        import numpy as _np
+
+        return getattr(_np, name)
+
+
+np = _LazyNumpy()
+_DNA_GAP_CODES = None
+_PROTEIN_GAP_CODES = None
+_DNA_GAP_BYTES = b"-?*XNxn"
+_PROTEIN_GAP_BYTES = b"-?*Xx"
+_DNA_GAP_CHARS = {"-", "?", "*", "X", "N"}
+_PROTEIN_GAP_CHARS = {"-", "?", "*", "X"}
+
+
+def _get_gap_codes(is_protein: bool):
+    global _DNA_GAP_CODES, _PROTEIN_GAP_CODES
+    if is_protein:
+        if _PROTEIN_GAP_CODES is None:
+            _PROTEIN_GAP_CODES = np.frombuffer(b"-?*Xx", dtype=np.uint8)
+        return _PROTEIN_GAP_CODES
+
+    if _DNA_GAP_CODES is None:
+        _DNA_GAP_CODES = np.frombuffer(b"-?*XNxn", dtype=np.uint8)
+    return _DNA_GAP_CODES
+
+
+def _count_no_gap_sites_in_identical_sequence(sequence: str, is_protein: bool) -> int:
+    try:
+        sequence_bytes = sequence.encode("ascii")
+        gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
+        if not any(code in sequence_bytes for code in gap_bytes):
+            return len(sequence)
+        return len(sequence_bytes.translate(None, gap_bytes))
+    except UnicodeEncodeError:
+        gap_chars = _PROTEIN_GAP_CHARS if is_protein else _DNA_GAP_CHARS
+        sequence = sequence.upper()
+        return len(sequence) - sum(sequence.count(char) for char in gap_chars)
+
+
+def _all_sequences_identical(sequences: list[str]) -> bool:
+    if not sequences:
+        return True
+
+    first_sequence = sequences[0]
+    for idx in range(1, len(sequences)):
+        if sequences[idx] != first_sequence:
+            return False
+    return True
 
 
 class AlignmentLengthNoGaps(Alignment):
@@ -35,7 +89,7 @@ class AlignmentLengthNoGaps(Alignment):
     def process_args(
         self,
         args: Namespace,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),
@@ -45,7 +99,7 @@ class AlignmentLengthNoGaps(Alignment):
         self,
         alignment: MultipleSeqAlignment,
         is_protein: bool,
-    ) -> Tuple[int, int, float]:
+    ) -> tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
         aln_len_no_gaps = self.get_sites_no_gaps_count(
             alignment,
@@ -66,19 +120,40 @@ class AlignmentLengthNoGaps(Alignment):
         """
         Count sites in the alignment with no gaps
         """
-        gap_chars = set(self.get_gap_chars(is_protein))
+        gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
+        sequences = [str(record.seq) for record in alignment]
 
-        # Convert alignment to numpy array
-        alignment_array = np.array([
-            list(str(record.seq)) for record in alignment
-        ], dtype='U1')
+        if not sequences:
+            return aln_len
 
-        # Count columns with no gaps
-        aln_len_no_gaps = 0
-        for col_idx in range(aln_len):
-            column = alignment_array[:, col_idx]
-            # Check if column has any gap characters
-            if not np.any(np.isin(column, list(gap_chars))):
-                aln_len_no_gaps += 1
+        first_sequence = sequences[0]
+        if _all_sequences_identical(sequences):
+            return _count_no_gap_sites_in_identical_sequence(
+                first_sequence,
+                is_protein,
+            )
 
-        return aln_len_no_gaps
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            gap_codes = _get_gap_codes(is_protein)
+            if not any(
+                alignment_bytes.find(bytes((int(gap_code),))) != -1
+                for gap_code in gap_codes
+            ):
+                return aln_len
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(len(sequences), aln_len)
+            columns_with_gaps = np.zeros(aln_len, dtype=np.bool_)
+            for gap_code in gap_codes:
+                columns_with_gaps |= np.any(alignment_array == gap_code, axis=0)
+        except UnicodeEncodeError:
+            sequences = [seq.upper() for seq in sequences]
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            gap_chars_array = np.array(list(gap_chars), dtype="U1")
+            columns_with_gaps = np.any(
+                np.isin(alignment_array, gap_chars_array),
+                axis=0,
+            )
+        return int(np.count_nonzero(~columns_with_gaps))

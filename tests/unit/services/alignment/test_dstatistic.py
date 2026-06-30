@@ -1,9 +1,34 @@
 import pytest
+import subprocess
+import sys
 from argparse import Namespace
+from io import StringIO
 from math import isclose
 
+import numpy as np
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
+
 from phykit.services.alignment.dstatistic import Dstatistic
+import phykit.services.alignment.dstatistic as module
 from phykit.errors import PhykitUserError
+
+
+def test_module_import_does_not_import_biopython_parsers():
+    code = """
+import sys
+import phykit.services.alignment.dstatistic as module
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "Bio.SeqIO.FastaIO" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def _write_alignment(path, seqs):
@@ -26,6 +51,294 @@ def _make_args(alignment, p1="P1", p2="P2", p3="P3", outgroup="Outgroup",
 
 
 class TestDstatistic:
+    def test_print_alignment_text_output_batches_report(self, monkeypatch):
+        svc = Dstatistic.__new__(Dstatistic)
+        svc.p1 = "P1"
+        svc.p2 = "P2"
+        svc.p3 = "P3"
+        svc.outgroup = "Outgroup"
+        svc.block_size = 100
+        printed = []
+
+        def fake_print(*args, **kwargs):
+            printed.append((args, kwargs))
+
+        monkeypatch.setattr("builtins.print", fake_print)
+        svc._print_alignment_text_output(
+            1000,
+            120,
+            75,
+            45,
+            0.25,
+            0.0625,
+            4.0,
+            0.000063,
+        )
+
+        expected = "\n".join([
+            "Patterson's D-statistic (ABBA-BABA Test)",
+            "=========================================",
+            "Topology: (((P1, P2), P3), Outgroup)",
+            "P1: P1",
+            "P2: P2",
+            "P3: P3",
+            "Outgroup: Outgroup",
+            "",
+            "Alignment length: 1000",
+            "Informative sites: 120",
+            "ABBA sites: 75",
+            "BABA sites: 45",
+            "D-statistic: 0.2500",
+            "Block jackknife (block size: 100):",
+            "  Standard error: 0.0625",
+            "  Z-score: 4.00",
+            "  p-value: 0.000063",
+            "",
+            f"Interpretation: {svc._interpret(0.25, 0.000063)}",
+        ])
+        assert printed == [((expected,), {})]
+
+    def test_read_fasta_uses_first_header_token_uppercases_and_keeps_last_duplicate(
+        self, tmp_path
+    ):
+        aln = tmp_path / "test.fa"
+        aln.write_text(
+            ">P1 description\nac gt\nn-\n"
+            ">P2 second description\ncc gg\nn-\n"
+            ">P1 replacement\ntttt\n"
+        )
+        assert Dstatistic._read_fasta(str(aln)) == {
+            "P1": "TTTT",
+            "P2": "CCGGN-",
+        }
+
+    def test_count_site_patterns_returns_block_counts(self):
+        seq_p1 = "AAAACCAAAA"
+        seq_p2 = "CCCCAAAAAA"
+        seq_p3 = "CCCCCCAAAA"
+        seq_o = "AAAAAAAAAA"
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            seq_p1,
+            seq_p2,
+            seq_p3,
+            seq_o,
+            block_size=5,
+        )
+
+        assert abba == 4
+        assert baba == 2
+        assert block_abba.tolist() == [4.0, 0.0]
+        assert block_baba.tolist() == [1.0, 1.0]
+
+    def test_count_site_patterns_all_valid_ascii_skips_validity_mask(self, mocker):
+        mocker.patch.object(
+            module.np,
+            "ones",
+            side_effect=AssertionError(
+                "all-valid ASCII D-statistic counts should not build a valid mask"
+            ),
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "AAAACCAAAA",
+            "CCCCAAAAAA",
+            "CCCCCCAAAA",
+            "AAAAAAAAAA",
+            block_size=5,
+        )
+
+        assert abba == 4
+        assert baba == 2
+        assert block_abba.tolist() == [4.0, 0.0]
+        assert block_baba.tolist() == [1.0, 1.0]
+
+    def test_count_site_patterns_all_invariant_skips_numpy_byte_setup(self, mocker):
+        mocker.patch.object(
+            module.np,
+            "frombuffer",
+            side_effect=AssertionError(
+                "all-invariant D-statistic counts should return before NumPy setup"
+            ),
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+            block_size=8,
+        )
+
+        assert abba == 0
+        assert baba == 0
+        assert block_abba.tolist() == [0.0] * 5
+        assert block_baba.tolist() == [0.0] * 5
+
+    def test_count_site_patterns_identical_ingroup_skips_numpy_byte_setup(self, mocker):
+        mocker.patch.object(
+            module.np,
+            "frombuffer",
+            side_effect=AssertionError(
+                "identical ingroup D-statistic counts should return before NumPy setup"
+            ),
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "CCCC" * 10,
+            "CCCC" * 10,
+            "CCCC" * 10,
+            "AAAA" * 10,
+            block_size=8,
+        )
+
+        assert abba == 0
+        assert baba == 0
+        assert block_abba.tolist() == [0.0] * 5
+        assert block_baba.tolist() == [0.0] * 5
+
+    def test_count_site_patterns_identical_p1_p2_skips_numpy_byte_setup(self, mocker):
+        mocker.patch.object(
+            module.np,
+            "frombuffer",
+            side_effect=AssertionError(
+                "identical P1/P2 D-statistic counts should return before NumPy setup"
+            ),
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "TGCA" * 10,
+            "AAAA" * 10,
+            block_size=8,
+        )
+
+        assert abba == 0
+        assert baba == 0
+        assert block_abba.tolist() == [0.0] * 5
+        assert block_baba.tolist() == [0.0] * 5
+
+    def test_count_site_patterns_identical_p3_outgroup_skips_numpy_byte_setup(
+        self, mocker
+    ):
+        mocker.patch.object(
+            module.np,
+            "frombuffer",
+            side_effect=AssertionError(
+                "identical P3/outgroup D-statistic counts should return before NumPy setup"
+            ),
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "ACGT" * 10,
+            "TGCA" * 10,
+            "GATT" * 10,
+            "GATT" * 10,
+            block_size=8,
+        )
+
+        assert abba == 0
+        assert baba == 0
+        assert block_abba.tolist() == [0.0] * 5
+        assert block_baba.tolist() == [0.0] * 5
+
+    def test_count_site_patterns_abba_only_skips_baba_count(self, mocker):
+        count_nonzero = mocker.patch.object(
+            module.np,
+            "count_nonzero",
+            wraps=module.np.count_nonzero,
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "AAAA" * 10,
+            "CCCC" * 10,
+            "CCCC" * 10,
+            "AAAA" * 10,
+            block_size=8,
+        )
+
+        assert abba == 40
+        assert baba == 0
+        assert block_abba.tolist() == [8.0] * 5
+        assert block_baba.tolist() == [0.0] * 5
+        assert count_nonzero.call_count == 1
+
+    def test_count_site_patterns_baba_only_skips_abba_count(self, mocker):
+        count_nonzero = mocker.patch.object(
+            module.np,
+            "count_nonzero",
+            wraps=module.np.count_nonzero,
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "CCCC" * 10,
+            "AAAA" * 10,
+            "CCCC" * 10,
+            "AAAA" * 10,
+            block_size=8,
+        )
+
+        assert abba == 0
+        assert baba == 40
+        assert block_abba.tolist() == [0.0] * 5
+        assert block_baba.tolist() == [8.0] * 5
+        assert count_nonzero.call_count == 1
+
+    def test_count_site_patterns_skips_ambiguous_sites(self):
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "ANXXC",
+            "CCCAA",
+            "CCGCC",
+            "AAAAA",
+            block_size=5,
+        )
+
+        assert abba == 1
+        assert baba == 1
+        assert block_abba.tolist() == [1.0]
+        assert block_baba.tolist() == [1.0]
+
+    def test_count_site_patterns_unicode_fallback_preserves_counts_and_blocks(self):
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "AΩCN",
+            "TΩAA",
+            "TΩCX",
+            "AΩAA",
+            block_size=2,
+        )
+
+        assert abba == 1
+        assert baba == 1
+        assert block_abba.tolist() == [1.0, 0.0]
+        assert block_baba.tolist() == [0.0, 1.0]
+
+    def test_jackknife_d_values_match_leave_one_out_loop(self):
+        block_abba = np.array([4.0, 0.0, 3.0, 1.0, 0.0])
+        block_baba = np.array([1.0, 2.0, 0.0, 1.0, 0.0])
+        total_abba = np.sum(block_abba)
+        total_baba = np.sum(block_baba)
+        expected = []
+        for idx in range(len(block_abba)):
+            loo_abba = total_abba - block_abba[idx]
+            loo_baba = total_baba - block_baba[idx]
+            denom = loo_abba + loo_baba
+            expected.append(
+                (loo_abba - loo_baba) / denom if denom > 0 else 0.0
+            )
+
+        observed = Dstatistic._jackknife_d_values(block_abba, block_baba)
+
+        np.testing.assert_allclose(observed, expected)
+
+    def test_jackknife_d_values_handles_all_zero_blocks(self):
+        observed = Dstatistic._jackknife_d_values(
+            np.zeros(4),
+            np.zeros(4),
+        )
+
+        np.testing.assert_allclose(observed, np.zeros(4))
+
     def test_abba_counted_correctly(self, tmp_path):
         """4 ABBA sites, 0 BABA, rest invariant."""
         aln = tmp_path / "test.fa"
@@ -283,6 +596,39 @@ class TestDstatistic:
         assert "block_size" in payload
         assert "n_blocks" in payload
 
+    def test_alignment_significance_does_not_import_scipy(self, tmp_path):
+        aln = tmp_path / "test.fa"
+        seqs = {
+            "P1":       "AAAACCAAAA",
+            "P2":       "CCCCAAAAAA",
+            "P3":       "CCCCCCAAAA",
+            "Outgroup": "AAAAAAAAAA",
+        }
+        _write_alignment(str(aln), seqs)
+        args = _make_args(str(aln), block_size=5, json_output=True)
+        svc = Dstatistic(args)
+        real_import = __import__
+
+        def fail_scipy_import(name, *args, **kwargs):
+            if name == "scipy" or name.startswith("scipy."):
+                raise AssertionError("D-statistic z-score p-value should not import scipy")
+            return real_import(name, *args, **kwargs)
+
+        import builtins
+        original_import = builtins.__import__
+        builtins.__import__ = fail_scipy_import
+        try:
+            import io, sys
+            captured = io.StringIO()
+            original_stdout = sys.stdout
+            sys.stdout = captured
+            try:
+                svc.run()
+            finally:
+                sys.stdout = original_stdout
+        finally:
+            builtins.__import__ = original_import
+
 
 def _write_gene_trees(path, newicks):
     with open(path, "w") as f:
@@ -305,6 +651,163 @@ def _make_gt_args(gene_trees, p1="A", p2="B", p3="C", outgroup="O",
 
 
 class TestGeneTreeMode:
+    def test_print_gene_tree_text_output_batches_report(self, monkeypatch):
+        svc = Dstatistic.__new__(Dstatistic)
+        svc.p1 = "P1"
+        svc.p2 = "P2"
+        svc.p3 = "P3"
+        svc.outgroup = "Outgroup"
+        svc.support_threshold = 70.0
+        printed = []
+
+        def fake_print(*args, **kwargs):
+            printed.append((args, kwargs))
+
+        monkeypatch.setattr("builtins.print", fake_print)
+        svc._print_gene_tree_text_output(
+            100,
+            30,
+            45,
+            15,
+            10,
+            0.5,
+            15.0,
+            0.000108,
+        )
+
+        expected = "\n".join([
+            "Patterson's D-statistic (Gene Tree Mode)",
+            "=========================================",
+            "Topology: (((P1, P2), P3), Outgroup)",
+            "P1: P1",
+            "P2: P2",
+            "P3: P3",
+            "Outgroup: Outgroup",
+            "",
+            "Gene trees: 100",
+            "Support threshold: 70.0",
+            "Concordant ((P1,P2),P3): 30",
+            "ABBA ((P2,P3),P1): 45",
+            "BABA ((P1,P3),P2): 15",
+            "Unresolved: 10",
+            "D-statistic: 0.5000",
+            "Chi-squared: 15.0000",
+            "p-value: 0.000108",
+            "",
+            f"Interpretation: {svc._interpret(0.5, 0.000108)}",
+        ])
+        assert printed == [((expected,), {})]
+
+    def test_collect_clade_taxa_caches_descendants(self):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,O:1):1);"), "newick")
+        clade_taxa = Dstatistic._collect_clade_taxa(tree)
+
+        assert clade_taxa[id(tree.root)] == frozenset({"A", "B", "C", "O"})
+        internal_sets = {
+            taxa for cid, taxa in clade_taxa.items()
+            if 1 < len(taxa) < 4
+        }
+        assert frozenset({"A", "B"}) in internal_sets
+        assert frozenset({"C", "O"}) in internal_sets
+
+    def test_direct_clade_taxa_preserves_nonterminal_preorder(self, monkeypatch):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,O:1):1);"), "newick")
+        expected_nonterminals = list(tree.get_nonterminals())
+        expected_root_taxa = frozenset(tip.name for tip in tree.get_terminals())
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("direct clade collector should not use generic traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_generic_traversal)
+
+        clade_taxa, nonterminals = (
+            Dstatistic._collect_clade_taxa_and_nonterminals_direct(tree)
+        )
+
+        assert nonterminals == expected_nonterminals
+        assert clade_taxa[id(tree.root)] == expected_root_taxa
+
+    def test_direct_clade_taxa_binary_children_use_indexed_aggregation(self):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class IndexedOnlyList(list):
+            def __iter__(self):
+                raise AssertionError("binary aggregation should not iterate children")
+
+        left = Clade(
+            name="left",
+            clades=IndexedOnlyList([Clade(name="A"), Clade(name="B")]),
+        )
+        right = Clade(
+            name="right",
+            clades=IndexedOnlyList([Clade(name="C"), Clade(name="O")]),
+        )
+        root = Clade(name="root", clades=IndexedOnlyList([left, right]))
+        tree = Tree(root=root)
+
+        clade_taxa, nonterminals = (
+            Dstatistic._collect_clade_taxa_and_nonterminals_direct(tree)
+        )
+
+        assert nonterminals == [root, left, right]
+        assert clade_taxa[id(left)] == frozenset({"A", "B"})
+        assert clade_taxa[id(right)] == frozenset({"C", "O"})
+        assert clade_taxa[id(root)] == frozenset({"A", "B", "C", "O"})
+
+    def test_get_quartet_topology_uses_combined_direct_traversal(self, monkeypatch):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,O:1):1);"), "newick")
+        svc = object.__new__(Dstatistic)
+        svc.support_threshold = None
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
+
+    def test_get_quartet_topology_avoids_full_complement_sets(self, monkeypatch):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class NoSubtractFrozenSet(frozenset):
+            def __sub__(self, other):
+                raise AssertionError("quartet topology should not build full complements")
+
+        root = Clade(name="root", clades=[Clade(name="left"), Clade(name="right")])
+        left = root.clades[0]
+        right = root.clades[1]
+        tree = Tree(root=root)
+        svc = object.__new__(Dstatistic)
+        svc.support_threshold = None
+
+        clade_taxa = {
+            id(root): NoSubtractFrozenSet({"A", "B", "C", "O", "extra"}),
+            id(left): NoSubtractFrozenSet({"A", "B"}),
+            id(right): NoSubtractFrozenSet({"C", "O", "extra"}),
+        }
+
+        monkeypatch.setattr(
+            Dstatistic,
+            "_collect_clade_taxa_and_nonterminals",
+            staticmethod(lambda tree: (clade_taxa, [root, left, right])),
+        )
+
+        assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
+
+    def test_low_support_branch_is_unresolved(self, tmp_path):
+        gt_file = tmp_path / "trees.nwk"
+        _write_gene_trees(gt_file, [
+            "((A:1,B:1)50:1,(C:1,O:1)50:1);",
+        ])
+        svc = Dstatistic(_make_gt_args(str(gt_file)))
+        svc.support_threshold = 80
+        tree = svc._parse_gene_trees(str(gt_file))[0]
+
+        assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "unresolved"
+
     def test_concordant_trees(self, tmp_path):
         """All concordant trees → D = 0."""
         gt_file = tmp_path / "trees.nwk"
@@ -348,6 +851,34 @@ class TestGeneTreeMode:
         assert payload["abba_count"] == 3
         assert payload["baba_count"] == 1
         assert isclose(payload["d_statistic"], 0.5, rel_tol=0.01)
+
+    def test_gene_tree_p_value_does_not_import_scipy(self, tmp_path, mocker):
+        gt_file = tmp_path / "trees.nwk"
+        _write_gene_trees(gt_file, [
+            "((B:1,C:1):1,(A:1,O:1):1);",
+            "((B:1,C:1):1,(A:1,O:1):1);",
+            "((B:1,C:1):1,(A:1,O:1):1);",
+            "((A:1,C:1):1,(B:1,O:1):1);",
+        ])
+        mocked = mocker.patch("phykit.services.alignment.dstatistic.print_json")
+        svc = Dstatistic(_make_gt_args(str(gt_file), json_output=True))
+        real_import = __import__
+
+        def fail_scipy_import(name, *args, **kwargs):
+            if name == "scipy" or name.startswith("scipy."):
+                raise AssertionError("gene-tree chi-square p-value should not import scipy")
+            return real_import(name, *args, **kwargs)
+
+        import builtins
+        original_import = builtins.__import__
+        builtins.__import__ = fail_scipy_import
+        try:
+            svc.run()
+        finally:
+            builtins.__import__ = original_import
+
+        payload = mocked.call_args.args[0]
+        assert payload["p_value"] is not None
 
     def test_multi_taxon_gene_trees(self, tmp_path, mocker):
         """Gene trees with >4 taxa — quartet is extracted correctly."""
