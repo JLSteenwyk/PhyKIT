@@ -78,7 +78,7 @@ def _calculate_summary_statistics(values):
             )
 
         twenty_fifth, median, seventy_fifth = np.percentile(arr, [25, 50, 75])
-        mean = np.mean(arr)
+        mean = arr.mean()
         minimum = np.min(arr)
         maximum = np.max(arr)
         variance = np.var(arr, ddof=1)

@@ -20,6 +20,7 @@ Results:
 | `calculate_summary_statistics_from_arr` combined quantiles | 1M floating-point values, optimized helper baseline | 0.0327s | 0.0187s | 1.75x |
 | `calculate_summary_statistics_from_arr` variance/std reuse | 1M floating-point values, optimized helper baseline | 0.005185s | 0.004021s | 1.29x |
 | `calculate_summary_statistics_from_arr` constant-array shortcut | 1M identical floating-point values, side-by-side previous percentile/variance path | 0.049040s | 0.000533s | 92.01x |
+| `calculate_summary_statistics_from_arr` ndarray mean reduction | 10 / 100 / 1000 / 100k / 1M floating-point values, side-by-side previous `np.mean` wrapper | 0.000008843s / 0.000008838s / 0.000007437s / 0.000078838s / 0.000916197s | 0.000006742s / 0.000005305s / 0.000006767s / 0.000061452s / 0.000516858s | 1.31x / 1.67x / 1.10x / 1.28x / 1.77x |
 | `calculate_summary_statistics_from_dict` | 1M floating-point dictionary values | 1.1465s | 0.0539s | 21.3x |
 | `calculate_summary_statistics_from_dict` fromiter setup | 1M floating-point dictionary values, optimized helper baseline | 0.0395s | 0.0276s | 1.4x |
 | `calculate_summary_statistics_from_dict` combined percentiles | 1M floating-point dictionary values, optimized helper baseline | 0.0373s | 0.0356s | 1.05x |
@@ -7260,7 +7261,9 @@ Profiling summary:
   avoiding a second full-array reduction while preserving the reported values.
   Constant arrays now return after a guarded equality check, preserving identical
   summary values while skipping percentile, variance, and standard-deviation
-  reductions for common all-equal branch-length/support summaries.
+  reductions for common all-equal branch-length/support summaries. Nonconstant
+  summaries now compute the mean through the ndarray method, avoiding generic
+  `np.mean` dispatch while preserving exact integer-mean formatting.
   A startup pass wraps the NumPy module in a lazy proxy so importing commands
   that only reference summary helpers does not import NumPy until a summary is
   calculated. Summary output now emits the existing eight-line report through

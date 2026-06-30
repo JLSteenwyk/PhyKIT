@@ -117,6 +117,16 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(stats['standard_deviation'], 0.0)
         self.assertEqual(stats['variance'], 0.0)
 
+    def test_nonconstant_mean_uses_array_reduction(self):
+        data = np.array([1.0, 2.0, 4.0, 8.0])
+        with patch(
+            'phykit.helpers.stats_summary.np.mean',
+            side_effect=AssertionError("mean should use ndarray.mean"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 3.75)
+
     def test_exact_integer_mean_and_median_preserve_integer_type(self):
         """Test exact integer mean/median keep legacy CLI formatting."""
         data = [85, 85, 100, 100, 100, 100, 100]
