@@ -285,7 +285,7 @@ class AlignmentOutlierTaxa(Alignment):
             invalid_chars_array = np.array(invalid_chars, dtype="U1")
             valid_mask = ~np.isin(alignment_array, invalid_chars_array)
         if not all_valid_ascii:
-            valid_lengths = np.sum(valid_mask, axis=1).astype(np.float64)
+            valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(np.float64)
 
         if aln_len > 0:
             gap_rates = 1.0 - (valid_lengths / float(aln_len))

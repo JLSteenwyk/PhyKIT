@@ -309,6 +309,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` observed-symbol validity DNA | 2000 taxa x 5000 sites, alphabet `ACGT-?NX*`, side-by-side previous full valid-mask path | 0.100830s | 0.066724s | 1.51x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` observed-symbol validity protein | 2000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous full valid-mask path | 0.134780s | 0.085772s | 1.57x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` no-gap observed-symbol validity | 2000 taxa x 5000 sites, DNA `ACGT` / 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.078720s / 0.091700s | 0.052968s / 0.046669s | 1.49x / 1.96x |
+| RCV/RCVT/AlignmentOutlierTaxa valid-length mask counts | 5000 taxa x 4000-site boolean valid mask, side-by-side previous `np.sum(mask, axis=1).astype(float)` | 0.008596s | 0.004423s | 1.94x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` many-short protein count table | 50k taxa x 50 no-gap protein sites, side-by-side previous one `np.bincount` per taxon row | 1.300922s | 0.921645s | 1.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.069846s | 0.010896s | 6.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058848s / 0.007070s / 0.211013s | 0.042901s / 0.000004s / 0.037338s | 1.37x / 1844.67x / 5.65x |
@@ -2791,10 +2792,12 @@ Profiling summary:
   pass derives valid ASCII symbols from byte codes present in the alignment and
   uses full sequence lengths when no invalid symbols are observed, avoiding the
   full validity mask for no-gap inputs and reducing setup work for gap-bearing
-  alignments. Many-short no-gap protein alignments now build the per-taxon
-  symbol count table with one row-offset `bincount`, avoiding tens of thousands
-  of tiny row-level `bincount` calls while keeping the per-row path for medium
-  or long alignments where it remains faster. Identical alignments now return
+  alignments. Gap-bearing paths now count row valid lengths with
+  `np.count_nonzero` instead of summing boolean masks before float conversion.
+  Many-short no-gap protein alignments now build the per-taxon symbol count
+  table with one row-offset `bincount`, avoiding tens of thousands of tiny
+  row-level `bincount` calls while keeping the per-row path for medium or long
+  alignments where it remains faster. Identical alignments now return
   zero-valued per-taxon rows before matrix construction because each taxon's
   composition equals the average composition after case normalization. A
   follow-up pass reuses the shared no-slice sequence equality helper to avoid
@@ -2846,12 +2849,14 @@ Profiling summary:
   Variable-composition ASCII alignments with no invalid symbols now use a
   byte-scan guard to skip invalid lookup construction, validity-mask allocation,
   and validity-weighted entropy averaging while preserving the existing mask
-  path for ambiguous or gapped data. A later protein-oriented pass counts ASCII
-  symbols by row/site with `bincount` when the symbol-count setup is large
-  enough to beat repeated equality reductions. The all-valid ASCII long-branch
-  proxy now reuses per-site symbol counts to compute each taxon's exact mean
-  distance to all other taxa, avoiding the previous taxon-by-taxon pairwise
-  match matrix while preserving the gapped and Unicode fallback paths.
+  path for ambiguous or gapped data. Gapped paths now count row valid lengths
+  with `np.count_nonzero` instead of summing boolean masks before float
+  conversion. A later protein-oriented pass counts ASCII symbols by row/site
+  with `bincount` when the symbol-count setup is large enough to beat repeated
+  equality reductions. The all-valid ASCII long-branch proxy now reuses per-site
+  symbol counts to compute each taxon's exact mean distance to all other taxa,
+  avoiding the previous taxon-by-taxon pairwise match matrix while preserving
+  the gapped and Unicode fallback paths.
 - `PlotAlignmentQC` composition-distance scatter panel baseline time called
   Matplotlib `scatter` once per taxon, creating thousands of artists for large
   alignments. The optimized path batches normal and flagged taxa into two
@@ -3425,9 +3430,11 @@ Profiling summary:
   validity pass derives the valid ASCII symbol set from byte codes present in
   the alignment and uses full sequence lengths when no invalid symbols are
   observed, avoiding full validity-mask construction for no-gap inputs and
-  reducing filtered-symbol setup for gap-bearing alignments. Identical
-  alignments now return zero RCV before NumPy matrix construction, preserving
-  case-insensitive behavior by comparing uppercased sequence strings. A
+  reducing filtered-symbol setup for gap-bearing alignments. Gap-bearing paths
+  now count row valid lengths with `np.count_nonzero` instead of summing boolean
+  masks before float conversion. Identical alignments now return zero RCV
+  before NumPy matrix construction, preserving case-insensitive behavior by
+  comparing uppercased sequence strings. A
   follow-up pass scans those sequence strings by index instead of evaluating the
   shortcut over `sequences[1:]`, avoiding a large temporary list while
   preserving early exit for heterogeneous alignments. The `rcv` command module

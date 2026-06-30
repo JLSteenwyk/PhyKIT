@@ -116,6 +116,30 @@ assert "numpy" not in sys.modules
 
         assert isclose(rcv.calculate_rcv(), 0.3333, rel_tol=0.001)
 
+    def test_relative_composition_variability_counts_valid_lengths_with_count_nonzero(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AnXT"), id="t1"),
+                SeqRecord(Seq("ACxT"), id="t2"),
+                SeqRecord(Seq("AG-T"), id="t3"),
+            ]
+        )
+        rcv = RelativeCompositionVariability(args)
+        mocker.patch.object(
+            RelativeCompositionVariability,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
+        )
+        count_nonzero_spy = mocker.spy(alignment_base_module.np, "count_nonzero")
+
+        assert isclose(rcv.calculate_rcv(), 0.3333, rel_tol=0.001)
+        assert any(
+            call.kwargs.get("axis") == 1
+            for call in count_nonzero_spy.call_args_list
+        )
+
     def test_relative_composition_variability_protein_ascii_uses_bincount(
         self, mocker, args
     ):

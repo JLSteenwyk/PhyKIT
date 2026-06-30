@@ -153,6 +153,27 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert [row["rcvt"] for row in rows] == [0.1111, 0.1111, 0.1111]
 
+    def test_calculate_rows_counts_valid_lengths_with_count_nonzero(
+        self, mocker, args
+    ):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AnXT"), id="t1"),
+                SeqRecord(Seq("ACxT"), id="t2"),
+                SeqRecord(Seq("AG-T"), id="t3"),
+            ]
+        )
+        count_nonzero_spy = mocker.spy(rcvt_module.np, "count_nonzero")
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert [row["rcvt"] for row in rows] == [0.1111, 0.1111, 0.1111]
+        assert any(
+            call.kwargs.get("axis") == 1
+            for call in count_nonzero_spy.call_args_list
+        )
+
     def test_calculate_rows_protein_ascii_large_alphabet_uses_bincount(
         self, mocker, args
     ):

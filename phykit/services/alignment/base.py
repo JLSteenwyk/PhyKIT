@@ -121,12 +121,12 @@ class Alignment(BaseService):
                 valid_lengths = np.full(num_records, aln_len, dtype=np.float64)
             else:
                 valid_mask = ~invalid_lookup[alignment_array]
-                valid_lengths = np.sum(valid_mask, axis=1).astype(np.float64)
+                valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(np.float64)
         except UnicodeEncodeError:
             alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
             invalid_chars_array = np.array(invalid_chars, dtype="U1")
             valid_mask = ~np.isin(alignment_array, invalid_chars_array)
-            valid_lengths = np.sum(valid_mask, axis=1).astype(np.float64)
+            valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(np.float64)
 
             # Get all unique valid characters in the alignment
             valid_chars = alignment_array[valid_mask]

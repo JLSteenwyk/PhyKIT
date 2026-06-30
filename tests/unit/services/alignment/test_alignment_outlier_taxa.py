@@ -330,6 +330,28 @@ class TestAlignmentOutlierTaxa:
         mocked_isin.assert_not_called()
         assert result["rows"][1]["gap_rate"] == 0.5
 
+    def test_ascii_path_counts_valid_lengths_with_count_nonzero(self, mocker):
+        service = self._service()
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("A-GN"), id="b"),
+                SeqRecord(Seq("TCGT"), id="c"),
+            ]
+        )
+        count_nonzero_spy = mocker.spy(
+            alignment_outlier_taxa_module.np,
+            "count_nonzero",
+        )
+
+        result = service.calculate_outliers(alignment, is_protein=False)
+
+        assert result["rows"][1]["gap_rate"] == 0.5
+        assert any(
+            call.kwargs.get("axis") == 1
+            for call in count_nonzero_spy.call_args_list
+        )
+
     def test_all_valid_ascii_path_skips_invalid_lookup(self, mocker):
         service = self._service()
         alignment = MultipleSeqAlignment(
