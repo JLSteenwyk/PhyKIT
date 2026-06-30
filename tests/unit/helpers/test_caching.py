@@ -26,6 +26,7 @@ import phykit.helpers.caching as module
 assert hasattr(module.pickle, "loads")
 assert module._result_cache is None
 assert module._alignment_cache is None
+assert module._MD5 is None
 assert "typing" not in sys.modules
 assert "json" not in sys.modules
 assert "pickle" not in sys.modules
@@ -107,6 +108,31 @@ class TestResultCache(TestCase):
         self.assertEqual(key1, key2)
         # Different values should produce different key
         self.assertNotEqual(key1, key3)
+
+    def test_get_cache_key_reuses_hashlib_md5_import(self):
+        import builtins
+        import phykit.helpers.caching as caching_module
+
+        previous_md5 = caching_module._MD5
+        caching_module._MD5 = None
+        original_import = builtins.__import__
+        hashlib_imports = 0
+
+        def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+            nonlocal hashlib_imports
+            if name == "hashlib":
+                hashlib_imports += 1
+            return original_import(name, globals, locals, fromlist, level)
+
+        with patch.object(builtins, "__import__", side_effect=counting_import):
+            try:
+                key1 = self.cache._get_cache_key("test", foo="bar")
+                key2 = self.cache._get_cache_key("test", foo="bar")
+            finally:
+                caching_module._MD5 = previous_md5
+
+        self.assertEqual(key1, key2)
+        self.assertEqual(hashlib_imports, 1)
 
     def test_set_and_get(self):
         """Test setting and getting cached values"""

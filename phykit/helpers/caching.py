@@ -29,12 +29,24 @@ class _LazyPickle:
 
 
 pickle = _LazyPickle()
+_MD5 = None
 
 
 def _json_dumps(*args, **kwargs):
     import json
 
     return json.dumps(*args, **kwargs)
+
+
+def _md5(*args, **kwargs):
+    global _MD5
+
+    if _MD5 is None:
+        from hashlib import md5 as _hashlib_md5
+
+        _MD5 = _hashlib_md5
+
+    return _MD5(*args, **kwargs)
 
 
 class ResultCache:
@@ -59,8 +71,6 @@ class ResultCache:
 
     def _get_cache_key(self, *args, **kwargs) -> str:
         """Generate a unique cache key from function arguments."""
-        import hashlib
-
         # Create a string representation of arguments
         key_parts = []
 
@@ -77,7 +87,7 @@ class ResultCache:
             key_parts.append(f"{k}={v}")
 
         key_string = "_".join(key_parts)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return _md5(key_string.encode()).hexdigest()
 
     def get(self, cache_key: str) -> object:
         """Retrieve cached result."""
