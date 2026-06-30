@@ -79,7 +79,8 @@ class PhyloImpute(Tree):
             vcv_type = "BM"
 
         # Find complete cases (taxa with no missing values)
-        complete_mask = ~np.any(np.isnan(Y), axis=1)
+        missing_mask = np.isnan(Y)
+        complete_mask = ~np.any(missing_mask, axis=1)
         n_complete = int(np.sum(complete_mask))
 
         if n_complete < 2:
@@ -104,15 +105,13 @@ class PhyloImpute(Tree):
         imputed_results = []
         Y_imputed = Y.copy()
 
-        for i in range(n):
-            missing_traits = np.where(np.isnan(Y[i, :]))[0]
-            if len(missing_traits) == 0:
-                continue
-
-            observed_traits = np.where(~np.isnan(Y[i, :]))[0]
+        for i in np.flatnonzero(~complete_mask):
+            row_missing = missing_mask[i]
+            missing_traits = np.flatnonzero(row_missing)
+            observed_traits = np.flatnonzero(~row_missing)
 
             imp_values, imp_ses = self._impute_taxon(
-                Y_imputed, vcv, i, list(observed_traits), list(missing_traits),
+                Y_imputed, vcv, i, observed_traits, missing_traits,
                 a_hat, Sigma_trait
             )
 

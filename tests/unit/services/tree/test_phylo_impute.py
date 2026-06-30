@@ -149,6 +149,63 @@ def test_run_uses_unmodified_tree_read(mocker, tmp_path):
     assert build_vcv.call_args.args[0] is tree
 
 
+def test_run_reuses_missing_mask_for_imputation_indices(mocker, tmp_path):
+    out = str(tmp_path / "imputed.tsv")
+    svc = _build_service(out)
+    tree = object()
+    trait_names = ["x", "y", "z"]
+    trait_data = {
+        "A": [1.0, 2.0, 3.0],
+        "B": [4.0, np.nan, 6.0],
+        "C": [7.0, 8.0, 9.0],
+        "D": [np.nan, 11.0, np.nan],
+    }
+    calls = []
+
+    mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+    mocker.patch.object(svc, "validate_tree")
+    mocker.patch.object(svc, "get_tip_names_from_tree", return_value=list(trait_data))
+    mocker.patch.object(
+        svc,
+        "_parse_trait_file_with_na",
+        return_value=(trait_names, trait_data, []),
+    )
+    mocker.patch(
+        "phykit.services.tree.vcv_utils.build_vcv_matrix",
+        return_value=np.eye(4),
+    )
+    mocker.patch.object(
+        svc,
+        "_estimate_complete_case_stats",
+        return_value=(np.zeros(3), np.eye(3)),
+    )
+    write_output = mocker.patch.object(svc, "_write_output_tsv")
+    mocker.patch.object(svc, "_print_text")
+
+    def fake_impute(Y, vcv, taxon_idx, observed_traits, missing_traits, a_hat, sigma):
+        calls.append((taxon_idx, observed_traits.copy(), missing_traits.copy()))
+        values = {int(j): float(100 + taxon_idx * 10 + j) for j in missing_traits}
+        ses = {int(j): 0.5 for j in missing_traits}
+        return values, ses
+
+    mocker.patch.object(svc, "_impute_taxon", side_effect=fake_impute)
+
+    svc.run()
+
+    assert len(calls) == 2
+    assert calls[0][0] == 1
+    np.testing.assert_array_equal(calls[0][1], np.array([0, 2]))
+    np.testing.assert_array_equal(calls[0][2], np.array([1]))
+    assert calls[1][0] == 3
+    np.testing.assert_array_equal(calls[1][1], np.array([1]))
+    np.testing.assert_array_equal(calls[1][2], np.array([0, 2]))
+
+    written_matrix = write_output.call_args.args[3]
+    assert written_matrix[1, 1] == pytest.approx(111.0)
+    assert written_matrix[3, 0] == pytest.approx(130.0)
+    assert written_matrix[3, 2] == pytest.approx(132.0)
+
+
 class TestPhyloImpute:
     def test_parse_na_values(self, tmp_path):
         """NA, ?, and empty values are all parsed as NaN."""
