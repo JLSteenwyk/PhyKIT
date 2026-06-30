@@ -347,6 +347,33 @@ class TestFelsensteinPruning:
         assert loglik < 0
         assert spy.call_count == 1
 
+    def test_pruning_root_likelihood_uses_dot_product(self, monkeypatch):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="A"),
+                    Clade(branch_length=1.0, name="B"),
+                    Clade(branch_length=1.0, name="C"),
+                ],
+            )
+        )
+        tip_states = {"A": "0", "B": "1", "C": "2"}
+        states = ["0", "1", "2"]
+        Q = build_q_matrix(np.array([0.1]), 3, "ER")
+        pi = np.ones(3) / 3.0
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("root likelihood should use np.dot")
+
+        monkeypatch.setattr(discrete_models.np, "sum", fail_sum)
+
+        _, loglik = felsenstein_pruning(tree, tip_states, Q, pi, states)
+
+        assert loglik < 0
+
     def test_pruning_uses_direct_tree_traversal(self, monkeypatch):
         from Bio.Phylo.BaseTree import TreeMixin
         from Bio.Phylo.Newick import Clade, Tree
@@ -550,6 +577,32 @@ class TestFelsensteinPruning:
         assert _felsenstein_loglik_prepared(context, Q, pi) == pytest.approx(
             expected
         )
+
+    def test_prepared_generic_root_likelihood_uses_dot_product(self, monkeypatch):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=0.5, name="A"),
+                    Clade(branch_length=1.0, name="B"),
+                    Clade(branch_length=1.5, name="C"),
+                ],
+            )
+        )
+        context = _prepare_felsenstein_context(
+            tree, {"A": "0", "B": "1", "C": "2"}, ["0", "1", "2"]
+        )
+        Q = build_q_matrix(np.array([0.1]), 3, "ER")
+        pi = np.ones(3) / 3.0
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("prepared root likelihood should use np.dot")
+
+        monkeypatch.setattr(discrete_models.np, "sum", fail_sum)
+
+        assert _felsenstein_loglik_prepared(context, Q, pi) < 0
 
     def test_two_state_er_rate_loglik_matches_prepared_q_likelihood(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree

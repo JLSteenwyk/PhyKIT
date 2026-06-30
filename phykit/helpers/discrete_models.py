@@ -188,7 +188,7 @@ def felsenstein_pruning(
             cond_liks[id(clade)] = lik
 
     root_lik = cond_liks[id(tree.root)]
-    total_lik = np.sum(pi * root_lik)
+    total_lik = float(np.dot(pi, root_lik))
     if total_lik <= 0:
         loglik = -1e20
     else:
@@ -339,7 +339,7 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
             lik *= P @ cond_liks[child_idx]
         cond_liks[idx] = lik
 
-    total_lik = np.sum(pi * cond_liks[context["root_index"]])
+    total_lik = float(np.dot(pi, cond_liks[context["root_index"]]))
     if total_lik <= 0:
         return -1e20
     return math.log(total_lik)

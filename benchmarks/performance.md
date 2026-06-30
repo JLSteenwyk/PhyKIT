@@ -1311,6 +1311,7 @@ Results:
 | `discrete_models.fit_q_matrix` scalar two-state ER rate objective | balanced 512-tip tree, two-state ER model, full Q fit | 0.353477s | 0.321415s | 1.10x |
 | `discrete_models.fit_q_matrix` two-state ER scalar optimizer | balanced 512-tip tree, two-state ER model, full Q fit with equal log-likelihood | 0.296045s | 0.022109s | 13.39x |
 | `discrete_models` two-state scalar exp/log primitives | one scalar transition decay and one scalar root log-likelihood operation, side-by-side previous NumPy ufunc dispatch | 0.000000403s | 0.000000145s | 2.79x |
+| `discrete_models` generic root likelihood total | 2 / 3 / 4 / 8 / 16 / 64-state prior-weighted likelihood vectors, side-by-side previous `np.sum(pi * root_lik)` | 0.000006310s / 0.000006381s / 0.000006961s / 0.000006135s / 0.000005135s / 0.000005092s | 0.000001144s / 0.000001084s / 0.000001175s / 0.000001519s / 0.000001047s / 0.000001155s | 5.52x / 5.89x / 5.93x / 4.04x / 4.90x / 4.41x |
 | `FitDiscrete.run` shared pruning context | balanced 8192-tip tree, ER/SYM/ARD setup context reuse | 0.045272s | 0.014442s | 3.13x |
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
@@ -5067,9 +5068,12 @@ Profiling summary:
   nonstandard tree objects. A later likelihood pass precomputes the fixed tip
   likelihood rows and the internal-node work list in that context, so optimizer
   evaluations copy the tip matrix and iterate only internal nodes while retaining
-  the same transition matrices and pruning arithmetic. `FitDiscrete.run` now
-  prepares the same pruning context once and passes it into each selected model
-  fit instead of rebuilding identical tree/state metadata for ER, SYM, and ARD.
+  the same transition matrices and pruning arithmetic. Generic-state root
+  likelihood totals now use `np.dot` for the prior-weighted conditional
+  likelihood vector, preserving the scalar log-likelihood while avoiding the
+  temporary product array reduction. `FitDiscrete.run` now prepares the same
+  pruning context once and passes it into each selected model fit instead of
+  rebuilding identical tree/state metadata for ER, SYM, and ARD.
   A later run-setup pass reads the cached tree without copying when branch
   lengths are complete, copies before default branch-length assignment, and only
   copies for pruning when the trait file omits tree tips. The complete-branch
