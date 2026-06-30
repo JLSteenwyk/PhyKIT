@@ -241,6 +241,7 @@ Results:
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` gap lookup | 1200 taxa x 12000 sites, alphabet `ACGT-?NX*` | 0.086420s | 0.023064s | 3.75x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` gap-code column reduction | 1200 taxa x 12000 sites, alphabet `ACGT-?NX*`, side-by-side previous lookup-mask gather | 0.040526s | 0.014469s | 2.80x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` no-gap byte short-circuit | 2000 taxa x 12000 sites DNA `ACGT` / 1200 taxa x 12000 sites 20 amino-acid symbols, side-by-side previous column-reduction path | 0.019192s / 0.008347s | 0.011522s / 0.005520s | 1.67x / 1.51x |
+| `AlignmentLengthNoGaps.get_sites_no_gaps_count` no-gap constant byte precheck | 1200 taxa x 12000 no-gap DNA sites, side-by-side previous NumPy gap-code precheck | 0.012226s | 0.011693s | 1.05x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` identical-sequence shortcut | 2000 taxa x 12000 DNA sites, identical no-gap/gappy sequences; 1200 taxa x 12000 identical protein sites, side-by-side previous alignment-wide byte path | 0.032510s / 0.063387s / 0.008216s | 0.000157s / 0.000284s / 0.000088s | 207.13x / 223.03x / 93.32x |
 | `AlignmentLengthNoGaps` identical Unicode fallback counts | 100k-site mixed-case Unicode identical sequence helper, DNA / protein, side-by-side previous `upper()` plus uppercase gap counts | 0.000486s / 0.000401s | 0.000379s / 0.000251s | 1.28x / 1.60x |
 | `AlignmentLengthNoGaps` identical-row no-slice scan | see shared `PairwiseIdentity` row above for the common helper benchmark | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
@@ -2662,7 +2663,9 @@ Profiling summary:
   preserving DNA/protein ambiguity semantics. Clean ASCII alignments now first
   scan the byte stream for gap/ambiguous byte codes and return the full
   alignment length immediately when none are present, while gap-bearing inputs
-  fall through to the existing column-reduction path. Fully identical
+  fall through to the existing column-reduction path. A follow-up no-gap pass
+  performs that precheck with module-level byte constants before resolving lazy
+  NumPy gap-code arrays. Fully identical
   alignments now count gap-free sites from the first sequence alone, preserving
   DNA/protein gap and ambiguity semantics while avoiding alignment-wide byte
   joins and matrix construction for unchanged inputs. The identical-sequence

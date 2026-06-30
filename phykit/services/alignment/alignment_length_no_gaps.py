@@ -136,12 +136,13 @@ class AlignmentLengthNoGaps(Alignment):
 
         try:
             alignment_bytes = "".join(sequences).encode("ascii")
-            gap_codes = _get_gap_codes(is_protein)
+            gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
             if not any(
-                alignment_bytes.find(bytes((int(gap_code),))) != -1
-                for gap_code in gap_codes
+                alignment_bytes.find(bytes((gap_code,))) != -1
+                for gap_code in gap_bytes
             ):
                 return aln_len
+            gap_codes = _get_gap_codes(is_protein)
             alignment_array = np.frombuffer(
                 alignment_bytes,
                 dtype=np.uint8,

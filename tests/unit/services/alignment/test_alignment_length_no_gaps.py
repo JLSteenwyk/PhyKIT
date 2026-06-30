@@ -157,6 +157,10 @@ assert "Bio.AlignIO" not in sys.modules
             "phykit.services.alignment.alignment_length_no_gaps.np.any",
             side_effect=AssertionError("no-gap ASCII path should not reduce columns"),
         )
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps._get_gap_codes",
+            side_effect=AssertionError("no-gap ASCII path should not load gap codes"),
+        )
 
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 5
 
