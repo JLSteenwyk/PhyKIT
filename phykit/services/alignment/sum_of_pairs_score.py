@@ -91,15 +91,13 @@ class SumOfPairsScore(Alignment):
         if len(record_id_pairs) != expected_len:
             return False
 
-        pair_index = 0
-        try:
-            for left_index, left_id in enumerate(record_ids[:-1]):
-                for right_id in record_ids[left_index + 1:]:
-                    if record_id_pairs[pair_index] != (left_id, right_id):
-                        raise ValueError
-                    pair_index += 1
-        except (IndexError, ValueError):
-            return set(record_id_pairs) == set(itertools.combinations(record_ids, 2))
+        for observed_pair, expected_pair in zip(
+            record_id_pairs, itertools.combinations(record_ids, 2)
+        ):
+            if observed_pair != expected_pair:
+                return set(record_id_pairs) == set(
+                    itertools.combinations(record_ids, 2)
+                )
 
         return True
 

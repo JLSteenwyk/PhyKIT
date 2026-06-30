@@ -156,21 +156,29 @@ class TestSumOfPairsScore:
         assert pairs == 5 * len(record_id_pairs)
         assert array_spy.call_count == len(reference_records)
 
-    def test_complete_pair_set_ordered_path_does_not_build_expected_pairs(
-        self, monkeypatch
-    ):
+    def test_complete_pair_set_ordered_path_does_not_slice_record_ids(self):
+        class NoSliceIds:
+            def __init__(self, values):
+                self.values = values
+
+            def __len__(self):
+                return len(self.values)
+
+            def __iter__(self):
+                return iter(self.values)
+
+            def __getitem__(self, item):
+                if isinstance(item, slice):
+                    raise AssertionError("ordered pair validation should not slice ids")
+                return self.values[item]
+
         ids = [f"id{i}" for i in range(8)]
         record_id_pairs = list(itertools.combinations(ids, 2))
 
-        def fail_combinations(*_args, **_kwargs):
-            raise AssertionError("ordered complete pair sets should not rebuild pairs")
-
-        monkeypatch.setattr(
-            "phykit.services.alignment.sum_of_pairs_score.itertools.combinations",
-            fail_combinations,
+        assert (
+            SumOfPairsScore._has_complete_pair_set(record_id_pairs, NoSliceIds(ids))
+            is True
         )
-
-        assert SumOfPairsScore._has_complete_pair_set(record_id_pairs, ids) is True
 
     def test_complete_pair_set_unordered_fallback(self):
         ids = [f"id{i}" for i in range(6)]
