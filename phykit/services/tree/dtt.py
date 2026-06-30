@@ -24,6 +24,12 @@ class _LazyNumpy:
 np = _LazyNumpy()
 
 
+def _permutation_p_value_ge(permutations: np.ndarray, observed: float) -> float:
+    if permutations.size == 0:
+        return float("nan")
+    return float(np.count_nonzero(permutations >= observed) / permutations.size)
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -493,7 +499,7 @@ class Dtt(Tree):
             ))
             sim_mdis[s] = sim_mdi
 
-        mdi_p = float(np.mean(np.abs(sim_mdis) >= np.abs(mdi)))
+        mdi_p = _permutation_p_value_ge(np.abs(sim_mdis), np.abs(mdi))
 
         return sim_dtt_matrix, mdi, mdi_p
 
@@ -621,7 +627,7 @@ class Dtt(Tree):
         ))
 
         sim_mdis = np.asarray(_trapezoid(sim_dtt_matrix - null_median, obs_times_arr))
-        mdi_p = float(np.mean(np.abs(sim_mdis) >= np.abs(mdi)))
+        mdi_p = _permutation_p_value_ge(np.abs(sim_mdis), np.abs(mdi))
 
         return sim_dtt_matrix, mdi, mdi_p
 

@@ -1700,6 +1700,7 @@ Results:
 | `Dtt._simulate_null` batched terminal-point extension | 20k simulated DTT rows x 1024 time points, terminal observation grid | 0.046184s | 0.022259s | 2.07x |
 | `Dtt._simulate_null` terminal-column masking | 200k simulated DTT rows x 80 time points, terminal observation grid final column | 0.138169s | 0.096509s | 1.43x |
 | `Dtt._simulate_null` vectorized MDI reductions | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.119121s | 0.097534s | 1.22x |
+| `Dtt._simulate_null` MDI p-value counts | 1M simulated MDI values, side-by-side previous `np.mean(abs(sim_mdis) >= abs(mdi))` reduction | 0.000991s | 0.000390s | 2.54x |
 | `Dtt._batch_clade_disparities_avg_sq` postorder subtree aggregation | balanced 2048-tip tree x 2 traits, 50 simulated DTT curves | 0.039455s | 0.026875s | 1.47x |
 | `Dtt._simulate_null` observed-DTT reuse | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.071679s | 0.045011s | 1.59x |
 | `Dtt._print_text` batched time-point output | 100k DTT time-point rows, captured stdout and identical text | 0.057375s | 0.046449s | 1.24x |
@@ -6054,6 +6055,8 @@ Profiling summary:
   already-computed observed DTT curve into null simulation, so MDI calculation
   avoids recomputing the observed curve from the same prepared context while
   preserving direct `_simulate_null()` callers that only provide observed times.
+  MDI p-values now count extreme simulated MDI values with `np.count_nonzero`
+  before dividing by the simulation count, avoiding boolean mean reductions.
   Text output now batches the header
   and per-time-point rows into one newline-joined print while preserving exact
   stdout text.
