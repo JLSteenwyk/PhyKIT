@@ -651,14 +651,7 @@ class PhyloAnova(Tree):
                 resid_diffs = weights @ resid_sub
                 d_perms = np.linalg.norm(hat_diff + resid_diffs, axis=1)
 
-                p_val = float(np.count_nonzero(d_perms >= d_obs) / d_perms.size)
-                d_mean = np.mean(d_perms)
-                d_std = np.std(d_perms)
-                z_val = (
-                    (d_obs - d_mean) / d_std
-                    if d_std > 0
-                    else 0.0
-                )
+                p_val, z_val = _permutation_p_value_and_z(d_obs, d_perms)
 
                 results.append(dict(
                     group1=g1, group2=g2,

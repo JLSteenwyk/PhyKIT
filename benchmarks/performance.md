@@ -6980,7 +6980,7 @@ Profiling summary:
   avoiding generic `np.sum` dispatch in the MANOVA permutation loop.
   Permutation p-value/z-score summaries now compute permutation means and
   standard deviations through ndarray reductions, avoiding lazy NumPy proxy
-  dispatch in the shared ANOVA/MANOVA summary helper.
+  dispatch in the shared ANOVA/MANOVA and pairwise summary helper.
   Phylomorphospace PCA axis-label variance setup now uses a dot product for the
   singular-value total variance, avoiding a temporary squared array reduction
   after SVD while preserving the reported PC percentages.
