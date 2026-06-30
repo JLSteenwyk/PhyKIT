@@ -561,6 +561,24 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         self.assertTrue(saturation_module._all_sequences_identical(sequences))
 
+    def test_valid_site_count_for_identical_unicode_sequence_counts_gap_chars(self):
+        sequence = "ACGT\u03a9N-X?"
+
+        self.assertEqual(
+            Saturation._valid_site_count_for_identical_sequence(
+                sequence,
+                {"-", "?", "*", "X", "N"},
+            ),
+            5,
+        )
+        self.assertEqual(
+            Saturation._valid_site_count_for_identical_sequence(
+                sequence,
+                {"-", "?", "*", "X"},
+            ),
+            6,
+        )
+
     def test_loop_identical_all_gap_sequences_return_nan_distances(self):
         tree = Tree(
             root=Clade(

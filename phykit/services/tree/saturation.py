@@ -255,7 +255,7 @@ class Saturation(Tree):
             gap_bytes = bytes(ord(char) for char in gap_chars)
             return len(sequence_bytes.translate(None, gap_bytes))
         except UnicodeEncodeError:
-            return sum(character not in gap_chars for character in sequence)
+            return len(sequence) - sum(sequence.count(char) for char in gap_chars)
 
     @classmethod
     def _constant_uncorrected_distance_for_identical_sequences(

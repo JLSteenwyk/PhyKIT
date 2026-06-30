@@ -1426,6 +1426,7 @@ Results:
 | `Saturation._calculate_uncorrected_distances_matrix` clean `exclude_gaps` handoff | 300 taxa x 1200 clean DNA sites, 44,850 requested pairs, `exclude_gaps=True`, side-by-side previous gappy valid-matrix path | 8.094869s | 0.888346s | 9.11x |
 | `Saturation._calculate_uncorrected_distances_matrix` standard pair-order extraction | 1000 taxa, 499500 requested pairs in upper-triangle order, identical extracted matrix distances | 0.265385s | 0.093287s | 2.84x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence shortcut | balanced 300-tip tree x 1200 mixed-symbol sites, 44,850 requested pairs, `exclude_gaps=True`, side-by-side previous matrix distance path | 1.866907s | 0.140145s | 13.32x |
+| `Saturation` identical Unicode valid-site count | 100k-site uppercase Unicode identical-sequence helper, DNA / protein gap sets, side-by-side previous Python character-membership loop | 0.006550s / 0.007644s | 0.000488s / 0.000397s | 13.42x / 19.24x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058916s / 0.004838s / 0.051696s | 0.033481s / 0.000000334s / 0.045077s | 1.76x / 14490.77x / 1.15x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
@@ -5371,7 +5372,8 @@ Profiling summary:
   gap-excluding all-ambiguous identical sequences still return `NaN` distances.
   That identical-sequence guard now uses a local index-based scanner instead of
   allocating `sequences[1:]`, retaining early mismatch exits without list-copy
-  overhead.
+  overhead. The identical-sequence Unicode valid-site fallback now counts gap
+  characters with `str.count` instead of looping over every character in Python.
   Cached read-only `Saturation.run` now uses the explicit unmodified tree read
   helper to avoid copying the cached parsed tree before tip-pair setup and
   pairwise distance calculation. Verbose text output now batches pairwise rows
