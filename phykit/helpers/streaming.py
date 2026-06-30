@@ -2,11 +2,10 @@
 Streaming utilities for memory-efficient processing of large files
 """
 
-from typing import Iterator, Optional
+from __future__ import annotations
+
 import mmap
 import os
-from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
 
 
 class StreamingFastaReader:
@@ -27,14 +26,16 @@ class StreamingFastaReader:
         self.chunk_size = chunk_size
         self.file_size = os.path.getsize(file_path)
 
-    def stream_sequences(self) -> Iterator[SeqRecord]:
+    def stream_sequences(self) -> object:
         """
         Stream sequences one at a time.
         """
+        from Bio import SeqIO
+
         with open(self.file_path) as handle:
             yield from SeqIO.parse(handle, "fasta")
 
-    def stream_chunks(self) -> Iterator[list]:
+    def stream_chunks(self) -> object:
         """
         Stream sequences in chunks for batch processing.
         """
@@ -56,12 +57,15 @@ class StreamingFastaReader:
         count = 0
         with open(self.file_path, 'rb') as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
-                for line in iter(mmapped_file.readline, b""):
-                    if line.startswith(b'>'):
-                        count += 1
+                if mmapped_file[:1] == b'>':
+                    count = 1
+                position = mmapped_file.find(b"\n>")
+                while position != -1:
+                    count += 1
+                    position = mmapped_file.find(b"\n>", position + 2)
         return count
 
-    def get_sequence_at_position(self, position: int) -> Optional[SeqRecord]:
+    def get_sequence_at_position(self, position: int) -> object | None:
         """
         Get a specific sequence by position without loading entire file.
         """
@@ -85,44 +89,42 @@ class MemoryEfficientAlignmentProcessor:
             Dictionary with column statistics
         """
         reader = StreamingFastaReader(file_path)
-
-        # First pass: get dimensions
-        num_seqs = 0
         seq_length = None
+        num_seqs = 0
+        unique_chars_by_col = None
+        gap_counts = None
+        gap_chars = {"-", "?", "X", "N"}
 
         for record in reader.stream_sequences():
+            seq = str(record.seq).upper()
             if seq_length is None:
-                seq_length = len(record.seq)
+                seq_length = len(seq)
+                unique_chars_by_col = [set() for _ in range(seq_length)]
+                gap_counts = [0] * seq_length
             num_seqs += 1
 
-        # Initialize column stats
-        column_stats = {
-            'variable_sites': [],
-            'gap_counts': [],
-            'conservation': []
+            for col_idx, char in enumerate(seq):
+                unique_chars_by_col[col_idx].add(char)
+                if char in gap_chars:
+                    gap_counts[col_idx] += 1
+
+        if seq_length is None:
+            return {
+                'variable_sites': [],
+                'gap_counts': [],
+                'conservation': []
+            }
+
+        return {
+            'variable_sites': [
+                len(unique_chars) > 1 for unique_chars in unique_chars_by_col
+            ],
+            'gap_counts': gap_counts,
+            'conservation': [
+                1 - (len(unique_chars) / num_seqs)
+                for unique_chars in unique_chars_by_col
+            ],
         }
-
-        # Process in chunks to maintain memory efficiency
-        for col_idx in range(seq_length):
-            column_chars = []
-            gap_count = 0
-
-            for record in reader.stream_sequences():
-                char = str(record.seq[col_idx]).upper()
-                column_chars.append(char)
-                if char in ['-', '?', 'X', 'N']:
-                    gap_count += 1
-
-            # Calculate statistics
-            unique_chars = set(column_chars)
-            is_variable = len(unique_chars) > 1
-            conservation_score = 1 - (len(unique_chars) / len(column_chars))
-
-            column_stats['variable_sites'].append(is_variable)
-            column_stats['gap_counts'].append(gap_count)
-            column_stats['conservation'].append(conservation_score)
-
-        return column_stats
 
     @staticmethod
     def process_large_alignment_in_batches(

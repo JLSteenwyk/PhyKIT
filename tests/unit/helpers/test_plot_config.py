@@ -1,8 +1,34 @@
 import argparse
+from io import StringIO
 
 import pytest
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
-from phykit.helpers.plot_config import PlotConfig, add_plot_arguments
+from phykit.helpers.plot_config import (
+    PlotConfig,
+    _mean_child_y,
+    _preorder_clades_direct,
+    _terminal_clades_direct,
+    add_plot_arguments,
+    build_parent_map,
+    compute_node_positions,
+    draw_tree_branches,
+    draw_tip_labels,
+)
+
+
+def test_module_import_does_not_import_typing():
+    import subprocess
+    import sys
+
+    code = """
+import sys
+import phykit.helpers.plot_config as module
+assert hasattr(module, "PlotConfig")
+assert "typing" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestPlotConfigDefaults:
@@ -273,6 +299,212 @@ class TestMergeColors:
         config = PlotConfig(colors=["red"])
         result = config.merge_colors(["#2b8cbe"])
         assert result == ["red"]
+
+
+class TestComputeNodePositions:
+    def _make_tree(self):
+        return Phylo.read(StringIO("((A:1,B:2):3,C:4);"), "newick")
+
+    def test_mean_child_y_scans_children_once(self):
+        class SinglePassChildren:
+            def __init__(self, children):
+                self.children = children
+                self.iterations = 0
+
+            def __iter__(self):
+                self.iterations += 1
+                yield from self.children
+
+        children = [object(), object(), object()]
+        iterable = SinglePassChildren(children)
+        node_y = {
+            id(children[0]): 1.0,
+            id(children[2]): 5.0,
+        }
+
+        assert _mean_child_y(iterable, node_y) == pytest.approx(3.0)
+        assert iterable.iterations == 1
+        assert _mean_child_y([object()], {}) == 0.0
+
+    def test_build_parent_map_uses_direct_tree_traversal(self, monkeypatch):
+        tree = self._make_tree()
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = build_parent_map(tree)
+        tips = [child for child in tree.root.clades[0].clades]
+
+        assert parent_map[id(tree.root.clades[0])] is tree.root
+        assert parent_map[id(tree.root.clades[1])] is tree.root
+        assert parent_map[id(tips[0])] is tree.root.clades[0]
+        assert parent_map[id(tips[1])] is tree.root.clades[0]
+
+    def test_build_parent_map_handles_mixed_child_counts(self, monkeypatch):
+        tree = Phylo.read(StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"), "newick")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = build_parent_map(tree)
+        binary = tree.root.clades[1]
+        trifurcation = tree.root.clades[2]
+
+        assert parent_map[id(tree.root.clades[0])] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcation)] is tree.root
+        assert parent_map[id(binary.clades[0])] is binary
+        assert parent_map[id(binary.clades[1])] is binary
+        assert parent_map[id(trifurcation.clades[0])] is trifurcation
+        assert parent_map[id(trifurcation.clades[1])] is trifurcation
+        assert parent_map[id(trifurcation.clades[2])] is trifurcation
+
+    def test_compute_node_positions_phylogram_direct_traversal(self, monkeypatch):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        tips = tree.get_terminals()
+        internal = parent_map[id(tips[0])]
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+
+        node_x, node_y = compute_node_positions(tree, parent_map)
+
+        assert node_x[id(tree.root)] == pytest.approx(0.0)
+        assert node_x[id(internal)] == pytest.approx(3.0)
+        assert node_x[id(tips[0])] == pytest.approx(4.0)
+        assert node_x[id(tips[1])] == pytest.approx(5.0)
+        assert node_x[id(tips[2])] == pytest.approx(4.0)
+        assert node_y[id(tips[0])] == 0
+        assert node_y[id(tips[1])] == 1
+        assert node_y[id(tips[2])] == 2
+        assert node_y[id(internal)] == pytest.approx(0.5)
+        assert node_y[id(tree.root)] == pytest.approx(1.25)
+
+    def test_draw_tree_branches_uses_direct_traversal(self, monkeypatch):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(tree, parent_map)
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        class NoopAxes:
+            def __init__(self):
+                self.plot_calls = 0
+
+            def plot(self, *args, **kwargs):
+                self.plot_calls += 1
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        ax = NoopAxes()
+        draw_tree_branches(ax, tree, node_x, node_y, parent_map)
+
+        assert ax.plot_calls == 2 * len(parent_map)
+
+    def test_draw_tree_branches_batches_real_matplotlib_axes(self, monkeypatch):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(tree, parent_map)
+        fig, ax = plt.subplots()
+
+        def fail_plot(*args, **kwargs):
+            raise AssertionError("real axes should batch branch drawing")
+
+        monkeypatch.setattr(ax, "plot", fail_plot)
+
+        try:
+            draw_tree_branches(ax, tree, node_x, node_y, parent_map)
+            assert len(ax.collections) == 2
+        finally:
+            plt.close(fig)
+
+    def test_compute_node_positions_cladogram_direct_traversal(self, monkeypatch):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        tips = tree.get_terminals()
+        internal = parent_map[id(tips[0])]
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+
+        node_x, node_y = compute_node_positions(tree, parent_map, cladogram=True)
+
+        assert node_x[id(tree.root)] == pytest.approx(0.0)
+        assert node_x[id(internal)] == pytest.approx(0.5)
+        assert all(node_x[id(tip)] == pytest.approx(1.0) for tip in tips)
+        assert node_y[id(tree.root)] == pytest.approx(1.25)
+
+    @pytest.mark.parametrize("cladogram", [False, True])
+    def test_compute_node_positions_reuses_precomputed_preorder(self, cladogram):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        preorder_clades = list(tree.find_clades(order="preorder"))
+
+        expected_x, expected_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=cladogram,
+        )
+        observed_x, observed_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=cladogram,
+            preorder_clades=preorder_clades,
+        )
+
+        assert observed_x == pytest.approx(expected_x)
+        assert observed_y == pytest.approx(expected_y)
+
+    def test_direct_clade_helpers_preserve_mixed_child_order(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);"),
+            "newick",
+        )
+        expected_preorder = list(tree.find_clades(order="preorder"))
+        expected_terminals = tree.get_terminals()
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_traversal)
+
+        assert _preorder_clades_direct(tree) == expected_preorder
+        assert _terminal_clades_direct(tree) == expected_terminals
+
+    def test_draw_tip_labels_uses_direct_terminal_traversal(self, monkeypatch):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(tree, parent_map)
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard trees should not call get_terminals")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        class Ax:
+            def text(self, *args, **kwargs):
+                return None
+
+        draw_tip_labels(Ax(), tree, node_x, node_y)
 
 
 class TestApplyToFigure:

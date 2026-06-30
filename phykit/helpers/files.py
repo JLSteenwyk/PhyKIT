@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Tuple, Optional
 from functools import lru_cache
-import hashlib
 import os
 
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
 from ..errors import PhykitUserError
+
+
+_NUCLEOTIDE_CHARS = {
+    "A", "C", "G", "T", "U", "-", "N", "?", "*"
+}
+_NUCLEOTIDE_BYTES = b"ACGTUacgtu-Nn?*"
 
 
 class FileFormat(Enum):
@@ -25,10 +29,9 @@ def _get_file_hash(file_path: str) -> str:
     # Use file path, size, and modification time for cache key
     # This is faster than hashing file contents
     stat = os.stat(file_path)
-    cache_key = f"{file_path}_{stat.st_size}_{stat.st_mtime}"
-    return hashlib.md5(cache_key.encode()).hexdigest()
+    return f"{file_path}_{stat.st_size}_{stat.st_mtime_ns}"
 
-def _detect_format_by_content(file_path: str) -> Optional[str]:
+def _detect_format_by_content(file_path: str) -> str | None:
     """Attempt to detect file format by examining file content."""
     with open(file_path) as f:
         first_line = f.readline().strip()
@@ -42,22 +45,31 @@ def _detect_format_by_content(file_path: str) -> Optional[str]:
             # Could be Stockholm
             if 'STOCKHOLM' in first_line:
                 return 'stockholm'
-        elif first_line.isdigit() or (len(first_line.split()) == 2 and
-                                      first_line.split()[0].isdigit()):
+        elif first_line.isdigit():
             return 'phylip'
+        else:
+            parts = first_line.split(None, 2)
+            if len(parts) == 2 and parts[0].isdigit():
+                return 'phylip'
 
     return None
 
 @lru_cache(maxsize=32)
-def _cached_alignment_read(file_hash: str, file_path: str, file_format: str) -> Tuple[MultipleSeqAlignment, bool]:
+def _cached_alignment_read(
+    file_hash: str,
+    file_path: str,
+    file_format: str,
+) -> tuple["MultipleSeqAlignment", bool]:
     """Cached reading of alignment files."""
+    from Bio import AlignIO
+
     with open(file_path) as f:
         alignment = AlignIO.read(f, file_format)
     return alignment, is_protein_alignment(alignment)
 
 def get_alignment_and_format(
     alignment_file_path: str
-) -> Tuple[MultipleSeqAlignment, str, bool]:
+) -> tuple["MultipleSeqAlignment", str, bool]:
     # Check if file exists first
     if not os.path.exists(alignment_file_path):
         raise PhykitUserError(
@@ -108,16 +120,17 @@ def get_alignment_and_format(
     )
 
 
-def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
-    nucleotide_set = {
-        "A", "C", "G", "T", "U", "-", "N", "?", "*"
-    }
-
+def is_protein_alignment(alignment: "MultipleSeqAlignment") -> bool:
     for record in alignment:
-        seq_set = set(record.seq.upper())
-        if seq_set - nucleotide_set:
-            # if there are chars that are not in the nucl set,
-            # it's likely a protein sequence
+        sequence = str(record.seq)
+        try:
+            has_non_nucleotide = bool(
+                sequence.encode("ascii").translate(None, _NUCLEOTIDE_BYTES)
+            )
+        except UnicodeEncodeError:
+            seq_set = set(sequence.upper())
+            has_non_nucleotide = bool(seq_set - _NUCLEOTIDE_CHARS)
+        if has_non_nucleotide:
             return True
 
     return False
@@ -126,7 +139,7 @@ def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     try:
         with open(single_col_file_path) as f:
-            return [line.rstrip("\n").strip() for line in f]
+            return [line.strip() for line in f]
     except FileNotFoundError:
         raise PhykitUserError(
             [

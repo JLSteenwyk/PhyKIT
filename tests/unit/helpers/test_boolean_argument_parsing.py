@@ -1,7 +1,22 @@
+import argparse
+import subprocess
+import sys
 
 import pytest
 
 from phykit.helpers.boolean_argument_parsing import str2bool
+
+
+def test_import_and_valid_parse_do_not_import_argparse():
+    code = """
+import sys
+from phykit.helpers.boolean_argument_parsing import str2bool
+assert str2bool("true") is True
+assert str2bool("false") is False
+assert "argparse" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
 
 class TestBooleanHandling(object):
     def test_str2bool_true_boolean(self):
@@ -46,7 +61,7 @@ class TestBooleanHandling(object):
 
     def test_str2bool_argument_type_error(self):
         v = 'Not_valid'
-        with pytest.raises(Exception) as excinfo:
+        with pytest.raises(argparse.ArgumentTypeError) as excinfo:
             v = str2bool(v)
         assert "Boolean value expected." in str(excinfo.value)
         

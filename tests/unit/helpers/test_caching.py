@@ -18,6 +18,26 @@ from phykit.helpers.caching import (
 )
 
 
+def test_module_import_does_not_initialize_heavy_serialization_or_cache_dir():
+    code = """
+import sys
+import phykit.helpers.caching as module
+
+assert hasattr(module.pickle, "loads")
+assert module._result_cache is None
+assert module._alignment_cache is None
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "pickle" not in sys.modules
+assert "hashlib" not in sys.modules
+assert "tempfile" not in sys.modules
+"""
+    import subprocess
+    import sys
+
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 class TestResultCache(TestCase):
     """Test ResultCache class"""
 

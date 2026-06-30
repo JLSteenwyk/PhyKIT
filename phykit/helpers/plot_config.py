@@ -1,6 +1,5 @@
 import sys
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 
 VALID_LEGEND_POSITIONS = frozenset([
@@ -12,21 +11,21 @@ VALID_LEGEND_POSITIONS = frozenset([
 
 @dataclass
 class PlotConfig:
-    fig_width: Optional[float] = None
-    fig_height: Optional[float] = None
+    fig_width: float | None = None
+    fig_height: float | None = None
     dpi: int = 300
     show_title: bool = True
-    title: Optional[str] = None
-    legend_position: Optional[str] = None
-    ylabel_fontsize: Optional[float] = None
-    xlabel_fontsize: Optional[float] = None
-    title_fontsize: Optional[float] = None
-    axis_fontsize: Optional[float] = None
-    colors: Optional[List[str]] = None
+    title: str | None = None
+    legend_position: str | None = None
+    ylabel_fontsize: float | None = None
+    xlabel_fontsize: float | None = None
+    title_fontsize: float | None = None
+    axis_fontsize: float | None = None
+    colors: list[str] | None = None
     ladderize: bool = False
     cladogram: bool = False
     circular: bool = False
-    color_file: Optional[str] = None
+    color_file: str | None = None
 
     def validate(self) -> None:
         if self.fig_width is not None and self.fig_width <= 0:
@@ -165,7 +164,7 @@ class PlotConfig:
         # Colors
         return self.merge_colors(default_colors)
 
-    def merge_colors(self, defaults: List[str]) -> List[str]:
+    def merge_colors(self, defaults: list[str]) -> list[str]:
         if self.colors is None:
             return list(defaults)
         result = list(defaults)
@@ -255,6 +254,29 @@ def compute_node_x_cladogram(tree, parent_map):
 
 def build_parent_map(tree):
     """Build a dict mapping child node id -> parent node."""
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return _build_parent_map_legacy(tree)
+
+    parent_map = {}
+    stack = [root]
+    pop = stack.pop
+    extend = stack.extend
+    while stack:
+        clade = pop()
+        children = getattr(clade, "clades", None)
+        if not isinstance(children, list):
+            return _build_parent_map_legacy(tree)
+        for child in children:
+            parent_map[id(child)] = clade
+        if children:
+            extend(children)
+    return parent_map
+
+
+def _build_parent_map_legacy(tree):
     parent_map = {}
     for clade in tree.find_clades(order="preorder"):
         for child in clade.clades:
@@ -262,7 +284,18 @@ def build_parent_map(tree):
     return parent_map
 
 
-def compute_node_positions(tree, parent_map, cladogram=False):
+def _mean_child_y(children, node_y):
+    total = 0.0
+    count = 0
+    for child in children:
+        child_id = id(child)
+        if child_id in node_y:
+            total += node_y[child_id]
+            count += 1
+    return float(total / count) if count else 0.0
+
+
+def compute_node_positions(tree, parent_map, cladogram=False, preorder_clades=None):
     """Compute (node_x, node_y) for a rectangular tree layout.
 
     Parameters
@@ -270,13 +303,145 @@ def compute_node_positions(tree, parent_map, cladogram=False):
     tree : Bio.Phylo tree
     parent_map : dict from build_parent_map()
     cladogram : if True, use equal-depth x-positions (tips aligned)
+    preorder_clades : optional precomputed preorder clade list
 
     Returns
     -------
     (node_x, node_y) : dicts mapping node id -> coordinate
     """
-    import numpy as np
+    if preorder_clades is not None:
+        return _compute_node_positions_from_preorder(
+            tree, parent_map, cladogram, preorder_clades
+        )
 
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return _compute_node_positions_legacy(tree, parent_map, cladogram=cladogram)
+
+    node_x = {}
+    node_y = {}
+    node_depth = {} if cladogram else None
+    preorder = []
+
+    stack = [(root, 0.0, 0)]
+    while stack:
+        clade, x_value, depth = stack.pop()
+        children = getattr(clade, "clades", None)
+        if not isinstance(children, list):
+            return _compute_node_positions_legacy(
+                tree, parent_map, cladogram=cladogram
+            )
+
+        preorder.append(clade)
+        cid = id(clade)
+        if cladogram:
+            node_depth[cid] = depth
+        else:
+            node_x[cid] = x_value
+
+        for child in reversed(children):
+            branch_length = child.branch_length if child.branch_length else 0.0
+            stack.append((child, x_value + branch_length, depth + 1))
+
+    terminal_count = 0
+    for clade in preorder:
+        if not clade.clades:
+            node_y[id(clade)] = terminal_count
+            terminal_count += 1
+
+    if cladogram:
+        max_depth = max(node_depth.values()) if node_depth else 1
+        step_size = 1.0 / max(max_depth, 1)
+        for clade in reversed(preorder):
+            cid = id(clade)
+            if clade.clades:
+                node_x[cid] = float(node_depth.get(cid, 0)) * step_size
+            else:
+                node_x[cid] = float(max_depth) * step_size
+
+    for clade in reversed(preorder):
+        children = clade.clades
+        cid = id(clade)
+        if children and cid not in node_y:
+            child_total = 0.0
+            child_count = 0
+            for child in children:
+                child_id = id(child)
+                if child_id in node_y:
+                    child_total += node_y[child_id]
+                    child_count += 1
+            node_y[cid] = float(child_total / child_count) if child_count else 0.0
+
+    return node_x, node_y
+
+
+def _compute_node_positions_from_preorder(
+    tree, parent_map, cladogram, preorder_clades
+):
+    node_x = {}
+    node_y = {}
+    root = tree.root
+
+    if cladogram:
+        node_depth = {id(root): 0}
+        max_depth = 0
+        for clade in preorder_clades:
+            cid = id(clade)
+            if clade is not root:
+                parent = parent_map.get(cid)
+                if parent is None:
+                    continue
+                depth = node_depth.get(id(parent), 0) + 1
+                node_depth[cid] = depth
+                if depth > max_depth:
+                    max_depth = depth
+            elif cid not in node_depth:
+                node_depth[cid] = 0
+
+        step_size = 1.0 / max(max_depth, 1)
+        for clade in preorder_clades:
+            cid = id(clade)
+            if clade.clades:
+                node_x[cid] = float(node_depth.get(cid, 0)) * step_size
+            else:
+                node_x[cid] = float(max_depth) * step_size
+    else:
+        node_x[id(root)] = 0.0
+        for clade in preorder_clades:
+            if clade is root:
+                continue
+            cid = id(clade)
+            parent = parent_map.get(cid)
+            if parent is None:
+                continue
+            branch_length = clade.branch_length if clade.branch_length else 0.0
+            node_x[cid] = node_x.get(id(parent), 0.0) + branch_length
+
+    terminal_count = 0
+    for clade in preorder_clades:
+        if not clade.clades:
+            node_y[id(clade)] = terminal_count
+            terminal_count += 1
+
+    for clade in reversed(preorder_clades):
+        children = clade.clades
+        cid = id(clade)
+        if children and cid not in node_y:
+            child_total = 0.0
+            child_count = 0
+            for child in children:
+                child_id = id(child)
+                if child_id in node_y:
+                    child_total += node_y[child_id]
+                    child_count += 1
+            node_y[cid] = float(child_total / child_count) if child_count else 0.0
+
+    return node_x, node_y
+
+
+def _compute_node_positions_legacy(tree, parent_map, cladogram=False):
     tips = list(tree.get_terminals())
     root = tree.root
 
@@ -298,15 +463,84 @@ def compute_node_positions(tree, parent_map, cladogram=False):
 
     for clade in tree.find_clades(order="postorder"):
         if not clade.is_terminal() and id(clade) not in node_y:
-            child_ys = [
-                node_y[id(c)] for c in clade.clades if id(c) in node_y
-            ]
-            if child_ys:
-                node_y[id(clade)] = float(np.mean(child_ys))
-            else:
-                node_y[id(clade)] = 0.0
+            node_y[id(clade)] = _mean_child_y(clade.clades, node_y)
 
     return node_x, node_y
+
+
+def _terminal_clades(tree):
+    direct_terminals = _terminal_clades_direct(tree)
+    if direct_terminals is not None:
+        return direct_terminals
+    return list(tree.get_terminals())
+
+
+def _terminal_clades_direct(tree):
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return None
+
+    terminals = []
+    stack = [root]
+    pop = stack.pop
+    append = stack.append
+    append_terminal = terminals.append
+    try:
+        while stack:
+            clade = pop()
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append(children[index])
+            else:
+                append_terminal(clade)
+    except AttributeError:
+        return None
+    return terminals
+
+
+def _preorder_clades(tree):
+    direct_clades = _preorder_clades_direct(tree)
+    if direct_clades is not None:
+        return direct_clades
+    return list(tree.find_clades(order="preorder"))
+
+
+def _preorder_clades_direct(tree):
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return None
+
+    clades = []
+    stack = [root]
+    pop = stack.pop
+    append = stack.append
+    append_clade = clades.append
+    try:
+        while stack:
+            clade = pop()
+            append_clade(clade)
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append(children[index])
+    except AttributeError:
+        return None
+    return clades
 
 
 def draw_tree_branches(
@@ -318,38 +552,131 @@ def draw_tree_branches(
     Override color per branch by passing a callable for `color`:
         color=lambda clade: "red" if ... else "black"
     """
+    if hasattr(ax, "add_collection"):
+        _draw_tree_branches_collections(
+            ax,
+            tree,
+            node_x,
+            node_y,
+            parent_map,
+            color=color,
+            lw=lw,
+            vertical_color=vertical_color,
+            vertical_lw=vertical_lw,
+        )
+        return
+
     root = tree.root
-    for clade in tree.find_clades(order="preorder"):
+    parent_get = parent_map.get
+    node_x_get = node_x.get
+    node_y_get = node_y.get
+    plot = ax.plot
+    color_is_callable = callable(color)
+    missing = object()
+    for clade in _preorder_clades(tree):
         if clade == root:
             continue
-        if id(clade) not in parent_map:
+        cid = id(clade)
+        parent = parent_get(cid, missing)
+        if parent is missing:
             continue
-        parent = parent_map[id(clade)]
-        if id(parent) not in node_x or id(clade) not in node_x:
+        pid = id(parent)
+        x0 = node_x_get(pid, missing)
+        x1 = node_x_get(cid, missing)
+        if x0 is missing or x1 is missing:
             continue
 
-        x0 = node_x[id(parent)]
-        x1 = node_x[id(clade)]
-        y0 = node_y.get(id(parent), 0)
-        y1 = node_y.get(id(clade), 0)
+        y0 = node_y_get(pid, 0)
+        y1 = node_y_get(cid, 0)
 
-        branch_color = color(clade) if callable(color) else color
-        ax.plot([x0, x1], [y1, y1], color=branch_color, lw=lw)
-        ax.plot([x0, x0], [y0, y1], color=vertical_color, lw=vertical_lw)
+        branch_color = color(clade) if color_is_callable else color
+        plot([x0, x1], [y1, y1], color=branch_color, lw=lw)
+        plot([x0, x0], [y0, y1], color=vertical_color, lw=vertical_lw)
+
+
+def _draw_tree_branches_collections(
+    ax,
+    tree,
+    node_x,
+    node_y,
+    parent_map,
+    color="black",
+    lw=1.5,
+    vertical_color="black",
+    vertical_lw=0.8,
+):
+    from matplotlib.collections import LineCollection
+
+    root = tree.root
+    horizontal_segments = []
+    color_is_callable = callable(color)
+    horizontal_colors = [] if color_is_callable else color
+    vertical_segments = []
+    append_horizontal = horizontal_segments.append
+    append_vertical = vertical_segments.append
+    append_horizontal_color = (
+        horizontal_colors.append if color_is_callable else None
+    )
+    parent_get = parent_map.get
+    node_x_get = node_x.get
+    node_y_get = node_y.get
+    missing = object()
+
+    for clade in _preorder_clades(tree):
+        if clade == root:
+            continue
+        cid = id(clade)
+        parent = parent_get(cid, missing)
+        if parent is missing:
+            continue
+        pid = id(parent)
+        x0 = node_x_get(pid, missing)
+        x1 = node_x_get(cid, missing)
+        if x0 is missing or x1 is missing:
+            continue
+
+        y0 = node_y_get(pid, 0)
+        y1 = node_y_get(cid, 0)
+
+        append_horizontal(((x0, y1), (x1, y1)))
+        append_vertical(((x0, y0), (x0, y1)))
+        if color_is_callable:
+            append_horizontal_color(color(clade))
+
+    if horizontal_segments:
+        ax.add_collection(
+            LineCollection(
+                horizontal_segments,
+                colors=horizontal_colors,
+                linewidths=lw,
+                capstyle="round",
+            ),
+            autolim=True,
+        )
+    if vertical_segments:
+        ax.add_collection(
+            LineCollection(
+                vertical_segments,
+                colors=vertical_color,
+                linewidths=vertical_lw,
+                capstyle="round",
+            ),
+            autolim=True,
+        )
+    ax.autoscale_view()
 
 
 def draw_tip_labels(
     ax, tree, node_x, node_y, fontsize=9, offset_fraction=0.03,
 ):
     """Draw taxon name labels at tree tips."""
-    tips = list(tree.get_terminals())
     max_x = max(node_x.values()) if node_x else 1.0
     offset = max_x * offset_fraction
 
     if fontsize <= 0:
         return
 
-    for tip in tips:
+    for tip in _terminal_clades(tree):
         ax.text(
             node_x[id(tip)] + offset, node_y[id(tip)],
             tip.name, va="center", fontsize=fontsize,

@@ -1,10 +1,8 @@
 """Declarative CLI alias registry."""
 
-from typing import Dict
-
 
 # Map user-facing aliases (and a few long-form synonyms) to Phykit handler names.
-ALIAS_TO_HANDLER: Dict[str, str] = {
+ALIAS_TO_HANDLER: dict[str, str] = {
     # version
     "version": "version",
     "v": "version",

@@ -107,12 +107,22 @@ def get_timescale_for_range(root_age, level="auto"):
             level = "era"
 
     if level == "epoch":
-        intervals = [(n, s, e) for n, s, e in EPOCHS if s > 0 and e < root_age * 1.1]
-        # Include any epoch that overlaps the tree's range
-        intervals = [(n, s, e) for n, s, e in EPOCHS if e < root_age * 1.05]
+        limit = root_age * 1.05
+        intervals = []
+        append = intervals.append
+        for n, s, e in EPOCHS:
+            if e >= limit:
+                break
+            append((n, s, e))
         return intervals, EPOCH_COLORS
     elif level == "period":
-        intervals = [(n, s, e) for n, s, e in PERIODS if e < root_age * 1.05]
+        limit = root_age * 1.05
+        intervals = []
+        append = intervals.append
+        for n, s, e in PERIODS:
+            if e >= limit:
+                break
+            append((n, s, e))
         return intervals, PERIOD_COLORS
     else:
         intervals = [(n, s, e) for n, s, e in ERAS if e < root_age * 1.05]

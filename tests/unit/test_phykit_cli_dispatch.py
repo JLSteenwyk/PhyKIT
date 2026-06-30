@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 import pytest
 
 import phykit.phykit as phykit_module
@@ -118,6 +121,19 @@ COMMAND_FACTORY_METHODS = [
 ]
 
 
+def test_module_import_does_not_import_typing():
+    code = """
+import sys
+import phykit.phykit
+assert "argparse" not in sys.modules
+assert "logging" not in sys.modules
+assert "textwrap" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 class TestPhykitCliDispatch:
     @pytest.mark.parametrize("method_name", COMMAND_METHODS)
     def test_command_parser_help_exits_cleanly(self, method_name):
@@ -134,12 +150,49 @@ class TestPhykitCliDispatch:
         out, _ = capsys.readouterr()
         assert "Invalid command option" in out
 
+    def test_run_alias_invalid_command_reuses_cached_banner(self, monkeypatch):
+        instance = object.__new__(Phykit)
+        phykit_module._clear_banner_cache()
+        with pytest.raises(SystemExit):
+            instance.run_alias("not_a_real_cmd", [])
+
+        monkeypatch.setattr(
+            phykit_module,
+            "_dedent",
+            lambda _text: (_ for _ in ()).throw(
+                AssertionError("banner should already be cached")
+            ),
+        )
+
+        with pytest.raises(SystemExit):
+            instance.run_alias("not_a_real_cmd", [])
+        phykit_module._clear_banner_cache()
+
     def test_run_alias_version(self, capsys):
         instance = object.__new__(Phykit)
         instance.help_header = Phykit.help_header
         instance.run_alias("v", [])
         out, _ = capsys.readouterr()
         assert "Version:" in out
+
+    def test_version_reuses_cached_default_banner(self, monkeypatch, mocker):
+        instance = object.__new__(Phykit)
+        instance.help_header = Phykit.help_header
+        phykit_module._clear_banner_cache()
+        mocked_print = mocker.patch("builtins.print")
+
+        instance.version()
+        monkeypatch.setattr(
+            phykit_module,
+            "_dedent",
+            lambda _text: (_ for _ in ()).throw(
+                AssertionError("version banner should already be cached")
+            ),
+        )
+        instance.version()
+
+        assert mocked_print.call_count == 2
+        phykit_module._clear_banner_cache()
 
     def test_init_dispatches_named_command(self, monkeypatch):
         calls = {}
@@ -150,6 +203,48 @@ class TestPhykitCliDispatch:
         monkeypatch.setattr(Phykit, "alignment_length", fake_alignment_length)
         monkeypatch.setattr("sys.argv", ["phykit", "alignment_length", "x.fa"])
         Phykit()
+        assert calls["argv"] == ["x.fa"]
+
+    def test_init_dispatches_named_command_without_top_level_parser(self, monkeypatch):
+        calls = {}
+
+        def fake_alignment_length(self, argv):
+            calls["argv"] = argv
+
+        def fail_new_parser(*_args, **_kwargs):
+            raise AssertionError("normal commands should bypass top-level help parser")
+
+        monkeypatch.setattr(Phykit, "alignment_length", fake_alignment_length)
+        monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+        monkeypatch.setattr("sys.argv", ["phykit", "alignment_length", "x.fa"])
+
+        Phykit()
+
+        assert calls["argv"] == ["x.fa"]
+
+    def test_dispatch_resolves_named_command_once(self):
+        calls = {}
+
+        class CountingCommand:
+            lookups = 0
+
+            def __get__(self, instance, owner):
+                self.lookups += 1
+
+                def handler(argv):
+                    calls["argv"] = argv
+
+                return handler
+
+        command = CountingCommand()
+
+        class DispatchProbe(Phykit):
+            probe_command = command
+
+        instance = object.__new__(DispatchProbe)
+        instance._dispatch_command("probe_command", ["x.fa"])
+
+        assert command.lookups == 1
         assert calls["argv"] == ["x.fa"]
 
     def test_init_dispatches_alias(self, monkeypatch):
@@ -163,6 +258,17 @@ class TestPhykitCliDispatch:
         monkeypatch.setattr("sys.argv", ["phykit", "al", "x.fa"])
         Phykit()
         assert calls == {"command": "al", "argv": ["x.fa"]}
+
+    def test_init_top_level_help_still_uses_full_parser(self, monkeypatch, capsys):
+        monkeypatch.setattr("sys.argv", ["phykit", "-h"])
+
+        with pytest.raises(SystemExit) as exc:
+            Phykit()
+
+        assert exc.value.code == 0
+        out, _ = capsys.readouterr()
+        assert "Alignment-based commands" in out
+        assert "Tree-based commands" in out
 
     def test_init_nameerror_exits_2(self, monkeypatch):
         def fake_run_alias(self, command, argv):

@@ -6,6 +6,8 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import tempfile
 import os
+import subprocess
+import sys
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -13,6 +15,19 @@ from phykit.helpers.streaming import (
     StreamingFastaReader,
     MemoryEfficientAlignmentProcessor
 )
+
+
+def test_module_import_does_not_import_biopython():
+    code = """
+import sys
+import phykit.helpers.streaming
+
+assert "typing" not in sys.modules
+assert "Bio" not in sys.modules
+assert "Bio.SeqIO" not in sys.modules
+assert "Bio.SeqRecord" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestStreamingFastaReader(unittest.TestCase):
@@ -95,15 +110,16 @@ class TestStreamingFastaReader(unittest.TestCase):
 
         # Setup mock mmap
         mock_mmap_instance = MagicMock()
-        mock_mmap_instance.readline.side_effect = [
-            b'>seq1\n', b'ATCG\n', b'>seq2\n', b'GCTA\n', b''
-        ]
+        mock_mmap_instance.__getitem__.return_value = b'>'
+        mock_mmap_instance.find.side_effect = [10, -1]
         mock_mmap_obj.return_value.__enter__.return_value = mock_mmap_instance
 
         reader = StreamingFastaReader("dummy.fasta")
         count = reader.get_sequence_count()
 
         self.assertEqual(count, 2)
+        mock_mmap_instance.find.assert_any_call(b"\n>")
+        mock_mmap_instance.find.assert_any_call(b"\n>", 12)
 
     def test_get_sequence_at_position(self):
         """Test getting specific sequence by position"""
@@ -175,19 +191,7 @@ class TestMemoryEfficientAlignmentProcessor(unittest.TestCase):
         seq2 = SeqRecord(Seq("ATCGATCG"), id="seq2")
         seq3 = SeqRecord(Seq("ANCG-TCG"), id="seq3")
 
-        # Mock stream_sequences to return sequences twice
-        # (once for getting dimensions, once for column processing)
-        mock_reader.stream_sequences.side_effect = [
-            iter([seq1, seq2, seq3]),  # First call for dimensions
-            iter([seq1, seq2, seq3]),  # For column 0
-            iter([seq1, seq2, seq3]),  # For column 1
-            iter([seq1, seq2, seq3]),  # For column 2
-            iter([seq1, seq2, seq3]),  # For column 3
-            iter([seq1, seq2, seq3]),  # For column 4
-            iter([seq1, seq2, seq3]),  # For column 5
-            iter([seq1, seq2, seq3]),  # For column 6
-            iter([seq1, seq2, seq3]),  # For column 7
-        ]
+        mock_reader.stream_sequences.return_value = iter([seq1, seq2, seq3])
 
         stats = MemoryEfficientAlignmentProcessor.calculate_column_stats_streaming(
             "dummy.fasta"
@@ -210,6 +214,7 @@ class TestMemoryEfficientAlignmentProcessor(unittest.TestCase):
         self.assertTrue(stats['variable_sites'][1])
         # Column 4: -, A, - - has gaps
         self.assertGreater(stats['gap_counts'][4], 0)
+        mock_reader.stream_sequences.assert_called_once()
 
     def test_calculate_column_stats_streaming_real_file(self):
         """Test column stats calculation with real file"""
