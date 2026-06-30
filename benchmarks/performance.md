@@ -178,6 +178,7 @@ Results:
 | `SumOfPairsScore.run` complete equal-length setup | 1200 taxa x 300 sites, complete equal-length pair set from reference IDs | 0.447407s | 0.000721s | 620.5x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` identical records | 1200 taxa x 1000 sites, complete equal-length query/reference records, side-by-side previous matrix stack path | 0.001236s | 0.000309s | 4.00x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` matching taxa count | 4000 taxa x 2000 sites, 2% changed residues, side-by-side previous boolean `np.sum(..., axis=0)` | 0.008258s | 0.005935s | 1.39x |
+| `SumOfPairsScore._calculate_equal_length_complete_records` match-vector sum | 100k-site per-site matching-pair vector, side-by-side previous `np.sum` total | 0.000053360s | 0.000038879s | 1.37x |
 | `SumOfPairsScore._calculate_equal_length_complete_pairs` ordered pair-set check | 1400 taxa x 300 sites, complete ordered `itertools.combinations` pair list, side-by-side previous full expected-set comparison | 0.528270s | 0.059062s | 8.94x |
 | `SumOfPairsScore._has_complete_pair_set` streamed ordered validation | 2400 taxa, 2878800 ordered pair IDs, side-by-side previous nested slice validation | 0.355139s | 0.165752s | 2.14x |
 | `sum_of_pairs_score` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.212225s | 0.119312s | 1.78x |
@@ -2538,7 +2539,9 @@ Profiling summary:
   for unchanged alignments. Complete pair-set validation now streams over the
   common ordered `itertools.combinations` layout before falling back to the
   previous unordered set comparison, preserving shuffled pair-list behavior
-  without allocating the expected pair set on the hot path. A later ordered
+  without allocating the expected pair set on the hot path. The complete-record
+  path now totals the per-site matching-pair vector with its ndarray `sum()`
+  method, avoiding an extra lazy NumPy reduction dispatch. A later ordered
   validation pass compares directly against the combinations iterator instead
   of walking nested slices of the record ID list, preserving the same unordered
   fallback while avoiding repeated slice allocation. Incomplete pair sets whose

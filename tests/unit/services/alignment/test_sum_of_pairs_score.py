@@ -240,6 +240,13 @@ class TestSumOfPairsScore:
             return original_count_nonzero(values, axis=axis)
 
         monkeypatch.setattr(module.np, "count_nonzero", counting_count_nonzero)
+        monkeypatch.setattr(
+            module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "complete equal-length fast path should use ndarray.sum"
+            ),
+        )
 
         matches, pairs = SumOfPairsScore._calculate_equal_length_complete_records(
             reference_records,

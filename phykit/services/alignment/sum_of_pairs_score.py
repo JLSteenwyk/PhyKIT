@@ -190,7 +190,7 @@ class SumOfPairsScore(Alignment):
         matches_per_site = (
             matching_taxa_per_site * (matching_taxa_per_site - 1)
         ) // 2
-        return int(np.sum(matches_per_site)), total_pairs
+        return int(matches_per_site.sum()), total_pairs
 
     @staticmethod
     def _calculate_unchanged_record_pairs(
