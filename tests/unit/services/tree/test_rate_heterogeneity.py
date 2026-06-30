@@ -552,6 +552,27 @@ class TestFitchParsimony:
         assert branch_regimes[id(trifurcating.clades[1])] == "r3"
         assert branch_regimes[id(trifurcating.clades[2])] == "r1"
 
+    def test_branch_regime_ambiguity_uses_lexicographic_tiebreak(self, service):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        regime_assignments = {
+            "A": "zeta",
+            "B": "beta",
+            "C": "alpha",
+            "D": "alpha",
+        }
+        parent_map = service._build_parent_map(tree)
+
+        branch_regimes = service._assign_branch_regimes(
+            tree,
+            regime_assignments,
+            parent_map,
+        )
+
+        ambiguous_child = tree.root.clades[0]
+        alpha_child = tree.root.clades[1]
+        assert branch_regimes[id(ambiguous_child)] == "beta"
+        assert branch_regimes[id(alpha_child)] == "alpha"
+
     def test_tip_states_preserved(self, service):
         tree = service.read_tree_file()
         tree_tips = service.get_tip_names_from_tree(tree)

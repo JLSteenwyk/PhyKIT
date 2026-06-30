@@ -440,7 +440,7 @@ class OUwie(Tree):
         root_set = state_sets.get(id(root), set())
         all_regimes = sorted(set(tip_regimes.values()))
         if root_set:
-            root_regime = sorted(root_set)[0]
+            root_regime = min(root_set)
         else:
             root_regime = all_regimes[0] if all_regimes else "unknown"
 
@@ -461,9 +461,9 @@ class OUwie(Tree):
                 if parent_regime in clade_set:
                     node_regimes[id(clade)] = parent_regime
                 else:
-                    node_regimes[id(clade)] = sorted(clade_set)[0]
+                    node_regimes[id(clade)] = min(clade_set)
             else:
-                node_regimes[id(clade)] = sorted(clade_set)[0]
+                node_regimes[id(clade)] = min(clade_set)
 
         branch_regimes = {}
         for clade in preorder:

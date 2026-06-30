@@ -526,7 +526,7 @@ class RateHeterogeneity(Tree):
         root = tree.root
         root_set = state_sets.get(id(root), set())
         if root_set:
-            node_regimes[id(root)] = sorted(root_set)[0]
+            node_regimes[id(root)] = min(root_set)
         else:
             node_regimes[id(root)] = sorted(set(tip_regimes.values()))[0]
 
@@ -547,9 +547,9 @@ class RateHeterogeneity(Tree):
                 if parent_regime in clade_set:
                     node_regimes[id(clade)] = parent_regime
                 else:
-                    node_regimes[id(clade)] = sorted(clade_set)[0]
+                    node_regimes[id(clade)] = min(clade_set)
             else:
-                node_regimes[id(clade)] = sorted(clade_set)[0]
+                node_regimes[id(clade)] = min(clade_set)
 
         # Branch regime = regime of the child node
         branch_regimes = {}

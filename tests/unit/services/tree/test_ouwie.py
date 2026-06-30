@@ -521,6 +521,40 @@ class TestRegimeAssignment:
         assert branch_regimes[id(trifurcation.clades[1])] == "r3"
         assert branch_regimes[id(trifurcation.clades[2])] == "r1"
 
+    def test_combined_branch_and_root_regime_uses_lexicographic_tiebreak(self, svc):
+        left = Clade(
+            clades=[
+                Clade(name="A", branch_length=1.0),
+                Clade(name="B", branch_length=1.0),
+            ],
+            branch_length=1.0,
+        )
+        right = Clade(
+            clades=[
+                Clade(name="C", branch_length=1.0),
+                Clade(name="D", branch_length=1.0),
+            ],
+            branch_length=1.0,
+        )
+        tree = NewickTree(root=Clade(clades=[left, right]))
+        tip_regimes = {
+            "A": "zeta",
+            "B": "beta",
+            "C": "alpha",
+            "D": "alpha",
+        }
+        parent_map = svc._build_parent_map(tree)
+
+        branch_regimes, root_regime = svc._assign_branch_regimes_and_root(
+            tree,
+            tip_regimes,
+            parent_map,
+        )
+
+        assert root_regime == "alpha"
+        assert branch_regimes[id(left)] == "beta"
+        assert branch_regimes[id(right)] == "alpha"
+
 
 class TestVCV:
     def test_build_root_to_tip_paths_uses_set_for_tip_filtering(self, precomputed):

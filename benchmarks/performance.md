@@ -1997,6 +1997,7 @@ Results:
 | `RateHeterogeneity._print_text_output` batched regime rows | 100k regime sigma rows, captured stdout and identical text | 0.047003s | 0.036191s | 1.30x |
 | `RateHeterogeneity._count_regime_tips` one-pass counts | 1M tip-regime assignments x 64 regimes, identical per-regime counts including absent regimes | 1.537367s | 0.051320s | 29.96x |
 | `RateHeterogeneity._assign_branch_regimes` binary state-set merge | balanced 65536-tip tree, three alternating regimes, side-by-side previous generic child-set merge | 0.224014s | 0.182105s | 1.23x |
+| `RateHeterogeneity` / `OUwie` regime ambiguity tiebreak | 1M small ambiguous regime sets, identical lexicographic selected regime without sorting | 0.188272s | 0.152076s | 1.24x |
 | `RateHeterogeneity._plot_regime_tree` rectangular setup | balanced 32768-tip tree, precomputed branch regimes and parent map | 0.6891s | 0.1084s | 6.4x |
 | `RateHeterogeneity._plot_regime_tree` circular setup | balanced 32768-tip tree, precomputed branch regimes and parent map | 0.8730s | 0.2226s | 3.9x |
 | `RateHeterogeneity._plot_regime_tree` node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, phylogram coordinate setup | 0.047597s | 0.037744s | 1.26x |
