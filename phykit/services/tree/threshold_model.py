@@ -544,8 +544,8 @@ class ThresholdModel(Tree):
             float(x1 @ C_inv_x1),
             float(x1 @ C_inv_x2),
             float(x2 @ C_inv_x2),
-            float(np.sum(C_inv_x1)),
-            float(np.sum(C_inv_x2)),
+            float(C_inv_x1.sum()),
+            float(C_inv_x2.sum()),
             one_C_one,
         )
 

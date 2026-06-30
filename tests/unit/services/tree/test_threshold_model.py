@@ -496,7 +496,7 @@ class TestLogLikelihoodBivariateBM:
 
         assert cached_ll == pytest.approx(explicit_ll)
 
-    def test_sufficient_stats_from_products_match_full_stats(self):
+    def test_sufficient_stats_from_products_match_full_stats(self, monkeypatch):
         C = np.array([
             [1.0, 0.2, 0.1],
             [0.2, 1.0, 0.3],
@@ -507,12 +507,20 @@ class TestLogLikelihoodBivariateBM:
         x2 = np.array([1.5, 0.7, -0.3])
 
         expected = ThresholdModel._bivariate_quadratic_stats(x1, x2, C_inv)
+        one_C_one = float(np.sum(C_inv))
+        monkeypatch.setattr(
+            threshold_model_module.np,
+            "sum",
+            lambda *args, **kwargs: pytest.fail(
+                "cached bivariate stats should use vector.sum"
+            ),
+        )
         observed = ThresholdModel._bivariate_quadratic_stats_from_products(
             x1,
             x2,
             C_inv @ x1,
             C_inv @ x2,
-            float(np.sum(C_inv)),
+            one_C_one,
         )
 
         np.testing.assert_allclose(observed, expected)

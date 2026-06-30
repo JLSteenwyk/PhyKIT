@@ -2156,6 +2156,7 @@ Results:
 | `ThresholdModel._sample_truncated_normal` cached lazy SciPy special helpers | 126k one-sided inverse-CDF draws | 0.227829s | 0.172824s | 1.32x |
 | `ThresholdModel._sample_truncated_normal` scalar math normal CDF | 126k alternating one-sided inverse-CDF draws, copied old sampler baseline, identical RNG streams | 0.103077s | 0.092541s | 1.11x |
 | `ThresholdModel._vcv_inverse_and_logdet` Cholesky setup | 500-taxon SPD VCV, side-by-side previous explicit inverse plus `slogdet` | 0.023747s | 0.002966s | 8.01x |
+| `ThresholdModel._bivariate_quadratic_stats_from_products` vector sums | 40-taxon cached `C^-1x` product vectors, identical sufficient-stat tuple | 0.000012523s | 0.000005615s | 2.23x |
 | `ThresholdModel._initialize_liabilities` vectorized discrete liabilities | 20k binary discrete taxa, scalar SciPy stream preserved | 2.035507s | 0.005099s | 399.2x |
 | `ThresholdModel._summarize_posterior` single-sort median/HPD | five 500k-sample posterior traces, identical summary statistics | 0.317456s | 0.248927s | 1.28x |
 | `ThresholdModel._output_text` batched summary output | 100k captured threshold-model text summaries, identical stdout text | 0.414422s | 0.337860s | 1.23x |
@@ -7288,7 +7289,10 @@ Profiling summary:
   tuning changes the underlying proposal variance. MCMC setup now derives both
   `C^-1` and `logdet(C)` from one Cholesky factor for positive-definite VCV
   matrices, while preserving the explicit inverse plus `slogdet` fallback for
-  non-Cholesky cases. `ThresholdModel.run` now
+  non-Cholesky cases. Cached bivariate quadratic statistics now sum the
+  precomputed `C^-1x` product vectors through each ndarray's `sum()` method,
+  avoiding lazy NumPy proxy dispatch in repeated MCMC setup/proposal paths.
+  `ThresholdModel.run` now
   reads the cached tree directly for validation and copies only when parsed
   trait taxa omit one or more tree tips before pruning, so all-shared trait
   matrices avoid the protective copy and no-op prune traversal. Text output now
