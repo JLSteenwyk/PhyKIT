@@ -1657,6 +1657,7 @@ Results:
 | `PhyloLogistic` standard-error diagonal solve | 200-coefficient SPD information matrix, side-by-side previous explicit inverse diagonal extraction | 0.002265682s | 0.000320565s | 7.07x |
 | `PhyloLogistic._normal_two_tailed_p_values` vectorized special erfc | 200k z statistics, side-by-side previous scalar Python `math.erfc` loop | 0.024712s | 0.001564s | 15.80x |
 | `PhyloLogistic._logistic_starting_values` row-scaled IRLS | 1500 taxa x 8-column design matrix, synthetic binary response | 0.018337s | 0.000254s | 72.3x |
+| `PhyloLogistic`/`PhylogeneticGLM` binary fallback class count | 80k validated 0/1 responses, side-by-side previous two equality-mask reductions | 0.000089306s | 0.000012742s | 7.01x |
 | `phylo_logistic` module import without `scipy.stats` | cold process import for logistic regression command module | 0.624020s | 0.431614s | 1.45x |
 | `phylo_logistic` module import without eager SciPy linalg/optimize | cold process import for logistic regression command module | 0.440761s | 0.166163s | 2.7x |
 | `phylo_logistic` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.082503s | 0.026603s | 3.10x |
@@ -5916,7 +5917,10 @@ Profiling summary:
   discovery no longer imports `typing`. A later likelihood-loop pass computes
   root-to-tip distances once per fit and reuses them across optimizer VCV
   builds, and uses scalar `math.exp` for per-branch OU transforms while retaining
-  NumPy vector exponentials for diagonal correction.
+  NumPy vector exponentials for diagonal correction. The saturated-starting-value
+  fallback now counts validated binary response classes with one
+  `np.count_nonzero` call and subtraction instead of two equality-mask
+  reductions.
 - `PhyloLogistic._compute_info_matrix` baseline time formed an explicit inverse
   of the OU-transformed VCV and allocated a dense diagonal weight matrix for
   every Firth-correction likelihood evaluation. The optimized path scales the
@@ -6012,7 +6016,10 @@ Profiling summary:
   `build_discordance_vcv()`. Final logistic MPLE and Poisson GEE standard errors
   now extract the inverse diagonal from a Cholesky solve for
   positive-definite information matrices, preserving the explicit inverse
-  fallback for non-Cholesky cases. The SciPy linalg and optimizer wrappers now
+  fallback for non-Cholesky cases. The saturated logistic starting-value
+  fallback now counts validated binary response classes with one
+  `np.count_nonzero` call and subtraction instead of two equality-mask
+  reductions. The SciPy linalg and optimizer wrappers now
   cache their imported callables after first use, matching the logistic command's
   wrapper pattern and avoiding repeated import-on-call overhead during iterative
   fits while preserving module-level patch points. A later startup pass keeps

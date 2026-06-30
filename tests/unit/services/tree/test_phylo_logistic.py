@@ -25,6 +25,32 @@ BINARY_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_binary_traits.tsv")
 GLM_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_glm_traits.tsv")
 
 
+def test_binary_response_class_counts_uses_count_nonzero(monkeypatch):
+    observed = []
+    original_count_nonzero = np.count_nonzero
+
+    def count_nonzero_spy(values, *args, **kwargs):
+        observed.append(values.copy())
+        return original_count_nonzero(values, *args, **kwargs)
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("binary response counts should use count_nonzero")
+
+    monkeypatch.setattr(
+        phylo_logistic_module.np,
+        "count_nonzero",
+        count_nonzero_spy,
+        raising=False,
+    )
+    monkeypatch.setattr(phylo_logistic_module.np, "sum", fail_sum, raising=False)
+
+    y = np.array([0, 1, 1, 0, 1], dtype=np.int8)
+
+    assert phylo_logistic_module._binary_response_class_counts(y) == (3, 2)
+    assert len(observed) == 1
+    assert observed[0].tolist() == [0, 1, 1, 0, 1]
+
+
 def test_module_import_does_not_import_numpy_or_scipy():
     code = """
 import sys

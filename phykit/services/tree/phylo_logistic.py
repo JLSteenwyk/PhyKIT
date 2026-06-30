@@ -20,6 +20,11 @@ _MINIMIZE = None
 _SPECIAL_ERFC = None
 
 
+def _binary_response_class_counts(y: np.ndarray) -> tuple[int, int]:
+    n1 = int(np.count_nonzero(y))
+    return n1, int(y.size - n1)
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -498,8 +503,7 @@ class PhyloLogistic(Tree):
         eta0 = X @ beta0
         if np.any(np.abs(eta0) >= btol):
             beta0 = np.zeros(p)
-            n1 = np.sum(y == 1)
-            n0 = np.sum(y == 0)
+            n1, n0 = _binary_response_class_counts(y)
             if n1 > 0 and n0 > 0:
                 beta0[0] = np.log(n1 / n0)
                 if np.any(np.abs(X @ beta0) >= btol):
