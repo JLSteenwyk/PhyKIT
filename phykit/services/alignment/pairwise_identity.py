@@ -415,6 +415,15 @@ class PairwiseIdentity(Alignment):
             })
         return results
 
+    @staticmethod
+    def _batched_pair_indices(num_records: int, chunk_size: int):
+        pair_indices = itertools.combinations(range(num_records), 2)
+        while True:
+            chunk = list(itertools.islice(pair_indices, chunk_size))
+            if not chunk:
+                break
+            yield chunk
+
     def _calculate_pairwise_identities_matrix(
         self,
         alignment: "MultipleSeqAlignment",
@@ -667,10 +676,9 @@ class PairwiseIdentity(Alignment):
             from functools import partial
 
             # Use multiprocessing for larger datasets
-            all_pairs = list(itertools.combinations(range(num_records), 2))
             num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
-            chunk_size = max(1, len(all_pairs) // (num_workers * 4))
-            pair_chunks = [all_pairs[i:i + chunk_size] for i in range(0, len(all_pairs), chunk_size)]
+            chunk_size = max(1, n_pairs // (num_workers * 4))
+            pair_chunks = self._batched_pair_indices(num_records, chunk_size)
 
             # Create partial function
             process_func = partial(

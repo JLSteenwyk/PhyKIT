@@ -281,6 +281,17 @@ class TestPairwiseIdentity:
         assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.25}
         assert stats["mean"] == pytest.approx(0.5)
 
+    def test_batched_pair_indices_streams_all_pairs(self, args):
+        service = PairwiseIdentity(args)
+
+        batches = list(service._batched_pair_indices(5, 3))
+        observed_pairs = [pair for batch in batches for pair in batch]
+
+        assert [len(batch) for batch in batches] == [3, 3, 3, 1]
+        assert observed_pairs == list(
+            pairwise_identity_module.itertools.combinations(range(5), 2)
+        )
+
     def test_calculate_pairwise_identities_exclude_gaps_matrix_path(self, mocker, args):
         service = PairwiseIdentity(args)
         alignment = MultipleSeqAlignment(
