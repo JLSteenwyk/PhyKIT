@@ -53,8 +53,8 @@ class TerminalBranchStats(Tree):
         if self.json_output:
             if self.verbose:
                 rows = [
-                    dict(length=round(len_and_name[0], 4), taxon=len_and_name[1])
-                    for len_and_name in lengths_and_names
+                    {"length": round(length, 4), "taxon": taxon}
+                    for length, taxon in lengths_and_names
                 ]
                 print_json(
                     dict(
