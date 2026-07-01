@@ -110,7 +110,7 @@ class FitContinuous(Tree):
             max_lam = compute_max_lambda(tree)
         else:
             max_lam = 1.0
-        tree_height = float(np.max(np.diag(vcv)))
+        tree_height = float(np.diagonal(vcv).max())
 
         results = []
         for model_name in self.selected_models:

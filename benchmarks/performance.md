@@ -1720,6 +1720,7 @@ Results:
 | `PhyloLogistic._print_text_output` inline significance thresholds | 100k coefficient rows, captured stdout and identical text, side-by-side previous `_signif_code()` loop | 0.105801s | 0.098002s | 1.08x |
 | `PhyloLogistic._format_result` zip-based coefficient mapping | 5k coefficient JSON entries, side-by-side previous index lookups | 0.148853s | 0.066884s | 2.23x |
 | `FitContinuous._vcv_ou` | 900-tip synthetic VCV matrix, `alpha=0.7` | 0.340860s | 0.009100s | 37.5x |
+| `FitContinuous.run`/`OUwie.run` tree-height diagonal maximum | 4 / 16 / 64 / 256 / 1024 / 2048 square VCV matrices, side-by-side previous `np.max(np.diag(vcv))` setup | 0.000002088s / 0.000002103s / 0.000002091s / 0.000002138s / 0.000002588s / 0.000003452s | 0.000001150s / 0.000001157s / 0.000001159s / 0.000001211s / 0.000001572s / 0.000002449s | 1.82x / 1.82x / 1.80x / 1.77x / 1.65x / 1.41x |
 | `FitContinuous._build_transformed_vcv` branch accumulation | balanced 1024-tip synthetic root-to-tip paths, delta-style transform | 0.216503s | 0.015251s | 14.2x |
 | `FitContinuous._build_transformed_vcv` single-tip diagonal updates | balanced 4096-tip synthetic root-to-tip paths, transformed branch lengths | 0.237096s | 0.177280s | 1.34x |
 | `FitContinuous._build_parent_map` direct traversal | balanced 65536-tip tree, parent-id map setup | 0.277243s | 0.028661s | 9.67x |

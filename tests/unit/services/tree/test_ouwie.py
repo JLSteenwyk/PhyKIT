@@ -1662,7 +1662,7 @@ class TestRun:
 
         assert spy.call_count == 1
 
-    def test_run_uses_unmodified_tree_read(self, default_args, mocker):
+    def test_run_uses_unmodified_tree_read(self, default_args, mocker, monkeypatch):
         svc = OUwie(default_args)
         tree = OUwie(default_args).read_tree_file()
         tree_tips = svc.get_tip_names_from_tree(tree)
@@ -1671,7 +1671,10 @@ class TestRun:
             name: ("x" if index % 2 == 0 else "y")
             for index, name in enumerate(tree_tips)
         }
-        per_regime_vcv = {"x": np.eye(2), "y": np.eye(2)}
+        per_regime_vcv = {
+            "x": np.array([[1.0, 0.1], [0.1, 3.0]]),
+            "y": np.array([[2.0, 0.2], [0.2, 1.0]]),
+        }
         fit_result = {
             "model": "BM1",
             "log_likelihood": -1.0,
@@ -1699,7 +1702,7 @@ class TestRun:
         )
         lineage_info = mocker.patch.object(svc, "_build_lineage_info", return_value={})
         mocker.patch.object(svc, "_build_per_regime_vcv", return_value=per_regime_vcv)
-        mocker.patch.object(svc, "_fit_model", return_value=fit_result)
+        fit_model = mocker.patch.object(svc, "_fit_model", return_value=fit_result)
         mocker.patch.object(
             svc, "_compute_model_comparison", side_effect=lambda results, *_args: results
         )
@@ -1709,6 +1712,13 @@ class TestRun:
             "_fast_copy",
             side_effect=AssertionError("all-shared analysis should not copy tree"),
         )
+        monkeypatch.setattr(
+            ouwie_module.np,
+            "diag",
+            lambda _matrix: (_ for _ in ()).throw(
+                AssertionError("tree height should read the VCV diagonal view")
+            ),
+        )
 
         svc.run()
 
@@ -1716,6 +1726,7 @@ class TestRun:
         validate.assert_called_once()
         fast_copy.assert_not_called()
         assert lineage_info.call_args.args[0] is tree
+        assert fit_model.call_args.args[8] == pytest.approx(4.0)
 
     def test_run_copies_before_pruning_missing_tree_tips(self, default_args, mocker):
         svc = OUwie(default_args)

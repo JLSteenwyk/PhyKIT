@@ -157,7 +157,7 @@ class OUwie(Tree):
         )
 
         vcv_total = sum(per_regime_vcv.values())
-        tree_height = float(np.max(np.diag(vcv_total)))
+        tree_height = float(np.diagonal(vcv_total).max())
 
         results = []
         for model_name in self.selected_models:

@@ -674,7 +674,7 @@ class TestVCVTransformations:
 
 
 class TestRun:
-    def test_run_uses_unmodified_tree_read(self, mocker):
+    def test_run_uses_unmodified_tree_read(self, mocker, monkeypatch):
         args = Namespace(
             tree="dummy.tre",
             trait_data="traits.tsv",
@@ -698,9 +698,14 @@ class TestRun:
             "_parse_trait_file",
             return_value={"a": 1.0, "b": 2.0, "c": 3.0},
         )
+        vcv = np.array([
+            [1.0, 0.1, 0.2],
+            [0.1, 3.5, 0.3],
+            [0.2, 0.3, 2.0],
+        ])
         mocker.patch(
             "phykit.services.tree.vcv_utils.build_vcv_matrix",
-            return_value=np.eye(3),
+            return_value=vcv,
         )
         mocker.patch.object(svc, "_build_parent_map", return_value={})
         mocker.patch.object(
@@ -708,7 +713,7 @@ class TestRun:
             "_build_root_to_tip_paths",
             return_value={"a": [], "b": [], "c": []},
         )
-        mocker.patch.object(
+        fit_model = mocker.patch.object(
             svc,
             "_fit_model",
             return_value={
@@ -725,10 +730,18 @@ class TestRun:
         )
         mocker.patch.object(svc, "_fit_white", return_value={"sigma2": 1.0})
         mocker.patch.object(svc, "_print_text_output")
+        monkeypatch.setattr(
+            fit_continuous_module.np,
+            "diag",
+            lambda _matrix: (_ for _ in ()).throw(
+                AssertionError("tree height should read the VCV diagonal view")
+            ),
+        )
 
         svc.run()
 
         read_tree.assert_called_once_with()
+        assert fit_model.call_args.args[-1] == pytest.approx(3.5)
         svc.validate_tree.assert_called_once_with(
             tree,
             min_tips=3,
