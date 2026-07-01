@@ -643,22 +643,22 @@ class RelativeRateTest(Tree):
         )
 
         if self.json_output:
-            print_json(dict(
-                outgroup=outgroup,
-                n_ingroup_taxa=n_ingroup,
-                n_tests=len(results),
-                results=[
-                    dict(
-                        taxon1=r["taxon1"], taxon2=r["taxon2"],
-                        m1=r["m1"], m2=r["m2"],
-                        chi2=round(r["chi2"], 4),
-                        p_value=r["p_value"],
-                        p_bonferroni=r["p_bonf"],
-                        p_fdr=r["p_fdr"],
-                    )
+            print_json({
+                "outgroup": outgroup,
+                "n_ingroup_taxa": n_ingroup,
+                "n_tests": len(results),
+                "results": [
+                    {
+                        "taxon1": r["taxon1"], "taxon2": r["taxon2"],
+                        "m1": r["m1"], "m2": r["m2"],
+                        "chi2": round(r["chi2"], 4),
+                        "p_value": r["p_value"],
+                        "p_bonferroni": r["p_bonf"],
+                        "p_fdr": r["p_fdr"],
+                    }
                     for r in results
                 ],
-            ))
+            })
         else:
             try:
                 lines = [

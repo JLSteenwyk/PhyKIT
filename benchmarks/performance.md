@@ -1165,6 +1165,7 @@ Results:
 | `RelativeRateTest._fdr` | 1M synthetic p-values | 0.698518s | 0.164136s | 4.3x |
 | `RelativeRateTest._add_multiple_testing_corrections` zip-based correction assignment | 1M result rows with Bonferroni/FDR arrays, side-by-side previous index lookups | 0.293454s | 0.222238s | 1.32x |
 | `RelativeRateTest` small multiple-testing corrections without NumPy startup | cold subprocess, 7 p-values through Bonferroni and FDR helpers | 0.087782s | 0.027210s | 3.23x |
+| `RelativeRateTest._output_single` JSON row construction | 500k pairwise relative-rate rows, identical row dictionaries | 1.108593s | 0.994351s | 1.11x |
 | `RelativeRateTest._output_single` batched text output | 100k pairwise relative-rate rows, captured stdout and identical text | 0.124079s | 0.111355s | 1.11x |
 | `RelativeRateTest._output_batch` batched text output | 100k pair summary rows, captured stdout and identical text | 0.121325s | 0.109700s | 1.11x |
 | `RelativeRateTest._output_batch` gene-result summary | 100k taxon-pair result groups x 8 gene results, identical reject counts and median chi-square values | 0.116062s | 0.107860s | 1.08x |
