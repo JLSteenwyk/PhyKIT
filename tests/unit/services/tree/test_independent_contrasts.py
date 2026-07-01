@@ -19,6 +19,7 @@ from pathlib import Path
 from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.independent_contrasts import IndependentContrasts
+import phykit.services.tree.independent_contrasts as ic_module
 
 
 def test_module_import_does_not_import_numpy():
@@ -587,6 +588,42 @@ class TestPICRun:
             "Mean absolute contrast: 2.000000\n"
             "Variance of contrasts:  8.000000\n"
         )
+
+    def test_contrast_summary_stats_use_ndarray_reductions(self, monkeypatch):
+        contrasts = [1.0, -3.0, 5.0, -7.0]
+        expected_mean_abs = float(np.mean(np.abs(contrasts)))
+        expected_variance = float(np.var(contrasts, ddof=1))
+
+        def fail_wrapper(*_args, **_kwargs):
+            raise AssertionError("summary stats should use ndarray reductions")
+
+        monkeypatch.setattr(ic_module.np, "mean", fail_wrapper)
+        monkeypatch.setattr(ic_module.np, "var", fail_wrapper)
+
+        mean_abs, variance = ic_module._contrast_summary_stats(contrasts)
+
+        assert mean_abs == pytest.approx(expected_mean_abs)
+        assert variance == pytest.approx(expected_variance)
+
+    def test_print_text_summary_stats_avoid_generic_wrappers(
+        self, args, monkeypatch, capsys
+    ):
+        ic = IndependentContrasts(args)
+
+        def fail_wrapper(*_args, **_kwargs):
+            raise AssertionError("text summary should use shared ndarray helper")
+
+        monkeypatch.setattr(ic_module.np, "mean", fail_wrapper)
+        monkeypatch.setattr(ic_module.np, "var", fail_wrapper)
+
+        ic._print_text(
+            [1.0, -3.0],
+            [["A", "B"], ["C", "D"]],
+        )
+
+        captured = capsys.readouterr()
+        assert "Mean absolute contrast: 2.000000" in captured.out
+        assert "Variance of contrasts:  8.000000" in captured.out
 
     def test_run_json_output(self, capsys, args):
         args.json = True

@@ -1297,6 +1297,7 @@ Results:
 | `IndependentContrasts.run` no-list binary polytomy pass | balanced 32768-tip tree with one trait value per tip, JSON output captured | 0.167298s | 0.154622s | 1.08x |
 | `IndependentContrasts._resolve_polytomies` unordered no-op scan | balanced 131072-tip binary tree, no-op dichotomy setup scan, optimized helper baseline | 0.030895s | 0.015197s | 2.03x |
 | `IndependentContrasts._print_text` batched output | 200k contrast rows, identical stdout text | 0.160924s | 0.135159s | 1.19x |
+| `IndependentContrasts` contrast summary reductions | 100 / 1000 / 10000 / 100000 / 200000 contrast values, side-by-side previous list-based `np.mean(np.abs(...))` and `np.var(..., ddof=1)` wrappers | 0.000019139s / 0.000086641s / 0.000621055s / 0.006865s / 0.013458s | 0.000015530s / 0.000043070s / 0.000297021s / 0.002686s / 0.005619s | 1.23x / 2.01x / 2.09x / 2.56x / 2.39x |
 | `IndependentContrasts` text-output compact descendant summaries | pectinate 12000-tip tree, compute PIC and captured text output with identical displayed tip previews/counts | 0.520021s | 0.030507s | 17.05x |
 | `IndependentContrasts._postorder_clades_fast` reverse-preorder helper | balanced 32768-tip tree, direct PIC postorder traversal | 0.010762s | 0.003350s | 3.21x |
 | `IndependentContrasts.run` trait parsing/prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.030738s | 0.018286s | 1.68x |

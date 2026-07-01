@@ -31,6 +31,13 @@ class _LazyNumpy:
 np = _LazyNumpy()
 
 
+def _contrast_summary_stats(contrasts) -> tuple[float, float]:
+    contrast_values = np.asarray(contrasts, dtype=float)
+    mean_abs = float(np.abs(contrast_values).mean())
+    variance = float(contrast_values.var(ddof=1))
+    return mean_abs, variance
+
+
 class IndependentContrasts(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -566,6 +573,7 @@ class IndependentContrasts(Tree):
         return merged, total_count
 
     def _print_text(self, contrasts, node_labels):
+        mean_abs, variance = _contrast_summary_stats(contrasts)
         lines = [
             f"Number of contrasts: {len(contrasts)}",
             "",
@@ -580,13 +588,14 @@ class IndependentContrasts(Tree):
         lines.extend(
             [
                 "",
-                f"Mean absolute contrast: {np.mean(np.abs(contrasts)):.6f}",
-                f"Variance of contrasts:  {np.var(contrasts, ddof=1):.6f}",
+                f"Mean absolute contrast: {mean_abs:.6f}",
+                f"Variance of contrasts:  {variance:.6f}",
             ]
         )
         print("\n".join(lines))
 
     def _print_text_summaries(self, contrasts, node_label_summaries):
+        mean_abs, variance = _contrast_summary_stats(contrasts)
         lines = [
             f"Number of contrasts: {len(contrasts)}",
             "",
@@ -603,14 +612,15 @@ class IndependentContrasts(Tree):
         lines.extend(
             [
                 "",
-                f"Mean absolute contrast: {np.mean(np.abs(contrasts)):.6f}",
-                f"Variance of contrasts:  {np.var(contrasts, ddof=1):.6f}",
+                f"Mean absolute contrast: {mean_abs:.6f}",
+                f"Variance of contrasts:  {variance:.6f}",
             ]
         )
         print("\n".join(lines))
 
     def _print_json(self, contrasts, node_labels, tip_traits):
         contrast_values = np.asarray(contrasts, dtype=float)
+        mean_abs, variance = _contrast_summary_stats(contrast_values)
         nodes = [
             {
                 "node": i + 1,
@@ -623,8 +633,8 @@ class IndependentContrasts(Tree):
             "n_taxa": len(tip_traits),
             "n_contrasts": len(contrasts),
             "contrasts": nodes,
-            "mean_absolute_contrast": round(float(np.mean(np.abs(contrast_values))), 6),
-            "variance_of_contrasts": round(float(np.var(contrast_values, ddof=1)), 6),
+            "mean_absolute_contrast": round(mean_abs, 6),
+            "variance_of_contrasts": round(variance, 6),
         }
         try:
             print(_json_dumps(payload, sort_keys=True))
