@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import os
 import sys
 
 from .base import Alignment
+
+_path_exists = os.path.exists
 
 
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
     return _print_json(*args, **kwargs)
+
 
 class RenameFastaEntries(Alignment):
     def __init__(self, args) -> None:
@@ -21,10 +25,7 @@ class RenameFastaEntries(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self):
-        try:
-            with open(self.fasta):
-                pass
-        except FileNotFoundError:
+        if not _path_exists(self.fasta):
             print("FASTA file path corresponds to no such file. Please check the path.")
             sys.exit(2)
 

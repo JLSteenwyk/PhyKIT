@@ -221,3 +221,32 @@ class TestRenameFastaEntries:
         assert payload["output_file"] == "/tmp/out.fa.renamed.fa"
         assert payload["total_records"] == 2
         assert payload["renamed_records"] == 1
+
+    def test_run_uses_path_exists_guard_before_rename(self, mocker):
+        args = Namespace(
+            fasta="/some/path/to/file.fa",
+            idmap="/some/path/to/idmap.txt",
+            output="/tmp/out.fa",
+            json=False,
+        )
+        service = RenameFastaEntries(args)
+        exists = mocker.patch(
+            "phykit.services.alignment.rename_fasta_entries._path_exists",
+            return_value=True,
+        )
+        load_idmap = mocker.patch.object(service, "load_idmap", return_value={"a": "A"})
+        replace = mocker.patch.object(
+            service,
+            "replace_ids_in_file_and_write",
+            return_value=(1, 2),
+        )
+
+        service.run()
+
+        exists.assert_called_once_with("/some/path/to/file.fa")
+        load_idmap.assert_called_once_with("/some/path/to/idmap.txt")
+        replace.assert_called_once_with(
+            "/tmp/out.fa.renamed.fa",
+            "/some/path/to/file.fa",
+            {"a": "A"},
+        )

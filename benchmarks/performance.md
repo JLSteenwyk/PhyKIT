@@ -555,6 +555,7 @@ Results:
 | `RenameFastaEntries.load_idmap` explicit split loop | 500k two-column ID-map rows, identical whitespace parsing and duplicate-key behavior | 1.323420s | 1.219563s | 1.09x |
 | `RenameFastaEntries._write_wrapped_fasta_sequence` | 25k renamed sequences x 1200 bp, 60-char wrapping | 0.0692s | 0.0597s | 1.2x |
 | `RenameFastaEntries._write_wrapped_fasta_sequence` list-backed chunks | 25k renamed sequences x 1200 bp, 60-char wrapping | 0.0598s | 0.0541s | 1.1x |
+| `RenameFastaEntries.run` FASTA existence guard | 100k existing FASTA path checks before ID-map loading and streaming rewrite, side-by-side previous open/close guard | 3.874264s | 0.556639s | 6.96x |
 | `rename_fasta_entries` module import without eager Bio.SeqIO | cold subprocess import after lazy Bio.SeqIO/FastaIO imports | 0.186867s | 0.117185s | 1.59x |
 | `rename_fasta_entries` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006248s | 0.005029s | 1.24x |
 | `rename_fasta_entries` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002786s | 0.000976s | 2.86x |
