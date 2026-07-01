@@ -401,27 +401,32 @@ class PairwiseIdentity(Alignment):
     def _process_pair_batch(self, alignment_data, pair_indices, exclude_gaps, gap_chars):
         """Process a batch of sequence pairs."""
         results = []
+        append_result = results.append
+        calculate_identity = self._calculate_identity_vectorized
+        gap_array_for_sequence = self._gap_chars_array_for_sequence
         for idx1, idx2 in pair_indices:
-            seq_one = alignment_data[idx1]['seq']
-            seq_two = alignment_data[idx2]['seq']
+            record_one = alignment_data[idx1]
+            record_two = alignment_data[idx2]
+            seq_one = record_one['seq']
+            seq_two = record_two['seq']
 
             if exclude_gaps:
-                gap_mask1 = alignment_data[idx1].get('gap_mask')
-                gap_mask2 = alignment_data[idx2].get('gap_mask')
+                gap_mask1 = record_one.get('gap_mask')
+                gap_mask2 = record_two.get('gap_mask')
                 if gap_mask1 is None:
-                    gap_chars_array = self._gap_chars_array_for_sequence(seq_one, gap_chars)
+                    gap_chars_array = gap_array_for_sequence(seq_one, gap_chars)
                     gap_mask1 = np.isin(seq_one, gap_chars_array)
                 if gap_mask2 is None:
-                    gap_chars_array = self._gap_chars_array_for_sequence(seq_two, gap_chars)
+                    gap_chars_array = gap_array_for_sequence(seq_two, gap_chars)
                     gap_mask2 = np.isin(seq_two, gap_chars_array)
-                identity = self._calculate_identity_vectorized(
+                identity = calculate_identity(
                     seq_one, seq_two, (gap_mask1, gap_mask2), exclude_gaps
                 )
             else:
-                identity = self._calculate_identity_vectorized(seq_one, seq_two)
+                identity = calculate_identity(seq_one, seq_two)
 
-            results.append({
-                'pair_id': [alignment_data[idx1]['id'], alignment_data[idx2]['id']],
+            append_result({
+                'pair_id': [record_one['id'], record_two['id']],
                 'identity': identity
             })
         return results

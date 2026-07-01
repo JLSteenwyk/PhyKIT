@@ -195,15 +195,24 @@ class TestPairwiseIdentity:
         alignment_data = [
             {"id": "a", "seq": np.array(list("AAAA"), dtype="U1")},
             {"id": "b", "seq": np.array(list("AAAT"), dtype="U1")},
+            {"id": "c", "seq": np.array(list("AATT"), dtype="U1")},
         ]
         results = service._process_pair_batch(
             alignment_data,
-            pair_indices=[(0, 1)],
+            pair_indices=[(0, 1), (0, 2), (1, 2)],
             exclude_gaps=False,
             gap_chars=set(["-"]),
         )
-        assert results[0]["pair_id"] == ["a", "b"]
-        assert round(results[0]["identity"], 4) == 0.75
+        assert [result["pair_id"] for result in results] == [
+            ["a", "b"],
+            ["a", "c"],
+            ["b", "c"],
+        ]
+        assert [round(result["identity"], 4) for result in results] == [
+            0.75,
+            0.5,
+            0.75,
+        ]
 
     def test_process_pair_batch_uses_precomputed_gap_masks(self, args, mocker):
         service = PairwiseIdentity(args)

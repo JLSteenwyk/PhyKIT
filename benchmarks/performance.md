@@ -131,6 +131,7 @@ Results:
 | `AlignmentLengthNoGaps`/`PairwiseIdentity` identical-row no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
 | `PairwiseIdentity.calculate_pairwise_identities` sequential fallback pair streaming | 500 mixed-length records, multiprocessing disabled, worker and stats helper held constant | 1.010443s | 0.595901s | 1.70x |
 | `PairwiseIdentity.calculate_pairwise_identities` multiprocessing fallback streaming chunks | 2500 fallback records, 3,123,750 index-pair chunk setup, side-by-side previous full pair-list slicing | 0.720987s | 0.338193s | 2.13x |
+| `PairwiseIdentity._process_pair_batch` local record reuse | 124,750 fallback pair comparisons over 500 records x 120 sites, side-by-side previous repeated `alignment_data` indexing | 0.862179s | 0.687560s | 1.25x |
 | `PairwiseIdentity.run` verbose batched text output | 100k pair rows, mocked alignment/read and identical stdout text | 0.054454s | 0.040773s | 1.34x |
 | `PairwiseIdentity.run` summary-only taxa-list elision | 1M mocked records, scoring and summary output mocked, non-verbose/no-plot output | 0.116345s | 0.000001s | 90068.29x |
 | `PairwiseIdentity._print_json_output` verbose row construction | 500k mocked pairwise identity rows, identical row dictionaries | 0.524115s | 0.375570s | 1.40x |
@@ -2657,7 +2658,10 @@ Profiling summary:
   avoiding the normalization pass for already identical inputs while preserving
   mixed-case equivalence. The identical-sequence guard now scans the sequence
   list by index instead of materializing `sequences[1:]`, preserving early
-  mismatch exits without a temporary list copy. Alignments with fewer than two records now return the
+  mismatch exits without a temporary list copy. The fallback pair worker now
+  reuses each pair's record dictionaries and bound hot helpers inside the loop,
+  avoiding repeated `alignment_data` indexing while preserving row order and
+  identity values. Alignments with fewer than two records now return the
   existing no-pair result and no-values summary before matrix probing or
   fallback sequence-array construction.
   Verbose JSON output now uses literal dictionaries for pair rows instead of
