@@ -8,6 +8,19 @@ from phykit.phykit import Phykit
 from phykit.errors import PhykitUserError
 
 
+def test_module_import_defers_boolean_parser_helper():
+    code = (
+        "import sys; "
+        "import phykit.phykit as module; "
+        "assert callable(module.str2bool); "
+        "assert 'phykit.helpers.boolean_argument_parsing' not in sys.modules; "
+        "assert module.str2bool('true') is True; "
+        "assert 'phykit.helpers.boolean_argument_parsing' in sys.modules"
+    )
+
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 COMMAND_METHODS = [
     "alignment_length",
     "alignment_length_no_gaps",

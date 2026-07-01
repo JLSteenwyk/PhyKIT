@@ -63,6 +63,7 @@ Results:
 | `phykit.phykit` CLI startup without eager logging setup | cold subprocess import after removing unused module logger/handler construction | 0.024059s | 0.020968s | 1.15x |
 | `phykit.phykit` CLI startup without eager `argparse` | cold subprocess import after deferring parser imports until `_new_parser()` and lazy-loading boolean parse errors | 0.020950s | 0.019993s | 1.05x |
 | `boolean_argument_parsing` import without eager `argparse` | cold subprocess import of `str2bool`; invalid values still raise `argparse.ArgumentTypeError` | 0.019988s | 0.018408s | 1.09x |
+| `phykit.phykit` CLI startup without eager boolean parser helper | median cold subprocess import, eager-helper preload vs lazy `str2bool` wrapper | 0.044624s | 0.043154s | 1.03x |
 | `geological_timescale.get_timescale_for_range` epoch intervals | 300k auto epoch-range calls, side-by-side previous overwritten epoch-list build | 1.001253s | 0.425282s | 2.35x |
 | `geological_timescale.get_timescale_for_range` period early stop | 160k auto period-range calls, identical included period bands | 0.191914s | 0.170999s | 1.12x |
 | `geological_timescale.get_timescale_for_range` epoch early stop | 300k mixed auto epoch-range calls, identical included epoch bands, side-by-side previous full epoch-table scan | 1.779906s | 0.629607s | 2.83x |
@@ -2473,8 +2474,11 @@ Profiling summary:
   `phykit.phykit` import. Parser construction now also defers `argparse` until
   `_new_parser()` runs; the global `SUPPRESS` value is synchronized with
   `argparse.SUPPRESS` at that point, and `str2bool` imports `argparse` only for
-  the invalid-value error path. Parser-description dedenting now goes through a
-  lazy `_dedent()` helper, so import-only callers avoid `textwrap` until a help
+  the invalid-value error path. A later startup pass also keeps the boolean
+  parser helper behind a same-name wrapper in `phykit.phykit`, so plain CLI
+  module imports avoid the helper until a boolean parser option is built or
+  invoked. Parser-description dedenting now goes through a lazy `_dedent()`
+  helper, so import-only callers avoid `textwrap` until a help
   description or banner actually needs dedenting. The default version and
   invalid-alias banners now cache their dedented text after first use, preserving
   lazy `textwrap` startup and custom `help_header` version behavior while

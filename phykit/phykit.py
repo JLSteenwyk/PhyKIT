@@ -4,10 +4,16 @@ import sys
 
 from .version import __version__
 
-from .helpers.boolean_argument_parsing import str2bool
 from .cli_registry import ALIAS_TO_HANDLER
 from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
+
+
+def str2bool(value):
+    from .helpers.boolean_argument_parsing import str2bool as _str2bool
+
+    return _str2bool(value)
+
 
 # Expose legacy factory names used by static command handlers in this module.
 globals().update(SERVICE_FACTORIES)
