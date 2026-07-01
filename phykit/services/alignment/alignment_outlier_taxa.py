@@ -23,6 +23,10 @@ def _row_l2_norms(matrix):
     return np.sqrt(np.einsum("ij,ij->i", matrix, matrix))
 
 
+def _column_dot(left, right):
+    return np.einsum("ij,ij->j", left, right)
+
+
 class AlignmentOutlierTaxa(Alignment):
     _INVALID_LOOKUP_CACHE = {}
 
@@ -428,7 +432,7 @@ class AlignmentOutlierTaxa(Alignment):
                 log_probs = np.zeros_like(site_probs, dtype=np.float64)
                 positive_probs = site_probs > 0
                 log_probs[positive_probs] = np.log2(site_probs[positive_probs])
-                site_entropies = -np.sum(site_probs * log_probs, axis=0)
+                site_entropies = -_column_dot(site_probs, log_probs)
 
             if all_valid_ascii:
                 entropy_burden = np.full(

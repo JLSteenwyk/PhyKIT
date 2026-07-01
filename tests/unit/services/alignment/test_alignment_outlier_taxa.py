@@ -477,6 +477,25 @@ class TestAlignmentOutlierTaxa:
 
         np.testing.assert_allclose(observed, expected)
 
+    def test_column_dot_matches_explicit_column_sum(self):
+        left = np.array(
+            [
+                [0.2, 0.0, 0.5],
+                [0.8, 1.0, 0.5],
+            ]
+        )
+        right = np.array(
+            [
+                [-2.321928, 0.0, -1.0],
+                [-0.321928, 0.0, -1.0],
+            ]
+        )
+
+        observed = alignment_outlier_taxa_module._column_dot(left, right)
+        expected = np.sum(left * right, axis=0)
+
+        np.testing.assert_allclose(observed, expected)
+
     def test_variable_composition_distance_avoids_linalg_norm(self, monkeypatch):
         service = self._service()
         alignment = MultipleSeqAlignment(
