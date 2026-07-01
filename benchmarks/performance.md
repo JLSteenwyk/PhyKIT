@@ -364,6 +364,8 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058848s / 0.007070s / 0.211013s | 0.042901s / 0.000004s / 0.037338s | 1.37x / 1844.67x / 5.65x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` single-record early return | 5 repeated 4.5M-site single-record RCVT calls, side-by-side previous sequence materialization before zero row | 0.001927875s | 0.000000416s | 4630.96x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` zip-based row assembly | 500k mocked taxon records and computed RCVT values, side-by-side previous index lookups | 0.317740s | 0.284361s | 1.12x |
+| `RelativeCompositionVariabilityTaxon.calculate_rows` zero row construction | 500k mocked zero-RCVT rows for identical/all-invalid alignments, identical row dictionaries | 0.185772s | 0.111760s | 1.66x |
+| `RelativeCompositionVariabilityTaxon.calculate_rows` value row construction | 500k mocked RCVT value rows, identical row dictionaries | 0.545980s | 0.493787s | 1.11x |
 | `RelativeCompositionVariabilityTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.017426s | 0.011493s | 1.52x |
 | `RelativeCompositionVariabilityTaxon._plot_rcvt` plot series preparation | 300k taxon rows, repeated RCVT values, identical stable descending taxon order and plotted values | 0.068288s | 0.042674s | 1.60x |
 | `rcvt` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction | 0.079652s | 0.029906s | 2.66x |

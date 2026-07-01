@@ -114,7 +114,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         if num_records == 0:
             return []
         if num_records == 1:
-            return [dict(taxon=alignment[0].id, rcvt=0.0)]
+            return [{"taxon": alignment[0].id, "rcvt": 0.0}]
 
         raw_sequences = [str(record.seq) for record in alignment]
         aln_len = alignment.get_alignment_length()
@@ -128,7 +128,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
                 break
 
         if all_identical:
-            return [dict(taxon=record.id, rcvt=0.0) for record in alignment]
+            return [{"taxon": record.id, "rcvt": 0.0} for record in alignment]
         sequences = [sequence.upper() for sequence in raw_sequences]
 
         if is_protein:
@@ -145,7 +145,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
             observed_chars = np.unique(alignment_array)
             unique_chars = observed_chars[~invalid_lookup[observed_chars]]
             if unique_chars.size == 0:
-                return [dict(taxon=record.id, rcvt=0.0) for record in alignment]
+                return [{"taxon": record.id, "rcvt": 0.0} for record in alignment]
             if unique_chars.size == observed_chars.size:
                 valid_mask = None
                 valid_lengths = np.full(num_records, aln_len, dtype=np.float64)
@@ -160,7 +160,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
 
             valid_chars = alignment_array[valid_mask]
             if valid_chars.size == 0:
-                return [dict(taxon=record.id, rcvt=0.0) for record in alignment]
+                return [{"taxon": record.id, "rcvt": 0.0} for record in alignment]
 
             unique_chars = np.unique(valid_chars)
         if alignment_array.dtype == np.uint8 and len(unique_chars) > 8:
@@ -190,7 +190,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         )
 
         return [
-            dict(taxon=record.id, rcvt=round(float(value), 4))
+            {"taxon": record.id, "rcvt": round(float(value), 4)}
             for record, value in zip(alignment, rcv_values)
         ]
 
