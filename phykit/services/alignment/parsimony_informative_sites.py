@@ -127,16 +127,22 @@ class ParsimonyInformative(Alignment):
         is_protein: bool = False,
     ) -> tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
-        sequences = [str(record.seq).upper() for record in alignment]
+        sequences = []
+        first_sequence = None
+        all_identical = True
+        for record in alignment:
+            sequence = str(record.seq).upper()
+            if first_sequence is None:
+                first_sequence = sequence
+            elif all_identical and sequence != first_sequence:
+                all_identical = False
+            sequences.append(sequence)
+
         if not sequences:
             return 0, aln_len, 0.0
         if aln_len == 0:
             return 0, aln_len, 0.0
-        first_sequence = sequences[0]
-        for sequence in sequences:
-            if sequence != first_sequence:
-                break
-        else:
+        if all_identical:
             return 0, aln_len, 0.0
 
         try:
