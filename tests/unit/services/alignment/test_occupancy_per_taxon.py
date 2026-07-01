@@ -137,6 +137,27 @@ class TestOccupancyPerTaxon(object):
             occupancy.calculate_occupancy_per_taxon(alignment, is_protein=True)
         ) == {"a": 5 / 9, "b": 5 / 9, "c": 5 / 9}
 
+    def test_occupancy_per_taxon_single_record_skips_matrix_helper(
+        self, args, mocker
+    ):
+        alignment = [SimpleNamespace(seq="ACGTN-?X*", id="solo")]
+        occupancy = OccupancyPerTaxon(args)
+        mocker.patch(
+            "phykit.services.alignment.occupancy_per_taxon._occupancy_from_ascii_matrix",
+            side_effect=AssertionError(
+                "single-record occupancy should avoid matrix helper setup"
+            ),
+        )
+
+        assert occupancy.calculate_occupancy_per_taxon(
+            alignment,
+            is_protein=False,
+        ) == [("solo", 4 / 9)]
+        assert occupancy.calculate_occupancy_per_taxon(
+            alignment,
+            is_protein=True,
+        ) == [("solo", 5 / 9)]
+
     def test_occupancy_ascii_matrix_identical_rows_return_shared_occupancy(self):
         record_data = [
             ("a", "ACGTN-?X*"),

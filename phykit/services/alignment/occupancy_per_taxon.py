@@ -104,6 +104,32 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
     ]
 
 
+def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
+    if is_protein:
+        invalid_chars = {"-", "?", "*", "X"}
+        invalid_bytes = _PROTEIN_INVALID_BYTES
+    else:
+        invalid_chars = {"-", "?", "*", "X", "N"}
+        invalid_bytes = _DNA_INVALID_BYTES
+
+    try:
+        seq_bytes = sequence.encode("ascii")
+        valid_count = len(seq_bytes.translate(None, invalid_bytes))
+    except UnicodeEncodeError:
+        sequence = sequence.upper()
+        valid_count = len(sequence) - sum(
+            sequence.count(char) for char in invalid_chars
+        )
+    return (valid_count / len(sequence)) if len(sequence) > 0 else 0.0
+
+
+def _alignment_size(alignment):
+    try:
+        return len(alignment)
+    except TypeError:
+        return None
+
+
 class OccupancyPerTaxon(Alignment):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -141,28 +167,22 @@ class OccupancyPerTaxon(Alignment):
         )
 
     def calculate_occupancy_per_taxon(self, alignment, is_protein: bool):
+        alignment_size = _alignment_size(alignment)
+        if alignment_size == 1:
+            record = alignment[0]
+            return [
+                (
+                    record.id,
+                    _occupancy_for_sequence(str(record.seq), is_protein),
+                )
+            ]
+
         record_data = [(record.id, str(record.seq)) for record in alignment]
         matrix_result = _occupancy_from_ascii_matrix(record_data, is_protein)
         if matrix_result is not None:
             return matrix_result
 
-        if is_protein:
-            invalid_chars = {"-", "?", "*", "X"}
-            invalid_bytes = _PROTEIN_INVALID_BYTES
-        else:
-            invalid_chars = {"-", "?", "*", "X", "N"}
-            invalid_bytes = _DNA_INVALID_BYTES
-
         output = []
         for record_id, seq in record_data:
-            try:
-                seq_bytes = seq.encode("ascii")
-                valid_count = len(seq_bytes.translate(None, invalid_bytes))
-            except UnicodeEncodeError:
-                seq = seq.upper()
-                valid_count = len(seq) - sum(
-                    seq.count(char) for char in invalid_chars
-                )
-            occupancy = (valid_count / len(seq)) if len(seq) > 0 else 0.0
-            output.append((record_id, occupancy))
+            output.append((record_id, _occupancy_for_sequence(seq, is_protein)))
         return output

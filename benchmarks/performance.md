@@ -615,6 +615,7 @@ Results:
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` no-gap DNA ASCII shortcut | 2000 taxa x 5000 sites, alphabet `ACGT`, side-by-side previous full matrix lookup path | 0.025015s | 0.004553s | 5.49x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` no-gap protein ASCII shortcut | 2000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full matrix lookup path | 0.027621s | 0.003884s | 7.11x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` identical gappy ASCII shortcut | 1200 taxa x 12000 sites, identical mixed-symbol DNA records with gaps/ambiguous symbols, side-by-side previous byte-matrix lookup path | 0.126362s | 0.000168s | 750.48x |
+| `OccupancyPerTaxon.calculate_occupancy_per_taxon` single-record direct count | 4.5M-site single-record DNA alignment, side-by-side previous record-data and matrix-helper setup | 0.022511792s | 0.010062833s | 2.24x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` identical-row no-slice scan | 1M identical mixed-symbol DNA records, side-by-side previous `sequences[1:]` equality scan | 0.569269s | 0.392282s | 1.45x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` combined length/identity scan | 1M mixed-symbol DNA records, identical / late-different / late variable-length cases, side-by-side previous sequence-list length pass plus identity pass | 0.288323s / 0.292319s / 0.085046s | 0.138665s / 0.282464s / 0.055508s | 2.08x / 1.03x / 1.53x |
 | `OccupancyPerTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.025741s | 0.019400s | 1.33x |
@@ -3732,7 +3733,9 @@ Profiling summary:
   helper pass combines equal-length validation and identical-row
   detection before building a separate sequence list, speeding conserved
   alignments and late variable-length rejection while preserving matrix
-  behavior for non-identical equal-length inputs. Text-mode
+  behavior for non-identical equal-length inputs. Single-record alignments now
+  count occupancy directly with the same ASCII/Unicode helper used by the
+  fallback path, avoiding record-data and matrix-helper setup. Text-mode
   `run` now batches per-taxon rows into one newline-joined print, preserving
   the same stdout text and leaving JSON output unchanged. A subsequent startup
   pass defers NumPy, validity lookup
