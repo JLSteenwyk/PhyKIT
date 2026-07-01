@@ -12,6 +12,7 @@ from Bio.SeqRecord import SeqRecord
 from phykit.services.alignment.evolutionary_rate_per_site import EvolutionaryRatePerSite
 from phykit.services.alignment.evolutionary_rate_per_site import (
     _GAP_DELETE_TABLES,
+    _column_sum_squares,
     _column_totals_and_sum_squares_from_ascii_codes,
     _prepare_evolutionary_rate_plot_series,
     _prepare_evolutionary_rate_row_plot_series,
@@ -138,6 +139,23 @@ assert "phykit.helpers.plot_config" not in sys.modules
         service = EvolutionaryRatePerSite(args)
         pic = service.calculate_pic({"A": 2, "T": 1})
         assert round(pic, 4) == 0.4444
+
+    def test_column_sum_squares_matches_explicit_reduction(self):
+        import numpy as np
+
+        counts = np.array(
+            [
+                [2, 0, 3, 1],
+                [1, 4, 0, 2],
+                [0, 1, 5, 3],
+            ],
+            dtype=np.int64,
+        )
+
+        np.testing.assert_allclose(
+            _column_sum_squares(counts),
+            np.sum(counts * counts, axis=0),
+        )
 
     def test_ascii_column_totals_helper_matches_reference_counts(self):
         import numpy as np

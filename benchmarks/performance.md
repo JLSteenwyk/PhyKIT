@@ -282,6 +282,7 @@ Results:
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/frequency path | 0.058379s | 0.044176s | 1.32x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.076192s | 0.006297s | 12.10x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.223614s / 0.006108s / 0.073953s | 0.104555s / 0.000004s / 0.049539s | 2.14x / 1610.87x / 1.49x |
+| `EvolutionaryRatePerSite`/`CompositionalBiasPerSite` column count sum-of-squares | count matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(counts * counts, axis=0)` | 0.426963s / 0.656234s / 0.739237s / 0.859598s | 0.317205s / 0.516822s / 0.375821s / 0.573535s | 1.35x / 1.27x / 1.97x / 1.50x |
 | `EvolutionaryRatePerSite.remove_gap_characters` cached translate deletion | 2M-character mixed-case sequence, gap/ambiguous symbols `-?*XxNn`, identical uppercase filtered output | 0.307932s | 0.012577s | 24.48x |
 | `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 1.473608s | 0.948019s | 1.55x |
 | `EvolutionaryRatePerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.069242s | 0.055913s | 1.24x |
@@ -2797,7 +2798,9 @@ Profiling summary:
   multi-character gap-token fallback. A later ASCII validity pass derives DNA
   valid symbols from the observed byte-code set and lets no-gap protein block
   counts skip the full valid mask, while protein alignments containing gap
-  symbols keep the filtered-mask path.
+  symbols keep the filtered-mask path. Column count sum-of-squares reductions
+  now use an `einsum` column dot, avoiding temporary squared count matrices in
+  ASCII block counters and Unicode fallback counters.
 - `CompositionalBiasPerSite.calculate_compositional_bias_per_site` baseline
   time filtered each column, called `np.unique`, and ran `chisquare` per site.
   The optimized path uses the same symbol-by-site count matrix pattern to
@@ -2815,6 +2818,9 @@ Profiling summary:
   When every site has a valid corrected p-value, the restore helper now returns
   the corrected list directly instead of allocating and filling an identical
   no-`"nan"` result.
+  Column count sum-of-squares reductions now use an `einsum` column dot,
+  avoiding temporary squared count matrices in ASCII block counters and Unicode
+  fallback counters.
   Text-mode `run` now batches per-site rows into one
   newline-joined print while preserving stdout text, JSON payloads, and plot
   reporting. A later terminal-output pass skips the intermediate row

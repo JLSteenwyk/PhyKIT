@@ -18,6 +18,10 @@ _PROTEIN_GAP_LOOKUP = None
 _GAP_DELETE_TABLES = {}
 
 
+def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
+    return np.einsum("ij,ij->j", counts, counts, dtype=np.float64)
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -72,7 +76,7 @@ def _column_totals_and_sum_squares_from_ascii_codes(
 
         slc = slice(start, stop)
         totals[slc] = counts.sum(axis=0, dtype=np.float64)
-        sum_squares[slc] = (counts * counts).sum(axis=0, dtype=np.float64)
+        sum_squares[slc] = _column_sum_squares(counts)
 
     return totals, sum_squares
 
@@ -307,7 +311,7 @@ class EvolutionaryRatePerSite(Alignment):
                 dtype=np.float64,
             )
             totals = np.sum(counts, axis=0)
-            sum_squares = np.sum(counts * counts, axis=0)
+            sum_squares = _column_sum_squares(counts)
         squared_frequency_sums = np.divide(
             sum_squares,
             totals * totals,

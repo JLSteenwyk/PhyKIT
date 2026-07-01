@@ -25,6 +25,10 @@ _PROTEIN_GAP_LOOKUP = None
 _FDR_VECTOR_MIN_LENGTH = 2048
 
 
+def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
+    return np.einsum("ij,ij->j", counts, counts, dtype=np.float64)
+
+
 def _get_gap_lookup(is_protein: bool):
     global _DNA_GAP_LOOKUP, _PROTEIN_GAP_LOOKUP
     if is_protein:
@@ -210,7 +214,7 @@ def _column_count_stats_from_ascii_codes(
         slc = slice(start, stop)
         category_counts[slc] = np.count_nonzero(counts, axis=0)
         totals[slc] = counts.sum(axis=0, dtype=np.float64)
-        sum_squares[slc] = (counts * counts).sum(axis=0, dtype=np.float64)
+        sum_squares[slc] = _column_sum_squares(counts)
 
     return category_counts, totals, sum_squares
 
@@ -490,7 +494,7 @@ class CompositionalBiasPerSite(Alignment):
                 )
                 category_counts = np.count_nonzero(counts, axis=0)
                 totals = np.sum(counts, axis=0)
-                sum_squares = np.sum(counts * counts, axis=0)
+                sum_squares = _column_sum_squares(counts)
             statistics = np.divide(
                 category_counts * sum_squares,
                 totals,

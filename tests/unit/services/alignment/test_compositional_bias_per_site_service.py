@@ -443,6 +443,21 @@ assert "numpy" not in sys.modules
         assert len(stat_res) == 9
         assert len(corrected) == 9
 
+    def test_column_sum_squares_matches_explicit_reduction(self):
+        counts = np.array(
+            [
+                [2, 0, 3, 1],
+                [1, 4, 0, 2],
+                [0, 1, 5, 3],
+            ],
+            dtype=np.int64,
+        )
+
+        np.testing.assert_allclose(
+            cbps_module._column_sum_squares(counts),
+            np.sum(counts * counts, axis=0),
+        )
+
     def test_column_count_stats_from_ascii_codes_matches_repeated_counts(self, mocker):
         alignment_array = np.array(
             [
