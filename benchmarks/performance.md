@@ -922,7 +922,9 @@ Results:
 | `PolytomyTest.chisquare_tests` p-value helper | cold process, two three-category equal-frequency chi-square tests | 0.487223s | 0.000007208s | 67594.8x |
 | `PolytomyTest.determine_sisters_and_add_to_counter` polytomy check | 5000 resolved three-tip counter evaluations | 0.250329s | 0.201572s | 1.24x |
 | `PolytomyTest._has_exactly_three_terminals` triplet check | 5000 resolved three-tip trees before legacy sister counting | 0.027710s | 0.002097s | 13.21x |
+| `PolytomyTest._has_exactly_three_terminals` fallback terminal scan | nonstandard tree yielding 500k terminals, false case | 0.043168s | 0.000001167s | 36990.6x |
 | `PolytomyTest.check_if_triplet_is_a_polytomy` direct internal count | 5000 resolved plus 5000 polytomy three-tip trees | 0.043043s | 0.004448s | 9.68x |
+| `PolytomyTest.check_if_triplet_is_a_polytomy` fallback nonterminal scan | nonstandard tree yielding 500k nonterminals, false case | 0.059486s | 0.000000958s | 62093.9x |
 | `PolytomyTest.count_number_of_groups_in_triplet` precomputed group-set reuse | 5k triplet group-representation checks over three 1k-taxon groups | 1.415379s | 0.617556s | 2.29x |
 | `PolytomyTest.sister_relationship_counter` direct nested increment | 3M repeated sister-count increments over one tree summary | 1.674614s | 0.906683s | 1.85x |
 | `PolytomyTest.set_branch_lengths_in_tree_to_one` direct traversal | balanced 65536-tip tree, reset every branch length to one | 0.202605s | 0.015667s | 12.93x |
@@ -4355,7 +4357,11 @@ Profiling summary:
   for nonstandard tree objects. The triplet polytomy detector now likewise uses
   a direct standard-tree internal-node count that exits after the second
   internal clade while retaining the generic `get_nonterminals()` fallback for
-  mocks and nonstandard tree objects. Legacy triplet-tree preparation now builds
+  mocks and nonstandard tree objects. A follow-up fallback pass short-circuits
+  those nonstandard `get_terminals()` and `get_nonterminals()` scans as soon as
+  the exact-three-tip or single-internal-node result is known, avoiding full list
+  materialization and full generator scans in false cases. Legacy triplet-tree
+  preparation now builds
   the prune list by scanning `tips` against a three-item triplet set, avoiding a
   full `set(tips)` allocation for every triplet and making prune order
   deterministic. The fast triplet evaluator now reuses one triplet set for both

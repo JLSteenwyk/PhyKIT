@@ -234,6 +234,35 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         finally:
             TreeMixin.get_nonterminals = original_get_nonterminals
 
+    def test_check_if_triplet_is_a_polytomy_fallback_stops_after_second_node(self):
+        class NonstandardTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def get_nonterminals(self):
+                for idx in range(10):
+                    if idx > 1:
+                        raise AssertionError("fallback should stop after second node")
+                    yield object()
+
+        self.assertFalse(
+            self.polytomy.check_if_triplet_is_a_polytomy(NonstandardTree())
+        )
+
+    def test_check_if_triplet_is_a_polytomy_fallback_accepts_single_node(self):
+        class NonstandardTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def get_nonterminals(self):
+                yield object()
+
+        self.assertTrue(
+            self.polytomy.check_if_triplet_is_a_polytomy(NonstandardTree())
+        )
+
     def test_has_exactly_three_terminals_uses_direct_traversal(self):
         tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
 
@@ -256,6 +285,33 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.assertTrue(self.polytomy._has_exactly_three_terminals(mock_tree))
         mock_tree.get_terminals.assert_called_once()
+
+    def test_has_exactly_three_terminals_fallback_stops_after_fourth_tip(self):
+        class NonstandardTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def get_terminals(self):
+                for idx in range(10):
+                    if idx > 3:
+                        raise AssertionError("fallback should stop after fourth tip")
+                    yield object()
+
+        self.assertFalse(self.polytomy._has_exactly_three_terminals(NonstandardTree()))
+
+    def test_has_exactly_three_terminals_fallback_accepts_three_tips(self):
+        class NonstandardTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def get_terminals(self):
+                yield object()
+                yield object()
+                yield object()
+
+        self.assertTrue(self.polytomy._has_exactly_three_terminals(NonstandardTree()))
 
     def test_sister_relationship_counter(self):
         """Test counting sister relationships"""

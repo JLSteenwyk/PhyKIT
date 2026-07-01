@@ -709,7 +709,7 @@ class PolytomyTest(Tree):
             root = tree.root
             root.clades
         except AttributeError:
-            return len(list(tree.get_terminals())) == 3
+            return PolytomyTest._fallback_has_exactly_three_terminals(tree)
 
         count = 0
         stack = [root]
@@ -718,7 +718,7 @@ class PolytomyTest(Tree):
                 clade = stack.pop()
                 children = clade.clades
                 if not isinstance(children, list):
-                    return len(list(tree.get_terminals())) == 3
+                    return PolytomyTest._fallback_has_exactly_three_terminals(tree)
                 if children:
                     stack.extend(children)
                 else:
@@ -726,7 +726,16 @@ class PolytomyTest(Tree):
                     if count > 3:
                         return False
         except AttributeError:
-            return len(list(tree.get_terminals())) == 3
+            return PolytomyTest._fallback_has_exactly_three_terminals(tree)
+        return count == 3
+
+    @staticmethod
+    def _fallback_has_exactly_three_terminals(tree: Newick.Tree) -> bool:
+        count = 0
+        for _terminal in tree.get_terminals():
+            count += 1
+            if count > 3:
+                return False
         return count == 3
 
     def check_if_triplet_is_a_polytomy(self, tree: Newick.Tree) -> bool:
@@ -737,7 +746,7 @@ class PolytomyTest(Tree):
             root = tree.root
             root.clades
         except AttributeError:
-            return sum(1 for _ in tree.get_nonterminals()) == 1
+            return self._fallback_has_single_nonterminal(tree)
 
         nonterminal_count = 0
         stack = [root]
@@ -746,15 +755,24 @@ class PolytomyTest(Tree):
                 clade = stack.pop()
                 children = clade.clades
                 if not isinstance(children, list):
-                    return sum(1 for _ in tree.get_nonterminals()) == 1
+                    return self._fallback_has_single_nonterminal(tree)
                 if children:
                     nonterminal_count += 1
                     if nonterminal_count > 1:
                         return False
                     stack.extend(children)
         except AttributeError:
-            return sum(1 for _ in tree.get_nonterminals()) == 1
+            return self._fallback_has_single_nonterminal(tree)
         return nonterminal_count == 1
+
+    @staticmethod
+    def _fallback_has_single_nonterminal(tree: Newick.Tree) -> bool:
+        count = 0
+        for _nonterminal in tree.get_nonterminals():
+            count += 1
+            if count > 1:
+                return False
+        return count == 1
 
     def sister_relationship_counter(
         self,
