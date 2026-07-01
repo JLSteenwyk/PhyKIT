@@ -1629,6 +1629,23 @@ class TestPhyloGwas:
         assert allele_1 == "β"
         assert group_freqs == {"X": 0.5, "Y": 0.5}
 
+    def test_unicode_multiallelic_site_stops_after_third_allele(self):
+        def alleles():
+            yield "α"
+            yield "β"
+            yield "γ"
+            raise AssertionError("multiallelic Unicode sites should stop early")
+
+        assert PhyloGwas._binary_alleles_from_unicode_site(alleles()) is None
+
+    def test_unicode_binary_site_preserves_sorted_tie_and_major_order(self):
+        assert PhyloGwas._binary_alleles_from_unicode_site(
+            ["β", "α", "β", "α"]
+        ) == ("α", "β")
+        assert PhyloGwas._binary_alleles_from_unicode_site(
+            ["β", "β", "α"]
+        ) == ("β", "α")
+
     def test_test_site_continuous_biallelic(self):
         """Biallelic site with continuous phenotype should return correlation."""
         service = PhyloGwas.__new__(PhyloGwas)

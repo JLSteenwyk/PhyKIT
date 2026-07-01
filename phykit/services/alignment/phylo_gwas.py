@@ -429,28 +429,26 @@ class PhyloGwas(Alignment):
             allele_0 = chr(int(allele_0_byte))
             allele_1 = chr(int(allele_1_byte))
         else:
-            try:
-                allele_bytes = "".join(alleles).encode("ascii")
-                allele_array = np.frombuffer(allele_bytes, dtype=np.uint8)
-                byte_summary = self._major_minor_bytes(allele_array)
-                if byte_summary is None:
+            if self._starts_with_non_ascii_allele(alleles):
+                allele_pair = self._binary_alleles_from_unicode_site(alleles)
+                if allele_pair is None:
                     return None
-                allele_0_byte, allele_1_byte, _ = byte_summary
-                allele_0 = chr(int(allele_0_byte))
-                allele_1 = chr(int(allele_1_byte))
-            except UnicodeEncodeError:
-                allele_counts = Counter(alleles)
-                unique_alleles = sorted(allele_counts.keys())
-
-                if len(unique_alleles) < 2:
-                    return None  # invariant
-                if len(unique_alleles) > 2:
-                    return None  # skip multiallelic
-
-                allele_0, allele_1 = unique_alleles
-                # allele_0 = major, allele_1 = minor by frequency
-                if allele_counts[allele_0] < allele_counts[allele_1]:
-                    allele_0, allele_1 = allele_1, allele_0
+                allele_0, allele_1 = allele_pair
+            else:
+                try:
+                    allele_bytes = "".join(alleles).encode("ascii")
+                    allele_array = np.frombuffer(allele_bytes, dtype=np.uint8)
+                    byte_summary = self._major_minor_bytes(allele_array)
+                    if byte_summary is None:
+                        return None
+                    allele_0_byte, allele_1_byte, _ = byte_summary
+                    allele_0 = chr(int(allele_0_byte))
+                    allele_1 = chr(int(allele_1_byte))
+                except UnicodeEncodeError:
+                    allele_pair = self._binary_alleles_from_unicode_site(alleles)
+                    if allele_pair is None:
+                        return None
+                    allele_0, allele_1 = allele_pair
 
         if group_codes is None:
             if n_groups == 2 and group_idx is None:
@@ -542,6 +540,38 @@ class PhyloGwas(Alignment):
 
         return p_value, allele_0, allele_1, group_freqs
 
+    @staticmethod
+    def _starts_with_non_ascii_allele(alleles):
+        try:
+            first_allele = alleles[0]
+        except (IndexError, TypeError):
+            return False
+
+        try:
+            first_allele.encode("ascii")
+        except UnicodeEncodeError:
+            return True
+        return False
+
+    @staticmethod
+    def _binary_alleles_from_unicode_site(alleles):
+        allele_counts = {}
+        for allele in alleles:
+            if allele in allele_counts:
+                allele_counts[allele] += 1
+                continue
+            if len(allele_counts) == 2:
+                return None
+            allele_counts[allele] = 1
+
+        if len(allele_counts) != 2:
+            return None
+
+        allele_0, allele_1 = sorted(allele_counts)
+        if allele_counts[allele_0] < allele_counts[allele_1]:
+            allele_0, allele_1 = allele_1, allele_0
+        return allele_0, allele_1
+
     def _test_site_continuous(
         self,
         alleles: List[str],
@@ -560,21 +590,20 @@ class PhyloGwas(Alignment):
         if isinstance(alleles, np.ndarray) and alleles.dtype == np.uint8:
             allele_array = alleles
         else:
-            try:
-                allele_bytes = "".join(alleles).encode("ascii")
-                allele_array = np.frombuffer(allele_bytes, dtype=np.uint8)
-            except UnicodeEncodeError:
-                allele_counts = Counter(alleles)
-                unique_alleles = sorted(allele_counts.keys())
-
-                if len(unique_alleles) < 2:
-                    return None  # invariant
-                if len(unique_alleles) > 2:
-                    return None  # skip multiallelic
-
-                allele_0, allele_1 = unique_alleles
-                if allele_counts[allele_0] < allele_counts[allele_1]:
-                    allele_0, allele_1 = allele_1, allele_0
+            if self._starts_with_non_ascii_allele(alleles):
+                allele_pair = self._binary_alleles_from_unicode_site(alleles)
+                if allele_pair is None:
+                    return None
+                allele_0, allele_1 = allele_pair
+            else:
+                try:
+                    allele_bytes = "".join(alleles).encode("ascii")
+                    allele_array = np.frombuffer(allele_bytes, dtype=np.uint8)
+                except UnicodeEncodeError:
+                    allele_pair = self._binary_alleles_from_unicode_site(alleles)
+                    if allele_pair is None:
+                        return None
+                    allele_0, allele_1 = allele_pair
 
         if allele_array is not None:
             byte_summary = self._major_minor_bytes(allele_array)

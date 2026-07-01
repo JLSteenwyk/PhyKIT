@@ -575,6 +575,8 @@ Results:
 | `PhyloGwas.run` ASCII biallelic column prefilter | 400 taxa x 50,000 sites, continuous phenotype scan, 90% invariant / 5% multiallelic / 5% biallelic ASCII columns | 0.352346s | 0.119668s | 2.94x |
 | `PhyloGwas.run` phylo-pattern minor-taxa scan | 400 taxa x 50,000 sites with 5000 significant tree-classified sites, side-by-side previous temporary allele-list filter | 2.555218s | 1.682205s | 1.52x |
 | `PhyloGwas.run` shared-taxon setup | 1M alignment taxa x 1M phenotype taxa with 750k overlap, identical sorted shared taxa | 3.113728s | 2.794556s | 1.11x |
+| `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
+| `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
 | `phylo_gwas` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.225119s | 0.116552s | 1.93x |
 | `phylo_gwas` module import without eager NumPy/json/plot config | cold subprocess import after lazy NumPy proxy plus JSON and plot config helper deferral | 0.075720s | 0.024089s | 3.14x |
 | `phylo_gwas` module import without shared typing startup | median cold subprocess import after removing annotation-only `typing` imports from shared error/alignment helpers | 0.007420s | 0.006305s | 1.18x |
@@ -3560,6 +3562,10 @@ Profiling summary:
   Benjamini-Hochberg correction now scales and cumulative-mins the sorted
   p-value buffer in place, then scatters into an uninitialized result array,
   preserving adjusted p-values while reducing temporary allocation pressure.
+  Obvious non-ASCII multiallelic sites now skip after seeing a third unique
+  allele instead of building a full `Counter` and sorting every unique allele;
+  true binary Unicode sites retain the previous sorted-label tie behavior and
+  major/minor frequency ordering.
 - `PhyloGwas._test_site_continuous` baseline time called SciPy's
   `pointbiserialr` and rebuilt phenotype arrays for every biallelic site. The
   optimized path computes the equivalent Pearson point-biserial statistic and
