@@ -325,6 +325,7 @@ Results:
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` protein no-gap mask elision | 1000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.052347s | 0.043303s | 1.21x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/statistic path | 0.066130s | 0.047264s | 1.40x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix/statistic path | 0.087052s | 0.010425s | 8.35x |
+| `CompositionalBiasPerSite.calculate_compositional_bias_per_site` raw-identical normalization scan | 300k raw-identical DNA rows x 32 sites, side-by-side previous eager uppercase sequence setup with zero statistics and `"nan"` p-values | 0.087884s | 0.023872s | 3.68x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` identical-row no-slice scan | 1M identical ASCII DNA rows x 32 sites, side-by-side previous `sequences[1:]` equality scan | 0.486066s | 0.234605s | 2.07x |
 | `CompositionalBiasPerSite.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical first-seen count order | 1.300166s | 0.822473s | 1.58x |
 | `CompositionalBiasPerSite._erfc_array` vectorized square roots | 500k chi-square half-statistics, side-by-side previous scalar `sqrt` + `erfc` loop without SciPy imports | 0.048987s | 0.040776s | 1.20x |
@@ -3019,11 +3020,14 @@ Profiling summary:
   valid-symbol discovery step, skipping count, statistic, p-value, and FDR work.
   Fully identical normalized alignments now take the same zero-statistic and
   `"nan"` p-value result before matrix construction, covering conserved
-  multi-symbol sequences while preserving the existing non-identical paths. A
-  follow-up identical-row pass scans the existing sequence list directly instead
-  of materializing `sequences[1:]`, reducing temporary allocation for high-taxon
-  conserved alignments. All-valid p-value correction now converts the p-value
-  array directly to a list instead of first applying an all-true boolean mask,
+  multi-symbol sequences while preserving the existing non-identical paths.
+  Raw-identical alignments now test equality before uppercasing every row,
+  avoiding the normalization pass for already identical inputs while preserving
+  mixed-case equivalence. A follow-up identical-row pass scans the existing
+  sequence list directly instead of materializing `sequences[1:]`, reducing
+  temporary allocation for high-taxon conserved alignments. All-valid p-value
+  correction now converts the p-value array directly to a list instead of first
+  applying an all-true boolean mask,
   preserving mixed-NaN filtering for gappy/all-invalid sites. Per-site
   `Power_divergenceResult` rows are now built
   with a localized list comprehension, preserving float coercion and namedtuple

@@ -431,13 +431,17 @@ class CompositionalBiasPerSite(Alignment):
         list[float | str],
     ]:
         aln_len = alignment.get_alignment_length()
-        sequences = [str(record.seq).upper() for record in alignment]
+        num_records = len(alignment)
 
-        if not sequences:
+        if num_records == 0:
             return [], []
-        first_sequence = sequences[0]
-        for sequence in sequences:
-            if sequence != first_sequence:
+
+        raw_sequences = [str(record.seq) for record in alignment]
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
                 break
         else:
             stat_res = [
@@ -445,6 +449,7 @@ class CompositionalBiasPerSite(Alignment):
                 for _ in range(aln_len)
             ]
             return stat_res, ["nan"] * aln_len
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
         valid_mask = None
