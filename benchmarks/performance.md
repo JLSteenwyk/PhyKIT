@@ -2348,6 +2348,7 @@ Results:
 | `retention_index` full-column Counter | 1200 taxa x 5000 characters, wildcard-aware RI state counts | 0.370389s | 0.149759s | 2.5x |
 | `retention_index` ASCII single-character fast path | 1200 taxa x 5000 single-character states, wildcard-aware RI state counts | 0.125720s | 0.039702s | 3.17x |
 | `CharacterMap.run` state summary plus RI counts | 1200 taxa x 5000 characters, wildcard-aware counts and synthetic observed steps | 0.394492s | 0.241499s | 1.63x |
+| `CharacterMap._retention_index_from_counts` single-pass Counter scans | 1000 two-state / 1000 four-state / 12000 four-state / 100000 four-state count columns, side-by-side previous repeated `Counter.values()` scans; 12000 twenty-state case was neutral at 1.00x | 0.001007792s / 0.001019082s / 0.010516019s / 0.075608151s | 0.000464652s / 0.000683357s / 0.008212559s / 0.072875630s | 2.17x / 1.49x / 1.28x / 1.04x |
 | `CharacterMap.run` counts-only byte state summary | 1200 taxa x 5000 single-character states, wildcard-aware counts | 0.183195s | 0.051354s | 3.57x |
 | `CharacterMap._summarize_character_ascii` counts-only streaming matrix | 1200 taxa x 5000 single-character states, identical wildcard-aware counts without row-list or giant text materialization | 0.238175s | 0.207201s | 1.15x |
 | `ThresholdModel._run_mcmc` continuous/continuous | 180 taxa SPD VCV, 1500 generations, sample every 10 | 0.3091s | 0.0750s | 4.1x |
@@ -7605,7 +7606,10 @@ Profiling summary:
   giant intermediate text string. The
   public full-summary helper now also reuses those byte-derived counts when
   available and constructs only the required per-character state lists, avoiding
-  one `Counter` per column without changing the returned state-list shape.
+  one `Counter` per column without changing the returned state-list shape. The
+  count-aware RI helper now scans each per-character `Counter.values()` view once
+  to derive total taxa and maximum state frequency together, avoiding repeated
+  Python-level counter traversals.
 - `CharacterMap._print_verbose` baseline time scanned every classified branch
   change for every character while printing one line at a time. The optimized
   path groups changes by character once, then emits the same verbose report with

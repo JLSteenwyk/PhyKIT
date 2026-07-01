@@ -420,23 +420,29 @@ class CharacterMap(Tree):
         sum_den = 0
 
         for counts, observed in zip(counts_per_char, observed_per_char):
-            n_taxa = sum(counts.values())
+            n_taxa = 0
+            f_max = 0
+            n_states = len(counts)
+            for count in counts.values():
+                n_taxa += count
+                if count > f_max:
+                    f_max = count
+
             if n_taxa == 0:
                 ri_per_char.append(None)
                 continue
 
-            n_states = len(counts)
-            f_max = max(counts.values())
             max_changes = n_taxa - f_max
             min_changes = n_states - 1
+            denominator = max_changes - min_changes
 
-            if max_changes == min_changes:
+            if denominator == 0:
                 ri_per_char.append(None)
             else:
-                ri = (max_changes - observed) / (max_changes - min_changes)
-                ri_per_char.append(ri)
-                sum_num += max_changes - observed
-                sum_den += max_changes - min_changes
+                numerator = max_changes - observed
+                ri_per_char.append(numerator / denominator)
+                sum_num += numerator
+                sum_den += denominator
 
         ri_overall = sum_num / sum_den if sum_den > 0 else None
         return ri_per_char, ri_overall

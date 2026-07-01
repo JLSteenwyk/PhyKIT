@@ -222,6 +222,31 @@ class TestCharacterMapStateSummary:
             observed_per_char,
         ) == retention_index(states_by_char, observed_per_char)
 
+    def test_count_aware_retention_index_scans_counts_once(self):
+        class CountingCounter(Counter):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.values_calls = 0
+
+            def values(self):
+                self.values_calls += 1
+                return super().values()
+
+        counts_per_char = [
+            CountingCounter({"0": 2, "1": 2}),
+            CountingCounter({"0": 1, "1": 2, "2": 2}),
+            CountingCounter(),
+        ]
+
+        ri_per_char, ri_overall = CharacterMap._retention_index_from_counts(
+            counts_per_char,
+            [1, 3, 0],
+        )
+
+        assert ri_per_char == [1.0, 0.0, None]
+        assert ri_overall == pytest.approx(0.5)
+        assert [counts.values_calls for counts in counts_per_char] == [1, 1, 1]
+
     def test_counts_only_summary_matches_full_summary_without_state_lists(self):
         tip_states = {
             "A": ["0", "0", "?", "1"],
