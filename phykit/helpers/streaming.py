@@ -4,14 +4,15 @@ Streaming utilities for memory-efficient processing of large files
 
 from __future__ import annotations
 
-import mmap
 import os
+
+
+_COUNT_CHUNK_SIZE = 1024 * 1024
 
 
 class StreamingFastaReader:
     """
     Memory-efficient streaming reader for large FASTA files.
-    Uses memory mapping to avoid loading entire file into memory.
     """
 
     def __init__(self, file_path: str, chunk_size: int = 1000):
@@ -55,14 +56,23 @@ class StreamingFastaReader:
         Count sequences without loading entire file.
         """
         count = 0
+        saw_data = False
+        previous = b""
         with open(self.file_path, 'rb') as f:
-            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
-                if mmapped_file[:1] == b'>':
-                    count = 1
-                position = mmapped_file.find(b"\n>")
-                while position != -1:
-                    count += 1
-                    position = mmapped_file.find(b"\n>", position + 2)
+            while True:
+                chunk = f.read(_COUNT_CHUNK_SIZE)
+                if not chunk:
+                    break
+                if not saw_data:
+                    saw_data = True
+                    if chunk[:1] == b'>':
+                        count = 1
+                count += (previous + chunk).count(b"\n>")
+                previous = chunk[-1:]
+
+        if not saw_data:
+            raise ValueError("cannot mmap an empty file")
+
         return count
 
     def get_sequence_at_position(self, position: int) -> object | None:

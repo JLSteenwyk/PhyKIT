@@ -3,7 +3,7 @@ Unit tests for streaming utilities
 """
 
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 import tempfile
 import os
 import subprocess
@@ -100,26 +100,13 @@ class TestStreamingFastaReader(unittest.TestCase):
         count = self.reader.get_sequence_count()
         self.assertEqual(count, 3)
 
-    @patch('os.path.getsize')
-    @patch('builtins.open', new_callable=mock_open, read_data=b'>seq1\nATCG\n>seq2\nGCTA\n')
-    @patch('mmap.mmap')
-    def test_get_sequence_count_with_mmap(self, mock_mmap_obj, mock_file, mock_getsize):
-        """Test sequence counting using memory mapping"""
-        # Mock file size
-        mock_getsize.return_value = 100
+    def test_get_sequence_count_across_chunk_boundary(self):
+        """Test sequence counting when a header marker spans chunks"""
+        with patch("phykit.helpers.streaming._COUNT_CHUNK_SIZE", 9):
+            reader = StreamingFastaReader(self.temp_file.name)
+            count = reader.get_sequence_count()
 
-        # Setup mock mmap
-        mock_mmap_instance = MagicMock()
-        mock_mmap_instance.__getitem__.return_value = b'>'
-        mock_mmap_instance.find.side_effect = [10, -1]
-        mock_mmap_obj.return_value.__enter__.return_value = mock_mmap_instance
-
-        reader = StreamingFastaReader("dummy.fasta")
-        count = reader.get_sequence_count()
-
-        self.assertEqual(count, 2)
-        mock_mmap_instance.find.assert_any_call(b"\n>")
-        mock_mmap_instance.find.assert_any_call(b"\n>", 12)
+        self.assertEqual(count, 3)
 
     def test_get_sequence_at_position(self):
         """Test getting specific sequence by position"""

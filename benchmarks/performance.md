@@ -464,6 +464,7 @@ Results:
 | `dna_threader` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.032400s | 0.031734s | 1.02x |
 | `MemoryEfficientAlignmentProcessor.calculate_column_stats_streaming` one-pass column stats | 300 FASTA records x 1500 sites, alphabet `ACGT-N` | 1.183170s | 0.026735s | 44.26x |
 | `StreamingFastaReader.get_sequence_count` mmap header scan | 300k FASTA records, 20 bp each, identical sequence count | 0.123812s | 0.066868s | 1.85x |
+| `StreamingFastaReader.get_sequence_count` chunked header count | 300k FASTA records, 20 bp each, identical sequence count | 0.084697s | 0.007856s | 10.78x |
 | `streaming` module import without eager Bio.SeqIO | cold subprocess import after localizing FASTA parser imports | 0.099270s | 0.002314s | 42.90x |
 | `streaming` module import without `typing` startup | median cold subprocess import after replacing annotation-only typing aliases with built-in annotations | 0.022866s | 0.021220s | 1.08x |
 | `parallel` module import without eager multiprocessing/NumPy/executors | cold subprocess import after lazy worker, array, and executor proxies | 0.070840s | 0.001929s | 36.72x |
@@ -3436,7 +3437,10 @@ Profiling summary:
 - `StreamingFastaReader.get_sequence_count` baseline time iterated every FASTA
   line through Python. The optimized helper scans the memory map for header-line
   markers, preserving the same count semantics for non-empty FASTA files while
-  avoiding per-line iteration.
+  avoiding per-line iteration. A follow-up pass replaces the repeated
+  `mmap.find()` loop with bounded chunk reads and C-level `bytes.count()` calls,
+  preserving start-of-file and `\n>` header-marker semantics while avoiding
+  both full-file materialization and repeated Python search loops.
 - `NumpyParallel.parallel_pairwise_operation` with explicit `num_workers=1`
   now fills the result matrix directly instead of materializing all pair payloads
   and result tuples before writing the matrix. The default parallel path still
