@@ -2213,6 +2213,7 @@ Results:
 | `ThresholdModel._run_mcmc` cached proposal scales/log sigma | 180 taxa SPD VCV, discrete/continuous traits, 700 generations, sample every 10 | 0.927273s | 0.860394s | 1.08x |
 | `ThresholdModel._run_mcmc` scalar math and cached Gibbs context fast path | 180 taxa SPD VCV, discrete/continuous traits, 700 generations, sample every 10 | 0.860394s | 0.433986s | 1.98x |
 | `ThresholdModel._run_mcmc` continuous-trait initial variance reuse | 4 / 10 / 100 / 1000 / 10k / 100k liability values, side-by-side previous duplicate `np.var` expression | 0.000022695s / 0.000014483s / 0.000016306s / 0.000016240s / 0.000034778s / 0.000212574s | 0.000010199s / 0.000010521s / 0.000009156s / 0.000010178s / 0.000019218s / 0.000071040s | 2.23x / 1.38x / 1.78x / 1.60x / 1.81x / 2.99x |
+| `ThresholdModel._run_mcmc` continuous-trait ndarray reductions | 4 / 10 / 100 / 1000 / 10k liability values, side-by-side previous `np.var`/`np.mean` wrappers during initial setup | 0.000008083s / 0.000008042s / 0.000008166s / 0.000009084s / 0.000018125s | 0.000007000s / 0.000007000s / 0.000007084s / 0.000008041s / 0.000016791s | 1.15x / 1.15x / 1.15x / 1.13x / 1.08x |
 | `ThresholdModel._run_mcmc` covariance diagonal mean setup | SPD VCV matrices with 120 / 180 / 500 / 1000 taxa, side-by-side previous `np.mean(np.diag(C))` copy | 0.000003209s / 0.000003167s / 0.000003458s / 0.000003666s | 0.000001583s / 0.000001584s / 0.000001708s / 0.000001875s | 2.03x / 2.00x / 2.02x / 1.96x |
 | `ThresholdModel._sample_liabilities_gibbs` inline one-sided inverse-CDF draws | 700 dense 180-tip Gibbs sweeps, alternating binary states, cached Gibbs context | 0.252991s | 0.239303s | 1.06x |
 | `ThresholdModel._sample_truncated_normal` cached float bounds | 126k one-sided inverse-CDF draws | 0.202700s | 0.138897s | 1.46x |
@@ -7517,8 +7518,9 @@ Profiling summary:
   precomputed `C^-1x` product vectors through each ndarray's `sum()` method,
   avoiding lazy NumPy proxy dispatch in repeated MCMC setup/proposal paths.
   Continuous-trait initialization now computes each liability variance once and
-  reuses it for the positive-variance fallback. The covariance diagonal mean
-  used for initial continuous-trait scaling now comes from `trace(C) / n`,
+  reuses it for the positive-variance fallback, then uses each liability
+  vector's ndarray `var()` and `mean()` methods for initial continuous-trait
+  scaling. The covariance diagonal mean now comes from `trace(C) / n`,
   preserving the same scalar while avoiding a copied diagonal array. Posterior
   summaries and plots now use each small NumPy trace's `mean()` method while
   keeping the generic `np.mean` path for larger traces, avoiding lazy proxy

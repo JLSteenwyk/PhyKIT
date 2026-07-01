@@ -785,21 +785,21 @@ class ThresholdModel(Tree):
             sigma2_1 = 1.0
             a1 = 0.0
         else:
-            var_x1 = float(np.var(x1))
+            var_x1 = float(x1.var())
             var_x1 = var_x1 if var_x1 > 0 else 1.0
             sigma2_1 = var_x1 / mean_diag_C
             sigma2_1 = max(sigma2_1, 1e-10)
-            a1 = float(np.mean(x1))
+            a1 = float(x1.mean())
 
         if type2 == "discrete":
             sigma2_2 = 1.0
             a2 = 0.0
         else:
-            var_x2 = float(np.var(x2))
+            var_x2 = float(x2.var())
             var_x2 = var_x2 if var_x2 > 0 else 1.0
             sigma2_2 = var_x2 / mean_diag_C
             sigma2_2 = max(sigma2_2, 1e-10)
-            a2 = float(np.mean(x2))
+            a2 = float(x2.mean())
 
         r = 0.0
         log_sigma2_1 = math.log(sigma2_1)

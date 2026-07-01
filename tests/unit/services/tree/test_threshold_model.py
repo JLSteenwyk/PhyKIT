@@ -994,12 +994,17 @@ class TestRunMCMC:
         def fail_diag(*_args, **_kwargs):
             raise AssertionError("MCMC setup should use np.trace instead of np.diag")
 
+        def fail_reduction(*_args, **_kwargs):
+            raise AssertionError("continuous MCMC setup should use ndarray reductions")
+
         monkeypatch.setattr(
             ThresholdModel,
             "_vcv_inverse_and_logdet",
             staticmethod(lambda matrix: (np.linalg.inv(matrix), 0.0)),
         )
         monkeypatch.setattr(threshold_model_module.np, "diag", fail_diag)
+        monkeypatch.setattr(threshold_model_module.np, "var", fail_reduction)
+        monkeypatch.setattr(threshold_model_module.np, "mean", fail_reduction)
 
         result = ThresholdModel._run_mcmc(
             t1, t2, "continuous", "continuous",
@@ -1129,7 +1134,7 @@ class TestRunMCMC:
             "a2",
         }
 
-    def test_continuous_initialization_computes_each_variance_once(self, monkeypatch):
+    def test_continuous_initialization_uses_array_reductions(self, monkeypatch):
         tree = _make_tree()
         names = sorted([t.name for t in tree.get_terminals()])
         C = ThresholdModel._build_vcv_matrix(tree, names)
@@ -1137,23 +1142,20 @@ class TestRunMCMC:
 
         t1 = {"A": 1.0, "B": 2.0, "C": 0.5, "D": 1.8}
         t2 = {"A": 1.1, "B": 2.1, "C": 0.6, "D": 1.9}
-        real_var = threshold_model_module.np.var
-        calls = []
 
-        def counting_var(arr, *args, **kwargs):
-            calls.append(np.asarray(arr).copy())
-            return real_var(arr, *args, **kwargs)
+        def fail_reduction(*_args, **_kwargs):
+            raise AssertionError("continuous initialization should use ndarray reductions")
 
-        monkeypatch.setattr(threshold_model_module.np, "var", counting_var)
+        monkeypatch.setattr(threshold_model_module.np, "var", fail_reduction)
+        monkeypatch.setattr(threshold_model_module.np, "mean", fail_reduction)
 
-        ThresholdModel._run_mcmc(
+        result = ThresholdModel._run_mcmc(
             t1, t2, "continuous", "continuous",
-            names, C, 0, 1, 0.0, rng
+            names, C, 2, 1, 0.0, rng
         )
 
-        assert len(calls) == 2
-        np.testing.assert_allclose(calls[0], [1.0, 2.0, 0.5, 1.8])
-        np.testing.assert_allclose(calls[1], [1.1, 2.1, 0.6, 1.9])
+        assert len(result["sigma2_1"]) == 2
+        assert len(result["a1"]) == 2
 
     def test_continuous_continuous(self):
         """Both continuous: should skip Gibbs, just run MH."""
