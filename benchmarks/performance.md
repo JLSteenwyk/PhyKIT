@@ -1300,6 +1300,7 @@ Results:
 | `RenameTreeTips.count_matching_tip_names` unordered read-only scan | balanced 131072-tip tree, every 16th tip in id map, optimized helper baseline | 0.023922s | 0.016833s | 1.42x |
 | `RenameTreeTips.has_matching_tip_name` unordered read-only scan | balanced 131072-tip tree, no matching tips, optimized helper baseline | 0.022242s | 0.015908s | 1.40x |
 | `RenameTreeTips` empty id-map short-circuit | balanced 32768-tip tree, empty id map for has/count/replace helper paths | 0.011177500s / 0.006682375s / 0.013954125s | 0.000005042s / 0.000002667s / 0.000003791s | 2216.80x / 2505.73x / 3680.91x |
+| `RenameTreeTips.read_id_map` binary token parser | 50k / 200k / 500k two-column rename rows, side-by-side previous text-mode `line.split()` parser | 0.028986s / 0.146914s / 0.463356s | 0.025624s / 0.132921s / 0.448390s | 1.13x / 1.11x / 1.03x |
 | `rename_tree_tips` module import without eager Bio.Phylo | cold subprocess import of rename-tree-tips command module | 0.162538s | 0.065407s | 2.49x |
 | `rename_tree_tips` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006052s | 0.004723s | 1.28x |
 | `RootTree.run` | balanced 32768-tip tree, root with one-tip outgroup | 0.3064s | 0.1872s | 1.6x |

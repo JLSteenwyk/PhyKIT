@@ -63,10 +63,10 @@ class RenameTreeTips(Tree):
     def read_id_map(self) -> dict[str, str]:
         idmap = dict()
         try:
-            with open(self.idmap) as identifiers:
+            with open(self.idmap, "rb") as identifiers:
                 for line in identifiers:
                     (key, val) = line.split()
-                    idmap[key] = val
+                    idmap[key.decode()] = val.decode()
         except FileNotFoundError:
             try:
                 print(f"{self.idmap} corresponds to no such file.")
