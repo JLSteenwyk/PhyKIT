@@ -166,6 +166,7 @@ Results:
 | `AlignmentEntropy.calculate_site_entropies` protein ASCII counts | 1000 taxa x 5000 sites, 20 amino-acid symbols | 0.076837s | 0.051144s | 1.50x |
 | `AlignmentEntropy.calculate_site_entropies` protein ASCII column-major indexing | 1200 taxa x 6000 sites, alphabet `ACDEFGHIKLMNPQRSTVWY-X?*` | 0.156230s | 0.128932s | 1.21x |
 | `AlignmentEntropy._entropy_from_ascii_codes` all-valid protein blocks | 1200 taxa x 12000 sites, 20 amino-acid symbols, side-by-side previous boolean-index path | 0.100458s | 0.090770s | 1.11x |
+| `AlignmentEntropy.calculate_site_entropies` clean protein gap-mask elision | 1200 taxa x 12000 clean protein sites, side-by-side previous full valid-mask setup with identical entropy values | 0.431117s | 0.378430s | 1.14x |
 | `AlignmentEntropy._entropy_from_ascii_codes` array-to-list conversion | 12 taxa x 800k clean DNA sites, full helper output conversion with identical Python float list | 0.750628s | 0.476712s | 1.57x |
 | `AlignmentEntropy._entropy_from_counts` masked log terms | 20 x 200k sparse protein count matrix, side-by-side previous `np.where(probs > 0, probs * log2(probs), 0)` terms | 0.040059s | 0.027744s | 1.44x |
 | `AlignmentEntropy`/`MaskAlignment` protein entropy column reductions | count matrices shaped 20x5000 / 64x20000, side-by-side previous in-place probability/log-probability product plus `np.sum(..., axis=0)` | 2.243765s / 3.478205s | 1.991224s / 2.424359s | 1.13x / 1.43x |
@@ -2633,7 +2634,10 @@ Profiling summary:
   directly from the entropy list when JSON/plot output do not need structured
   row dictionaries. Clean protein ASCII entropy blocks now bypass the per-block
   valid-mask boolean index, preserving the existing gappy path while reducing
-  clean 1200 x 12000 protein helper time from 0.100458s to 0.090770s.
+  clean 1200 x 12000 protein helper time from 0.100458s to 0.090770s. A later
+  clean-protein entropy pass also skips constructing the full valid mask before
+  calling that helper when no protein gap bytes are present, leaving the DNA and
+  Unicode paths unchanged.
   Entropy term calculation now uses masked `np.log2` into a scratch array
   instead of `np.where`, so sparse protein count matrices avoid computing logs
   for zero-probability symbols while preserving exact entropy values.

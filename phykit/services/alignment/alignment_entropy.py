@@ -17,13 +17,14 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
+_PROTEIN_GAP_BYTES = b"-?*X"
 
 
 def _get_gap_codes(is_protein: bool):
     global _DNA_GAP_CODES, _PROTEIN_GAP_CODES
     if is_protein:
         if _PROTEIN_GAP_CODES is None:
-            _PROTEIN_GAP_CODES = np.frombuffer(b"-?*X", dtype=np.uint8)
+            _PROTEIN_GAP_CODES = np.frombuffer(_PROTEIN_GAP_BYTES, dtype=np.uint8)
         return _PROTEIN_GAP_CODES
 
     if _DNA_GAP_CODES is None:
@@ -257,24 +258,35 @@ class AlignmentEntropy(Alignment):
             return [0.0] * aln_len
 
         try:
+            alignment_bytes = "".join(sequences).encode("ascii")
             alignment_array = np.frombuffer(
-                "".join(sequences).encode("ascii"),
+                alignment_bytes,
                 dtype=np.uint8,
             ).reshape(len(sequences), aln_len)
-            invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)
-            for gap_code in _get_gap_codes(is_protein):
-                invalid_mask |= alignment_array == gap_code
-            valid_mask = ~invalid_mask
+            if is_protein and not any(
+                gap_code in alignment_bytes for gap_code in _PROTEIN_GAP_BYTES
+            ):
+                valid_mask = None
+                valid_chars = np.unique(alignment_array)
+                all_valid = True
+            else:
+                invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)
+                for gap_code in _get_gap_codes(is_protein):
+                    invalid_mask |= alignment_array == gap_code
+                valid_mask = ~invalid_mask
+                valid_chars = np.unique(alignment_array[valid_mask])
+                all_valid = bool(valid_mask.all())
         except UnicodeEncodeError:
             invalid_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
             alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
             invalid_chars_array = np.array(list(invalid_chars), dtype="U1")
             valid_mask = ~np.isin(alignment_array, invalid_chars_array)
+            valid_chars = np.unique(alignment_array[valid_mask])
+            all_valid = False
 
         if alignment_array.size == 0:
             return []
 
-        valid_chars = np.unique(alignment_array[valid_mask])
         if valid_chars.size == 0:
             return [0.0] * alignment_array.shape[1]
         if valid_chars.size == 1:
@@ -285,7 +297,7 @@ class AlignmentEntropy(Alignment):
                 alignment_array,
                 valid_mask,
                 valid_chars,
-                all_valid=bool(valid_mask.all()),
+                all_valid=all_valid,
             )
 
         count_reducer = (

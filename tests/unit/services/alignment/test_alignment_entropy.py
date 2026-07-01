@@ -475,6 +475,27 @@ assert "Bio.AlignIO" not in sys.modules
         assert spy.call_args.kwargs["all_valid"] is True
         assert len(entropies) == 9
 
+    def test_site_entropies_clean_protein_skips_gap_code_mask(self, mocker):
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        entropy = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False))
+        alignment = [
+            SeqRecord(Seq("ACDEFGHIK"), id="t1"),
+            SeqRecord(Seq("LMNPQRSTV"), id="t2"),
+            SeqRecord(Seq("WYACDEFGH"), id="t3"),
+        ]
+        mocker.patch(
+            "phykit.services.alignment.alignment_entropy._get_gap_codes",
+            side_effect=AssertionError(
+                "clean protein entropy should skip gap-code mask setup"
+            ),
+        )
+
+        entropies = entropy.calculate_site_entropies(alignment, is_protein=True)
+
+        assert len(entropies) == 9
+
     def test_site_entropies_unicode_fallback(self):
         entropy = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False))
         alignment = [
