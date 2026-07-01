@@ -424,6 +424,43 @@ class TestGCFComputation:
             )
             assert cached == uncached
 
+    def test_cached_four_groups_merge_multifurcation_extras(
+        self, default_args, monkeypatch
+    ):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1,C:1,D:1):1,(E:1,F:1,G:1,H:1):1);"),
+            "newick",
+        )
+        all_taxa = frozenset({"A", "B", "C", "D", "E", "F", "G", "H"})
+        parent_map = svc._asr._build_parent_map(species_tree)
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+        node = species_tree.root.clades[0]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached descendant sets should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        groups = svc._get_four_groups(
+            species_tree,
+            node,
+            parent_map,
+            all_taxa,
+            clade_tip_sets,
+        )
+        assert groups == (
+            frozenset({"A"}),
+            frozenset({"B", "C", "D"}),
+            frozenset({"E", "F", "G", "H"}),
+            frozenset(),
+        )
+
 
 class TestCachedDescendantAssembly:
     def test_distribution_result_assembly_uses_cached_descendants(

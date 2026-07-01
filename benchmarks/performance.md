@@ -901,6 +901,7 @@ Results:
 | `ConcordanceAsr._plot_concordance_contmap` circular setup | balanced 32768-tip tree, precomputed ancestral estimates and gCF values | 0.9902s | 0.1985s | 5.0x |
 | `ConcordanceAsr._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.034202s | 0.023919s | 1.43x |
 | `ConcordanceAsr._collect_clade_tip_sets` reverse-preorder binary merge | balanced 32768-tip tree, descendant tip-set cache used by gCF, ASR re-keying, and uncertainty output | 0.343929s | 0.172670s | 1.99x |
+| `ConcordanceAsr._get_four_groups` multifurcation child union | 500 cached gCF group decompositions over 16x16x32 / 64x64x16 / 128x128x8 wide node/sibling groups, side-by-side previous repeated immutable-set union path | 0.080950s / 0.842278s / 1.430373s | 0.043102s / 0.150936s / 0.385916s | 1.88x / 5.58x / 3.71x |
 | `ConcordanceAsr._plot_concordance_contmap` node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, phylogram coordinate setup | 0.051516s | 0.039994s | 1.29x |
 | `ConcordanceAsr._plot_concordance_contmap` circular coordinate clade-list reuse | balanced 32768-tip tree, node positions plus preorder/tip lists already available | 0.055215s | 0.044103s | 1.25x |
 | `ConcordanceAsr._plot_concordance_contmap` rectangular batched base branches | balanced 512-tip tree, gCF markers present, real Matplotlib Agg render | 2.872509s | 1.955351s | 1.47x |
