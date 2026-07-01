@@ -396,6 +396,7 @@ Results:
 | `AlignmentOutlierTaxa.calculate_outliers` all-valid protein long-branch formula | two repeated 220-taxon x 2000-site protein analyses, side-by-side previous all-valid pairwise matrix-product long-branch path | 9.241269s | 0.075789s | 121.93x |
 | `AlignmentOutlierTaxa.calculate_outliers` composition-distance row norms | 400 taxa x 1200 DNA sites and 1000 taxa x 5000 protein sites, side-by-side previous `np.linalg.norm(..., axis=1)` with identical rows | 0.039359s / 0.229932s | 0.016265s / 0.188438s | 2.42x / 1.22x |
 | `AlignmentOutlierTaxa.calculate_outliers` entropy column dot | site probability/log-probability matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(site_probs * log_probs, axis=0)` | 0.420023s / 0.620534s / 0.777484s / 1.564784s | 0.380694s / 0.425398s / 0.542617s / 1.111065s | 1.10x / 1.46x / 1.43x / 1.41x |
+| `AlignmentOutlierTaxa.calculate_outliers` all-valid entropy burden total | 1200 / 5000 / 12000 / 20000 / 100k / 1M site entropy vectors, side-by-side previous `np.sum(site_entropies) / aln_len` scalar total with long-alignment fallback | 0.000008353s / 0.000009390s / 0.000020950s / 0.000024403s / 0.000085546s / 0.001561792s | 0.000003974s / 0.000007368s / 0.000012166s / 0.000023877s / 0.000040040s / 0.001419092s | 2.10x / 1.27x / 1.72x / 1.02x / 2.14x / 1.10x |
 | `AlignmentOutlierTaxa.calculate_outliers` zipped row assembly | 100k synthetic taxa with six feature arrays and nested reason rows | 0.437748s | 0.370843s | 1.18x |
 | `AlignmentOutlierTaxa.calculate_outliers` literal nested row assembly | 100k synthetic taxa with six feature arrays and nested reason rows | 1.943047s | 1.677475s | 1.16x |
 | `AlignmentOutlierTaxa.run` batched text output | 100k outlier rows, mocked alignment/read and identical stdout text | 0.103591s | 0.090365s | 1.15x |
@@ -3215,7 +3216,9 @@ Profiling summary:
   linalg dispatch while preserving the same rounded row distances. Entropy
   burden now computes per-site probability/log-probability products with an
   `einsum` column dot, avoiding a temporary product matrix while preserving
-  entropy values.
+  entropy values. The all-valid entropy-burden scalar total now uses the
+  entropy vector's direct `sum()` for common alignment lengths and keeps the
+  generic `np.sum` path for very long alignments where it remains faster.
 - `PlotAlignmentQC` composition-distance scatter panel baseline time called
   Matplotlib `scatter` once per taxon, creating thousands of artists for large
   alignments. The optimized path batches normal and flagged taxa into two

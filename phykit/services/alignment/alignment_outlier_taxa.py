@@ -11,6 +11,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_SITE_ENTROPY_DIRECT_SUM_MAX_SIZE = 100_000
 
 
 def print_json(*args, **kwargs):
@@ -25,6 +26,12 @@ def _row_l2_norms(matrix):
 
 def _column_dot(left, right):
     return np.einsum("ij,ij->j", left, right)
+
+
+def _average_site_entropy(site_entropies, aln_len: int) -> float:
+    if site_entropies.size <= _SITE_ENTROPY_DIRECT_SUM_MAX_SIZE:
+        return float(site_entropies.sum() / aln_len)
+    return float(np.sum(site_entropies) / aln_len)
 
 
 class AlignmentOutlierTaxa(Alignment):
@@ -509,7 +516,7 @@ class AlignmentOutlierTaxa(Alignment):
             if all_valid_ascii:
                 entropy_burden = np.full(
                     n_taxa,
-                    float(np.sum(site_entropies) / aln_len),
+                    _average_site_entropy(site_entropies, aln_len),
                     dtype=np.float64,
                 )
             else:

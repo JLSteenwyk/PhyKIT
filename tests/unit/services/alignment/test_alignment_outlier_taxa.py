@@ -30,6 +30,27 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_average_site_entropy_common_path_uses_array_sum(monkeypatch):
+    site_entropies = np.array([0.5, 1.0, 1.5, 2.0])
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("common site-entropy totals should use ndarray.sum")
+
+    monkeypatch.setattr(
+        alignment_outlier_taxa_module.np,
+        "sum",
+        fail_sum,
+        raising=False,
+    )
+
+    observed = alignment_outlier_taxa_module._average_site_entropy(
+        site_entropies,
+        site_entropies.size,
+    )
+
+    assert observed == np.mean(site_entropies)
+
+
 class TestAlignmentOutlierTaxa:
     def _service(self):
         args = Namespace(
