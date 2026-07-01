@@ -646,6 +646,7 @@ Results:
 | `phylo_gwas` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.225119s | 0.116552s | 1.93x |
 | `phylo_gwas` module import without eager NumPy/json/plot config | cold subprocess import after lazy NumPy proxy plus JSON and plot config helper deferral | 0.075720s | 0.024089s | 3.14x |
 | `phylo_gwas` module import without shared typing startup | median cold subprocess import after removing annotation-only `typing` imports from shared error/alignment helpers | 0.007420s | 0.006305s | 1.18x |
+| `phylo_gwas` module import without eager CSV helper | median cold subprocess import after localizing `csv` to optional CSV output writing | 0.051231s | 0.042905s | 1.19x |
 | `Alignment.calculate_rcv` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.0766s | 0.0292s | 2.6x |
 | `Alignment.calculate_rcv` invalid lookup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.063539s | 0.028435s | 2.23x |
 | `Alignment.calculate_rcv` protein byte bincounts | 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous per-symbol scan | 0.157945s | 0.130001s | 1.21x |
@@ -3866,6 +3867,9 @@ Profiling summary:
   objects and summary counts. CSV output now uses direct required-field access
   for result dictionaries produced by the GWAS run path while retaining the
   previous blank-default `get()` fallback for incomplete external result rows.
+  A later startup pass localizes the `csv` import to that optional CSV writer,
+  so ordinary PhyloGwas command discovery and non-CSV runs avoid loading the
+  CSV helper while preserving quoted CSV output behavior.
 - `Alignment.calculate_rcv` baseline time built a Unicode character matrix and
   filled the per-sequence count matrix through nested sequence/symbol loops.
   The optimized path uses a byte-backed alignment matrix and computes each

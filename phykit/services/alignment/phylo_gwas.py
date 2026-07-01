@@ -8,7 +8,6 @@ using a phylogenetic tree, and produces a Manhattan plot.
 
 from __future__ import annotations
 
-import csv
 import heapq
 import math
 import sys
@@ -1462,6 +1461,8 @@ class PhyloGwas(Alignment):
         )
 
         with open(self.csv_output, "w", newline="") as fh:
+            import csv
+
             writer = csv.writer(fh)
             writer.writerow(fieldnames)
             writerow = writer.writerow
