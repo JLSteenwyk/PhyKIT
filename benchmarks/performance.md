@@ -295,6 +295,7 @@ Results:
 | `EvolutionaryRatePerSite`/`CompositionalBiasPerSite` column count sum-of-squares | count matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(counts * counts, axis=0)` | 0.426963s / 0.656234s / 0.739237s / 0.859598s | 0.317205s / 0.516822s / 0.375821s / 0.573535s | 1.35x / 1.27x / 1.97x / 1.50x |
 | `EvolutionaryRatePerSite.remove_gap_characters` cached translate deletion | 2M-character mixed-case sequence, gap/ambiguous symbols `-?*XxNn`, identical uppercase filtered output | 0.307932s | 0.012577s | 24.48x |
 | `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 1.473608s | 0.948019s | 1.55x |
+| `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` multi-character gap fallback | 100k records, non-ASCII column, gap tokens `--` and `?`, identical `Counter` output | 0.020868s | 0.016616s | 1.26x |
 | `EvolutionaryRatePerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.069242s | 0.055913s | 1.24x |
 | `EvolutionaryRatePerSite.run` direct terminal text output | 100k site values, mocked alignment/read and identical stdout text | 0.083225s | 0.064262s | 1.30x |
 | `EvolutionaryRatePerSite.run` plot-only series preparation | 1M site rates, identical rounded plotted site/value arrays without temporary row dictionaries | 0.376116s | 0.196265s | 1.92x |
@@ -2902,7 +2903,10 @@ Profiling summary:
   unusual multi-character gap tokens. The public per-column occurrence helper
   now counts directly from records for single-character gap lists, avoiding
   BioPython column-slice construction while preserving the existing
-  multi-character gap-token fallback. A later ASCII validity pass derives DNA
+  multi-character gap-token fallback. A follow-up extends the direct record-wise
+  occurrence counter to multi-character gap-token configurations too, avoiding
+  column-slice construction while preserving the same token semantics. A later
+  ASCII validity pass derives DNA
   valid symbols from the observed byte-code set and lets no-gap protein block
   counts skip the full valid mask, while protein alignments containing gap
   symbols keep the filtered-mask path. Column count sum-of-squares reductions

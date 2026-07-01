@@ -135,6 +135,38 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         assert counts == {"A": 2, "-": 1}
 
+    def test_get_number_of_occurrences_multi_character_gaps_avoid_column_slice(
+        self, args
+    ):
+        class NoColumnSliceAlignment:
+            def __init__(self, records):
+                self.records = records
+
+            def __iter__(self):
+                return iter(self.records)
+
+            def __getitem__(self, key):
+                if isinstance(key, tuple):
+                    raise AssertionError("column slicing should not be used")
+                return self.records[key]
+
+        service = EvolutionaryRatePerSite(args)
+        alignment = NoColumnSliceAlignment(
+            [
+                SeqRecord(Seq("A"), id="t1"),
+                SeqRecord(Seq("-"), id="dash"),
+                SeqRecord(Seq("a"), id="t2"),
+            ]
+        )
+
+        counts = service.get_number_of_occurrences_per_character(
+            alignment,
+            0,
+            ["--"],
+        )
+
+        assert counts == {"A": 2, "-": 1}
+
     def test_calculate_pic(self, args):
         service = EvolutionaryRatePerSite(args)
         pic = service.calculate_pic({"A": 2, "T": 1})

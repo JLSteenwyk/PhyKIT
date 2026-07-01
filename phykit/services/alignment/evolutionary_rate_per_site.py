@@ -224,20 +224,14 @@ class EvolutionaryRatePerSite(Alignment):
         idx: int,
         gap_chars: list[str]
     ) -> dict[str, int]:
-        if all(len(char) == 1 for char in gap_chars):
-            gap_chars_set = set(gap_chars)
-            counts = {}
-            for record in alignment:
-                char = record.seq[idx]
-                if char not in gap_chars_set:
-                    char = char.upper()
-                    counts[char] = counts.get(char, 0) + 1
-            return Counter(counts)
-
-        seq_at_position = alignment[:, idx]
-        clean_seq = self.remove_gap_characters(seq_at_position, gap_chars)
-
-        return Counter(clean_seq)
+        gap_chars_set = set(gap_chars)
+        counts = {}
+        for record in alignment:
+            char = record.seq[idx]
+            if char not in gap_chars_set:
+                char = char.upper()
+                counts[char] = counts.get(char, 0) + 1
+        return Counter(counts)
 
     def calculate_pic(
         self,
