@@ -1007,7 +1007,7 @@ class OUwie(Tree):
         if sig2 <= 0:
             return float("-inf"), 0.0, z0
 
-        logdet_C = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet_C = 2.0 * float(np.log(np.diag(factor[0])).sum())
         ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet_C + n)
         return float(ll), float(sig2), float(z0)
 
@@ -1068,7 +1068,7 @@ class OUwie(Tree):
         e = x - z0
         V_inv_e = V_inv_x - V_inv_ones * z0
         quad = float(e @ V_inv_e)
-        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
         ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
         return z0, float(ll)
 
@@ -1130,7 +1130,7 @@ class OUwie(Tree):
         if sig2 <= 0:
             return theta, sig2, float("-inf")
 
-        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
         ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
         return theta, float(sig2), float(ll)
 
@@ -1189,7 +1189,7 @@ class OUwie(Tree):
         e = x - W @ theta
         V_inv_e = V_inv_x - V_inv_W @ theta
         quad = float(e @ V_inv_e)
-        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
         ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
         return theta, float(ll)
 

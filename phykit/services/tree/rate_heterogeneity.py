@@ -656,7 +656,7 @@ class RateHeterogeneity(Tree):
         C_inv_e = C_inv_y - C_inv_ones * a_hat
         sigma2 = float(e @ C_inv_e) / n
 
-        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
         if sigma2 <= 0:
             return sigma2, a_hat, float("-inf")
 
@@ -788,7 +788,7 @@ class RateHeterogeneity(Tree):
         e = y - a_hat
         V_inv_e = V_inv_y - V_inv_ones * a_hat
         quad = float(e @ V_inv_e)
-        logdet = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
         ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
         return a_hat, ll
 

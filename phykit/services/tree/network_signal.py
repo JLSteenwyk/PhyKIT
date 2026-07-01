@@ -483,7 +483,7 @@ class NetworkSignal(Tree):
             return NetworkSignal._log_likelihood_inverse(x, C)
 
         # Concentrated log-likelihood
-        logdet_C = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet_C = 2.0 * float(np.log(np.diag(factor[0])).sum())
         logdet_sig2C = n * np.log(sig2) + logdet_C
         ll = -0.5 * (n * np.log(2 * np.pi) + logdet_sig2C + n)
 

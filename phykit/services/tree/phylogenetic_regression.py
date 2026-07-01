@@ -381,7 +381,7 @@ class PhylogeneticRegression(Tree):
         )
 
         sigma2_ml = float(residuals @ C_inv_residuals) / n
-        logdet_C = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+        logdet_C = 2.0 * float(np.log(np.diag(factor[0])).sum())
         ll = -0.5 * (
             n * np.log(2 * np.pi) + n * np.log(sigma2_ml) + logdet_C + n
         )

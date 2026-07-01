@@ -737,7 +737,7 @@ class ThresholdModel(Tree):
                 np.eye(C.shape[0], dtype=C.dtype),
                 check_finite=False,
             )
-            logdet_C = 2.0 * float(np.sum(np.log(np.diag(factor[0]))))
+            logdet_C = 2.0 * float(np.log(np.diag(factor[0])).sum())
             return C_inv, logdet_C
         except (np.linalg.LinAlgError, FloatingPointError, ValueError):
             C_inv = np.linalg.inv(C)

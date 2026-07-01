@@ -1878,6 +1878,7 @@ Results:
 | `pgls_utils.pgls_log_likelihood` | 420 taxa SPD VCV x 3-column design matrix | 0.0064s | 0.0006s | 10.7x |
 | `pgls_utils.pgls_log_likelihood` cached SciPy linalg wrappers | 2k repeated 8-taxon SPD VCV x 2-column design matrix calls, SciPy already warm | 0.064135s | 0.061040s | 1.05x |
 | `pgls_utils.pgls_log_likelihood` combined RHS solve | 160 repeated 420-taxon SPD VCV x 4-column design matrix likelihood evaluations, SciPy already warm | 0.094840s | 0.075566s | 1.26x |
+| Cholesky logdet diagonal reductions | 4 / 32 / 256 / 5k / 100k diagonal values, shared likelihood idiom, side-by-side previous `np.sum(np.log(diag))` wrapper | 3.604498s / 1.149306s / 1.004864s / 0.182699s / 0.198437s | 1.484793s / 0.463736s / 0.355035s / 0.090258s / 0.105189s | 2.43x / 2.48x / 2.83x / 2.02x / 1.89x |
 | `pgls_utils.estimate_lambda` | 260 taxa SPD VCV x 3-column design matrix, `max_lam=1.0` | 0.7152s | 0.0676s | 10.6x |
 | `pgls_utils.fit_gls` combined RHS multiply | 900 taxa SPD inverse x 13-column design matrix | 0.001092s | 0.000848s | 1.3x |
 | `pgls_utils.fit_gls` preallocated combined RHS | 300 repeated 250-taxon SPD inverse x 4-column design matrix fits, side-by-side previous `np.column_stack((X, y))` RHS assembly | 0.084559s | 0.019053s | 4.44x |
@@ -6520,7 +6521,9 @@ Profiling summary:
   annotation-only `typing` aliases with built-in postponed annotations. A
   repeated-call pass caches the resolved SciPy Cholesky/optimizer functions
   after first use, preserving import deferral while avoiding repeated import
-  machinery inside optimizer likelihood loops.
+  machinery inside optimizer likelihood loops. Cholesky log-determinant paths
+  now reduce `log(diag(L))` through the ndarray's `sum()` method, avoiding
+  generic `np.sum` dispatch in shared likelihood kernels.
 - `pgls_utils.fit_gls` baseline time applied `C^-1` separately while building
   `X' C^-1 X`, `X' C^-1 y`, and the residual sum of squares. The optimized helper
   applies `C^-1` once to the combined `[X, y]` right-hand side and reuses those
