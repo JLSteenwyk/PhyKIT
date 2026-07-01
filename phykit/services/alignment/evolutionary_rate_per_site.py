@@ -250,12 +250,24 @@ class EvolutionaryRatePerSite(Alignment):
         is_protein: bool = False,
     ) -> list[float]:
         aln_len = alignment.get_alignment_length()
-        sequences = [str(record.seq).upper() for record in alignment]
+        num_records = len(alignment)
 
-        if not sequences:
+        if num_records == 0:
             return []
-        if _all_sequences_identical(sequences):
+
+        raw_sequences = [str(record.seq) for record in alignment]
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
             return [0.0] * aln_len
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
         ascii_matrix = False

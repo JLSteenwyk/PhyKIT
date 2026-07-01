@@ -303,6 +303,7 @@ Results:
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` protein no-gap mask elision | 1000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.099297s | 0.069440s | 1.43x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/frequency path | 0.058379s | 0.044176s | 1.32x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.076192s | 0.006297s | 12.10x |
+| `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero PIC values | 0.158051s | 0.099522s | 1.59x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.223614s / 0.006108s / 0.073953s | 0.104555s / 0.000004s / 0.049539s | 2.14x / 1610.87x / 1.49x |
 | `EvolutionaryRatePerSite`/`CompositionalBiasPerSite` column count sum-of-squares | count matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(counts * counts, axis=0)` | 0.426963s / 0.656234s / 0.739237s / 0.859598s | 0.317205s / 0.516822s / 0.375821s / 0.573535s | 1.35x / 1.27x / 1.97x / 1.50x |
 | `EvolutionaryRatePerSite.remove_gap_characters` cached translate deletion | 2M-character mixed-case sequence, gap/ambiguous symbols `-?*XxNn`, identical uppercase filtered output | 0.307932s | 0.012577s | 24.48x |
@@ -2946,9 +2947,12 @@ Profiling summary:
   frequency-sum work while preserving all multi-symbol paths. Fully identical
   normalized alignments now return zero PIC values before byte-matrix
   construction, covering conserved multi-symbol sequences while leaving
-  non-identical alignments on the existing count path. A follow-up pass reuses
-  the shared no-slice equality helper so this shortcut no longer materializes
-  `sequences[1:]` and still exits early for heterogeneous alignments.
+  non-identical alignments on the existing count path. Raw-identical alignments
+  now test equality before uppercasing every row, avoiding the normalization pass
+  for already identical inputs while preserving mixed-case equivalence. A
+  follow-up pass reuses the shared no-slice equality helper so this shortcut no
+  longer materializes `sequences[1:]` and still exits early for heterogeneous
+  alignments.
   The public gap-removal helper now reuses cached `str.translate` deletion
   tables for single-character gap lists, preserving the previous fallback for
   unusual multi-character gap tokens. The public per-column occurrence helper
