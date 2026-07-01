@@ -19,6 +19,10 @@ def print_json(*args, **kwargs):
     return _print_json(*args, **kwargs)
 
 
+def _row_l2_norms(matrix):
+    return np.sqrt(np.einsum("ij,ij->i", matrix, matrix))
+
+
 class AlignmentOutlierTaxa(Alignment):
     _INVALID_LOOKUP_CACHE = {}
 
@@ -314,7 +318,7 @@ class AlignmentOutlierTaxa(Alignment):
                 where=valid_lengths[:, None] > 0,
             )
             center = np.median(comp_matrix, axis=0)
-            composition_distances = np.linalg.norm(comp_matrix - center, axis=1)
+            composition_distances = _row_l2_norms(comp_matrix - center)
         else:
             composition_distances = np.zeros(n_taxa, dtype=np.float64)
             comp_matrix = np.zeros((n_taxa, 0), dtype=np.float64)

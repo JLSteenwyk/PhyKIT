@@ -2,6 +2,7 @@ from argparse import Namespace
 from pathlib import Path
 import subprocess
 import sys
+import numpy as np
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
@@ -461,6 +462,49 @@ class TestAlignmentOutlierTaxa:
 
         assert calls == {"rows": 1, "sites": 1}
         assert len(result["rows"]) == 3
+
+    def test_row_l2_norms_matches_linalg_norm(self):
+        matrix = np.array(
+            [
+                [0.1, -0.2, 0.3],
+                [0.0, 0.0, 0.0],
+                [-0.4, 0.5, -0.6],
+            ]
+        )
+
+        observed = alignment_outlier_taxa_module._row_l2_norms(matrix)
+        expected = np.linalg.norm(matrix, axis=1)
+
+        np.testing.assert_allclose(observed, expected)
+
+    def test_variable_composition_distance_avoids_linalg_norm(self, monkeypatch):
+        service = self._service()
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTACGT"), id="a"),
+                SeqRecord(Seq("ACGTTCGT"), id="b"),
+                SeqRecord(Seq("TCGTACGA"), id="c"),
+            ]
+        )
+
+        def fail_norm(*_args, **_kwargs):
+            raise AssertionError(
+                "composition distances should use the row L2 helper"
+            )
+
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module.np.linalg,
+            "norm",
+            fail_norm,
+        )
+
+        result = service.calculate_outliers(alignment, is_protein=False)
+
+        assert [row["composition_distance"] for row in result["rows"]] == [
+            0.0,
+            0.1768,
+            0.0,
+        ]
 
     def test_all_valid_long_branch_proxy_matches_pairwise_reference(self):
         matrix = alignment_outlier_taxa_module.np.frombuffer(
