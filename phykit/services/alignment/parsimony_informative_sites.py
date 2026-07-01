@@ -152,7 +152,7 @@ class ParsimonyInformative(Alignment):
                 invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)
                 for gap_code in _get_gap_codes(is_protein):
                     invalid_mask |= alignment_array == gap_code
-                valid_mask = ~invalid_mask if np.any(invalid_mask) else None
+                valid_mask = ~invalid_mask if invalid_mask.any() else None
             pi_sites = _count_ascii_parsimony_informative_sites(
                 alignment_array,
                 valid_mask,

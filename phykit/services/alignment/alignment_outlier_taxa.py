@@ -308,7 +308,7 @@ class AlignmentOutlierTaxa(Alignment):
             valid_chars = alignment_array[valid_mask]
         if valid_chars.size > 0:
             symbols = np.unique(valid_chars)
-            if symbols.size == 1 and np.all(valid_lengths == valid_lengths[0]):
+            if symbols.size == 1 and (valid_lengths == valid_lengths[0]).all():
                 return self._constant_composition_result(
                     alignment,
                     float(valid_lengths[0]),
@@ -369,7 +369,7 @@ class AlignmentOutlierTaxa(Alignment):
                 if all_valid_ascii:
                     comparable = np.ones(n_taxa, dtype=bool)
                     comparable[i] = False
-                    if np.any(comparable):
+                    if comparable.any():
                         mismatches = np.sum(
                             alignment_array != alignment_array[i],
                             axis=1,
@@ -386,7 +386,7 @@ class AlignmentOutlierTaxa(Alignment):
                     )
                     comparable = overlap_counts > 0
                     comparable[i] = False
-                    if np.any(comparable):
+                    if comparable.any():
                         distances = mismatches[comparable] / overlap_counts[comparable]
                         long_branch_proxy[i] = float(np.mean(distances))
 

@@ -67,7 +67,7 @@ def _column_entropies_from_ascii_codes(
             count_index = (block_by_site + site_offsets).ravel()
         else:
             block_valid = valid_mask[:, start:stop]
-            if not np.any(block_valid):
+            if not block_valid.any():
                 continue
             count_index = (block_by_site + site_offsets)[block_valid.T]
         counts = np.bincount(
@@ -305,7 +305,7 @@ class MaskAlignment(Alignment):
         if (
             mask_len
             and not keep_mask[0]
-            and not np.any(keep_mask)
+            and not keep_mask.any()
             and all(len(str(record.seq)) == mask_len for record in records)
         ):
             return {
@@ -313,7 +313,7 @@ class MaskAlignment(Alignment):
                 for record in records
             }
 
-        if len(keep_mask) and np.all(keep_mask):
+        if len(keep_mask) and keep_mask.all():
             return {
                 record.id: str(record.seq).upper()
                 for record in records

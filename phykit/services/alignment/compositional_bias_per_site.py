@@ -203,7 +203,7 @@ def _column_count_stats_from_ascii_codes(
             count_index = (block_by_site + site_offsets).ravel()
         else:
             block_valid = valid_mask[:, start:stop]
-            if not np.any(block_valid):
+            if not block_valid.any():
                 continue
             count_index = (block_by_site + site_offsets)[block_valid.T]
         counts = np.bincount(

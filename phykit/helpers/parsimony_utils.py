@@ -645,7 +645,7 @@ def _retention_index_ascii_single_char(
 
     valid = (observed_taxa > 0) & (max_changes != min_changes)
     ri_per_char: list[float | None] = [None] * n_chars
-    if np.any(valid):
+    if valid.any():
         numerators = max_changes[valid] - observed[valid]
         denominators = max_changes[valid] - min_changes[valid]
         for index, value in zip(np.flatnonzero(valid), numerators / denominators):

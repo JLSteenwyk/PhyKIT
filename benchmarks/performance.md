@@ -164,6 +164,7 @@ Results:
 | `AlignmentEntropy._entropy_from_ascii_codes` array-to-list conversion | 12 taxa x 800k clean DNA sites, full helper output conversion with identical Python float list | 0.750628s | 0.476712s | 1.57x |
 | `AlignmentEntropy._entropy_from_counts` masked log terms | 20 x 200k sparse protein count matrix, side-by-side previous `np.where(probs > 0, probs * log2(probs), 0)` terms | 0.040059s | 0.027744s | 1.44x |
 | `AlignmentEntropy`/`MaskAlignment` protein entropy column reductions | count matrices shaped 20x5000 / 64x20000, side-by-side previous in-place probability/log-probability product plus `np.sum(..., axis=0)` | 2.243765s / 3.478205s | 1.991224s / 2.424359s | 1.13x / 1.43x |
+| Shared boolean mask `any`/`all` reductions | empty / 10 / 1000 / 1M / 1000x1000 boolean masks, side-by-side previous top-level `np.any`/`np.all` dispatch | `any`: 4.323206s / 3.550042s / 1.254590s / 0.002394s / 0.001399s; `all`: 3.013299s / 2.108792s / 1.183967s / 0.001637s / 0.001208s | `any`: 0.750272s / 0.762969s / 0.429710s / 0.000900s / 0.000662s; `all`: 0.505534s / 1.391566s / 0.265627s / 0.001174s / 0.000669s | `any`: 5.76x / 4.65x / 2.92x / 2.66x / 2.11x; `all`: 5.96x / 1.52x / 4.46x / 1.39x / 1.80x |
 | `AlignmentEntropy.calculate_site_entropies` ASCII DNA entropy counts | 3000 taxa x 8000 sites, four observed DNA symbols, side-by-side previous boolean `np.sum(..., axis=0)` counts | 0.306331s | 0.138240s | 2.22x |
 | `AlignmentEntropy.calculate_site_entropies` gap-code mask construction | 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous lookup-mask gather | 0.392355s | 0.335875s | 1.17x |
 | `AlignmentEntropy.calculate_site_entropies` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/probability path | 0.088211s | 0.072725s | 1.21x |
@@ -2545,6 +2546,10 @@ Profiling summary:
   Entropy term calculation now uses masked `np.log2` into a scratch array
   instead of `np.where`, so sparse protein count matrices avoid computing logs
   for zero-probability symbols while preserving exact entropy values.
+  Mask-presence checks in shared alignment helpers now use ndarray
+  `any()`/`all()` reductions instead of top-level `np.any`/`np.all` dispatch,
+  preserving boolean results while reducing dispatch overhead across empty,
+  small, and large masks.
   Protein-sized entropy matrices now reduce probability/log-probability terms
   with an `einsum` column dot while DNA-sized matrices keep the previous
   in-place product path. DNA-sized
