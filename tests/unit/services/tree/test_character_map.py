@@ -373,6 +373,31 @@ class TestCharacterMapStateSummary:
         assert bincount_calls == 1
         np.testing.assert_array_equal(observed, expected)
 
+    def test_ascii_counts_per_char_matches_reference_and_omits_zeros(self):
+        import numpy as np
+
+        symbol_labels = ["0", "1", "2", "3"]
+        symbol_counts = np.array(
+            [
+                [2, 0, 1],
+                [0, 4, 1],
+                [3, 0, 0],
+                [0, 5, 1],
+            ]
+        )
+
+        observed = CharacterMap._ascii_counts_per_char(
+            symbol_counts,
+            symbol_labels,
+        )
+
+        assert observed == [
+            Counter({"0": 2, "2": 3}),
+            Counter({"1": 4, "3": 5}),
+            Counter({"0": 1, "1": 1, "3": 1}),
+        ]
+        assert all(count for counts in observed for count in counts.values())
+
     def test_full_summary_reuses_ascii_summary_for_single_character_states(
         self, monkeypatch
     ):

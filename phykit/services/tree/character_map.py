@@ -379,17 +379,24 @@ class CharacterMap(Tree):
             np.count_nonzero(np.count_nonzero(symbol_counts >= 2, axis=0) >= 2)
         )
         symbol_labels = [chr(int(symbol)) for symbol in symbols]
-        counts_per_char = [
+        counts_per_char = CharacterMap._ascii_counts_per_char(
+            symbol_counts,
+            symbol_labels,
+        )
+        return n_states_per_char, states_by_char, n_informative, counts_per_char
+
+    @staticmethod
+    def _ascii_counts_per_char(symbol_counts, symbol_labels):
+        return [
             Counter(
                 {
-                    label: int(count)
-                    for label, count in zip(symbol_labels, symbol_counts[:, index])
+                    label: count
+                    for label, count in zip(symbol_labels, column_counts.tolist())
                     if count
                 }
             )
-            for index in range(n_chars)
+            for column_counts in symbol_counts.T
         ]
-        return n_states_per_char, states_by_char, n_informative, counts_per_char
 
     @staticmethod
     def _ascii_symbol_counts_by_char(matrix, symbols):
