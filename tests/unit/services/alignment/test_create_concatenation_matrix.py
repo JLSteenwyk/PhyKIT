@@ -742,6 +742,36 @@ class TestCreateConcatenationMatrix:
         assert len(line_collections) == 1
         assert len(line_collections[0].get_segments()) == 3
 
+    def test_plot_concatenation_occupancy_counts_rows_with_count_nonzero(
+        self, tmp_path, args, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        import numpy as real_np
+
+        calls = []
+        ccm = CreateConcatenationMatrix(args)
+
+        def tracking_count_nonzero(values, *call_args, **kwargs):
+            calls.append(kwargs.get("axis"))
+            return real_np.count_nonzero(values, *call_args, **kwargs)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("represented occupancy rows should use count_nonzero")
+
+        monkeypatch.setattr(ccm_module.np, "count_nonzero", tracking_count_nonzero)
+        monkeypatch.setattr(ccm_module.np, "sum", fail_sum, raising=False)
+
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B"],
+            alignment_paths=["g1.fa", "g2.fa"],
+            concatenated_seqs={"A": ["AC", "GT"], "B": ["A-", "G?"]},
+            present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+            gene_lengths=[2, 2],
+            output_file=str(tmp_path / "occ_count_nonzero.png"),
+        )
+
+        assert calls == [1]
+
     def test_plot_concatenation_occupancy_pdf_output(self, tmp_path, args):
         pytest.importorskip("matplotlib")
         ccm = CreateConcatenationMatrix(args)

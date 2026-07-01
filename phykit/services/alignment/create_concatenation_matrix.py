@@ -228,7 +228,7 @@ class CreateConcatenationMatrix(Alignment):
         )
 
         # Sort taxa by total represented occupancy (state == 2), descending
-        represented_counts = np.sum(state_matrix == 2, axis=1)
+        represented_counts = np.count_nonzero(state_matrix == 2, axis=1)
         order = np.argsort(-represented_counts)
         state_matrix = state_matrix[order, :]
         taxa_sorted = [taxa[idx] for idx in order]
