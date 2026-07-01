@@ -295,6 +295,7 @@ Results:
 | `MaskAlignment.apply_mask` all-keep shortcut | 2000 taxa x 5000 sites, lowercase ASCII sequences and all-true keep mask, side-by-side previous matrix-slice path | 0.032670s | 0.006820s | 4.79x |
 | `MaskAlignment.apply_mask` all-trim shortcut | 2000 taxa x 5000 sites, lowercase ASCII sequences and all-false keep mask, side-by-side previous matrix-slice path | 0.008348s | 0.001225s | 6.81x |
 | `MaskAlignment.run` batched FASTA text output | 100k masked FASTA records, mocked alignment/read and identical stdout text | 0.021122s | 0.011388s | 1.85x |
+| `MaskAlignment.run` JSON row construction | 500k masked sequence rows, identical row dictionaries | 0.308298s | 0.156746s | 1.97x |
 | `MaskAlignment.run` JSON kept-site count | 2M-site boolean keep mask, side-by-side previous boolean `np.sum` count | 0.000407500s | 0.000067708s | 6.02x |
 | `mask_alignment` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction and postponed annotations | 0.081088s | 0.023500s | 3.45x |
 | `mask_alignment` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006133s | 0.005002s | 1.23x |

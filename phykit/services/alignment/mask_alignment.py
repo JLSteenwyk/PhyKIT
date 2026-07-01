@@ -108,7 +108,7 @@ class MaskAlignment(Alignment):
         masked = self.apply_mask(alignment, keep_mask)
 
         if self.json_output:
-            rows = [dict(taxon=taxon, sequence=seq) for taxon, seq in masked.items()]
+            rows = [{"taxon": taxon, "sequence": seq} for taxon, seq in masked.items()]
             print_json(
                 dict(
                     thresholds=dict(
