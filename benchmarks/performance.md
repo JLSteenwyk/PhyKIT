@@ -396,6 +396,7 @@ Results:
 | `DNAThreader.create_mask` binary ClipKIT status parse | 200k ClipKIT rows expanded to nucleotide mask | 0.051766s | 0.049098s | 1.05x |
 | `DNAThreader.create_mask` constant triplet expansion | 200k ClipKIT rows expanded to nucleotide mask | 0.066043s | 0.057353s | 1.15x |
 | `DNAThreader.thread` ClipKIT all-keep detection | 500k all-keep ClipKIT rows expanded to nucleotide mask and all-true flag | 0.128622s | 0.123556s | 1.04x |
+| `DNAThreader.create_mask` bounded byte status comparison | 200k all-keep ClipKIT rows expanded to nucleotide mask, identical single-space status parsing | 0.128046s | 0.104242s | 1.23x |
 | `DNAThreader.clipkit_log_data` streaming row split | 300k ClipKIT rows, identical parsed row lists | 0.058648s | 0.054238s | 1.08x |
 | `DNAThreader.run` batched FASTA text output | 100k threaded FASTA records, mocked parser/threading and identical stdout text | 0.030984s | 0.011490s | 2.70x |
 | `dna_threader` module import without eager Bio.SeqIO/Seq | cold subprocess import after lazy Biopython sequence imports | 0.187897s | 0.084045s | 2.24x |
@@ -3109,6 +3110,9 @@ Profiling summary:
   private mask builder that returns the all-sites-kept flag while expanding the
   ClipKIT log, avoiding a second full `all(mask)` scan for all-keep logs while
   preserving the public `create_mask()` return type and monkeypatch fallback.
+  A later parser pass compares the bounded four-byte status field directly,
+  avoiding per-row `startswith` dispatch while preserving the exact existing
+  rule that `keep` must start immediately after the first space.
   The compatibility `clipkit_log_data` property now streams rows from the file
   handle instead of materializing `readlines()` before splitting, preserving the
   returned parsed row lists with lower peak memory.

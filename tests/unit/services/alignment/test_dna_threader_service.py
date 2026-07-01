@@ -102,6 +102,22 @@ assert "Bio.AlignIO" not in sys.modules
             True, True, True,
         ]
 
+    def test_create_mask_preserves_single_space_status_rule(self, args, mocker):
+        args.clipkit_log_file = "clipkit.log"
+        service = DNAThreader(args)
+        mocker.patch(
+            "builtins.open",
+            mocker.mock_open(read_data=b"1  keep\n2 keep\n3 keep \n"),
+        )
+
+        mask = service.create_mask(0)
+
+        assert mask == [
+            False, False, False,
+            True, True, True,
+            True, True, True,
+        ]
+
     def test_create_mask_returns_plain_boolean_list_from_codon_triplets(
         self, args, mocker
     ):

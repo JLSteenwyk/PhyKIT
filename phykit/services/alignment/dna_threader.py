@@ -111,7 +111,7 @@ class DNAThreader(Alignment):
             for line in f:
                 status_start = line.find(b" ") + 1
                 status_end = status_start + 4
-                keep = line.startswith(b"keep", status_start) and (
+                keep = line[status_start:status_end] == b"keep" and (
                     len(line) == status_end or line[status_end] in (32, 10)
                 )
                 if keep:
