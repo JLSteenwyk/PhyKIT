@@ -376,6 +376,37 @@ class TestTreeBase:
             2.0,
         ]
 
+    def test_validate_tree_fallback_stops_after_minimum_tip_count(self):
+        service = Tree()
+
+        class NonstandardTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def get_terminals(self):
+                for idx in range(10):
+                    if idx > 2:
+                        raise AssertionError("fallback should stop at min_tips")
+                    yield object()
+
+        service.validate_tree(NonstandardTree(), min_tips=3)
+
+    def test_validate_tree_fallback_rejects_too_few_tips(self):
+        service = Tree()
+
+        class NonstandardTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def get_terminals(self):
+                yield object()
+                yield object()
+
+        with pytest.raises(PhykitUserError):
+            service.validate_tree(NonstandardTree(), min_tips=3)
+
     def test_read_tree_file_success_returns_deepcopy(self, mocker):
         service = Tree(tree_file_path="x.tre")
         source_tree = {"name": "tree"}

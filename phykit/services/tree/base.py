@@ -572,9 +572,7 @@ class Tree(BaseService):
         ):
             return
 
-        tips = list(tree.get_terminals())
-
-        if len(tips) < min_tips:
+        if not self._has_minimum_terminals(tree, min_tips):
             raise PhykitUserError(
                 [f"Tree must have at least {min_tips} tips{ctx}."],
                 code=2,
@@ -591,6 +589,15 @@ class Tree(BaseService):
                         [f"All branches in the tree must have lengths{ctx}."],
                         code=2,
                     )
+
+    @staticmethod
+    def _has_minimum_terminals(tree, min_tips: int) -> bool:
+        tip_count = 0
+        for _terminal in tree.get_terminals():
+            tip_count += 1
+            if tip_count >= min_tips:
+                return True
+        return False
 
     @staticmethod
     def _validate_standard_tree(

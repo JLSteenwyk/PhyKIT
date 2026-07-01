@@ -1393,6 +1393,7 @@ Results:
 | `Tree.validate_tree` default branch lengths | balanced 65536-tip tree, fill half of terminal branch lengths | 0.2983s | 0.0149s | 20.0x |
 | `Tree._validate_standard_tree` unordered child push, required branch lengths | balanced 262144-tip tree, min-tip and branch-length validation, optimized helper baseline | 0.053449s | 0.031135s | 1.72x |
 | `Tree._validate_standard_tree` unordered child push, default branch lengths | balanced 65536-tip tree, fill half of terminal branch lengths, optimized helper baseline | 0.016180s | 0.010987s | 1.47x |
+| `Tree.validate_tree` generic fallback min-tip check | nonstandard tree yielding 500k terminals, `min_tips=3` | 0.036222s | 0.000001292s | 28035.6x |
 | `Tree.prune_tree_using_taxa_list` | balanced 2048-tip tree, prune 1024 named tips | 0.2327s | 0.2070s | 1.1x |
 | `Tree.prune_tree_using_taxa_list` batch standard-tree pruning | balanced 2048-tip tree, prune 1024 resolved terminal targets | 0.2030s | 0.0022s | 91.9x |
 | `Tree._prune_terminal_objects_batch_standard_tree` reverse-preorder pass | balanced 2048-tip tree, prune 1024 resolved terminal targets | 0.001459s | 0.001125s | 1.30x |
@@ -5369,7 +5370,10 @@ Profiling summary:
   objects and keeping root branch-length handling unchanged. A later pass
   localizes stack operations and pushes child lists directly because validation
   does not expose traversal order, reducing the remaining optimized helper cost
-  for both required-length checks and default-length assignment. `shared_tips`
+  for both required-length checks and default-length assignment. The generic
+  fallback now counts terminals only until `min_tips` is reached, avoiding full
+  terminal-list materialization when branch-length fallback traversal is not
+  needed. `shared_tips`
   now computes the set intersection once before checking emptiness and returning
   the list, preserving unique-tip semantics while avoiding a duplicate
   intersection for overlapping tree/taxon lists.
