@@ -609,6 +609,7 @@ Results:
 | `Alignment.calculate_rcv` observed-symbol validity protein | 2000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous full valid-mask path | 0.099660s | 0.078707s | 1.27x |
 | `Alignment.calculate_rcv` no-gap observed-symbol validity | 2000 taxa x 5000 sites, DNA `ACGT` / 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.051012s / 0.063966s | 0.034910s / 0.042129s | 1.46x / 1.52x |
 | `Alignment.calculate_rcv` identical-sequence shortcut | 1200 taxa x 12000 sites, lowercase/uppercase identical DNA records, side-by-side previous matrix path | 0.046277s | 0.006825s | 6.78x |
+| `Alignment.calculate_rcv` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero RCV | 0.169686s | 0.036446s | 4.66x |
 | `Alignment.calculate_rcv` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.163491s / 0.008818s / 0.075810s | 0.050280s / 0.000004s / 0.031403s | 3.25x / 2377.98x / 2.41x |
 | `Alignment.calculate_rcv` final RCV total | median per-call reduction of 260 / 1200 / 2000 per-taxon RCV values, side-by-side previous `np.sum` wrapper | 0.000003516s / 0.000005445s / 0.000004957s | 0.000002338s / 0.000002423s / 0.000003238s | 1.50x / 2.25x / 1.53x |
 | `Alignment.calculate_rcv` clean large-short ASCII count matrix | 10000 taxa x 128 sites / 50000 taxa x 64 sites / 200000 taxa x 32 sites, 20 valid symbols, side-by-side previous per-row `bincount` loop | 5.113480s / 5.967428s / 6.979634s | 1.557019s / 1.341158s / 1.625248s | 3.28x / 4.45x / 4.29x |
@@ -3730,9 +3731,11 @@ Profiling summary:
   now count row valid lengths with `np.count_nonzero` instead of summing boolean
   masks before float conversion. Identical alignments now return zero RCV
   before NumPy matrix construction, preserving case-insensitive behavior by
-  comparing uppercased sequence strings. A
-  follow-up pass scans those sequence strings by index instead of evaluating the
-  shortcut over `sequences[1:]`, avoiding a large temporary list while
+  comparing uppercased sequence strings. Raw-identical alignments now test
+  equality before uppercasing every row, avoiding the normalization pass for
+  already identical inputs while preserving mixed-case equivalence. A follow-up
+  pass scans those sequence strings by index instead of evaluating the shortcut
+  over `sequences[1:]`, avoiding a large temporary list while
   preserving early exit for heterogeneous alignments. The final per-taxon RCV
   total now uses the ndarray reduction method directly, avoiding the generic
   `np.sum` dispatch on the realistic taxon-vector sizes covered by the RCV

@@ -118,9 +118,19 @@ class Alignment(BaseService):
         if num_records == 1:
             return 0.0
 
-        sequences = [str(record.seq).upper() for record in alignment]
-        if _all_sequences_identical(sequences):
+        raw_sequences = [str(record.seq) for record in alignment]
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
             return 0.0
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         aln_len = alignment.get_alignment_length()
 
