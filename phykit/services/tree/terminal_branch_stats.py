@@ -45,7 +45,9 @@ class TerminalBranchStats(Tree):
         tree = self.read_tree_file_unmodified()
         _, stats, lengths_and_names = \
             self.calculate_terminal_branch_stats(
-                tree, include_names=self.verbose
+                tree,
+                include_names=self.verbose,
+                return_lengths=False,
             )
 
         if self.json_output:
@@ -200,6 +202,7 @@ class TerminalBranchStats(Tree):
         self,
         tree: Newick.Tree,
         include_names: bool = True,
+        return_lengths: bool = True,
     ) -> tuple[
         list[float],
         dict[str, float],
@@ -214,7 +217,12 @@ class TerminalBranchStats(Tree):
                 stats = calculate_summary_statistics_from_arr(
                     terminal_branch_lengths_arr
                 )
-                return terminal_branch_lengths_arr.tolist(), stats, []
+                lengths = (
+                    terminal_branch_lengths_arr.tolist()
+                    if return_lengths
+                    else []
+                )
+                return lengths, stats, []
 
         terminal_branch_lengths, lengths_and_names = \
             self.get_terminal_branch_lengths(tree, include_names=include_names)
@@ -223,4 +231,5 @@ class TerminalBranchStats(Tree):
 
         stats = calculate_summary_statistics_from_arr(terminal_branch_lengths)
 
-        return terminal_branch_lengths, stats, lengths_and_names
+        lengths = terminal_branch_lengths if return_lengths else []
+        return lengths, stats, lengths_and_names

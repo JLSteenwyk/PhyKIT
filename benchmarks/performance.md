@@ -1057,6 +1057,7 @@ Results:
 | `TerminalBranchStats.get_terminal_branch_lengths` direct verbose traversal | balanced 65536-tip tree, branch length and taxon name for every terminal branch | 0.1697s | 0.0480s | 3.5x |
 | `TerminalBranchStats._get_terminal_branch_lengths_direct` order-preserving child push | balanced 65536-tip tree, branch length and taxon name for every terminal branch, side-by-side previous `reversed(children)` helper | 0.016234s | 0.012539s | 1.29x |
 | `TerminalBranchStats.run` verbose batched text output | 100k terminal rows, mocked tree/read and identical stdout text | 0.052963s | 0.038226s | 1.39x |
+| `TerminalBranchStats.run` non-verbose skipped length-list return | 1M terminal branch lengths, stats helper mocked, identical summary payload | 0.068538458s | 0.000000317s | 216448.85x |
 | `TerminalBranchStats.run` cached read-only tree path | balanced 32768-tip cached tree with varied terminal lengths, non-verbose summary output mocked | 0.108551s | 0.003696s | 29.37x |
 | `terminal_branch_stats` module import without eager Bio.Phylo | cold subprocess import of terminal-branch-stats command module | 0.169211s | 0.118903s | 1.42x |
 | `terminal_branch_stats` module import without eager stats NumPy | cold subprocess import after lazy shared summary helper | 0.118903s | 0.070102s | 1.70x |
@@ -7591,6 +7592,9 @@ Profiling summary:
   backward, preserving terminal-length order while avoiding the per-node
   `reversed(children)` iterator. The list-returning direct helper now uses the
   same order-preserving child push for verbose and non-verbose API callers.
+  Command execution can now request `return_lengths=False`, so non-verbose
+  `run()` keeps the default API return shape available to direct callers while
+  avoiding an unused NumPy-array-to-list conversion before printing summaries.
 - `calculate_summary_statistics_from_arr` and
   `calculate_summary_statistics_from_dict` baseline time mixed multiple Python
   `statistics` passes with repeated NumPy conversions. The optimized shared

@@ -188,6 +188,38 @@ class TestTerminalBranchStats:
         stats_arg = mocked_stats.call_args.args[0]
         assert stats_arg.tolist() == [1.0, 2.0, 4.0]
 
+    def test_calculate_terminal_branch_stats_can_skip_returned_lengths(
+        self, mocker, args
+    ):
+        class ArrayWithoutToList:
+            size = 3
+
+            def tolist(self):
+                raise AssertionError("unneeded lengths should not be materialized")
+
+        service = TerminalBranchStats(args)
+        arr = ArrayWithoutToList()
+        mocker.patch.object(
+            TerminalBranchStats,
+            "_get_terminal_branch_lengths_array_direct",
+            return_value=arr,
+        )
+        mocked_stats = mocker.patch(
+            "phykit.services.tree.terminal_branch_stats.calculate_summary_statistics_from_arr",
+            return_value={"mean": 2.0},
+        )
+
+        lengths, stats, lengths_and_names = service.calculate_terminal_branch_stats(
+            object(),
+            include_names=False,
+            return_lengths=False,
+        )
+
+        assert lengths == []
+        assert stats == {"mean": 2.0}
+        assert lengths_and_names == []
+        mocked_stats.assert_called_once_with(arr)
+
     def test_terminal_branch_lengths_array_preserves_order_without_reversed(
         self, args
     ):
@@ -235,7 +267,11 @@ class TestTerminalBranchStats:
 
         service.run()
         mocked_print_summary.assert_called_once_with({"mean": 1.5})
-        mocked_stats.assert_called_once_with(tree, include_names=False)
+        mocked_stats.assert_called_once_with(
+            tree,
+            include_names=False,
+            return_lengths=False,
+        )
 
     def test_run_uses_unmodified_tree_read(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", verbose=False, json=False)
@@ -275,7 +311,11 @@ class TestTerminalBranchStats:
         service.run()
         out, _ = capsys.readouterr()
         assert out == "1.1235 a\n2.0 b\n"
-        mocked_stats.assert_called_once_with(tree, include_names=True)
+        mocked_stats.assert_called_once_with(
+            tree,
+            include_names=True,
+            return_lengths=False,
+        )
 
     def test_run_verbose_handles_broken_pipe(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", verbose=True, json=False)
