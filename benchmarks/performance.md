@@ -1310,6 +1310,7 @@ Results:
 | `LTT._compute_gamma_and_ltt` shared internal-depth calculation | balanced 32768-tip tree, shared terminal list and depth map, identical gamma/LTT output | 0.028798s | 0.018729s | 1.54x |
 | `LTT._compute_gamma_and_ltt` internal-depth child push | balanced 131072-tip tree, shared terminal list and depth map, identical gamma/LTT output | 0.092145s | 0.078426s | 1.17x |
 | `LTT._compute_gamma_and_ltt` LTT row construction | 1M sorted internal depths, identical LTT rows, side-by-side previous `internal_depths[1:]` loop | 0.363777s | 0.274531s | 1.33x |
+| `LTT._output_json` LTT row construction | 1M mocked LTT rows, identical row dictionaries | 0.814529s | 0.449677s | 1.81x |
 | `ltt` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.013677s | 0.006328s | 2.16x |
 | `ltt` module import without `typing` startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006019s | 0.004281s | 1.41x |
 | `TreenessOverRCV.run` read-only treeness setup | balanced 32768-tip cached tree, RCV calculation and output mocked, side-by-side previous copied tree read | 0.241418s | 0.008151s | 29.62x |
@@ -5136,7 +5137,8 @@ Profiling summary:
   standalone and combined gamma/LTT paths. The combined gamma/LTT helper now
   builds LTT rows with an iterator helper instead of slicing
   `internal_depths[1:]`, preserving the same row sequence without copying the
-  sorted internal-depth tail.
+  sorted internal-depth tail. JSON output now uses literal dictionaries for LTT
+  rows instead of repeated `dict(...)` calls.
 - `CollapseBranches.run` baseline time counted internal nodes before and after
   collapsing even for normal text output, where the collapsed branch count is
   not reported. The optimized path performs those count traversals only for

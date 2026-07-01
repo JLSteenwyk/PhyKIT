@@ -436,7 +436,7 @@ class LTT(Tree):
             branching_times=[float(t) for t in bt],
             internode_intervals=[float(v) for v in g],
             ltt=[
-                dict(time_from_root=float(t), n_lineages=int(n))
+                {"time_from_root": float(t), "n_lineages": int(n)}
                 for t, n in ltt_data
             ],
         )
