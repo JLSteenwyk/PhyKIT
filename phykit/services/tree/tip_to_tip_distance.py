@@ -245,22 +245,22 @@ class TipToTipDistance(Tree):
         if fast_result is not None:
             combos, distances = fast_result
             return [
-                dict(
-                    taxon_a=taxon_a,
-                    taxon_b=taxon_b,
-                    tip_to_tip_distance=round(float(distance), 4),
-                )
+                {
+                    "taxon_a": taxon_a,
+                    "taxon_b": taxon_b,
+                    "tip_to_tip_distance": round(float(distance), 4),
+                }
                 for (taxon_a, taxon_b), distance in zip(combos, distances)
             ]
 
         rows = []
         for taxon_a, taxon_b in itertools.combinations(tips, 2):
             rows.append(
-                dict(
-                    taxon_a=taxon_a,
-                    taxon_b=taxon_b,
-                    tip_to_tip_distance=round(float(TreeMixin.distance(tree_zero, taxon_a, taxon_b)), 4),
-                )
+                {
+                    "taxon_a": taxon_a,
+                    "taxon_b": taxon_b,
+                    "tip_to_tip_distance": round(float(TreeMixin.distance(tree_zero, taxon_a, taxon_b)), 4),
+                }
             )
         return rows
 
