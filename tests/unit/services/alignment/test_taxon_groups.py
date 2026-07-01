@@ -209,6 +209,27 @@ class TestTreeMode:
         assert "  Files: tree0.nwk, tree1.nwk" in output
         assert "Group 2 (2 taxa, 1 files):" in output
 
+    def test_equal_size_groups_keep_first_seen_order(self, tmp_path, monkeypatch):
+        svc = TaxonGroups(_make_args(tmp_path / "unused.txt"))
+        monkeypatch.setattr(
+            svc,
+            "_read_file_list",
+            lambda _path: ["first.nwk", "second.nwk", "third.nwk"],
+        )
+        taxon_sets = {
+            "first.nwk": ["A", "B"],
+            "second.nwk": ["C", "D"],
+            "third.nwk": ["E", "F"],
+        }
+        monkeypatch.setattr(svc, "_extract_taxa", taxon_sets.__getitem__)
+
+        with patch("builtins.print") as mock_print:
+            svc.run()
+
+        output = mock_print.call_args.args[0]
+        assert output.index("  Files: first.nwk") < output.index("  Files: second.nwk")
+        assert output.index("  Files: second.nwk") < output.index("  Files: third.nwk")
+
     def test_extract_tree_taxa_uses_direct_terminal_name_traversal(
         self, tmp_path, monkeypatch
     ):

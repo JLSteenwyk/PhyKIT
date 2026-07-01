@@ -82,7 +82,7 @@ class TaxonGroups:
             groups[frozenset(taxa)].append(path)
 
         # 3. Sort groups by size (largest first)
-        sorted_groups = sorted(groups.items(), key=lambda x: -len(x[1]))
+        sorted_groups = sorted(groups.items(), key=lambda x: len(x[1]), reverse=True)
 
         # 4. Output
         if self.json_output:
