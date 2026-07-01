@@ -270,6 +270,18 @@ class TestPhyloGwas:
             "β",
         ]
 
+    def test_extract_column_alleles_fallback_inlines_ambiguity_check(
+        self, monkeypatch
+    ):
+        sequences = ["AαG", "AβG", "A?G"]
+
+        def fail_is_ambiguous(_char):
+            raise AssertionError("fallback extraction should check ambiguity inline")
+
+        monkeypatch.setattr(PhyloGwas, "_is_ambiguous", fail_is_ambiguous)
+
+        assert PhyloGwas._extract_column_alleles(1, sequences, None, None) is None
+
     def test_detect_phenotype_type_categorical(self):
         assert PhyloGwas._detect_phenotype_type(["highland", "lowland"]) == "categorical"
 

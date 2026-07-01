@@ -323,11 +323,12 @@ class PhyloGwas(Alignment):
             return list(column.tobytes().decode("ascii"))
 
         alleles = []
+        append = alleles.append
         for sequence in sequences:
             char = sequence[col_idx]
-            if PhyloGwas._is_ambiguous(char):
+            if char in {"-", "N", "X", "?", "*"}:
                 return None
-            alleles.append(char)
+            append(char)
         return alleles
 
     @staticmethod

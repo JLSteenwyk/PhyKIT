@@ -594,6 +594,7 @@ Results:
 | `PhyloGwas._read_phenotype` bounded row split | 1M phenotype TSV rows with comments/blanks and three ignored trailing columns, side-by-side previous full-row split | 0.959486s | 0.867587s | 1.11x |
 | `PhyloGwas._read_phenotype` binary bounded row split | 1M phenotype TSV rows with comments/blanks and three ignored trailing columns, identical first-two-column/duplicate output | 0.402401s | 0.382109s | 1.05x |
 | `PhyloGwas` allele extraction | 600 taxa x 5k ASCII sites, no ambiguous columns | 0.2494s | 0.0264s | 9.4x |
+| `PhyloGwas._extract_column_alleles` non-ASCII fallback ambiguity check | 300k shared non-ASCII sequences, side-by-side previous per-character `_is_ambiguous` helper call | 0.207304s | 0.116982s | 1.77x |
 | `PhyloGwas` ASCII valid-column prefilter | 600 taxa x 50k ASCII sites, 1% ambiguous character rate | 0.116165s | 0.033381s | 3.48x |
 | `PhyloGwas._benjamini_hochberg` | 1M synthetic p-values | 0.3779s | 0.1207s | 3.1x |
 | `PhyloGwas.run` zip-based FDR result annotation | 1M site result rows with adjusted p-value array, side-by-side previous index lookups | 0.263524s | 0.181904s | 1.45x |
@@ -3740,7 +3741,9 @@ Profiling summary:
   per-column ambiguity check. A subsequent pass samples unambiguous ASCII
   columns and, when invariant or multiallelic columns are present, builds a
   stricter biallelic mask so those columns never enter the per-site association
-  tests; all-biallelic scans keep the lighter non-ambiguous mask.
+  tests; all-biallelic scans keep the lighter non-ambiguous mask. The non-ASCII
+  fallback now checks ambiguous symbols inline while building the allele list,
+  avoiding one helper call per shared taxon.
 - `PhyloGwas._benjamini_hochberg` baseline time walked sorted p-values in a
   Python reverse loop to enforce monotonic adjusted values. The optimized path
   computes ranked p-values in NumPy and applies a vectorized reverse cumulative
