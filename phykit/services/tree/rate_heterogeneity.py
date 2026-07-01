@@ -165,7 +165,7 @@ class RateHeterogeneity(Tree):
         )
 
         # Build total VCV
-        C_total = sum(per_regime_vcv.values())
+        C_total = self._sum_vcv_matrices(per_regime_vcv)
 
         # Fit single-rate model
         sigma2_single, anc_single, ll_single = self._fit_single_rate(y, C_total)
@@ -277,6 +277,18 @@ class RateHeterogeneity(Tree):
     ) -> dict[str, int]:
         counts = Counter(regime_assignments.values())
         return {regime: counts[regime] for regime in regimes}
+
+    @staticmethod
+    def _sum_vcv_matrices(per_regime_vcv):
+        matrices = iter(per_regime_vcv.values())
+        try:
+            total = next(matrices).copy()
+        except StopIteration:
+            return 0
+
+        for matrix in matrices:
+            total += matrix
+        return total
 
     def _parse_trait_file(
         self, path: str, tree_tips: list[str]

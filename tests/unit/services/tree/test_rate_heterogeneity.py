@@ -1187,6 +1187,22 @@ class TestRun:
         assert counts == {"a": 2, "b": 2, "c": 1, "missing": 0}
         assert assignments.iterable.iterations == 1
 
+    def test_sum_vcv_matrices_accumulates_without_mutating_inputs(self):
+        x = np.array([[1.0, 2.0], [3.0, 4.0]])
+        y = np.array([[0.5, 1.5], [2.5, 3.5]])
+        z = np.array([[2.0, 0.0], [0.0, 2.0]])
+        original_x = x.copy()
+        original_y = y.copy()
+        original_z = z.copy()
+
+        observed = RateHeterogeneity._sum_vcv_matrices({"x": x, "y": y, "z": z})
+
+        np.testing.assert_allclose(observed, x + y + z)
+        np.testing.assert_allclose(x, original_x)
+        np.testing.assert_allclose(y, original_y)
+        np.testing.assert_allclose(z, original_z)
+        assert observed is not x
+
     @patch("builtins.print")
     def test_two_regime_lrt_p_value_does_not_import_scipy_stats(
         self, mocked_print, json_args, monkeypatch

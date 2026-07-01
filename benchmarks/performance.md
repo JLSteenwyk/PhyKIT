@@ -2207,6 +2207,7 @@ Results:
 | `RateHeterogeneity._plot_regime_tree` circular batched regime branches/arcs | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/arc/legend render | 1.475253s | 0.261012s | 5.65x |
 | `RateHeterogeneity._build_per_regime_vcv` branch accumulation | balanced 1024-tip synthetic root-to-tip paths x 3 regimes | 0.345525s | 0.019535s | 17.7x |
 | `RateHeterogeneity._build_per_regime_vcv` single-tip diagonal updates | balanced 2048-tip prepared branch groups x 3 regimes | 0.067988s | 0.054495s | 1.25x |
+| `RateHeterogeneity._sum_vcv_matrices` first-copy accumulation | 120 taxa x 3 regimes / 420 taxa x 3 regimes / 420 taxa x 8 regimes SPD-like VCV matrices, side-by-side previous Python `sum()` matrix accumulation | 0.000028s / 0.000310729s / 0.000795989s | 0.000009s / 0.000150399s / 0.000609011s | 3.11x / 2.07x / 1.31x |
 | `RateHeterogeneity._chi2_sf` df=2 scalar p-values | 2k three-regime LRT chi-square survival probabilities | 0.049870s | 0.000256s | 194.8x |
 | `RateHeterogeneity._fit_single_rate` | 420 taxa SPD VCV, single continuous trait | 0.0079s | 0.0005s | 15.8x |
 | `RateHeterogeneity._fit_single_rate_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV single-rate BM likelihood evaluations, SciPy already warm | 0.053752s | 0.045064s | 1.19x |
@@ -7334,7 +7335,9 @@ Profiling summary:
   submatrix for that branch's regime, preserving the same per-regime covariance
   decomposition. A later pass writes terminal-only branches directly to the
   diagonal, avoiding one-element index arrays and `np.ix_` tuples for single-tip
-  branch groups.
+  branch groups. Total VCV setup now copies the first regime matrix and
+  accumulates the remaining matrices in place, avoiding Python `sum()`'s extra
+  temporary arrays while leaving per-regime matrices unmodified.
 - `RateHeterogeneity._fit_single_rate` and `_fit_multi_rate` baseline time
   formed explicit covariance inverses and computed log determinants through
   `slogdet`. The optimized paths use Cholesky solves and Cholesky log
