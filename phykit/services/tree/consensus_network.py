@@ -536,7 +536,12 @@ class ConsensusNetwork(Tree):
                                   gap_positions_by_split=None):
         """Compute 2D direction vectors for each circular split."""
         n = len(ordering)
-        angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
+        cos_by_taxon = {}
+        sin_by_taxon = {}
+        for i, taxon in enumerate(ordering):
+            angle = 2 * math.pi * i / n
+            cos_by_taxon[taxon] = math.cos(angle)
+            sin_by_taxon[taxon] = math.sin(angle)
         directions = {}
         for split, count, freq in circular_splits:
             if gap_positions_by_split is None:
@@ -564,8 +569,8 @@ class ConsensusNetwork(Tree):
             else:
                 dx, dy = 1.0, 0.0
             # Orient toward the canonical (positive / smaller) side
-            cx_split = sum(math.cos(angles[t]) for t in split) / len(split)
-            cy_split = sum(math.sin(angles[t]) for t in split) / len(split)
+            cx_split = sum(cos_by_taxon[t] for t in split) / len(split)
+            cy_split = sum(sin_by_taxon[t] for t in split) / len(split)
             if dx * cx_split + dy * cy_split < 0:
                 dx = -dx
                 dy = -dy

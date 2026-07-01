@@ -1414,6 +1414,7 @@ Results:
 | `ConsensusNetwork._compute_circular_ordering` terminal-order extraction | parsed balanced 65536-tip consensus-like tree, collect terminal names | 0.139837s | 0.018060s | 7.74x |
 | `ConsensusNetwork._build_splits_graph` | 80 taxa, 20 circular splits, 33-node consensus graph | 7.2405s | 0.0117s | 621.0x |
 | `ConsensusNetwork._build_splits_graph` integer-mask edge pass | 4096 taxa, 12 independent splits, 4096 nodes / 24576 edges, side-by-side previous tuple-slicing edge pass | 0.078513s | 0.062518s | 1.26x |
+| `ConsensusNetwork._compute_split_directions` cached taxon coordinates | 50 taxa/200 splits, 200 taxa/1000 splits, 500 taxa/3000 splits, identical direction dictionaries with cached gap positions | 0.000906s / 0.013686s / 0.127458s | 0.000681s / 0.008597s / 0.102900s | 1.33x / 1.59x / 1.24x |
 | `NeighborNet` / `ConsensusNetwork` network edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.025885s | 0.012323s | 2.10x |
 | `NeighborNet` / `ConsensusNetwork` unlabeled fallback point rendering | 4096 taxa without accepted splits, real Matplotlib Agg point render | 0.756119s | 0.026598s | 28.43x |
 | `ConsensusNetwork.run` batched text split output | 100k filtered split rows, captured stdout and identical text | 0.064258s | 0.050664s | 1.27x |
@@ -5381,6 +5382,9 @@ Profiling summary:
   returning the same public tuple sign vectors. Circular-order setup now also
   reads the majority-consensus terminal order through the shared direct
   terminal-name traversal instead of materializing terminal clade objects.
+  Split-direction setup now caches each taxon's circular cos/sin coordinates
+  once per ordering instead of recomputing them for every accepted split
+  membership centroid.
   Network plotting now batches internal split-graph edges and pendant taxon
   edges into `LineCollection`s while preserving per-pendant linewidth and alpha.
   Pendant-edge scaling now computes the split-graph x/y extent in one pass

@@ -518,6 +518,45 @@ class TestBuildSplitsGraph:
         for split, direction in expected.items():
             assert observed[split] == pytest.approx(direction)
 
+    def test_compute_split_directions_reuses_taxon_coordinates(self, monkeypatch):
+        ordering = [f"T{i}" for i in range(12)]
+        splits = [
+            frozenset(ordering[start:start + size])
+            for start, size in (
+                (0, 2),
+                (1, 3),
+                (2, 4),
+                (4, 3),
+                (5, 5),
+            )
+        ]
+        circular_splits = [
+            (split, idx + 1, 0.1 * (idx + 1))
+            for idx, split in enumerate(splits)
+        ]
+        gap_positions_by_split = {
+            split: ConsensusNetwork._circular_gap_positions(split, ordering)
+            for split in splits
+        }
+        real_cos = math.cos
+        cos_calls = 0
+
+        def counted_cos(value):
+            nonlocal cos_calls
+            cos_calls += 1
+            return real_cos(value)
+
+        monkeypatch.setattr(consensus_network_module.math, "cos", counted_cos)
+
+        directions = ConsensusNetwork._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
+
+        assert len(directions) == len(circular_splits)
+        assert cos_calls == len(ordering) + 2 * len(circular_splits)
+
     @staticmethod
     def _legacy_build_splits_graph(circular_splits, all_taxa):
         splits_list = [s[0] for s in circular_splits]
