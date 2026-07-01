@@ -327,7 +327,8 @@ class NumpyParallel:
         n = len(items)
         result_matrix = np.zeros((n, n))
 
-        if num_workers == 1:
+        pair_count = n * (n - 1) // 2 if symmetric else n * n
+        if num_workers == 1 or pair_count < 20:
             if symmetric:
                 for i in range(n):
                     item_i = items[i]

@@ -457,6 +457,7 @@ Results:
 | `parallel` module import without `typing` startup | median cold subprocess import after converting annotation-only collection/callable/optional aliases to built-in postponed annotations | 0.024022s | 0.020614s | 1.17x |
 | `ParallelProcessor.get_optimal_workers` cached CPU count | 500k repeated worker-selection calls with varying data sizes, identical worker counts | 2.401188s | 0.699817s | 3.43x |
 | `NumpyParallel.parallel_pairwise_operation` explicit sequential symmetric path | 1200 items, symmetric pairwise absolute-difference matrix, `num_workers=1`, identical matrix output | 0.328311s | 0.157943s | 2.08x |
+| `NumpyParallel.parallel_pairwise_operation` small default direct path | 5-item symmetric absolute-difference matrix / 4-item non-symmetric subtraction matrix, side-by-side previous pair-list setup before sequential `parallel_map` fallback | 0.000028341s / 0.000030722s | 0.000017988s / 0.000016394s | 1.58x / 1.87x |
 | `ParallelProcessor.parallel_reduce` no-initial iterator reduction | 1M-item sequential identity map plus additive reduce, side-by-side previous `results[1:]` slice | 0.209717s | 0.151342s | 1.39x |
 | `NumpyParallel.parallel_apply_along_axis` lazy index range | 1 x 1M array, column-wise sequential apply with identical output, side-by-side previous eager `list(range(...))` index stream | 1.033323s | 0.788665s | 1.31x |
 | `CreateConcatenationMatrix._process_alignment_file` | 2500-record FASTA, 2750 requested taxa, 120 sites | 0.0566s | 0.0017s | 33.3x |
@@ -3368,6 +3369,9 @@ Profiling summary:
   `NumpyParallel.parallel_apply_along_axis` now passes `range` index streams to
   `parallel_map` instead of eagerly materializing `list(range(...))`, preserving
   ordered row/column application while avoiding large temporary index lists.
+  Small pairwise matrices now use the same direct fill loop as explicit
+  sequential calls, avoiding pair-list construction before `parallel_map` falls
+  back to sequential execution.
 - `CreateConcatenationMatrix._compute_effective_occupancy` baseline time
   checked every concatenated character in Python when threshold filtering was
   enabled. The optimized path counts each fixed invalid symbol with C-level

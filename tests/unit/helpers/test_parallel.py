@@ -480,3 +480,48 @@ class TestNumpyParallel(unittest.TestCase):
                             [1, 0, -1],
                             [2, 1, 0]])
         np.testing.assert_array_equal(result, expected)
+
+    def test_parallel_pairwise_operation_small_symmetric_direct_by_default(self):
+        """Small symmetric pairwise operations avoid parallel setup overhead."""
+        items = [1, 2, 4, 8, 16]
+
+        with patch(
+            "phykit.helpers.parallel.ParallelProcessor.parallel_map",
+            side_effect=AssertionError("small pairwise work should use direct loops"),
+        ):
+            result = NumpyParallel.parallel_pairwise_operation(
+                items,
+                lambda left, right: abs(left - right),
+                symmetric=True,
+            )
+
+        expected = np.array([
+            [0, 1, 3, 7, 15],
+            [1, 0, 2, 6, 14],
+            [3, 2, 0, 4, 12],
+            [7, 6, 4, 0, 8],
+            [15, 14, 12, 8, 0],
+        ])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_parallel_pairwise_operation_small_non_symmetric_direct_by_default(self):
+        """Small non-symmetric pairwise operations avoid parallel setup overhead."""
+        items = [1, 2, 4, 8]
+
+        with patch(
+            "phykit.helpers.parallel.ParallelProcessor.parallel_map",
+            side_effect=AssertionError("small pairwise work should use direct loops"),
+        ):
+            result = NumpyParallel.parallel_pairwise_operation(
+                items,
+                lambda left, right: left - right,
+                symmetric=False,
+            )
+
+        expected = np.array([
+            [0, -1, -3, -7],
+            [1, 0, -2, -6],
+            [3, 2, 0, -4],
+            [7, 6, 4, 0],
+        ])
+        np.testing.assert_array_equal(result, expected)
