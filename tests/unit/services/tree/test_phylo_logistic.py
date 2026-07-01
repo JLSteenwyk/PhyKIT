@@ -848,6 +848,44 @@ class TestRun:
         assert "convergence" in data
         assert "n_taxa" in data
 
+    def test_format_result_maps_coefficients_with_zip(self):
+        svc = PhyloLogistic.__new__(PhyloLogistic)
+        svc.response = "binary_trait"
+        svc.predictors = ["body_mass"]
+
+        result = svc._format_result(
+            method="logistic_MPLE",
+            coef_names=["(Intercept)", "body_mass"],
+            beta_hat=np.array([1.25, -0.5]),
+            se=np.array([0.25, 0.2]),
+            z_stats=np.array([5.0, -2.5]),
+            p_values=np.array([0.0001, 0.012]),
+            ll=-12.5,
+            pen_ll=-13.5,
+            aic=31.0,
+            formula="binary_trait ~ body_mass",
+            n=25,
+            k=1,
+            ordered_names=["a", "b"],
+            alpha=0.125,
+            convergence=0,
+        )
+
+        assert result["coefficients"] == {
+            "(Intercept)": {
+                "estimate": 1.25,
+                "std_error": 0.25,
+                "z_value": 5.0,
+                "p_value": 0.0001,
+            },
+            "body_mass": {
+                "estimate": -0.5,
+                "std_error": 0.2,
+                "z_value": -2.5,
+                "p_value": 0.012,
+            },
+        }
+
     @patch("builtins.print")
     def test_multiple_predictors(self, mocked_print, multi_predictor_args):
         """Comma-separated predictors should work."""

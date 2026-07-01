@@ -1709,6 +1709,7 @@ Results:
 | `PhyloLogistic.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, fitting, and output mocked | 0.516410s | 0.000033s | 15648.79x |
 | `PhyloLogistic._print_text_output` batched coefficient output | 100k coefficient rows, captured stdout and identical text | 0.116695s | 0.101976s | 1.14x |
 | `PhyloLogistic._print_text_output` inline significance thresholds | 100k coefficient rows, captured stdout and identical text, side-by-side previous `_signif_code()` loop | 0.105801s | 0.098002s | 1.08x |
+| `PhyloLogistic._format_result` zip-based coefficient mapping | 5k coefficient JSON entries, side-by-side previous index lookups | 0.148853s | 0.066884s | 2.23x |
 | `FitContinuous._vcv_ou` | 900-tip synthetic VCV matrix, `alpha=0.7` | 0.340860s | 0.009100s | 37.5x |
 | `FitContinuous._build_transformed_vcv` branch accumulation | balanced 1024-tip synthetic root-to-tip paths, delta-style transform | 0.216503s | 0.015251s | 14.2x |
 | `FitContinuous._build_transformed_vcv` single-tip diagonal updates | balanced 4096-tip synthetic root-to-tip paths, transformed branch lengths | 0.237096s | 0.177280s | 1.34x |
@@ -6125,7 +6126,9 @@ Profiling summary:
   validates, reads tips, prepares response/design arrays, and fits against
   non-mutating VCV builders. Text report output now batches the header,
   coefficient rows, and footer into one newline-joined print while preserving
-  exact stdout text. Final coefficient standard errors now extract the inverse
+  exact stdout text. JSON coefficient mapping now zips coefficient names and
+  statistic arrays directly, preserving the same payload while avoiding repeated
+  integer indexing. Final coefficient standard errors now extract the inverse
   diagonal from a Cholesky solve for positive-definite information matrices
   while preserving the explicit inverse fallback for non-Cholesky cases.
 - `FitContinuous._vcv_ou` baseline time filled the OU-transformed VCV with a

@@ -664,14 +664,17 @@ class PhyloLogistic(Tree):
         alpha: float,
         convergence: int,
     ) -> dict:
-        coefficients = {}
-        for i, name in enumerate(coef_names):
-            coefficients[name] = {
-                "estimate": float(beta_hat[i]),
-                "std_error": float(se[i]),
-                "z_value": float(z_stats[i]),
-                "p_value": float(p_values[i]),
+        coefficients = {
+            name: {
+                "estimate": float(beta),
+                "std_error": float(std_error),
+                "z_value": float(z_stat),
+                "p_value": float(p_value),
             }
+            for name, beta, std_error, z_stat, p_value in zip(
+                coef_names, beta_hat, se, z_stats, p_values
+            )
+        }
 
         result = {
             "method": method,
