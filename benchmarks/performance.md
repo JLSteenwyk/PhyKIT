@@ -316,6 +316,7 @@ Results:
 | `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 1.473608s | 0.948019s | 1.55x |
 | `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` multi-character gap fallback | 100k records, non-ASCII column, gap tokens `--` and `?`, identical `Counter` output | 0.020868s | 0.016616s | 1.26x |
 | `EvolutionaryRatePerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.069242s | 0.055913s | 1.24x |
+| `EvolutionaryRatePerSite.run` JSON row construction | 500k mocked site-rate rows, identical row dictionaries | 0.711359s | 0.613622s | 1.16x |
 | `EvolutionaryRatePerSite.run` direct terminal text output | 100k site values, mocked alignment/read and identical stdout text | 0.083225s | 0.064262s | 1.30x |
 | `EvolutionaryRatePerSite.run` plot-only series preparation | 1M site rates, identical rounded plotted site/value arrays without temporary row dictionaries | 0.376116s | 0.196265s | 1.92x |
 | `evolutionary_rate_per_site` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.114353s | 0.029664s | 3.86x |

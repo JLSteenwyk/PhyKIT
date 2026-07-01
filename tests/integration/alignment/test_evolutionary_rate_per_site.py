@@ -72,7 +72,7 @@ class TestEvolutionaryRatePerSite(object):
         assert payload["sites"][0] == {"evolutionary_rate": 0.0, "site": 1}
         assert payload["sites"][2] == {"evolutionary_rate": 0.48, "site": 3}
 
-    @patch("phykit.services.alignment.evolutionary_rate_per_site.EvolutionaryRatePerSite._plot_evolutionary_rate_per_site")
+    @patch("phykit.services.alignment.evolutionary_rate_per_site.EvolutionaryRatePerSite._plot_evolutionary_rate_values")
     @patch("builtins.print")
     def test_evolutionary_rate_per_site_plot(self, mocked_print, mocked_plot):
         testargs = [
