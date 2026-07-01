@@ -473,6 +473,44 @@ assert "phykit.helpers.plot_config" not in sys.modules
         self.assertEqual(distances, [0.25, 0.25, 0.5])
         self.assertEqual(vstack_spy.call_count, 1)
 
+    def test_calculate_uncorrected_distances_stacks_raw_gap_masks_before_invert(self):
+        seq_arrays = {
+            "seq1": self.saturation._sequence_to_array("AT-G"),
+            "seq2": self.saturation._sequence_to_array("ATCG"),
+            "seq3": self.saturation._sequence_to_array("A-CG"),
+        }
+        gap_mask = {
+            name: self.saturation._gap_mask_for_array(seq_arr, {"-", "N", "?"})
+            for name, seq_arr in seq_arrays.items()
+        }
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq2", "seq3"),
+        ]
+        stacked_inputs = []
+
+        def capture_vstack(rows, *args, **kwargs):
+            stacked_inputs.append([row.copy() for row in rows])
+            return np.vstack(rows, *args, **kwargs)
+
+        with patch(
+            "phykit.services.tree.saturation.np.vstack",
+            side_effect=capture_vstack,
+        ):
+            distances = self.saturation._calculate_uncorrected_distances_matrix(
+                ["seq1", "seq2", "seq3"],
+                combos,
+                seq_arrays,
+                gap_mask,
+                True,
+            )
+
+        self.assertEqual(len(stacked_inputs), 2)
+        for observed, tip in zip(stacked_inputs[1], ["seq1", "seq2", "seq3"]):
+            np.testing.assert_array_equal(observed, gap_mask[tip])
+        self.assertEqual(distances, [0.0, 0.0, 0.0])
+
     @patch('multiprocessing.Pool')
     def test_loop_through_combos_uses_matrix_uncorrected_distances(
         self, mock_pool_class

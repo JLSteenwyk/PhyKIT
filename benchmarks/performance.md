@@ -1462,6 +1462,7 @@ Results:
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` all-pairs matrix distances | balanced tree with 150 tips x 800 sites, `exclude_gaps=True`, ordered cached patristic distances | 0.022602s | 0.010371s | 2.2x |
 | `Saturation._calculate_uncorrected_distances_matrix` no-gap direct comparison | 300 taxa x 1200 sites, 44,850 requested pairs, `exclude_gaps=False` | 0.117667s | 0.031655s | 3.72x |
 | `Saturation._calculate_uncorrected_distances_matrix` clean `exclude_gaps` handoff | 300 taxa x 1200 clean DNA sites, 44,850 requested pairs, `exclude_gaps=True`, side-by-side previous gappy valid-matrix path | 8.094869s | 0.888346s | 9.11x |
+| `Saturation._calculate_uncorrected_distances_matrix` gappy valid-mask construction | 150 taxa x 800 sites / 300 taxa x 1200 sites / 1000 taxa x 1200 sites / 1000 taxa x 8000 sites, side-by-side previous per-tip inverted-mask list before `vstack` | 1.230092s / 0.782973s / 0.323495s / 0.138809s | 0.636202s / 0.347071s / 0.080768s / 0.080888s | 1.93x / 2.26x / 4.01x / 1.72x |
 | `Saturation._calculate_uncorrected_distances_matrix` standard pair-order extraction | 1000 taxa, 499500 requested pairs in upper-triangle order, identical extracted matrix distances | 0.265385s | 0.093287s | 2.84x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence shortcut | balanced 300-tip tree x 1200 mixed-symbol sites, 44,850 requested pairs, `exclude_gaps=True`, side-by-side previous matrix distance path | 1.866907s | 0.140145s | 13.32x |
 | `Saturation` identical Unicode valid-site count | 100k-site uppercase Unicode identical-sequence helper, DNA / protein gap sets, side-by-side previous Python character-membership loop | 0.006550s / 0.007644s | 0.000488s / 0.000397s | 13.42x / 19.24x |
@@ -5517,7 +5518,9 @@ Profiling summary:
   validity-mask path. A later guard lets `exclude_gaps=True` clean alignments
   with no observed gap positions reuse that no-gap matrix path after the usual
   sequence validation, preserving the gappy validity-mask path as soon as any
-  selected taxon has a gap. Standard upper-triangle pair requests now extract
+  selected taxon has a gap. The gappy matrix path now stacks raw gap masks and
+  inverts the single stacked matrix, avoiding one temporary inverted boolean
+  array per taxon. Standard upper-triangle pair requests now extract
   matrix distances row-wise, avoiding per-pair taxon-index dictionary lookups
   while preserving the fallback for custom pair orders. When cached tree distances
   are available and every

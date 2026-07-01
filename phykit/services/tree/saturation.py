@@ -335,7 +335,7 @@ class Saturation(Tree):
         except KeyError:
             return None
 
-        valid_matrix = np.vstack([~gap_mask[tip] for tip in combo_tips])
+        valid_matrix = ~np.vstack([gap_mask[tip] for tip in combo_tips])
 
         valid_float = valid_matrix.astype(np.float64)
         adjusted_lengths = valid_float @ valid_float.T
