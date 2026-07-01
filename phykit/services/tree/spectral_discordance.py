@@ -74,6 +74,10 @@ def _singular_value_total_variance(singular_values: np.ndarray) -> float:
     return float(np.dot(singular_values, singular_values))
 
 
+def _row_l2_norms(matrix: np.ndarray) -> np.ndarray:
+    return np.sqrt(np.einsum("ij,ij->i", matrix, matrix))[:, None]
+
+
 def _shared_gene_tree_taxa(gene_trees, get_tip_names):
     shared = set(get_tip_names(gene_trees[0]))
     for idx in range(1, len(gene_trees)):
@@ -847,7 +851,7 @@ class SpectralDiscordance(Tree):
             K = max(K, 2)
 
         vecs = eigenvectors[:, :K]
-        row_norms = np.linalg.norm(vecs, axis=1, keepdims=True)
+        row_norms = _row_l2_norms(vecs)
         row_norms[row_norms == 0] = 1.0
         vecs = vecs / row_norms
 

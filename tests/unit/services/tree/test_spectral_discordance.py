@@ -384,6 +384,20 @@ class TestPCA:
             singular_values
         ) == pytest.approx(expected)
 
+    def test_row_l2_norms_matches_linalg_norm(self):
+        matrix = np.array(
+            [
+                [3.0, 4.0, 0.0],
+                [1.0, 2.0, 2.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+
+        observed = spectral_discordance_module._row_l2_norms(matrix)
+        expected = np.linalg.norm(matrix, axis=1, keepdims=True)
+
+        np.testing.assert_allclose(observed, expected)
+
     def test_variance_explained_descending(self, default_args):
         _, ve, _, _ = self._get_pca(default_args)
         for i in range(len(ve) - 1):
@@ -595,6 +609,38 @@ class TestSpectralClustering:
             spectral_discordance_module.np,
             "triu_indices",
             fail_triu_indices,
+        )
+
+        labels, K, eigengaps = svc._spectral_cluster(X_centered, n_clusters=2)
+
+        assert len(labels) == X_centered.shape[0]
+        assert K == 2
+        assert eigengaps.size > 0
+
+    def test_spectral_cluster_row_normalization_avoids_linalg_norm(
+        self, default_args, monkeypatch
+    ):
+        svc = SpectralDiscordance(default_args)
+        X_centered = np.array(
+            [
+                [0.0, 0.0],
+                [0.1, 0.0],
+                [0.0, 0.1],
+                [4.0, 4.0],
+                [4.1, 4.0],
+                [4.0, 4.1],
+            ]
+        )
+
+        def fail_norm(*_args, **_kwargs):
+            raise AssertionError(
+                "spectral clustering should use the row L2 helper"
+            )
+
+        monkeypatch.setattr(
+            spectral_discordance_module.np.linalg,
+            "norm",
+            fail_norm,
         )
 
         labels, K, eigengaps = svc._spectral_cluster(X_centered, n_clusters=2)

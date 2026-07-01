@@ -735,6 +735,7 @@ Results:
 | `SpectralDiscordance._canonical_split` size-first complement avoidance | 9k mixed 20-vs-1180, 1180-vs-20, and 600-vs-600 bipartitions over 1200 taxa | 0.269033s | 0.236251s | 1.14x |
 | `SpectralDiscordance._spectral_cluster` normalized Laplacian scaling | 900-item synthetic affinity matrix, diagonal scaling step | 0.029895s | 0.002207s | 13.5x |
 | `SpectralDiscordance._spectral_cluster` condensed distance reuse | 2500 gene-tree PCA score rows x 8 dimensions, side-by-side previous squareform plus triangular-index distance gather for bandwidth median | 0.303434s | 0.091461s | 3.32x |
+| `SpectralDiscordance._spectral_cluster` eigenvector row normalization | 200x4 / 1000x8 / 5000x12 / 10000x20 eigenvector matrices, side-by-side previous `np.linalg.norm(..., axis=1, keepdims=True)` | 0.000003750s / 0.000011625s / 0.000133792s / 0.000351958s | 0.000002667s / 0.000005625s / 0.000054666s / 0.000056291s | 1.41x / 2.07x / 2.45x / 6.25x |
 | `SpectralDiscordance._kmeans` vectorized distance and center updates | 80k rows x 8 dimensions, 12 clusters, fixed RandomState seed and identical labels | 12.232717s | 0.789952s | 15.49x |
 | `SpectralDiscordance._get_top_loadings` partial top-N selection | 20 PCs x 300k bipartitions, top 10 loadings per PC, identical reported entries | 0.442687s | 0.050885s | 8.70x |
 | `SpectralDiscordance._run_pca` singular-value total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 singular values, side-by-side previous `np.sum(S ** 2)` | 0.000005887s / 0.000006054s / 0.000005545s / 0.000005994s / 0.000006021s / 0.000006877s / 0.000004525s / 0.000006631s | 0.000001281s / 0.000001132s / 0.000001423s / 0.000001156s / 0.000001312s / 0.000001259s / 0.000000879s / 0.000001432s | 4.60x / 5.35x / 3.90x / 5.19x / 4.59x / 5.46x / 5.15x / 4.63x |
@@ -3842,9 +3843,11 @@ Profiling summary:
   bipartition canonicalization now compares the smallest taxon on each disjoint
   half instead of sorting both halves, preserving the documented sorted
   lexicographic tiebreak. Spectral clustering uses the same direct
-  normalized-Laplacian scaling as TreeSpace. PCA variance explained now computes
-  singular-value total variance with a dot product, avoiding the temporary
-  squared array reduction after SVD. Gene-tree file-list rows now use
+  normalized-Laplacian scaling as TreeSpace. Eigenvector row normalization now
+  computes row L2 norms with an `einsum` reduction before the square root,
+  avoiding `np.linalg.norm` dispatch while preserving normalized rows. PCA
+  variance explained now computes singular-value total variance with a dot
+  product, avoiding the temporary squared array reduction after SVD. Gene-tree file-list rows now use
   a bound string existence check before `Phylo.read`, preserving the parser's
   current path interpretation while avoiding a `Path` object per listed file.
   Top-loading reporting now uses guarded partial selection for the common
