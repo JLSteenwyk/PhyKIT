@@ -246,6 +246,7 @@ Results:
 | `GCContent.calculate_gc_per_sequence_data` ASCII matrix counts | 2000 taxa x 5000 sites, alphabet `ACGTN-?X*` | 0.037366s | 0.025886s | 1.44x |
 | `GCContent.calculate_gc_per_sequence_data` no-gap ASCII valid lengths | 2000 taxa x 5000 sites, alphabet `ACGT`, side-by-side previous valid lookup count path | 0.057049s | 0.033166s | 1.72x |
 | `GCContent.calculate_gc_per_sequence_data` variable-length ASCII fallback | 50k records x 90-106 bp, alphabet `ACGTN-?X*` | 0.273960s | 0.195534s | 1.40x |
+| `GCContent.calculate_gc_per_sequence_data` variable-length byte counts | 50k records x 90-106 ASCII bp, alphabet `ACGTN-?X*acgtnx`, side-by-side previous per-record NumPy fallback | 0.500206s | 0.109694s | 4.56x |
 | `GCContent.calculate_gc_per_sequence_data` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with ambiguous/gap symbols, lowercase/uppercase variants, side-by-side previous matrix path | 0.062592s | 0.005746s | 10.89x |
 | `GCContent._gc_counts_from_ascii_matrix` raw-identical normalized shortcut | 500k identical DNA records with ambiguous/gap symbols, side-by-side previous per-row uppercase equality scan | 0.454749s | 0.375646s | 1.21x |
 | `GCContent.calculate_gc_total_value` ASCII flat counts | 2000 taxa x 5000 sites, alphabet `ACGTN-?X*` | 0.037335s | 0.022379s | 1.67x |
@@ -2850,6 +2851,9 @@ Profiling summary:
   follow-up identical-row pass checks raw string equality before normalizing
   each row, avoiding repeated uppercase allocations for already-identical rows
   while preserving case-insensitive matching. A
+  later variable-length fallback pass counts valid and GC bytes directly for
+  ASCII per-sequence rows, avoiding per-record NumPy array setup while keeping
+  the Unicode string-count fallback unchanged. A
   later startup pass builds lookup tables lazily and
   defers the annotation-only Bio.Align import so import-only callers do not
   load NumPy. A follow-up startup pass keeps JSON output behind a module-level

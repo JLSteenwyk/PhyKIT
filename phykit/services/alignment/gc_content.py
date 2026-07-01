@@ -78,6 +78,24 @@ def _gc_counts_from_upper_sequence(sequence: str, is_protein: bool) -> tuple[int
     return valid_count, gc_count
 
 
+def _gc_counts_from_ascii_bytes(
+    sequence_bytes: bytes,
+    is_protein: bool,
+) -> tuple[int, int]:
+    invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
+    if any(code in sequence_bytes for code in invalid_bytes):
+        valid_count = len(sequence_bytes.translate(None, invalid_bytes))
+    else:
+        valid_count = len(sequence_bytes)
+    gc_count = (
+        sequence_bytes.count(b"G")
+        + sequence_bytes.count(b"C")
+        + sequence_bytes.count(b"g")
+        + sequence_bytes.count(b"c")
+    )
+    return valid_count, gc_count
+
+
 def _common_upper_sequence(sequences: list[str]) -> str | None:
     first_raw = sequences[0]
     first_upper = first_raw.upper()
@@ -233,14 +251,13 @@ class GCContent(Alignment):
             ]
 
         gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
-        valid_lookup = _get_valid_lookup(is_protein)
-        gc_lookup = _get_gc_lookup()
         output = []
         for record_id, seq in record_data:
             try:
-                seq_array = np.frombuffer(seq.encode("ascii"), dtype=np.uint8)
-                valid_len = int(np.count_nonzero(valid_lookup[seq_array]))
-                gc_count = int(np.count_nonzero(gc_lookup[seq_array]))
+                valid_len, gc_count = _gc_counts_from_ascii_bytes(
+                    seq.encode("ascii"),
+                    is_protein,
+                )
             except UnicodeEncodeError:
                 seq = seq.upper()
                 valid_len = len(seq) - sum(seq.count(char) for char in gap_chars)

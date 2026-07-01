@@ -183,7 +183,7 @@ assert "phykit.helpers.files" not in sys.modules
             ("c", 4 / 6),
         ]
 
-    def test_calculate_gc_per_sequence_data_variable_length_uses_count_nonzero(
+    def test_calculate_gc_per_sequence_data_variable_length_uses_byte_counts(
         self, args, mocker
     ):
         service = GCContent(args)
@@ -193,8 +193,10 @@ assert "phykit.helpers.files" not in sys.modules
         ]
         mocker.patch.object(
             gc_content_module.np,
-            "sum",
-            side_effect=AssertionError("ASCII fallback should use count_nonzero"),
+            "frombuffer",
+            side_effect=AssertionError(
+                "variable-length ASCII fallback should use byte counts"
+            ),
         )
 
         assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
