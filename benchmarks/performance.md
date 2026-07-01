@@ -2188,6 +2188,7 @@ Results:
 | `ThresholdModel._bivariate_quadratic_stats_from_products` vector sums | 40-taxon cached `C^-1x` product vectors, identical sufficient-stat tuple | 0.000012523s | 0.000005615s | 2.23x |
 | `ThresholdModel._initialize_liabilities` vectorized discrete liabilities | 20k binary discrete taxa, scalar SciPy stream preserved | 2.035507s | 0.005099s | 399.2x |
 | `ThresholdModel._summarize_posterior` single-sort median/HPD | five 500k-sample posterior traces, identical summary statistics | 0.317456s | 0.248927s | 1.28x |
+| `ThresholdModel._summarize_posterior` small-trace mean reductions | five 1k-sample posterior traces, side-by-side previous `np.mean` wrapper after single-sort summary setup | 0.337282s | 0.166087s | 2.03x |
 | `ThresholdModel._output_text` batched summary output | 100k captured threshold-model text summaries, identical stdout text | 0.414422s | 0.337860s | 1.23x |
 | `ThresholdModel._output_text` single-report formatting | 100k captured threshold-model text summaries, identical stdout text, side-by-side previous newline-joined list comparison | 0.301403s | 0.285244s | 1.06x |
 | `ThresholdModel._output_text` percent report template | 100k captured threshold-model text summaries, identical stdout text, side-by-side previous f-string report formatter comparison | 0.333694s | 0.258711s | 1.29x |
@@ -7397,7 +7398,10 @@ Profiling summary:
   precomputed `C^-1x` product vectors through each ndarray's `sum()` method,
   avoiding lazy NumPy proxy dispatch in repeated MCMC setup/proposal paths.
   Continuous-trait initialization now computes each liability variance once and
-  reuses it for the positive-variance fallback.
+  reuses it for the positive-variance fallback. Posterior summaries and plots
+  now use each small NumPy trace's `mean()` method while keeping the generic
+  `np.mean` path for larger traces, avoiding lazy proxy dispatch on common
+  sampled-chain summaries.
   `ThresholdModel.run` now
   reads the cached tree directly for validation and copies only when parsed
   trait taxa omit one or more tree tips before pruning, so all-shared trait

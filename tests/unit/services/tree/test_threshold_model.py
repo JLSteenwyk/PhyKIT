@@ -960,6 +960,27 @@ class TestComputeHPD:
         assert summary["r"]["median"] == pytest.approx(float(np.median(samples)))
         assert summary["acceptance_rates"] == {"r": 0.25}
 
+    def test_summarize_posterior_small_traces_use_array_mean(self, monkeypatch):
+        rng = np.random.default_rng(20260701)
+        samples = rng.normal(size=101)
+        mcmc_result = {
+            "r": samples,
+            "sigma2_1": samples + 1.0,
+            "sigma2_2": samples + 2.0,
+            "a1": samples - 1.0,
+            "a2": samples - 2.0,
+            "acceptance_rates": {"r": 0.25},
+        }
+
+        def fail_mean(*_args, **_kwargs):
+            raise AssertionError("small posterior traces should use ndarray.mean")
+
+        monkeypatch.setattr(threshold_model_module.np, "mean", fail_mean)
+
+        summary = ThresholdModel._summarize_posterior(mcmc_result)
+
+        assert summary["r"]["mean"] == pytest.approx(float(samples.mean()))
+
 
 class TestRunMCMC:
     def test_expected_keys(self):

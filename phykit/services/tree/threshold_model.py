@@ -1036,6 +1036,12 @@ class ThresholdModel(Tree):
         return float((sorted_samples[mid - 1] + sorted_samples[mid]) / 2.0)
 
     @staticmethod
+    def _sample_mean(samples):
+        if hasattr(samples, "mean") and len(samples) < 10_000:
+            return float(samples.mean())
+        return float(np.mean(samples))
+
+    @staticmethod
     def _summarize_posterior(mcmc_result):
         summary = {}
         for param in ("r", "sigma2_1", "sigma2_2", "a1", "a2"):
@@ -1053,7 +1059,7 @@ class ThresholdModel(Tree):
                 sorted_samples
             )
             summary[param] = {
-                "mean": float(np.mean(samples)),
+                "mean": ThresholdModel._sample_mean(samples),
                 "median": ThresholdModel._median_from_sorted(sorted_samples),
                 "hpd_lower": hpd_lo,
                 "hpd_upper": hpd_hi,
@@ -1163,7 +1169,7 @@ class ThresholdModel(Tree):
 
         for row, (param, label) in enumerate(params):
             samples = mcmc_result[param]
-            mean_val = float(np.mean(samples))
+            mean_val = ThresholdModel._sample_mean(samples)
             hpd_lo, hpd_hi = ThresholdModel._compute_hpd(samples)
 
             # --- Left: trace plot ---
