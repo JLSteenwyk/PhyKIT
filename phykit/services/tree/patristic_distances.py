@@ -85,11 +85,11 @@ class PatristicDistances(Tree):
         if self.json_output:
             if self.verbose:
                 rows = [
-                    dict(
-                        taxon_a=combo[0],
-                        taxon_b=combo[1],
-                        patristic_distance=round(patristic_distance, 4),
-                    )
+                    {
+                        "taxon_a": combo[0],
+                        "taxon_b": combo[1],
+                        "patristic_distance": round(patristic_distance, 4),
+                    }
                     for combo, patristic_distance in zip(combos, patristic_distances)
                 ]
                 print_json(
