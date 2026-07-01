@@ -717,6 +717,7 @@ Results:
 | `SpuriousSequence.get_branch_lengths_and_their_names` one-pass collection | balanced 131072-tip standard tree, terminal branch lengths and name map, side-by-side previous terminal-list materialization | 0.095943s | 0.075439s | 1.27x |
 | `SpuriousSequence.identify_spurious_sequence` large median | balanced 131072-tip tree, varied terminal branch lengths and identical threshold | 0.075865s | 0.057356s | 1.32x |
 | `SpuriousSequence.run` batched text output | 50k flagged terminal rows, mocked tree/read and identical stdout text | 0.087150s | 0.031513s | 2.77x |
+| `SpuriousSequence.run` JSON row construction | 500k mocked flagged terminal rows, identical row dictionaries | 0.748736s | 0.589699s | 1.27x |
 | `SpuriousSequence.run` cached read-only tree path | balanced 32768-tip cached tree with 1% long terminal branches, output mocked | 0.122502s | 0.005828s | 21.02x |
 | `spurious_sequence` module import without eager Bio.Phylo | cold subprocess import of spurious-sequence command module | 0.157770s | 0.070032s | 2.25x |
 | `spurious_sequence` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.010024s | 0.009378s | 1.07x |
@@ -3942,7 +3943,8 @@ Profiling summary:
   every flagged row, built JSON payload rows even for text output, and called
   `print` once per reported row. The optimized text path rounds shared values
   once, builds only the text rows it needs, and emits the same stdout text in a
-  single output call while preserving JSON payload shape. Cached read-only
+  single output call while preserving JSON payload shape. JSON row materialization
+  now uses literal dictionaries instead of repeated `dict(...)` calls. Cached read-only
   `SpuriousSequence.run` now also uses the explicit unmodified tree read helper
   to avoid copying the cached parsed tree before collecting terminal branches.
   A follow-up startup pass keeps JSON output behind a module-level forwarding

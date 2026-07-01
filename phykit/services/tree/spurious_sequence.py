@@ -39,12 +39,12 @@ class SpuriousSequence(Tree):
 
         if self.json_output:
             spurious_rows = [
-                dict(
-                    taxon=name,
-                    branch_length=round(length, 4),
-                    threshold=rounded_threshold,
-                    median=rounded_median,
-                )
+                {
+                    "taxon": name,
+                    "branch_length": round(length, 4),
+                    "threshold": rounded_threshold,
+                    "median": rounded_median,
+                }
                 for name, length in name_and_branch_len.items()
                 if length >= threshold
             ]
