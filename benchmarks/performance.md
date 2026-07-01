@@ -1045,6 +1045,7 @@ Results:
 | `NeighborNet._is_circular_split` modulo-free boundary scan | 4096-taxon circular ordering, 610 contiguous/non-contiguous split checks with identical results | 0.230614s | 0.131844s | 1.75x |
 | `NeighborNet._is_circular_split` third-boundary early rejection | 4096-taxon circular ordering, mixed 746 circular/non-circular split checks with identical accepted count | 0.141770s | 0.076098s | 1.86x |
 | `NeighborNet._compute_split_directions` modulo-free gap scan | 4096-taxon circular ordering, 316 circular split direction vectors with identical output | 0.142790s | 0.079448s | 1.80x |
+| `NeighborNet._compute_split_directions` cached taxon coordinates | 50 taxa/200 splits, 200 taxa/1000 splits, 500 taxa/3000 splits, identical direction dictionaries with cached gap positions | 0.001240s / 0.042574s / 0.371985s | 0.000936s / 0.025069s / 0.056481s | 1.33x / 1.70x / 6.59x |
 | `NeighborNet` circular split filtering plus direction setup | 8192-taxon circular ordering, mixed 1490 circular/non-circular split checks with identical 745 accepted direction vectors | 0.631656s | 0.345524s | 1.83x |
 | `NeighborNet._compute_distance_matrix_from_equal_length_sequences` clean ASCII direct comparison | 260 taxa x 6000 sites, alphabet `ACGT`, p-distance matrix | 0.161045s | 0.120611s | 1.34x |
 | `NeighborNet._read_distance_matrix` row-slice CSV fill | 800 x 800 labeled CSV distance matrix, identical taxa and matrix values | 0.124120s | 0.094420s | 1.31x |
@@ -4422,6 +4423,9 @@ Profiling summary:
   per split. Network drawing now carries accepted split gap positions from the
   filter step into direction setup, avoiding a second boundary scan for each
   accepted split while preserving filtered split order and direction vectors.
+  Split-direction setup now also caches each taxon's circular cos/sin
+  coordinates once per ordering instead of recomputing them for every accepted
+  split membership centroid.
   The same circular split validation, direction-scan, and accepted-gap reuse
   pattern is mirrored in `ConsensusNetwork` and `QuartetNetwork`.
 - `NeighborNet._estimate_split_weights` baseline time built the NNLS design

@@ -556,6 +556,33 @@ class TestCircularSplits:
         for split, direction in expected.items():
             assert observed[split] == pytest.approx(direction)
 
+    def test_compute_split_directions_reuses_taxon_coordinates(self, monkeypatch):
+        ordering = [f"T{i}" for i in range(12)]
+        splits = NeighborNet._enumerate_circular_splits(ordering)[:8]
+        circular_splits = [(split, 1.0) for split in splits]
+        gap_positions_by_split = {
+            split: NeighborNet._circular_gap_positions(split, ordering)
+            for split in splits
+        }
+        real_cos = math.cos
+        cos_calls = 0
+
+        def counted_cos(value):
+            nonlocal cos_calls
+            cos_calls += 1
+            return real_cos(value)
+
+        monkeypatch.setattr(neighbor_net_module.math, "cos", counted_cos)
+
+        directions = NeighborNet._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
+
+        assert len(directions) == len(circular_splits)
+        assert cos_calls == len(ordering) + 2 * len(circular_splits)
+
     def test_split_count_four_taxa(self):
         ordering = ["A", "B", "C", "D"]
         splits = NeighborNet._enumerate_circular_splits(ordering)
