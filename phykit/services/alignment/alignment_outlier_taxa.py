@@ -300,14 +300,24 @@ class AlignmentOutlierTaxa(Alignment):
                 outliers=[],
             )
 
-        sequences = [str(record.seq).upper() for record in alignment]
-        aln_len = alignment.get_alignment_length()
-
         invalid_chars = (
             ["-", "?", "*", "X"]
             if is_protein
             else ["-", "?", "*", "X", "N"]
         )
+        aln_len = alignment.get_alignment_length()
+        if n_taxa == 1:
+            valid_length = self._valid_length_for_identical_sequence(
+                str(alignment[0].seq).upper(),
+                invalid_chars,
+            )
+            return self._constant_composition_result(
+                alignment,
+                float(valid_length),
+                aln_len,
+            )
+
+        sequences = [str(record.seq).upper() for record in alignment]
         if _all_sequences_identical(sequences):
             first_sequence = sequences[0]
             valid_length = self._valid_length_for_identical_sequence(

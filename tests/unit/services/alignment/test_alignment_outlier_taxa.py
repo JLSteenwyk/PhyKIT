@@ -216,6 +216,40 @@ class TestAlignmentOutlierTaxa:
             },
         ]
 
+    def test_calculate_outliers_single_record_skips_matrix_path(self, mocker):
+        service = self._service()
+        alignment = MultipleSeqAlignment([SeqRecord(Seq("NNNN----"), id="solo")])
+        mocker.patch.object(
+            alignment_outlier_taxa_module.np,
+            "frombuffer",
+            side_effect=AssertionError("single-record path should skip matrix work"),
+        )
+
+        result = service.calculate_outliers(alignment, is_protein=False)
+
+        assert result["thresholds"] == {
+            "gap_rate": None,
+            "occupancy": None,
+            "composition_distance": None,
+            "long_branch_proxy": None,
+            "rcvt": None,
+            "entropy_burden": None,
+        }
+        assert result["outliers"] == []
+        assert result["rows"] == [
+            {
+                "taxon": "solo",
+                "gap_rate": 1.0,
+                "occupancy": 0.0,
+                "composition_distance": 0.0,
+                "long_branch_proxy": None,
+                "rcvt": 0.0,
+                "entropy_burden": 0.0,
+                "flagged": False,
+                "reasons": [],
+            }
+        ]
+
     def test_calculate_outliers_identical_multi_symbol_sequences_skip_matrix(
         self, mocker
     ):
