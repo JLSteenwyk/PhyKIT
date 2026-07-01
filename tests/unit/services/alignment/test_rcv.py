@@ -180,6 +180,34 @@ assert "numpy" not in sys.modules
         assert rcv.calculate_rcv() > 0.0
         assert bincount_spy.call_count == len(alignment)
 
+    def test_ascii_rcv_count_matrix_large_short_clean_uses_single_bincount(
+        self,
+        mocker,
+    ):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY"
+        matrix = alignment_base_module.np.tile(
+            alignment_base_module.np.frombuffer(
+                alphabet,
+                dtype=alignment_base_module.np.uint8,
+            ),
+            (10_000, 1),
+        )
+        unique_chars = alignment_base_module.np.unique(matrix)
+        bincount_spy = mocker.spy(alignment_base_module.np, "bincount")
+
+        observed = alignment_base_module._ascii_rcv_count_matrix(
+            matrix,
+            unique_chars,
+            None,
+        )
+
+        expected = alignment_base_module.np.ones(
+            (10_000, len(unique_chars)),
+            dtype=alignment_base_module.np.float64,
+        )
+        alignment_base_module.np.testing.assert_array_equal(observed, expected)
+        assert bincount_spy.call_count == 1
+
     def test_relative_composition_variability_no_gap_ascii_uses_full_lengths(
         self, mocker, args
     ):

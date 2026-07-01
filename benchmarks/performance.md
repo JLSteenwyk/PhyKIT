@@ -573,6 +573,7 @@ Results:
 | `Alignment.calculate_rcv` identical-sequence shortcut | 1200 taxa x 12000 sites, lowercase/uppercase identical DNA records, side-by-side previous matrix path | 0.046277s | 0.006825s | 6.78x |
 | `Alignment.calculate_rcv` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.163491s / 0.008818s / 0.075810s | 0.050280s / 0.000004s / 0.031403s | 3.25x / 2377.98x / 2.41x |
 | `Alignment.calculate_rcv` final RCV total | median per-call reduction of 260 / 1200 / 2000 per-taxon RCV values, side-by-side previous `np.sum` wrapper | 0.000003516s / 0.000005445s / 0.000004957s | 0.000002338s / 0.000002423s / 0.000003238s | 1.50x / 2.25x / 1.53x |
+| `Alignment.calculate_rcv` clean large-short ASCII count matrix | 10000 taxa x 128 sites / 50000 taxa x 64 sites / 200000 taxa x 32 sites, 20 valid symbols, side-by-side previous per-row `bincount` loop | 5.113480s / 5.967428s / 6.979634s | 1.557019s / 1.341158s / 1.625248s | 3.28x / 4.45x / 4.29x |
 | `rcv` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006077s | 0.004840s | 1.26x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.0483s | 0.0037s | 13.1x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` byte lookup | 1200 taxa x 12000 sites, alphabet `ACGT-?*XN` | 0.0753s | 0.0264s | 2.9x |
@@ -3557,7 +3558,10 @@ Profiling summary:
   preserving early exit for heterogeneous alignments. The final per-taxon RCV
   total now uses the ndarray reduction method directly, avoiding the generic
   `np.sum` dispatch on the realistic taxon-vector sizes covered by the RCV
-  benchmarks. The `rcv` command module now keeps JSON output behind a
+  benchmarks. Clean large-short ASCII matrices now use a single encoded
+  `bincount` count matrix pass, matching the existing row-wise count output
+  while avoiding one Python loop iteration per taxon. The `rcv` command module
+  now keeps JSON output behind a
   module-level forwarding wrapper,
   preserving the patch point while avoiding JSON helper startup during command
   discovery.

@@ -47,6 +47,30 @@ def _get_invalid_lookup(is_protein: bool):
     return _DNA_INVALID_LOOKUP
 
 
+def _ascii_rcv_count_matrix(alignment_array, unique_chars, valid_mask):
+    num_records, aln_len = alignment_array.shape
+    if valid_mask is None and num_records >= 10_000 and aln_len <= 256:
+        encoded = alignment_array.astype(np.int64)
+        encoded += (np.arange(num_records, dtype=np.int64) * 256)[:, None]
+        counts = np.bincount(
+            encoded.ravel(),
+            minlength=num_records * 256,
+        ).reshape(num_records, 256)
+        return counts[:, unique_chars].astype(np.float64, copy=False)
+
+    count_matrix = np.zeros(
+        (num_records, len(unique_chars)),
+        dtype=np.float64,
+    )
+    for row_idx, row in enumerate(alignment_array):
+        row_values = row if valid_mask is None else row[valid_mask[row_idx]]
+        count_matrix[row_idx] = np.bincount(
+            row_values,
+            minlength=256,
+        )[unique_chars]
+    return count_matrix
+
+
 class Alignment(BaseService):
     def __init__(
         self,
@@ -135,16 +159,11 @@ class Alignment(BaseService):
 
             unique_chars = np.unique(valid_chars)
         if alignment_array.dtype == np.uint8 and len(unique_chars) > 8:
-            count_matrix = np.zeros(
-                (num_records, len(unique_chars)),
-                dtype=np.float64,
+            count_matrix = _ascii_rcv_count_matrix(
+                alignment_array,
+                unique_chars,
+                valid_mask,
             )
-            for row_idx, row in enumerate(alignment_array):
-                row_values = row if valid_mask is None else row[valid_mask[row_idx]]
-                count_matrix[row_idx] = np.bincount(
-                    row_values,
-                    minlength=256,
-                )[unique_chars]
         else:
             count_matrix = np.array(
                 [
