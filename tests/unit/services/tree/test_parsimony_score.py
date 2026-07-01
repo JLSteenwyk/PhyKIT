@@ -172,13 +172,18 @@ class TestFitchAlgorithm:
             "get_tip_names_from_tree",
             return_value=["A", "B", "C"],
         )
-        mocker.patch.object(ps, "_fitch_parsimony", return_value=(3, [1, 2]))
+        fitch_mock = mocker.patch.object(
+            ps,
+            "_fitch_parsimony",
+            return_value=(3, [1, 2]),
+        )
         ps.verbose = True
 
         ps.run()
 
         captured = capsys.readouterr()
         assert captured.out == "3\n\n1\t1\n2\t2\n"
+        assert fitch_mock.call_args.kwargs["return_per_site"] is True
 
     def test_run_all_shared_binary_tree_uses_read_only_tree_without_copy_or_resolve(
         self, monkeypatch, args, capsys
@@ -227,10 +232,11 @@ class TestFitchAlgorithm:
             },
         )
 
-        def fitch(tree_arg, sequences, aln_length):
+        def fitch(tree_arg, sequences, aln_length, return_per_site=True):
             captured["tree"] = tree_arg
             captured["sequences"] = sequences
             captured["aln_length"] = aln_length
+            captured["return_per_site"] = return_per_site
             return 0, [0, 0]
 
         monkeypatch.setattr(ps, "_fitch_parsimony", fitch)
@@ -241,6 +247,7 @@ class TestFitchAlgorithm:
         assert captured["tree"] is tree
         assert set(captured["sequences"]) == {"A", "B", "C", "D"}
         assert captured["aln_length"] == 2
+        assert captured["return_per_site"] is False
         assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
 
     def test_run_missing_alignment_taxa_copies_before_pruning(
@@ -265,9 +272,10 @@ class TestFitchAlgorithm:
             lambda *_args, **_kwargs: {"A": "AC", "B": "AC", "C": "GT"},
         )
 
-        def fitch(tree_arg, sequences, aln_length):
+        def fitch(tree_arg, sequences, aln_length, return_per_site=True):
             captured["tree"] = tree_arg
             captured["sequences"] = sequences
+            captured["return_per_site"] = return_per_site
             return 1, [0, 1]
 
         monkeypatch.setattr(ps, "_fitch_parsimony", fitch)
@@ -278,6 +286,7 @@ class TestFitchAlgorithm:
         assert len(copied_trees) == 1
         assert captured["tree"] is copied_trees[0]
         assert set(captured["sequences"]) == {"A", "B", "C"}
+        assert captured["return_per_site"] is False
         assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
         assert {tip.name for tip in copied_trees[0].get_terminals()} == {
             "A",
@@ -312,7 +321,7 @@ class TestFitchAlgorithm:
             },
         )
 
-        def fitch(tree_arg, *_args):
+        def fitch(tree_arg, *_args, **_kwargs):
             captured["tree"] = tree_arg
             return 0, [0, 0]
 
@@ -342,6 +351,48 @@ class TestFitchAlgorithm:
         aln_length = len(next(iter(sequences.values())))
         total, per_site = ps._fitch_parsimony(tree, sequences, aln_length)
         assert total == sum(per_site)
+
+    def test_fitch_can_skip_per_site_score_materialization(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        sequences = {
+            "A": "ACGT" * 5,
+            "B": "AGGT" * 5,
+            "C": "NC-T" * 5,
+            "D": "TCGA" * 5,
+        }
+
+        total, per_site = ps._fitch_parsimony(tree, sequences, 20)
+        skipped_total, skipped_per_site = ps._fitch_parsimony(
+            tree,
+            sequences,
+            20,
+            return_per_site=False,
+        )
+
+        assert skipped_total == total
+        assert skipped_per_site == []
+        assert total == sum(per_site)
+
+    def test_fitch_identical_sequence_shortcut_can_skip_per_site_scores(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        sequences = {
+            "A": "ACGT" * 5,
+            "B": "ACGT" * 5,
+            "C": "ACGT" * 5,
+            "D": "ACGT" * 5,
+        }
+
+        total, per_site = ps._fitch_parsimony(
+            tree,
+            sequences,
+            20,
+            return_per_site=False,
+        )
+
+        assert total == 0
+        assert per_site == []
 
     def test_vectorized_fitch_matches_set_fallback_for_wildcards_and_non_dna(self, args):
         ps = ParsimonyScore(args)
@@ -595,6 +646,31 @@ class TestFitchAlgorithm:
 
         assert per_site == [len(taxa) - 1, len(taxa) - 1]
         assert total == sum(per_site)
+
+    def test_set_fallback_can_skip_per_site_score_materialization(self, args):
+        def build_subtree(names):
+            if len(names) == 1:
+                return f"{names[0]}:1"
+            mid = len(names) // 2
+            return f"({build_subtree(names[:mid])},{build_subtree(names[mid:])}):1"
+
+        taxa = [f"T{i}" for i in range(70)]
+        tree = Phylo.read(StringIO(f"{build_subtree(taxa)};"), "newick")
+        states = [chr(0x100 + idx) for idx in range(len(taxa))]
+        sequences = {
+            taxon: states[idx] + states[(idx + 1) % len(states)]
+            for idx, taxon in enumerate(taxa)
+        }
+
+        total, per_site = ParsimonyScore(args)._fitch_parsimony_sets(
+            tree,
+            sequences,
+            2,
+            return_per_site=False,
+        )
+
+        assert total == 2 * (len(taxa) - 1)
+        assert per_site == []
 
 
 class TestParsimonyScoreJson:

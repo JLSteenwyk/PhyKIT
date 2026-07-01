@@ -75,7 +75,12 @@ class ParsimonyScore(Tree):
         sequences = {t: sequences[t] for t in shared}
         aln_length = len(next(iter(sequences.values())))
 
-        total_score, per_site = self._fitch_parsimony(tree, sequences, aln_length)
+        total_score, per_site = self._fitch_parsimony(
+            tree,
+            sequences,
+            aln_length,
+            return_per_site=self.verbose,
+        )
 
         if self.json_output:
             payload = {
@@ -221,7 +226,11 @@ class ParsimonyScore(Tree):
         return sequences
 
     def _fitch_parsimony(
-        self, tree, sequences: dict[str, str], aln_length: int
+        self,
+        tree,
+        sequences: dict[str, str],
+        aln_length: int,
+        return_per_site: bool = True,
     ) -> tuple:
         """Compute Fitch parsimony score.
 
@@ -236,10 +245,16 @@ class ParsimonyScore(Tree):
         if self._sequences_are_identical(sequences) and (
             self._tree_terminals_have_sequences(tree, sequences)
         ):
-            return 0, [0] * aln_length
+            per_site = [0] * aln_length if return_per_site else []
+            return 0, per_site
 
         if aln_length <= 16:
-            return self._fitch_parsimony_small(tree, sequences, aln_length)
+            return self._fitch_parsimony_small(
+                tree,
+                sequences,
+                aln_length,
+                return_per_site=return_per_site,
+            )
 
         wildcard_chars = {"-", "N", "X", "?", "n", "x"}
         all_states = {"A", "C", "G", "T"}
@@ -252,7 +267,12 @@ class ParsimonyScore(Tree):
         }
         state_symbols = sorted(all_states | observed_states)
         if len(state_symbols) > 63:
-            return self._fitch_parsimony_sets(tree, sequences, aln_length)
+            return self._fitch_parsimony_sets(
+                tree,
+                sequences,
+                aln_length,
+                return_per_site=return_per_site,
+            )
 
         state_masks = {
             char: np.uint64(1 << idx)
@@ -273,7 +293,10 @@ class ParsimonyScore(Tree):
                 state_lookup[ord(char)] = wildcard_mask
 
         node_states = {}
-        site_scores = np.zeros(aln_length, dtype=np.int64)
+        if return_per_site:
+            site_scores = np.zeros(aln_length, dtype=np.int64)
+        else:
+            total_score = 0
         default_states = np.full(aln_length, wildcard_mask, dtype=np.uint64)
 
         clades = self._postorder_clades_fast(tree)
@@ -307,15 +330,22 @@ class ParsimonyScore(Tree):
 
                 intersection = left_states & right_states
                 changed = intersection == 0
-                site_scores += changed
+                if return_per_site:
+                    site_scores += changed
+                else:
+                    total_score += int(changed.sum())
                 node_states[id(clade)] = np.where(
                     changed,
                     left_states | right_states,
                     intersection,
                 )
 
-        per_site = site_scores.astype(int).tolist()
-        return int(site_scores.sum()), per_site
+        if return_per_site:
+            total_score = int(site_scores.sum())
+            per_site = site_scores.astype(int).tolist()
+        else:
+            per_site = []
+        return total_score, per_site
 
     @staticmethod
     def _sequences_are_identical(sequences: dict[str, str]) -> bool:
@@ -356,7 +386,11 @@ class ParsimonyScore(Tree):
         return True
 
     def _fitch_parsimony_small(
-        self, tree, sequences: dict[str, str], aln_length: int
+        self,
+        tree,
+        sequences: dict[str, str],
+        aln_length: int,
+        return_per_site: bool = True,
     ) -> tuple:
         wildcard_chars = {"-", "N", "X", "?", "n", "x"}
         all_states = {"A", "C", "G", "T"}
@@ -369,7 +403,12 @@ class ParsimonyScore(Tree):
         }
         state_symbols = sorted(all_states | observed_states)
         if len(state_symbols) > 63:
-            return self._fitch_parsimony_sets(tree, sequences, aln_length)
+            return self._fitch_parsimony_sets(
+                tree,
+                sequences,
+                aln_length,
+                return_per_site=return_per_site,
+            )
 
         state_masks = {
             char: 1 << idx
@@ -384,7 +423,10 @@ class ParsimonyScore(Tree):
             state_lookup[char] = wildcard_mask
 
         node_states = {}
-        site_scores = [0] * aln_length
+        if return_per_site:
+            site_scores = [0] * aln_length
+        else:
+            total_score = 0
         default_states = [wildcard_mask] * aln_length
         sequence_states = {}
         sequence_state_cache = {}
@@ -421,14 +463,26 @@ class ParsimonyScore(Tree):
                     states.append(intersection)
                 else:
                     states.append(left_state | right_state)
-                    site_scores[idx] += 1
+                    if return_per_site:
+                        site_scores[idx] += 1
+                    else:
+                        total_score += 1
 
             node_states[id(clade)] = states
 
-        return sum(site_scores), site_scores
+        if return_per_site:
+            total_score = sum(site_scores)
+            per_site = site_scores
+        else:
+            per_site = []
+        return total_score, per_site
 
     def _fitch_parsimony_sets(
-        self, tree, sequences: dict[str, str], aln_length: int
+        self,
+        tree,
+        sequences: dict[str, str],
+        aln_length: int,
+        return_per_site: bool = True,
     ) -> tuple:
         wildcard_chars = {"-", "N", "X", "?", "n", "x"}
         all_states = {"A", "C", "G", "T"}
@@ -437,7 +491,7 @@ class ParsimonyScore(Tree):
         if clades is None:
             clades = list(tree.find_clades(order="postorder"))
 
-        per_site = []
+        per_site = [] if return_per_site else None
         total_score = 0
         id_ = id
 
@@ -468,7 +522,8 @@ class ParsimonyScore(Tree):
                         node_states[id_(clade)] = left_states | right_states
                         site_score += 1
 
-            per_site.append(site_score)
+            if return_per_site:
+                per_site.append(site_score)
             total_score += site_score
 
-        return total_score, per_site
+        return total_score, per_site if return_per_site else []

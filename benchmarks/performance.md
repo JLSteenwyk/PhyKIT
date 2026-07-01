@@ -1955,6 +1955,7 @@ Results:
 | `ParsimonyScore._fitch_parsimony` reverse-preorder postorder helper | balanced 32768-tip tree x 4 sites, four repeated sequence patterns | 0.042540s | 0.035535s | 1.20x |
 | `ParsimonyScore._fitch_parsimony_sets` postorder reuse | balanced 128-tip tree x 300 sites, 80 observed Unicode states forcing set fallback | 0.202495s | 0.033781s | 5.99x |
 | `ParsimonyScore._fitch_parsimony` identical-sequence shortcut | 2048-tip balanced tree, 10k identical DNA sites, identical zero total and per-site scores | 4.821393s | 0.000458s | 10527.1x |
+| `ParsimonyScore._fitch_parsimony` non-verbose score-only path | 4-tip tree x 500k sites, vectorized Fitch path, identical total score with/without returned per-site scores | 0.445905s | 0.248677s | 1.79x |
 | `IndependentContrasts._compute_pic` | balanced tree with 2500 tips, continuous trait | 0.0219s | 0.0039s | 5.7x |
 | `FitContinuous._concentrated_ll` | 420 taxa SPD VCV, single continuous trait | 0.0064s | 0.0005s | 12.7x |
 | `FitContinuous._concentrated_ll_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm | 0.057255s | 0.042199s | 1.36x |
@@ -6719,7 +6720,9 @@ Profiling summary:
   short-alignment path and the vectorized path. The large-state set fallback now
   also materializes postorder clades once and reuses that order for every site,
   preserving the fallback semantics while avoiding one Bio.Phylo traversal per
-  site.
+  site. Non-verbose scoring now requests a score-only path, avoiding unused
+  per-site score array/list materialization while preserving verbose output and
+  the direct helper default.
 - `ParsimonyScore._parse_alignment` baseline time materialized `SeqRecord`
   objects before immediately converting them into uppercase strings. The
   optimized loader streams titles and sequences with `SimpleFastaParser`,
