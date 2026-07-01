@@ -1000,6 +1000,7 @@ Results:
 | `BipartitionSupportStats.calculate_threshold_stats` multi-threshold counts | 1M support values, 17 thresholds | 1.107047s | 0.146290s | 7.57x |
 | `BipartitionSupportStats.calculate_threshold_stats` NumPy support values | 1M NumPy support values, 17 thresholds | 0.312667s | 0.037389s | 8.36x |
 | `BipartitionSupportStats.calculate_threshold_stats` single NumPy threshold | 2M NumPy support values, one threshold cutoff | 0.175425s | 0.000868s | 202.1x |
+| `BipartitionSupportStats.calculate_threshold_stats` large single-threshold Python list | 1M support values, one threshold cutoff, side-by-side previous Python generator count | 0.034144s | 0.028985s | 1.18x |
 | `BipartitionSupportStats.calculate_threshold_stats` many-threshold Python list | 500k support values, 1000 thresholds | 0.133931s | 0.036207s | 3.70x |
 | `BipartitionSupportStats.calculate_threshold_stats` empty thresholds | 2M support values, default no-threshold path, side-by-side previous unnecessary sort | 2.736035s | 0.000004s | 691083.37x |
 | `BipartitionSupportStats._to_builtin` already-builtin verbose payload | 300k bipartition JSON rows, recursive NumPy conversion helper with identical values | 0.969412s | 0.563180s | 1.72x |
@@ -4529,10 +4530,10 @@ Profiling summary:
   NumPy sort and `searchsorted`, preserving the list/bisect fallback. The
   single-threshold NumPy path now counts the boolean comparison with
   `np.count_nonzero`, avoiding a Python scalar loop for the common
-  `--thresholds 90` style case. Large Python support-value lists with many
-  thresholds now use the same NumPy sort/searchsorted path, preserving the
-  bisect fallback for small threshold sets to avoid unnecessary NumPy startup
-  and conversion.
+  `--thresholds 90` style case. Large Python support-value lists now also use
+  NumPy counting for one cutoff and the same NumPy sort/searchsorted path for
+  many thresholds, preserving the Python fallbacks for small inputs to avoid
+  unnecessary NumPy startup and conversion.
 - `InternalBranchStats.get_internal_branch_lengths` used the same repeated
   terminal-name extraction for verbose internal-branch rows. The optimized path
   caches descendant terminal names once in postorder and keeps

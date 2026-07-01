@@ -195,6 +195,26 @@ assert "Bio.Phylo" not in sys.modules
         assert isinstance(stats[0]["count_below"], int)
         assert isinstance(stats[0]["fraction_below"], float)
 
+    def test_threshold_stats_large_single_threshold_list_uses_count_nonzero(
+        self, args, mocker, monkeypatch
+    ):
+        args.thresholds = "50"
+        t = BipartitionSupportStats(args)
+        values = [float(index % 100) for index in range(5000)]
+        mocked_count_nonzero = mocker.spy(bss_module.np, "count_nonzero")
+
+        def fail_bisect(*_args, **_kwargs):
+            raise AssertionError("single-threshold path should not sort and bisect")
+
+        monkeypatch.setattr(bss_module, "bisect_left", fail_bisect)
+
+        stats = t.calculate_threshold_stats(values, t.thresholds)
+
+        mocked_count_nonzero.assert_called_once()
+        assert stats == [
+            {"threshold": 50.0, "count_below": 2500, "fraction_below": 0.5},
+        ]
+
     def test_threshold_stats_empty_bs_vals(self, args):
         args.thresholds = "70,90"
         t = BipartitionSupportStats(args)

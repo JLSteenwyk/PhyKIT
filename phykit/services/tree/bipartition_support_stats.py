@@ -143,6 +143,9 @@ class BipartitionSupportStats(Tree):
             threshold = thresholds[0]
             if is_numpy_values:
                 count_below = int(np.count_nonzero(bs_vals < threshold))
+            elif total >= _NUMPY_THRESHOLD_STATS_MIN_VALUES:
+                values = np.asarray(bs_vals, dtype=float)
+                count_below = int(np.count_nonzero(values < threshold))
             else:
                 count_below = sum(val < threshold for val in bs_vals)
             return [
