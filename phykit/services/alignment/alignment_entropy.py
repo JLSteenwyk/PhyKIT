@@ -245,17 +245,20 @@ class AlignmentEntropy(Alignment):
         plt.close(fig)
 
     def calculate_site_entropies(self, alignment, is_protein: bool) -> list[float]:
-        sequences = [str(record.seq).upper() for record in alignment]
-        if not sequences:
+        raw_sequences = [str(record.seq) for record in alignment]
+        if not raw_sequences:
             return []
 
-        aln_len = len(sequences[0])
-        first_sequence = sequences[0]
-        for sequence in sequences:
-            if sequence != first_sequence:
+        first_raw_sequence = raw_sequences[0]
+        aln_len = len(first_raw_sequence)
+        first_sequence = first_raw_sequence.upper()
+        for idx in range(1, len(raw_sequences)):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
                 break
         else:
             return [0.0] * aln_len
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         try:
             alignment_bytes = "".join(sequences).encode("ascii")

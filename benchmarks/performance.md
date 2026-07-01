@@ -182,6 +182,7 @@ Results:
 | `AlignmentEntropy.calculate_site_entropies` gap-code mask construction | 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous lookup-mask gather | 0.392355s | 0.335875s | 1.17x |
 | `AlignmentEntropy.calculate_site_entropies` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/probability path | 0.088211s | 0.072725s | 1.21x |
 | `AlignmentEntropy.calculate_site_entropies` identical-sequence shortcut | 1200 taxa x 12000 sites, identical ASCII DNA alignment, side-by-side previous byte-matrix path | 0.092795s | 0.005340s | 17.38x |
+| `AlignmentEntropy.calculate_site_entropies` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero entropies | 0.153022s | 0.092751s | 1.65x |
 | `AlignmentEntropy.calculate_site_entropies` identical-row no-slice scan | 1M identical ASCII DNA rows, side-by-side previous `sequences[1:]` equality scan | 0.470263s | 0.391903s | 1.20x |
 | `AlignmentEntropy.calculate_site_entropies` deferred Unicode gap-char set | 400 taxa x 2000 ASCII DNA sites, side-by-side previous unconditional `get_gap_chars` set construction | 0.389624s | 0.279371s | 1.39x |
 | `AlignmentEntropy.calculate_site_entropies` entropy column dot | 2 / 4 / 8 / 20 states by 12000 / 12000 / 12000 / 5000 sites, side-by-side previous small-alphabet multiply plus `np.sum(axis=0)` path | 0.000073515s / 0.000106187s / 0.000208391s / 0.000220500s | 0.000051922s / 0.000071867s / 0.000164666s / 0.000112586s | 1.42x / 1.48x / 1.27x / 1.96x |
@@ -2630,9 +2631,12 @@ Profiling summary:
   startup pass applies lazy lookup construction while preserving its module-level `np.isin`
   patch point. Alignment-entropy byte histograms now encode block counts in
   column-major order, avoiding a tiled site-offset array for each block while
-  preserving the same entropy values. Identical-row entropy shortcuts now scan
-  the existing sequence list directly instead of materializing `sequences[1:]`,
-  reducing temporary allocation for high-taxon conserved alignments. A
+  preserving the same entropy values. Raw-identical entropy alignments now test
+  equality before uppercasing every row, avoiding the normalization pass for
+  already identical inputs while preserving mixed-case equivalence.
+  Identical-row entropy shortcuts now scan the existing sequence list directly
+  instead of materializing `sequences[1:]`, reducing temporary allocation for
+  high-taxon conserved alignments. A
   follow-up startup pass keeps JSON output for the variable-sites and
   parsimony-informative commands behind module-level
   forwarding wrappers, preserving their patch points while avoiding JSON helper
