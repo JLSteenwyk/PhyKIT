@@ -918,6 +918,29 @@ class TestPhyloPath:
         assert sigma2 > 0
         assert var_beta.shape == (3, 3)
 
+    def test_pgls_fit_uses_diagonal_view_for_standard_errors(
+        self, monkeypatch
+    ):
+        rng = np.random.default_rng(20260701)
+        svc = PhyloPath.__new__(PhyloPath)
+        n = 12
+        A = rng.normal(size=(n, n))
+        vcv = A @ A.T + np.eye(n)
+        X = np.column_stack([np.ones(n), rng.normal(size=n)])
+        y = X @ np.array([0.5, -0.25]) + rng.normal(scale=0.05, size=n)
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("PGLS standard errors should use diagonal access")
+
+        monkeypatch.setattr(phylo_path_module.np, "diag", fail_diag)
+
+        beta_hat, se, sigma2 = svc._pgls_fit(y, X, vcv, n)
+
+        assert beta_hat.shape == (2,)
+        assert se.shape == (2,)
+        assert np.all(np.isfinite(se))
+        assert sigma2 > 0
+
     def test_csv_output(self, tmp_path):
         """CSV file is created."""
         csv_path = str(tmp_path / "path.csv")

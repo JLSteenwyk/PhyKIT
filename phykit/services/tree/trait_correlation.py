@@ -207,7 +207,7 @@ class TraitCorrelation(Tree):
     def _correlation_and_p_values(
         self, phylo_cov: np.ndarray, n: int, p: int
     ):
-        std_devs = np.sqrt(np.diag(phylo_cov))
+        std_devs = np.sqrt(phylo_cov.diagonal())
         corr_matrix = phylo_cov / np.outer(std_devs, std_devs)
         np.fill_diagonal(corr_matrix, 1.0)
 

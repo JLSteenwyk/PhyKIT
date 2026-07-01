@@ -884,11 +884,15 @@ class TestPoissonGEE:
         def fail_inverse_information(*_args, **_kwargs):
             raise AssertionError("positive-definite R should use Cholesky path")
 
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("Poisson GEE should use ndarray diagonal access")
+
         monkeypatch.setattr(
             svc,
             "_poisson_gee_information_and_score",
             fail_inverse_information,
         )
+        monkeypatch.setattr(phylogenetic_glm_module.np, "diag", fail_diag)
 
         result = svc._fit_poisson_gee(tree=None, y=y, X=X, ordered_names=ordered_names)
 

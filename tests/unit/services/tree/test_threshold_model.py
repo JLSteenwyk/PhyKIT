@@ -800,7 +800,7 @@ class TestSampleLiabilitiesGibbs:
 
         np.testing.assert_allclose(observed, expected)
 
-    def test_gibbs_context_matches_default_sampler(self):
+    def test_gibbs_context_matches_default_sampler(self, monkeypatch):
         tree = _make_tree()
         names = sorted([t.name for t in tree.get_terminals()])
         C = ThresholdModel._build_vcv_matrix(tree, names)
@@ -811,6 +811,12 @@ class TestSampleLiabilitiesGibbs:
         other_liabs = np.array([1.0, 2.0, 0.5, 1.5])
         sigma2 = 1.2
         a = 0.1
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("Gibbs setup should use ndarray diagonal access")
+
+        monkeypatch.setattr("phykit.services.tree.threshold_model.np.diag", fail_diag)
+
         context = ThresholdModel._prepare_gibbs_context(C_inv, sigma2)
 
         expected = ThresholdModel._sample_liabilities_gibbs(

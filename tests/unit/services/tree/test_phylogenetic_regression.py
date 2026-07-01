@@ -765,6 +765,12 @@ class TestRun:
             "phykit.services.tree.phylogenetic_regression._t_two_tailed_p_values",
             return_value=np.array([0.2, 0.3]),
         )
+        mocker.patch(
+            "phykit.services.tree.phylogenetic_regression.np.diag",
+            side_effect=AssertionError(
+                "standard errors should use ndarray diagonal access"
+            ),
+        )
         mocker.patch.object(PhylogeneticRegression, "_print_text_output")
 
         svc.run()

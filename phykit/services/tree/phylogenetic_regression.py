@@ -228,7 +228,7 @@ class PhylogeneticRegression(Tree):
         ) = self._fit_model(y, X, vcv, k, n)
 
         # Standard errors, t-stats, p-values
-        se = np.sqrt(np.diag(var_beta))
+        se = np.sqrt(var_beta.diagonal())
         df_resid = n - k - 1
         t_stats = beta_hat / se
         p_values = _t_two_tailed_p_values(t_stats, df_resid)

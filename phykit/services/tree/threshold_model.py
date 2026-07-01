@@ -646,7 +646,7 @@ class ThresholdModel(Tree):
         float_tiny = ThresholdModel._FLOAT_TINY
         one_minus_eps = ThresholdModel._ONE_MINUS_EPS
         if gibbs_context is None:
-            c_inv_diag = np.diag(C_inv)
+            c_inv_diag = C_inv.diagonal()
             sd_cond_by_tip = None
             valid_tip = None
         else:
@@ -714,7 +714,7 @@ class ThresholdModel(Tree):
 
     @staticmethod
     def _prepare_gibbs_context(C_inv, sigma2):
-        c_inv_diag = np.diag(C_inv).copy()
+        c_inv_diag = C_inv.diagonal().copy()
         valid = (c_inv_diag > 1e-15) & np.isfinite(c_inv_diag)
         sd_cond = np.zeros_like(c_inv_diag, dtype=float)
         if sigma2 > 0 and np.isfinite(sigma2):

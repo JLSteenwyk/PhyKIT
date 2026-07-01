@@ -923,7 +923,7 @@ class PhylogeneticGLM(Tree):
             vcv = self._precomputed_vcv
         else:
             vcv = self._build_vcv_matrix(tree, ordered_names)
-        d = np.sqrt(np.diag(vcv))
+        d = np.sqrt(vcv.diagonal())
         R = vcv / np.outer(d, d)
 
         R_inv = None

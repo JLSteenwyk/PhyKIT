@@ -308,7 +308,9 @@ class TestTraitCorrelation:
         assert observed_corr == pytest.approx(expected_corr)
         assert observed_p == pytest.approx(expected_p)
 
-    def test_correlation_p_values_match_scalar_reference(self, tmp_path):
+    def test_correlation_p_values_match_scalar_reference(
+        self, tmp_path, monkeypatch
+    ):
         from scipy.stats import t as t_dist
 
         out = str(tmp_path / "corr.png")
@@ -321,9 +323,15 @@ class TestTraitCorrelation:
             ]
         )
         n = 12
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("correlation scaling should use diagonal access")
+
+        monkeypatch.setattr(trait_correlation_module.np, "diag", fail_diag)
+
         corr, pmat = svc._correlation_and_p_values(phylo_cov, n, 3)
 
-        assert np.diag(pmat).tolist() == [1.0, 1.0, 1.0]
+        assert pmat.diagonal().tolist() == [1.0, 1.0, 1.0]
         assert pmat[0, 1] == 0.0
         assert pmat[1, 0] == 0.0
         r = corr[0, 2]

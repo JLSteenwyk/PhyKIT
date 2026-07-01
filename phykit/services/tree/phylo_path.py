@@ -586,7 +586,7 @@ class PhyloPath(Tree):
         beta_hat, residuals, sigma2, var_beta = self._fit_gls_from_vcv(
             y, X, vcv_lam
         )
-        se = np.sqrt(np.maximum(np.diag(var_beta), 0.0))
+        se = np.sqrt(np.maximum(var_beta.diagonal(), 0.0))
 
         return beta_hat, se, sigma2
 
