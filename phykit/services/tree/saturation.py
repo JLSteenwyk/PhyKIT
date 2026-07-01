@@ -273,19 +273,24 @@ class Saturation(Tree):
         if not combo_tips:
             return None
 
-        sequences_by_tip = {
-            record.name: str(record.seq).upper()
+        raw_sequences_by_tip = {
+            record.name: str(record.seq)
             for record in alignment
         }
         try:
-            sequences = [sequences_by_tip[tip] for tip in combo_tips]
+            first_raw_sequence = raw_sequences_by_tip[combo_tips[0]]
         except KeyError:
             return None
 
-        if not _all_sequences_identical(sequences):
-            return None
+        first_sequence = first_raw_sequence.upper()
+        for idx in range(1, len(combo_tips)):
+            try:
+                sequence = raw_sequences_by_tip[combo_tips[idx]]
+            except KeyError:
+                return None
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                return None
 
-        first_sequence = sequences[0]
         if exclude_gaps:
             valid_sites = cls._valid_site_count_for_identical_sequence(
                 first_sequence,

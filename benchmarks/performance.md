@@ -1531,6 +1531,7 @@ Results:
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence shortcut | balanced 300-tip tree x 1200 mixed-symbol sites, 44,850 requested pairs, `exclude_gaps=True`, side-by-side previous matrix distance path | 1.866907s | 0.140145s | 13.32x |
 | `Saturation` identical Unicode valid-site count | 100k-site uppercase Unicode identical-sequence helper, DNA / protein gap sets, side-by-side previous Python character-membership loop | 0.006550s / 0.007644s | 0.000488s / 0.000397s | 13.42x / 19.24x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058916s / 0.004838s / 0.051696s | 0.033481s / 0.000000334s / 0.045077s | 1.76x / 14490.77x / 1.15x |
+| `Saturation._constant_uncorrected_distance_for_identical_sequences` raw-identical normalization scan | 500k raw-identical requested tips with gappy DNA symbols, side-by-side previous eager uppercase tip dictionary and sequence list | 0.824100s | 0.671471s | 1.23x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
 | `saturation` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy and annotation-only Biopython imports | 0.144697s | 0.035127s | 4.12x |
@@ -5730,6 +5731,9 @@ Profiling summary:
   allocating `sequences[1:]`, retaining early mismatch exits without list-copy
   overhead. The identical-sequence Unicode valid-site fallback now counts gap
   characters with `str.count` instead of looping over every character in Python.
+  Raw-identical requested tips now compare raw sequence strings before falling
+  back to uppercase comparisons, preserving case-insensitive matching while
+  avoiding repeated uppercase allocations for already-normalized conserved rows.
   Cached read-only `Saturation.run` now uses the explicit unmodified tree read
   helper to avoid copying the cached parsed tree before tip-pair setup and
   pairwise distance calculation. Verbose text output now batches pairwise rows
