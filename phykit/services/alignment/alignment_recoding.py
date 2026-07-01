@@ -35,7 +35,7 @@ class AlignmentRecoding(Alignment):
                 dict(
                     code=self.code,
                     taxa=[
-                        dict(taxon=taxon, sequence=seq)
+                        {"taxon": taxon, "sequence": seq}
                         for taxon, seq in recoded_alignment.items()
                     ],
                 )

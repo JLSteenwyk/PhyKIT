@@ -19,8 +19,9 @@ def _expected_fasta_call(*records):
 class TestAlignmentRecoding(object):
     @patch("builtins.print")
     def test_alignment_recoding_invalid_input(self, mocked_print):  # noqa
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", ["phykit", "alignment_recoding"]):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

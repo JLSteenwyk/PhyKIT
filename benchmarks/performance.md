@@ -552,6 +552,7 @@ Results:
 | `AlignmentRecoding.recode_alignment` | 500 taxa x 10k sites, RY nucleotide recoding with lowercase/gap symbols | 0.5274s | 0.0180s | 29.3x |
 | `AlignmentRecoding.run` string-backed recoded FASTA assembly | 500 taxa x 10k sites, RY nucleotide recoding with lowercase/gap symbols and mocked stdout | 0.039963s | 0.004749s | 8.42x |
 | `AlignmentRecoding.run` batched FASTA text output | 100k recoded FASTA records, mocked alignment/read and identical stdout text | 0.066343s | 0.055510s | 1.20x |
+| `AlignmentRecoding.run` JSON row construction | 500k recoded sequence rows, identical row dictionaries | 0.211444s | 0.177975s | 1.19x |
 | `AlignmentRecoding.read_recoding_table` bounded split | 1M custom recoding rows with ignored trailing columns, identical recoding dictionary | 0.213408s | 0.163705s | 1.30x |
 | `AlignmentRecoding._build_translation_table` direct case inserts | 200k translation-table builds from uppercase/lowercase recoding symbols plus DNA gap symbols, side-by-side previous per-symbol two-item set builder | 6.007475s | 5.653971s | 1.06x |
 | `alignment_recoding` module import without eager Bio.Align/json helpers | cold subprocess import after postponed annotations and lazy JSON helper wrapper | 0.114186s | 0.026325s | 4.34x |
