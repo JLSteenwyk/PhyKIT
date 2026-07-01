@@ -270,6 +270,38 @@ class TestSitesMode:
 
         assert _read_fasta(f"{prefix}.fa") == _read_fasta(aln)
 
+    def test_sites_mode_stops_at_first_length_mismatch(
+        self, tmp_path, monkeypatch
+    ):
+        class EarlyMismatchSequences(dict):
+            def values(self):
+                yield "AAAA"
+                yield "AAA"
+                raise AssertionError(
+                    "length validation should stop at the first mismatch"
+                )
+
+        args = Namespace(
+            mode="sites", alignment="aln.fa", list=None, partition=None,
+            number=2, fraction=None, seed=42, bootstrap=False,
+            output=os.path.join(str(tmp_path), "out"), json=False,
+        )
+        service = AlignmentSubsample(args)
+        monkeypatch.setattr(
+            service,
+            "_read_alignment",
+            lambda _path: EarlyMismatchSequences(
+                {"t1": "AAAA", "t2": "AAA", "t3": "AAAA"}
+            ),
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            service._run_sites(None)
+
+        assert exc_info.value.messages == [
+            "All sequences in the alignment must have the same length."
+        ]
+
     def test_write_fasta_batches_records_preserving_exact_text(
         self, tmp_path, monkeypatch
     ):

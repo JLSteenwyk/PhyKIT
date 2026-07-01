@@ -135,13 +135,20 @@ class AlignmentSubsample(Alignment):
             )
 
         sequences = self._read_alignment(self.alignment_path)
-        lengths = set(len(seq) for seq in sequences.values())
-        if len(lengths) != 1:
+        seq_iter = iter(sequences.values())
+        try:
+            aln_len = len(next(seq_iter))
+        except StopIteration:
             raise PhykitUserError(
                 ["All sequences in the alignment must have the same length."],
                 code=2,
             )
-        aln_len = lengths.pop()
+        for seq in seq_iter:
+            if len(seq) != aln_len:
+                raise PhykitUserError(
+                    ["All sequences in the alignment must have the same length."],
+                    code=2,
+                )
         n = self._compute_n(aln_len, "sites")
 
         if not self.bootstrap and n == aln_len:

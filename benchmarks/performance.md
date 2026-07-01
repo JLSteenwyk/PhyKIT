@@ -556,6 +556,7 @@ Results:
 | `AlignmentSubsample._read_alignment` shared case-preserving parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.047439s | 0.036622s | 1.30x |
 | `AlignmentSubsample._run_sites` site selection | 500 taxa x 10k sites, 5k sampled sites without replacement | 0.0911s | 0.0324s | 2.8x |
 | `AlignmentSubsample._run_sites` full-site non-bootstrap shortcut | 500 taxa x 10000 sites, selected site count equals alignment length, mocked FASTA write and summary output | 0.076459s | 0.000031s | 2459.84x |
+| `AlignmentSubsample._run_sites` direct length validation | 50k alignment sequences x 120 sites, equal lengths / late mismatch / early mismatch / empty alignment | 0.004171107s / 0.005440565s / 0.003542095s / 0.000001152s | 0.002701266s / 0.001679951s / 0.000000500s / 0.000001066s | 1.54x / 3.24x / 7084.19x / 1.08x |
 | `AlignmentSubsample._assemble_partition_subsample` | 900 taxa x 800 partitions x 80 sites, 600 selected partitions with duplicates | 0.1243s | 0.0502s | 2.5x |
 | `AlignmentSubsample._print_summary` batched text output | seven captured summaries with 100k output-file rows each, identical stdout text | 0.118185s | 0.050466s | 2.34x |
 | `AlignmentSubsample._write_fasta` chunked output | 1M FASTA records x 40 bp, identical output file text, previous per-record write baseline | 0.273654s | 0.193250s | 1.42x |
@@ -3596,7 +3597,9 @@ Profiling summary:
   sequence mapping directly when the selected count equals the alignment length,
   avoiding random sampling, `itemgetter` construction, and per-taxon sequence
   rebuilds while leaving bootstrap and partial-site sampling on the existing
-  path.
+  path. Length validation now compares each sequence to the first observed
+  sequence length directly, avoiding a temporary length set and stopping at the
+  first mismatch while preserving the empty-alignment user error.
 - `AlignmentSubsample._run_partitions` baseline time walked every selected
   partition and then every taxon, repeatedly looking up taxon sequences while
   collecting partition slices. The optimized path builds selected slice ranges
