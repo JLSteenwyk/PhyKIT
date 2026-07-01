@@ -682,6 +682,89 @@ class TestAlignmentOutlierTaxa:
         assert calls == 1
         assert result["rows"][0]["long_branch_proxy"] == 0.1875
 
+    def test_blocked_long_branch_proxy_matches_pairwise_reference(self):
+        service = self._service()
+        matrix = alignment_outlier_taxa_module.np.frombuffer(
+            b"ACGT"
+            b"AG-T"
+            b"A--T"
+            b"NNNN",
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        ).reshape(4, 4)
+        invalid_lookup = service._invalid_lookup_for_chars(["-", "?", "*", "X", "N"])
+        valid_mask = ~invalid_lookup[matrix]
+        symbols = alignment_outlier_taxa_module.np.unique(matrix[valid_mask])
+
+        observed = AlignmentOutlierTaxa._blocked_long_branch_proxy(
+            matrix,
+            valid_mask,
+            symbols,
+        )
+
+        expected = []
+        for row_idx, row in enumerate(matrix):
+            distances = []
+            for other_idx, other in enumerate(matrix):
+                if other_idx == row_idx:
+                    continue
+                overlap = valid_mask[row_idx] & valid_mask[other_idx]
+                if overlap.any():
+                    distances.append(
+                        alignment_outlier_taxa_module.np.mean(
+                            row[overlap] != other[overlap]
+                        )
+                    )
+            expected.append(
+                alignment_outlier_taxa_module.np.nan
+                if not distances
+                else sum(distances) / len(distances)
+            )
+
+        alignment_outlier_taxa_module.np.testing.assert_allclose(
+            observed,
+            alignment_outlier_taxa_module.np.array(expected),
+        )
+
+    def test_large_ambiguous_long_branch_uses_blocked_helper(
+        self,
+        monkeypatch,
+    ):
+        service = self._service()
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("AGGT"), id="b"),
+                SeqRecord(Seq("A--T"), id="c"),
+                SeqRecord(Seq("NNNN"), id="d"),
+            ]
+        )
+        original = AlignmentOutlierTaxa._blocked_long_branch_proxy
+        calls = 0
+
+        def count_blocked(alignment_array, valid_mask, symbols):
+            nonlocal calls
+            calls += 1
+            return original(alignment_array, valid_mask, symbols)
+
+        monkeypatch.setattr(AlignmentOutlierTaxa, "_PAIRWISE_MATRIX_MAX_CELLS", 4)
+        monkeypatch.setattr(
+            AlignmentOutlierTaxa,
+            "_blocked_long_branch_proxy",
+            staticmethod(count_blocked),
+        )
+
+        result = service.calculate_outliers(alignment, is_protein=False)
+
+        assert calls == 1
+        assert {
+            row["taxon"]: row["long_branch_proxy"] for row in result["rows"]
+        } == {
+            "a": 0.125,
+            "b": 0.125,
+            "c": 0.0,
+            "d": None,
+        }
+
     def test_long_branch_proxy_matches_pairwise_reference(self):
         service = self._service()
         alignment = MultipleSeqAlignment(

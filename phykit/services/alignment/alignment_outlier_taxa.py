@@ -29,6 +29,8 @@ def _column_dot(left, right):
 
 class AlignmentOutlierTaxa(Alignment):
     _INVALID_LOOKUP_CACHE = {}
+    _PAIRWISE_MATRIX_MAX_CELLS = 4_000_000
+    _BLOCKED_SYMBOL_MASK_MAX_CELLS = 20_000_000
 
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -230,6 +232,49 @@ class AlignmentOutlierTaxa(Alignment):
         long_branch_proxy[:] = 1.0 - (other_matches / denom)
         return long_branch_proxy
 
+    @classmethod
+    def _blocked_long_branch_proxy(cls, alignment_array, valid_mask, symbols):
+        n_taxa, aln_len = alignment_array.shape
+        long_branch_proxy = np.full(n_taxa, np.nan, dtype=np.float64)
+        if n_taxa <= 1 or aln_len == 0:
+            return long_branch_proxy
+
+        symbol_mask_cells = int(symbols.size) * int(alignment_array.size)
+        if symbol_mask_cells > cls._BLOCKED_SYMBOL_MASK_MAX_CELLS:
+            return None
+
+        valid_float = valid_mask.astype(np.float64)
+        symbol_masks = [
+            ((alignment_array == symbol) & valid_mask).astype(np.float64)
+            for symbol in symbols
+        ]
+        block_size = max(1, min(n_taxa, cls._PAIRWISE_MATRIX_MAX_CELLS // n_taxa))
+        for start in range(0, n_taxa, block_size):
+            stop = min(start + block_size, n_taxa)
+            overlap_counts = valid_float[start:stop] @ valid_float.T
+            mismatch_counts = overlap_counts.copy()
+            for symbol_mask in symbol_masks:
+                mismatch_counts -= symbol_mask[start:stop] @ symbol_mask.T
+
+            comparable = overlap_counts > 0
+            rows = np.arange(stop - start, dtype=np.intp)
+            comparable[rows, start + rows] = False
+            comparable_counts = np.count_nonzero(comparable, axis=1)
+            mismatch_counts[~comparable] = 0.0
+            np.divide(
+                mismatch_counts,
+                overlap_counts,
+                out=mismatch_counts,
+                where=comparable,
+            )
+            long_branch_proxy[start:stop] = np.divide(
+                np.sum(mismatch_counts, axis=1),
+                comparable_counts,
+                out=np.full(stop - start, np.nan, dtype=np.float64),
+                where=comparable_counts > 0,
+            )
+        return long_branch_proxy
+
     def calculate_outliers(self, alignment, is_protein: bool) -> dict[str, object]:
         taxa = [record.id for record in alignment]
         n_taxa = len(taxa)
@@ -339,7 +384,10 @@ class AlignmentOutlierTaxa(Alignment):
                 symbols,
                 site_counts,
             )
-        elif valid_chars.size > 0 and pairwise_cells <= 4_000_000:
+        elif (
+            valid_chars.size > 0
+            and pairwise_cells <= self._PAIRWISE_MATRIX_MAX_CELLS
+        ):
             valid_float = valid_mask.astype(np.float64)
             overlap_counts = valid_float @ valid_float.T
             match_counts = np.zeros_like(overlap_counts, dtype=np.float64)
@@ -367,30 +415,42 @@ class AlignmentOutlierTaxa(Alignment):
                 where=comparable_counts > 0,
             )
         else:
-            for i in range(n_taxa):
-                if all_valid_ascii:
-                    comparable = np.ones(n_taxa, dtype=bool)
-                    comparable[i] = False
-                    if comparable.any():
+            blocked_proxy = None
+            if valid_chars.size > 0 and not all_valid_ascii:
+                blocked_proxy = self._blocked_long_branch_proxy(
+                    alignment_array,
+                    valid_mask,
+                    symbols,
+                )
+            if blocked_proxy is not None:
+                long_branch_proxy = blocked_proxy
+            else:
+                for i in range(n_taxa):
+                    if all_valid_ascii:
+                        comparable = np.ones(n_taxa, dtype=bool)
+                        comparable[i] = False
+                        if comparable.any():
+                            mismatches = np.sum(
+                                alignment_array != alignment_array[i],
+                                axis=1,
+                            )
+                            long_branch_proxy[i] = float(
+                                np.mean(mismatches[comparable] / float(aln_len))
+                            )
+                    else:
+                        overlap = valid_mask & valid_mask[i]
+                        overlap_counts = np.sum(overlap, axis=1)
                         mismatches = np.sum(
-                            alignment_array != alignment_array[i],
+                            (alignment_array != alignment_array[i]) & overlap,
                             axis=1,
                         )
-                        long_branch_proxy[i] = float(
-                            np.mean(mismatches[comparable] / float(aln_len))
-                        )
-                else:
-                    overlap = valid_mask & valid_mask[i]
-                    overlap_counts = np.sum(overlap, axis=1)
-                    mismatches = np.sum(
-                        (alignment_array != alignment_array[i]) & overlap,
-                        axis=1,
-                    )
-                    comparable = overlap_counts > 0
-                    comparable[i] = False
-                    if comparable.any():
-                        distances = mismatches[comparable] / overlap_counts[comparable]
-                        long_branch_proxy[i] = float(np.mean(distances))
+                        comparable = overlap_counts > 0
+                        comparable[i] = False
+                        if comparable.any():
+                            distances = (
+                                mismatches[comparable] / overlap_counts[comparable]
+                            )
+                            long_branch_proxy[i] = float(np.mean(distances))
 
         gap_threshold = self._high_outlier_threshold(gap_rates, self.gap_z)
         composition_threshold = self._high_outlier_threshold(

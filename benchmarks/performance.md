@@ -337,6 +337,7 @@ Results:
 | `AlignmentOutlierTaxa.calculate_outliers` | 180 taxa x 1200 sites, alphabet `ACGT-?NX*` | 0.734118s | 0.008124s | 90.36x |
 | `AlignmentOutlierTaxa.calculate_outliers` ASCII numeric core uint8 lookup | 400 taxa x 1200 sites, alphabet `ACGT-?NX*` | 0.546744s | 0.176515s | 3.10x |
 | `AlignmentOutlierTaxa.calculate_outliers` long-branch matrix products | 400 taxa x 1200 sites, alphabet `ACGT-?NX*` | 0.165889s | 0.035340s | 4.69x |
+| `AlignmentOutlierTaxa._blocked_long_branch_proxy` large ambiguous DNA fallback | 3000 taxa x 300 sites, alphabet `ACGTN-`, side-by-side previous per-taxon row loop above full-matrix cutoff | 5.048598s | 2.537640s | 1.99x |
 | `AlignmentOutlierTaxa.calculate_outliers` comparable-pair row counts | 2000 x 2000 comparable-pair boolean matrix, side-by-side previous `np.sum(..., axis=1)` row counts | 0.001769s | 0.001283s | 1.38x |
 | `AlignmentOutlierTaxa.calculate_outliers` constant-composition shortcut | 1000 taxa x 5000 sites, conserved ASCII DNA alignment, side-by-side previous full feature pipeline | 0.429936s | 0.042515s | 10.11x |
 | `AlignmentOutlierTaxa.calculate_outliers` identical multi-symbol shortcut | 1000 taxa x 5000 mixed-symbol DNA sites, lowercase/uppercase variants, side-by-side previous full feature pipeline | 8.073867s | 0.014392s | 561.01x |
