@@ -148,6 +148,24 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.assertEqual(count, 2)  # Only group 0 and group 2
 
+    def test_count_number_of_groups_uses_precomputed_group_sets(self):
+        groups_arr = [
+            ["test", ["seq1", "seq2"], ["seq3", "seq4"], ["seq5", "seq6"], ["out"]]
+        ]
+        groups_of_groups, _ = self.polytomy.determine_groups_of_groups(groups_arr)
+        groups = groups_of_groups["test"]
+        _, cached_groups = self.polytomy._group_tuple_cache_by_id[id(groups)]
+        self.polytomy._count_groups_cached = Mock(return_value=3)
+
+        count = self.polytomy.count_number_of_groups_in_triplet(
+            ("seq1", "seq3", "seq5"), groups
+        )
+
+        self.assertEqual(count, 3)
+        self.polytomy._count_groups_cached.assert_called_once_with(
+            ("seq1", "seq3", "seq5"), cached_groups
+        )
+
     def test_set_branch_lengths_in_tree_to_one(self):
         """Test setting all branch lengths to 1"""
         mock_tree = Mock(spec=Newick.Tree)

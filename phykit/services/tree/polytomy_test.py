@@ -512,6 +512,7 @@ class PolytomyTest(Tree):
 
         # Pre-compute group sets for faster lookups
         self._group_sets_cache = {}
+        self._group_tuple_cache_by_id = {}
 
         for group in groups_arr:
             temp = []
@@ -520,8 +521,13 @@ class PolytomyTest(Tree):
                 taxa_list = [taxon_name for taxon_name in group[i]]
                 temp.append(taxa_list)
                 group_sets.append(frozenset(taxa_list))
+            group_sets_tuple = tuple(group_sets)
             groups_of_groups[group[0]] = temp
             self._group_sets_cache[group[0]] = group_sets
+            self._group_tuple_cache_by_id[id(temp)] = (
+                tuple(id(taxa_list) for taxa_list in temp),
+                group_sets_tuple,
+            )
 
         outgroup_taxa = [taxon_name for taxon_name in group[4]]
 
@@ -655,8 +661,18 @@ class PolytomyTest(Tree):
         """
         determine how many groups are represented in a triplet
         """
-        # Convert groups to tuple of frozensets for caching
-        groups_tuple = tuple(frozenset(group) for group in groups)
+        groups_tuple = None
+        cached_groups = getattr(self, "_group_tuple_cache_by_id", {}).get(id(groups))
+        if cached_groups is not None:
+            group_ids, cached_tuple = cached_groups
+            if len(group_ids) == len(groups) and all(
+                id(group) == group_id
+                for group, group_id in zip(groups, group_ids)
+            ):
+                groups_tuple = cached_tuple
+
+        if groups_tuple is None:
+            groups_tuple = tuple(frozenset(group) for group in groups)
         return self._count_groups_cached(triplet, groups_tuple)
 
     def set_branch_lengths_in_tree_to_one(
