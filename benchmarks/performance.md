@@ -677,6 +677,7 @@ Results:
 | `PatristicDistances.run` cached read-only tree setup | balanced 32768-tip cached tree, non-verbose stats/output mocked | 0.388442s | 0.000097s | 3994.26x |
 | `SpuriousSequence.get_branch_lengths_and_their_names` | balanced 65536-tip tree, terminal branch-length collection | 0.1404s | 0.0184s | 7.6x |
 | `SpuriousSequence._iter_terminal_clades` order-preserving child push | balanced 131072-tip tree, terminal clade list with identical tip order, side-by-side previous `reversed(children)` helper | 0.045395s | 0.040772s | 1.11x |
+| `SpuriousSequence.get_branch_lengths_and_their_names` one-pass collection | balanced 131072-tip standard tree, terminal branch lengths and name map, side-by-side previous terminal-list materialization | 0.095943s | 0.075439s | 1.27x |
 | `SpuriousSequence.identify_spurious_sequence` large median | balanced 131072-tip tree, varied terminal branch lengths and identical threshold | 0.075865s | 0.057356s | 1.32x |
 | `SpuriousSequence.run` batched text output | 50k flagged terminal rows, mocked tree/read and identical stdout text | 0.087150s | 0.031513s | 2.77x |
 | `SpuriousSequence.run` cached read-only tree path | balanced 32768-tip cached tree with 1% long terminal branches, output mocked | 0.122502s | 0.005828s | 21.02x |
@@ -3802,7 +3803,11 @@ Profiling summary:
   import until tree I/O is actually requested by the shared tree base. The
   direct terminal helper now pushes binary children right-then-left and indexes
   multifurcations backward, preserving terminal order while reducing balanced
-  131072-tip terminal traversal median time from 0.045395s to 0.040772s.
+  131072-tip terminal traversal median time from 0.045395s to 0.040772s. The
+  branch-length collection path now records terminal branch lengths and names
+  during that standard-tree traversal, avoiding a separate terminal-list
+  materialization pass while preserving the fallback route for nonstandard tree
+  objects.
 - `SpuriousSequence.run` text-output baseline rounded threshold/median for
   every flagged row, built JSON payload rows even for text output, and called
   `print` once per reported row. The optimized text path rounds shared values

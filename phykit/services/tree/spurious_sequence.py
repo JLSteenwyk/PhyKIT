@@ -119,6 +119,10 @@ class SpuriousSequence(Tree):
         list[float],
         dict[str, float],
     ]:
+        direct_result = self._get_branch_lengths_and_names_standard_tree(tree)
+        if direct_result is not None:
+            return direct_result
+
         branch_lengths = []
         name_and_branch_len = {}
 
@@ -129,6 +133,41 @@ class SpuriousSequence(Tree):
             if terminal.branch_length is not None:
                 branch_lengths.append(terminal.branch_length)
                 name_and_branch_len[terminal.name] = terminal.branch_length
+
+        return branch_lengths, name_and_branch_len
+
+    @staticmethod
+    def _get_branch_lengths_and_names_standard_tree(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        branch_lengths = []
+        name_and_branch_len = {}
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        append_length = branch_lengths.append
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                elif child_count:
+                    for idx in range(child_count - 1, -1, -1):
+                        append(children[idx])
+                else:
+                    branch_length = clade.branch_length
+                    if branch_length is not None:
+                        append_length(branch_length)
+                        name_and_branch_len[clade.name] = branch_length
+        except AttributeError:
+            return None
 
         return branch_lengths, name_and_branch_len
 

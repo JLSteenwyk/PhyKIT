@@ -82,6 +82,28 @@ class TestSpuriousSequence:
         assert branch_lengths == [1.0, 2.0, 4.0]
         assert name_map == {"a": 1.0, "b": 2.0, "c": 4.0}
 
+    def test_get_branch_lengths_standard_tree_collects_in_one_pass(
+        self, args, monkeypatch
+    ):
+        service = SpuriousSequence(args)
+        tree = Phylo.read(StringIO("((a:1,b:2):3,c:4);"), "newick")
+
+        def fail_terminal_list(_tree):
+            raise AssertionError(
+                "standard tree should collect branch lengths directly"
+            )
+
+        monkeypatch.setattr(
+            SpuriousSequence,
+            "_iter_terminal_clades",
+            staticmethod(fail_terminal_list),
+        )
+
+        branch_lengths, name_map = service.get_branch_lengths_and_their_names(tree)
+
+        assert branch_lengths == [1.0, 2.0, 4.0]
+        assert name_map == {"a": 1.0, "b": 2.0, "c": 4.0}
+
     def test_iter_terminal_clades_preserves_order_with_mixed_child_counts(
         self, monkeypatch
     ):
