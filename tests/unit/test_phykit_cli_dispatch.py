@@ -13,8 +13,11 @@ def test_module_import_defers_boolean_parser_helper():
         "import sys; "
         "import phykit.phykit as module; "
         "assert callable(module.str2bool); "
+        "assert module._STR2BOOL is None; "
         "assert 'phykit.helpers.boolean_argument_parsing' not in sys.modules; "
         "assert module.str2bool('true') is True; "
+        "assert module._STR2BOOL is not None; "
+        "assert module.str2bool('false') is False; "
         "assert 'phykit.helpers.boolean_argument_parsing' in sys.modules"
     )
 

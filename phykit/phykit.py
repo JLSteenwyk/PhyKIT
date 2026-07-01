@@ -9,9 +9,17 @@ from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
 
 
+_STR2BOOL = None
+
+
 def str2bool(value):
+    global _STR2BOOL
+    if _STR2BOOL is not None:
+        return _STR2BOOL(value)
+
     from .helpers.boolean_argument_parsing import str2bool as _str2bool
 
+    _STR2BOOL = _str2bool
     return _str2bool(value)
 
 
