@@ -194,6 +194,7 @@ Results:
 | `AlignmentEntropy.run` verbose text direct rows | 100k site rows, mocked alignment/read/calculation, captured stdout and identical text, side-by-side previous row-dict formatter | 0.057309s | 0.047691s | 1.20x |
 | `AlignmentEntropy.run` nonverbose summary output | 100k site entropies, mocked alignment/read/calculation | 0.044581s | 0.000471s | 94.7x |
 | `AlignmentEntropy.run` nonverbose plot-only series preparation | 1M site entropies, identical rounded plotted site/value arrays without temporary row dictionaries | 0.404570s | 0.200756s | 2.02x |
+| `AlignmentEntropy._prepare_entropy_row_plot_series` row array conversion | 500k verbose plot rows, identical site and entropy arrays | 0.162959s | 0.111404s | 1.46x |
 | `alignment_entropy` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction | 0.078578s | 0.029387s | 2.67x |
 | `alignment_entropy` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.011941s | 0.005361s | 2.23x |
 | `alignment_entropy` module import without shared `hashlib`/`typing` startup | median cold subprocess import after localizing helper hashing and replacing annotation-only typing aliases | 0.006227s | 0.001422s | 4.38x |

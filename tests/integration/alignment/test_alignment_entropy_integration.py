@@ -80,7 +80,7 @@ class TestAlignmentEntropy(object):
         assert payload["rows"][0] == payload["sites"][0]
         assert payload["sites"][0] == {"site": 1, "entropy": 0.0}
 
-    @patch("phykit.services.alignment.alignment_entropy.AlignmentEntropy._plot_alignment_entropy")
+    @patch("phykit.services.alignment.alignment_entropy.AlignmentEntropy._plot_alignment_entropy_values")
     @patch("builtins.print")
     def test_alignment_entropy_plot(self, mocked_print, mocked_plot):
         testargs = [
@@ -100,7 +100,7 @@ class TestAlignmentEntropy(object):
             for call in mocked_print.mock_calls
         )
 
-    @patch("phykit.services.alignment.alignment_entropy.AlignmentEntropy._plot_alignment_entropy")
+    @patch("phykit.services.alignment.alignment_entropy.AlignmentEntropy._plot_alignment_entropy_values")
     @patch("builtins.print")
     def test_alignment_entropy_plot_json(self, mocked_print, mocked_plot):
         testargs = [

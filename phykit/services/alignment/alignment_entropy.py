@@ -105,8 +105,17 @@ def _prepare_entropy_plot_series(entropies):
 
 
 def _prepare_entropy_row_plot_series(rows):
-    sites = np.array([int(row["site"]) for row in rows], dtype=np.int32)
-    entropies = np.array([float(row["entropy"]) for row in rows], dtype=np.float64)
+    count = len(rows)
+    sites = np.fromiter(
+        (int(row["site"]) for row in rows),
+        dtype=np.int32,
+        count=count,
+    )
+    entropies = np.fromiter(
+        (float(row["entropy"]) for row in rows),
+        dtype=np.float64,
+        count=count,
+    )
     return sites, entropies
 
 
