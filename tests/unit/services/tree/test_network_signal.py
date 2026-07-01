@@ -767,6 +767,38 @@ class TestQuartetJsonInference:
             {"donor": "C", "recipient": "D", "gamma": 0.4, "n_quartets": 2},
         ]
 
+    def test_infer_from_quartet_json_preserves_gamma_bounds(self):
+        quartet_data = {
+            "quartets": [
+                {
+                    "taxa": ["A", "B", "C", "D"],
+                    "classification": "hybrid",
+                    "counts": [0, 0, 0],
+                    "dominant_topology": "{A, B} | {C, D}",
+                },
+                {
+                    "taxa": ["E", "F", "G", "H"],
+                    "classification": "hybrid",
+                    "counts": [999999, 1, 0],
+                    "dominant_topology": "{E, F} | {G, H}",
+                },
+                {
+                    "taxa": ["I", "J", "K", "L"],
+                    "classification": "hybrid",
+                    "counts": [1, 1, 0],
+                    "dominant_topology": "{I, J} | {K, L}",
+                },
+            ]
+        }
+
+        edges = NetworkSignal._infer_hybrid_edges(quartet_data)
+
+        assert edges == [
+            {"donor": "B", "recipient": "C", "gamma": 0.1, "n_quartets": 1},
+            {"donor": "F", "recipient": "G", "gamma": 0.001, "n_quartets": 1},
+            {"donor": "J", "recipient": "K", "gamma": 0.499, "n_quartets": 1},
+        ]
+
     def test_no_hybrid_quartets_returns_empty(self):
         """All 'tree' quartets -> empty list."""
         quartet_data = {

@@ -377,6 +377,8 @@ class NetworkSignal(Tree):
         parsed_topology_cache = {}
         parse_topology = NetworkSignal._parse_topology_string
         top_two_indices = NetworkSignal._top_two_topology_indices
+        pair_stats_get = pair_stats.get
+        topology_cache_get = parsed_topology_cache.get
 
         for q in quartet_data.get("quartets", []):
             if q["classification"] != "hybrid":
@@ -387,7 +389,7 @@ class NetworkSignal(Tree):
             dominant_topo_str = q["dominant_topology"]
 
             # Preserve topology-string validation without reparsing repeated JSON rows.
-            if dominant_topo_str not in parsed_topology_cache:
+            if topology_cache_get(dominant_topo_str) is None:
                 parsed_topology_cache[dominant_topo_str] = parse_topology(
                     dominant_topo_str
                 )
@@ -411,35 +413,33 @@ class NetworkSignal(Tree):
                 if taxon_1 <= taxon_2
                 else (taxon_2, taxon_1)
             )
-            total = sum(counts)
-            minor_count = counts[minor_idx]
-            gamma_est = minor_count / total if total > 0 else 0.1
-            gamma_est = min(gamma_est, 0.499)
-            gamma_est = max(gamma_est, 0.001)
+            total = counts[0] + counts[1] + counts[2]
+            gamma_est = counts[minor_idx] / total if total > 0 else 0.1
+            if gamma_est > 0.499:
+                gamma_est = 0.499
+            elif gamma_est < 0.001:
+                gamma_est = 0.001
 
-            stats = pair_stats.get(pair_key)
+            stats = pair_stats_get(pair_key)
             if stats is None:
                 pair_stats[pair_key] = [1, gamma_est]
             else:
                 stats[0] += 1
                 stats[1] += gamma_est
 
-        edges = []
-        for (donor, recipient), (n_quartets, gamma_sum) in sorted(
-            pair_stats.items(),
-            key=lambda item: item[1][0],
-            reverse=True,
-        ):
-            avg_gamma = gamma_sum / n_quartets
-            avg_gamma = round(avg_gamma, 4)
-            edges.append({
+        return [
+            {
                 "donor": donor,
                 "recipient": recipient,
-                "gamma": avg_gamma,
+                "gamma": round(gamma_sum / n_quartets, 4),
                 "n_quartets": n_quartets,
-            })
-
-        return edges
+            }
+            for (donor, recipient), (n_quartets, gamma_sum) in sorted(
+                pair_stats.items(),
+                key=lambda item: item[1][0],
+                reverse=True,
+            )
+        ]
 
     # ------------------------------------------------------------------
     # K and Lambda (same formulas as phylogenetic_signal.py)

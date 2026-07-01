@@ -2204,6 +2204,7 @@ Results:
 | `NetworkSignal._infer_hybrid_edges` direct topology-pair mapping | 200k hybrid quartet JSON records, three alternating dominant topologies, side-by-side previous set-based swap comparison | 0.374105s | 0.178060s | 2.10x |
 | `NetworkSignal._infer_hybrid_edges` plain-dict pair counts | 500k quartet JSON records with repeated pair evidence, identical stable descending-frequency edge output | 0.837850s | 0.691837s | 1.21x |
 | `NetworkSignal._infer_hybrid_edges` combined pair stats | 500k quartet JSON records with repeated pair evidence, side-by-side previous parallel count/sum dictionaries | 0.307262s | 0.269797s | 1.14x |
+| `NetworkSignal._infer_hybrid_edges` direct count total and gamma clamp | 500k quartet JSON records with repeated pair evidence, side-by-side previous `sum()` plus `min()`/`max()` gamma path | 1.371010s | 1.062322s | 1.29x |
 | `NetworkSignal._parse_trait_file` streaming two-column parser | 500k two-column trait rows with comments/blanks, all taxa shared, randomized old/new measurement order | 0.457297s | 0.441136s | 1.04x |
 | `NetworkSignal._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.437650s | 0.239459s | 1.83x |
 | `NetworkSignal._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.235204s | 0.223874s | 1.05x |
@@ -7346,7 +7347,10 @@ Profiling summary:
   instead of storing one gamma list per inferred edge. Another pass replaces
   the pair-evidence `Counter` with a plain dictionary and stable descending
   sort, preserving `most_common()` tie ordering while reducing per-quartet
-  count-update overhead.
+  count-update overhead. The latest inference pass uses direct three-count
+  totals, branch-based gamma clamping, and a list-comprehension edge payload,
+  preserving topology validation, gamma bounds, and descending-frequency output
+  order while reducing scalar helper dispatch in the hot loop.
 - `NetworkSignal._log_likelihood` baseline time formed an explicit inverse of
   each candidate network VCV matrix. The optimized path uses Cholesky solves
   and the Cholesky log determinant for positive-definite matrices, retaining
