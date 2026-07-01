@@ -517,7 +517,7 @@ class PhylogeneticSignal(Tree):
             e = x - a_hat
             C_inv_e = C_inv_x - C_inv_ones * a_hat
             sig2_bm = float(e @ C_inv_e) / n
-            sig2_wn = float(np.var(x))  # numpy uses /n by default
+            sig2_wn = float(x.var())  # numpy uses /n by default
             if sig2_wn == 0:
                 return float("nan")
             return 1.0 - sig2_bm / sig2_wn
@@ -532,7 +532,7 @@ class PhylogeneticSignal(Tree):
         a_hat = float((ones @ C_inv @ x) / (ones @ C_inv @ ones))
         e = x - a_hat
         sig2_bm = float(e @ C_inv @ e) / n
-        sig2_wn = float(np.var(x))  # numpy uses /n by default
+        sig2_wn = float(x.var())  # numpy uses /n by default
         if sig2_wn == 0:
             return float("nan")
         return 1.0 - sig2_bm / sig2_wn

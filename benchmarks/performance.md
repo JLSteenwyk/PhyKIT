@@ -1965,6 +1965,7 @@ Results:
 | `PhylogeneticSignal`/`NetworkSignal` permutation p-value counts | 1M permutation statistics, side-by-side previous `np.mean(permutations >= observed)` reduction | 0.000991s | 0.000390s | 2.54x |
 | `PhylogeneticSignal._compute_r2_phylo` | 420 taxa SPD VCV, single continuous trait | 0.0047s | 0.0015s | 3.2x |
 | `PhylogeneticSignal._compute_r2_phylo` combined RHS solve | 120 repeated 420-taxon SPD VCV R2 effect-size evaluations, SciPy already warm | 0.052471s | 0.039279s | 1.34x |
+| `PhylogeneticSignal._compute_r2_phylo` white-noise variance reduction | 260 / 420 / 1000 trait values, side-by-side previous `np.var(x)` wrapper | 0.000006042s / 0.000006084s / 0.000006667s | 0.000005459s / 0.000005541s / 0.000006083s | 1.11x / 1.10x / 1.10x |
 | `PhylogeneticSignal._log_likelihood` | 420 taxa SPD VCV, single continuous trait | 0.0074s | 0.0005s | 14.5x |
 | `PhylogeneticSignal._log_likelihood` combined Cholesky RHS solve | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm | 0.059433s | 0.040428s | 1.47x |
 | `PhylogeneticSignal._log_likelihood` cached SciPy Cholesky wrappers | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.040999s | 0.039617s | 1.03x |
@@ -2035,6 +2036,7 @@ Results:
 | `NetworkSignal._blombergs_k` | 420 taxa SPD VCV, 1000 permutations | 0.1238s | 0.0262s | 4.7x |
 | `NetworkSignal._blombergs_k` Cholesky inverse construction | 450 taxa SPD VCV, 16 seeded permutations, side-by-side previous explicit inverse | 0.005925s | 0.002848s | 2.08x |
 | `NetworkSignal._blombergs_k_permutations` algebraic batch ratios | 420 taxa SPD VCV, 1000 permutations | 0.021850s | 0.014678s | 1.49x |
+| `NetworkSignal._blombergs_k_permutations` invariant trait sum | 260 / 420 / 1000 trait values, side-by-side previous `np.sum(x)` wrapper | 0.000001625s / 0.000001625s / 0.000004125s | 0.000000834s / 0.000000875s / 0.000002292s | 1.95x / 1.86x / 1.80x |
 | `NetworkSignal._log_likelihood` | 420 taxa SPD VCV, single continuous trait | 0.0088s | 0.0005s | 17.6x |
 | `NetworkSignal._log_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm | 0.054446s | 0.039508s | 1.38x |
 | `NetworkSignal._log_likelihood_cholesky` cached SciPy Cholesky wrappers | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.090518s | 0.069456s | 1.30x |
@@ -6762,7 +6764,9 @@ Profiling summary:
   original inverse-based calculation as a fallback. A repeated effect-size pass
   now solves `[1, x]` as one Cholesky right-hand side and derives the residual
   solve from those columns, avoiding two duplicate triangular solves per
-  positive-definite R2 evaluation.
+  positive-definite R2 evaluation. The white-noise variance term now uses the
+  trait vector's ndarray `var()` method, avoiding generic NumPy dispatch in both
+  the Cholesky path and inverse fallback.
 - `PhylogeneticSignal._log_likelihood` baseline time formed an explicit inverse
   of every candidate lambda covariance matrix. The optimized path uses Cholesky
   factorization and triangular solves for positive-definite matrices, while
@@ -6920,7 +6924,9 @@ Profiling summary:
   permutation count, avoiding boolean mean reductions. K setup now builds the
   required covariance inverse from a Cholesky identity solve for
   positive-definite network VCVs while preserving the explicit inverse fallback
-  for non-Cholesky cases.
+  for non-Cholesky cases. The algebraic permutation setup now computes the
+  invariant trait sum through the ndarray `sum()` method, avoiding generic NumPy
+  dispatch while preserving the same centered numerator formula.
 - `NetworkSignal._validate_tree` baseline time materialized terminal clades,
   traversed the tree again to check branch lengths, and then scanned all clades
   a third time to count unresolved polytomies. The optimized path gathers tip

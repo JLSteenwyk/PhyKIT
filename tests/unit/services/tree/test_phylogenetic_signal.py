@@ -763,6 +763,14 @@ class TestEffectSize:
             return original_cho_solve(*args, **kwargs)
 
         monkeypatch.setattr(ps_module, "cho_solve", counting_cho_solve)
+        monkeypatch.setattr(
+            ps_module.np,
+            "var",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("R2 variance should use ndarray.var")
+            ),
+            raising=False,
+        )
 
         assert svc._compute_r2_phylo(x, vcv) == pytest.approx(
             svc._compute_r2_phylo_inverse(x, vcv)

@@ -570,7 +570,7 @@ class NetworkSignal(Tree):
         rng = np.random.default_rng(seed=42)
         n = len(x)
         weights = np.sum(C_inv, axis=0)
-        x_sum = float(np.sum(x))
+        x_sum = float(x.sum())
         x_sumsq = float(x @ x)
         k_perm = np.empty(n_perm, dtype=np.float64)
 
