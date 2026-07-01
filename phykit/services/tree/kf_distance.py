@@ -21,6 +21,10 @@ class KuhnerFelsensteinDistance(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
+        if self.tree_file_path == self.tree1_file_path:
+            self._output_result(0.0, 0.0)
+            return
+
         tree_zero = self.read_tree_file()
         tree_one = self.read_tree1_file()
 
@@ -49,6 +53,9 @@ class KuhnerFelsensteinDistance(Tree):
 
         plain_kf, normalized_kf = self.calculate_kf_distance(tree_zero, tree_one)
 
+        self._output_result(plain_kf, normalized_kf)
+
+    def _output_result(self, plain_kf, normalized_kf):
         if self.json_output:
             print_json(
                 dict(

@@ -756,6 +756,7 @@ Results:
 | `rf_distance` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006557s | 0.004961s | 1.32x |
 | `rf_distance` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005337s | 0.003524s | 1.51x |
 | `KuhnerFelsensteinDistance.run` rooting-tip setup | balanced 65536-tip tree, first terminal lookup before rooting | 0.1238s | 0.000004s | 27506.1x |
+| `KuhnerFelsensteinDistance.run` same-path shortcut | balanced 32768-tip cached tree passed as both inputs, KF calculation and output isolated | 4.023412s | 0.000002083s | 1931636.98x |
 | `KuhnerFelsensteinDistance.calculate_kf_distance` | balanced 1024-tip tree pair, branch score split map | 0.0472s | 0.0105s | 4.5x |
 | `KuhnerFelsensteinDistance._get_splits_with_lengths` direct postorder | balanced 32768-tip tree, identical branch-score split map | 0.299108s | 0.200414s | 1.49x |
 | `KuhnerFelsensteinDistance._get_splits_with_lengths` binary child union | balanced 32768-tip tree, branch-score split map, side-by-side previous direct split helper | 0.049567s | 0.035310s | 1.40x |

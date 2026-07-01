@@ -75,8 +75,8 @@ def test_kf_distance_import_does_not_import_typing():
 @pytest.fixture
 def args():
     kwargs = dict(
-        tree_zero="/some/path/to/file.tre",
-        tree_one="/some/path/to/file.tre",
+        tree_zero="/some/path/to/file_zero.tre",
+        tree_one="/some/path/to/file_one.tre",
     )
     return Namespace(**kwargs)
 
@@ -320,6 +320,33 @@ class TestKuhnerFelsensteinDistance:
         kf.run()
 
         mocked_print.assert_called_once_with("5.1234\t0.3456")
+
+    def test_run_same_path_shortcuts_identical_kf(self, mocker):
+        args = Namespace(
+            tree_zero="/some/path/to/file.tre",
+            tree_one="/some/path/to/file.tre",
+        )
+        kf = KuhnerFelsensteinDistance(args)
+        mocker.patch.object(
+            kf,
+            "read_tree_file",
+            side_effect=AssertionError("same-path KF should not copy tree zero"),
+        )
+        mocker.patch.object(
+            kf,
+            "read_tree1_file",
+            side_effect=AssertionError("same-path KF should not copy tree one"),
+        )
+        mocker.patch.object(
+            kf,
+            "calculate_kf_distance",
+            side_effect=AssertionError("same-path KF should skip split comparison"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        kf.run()
+
+        mocked_print.assert_called_once_with("0.0\t0.0")
 
     def test_run_json_output(self, mocker):
         args = Namespace(tree_zero="/a.tre", tree_one="/b.tre", json=True)
