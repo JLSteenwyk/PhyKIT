@@ -16,6 +16,7 @@ _OCCUPANCY_INVALID_CHARS = {"-", "?", "*", "X", "x", "N", "n"}
 _OCCUPANCY_INVALID_BYTES = b"-?*XxNn"
 _OCCUPANCY_STATE_LOOKUP = None
 _FASTA_WRITE_CHUNK_ROWS = 4096
+_OCCUPANCY_INVALID_SCAN_BYTES = 4096
 
 
 class _LazyNumpy:
@@ -32,6 +33,23 @@ def _dedent(*args, **kwargs):
     from textwrap import dedent
 
     return dedent(*args, **kwargs)
+
+
+def _has_occupancy_invalid_bytes(sequence_bytes: bytes) -> bool:
+    if len(sequence_bytes) <= _OCCUPANCY_INVALID_SCAN_BYTES:
+        return any(code in sequence_bytes for code in _OCCUPANCY_INVALID_BYTES)
+
+    if any(
+        code in sequence_bytes[:_OCCUPANCY_INVALID_SCAN_BYTES]
+        for code in _OCCUPANCY_INVALID_BYTES
+    ):
+        return True
+    if any(
+        code in sequence_bytes[-_OCCUPANCY_INVALID_SCAN_BYTES:]
+        for code in _OCCUPANCY_INVALID_BYTES
+    ):
+        return True
+    return any(code in sequence_bytes for code in _OCCUPANCY_INVALID_BYTES)
 
 
 class _LazyMultiprocessing:
@@ -557,12 +575,16 @@ class CreateConcatenationMatrix(Alignment):
             sequence = ''.join(seq_parts)
             total_positions = len(sequence)
             try:
-                informative = len(
-                    sequence.encode("ascii").translate(
-                        None,
-                        _OCCUPANCY_INVALID_BYTES,
+                sequence_bytes = sequence.encode("ascii")
+                if _has_occupancy_invalid_bytes(sequence_bytes):
+                    informative = len(
+                        sequence_bytes.translate(
+                            None,
+                            _OCCUPANCY_INVALID_BYTES,
+                        )
                     )
-                )
+                else:
+                    informative = len(sequence_bytes)
             except UnicodeEncodeError:
                 informative = sum(
                     character not in _OCCUPANCY_INVALID_CHARS

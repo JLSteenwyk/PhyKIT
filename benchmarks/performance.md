@@ -482,6 +482,7 @@ Results:
 | `CreateConcatenationMatrix._compute_effective_occupancy` | 900 taxa x 80 genes x 300 sites, threshold filtering invalid symbols | 0.6085s | 0.1985s | 3.1x |
 | `CreateConcatenationMatrix._compute_effective_occupancy` joined counts | 800 taxa x 300 genes x 180 sites, threshold filtering invalid symbols | 0.4558s | 0.2637s | 1.7x |
 | `CreateConcatenationMatrix._compute_effective_occupancy` byte deletion | 800 taxa x 300 genes x 180 sites, threshold filtering invalid symbols | 0.2376s | 0.1540s | 1.5x |
+| `CreateConcatenationMatrix._compute_effective_occupancy` clean ASCII invalid-byte precheck | 1200 taxa x two 12k-site clean DNA parts, side-by-side previous unconditional byte deletion | 0.033407s | 0.029966s | 1.11x |
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` | 800 taxa x 220 genes x 180 sites, occupancy plot state matrix | 2.8920s | 0.2351s | 12.3x |
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` batched gene lookup | 800 taxa x 220 genes x 180 sites, 80% present, occupancy plot state matrix | 0.249490s | 0.061994s | 4.0x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` gene-boundary rendering | 4096 gene boundary lines, real Matplotlib Agg render | 0.796482s | 0.055704s | 14.30x |
@@ -3457,7 +3458,10 @@ Profiling summary:
   taxon's parts once and performs one invalid-symbol count pass per taxon,
   reducing repeated block-loop overhead for many-gene concatenations. A later
   pass uses ASCII byte deletion to count informative positions in C while
-  retaining the character-wise fallback for non-ASCII sequence content.
+  retaining the character-wise fallback for non-ASCII sequence content. Clean
+  ASCII concatenations now scan for invalid bytes before deletion and use the
+  full byte length when no invalid symbols are present, avoiding a deletion-copy
+  while preserving the byte-deletion path for gappy or ambiguous inputs.
 - `CreateConcatenationMatrix._plot_concatenation_occupancy` baseline time filled
   the plot state matrix one character at a time. The optimized path builds state
   values for each sequence block with a byte lookup table, retains a Unicode

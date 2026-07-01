@@ -859,6 +859,18 @@ class TestCreateConcatenationMatrix:
         assert occupancy["A"] == 1.0
         assert excluded == set()
 
+    def test_occupancy_invalid_byte_scan_detects_positions(self):
+        scan = ccm_module._OCCUPANCY_INVALID_SCAN_BYTES
+
+        assert ccm_module._has_occupancy_invalid_bytes(b"ACGT") is False
+        assert ccm_module._has_occupancy_invalid_bytes(b"ACGT?") is True
+        assert ccm_module._has_occupancy_invalid_bytes(
+            b"A" * (scan + 1) + b"N"
+        ) is True
+        assert ccm_module._has_occupancy_invalid_bytes(
+            b"A" * (scan + 1) + b"C"
+        ) is False
+
     def test_compute_effective_occupancy_all_gaps(self, args):
         ccm = CreateConcatenationMatrix(args)
         seqs = {"A": ["----", "NNNN"]}
