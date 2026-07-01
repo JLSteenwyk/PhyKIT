@@ -73,9 +73,15 @@ class TestGCContent(object):
 
     @patch("builtins.print")
     def test_gc_content_incorrect_input_file(self, mocked_print):
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/does_not_exist.fa",
+        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+            with patch.object(sys, "argv", testargs):
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

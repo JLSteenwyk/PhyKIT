@@ -182,15 +182,15 @@ class GCContent(Alignment):
             if self.verbose:
                 rows = self.calculate_gc_per_sequence_data(records, is_protein)
                 row_payload = [
-                    dict(taxon=taxon, gc_content=round(gc_content, 4))
+                    {"taxon": taxon, "gc_content": round(gc_content, 4)}
                     for taxon, gc_content in rows
                 ]
                 print_json(
-                    dict(
-                        verbose=True,
-                        rows=row_payload,
-                        sequences=row_payload,
-                    )
+                    {
+                        "verbose": True,
+                        "rows": row_payload,
+                        "sequences": row_payload,
+                    }
                 )
             else:
                 print_json(

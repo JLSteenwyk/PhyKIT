@@ -254,6 +254,7 @@ Results:
 | `GCContent._gc_counts_from_upper_sequence` identical-row count helper | 4M clean uppercase DNA chars / 4M gappy uppercase DNA chars / 1.05M uppercase Unicode DNA chars, side-by-side previous helper re-uppercase and repeated `str.count` output | 0.105214s / 0.238117s / 0.052446s | 0.037932s / 0.051851s / 0.020863s | 2.77x / 4.59x / 2.51x |
 | `GCContent._gc_total_from_ascii` raw-identical normalized shortcut | 500k identical DNA records with ambiguous/gap symbols, side-by-side previous per-row uppercase equality scan | 0.384826s | 0.095858s | 4.01x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
+| `GCContent.run` verbose JSON row construction | 500k mocked per-sequence GC rows, identical payload dictionaries | 0.636805s | 0.571975s | 1.11x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
 | `gc_content` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006135s | 0.004972s | 1.23x |
 | `gc_content` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002604s | 0.000947s | 2.75x |
