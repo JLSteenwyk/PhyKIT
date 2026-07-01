@@ -271,6 +271,27 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln_len == 4
         assert pi_sites_per == 0.0
 
+    def test_parsimony_informative_single_record_returns_before_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError(
+                    "single-record parsimony informative sites should not inspect sequence"
+                )
+
+        class DummyAlignment(list):
+            def get_alignment_length(self):
+                return 7
+
+        alignment = DummyAlignment([SimpleNamespace(seq=UnstringableSequence())])
+        pi = ParsimonyInformative(args)
+
+        assert pi.calculate_parsimony_informative_sites(
+            alignment,
+            is_protein=False,
+        ) == (0, 7, 0.0)
+
     def test_parsimony_informative_sites_unicode_fallback(self, args, mocker):
         class DummyAlignment(list):
             def get_alignment_length(self):

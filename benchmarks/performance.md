@@ -155,6 +155,7 @@ Results:
 | `ParsimonyInformative.calculate_parsimony_informative_sites` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous block-count path | 0.142054s | 0.005836s | 24.34x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` identical-row no-slice scan | 1M identical ASCII DNA rows, side-by-side previous `sequences[1:]` equality scan | 0.390887s | 0.279042s | 1.40x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` combined sequence-build identity scan | 1M mixed-symbol DNA rows, identical / late-different setup cases, side-by-side previous sequence-list build plus identity pass | 0.230124s / 0.285500s | 0.174743s / 0.217506s | 1.32x / 1.31x |
+| `ParsimonyInformative.calculate_parsimony_informative_sites` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous sequence materialization before zero return | 0.005767500s | 0.000001250s | 4614.61x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` Unicode final PI-site count | 1M-site fallback recurrent-state count vector, side-by-side previous boolean `np.sum` final count | 0.000235s | 0.000063s | 3.73x |
 | `ParsimonyInformative.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 0.834731s | 0.524695s | 1.59x |
 | `ParsimonyInformative.is_parsimony_informative` early recurrent-state exit | 20k repeated checks over 1000 recurrent and 1000 singleton states, identical truth value | 0.930823s | 0.002989s | 311.41x |
@@ -2592,7 +2593,9 @@ Profiling summary:
   materializing `sequences[1:]`, reducing temporary allocation for high-taxon
   conserved alignments. A later setup pass combines sequence-list construction
   with identical-row detection, removing an extra pass over conserved inputs
-  while preserving the existing block-count and Unicode fallback paths.
+  while preserving the existing block-count and Unicode fallback paths. The
+  single-record path now returns zero parsimony-informative sites after reading
+  the alignment length because one taxon cannot provide two recurrent states.
   Parsimony-informative ASCII columns now use chunked 256-bin column
   histograms to count symbols appearing at least twice, avoiding one full
   matrix scan per observed protein symbol while keeping memory bounded by the
