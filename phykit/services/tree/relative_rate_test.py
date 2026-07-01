@@ -210,6 +210,20 @@ class RelativeRateTest(Tree):
         return terminal_name if terminal_count == 1 else _NO_SINGLETON_OUTGROUP
 
     @staticmethod
+    def _generic_single_terminal_name_if_singleton(clade):
+        terminal_count = 0
+        terminal_name = _NO_SINGLETON_OUTGROUP
+
+        for terminal in clade.get_terminals():
+            terminal_count += 1
+            if terminal_count == 1:
+                terminal_name = terminal.name
+            else:
+                return _NO_SINGLETON_OUTGROUP
+
+        return terminal_name if terminal_count == 1 else _NO_SINGLETON_OUTGROUP
+
+    @staticmethod
     def _identify_outgroup(tree) -> str:
         """Identify outgroup as the earliest-diverging taxon in a rooted tree.
 
@@ -241,24 +255,20 @@ class RelativeRateTest(Tree):
             )
 
         # Generic fallback for nonstandard tree-like objects.
-        clade_sizes = []
         for child in children:
-            terminals = list(child.get_terminals())
-            clade_sizes.append((len(terminals), terminals, child))
-
-        clade_sizes.sort(key=lambda x: x[0])
-        smallest_clade = clade_sizes[0]
-
-        if smallest_clade[0] != 1:
-            raise PhykitUserError(
-                [
-                    "Cannot determine a single outgroup taxon from the rooted tree. "
-                    "The smallest clade at the root contains multiple taxa. "
-                    "Please ensure the tree is rooted with a single outgroup taxon."
-                ]
+            terminal_name = (
+                RelativeRateTest._generic_single_terminal_name_if_singleton(child)
             )
+            if terminal_name is not _NO_SINGLETON_OUTGROUP:
+                return terminal_name
 
-        return smallest_clade[1][0].name
+        raise PhykitUserError(
+            [
+                "Cannot determine a single outgroup taxon from the rooted tree. "
+                "The smallest clade at the root contains multiple taxa. "
+                "Please ensure the tree is rooted with a single outgroup taxon."
+            ]
+        )
 
     # ------------------------------------------------------------------
     # Multiple testing correction

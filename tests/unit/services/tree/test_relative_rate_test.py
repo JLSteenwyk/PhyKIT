@@ -733,6 +733,55 @@ class TestIdentifyOutgroup:
 
         assert outgroup == "O"
 
+    def test_identify_outgroup_generic_fallback_stops_after_second_tip(self):
+        class Tip:
+            def __init__(self, name):
+                self.name = name
+
+        class Child:
+            def __init__(self, name, terminal_count):
+                self.name = name
+                self.terminal_count = terminal_count
+
+            @property
+            def clades(self):
+                raise AttributeError
+
+            def get_terminals(self):
+                for idx in range(self.terminal_count):
+                    if idx > 1:
+                        raise AssertionError("fallback should stop after second tip")
+                    yield Tip(f"{self.name}{idx}")
+
+        class Tree:
+            root = type(
+                "Root",
+                (),
+                {"clades": [Child("large", 10), Child("out", 1)]},
+            )()
+
+        assert RelativeRateTest._identify_outgroup(Tree()) == "out0"
+
+    def test_identify_outgroup_generic_fallback_raises_without_singleton(self):
+        class Tip:
+            name = "tip"
+
+        class Child:
+            @property
+            def clades(self):
+                raise AttributeError
+
+            def get_terminals(self):
+                yield Tip()
+                yield Tip()
+                raise AssertionError("fallback should stop after second tip")
+
+        class Tree:
+            root = type("Root", (), {"clades": [Child(), Child()]})()
+
+        with pytest.raises(relative_rate_test_module.PhykitUserError):
+            RelativeRateTest._identify_outgroup(Tree())
+
 
 class TestMultipleTestingCorrection:
     def test_bonferroni(self):

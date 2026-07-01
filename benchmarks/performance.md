@@ -1135,6 +1135,7 @@ Results:
 | `relative_rate_test` module import without eager file helper | median cold subprocess import after lazy alignment-reader wrapper | 0.048166s | 0.029581s | 1.63x |
 | `relative_rate_test` module import without eager `pathlib` | median cold subprocess import after lazy batch-list `Path` wrapper | 0.044962s | 0.038405s | 1.17x |
 | `RelativeRateTest.run` cached read-only tree setup | balanced 32768-tip rooted cached tree, outgroup identification with alignment analysis and output mocked | 0.393320s | 0.000271s | 1451.37x |
+| `RelativeRateTest._identify_outgroup` generic fallback singleton scan | nonstandard root with 300k-tip ingroup, singleton outgroup, and second 300k-tip ingroup | 0.317954s | 0.000007459s | 42627.3x |
 | `CovaryingEvolutionaryRates.correct_branch_lengths` | exact-matching balanced 256-tip gene trees plus reference | 0.3197s | 0.0044s | 72.4x |
 | `CovaryingEvolutionaryRates.correct_branch_lengths` same-tree branch-length reuse | balanced 8192-tip tree passed as both gene trees and reference, side-by-side previous duplicate branch-length extraction | 4.022530s | 2.395759s | 1.68x |
 | `CovaryingEvolutionaryRates.correct_branch_lengths` same-tree/reference shortcut | balanced 32768-tip tree passed as both gene trees and reference, side-by-side previous same-gene branch-map reuse path | 4.946255s | 2.663574s | 1.86x |
@@ -4658,7 +4659,9 @@ Profiling summary:
 - `RelativeRateTest._identify_outgroup` now scans each root child only until it
   can prove whether that child is a singleton, avoiding full terminal-list
   materialization for a large ingroup clade when the rooted tree has one
-  outgroup taxon. Nonstandard tree-like objects retain the generic fallback.
+  outgroup taxon. Nonstandard tree-like objects retain the generic fallback,
+  and that fallback now applies the same singleton-only scan instead of
+  materializing and sorting every root-child terminal list.
   Cached read-only `RelativeRateTest.run` now avoids copying the cached parsed
   tree because outgroup identification, alignment analysis, output, and optional
   plotting do not mutate it. Batch alignment-list cleanup now streams the list
