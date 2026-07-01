@@ -1749,6 +1749,7 @@ Results:
 | `Dtt._compute_dtt` | balanced tree with 300 tips x 2 traits | 0.8787s | 0.0472s | 18.6x |
 | `Dtt._compute_dtt` lineage event sweep | balanced tree with 300 tips x 2 traits, optimized DTT baseline | 0.0472s | 0.0110s | 4.3x |
 | `Dtt._compute_dtt` lineage list means | 5k synthetic lineage events over 20k cached clade disparities, identical DTT values | 0.153168s | 0.062355s | 2.46x |
+| `Dtt._simulate_null_avg_sq_batch` selected clade means | 1000 simulations x 5000 clades, selected-column widths 1 / 2 / 4 / 8, side-by-side previous temporary slice plus `np.mean(..., axis=1)` | 0.000005500s / 0.000007084s / 0.000009541s / 0.000013687s | 0.000000333s / 0.000003417s / 0.000005916s / 0.000010459s | 16.52x / 2.07x / 1.61x / 1.31x |
 | `Dtt._prepare_dtt_context` direct standard-tree setup | balanced 8192-tip tree, all tips represented in trait order | 0.302738s | 0.273333s | 1.11x |
 | `Dtt._prepare_dtt_context` streaming terminal-depth max | 1M terminal depths, identical root-relative tree height without temporary list | 0.132334s | 0.078064s | 1.70x |
 | `Dtt._simulate_null` DTT context reuse | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 7.4703s | 0.5626s | 13.3x |

@@ -69,6 +69,18 @@ def _batch_row_sum_squares(values: np.ndarray) -> np.ndarray:
     return np.einsum("ij,ij->i", rows, rows)
 
 
+def _mean_selected_columns(values: np.ndarray, positions: list[int]) -> np.ndarray:
+    if len(positions) == 1:
+        return values[:, positions[0]]
+    if len(positions) <= 8:
+        selected_sum = values[:, positions[0]].copy()
+        for position in positions[1:]:
+            selected_sum += values[:, position]
+        selected_sum /= float(len(positions))
+        return selected_sum
+    return np.mean(values[:, positions], axis=1)
+
+
 def _max_terminal_depth(terminals, depths, root_depth):
     iterator = iter(terminals)
     first = next(iterator)
@@ -566,7 +578,7 @@ class Dtt(Tree):
                 if clade_id in clade_id_to_pos
             ]
             if positions:
-                mean_disp = np.mean(clade_disp[:, positions], axis=1)
+                mean_disp = _mean_selected_columns(clade_disp, positions)
                 rel_disp = np.zeros(self.nsim)
                 np.divide(
                     mean_disp,

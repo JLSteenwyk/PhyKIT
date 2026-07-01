@@ -19,8 +19,36 @@ from pathlib import Path
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
-from phykit.services.tree.dtt import Dtt, _max_terminal_depth
+from phykit.services.tree.dtt import Dtt, _max_terminal_depth, _mean_selected_columns
 import phykit.services.tree.dtt as dtt_module
+
+
+def test_mean_selected_columns_accumulates_small_selections(monkeypatch):
+    values = np.arange(30, dtype=float).reshape(5, 6)
+
+    def fail_mean(*_args, **_kwargs):
+        raise AssertionError("small selected-column means should avoid np.mean")
+
+    monkeypatch.setattr(dtt_module.np, "mean", fail_mean)
+
+    np.testing.assert_allclose(
+        _mean_selected_columns(values, [1]),
+        values[:, 1],
+    )
+    np.testing.assert_allclose(
+        _mean_selected_columns(values, [1, 3, 5]),
+        values[:, [1, 3, 5]].mean(axis=1),
+    )
+
+
+def test_mean_selected_columns_uses_numpy_for_wide_selections():
+    values = np.arange(120, dtype=float).reshape(10, 12)
+    positions = list(range(10))
+
+    np.testing.assert_allclose(
+        _mean_selected_columns(values, positions),
+        values[:, positions].mean(axis=1),
+    )
 
 
 def test_max_terminal_depth_scans_terminals_once():
