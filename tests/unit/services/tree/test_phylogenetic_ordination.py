@@ -1437,6 +1437,34 @@ class TestRun:
             "taxon_a\t1.234568\t2.000000\t-3.500000"
         )
 
+    def test_format_dimreduce_result_preserves_payload_shape(self, tsne_args):
+        svc = PhylogeneticOrdination(tsne_args)
+        svc.n_components = 3
+
+        result = svc._format_dimreduce_result(
+            embedding=np.array([[1.2345678, 2.0, -3.5]]),
+            taxon_names=["taxon_a"],
+            params={"perplexity": 3.5},
+            lambda_val=0.5,
+            log_likelihood=-12.25,
+        )
+
+        assert result == {
+            "method": "tsne",
+            "correction": "BM",
+            "n_components": 3,
+            "parameters": {"perplexity": 3.5},
+            "embedding": {
+                "taxon_a": {
+                    "Dim1": 1.234568,
+                    "Dim2": 2.0,
+                    "Dim3": -3.5,
+                },
+            },
+            "lambda": 0.5,
+            "log_likelihood": -12.25,
+        }
+
     def test_tsne_json_output(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,

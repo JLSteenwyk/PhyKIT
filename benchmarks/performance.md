@@ -1800,6 +1800,7 @@ Results:
 | `PhylogeneticOrdination._format_pca_result` row-slice JSON payload | 100k taxa x 4 PC scores plus 8 trait loadings, identical nested payload | 0.072574s | 0.058033s | 1.25x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` batched text output | 100k taxa x 2 embedding dimensions, captured stdout and identical text | 0.111761s | 0.099769s | 1.12x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` embedding row conversion | 100k taxa x 2 embedding dimensions, identical captured text while avoiding per-cell NumPy indexing | 0.692168s | 0.517560s | 1.34x |
+| `PhylogeneticOrdination._format_dimreduce_result` row-list JSON payload | 5k taxa x 2 embedding dimensions, identical nested payload | 0.290704s | 0.096889s | 3.00x |
 | `PhylogeneticOrdination._resolve_tree_color_trait` single-pass color file | 300k-row external tree-color TSV, all taxa covered, reconstruction stubbed to isolate parsing | 0.934379s | 0.522889s | 1.79x |
 | `phylogenetic_ordination` module import without eager SciPy linalg/optimize | cold process import for phylogenetic-ordination command module | 0.440223s | 0.168008s | 2.6x |
 | `phylogenetic_ordination` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS import | 0.168008s | 0.032468s | 5.17x |
@@ -6357,7 +6358,10 @@ Profiling summary:
   formatting while avoiding one `print` call per trait or taxon row. PCA JSON
   payload construction now iterates eigenvector and score matrix rows directly,
   preserving nested labels and float conversion while avoiding repeated
-  two-dimensional indexing. A follow-up startup pass localizes pickle to
+  two-dimensional indexing. Dimensionality-reduction JSON output now converts
+  embedding rows once and zips them with dimension labels, preserving rounded
+  nested payload values while avoiding repeated two-dimensional indexing.
+  A follow-up startup pass localizes pickle to
   ancestral-score reconstruction, imports `PlotConfig` only while processing
   arguments, and keeps JSON output and trait parsing behind local forwarding
   wrappers so import-only callers avoid those

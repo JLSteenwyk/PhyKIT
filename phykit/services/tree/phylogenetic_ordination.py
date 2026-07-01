@@ -754,11 +754,11 @@ class PhylogeneticOrdination(Tree):
             "n_components": self.n_components,
             "parameters": params,
             "embedding": {
-                taxon_names[k]: {
-                    dim_labels[i]: round(float(embedding[k, i]), 6)
-                    for i in range(self.n_components)
+                taxon: {
+                    label: round(float(value), 6)
+                    for label, value in zip(dim_labels, row)
                 }
-                for k in range(len(taxon_names))
+                for taxon, row in zip(taxon_names, embedding.tolist())
             },
         }
         if lambda_val is not None:
