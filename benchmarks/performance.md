@@ -609,6 +609,7 @@ Results:
 | `PhyloGwas._prune_tree_to_taxa` no-op shared-taxa setup | balanced 65536-tip tree, all taxa retained before phylogenetic classification | 0.176819s | 0.040796s | 4.33x |
 | `PhyloGwas._terminal_clades` order-preserving child push | balanced 131072-tip tree, terminal helper for prune setup, side-by-side previous `reversed(children)` helper | 0.038431s | 0.033913s | 1.13x |
 | `PhyloGwas._classify_phylo_pattern` | balanced 1024-tip tree, 5000 significant-site derived-taxon classifications | 7.7410s | 0.0062s | 1245.4x |
+| `PhyloGwas._minor_allele_taxa_from_ascii_column` | 2k x 2k with 500 significant sites / 10k x 1k with 300 significant sites / 20k x 500 with 200 significant sites, side-by-side previous per-taxon string lookup scan | 0.153147s / 1.386344s / 1.461905s | 0.028301s / 0.103953s / 0.217120s | 5.41x / 13.34x / 6.73x |
 | `PhyloGwas._build_phylo_pattern_index` direct postorder | balanced 32768-tip tree, descendant taxon-set index for monophyly classification | 0.276455s | 0.187328s | 1.48x |
 | `PhyloGwas._build_phylo_pattern_index` reverse-preorder helper | balanced 32768-tip tree, descendant taxon-set index for monophyly classification | 0.068807s | 0.055296s | 1.24x |
 | `PhyloGwas._build_phylo_pattern_index` binary child union | balanced 65536-tip tree, descendant taxon-set index for monophyly classification, side-by-side previous generic child-set union | 0.189455s | 0.179548s | 1.06x |

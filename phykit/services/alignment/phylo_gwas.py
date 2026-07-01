@@ -690,6 +690,16 @@ class PhyloGwas(Alignment):
         return [taxon for taxon in shared_taxa if seqs[taxon][position] == allele]
 
     @staticmethod
+    def _minor_allele_taxa_from_ascii_column(
+        shared_taxa: list[str],
+        allele_array: np.ndarray,
+        allele: str,
+    ) -> list[str]:
+        allele_code = ord(allele)
+        matching_rows = (allele_array == allele_code).nonzero()[0]
+        return [shared_taxa[index] for index in matching_rows]
+
+    @staticmethod
     def _build_phylo_pattern_index(tree) -> set:
         """Return descendant taxon sets for all clades in one postorder pass."""
         direct_result = PhyloGwas._build_phylo_pattern_index_direct(tree)
@@ -1053,12 +1063,19 @@ class PhyloGwas(Alignment):
                 r["gene"] = self._position_to_gene(position, partitions)
 
             if tree is not None and r["fdr_significant"]:
-                taxa_minor = self._minor_allele_taxa(
-                    shared_taxa,
-                    seqs,
-                    position,
-                    r["allele_1"],
-                )
+                if alignment_matrix is not None:
+                    taxa_minor = self._minor_allele_taxa_from_ascii_column(
+                        shared_taxa,
+                        alignment_matrix[:, position],
+                        r["allele_1"],
+                    )
+                else:
+                    taxa_minor = self._minor_allele_taxa(
+                        shared_taxa,
+                        seqs,
+                        position,
+                        r["allele_1"],
+                    )
                 r["phylo_pattern"] = self._classify_phylo_pattern(
                     tree, taxa_minor, monophyletic_sets
                 )

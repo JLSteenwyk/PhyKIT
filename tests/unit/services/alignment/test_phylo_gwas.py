@@ -851,22 +851,42 @@ class TestPhyloGwas:
             "sp4",
         ]
 
-    def test_run_uses_minor_allele_taxa_for_phylo_pattern(
+    def test_minor_allele_taxa_from_ascii_column_matches_string_scan(self):
+        shared_taxa = ["sp1", "sp2", "sp3", "sp4"]
+        seqs = {
+            "sp1": "AAG",
+            "sp2": "AGG",
+            "sp3": "AAG",
+            "sp4": "AGC",
+        }
+        matrix = PhyloGwas._build_ascii_alignment_matrix(
+            [seqs[taxon] for taxon in shared_taxa],
+            3,
+        )
+        assert matrix is not None
+
+        assert PhyloGwas._minor_allele_taxa_from_ascii_column(
+            shared_taxa,
+            matrix[:, 1],
+            "G",
+        ) == PhyloGwas._minor_allele_taxa(shared_taxa, seqs, 1, "G")
+
+    def test_run_uses_ascii_column_minor_allele_taxa_for_phylo_pattern(
         self, tmp_path, capsys, monkeypatch
     ):
         args = _make_args(
             tmp_path, tree=TREE_MONOPHYLETIC, json_output=True, alpha=1.0
         )
         calls = []
-        original = PhyloGwas._minor_allele_taxa
+        original = PhyloGwas._minor_allele_taxa_from_ascii_column
 
-        def tracking_minor_allele_taxa(shared_taxa, seqs, position, allele):
-            calls.append((position, allele))
-            return original(shared_taxa, seqs, position, allele)
+        def tracking_minor_allele_taxa(shared_taxa, allele_array, allele):
+            calls.append((len(allele_array), allele))
+            return original(shared_taxa, allele_array, allele)
 
         monkeypatch.setattr(
             PhyloGwas,
-            "_minor_allele_taxa",
+            "_minor_allele_taxa_from_ascii_column",
             staticmethod(tracking_minor_allele_taxa),
         )
 
@@ -876,7 +896,7 @@ class TestPhyloGwas:
         out, _ = capsys.readouterr()
         payload = json.loads(out)
         expected = [
-            (result["position"] - 1, result["allele_1"])
+            (len(PHENO_CATEGORICAL), result["allele_1"])
             for result in payload["results"]
             if result["fdr_significant"]
         ]
