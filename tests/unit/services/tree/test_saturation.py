@@ -416,6 +416,33 @@ assert "phykit.helpers.plot_config" not in sys.modules
         self.assertTrue(np.isnan(distances[1]))
         self.assertEqual(distances[2], 0.5)
 
+    def test_standard_upper_triangle_gappy_distances_all_valid_skips_scratch_rows(self):
+        combo_tips = ["seq1", "seq2", "seq3"]
+        combos = [("seq1", "seq2"), ("seq1", "seq3"), ("seq2", "seq3")]
+        identity_counts = np.array(
+            [
+                [4.0, 2.0, 1.0],
+                [2.0, 4.0, 2.0],
+                [1.0, 2.0, 4.0],
+            ]
+        )
+        adjusted_lengths = np.full((3, 3), 4.0)
+
+        with patch(
+            "phykit.services.tree.saturation.np.empty",
+            side_effect=AssertionError(
+                "all-valid gappy distances should use direct row division"
+            ),
+        ):
+            distances = self.saturation._standard_upper_triangle_gappy_distances(
+                combo_tips,
+                combos,
+                identity_counts,
+                adjusted_lengths,
+            )
+
+        self.assertEqual(distances, [0.5, 0.75, 0.5])
+
     def test_calculate_uncorrected_distances_matrix_no_gap_path_skips_valid_matrix(self):
         seq_arrays = {
             "seq1": self.saturation._sequence_to_array("ATCG"),

@@ -451,21 +451,30 @@ class Saturation(Tree):
         if not cls._combos_are_standard_upper_triangle(combo_tips, combos):
             return None
 
+        if (adjusted_lengths != 0.0).all():
+            distances = []
+            extend = distances.extend
+            for idx in range(len(combo_tips) - 1):
+                extend(
+                    (
+                        1.0
+                        - (
+                            identity_counts[idx, idx + 1:]
+                            / adjusted_lengths[idx, idx + 1:]
+                        )
+                    ).tolist()
+                )
+            return distances
+
+        valid = adjusted_lengths != 0.0
+        values = np.empty(adjusted_lengths.shape, dtype=np.float64)
+        values[valid] = 1.0 - (identity_counts[valid] / adjusted_lengths[valid])
+        values[~valid] = np.nan
+
         distances = []
-        append = distances.append
         extend = distances.extend
         for idx in range(len(combo_tips) - 1):
-            lengths = adjusted_lengths[idx, idx + 1:]
-            identities = identity_counts[idx, idx + 1:]
-            valid = lengths != 0.0
-            row = np.empty(len(lengths), dtype=np.float64)
-            row[valid] = 1.0 - (identities[valid] / lengths[valid])
-            if valid.all():
-                extend(row.tolist())
-            else:
-                row[~valid] = np.nan
-                for value in row:
-                    append(float(value))
+            extend(values[idx, idx + 1:].tolist())
         return distances
 
     def loop_through_combos_and_calculate_pds_and_pis(
