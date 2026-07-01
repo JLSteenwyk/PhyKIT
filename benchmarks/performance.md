@@ -386,6 +386,7 @@ Results:
 | `ColumnScore._calculate_matches_between_alignments_direct` identical-sequence shortcut | 260 taxa x 5000 identical query/reference sites, lowercase/uppercase variants, side-by-side previous double-unique/intersection path | 0.006354s | 0.003171s | 2.00x |
 | `ColumnScore._calculate_matches_between_alignments_direct` repeated-row same-object shortcut | 1200 taxa x 12000 sites, every row the same mixed-symbol ASCII sequence, side-by-side previous byte-matrix unique-column path | 0.094739s | 0.011452s | 8.27x |
 | `ColumnScore._calculate_matches_between_alignments_direct` repeated-row separate-alignments shortcut | 1200 taxa x 12000 sites, reference/query each have repeated mixed-symbol ASCII rows with partially overlapping symbols, side-by-side previous double-unique/intersection path | 0.382126s | 0.046693s | 8.18x |
+| `ColumnScore._calculate_matches_between_alignments_direct` taxon-count mismatch shortcut | 260-reference-taxon x 5000-site alignment against one-query-taxon x 5000-site alignment, side-by-side previous sequence materialization before zero-match result | 0.001336417s | 0.000003041s | 439.43x |
 | `ColumnScore._repeated_sequence_symbols_ascii` no-slice row scan | 2M repeated ASCII rows, side-by-side previous `sequences[1:]` equality scan | 0.238253s | 0.085275s | 2.79x |
 | `column_score` module import without eager NumPy/Bio.AlignIO | cold subprocess import after lazy NumPy, AlignIO, annotation, and JSON helpers | 0.124730s | 0.022308s | 5.59x |
 | `column_score` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002598s | 0.000871s | 2.98x |
@@ -3132,7 +3133,9 @@ Profiling summary:
   the same unique-column semantics without building transposed byte matrices.
   A follow-up helper pass scans repeated rows without materializing
   `sequences[1:]`, which removes a large temporary list for high-taxon repeated
-  alignments.
+  alignments. Separate alignments with different nonzero taxon counts now return
+  the existing zero-match result from the query alignment length before sequence
+  materialization.
   A startup pass defers NumPy, Bio.AlignIO, annotation-only Bio.Align, and JSON
   helper imports behind module-level proxies/wrappers while preserving existing
   test patch points. A follow-up startup pass removes the runtime

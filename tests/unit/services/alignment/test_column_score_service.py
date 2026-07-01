@@ -1,6 +1,7 @@
 from argparse import Namespace
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -169,6 +170,33 @@ class TestColumnScore:
         assert service._calculate_matches_between_alignments_direct(
             reference, query
         ) == (0, 2)
+
+    def test_direct_column_matching_taxon_count_mismatch_skips_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError(
+                    "taxon-count mismatch should not inspect sequences"
+                )
+
+        class DummyAlignment(list):
+            def get_alignment_length(self):
+                return 5
+
+        service = ColumnScore(args)
+        reference = DummyAlignment(
+            [
+                SimpleNamespace(seq=UnstringableSequence()),
+                SimpleNamespace(seq=UnstringableSequence()),
+            ]
+        )
+        query = DummyAlignment([SimpleNamespace(seq=UnstringableSequence())])
+
+        assert service._calculate_matches_between_alignments_direct(
+            reference,
+            query,
+        ) == (0, 5)
 
     def test_direct_column_matching_falls_back_for_unicode(self, args):
         service = ColumnScore(args)

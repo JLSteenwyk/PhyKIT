@@ -29,6 +29,20 @@ def print_json(*args, **kwargs):
     return _print_json(*args, **kwargs)
 
 
+def _alignment_size(alignment):
+    try:
+        return len(alignment)
+    except TypeError:
+        return None
+
+
+def _alignment_length(alignment):
+    get_alignment_length = getattr(alignment, "get_alignment_length", None)
+    if get_alignment_length is None:
+        return None
+    return get_alignment_length()
+
+
 class ColumnScore(Alignment):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -149,6 +163,19 @@ class ColumnScore(Alignment):
             if unique_column_count is None:
                 return None
             return unique_column_count, query_len
+
+        ref_size = _alignment_size(reference_records)
+        query_size = _alignment_size(query_records)
+        if (
+            ref_size is not None
+            and query_size is not None
+            and ref_size > 0
+            and query_size > 0
+            and ref_size != query_size
+        ):
+            query_len = _alignment_length(query_records)
+            if query_len is not None:
+                return 0, query_len
 
         ref_sequences = [str(record.seq).upper() for record in reference_records]
         query_sequences = [str(record.seq).upper() for record in query_records]
