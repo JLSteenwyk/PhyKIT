@@ -846,6 +846,13 @@ class TestNearestPsd:
             return original_diag(a, *args, **kwargs)
 
         monkeypatch.setattr(vcv_utils.np, "diag", diag_without_vector_to_matrix)
+        monkeypatch.setattr(
+            vcv_utils.np,
+            "min",
+            lambda *args, **kwargs: pytest.fail(
+                "PSD reconstruction should use ndarray.min"
+            ),
+        )
 
         observed, corrected, min_eval = vcv_utils._nearest_psd_from_eigendecomposition(
             bad, eigvals, Q

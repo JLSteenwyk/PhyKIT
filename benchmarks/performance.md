@@ -1387,6 +1387,7 @@ Results:
 | `vcv_utils._nearest_psd` smallest-eigenvalue check | 1024 x 1024 already-PSD averaged VCV matrix | 0.106880s | 0.061465s | 1.74x |
 | `vcv_utils._nearest_psd` cached SciPy eigvalsh wrapper | 2k repeated 8 x 8 already-PSD matrices, SciPy already warm | 0.027812s | 0.026592s | 1.05x |
 | `vcv_utils._nearest_psd` correction reconstruction | 900 x 900 eigenvector matrix with clipped eigenvalues | 0.029000s | 0.015881s | 1.8x |
+| `vcv_utils._nearest_psd_from_eigendecomposition` eigenvalue minimum | 8 / 64 / 1024 / 100k / 1M eigenvalues, side-by-side previous `np.min` wrapper | 2.048513s / 0.970033s / 0.288490s / 0.105668s / 0.029085s | 1.375394s / 0.674878s / 0.170990s / 0.095815s / 0.025196s | 1.49x / 1.44x / 1.69x / 1.10x / 1.15x |
 | `vcv_utils` module import without eager SciPy linalg | cold process import for shared VCV helpers | 0.323420s | 0.183398s | 1.8x |
 | `vcv_utils` module import without eager Bio.Phylo | cold subprocess import with lazy `Phylo.read` proxy | 0.174747s | 0.112800s | 1.55x |
 | `vcv_utils` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.112800s | 0.024335s | 4.64x |
@@ -5321,8 +5322,9 @@ Profiling summary:
   already-PSD matrices without a full eigendecomposition; the full
   eigendecomposition is still used when correction is actually needed. Corrected
   matrix reconstruction now scales eigenvector columns by clipped eigenvalues
-  instead of materializing a dense diagonal eigenvalue matrix. A later startup
-  pass replaced the eager `scipy.linalg.eigvalsh` import with a same-name lazy
+  instead of materializing a dense diagonal eigenvalue matrix and reads the
+  smallest eigenvalue through the eigenvalue array's own `min()` method. A later
+  startup pass replaced the eager `scipy.linalg.eigvalsh` import with a same-name lazy
   wrapper, so import-only callers avoid linalg startup while PSD checks still
   call SciPy's Hermitian eigensolver. A repeated-check pass caches the resolved
   SciPy `eigvalsh` function after first use, keeping the import deferral while

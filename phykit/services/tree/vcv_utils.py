@@ -698,7 +698,7 @@ def _nearest_psd(matrix: np.ndarray) -> tuple[np.ndarray, bool, float]:
 def _nearest_psd_from_eigendecomposition(
     matrix: np.ndarray, eigvals: np.ndarray, eigvecs: np.ndarray
 ) -> tuple[np.ndarray, bool, float]:
-    min_eval = float(np.min(eigvals))
+    min_eval = float(eigvals.min())
 
     if min_eval >= 0:
         return matrix, False, min_eval
