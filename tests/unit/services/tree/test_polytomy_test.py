@@ -257,6 +257,13 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         summary = self.polytomy.sister_relationship_counter(tree_file, summary, "0-2")
         self.assertEqual(summary["tree1.tre"]["0-2"], 1)
 
+        # Existing counts are updated in place
+        self.assertIs(
+            self.polytomy.sister_relationship_counter(tree_file, summary, "0-2"),
+            summary,
+        )
+        self.assertEqual(summary["tree1.tre"]["0-2"], 2)
+
     @patch('phykit.services.tree.polytomy_test.Phylo.read')
     def test_get_triplet_tree_success(self, mock_phylo_read):
         """Test getting triplet tree successfully"""

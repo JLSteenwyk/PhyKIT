@@ -915,6 +915,7 @@ Results:
 | `PolytomyTest.determine_sisters_and_add_to_counter` polytomy check | 5000 resolved three-tip counter evaluations | 0.250329s | 0.201572s | 1.24x |
 | `PolytomyTest._has_exactly_three_terminals` triplet check | 5000 resolved three-tip trees before legacy sister counting | 0.027710s | 0.002097s | 13.21x |
 | `PolytomyTest.check_if_triplet_is_a_polytomy` direct internal count | 5000 resolved plus 5000 polytomy three-tip trees | 0.043043s | 0.004448s | 9.68x |
+| `PolytomyTest.sister_relationship_counter` direct nested increment | 3M repeated sister-count increments over one tree summary | 1.674614s | 0.906683s | 1.85x |
 | `PolytomyTest.set_branch_lengths_in_tree_to_one` direct traversal | balanced 65536-tip tree, reset every branch length to one | 0.202605s | 0.015667s | 12.93x |
 | `PolytomyTest.print_gene_support_freq_res` batched text output | 100k captured gene-support frequency summaries, identical stdout text | 0.234641s | 0.155517s | 1.51x |
 | `PolytomyTest.get_triplet_tree` prune-list setup | 200 mocked legacy triplet-tree preparations over 8195 tips, tree read/root/prune mocked | 0.194432s | 0.121392s | 1.60x |

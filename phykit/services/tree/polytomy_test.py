@@ -749,14 +749,11 @@ class PolytomyTest(Tree):
         """
         counter for how many times a particular sister relationship is observed
         """
-        # if tree is not in summary, create a key for it
-        if tree_file not in summary:
-            summary[str(tree_file)] = {}
-        # if the sister relationship is not in the tree file dict, create a key for it
-        if sisters not in summary[str(tree_file)]:
-            summary[str(tree_file)][sisters] = 1
-        else:
-            summary[str(tree_file)][sisters] += 1
+        tree_file = str(tree_file)
+        tree_counts = summary.get(tree_file)
+        if tree_counts is None:
+            tree_counts = summary[tree_file] = {}
+        tree_counts[sisters] = tree_counts.get(sisters, 0) + 1
 
         return summary
 
