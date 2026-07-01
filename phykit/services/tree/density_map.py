@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 
 from .base import Tree
-from .stochastic_character_map import StochasticCharacterMap
 from ...errors import PhykitUserError
 
 
@@ -51,6 +50,8 @@ class DensityMap(Tree):
 
     def run(self) -> None:
         tree = self.read_tree_file_unmodified()
+
+        from .stochastic_character_map import StochasticCharacterMap
 
         # Use StochasticCharacterMap to do the heavy lifting
         scm = StochasticCharacterMap.__new__(StochasticCharacterMap)
@@ -216,7 +217,7 @@ class DensityMap(Tree):
     def _plot_density_map(
         self, tree, mappings: list[dict], states: list[str],
         output_path: str, parent_map: dict = None,
-        scm: StochasticCharacterMap = None,
+        scm=None,
     ) -> None:
         from ...helpers.plot_config import compute_node_positions
 

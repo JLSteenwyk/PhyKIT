@@ -778,6 +778,7 @@ Results:
 | `density_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.084363s | 0.032070s | 2.63x |
 | `density_map` module import without eager JSON/plot/color helpers | median cold subprocess import after localizing output, PlotConfig, circular-layout, and color-annotation helpers | 0.014782s | 0.005735s | 2.58x |
 | `density_map` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.007946s | 0.005545s | 1.43x |
+| `density_map` module import without eager stochastic-map service | median cold subprocess import after localizing `StochasticCharacterMap` to `run()` | 0.047153s | 0.045769s | 1.03x |
 | `RobinsonFouldsDistance.run` rooting-tip setup | balanced 65536-tip tree, first terminal lookup before rooting | 0.1232s | 0.000005s | 27122.6x |
 | `RobinsonFouldsDistance.run` same-path shortcut | balanced 32768-tip cached tree passed as both inputs, RF calculation and output isolated | 4.477090s | 0.039716s | 112.73x |
 | `RobinsonFouldsDistance._first_terminal_name` direct leftmost descent | balanced depth-17 tree, first terminal lookup, side-by-side previous direct stack helper | 0.000002650s | 0.000001039s | 2.55x |
@@ -4118,7 +4119,9 @@ Profiling summary:
   would mutate the tree. Text summary output now batches the five-line report
   into one newline-joined print while preserving exact stdout text. A follow-up
   startup pass converts annotation-only `typing` aliases to built-in postponed
-  annotations, so command discovery no longer imports `typing`.
+  annotations, so command discovery no longer imports `typing`. A later startup
+  pass localizes `StochasticCharacterMap` to `run()`, avoiding stochastic-map
+  service import during density-map command discovery.
 - `RobinsonFouldsDistance.run` now finds the first terminal for outgroup rooting
   with direct preorder traversal instead of materializing every terminal clade.
   Nonstandard tree objects retain the previous terminal-list fallback. A later

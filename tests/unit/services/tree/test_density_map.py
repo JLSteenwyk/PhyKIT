@@ -35,6 +35,7 @@ assert "phykit.helpers.json_output" not in sys.modules
 assert "phykit.helpers.plot_config" not in sys.modules
 assert "phykit.helpers.circular_layout" not in sys.modules
 assert "phykit.helpers.color_annotations" not in sys.modules
+assert "phykit.services.tree.stochastic_character_map" not in sys.modules
 assert "numpy" not in sys.modules
 assert "matplotlib" not in sys.modules
 assert "matplotlib.pyplot" not in sys.modules
