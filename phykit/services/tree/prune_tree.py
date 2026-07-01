@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 from .base import Tree
 
 
@@ -19,12 +17,24 @@ def read_single_column_file_to_list(*args, **kwargs):
     return _read_single_column_file_to_list(*args, **kwargs)
 
 
-_BRANCH_LABEL_RE = re.compile(r"\{[^{}]*\}")
+_BRANCH_LABEL_RE = None
+_BRANCH_LABEL_SUB = None
 
 
 def _strip_branch_label(name: str) -> str:
     """Remove HyPhy/aBSREL-style {…} branch labels from a tip name."""
-    return _BRANCH_LABEL_RE.sub("", name) if name and "{" in name else name
+    if not name or "{" not in name:
+        return name
+
+    global _BRANCH_LABEL_RE, _BRANCH_LABEL_SUB
+    branch_label_sub = _BRANCH_LABEL_SUB
+    if branch_label_sub is None:
+        import re
+
+        _BRANCH_LABEL_RE = re.compile(r"\{[^{}]*\}")
+        branch_label_sub = _BRANCH_LABEL_RE.sub
+        _BRANCH_LABEL_SUB = branch_label_sub
+    return branch_label_sub("", name)
 
 
 class PruneTree(Tree):

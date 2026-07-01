@@ -14,7 +14,9 @@ from phykit.services.tree.prune_tree import PruneTree, _strip_branch_label
 def test_module_import_does_not_import_json_helpers_or_typing():
     code = """
 import sys
+before = set(sys.modules)
 import phykit.services.tree.prune_tree as module
+imported = set(sys.modules) - before
 
 assert callable(module.print_json)
 assert callable(module.read_single_column_file_to_list)
@@ -22,6 +24,9 @@ assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 assert "phykit.helpers.files" not in sys.modules
 assert "typing" not in sys.modules
+assert "re" not in imported
+assert module._BRANCH_LABEL_RE is None
+assert module._BRANCH_LABEL_SUB is None
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 

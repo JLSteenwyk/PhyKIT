@@ -1321,6 +1321,7 @@ Results:
 | `prune_tree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006864s | 0.005426s | 1.27x |
 | `prune_tree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006264s | 0.004162s | 1.50x |
 | `prune_tree` module import without eager file helper | median cold subprocess import, interleaved lazy import vs eager-equivalent `phykit.helpers.files` preload | 0.026866s | 0.026566s | 1.01x |
+| `prune_tree` module import without eager branch-label regex | median cold subprocess import with `python -S`, interleaved lazy import vs eager-equivalent `re.compile` preload | 0.033570s | 0.030445s | 1.10x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` compact split ids | identical balanced 16384-tip trees, rooted descendant split comparison | 0.069501s | 0.052131s | 1.33x |
 | `NearestNeighborInterchange._build_parent_map` direct traversal | balanced 32768-tip tree, parent map for NNI generation | 0.101185s | 0.010405s | 9.72x |
 | `NearestNeighborInterchange._build_parent_map` unordered child push | balanced 65536-tip tree, parent map for NNI generation, optimized helper baseline | 0.020223s | 0.014583s | 1.39x |
@@ -5323,9 +5324,11 @@ Profiling summary:
   removes the annotation-only `typing` import by using postponed built-in
   annotations. Branch-label stripping now checks for `{` before running the
   compiled label regex, avoiding regex work for ordinary tip names while
-  preserving labeled-tip cleanup. The taxa-list reader now uses a local
-  forwarding wrapper, preserving the module-level patch point while avoiding
-  `phykit.helpers.files` during import-only command discovery.
+  preserving labeled-tip cleanup. A follow-up startup pass compiles that regex
+  lazily on the first labeled-tip cleanup, so normal prune-tree imports do not
+  pay regex setup. The taxa-list reader now uses a local forwarding wrapper,
+  preserving the module-level patch point while avoiding `phykit.helpers.files`
+  during import-only command discovery.
 - `InternodeLabeler.run` baseline time made a second full-tree
   pickle/unpickle copy before assigning internal-node labels. The optimized
   path labels the isolated tree returned by `read_tree_file()` directly before
