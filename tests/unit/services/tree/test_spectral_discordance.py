@@ -517,6 +517,17 @@ class TestSpectralClustering:
 
         np.testing.assert_allclose(observed, expected)
 
+    def test_squared_distances_to_center_matches_reference(self):
+        X = np.array([[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]])
+        center = np.array([1.0, 1.0])
+
+        observed = spectral_discordance_module._squared_distances_to_center(
+            X,
+            center,
+        )
+
+        np.testing.assert_allclose(observed, np.array([1.0, 5.0, 25.0]))
+
     def test_update_kmeans_centers_preserves_empty_clusters(self):
         X = np.array([[0.0, 0.0], [2.0, 2.0], [4.0, 4.0]])
         labels = np.array([0, 0, 2])
@@ -541,6 +552,19 @@ class TestSpectralClustering:
         observed = SpectralDiscordance._kmeans(X, 4, max_iter=20)
 
         np.testing.assert_array_equal(observed, expected)
+
+    def test_kmeans_initialization_uses_einsum_distances(self, monkeypatch):
+        rng = np.random.default_rng(20260701)
+        X = rng.normal(size=(200, 5))
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("kmeans initialization should avoid np.sum")
+
+        monkeypatch.setattr(spectral_discordance_module.np, "sum", fail_sum)
+
+        labels = SpectralDiscordance._kmeans(X, 4, max_iter=20)
+
+        assert labels.shape == (200,)
 
     def test_override_k(self, default_args):
         labels, K, _ = self._get_clusters(default_args, n_clusters=3)

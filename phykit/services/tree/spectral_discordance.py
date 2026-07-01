@@ -54,6 +54,11 @@ def _squared_distances_to_centers(X: np.ndarray, centers: np.ndarray) -> np.ndar
     return distances
 
 
+def _squared_distances_to_center(X: np.ndarray, center: np.ndarray) -> np.ndarray:
+    diff = X - center
+    return np.einsum("ij,ij->i", diff, diff)
+
+
 def _update_kmeans_centers(
     X: np.ndarray,
     labels: np.ndarray,
@@ -866,13 +871,13 @@ class SpectralDiscordance(Tree):
         rng = np.random.RandomState(42)
 
         centers = [X[rng.randint(G)]]
-        closest_dists = np.sum((X - centers[0]) ** 2, axis=1)
+        closest_dists = _squared_distances_to_center(X, centers[0])
         for _ in range(1, K):
             total = closest_dists.sum()
             probs = closest_dists / total if total > 0 else np.ones(G) / G
             next_center = X[rng.choice(G, p=probs)]
             centers.append(next_center)
-            new_dists = np.sum((X - next_center) ** 2, axis=1)
+            new_dists = _squared_distances_to_center(X, next_center)
             np.minimum(closest_dists, new_dists, out=closest_dists)
         centers = np.array(centers)
         labels = np.zeros(G, dtype=np.intp)
