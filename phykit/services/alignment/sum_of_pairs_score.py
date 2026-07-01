@@ -168,12 +168,16 @@ class SumOfPairsScore(Alignment):
             SumOfPairsScore._record_seq(query_records[seq_id])
             for seq_id in record_ids
         ]
-        lengths = {len(seq) for seq in ref_seqs}
-        lengths.update(len(seq) for seq in query_seqs)
-        if len(lengths) != 1:
+        if not ref_seqs or not query_seqs:
             return None
 
-        seq_len = lengths.pop()
+        seq_len = len(ref_seqs[0])
+        for seq in ref_seqs:
+            if len(seq) != seq_len:
+                return None
+        for seq in query_seqs:
+            if len(seq) != seq_len:
+                return None
         if seq_len == 0:
             return 0, 0
 

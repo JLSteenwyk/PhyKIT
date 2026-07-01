@@ -279,6 +279,31 @@ class TestSumOfPairsScore:
         assert pairs == 4 * len(record_id_pairs)
         mocked_stack.assert_not_called()
 
+    def test_complete_record_path_validates_lengths_before_matrix_stack(
+        self, mocker
+    ):
+        reference_records = _make_records({
+            "id1": "AAAA",
+            "id2": "AAAA",
+            "id3": "AAAA",
+        })
+        query_records = _make_records({
+            "id1": "AAAA",
+            "id2": "AAAA",
+            "id3": "AAA",
+        })
+        mocked_stack = mocker.patch.object(
+            SumOfPairsScore,
+            "_stack_equal_length_sequence_pairs",
+            side_effect=AssertionError("mixed lengths should skip matrix stack"),
+        )
+
+        assert SumOfPairsScore._calculate_equal_length_complete_records(
+            reference_records,
+            query_records,
+        ) is None
+        mocked_stack.assert_not_called()
+
     def test_incomplete_unchanged_pair_set_skips_sequence_arrays(
         self, mocker, args
     ):
