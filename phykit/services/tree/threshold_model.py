@@ -531,7 +531,7 @@ class ThresholdModel(Tree):
         """Precompute C_inv quadratic terms independent of BM parameters."""
         C_inv_x1 = C_inv @ x1
         C_inv_x2 = C_inv @ x2
-        one_C_one = float(np.sum(C_inv))
+        one_C_one = float(C_inv.sum())
         return ThresholdModel._bivariate_quadratic_stats_from_products(
             x1, x2, C_inv_x1, C_inv_x2, one_C_one
         )
@@ -847,7 +847,7 @@ class ThresholdModel(Tree):
         samples_a1 = []
         samples_a2 = []
 
-        one_C_one = float(np.sum(C_inv))
+        one_C_one = float(C_inv.sum())
         C_inv_x1 = C_inv @ x1
         C_inv_x2 = C_inv @ x2
         quad_stats = ThresholdModel._bivariate_quadratic_stats_from_products(

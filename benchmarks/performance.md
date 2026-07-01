@@ -2235,6 +2235,7 @@ Results:
 | `ThresholdModel._sample_truncated_normal` cached lazy SciPy special helpers | 126k one-sided inverse-CDF draws | 0.227829s | 0.172824s | 1.32x |
 | `ThresholdModel._sample_truncated_normal` scalar math normal CDF | 126k alternating one-sided inverse-CDF draws, copied old sampler baseline, identical RNG streams | 0.103077s | 0.092541s | 1.11x |
 | `ThresholdModel._vcv_inverse_and_logdet` Cholesky setup | 500-taxon SPD VCV, side-by-side previous explicit inverse plus `slogdet` | 0.023747s | 0.002966s | 8.01x |
+| `ThresholdModel` full inverse-matrix scalar sum | 2 / 4 / 16 / 64 / 256 / 1024 / 2048 square inverse VCV matrices, side-by-side previous `np.sum(C_inv)` wrapper | 0.000001934s / 0.000002439s / 0.000001560s / 0.000002062s / 0.000055042s / 0.000314244s / 0.001257795s | 0.000000699s / 0.000000699s / 0.000000752s / 0.000001328s / 0.000014229s / 0.000237814s / 0.001173287s | 2.77x / 3.49x / 2.07x / 1.55x / 3.87x / 1.32x / 1.07x |
 | `ThresholdModel._bivariate_quadratic_stats_from_products` vector sums | 40-taxon cached `C^-1x` product vectors, identical sufficient-stat tuple | 0.000012523s | 0.000005615s | 2.23x |
 | `ThresholdModel._initialize_liabilities` vectorized discrete liabilities | 20k binary discrete taxa, scalar SciPy stream preserved | 2.035507s | 0.005099s | 399.2x |
 | `ThresholdModel._summarize_posterior` single-sort median/HPD | five 500k-sample posterior traces, identical summary statistics | 0.317456s | 0.248927s | 1.28x |

@@ -511,14 +511,15 @@ class TestLogLikelihoodBivariateBM:
         x2 = np.array([1.5, 0.7, -0.3])
 
         expected = ThresholdModel._bivariate_quadratic_stats(x1, x2, C_inv)
-        one_C_one = float(np.sum(C_inv))
+        one_C_one = float(C_inv.sum())
         monkeypatch.setattr(
             threshold_model_module.np,
             "sum",
             lambda *args, **kwargs: pytest.fail(
-                "cached bivariate stats should use vector.sum"
+                "cached bivariate stats should use ndarray sum methods"
             ),
         )
+        observed_full = ThresholdModel._bivariate_quadratic_stats(x1, x2, C_inv)
         observed = ThresholdModel._bivariate_quadratic_stats_from_products(
             x1,
             x2,
@@ -527,6 +528,7 @@ class TestLogLikelihoodBivariateBM:
             one_C_one,
         )
 
+        np.testing.assert_allclose(observed_full, expected)
         np.testing.assert_allclose(observed, expected)
 
     def test_r_zero_equals_sum_univariate(self):
