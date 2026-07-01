@@ -195,7 +195,7 @@ assert "Bio.Phylo" not in sys.modules
         assert isinstance(stats[0]["count_below"], int)
         assert isinstance(stats[0]["fraction_below"], float)
 
-    def test_threshold_stats_large_single_threshold_list_uses_count_nonzero(
+    def test_threshold_stats_large_single_threshold_list_scans_once(
         self, args, mocker, monkeypatch
     ):
         args.thresholds = "50"
@@ -210,7 +210,7 @@ assert "Bio.Phylo" not in sys.modules
 
         stats = t.calculate_threshold_stats(values, t.thresholds)
 
-        mocked_count_nonzero.assert_called_once()
+        mocked_count_nonzero.assert_not_called()
         assert stats == [
             {"threshold": 50.0, "count_below": 2500, "fraction_below": 0.5},
         ]
