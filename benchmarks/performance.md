@@ -326,6 +326,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` no-gap observed-symbol validity | 2000 taxa x 5000 sites, DNA `ACGT` / 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.078720s / 0.091700s | 0.052968s / 0.046669s | 1.49x / 1.96x |
 | RCV/RCVT/AlignmentOutlierTaxa valid-length mask counts | 5000 taxa x 4000-site boolean valid mask, side-by-side previous `np.sum(mask, axis=1).astype(float)` | 0.008596s | 0.004423s | 1.94x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` many-short protein count table | 50k taxa x 50 no-gap protein sites, side-by-side previous one `np.bincount` per taxon row | 1.300922s | 0.921645s | 1.41x |
+| `RelativeCompositionVariabilityTaxon.calculate_rows` count-matrix column totals | count matrices shaped 260x4 / 1200x20 / 2000x20 / 50000x20, side-by-side previous `np.sum(..., axis=0)` wrapper | 3.497999s / 3.163409s / 4.144007s / 4.768939s | 1.929073s / 2.924800s / 3.469921s / 3.756192s | 1.81x / 1.08x / 1.19x / 1.27x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.069846s | 0.010896s | 6.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058848s / 0.007070s / 0.211013s | 0.042901s / 0.000004s / 0.037338s | 1.37x / 1844.67x / 5.65x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` zip-based row assembly | 500k mocked taxon records and computed RCVT values, side-by-side previous index lookups | 0.317740s | 0.284361s | 1.12x |
@@ -2906,7 +2907,9 @@ Profiling summary:
   Many-short no-gap protein alignments now build the per-taxon symbol count
   table with one row-offset `bincount`, avoiding tens of thousands of tiny
   row-level `bincount` calls while keeping the per-row path for medium or long
-  alignments where it remains faster. Identical alignments now return
+  alignments where it remains faster. Count-matrix column totals now use the
+  ndarray reduction method, avoiding generic `np.sum` dispatch while leaving
+  the mixed-performance row sums unchanged. Identical alignments now return
   zero-valued per-taxon rows before matrix construction because each taxon's
   composition equals the average composition after case normalization. A
   follow-up pass reuses the shared no-slice sequence equality helper to avoid

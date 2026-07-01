@@ -191,6 +191,29 @@ assert "Bio.AlignIO" not in sys.modules
         assert bincount_spy.call_count == len(alignment)
         assert [row["taxon"] for row in rows] == ["t1", "t2"]
 
+    def test_calculate_rows_column_totals_use_array_reduction(self, mocker, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWY"), id="t1"),
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWA"), id="t2"),
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWC"), id="t3"),
+            ]
+        )
+        sum_spy = mocker.spy(rcvt_module.np, "sum")
+
+        rows = service.calculate_rows(alignment, is_protein=True)
+
+        assert [row["taxon"] for row in rows] == ["t1", "t2", "t3"]
+        assert not any(
+            call.kwargs.get("axis") == 0
+            for call in sum_spy.call_args_list
+        )
+        assert any(
+            call.kwargs.get("axis") == 1
+            for call in sum_spy.call_args_list
+        )
+
     def test_calculate_rows_no_gap_ascii_uses_full_lengths(self, mocker, args):
         service = RelativeCompositionVariabilityTaxon(args)
         alignment = MultipleSeqAlignment(

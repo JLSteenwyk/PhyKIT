@@ -166,7 +166,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
                 dtype=np.float32,
             ).T
 
-        average_counts = np.sum(count_matrix, axis=0) / num_records
+        average_counts = count_matrix.sum(axis=0) / num_records
         deviations = np.abs(count_matrix - average_counts)
         seq_sums = np.sum(deviations, axis=1)
         denom = num_records * valid_lengths
