@@ -287,6 +287,31 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         mock_tree.prune.assert_any_call('tip3')
         self.assertEqual(result, mock_tree)
 
+    def test_copy_and_prune_if_needed_skips_copy_without_tips(self):
+        mock_tree = Mock()
+        self.cov_rates._fast_copy = Mock(
+            side_effect=AssertionError("tree should not be copied without pruning")
+        )
+        self.cov_rates.prune_tips = Mock()
+
+        result = self.cov_rates._copy_and_prune_if_needed(mock_tree, [])
+
+        self.assertIs(result, mock_tree)
+        self.cov_rates._fast_copy.assert_not_called()
+        self.cov_rates.prune_tips.assert_not_called()
+
+    def test_copy_and_prune_if_needed_copies_before_pruning(self):
+        mock_tree = Mock()
+        mock_tree_copy = Mock()
+        self.cov_rates._fast_copy = Mock(return_value=mock_tree_copy)
+        self.cov_rates.prune_tips = Mock(return_value=mock_tree_copy)
+
+        result = self.cov_rates._copy_and_prune_if_needed(mock_tree, ["tip1"])
+
+        self.assertIs(result, mock_tree_copy)
+        self.cov_rates._fast_copy.assert_called_once_with(mock_tree)
+        self.cov_rates.prune_tips.assert_called_once_with(mock_tree_copy, ["tip1"])
+
     @patch('pickle.loads')
     def test_process_terminal_batch(self, mock_loads):
         """Test static method for processing terminal batch"""
@@ -764,9 +789,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         mock_ref_tree = Mock()
 
         # Mock tree reading methods
-        self.cov_rates.read_tree_file = Mock(return_value=mock_tree0)
-        self.cov_rates.read_tree1_file = Mock(return_value=mock_tree1)
-        self.cov_rates.read_reference_tree_file = Mock(return_value=mock_ref_tree)
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=mock_tree0)
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=mock_tree1)
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=mock_ref_tree)
 
         # Mock tip names
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[
@@ -814,9 +839,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         mock_ref_tree = Mock()
 
         # Mock tree reading methods
-        self.cov_rates.read_tree_file = Mock(return_value=mock_tree0)
-        self.cov_rates.read_tree1_file = Mock(return_value=mock_tree1)
-        self.cov_rates.read_reference_tree_file = Mock(return_value=mock_ref_tree)
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=mock_tree0)
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=mock_tree1)
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=mock_ref_tree)
 
         # Mock tip names
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[
@@ -862,9 +887,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         mock_ref_tree = Mock()
 
         # Mock tree reading methods
-        self.cov_rates.read_tree_file = Mock(return_value=mock_tree0)
-        self.cov_rates.read_tree1_file = Mock(return_value=mock_tree1)
-        self.cov_rates.read_reference_tree_file = Mock(return_value=mock_ref_tree)
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=mock_tree0)
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=mock_tree1)
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=mock_ref_tree)
 
         # Mock tip names
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[
@@ -920,9 +945,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         mock_tree1 = Mock()
         mock_ref_tree = Mock()
 
-        self.cov_rates.read_tree_file = Mock(return_value=mock_tree0)
-        self.cov_rates.read_tree1_file = Mock(return_value=mock_tree1)
-        self.cov_rates.read_reference_tree_file = Mock(return_value=mock_ref_tree)
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=mock_tree0)
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=mock_tree1)
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=mock_ref_tree)
 
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[
             ['tip1'], ['tip1'], ['tip1']
@@ -966,9 +991,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.cov_rates.verbose = False
         self.cov_rates.plot = False
 
-        self.cov_rates.read_tree_file = Mock(return_value=Mock())
-        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
-        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=Mock())
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
         self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
         self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
@@ -990,9 +1015,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.cov_rates.plot_output = "cover.png"
         self.cov_rates._plot_covarying_rates_scatter = Mock()
 
-        self.cov_rates.read_tree_file = Mock(return_value=Mock())
-        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
-        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=Mock())
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
         self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
         self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
@@ -1015,9 +1040,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.cov_rates.plot_output = "plot-file.png"
         self.cov_rates._plot_covarying_rates_scatter = Mock()
 
-        self.cov_rates.read_tree_file = Mock(return_value=Mock())
-        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
-        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=Mock())
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
         self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
         self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)
@@ -1035,9 +1060,9 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.cov_rates.plot_output = "saved.png"
         self.cov_rates._plot_covarying_rates_scatter = Mock()
 
-        self.cov_rates.read_tree_file = Mock(return_value=Mock())
-        self.cov_rates.read_tree1_file = Mock(return_value=Mock())
-        self.cov_rates.read_reference_tree_file = Mock(return_value=Mock())
+        self.cov_rates.read_tree_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_tree1_file_unmodified = Mock(return_value=Mock())
+        self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=Mock())
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[["a", "b"], ["a", "b"], ["a", "b"]])
         self.cov_rates.shared_tips = Mock(return_value=["a", "b"])
         self.cov_rates.prune_tips = Mock(side_effect=lambda tree, tips: tree)

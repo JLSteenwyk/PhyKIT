@@ -84,8 +84,22 @@ class Tree(BaseService):
     def read_tree1_file(self):
         return self._read_tree_with_error(self.tree1_file_path, "tree1_file_path")
 
+    def read_tree1_file_unmodified(self):
+        return self._read_tree_with_error(
+            self.tree1_file_path,
+            "tree1_file_path",
+            copy_tree=False,
+        )
+
     def read_reference_tree_file(self):
         return self._read_tree_with_error(self.reference, "reference")
+
+    def read_reference_tree_file_unmodified(self):
+        return self._read_tree_with_error(
+            self.reference,
+            "reference",
+            copy_tree=False,
+        )
 
     @staticmethod
     def _fast_copy(tree):

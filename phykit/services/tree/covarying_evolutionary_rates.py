@@ -103,9 +103,9 @@ class CovaryingEvolutionaryRates(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self):
-        tree_zero = self.read_tree_file()
-        tree_one = self.read_tree1_file()
-        tree_ref = self.read_reference_tree_file()
+        tree_zero = self.read_tree_file_unmodified()
+        tree_one = self.read_tree1_file_unmodified()
+        tree_ref = self.read_reference_tree_file_unmodified()
 
         # - Calculate correlation between two gene trees
         # and save results to an array, corrArr.
@@ -130,9 +130,9 @@ class CovaryingEvolutionaryRates(Tree):
         )
 
         # get a set of pruned trees
-        tree_zero = self.prune_tips(tree_zero, tree_zero_tips_to_prune)
-        tree_one = self.prune_tips(tree_one, tree_one_tips_to_prune)
-        tree_ref = self.prune_tips(tree_ref, tree_ref_tips_to_prune)
+        tree_zero = self._copy_and_prune_if_needed(tree_zero, tree_zero_tips_to_prune)
+        tree_one = self._copy_and_prune_if_needed(tree_one, tree_one_tips_to_prune)
+        tree_ref = self._copy_and_prune_if_needed(tree_ref, tree_ref_tips_to_prune)
 
         # obtain corrected branch lengths where branch lengths
         # are corrected by the species tree branch length
@@ -248,6 +248,11 @@ class CovaryingEvolutionaryRates(Tree):
             [tip for tip in tree_one_tips if tip not in shared_tip_set],
             [tip for tip in tree_ref_tips if tip not in shared_tip_set],
         )
+
+    def _copy_and_prune_if_needed(self, tree, tips):
+        if not tips:
+            return tree
+        return self.prune_tips(self._fast_copy(tree), tips)
 
     def _plot_covarying_rates_scatter(self, x_vals, y_vals, corr):
         try:
