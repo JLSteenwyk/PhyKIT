@@ -38,12 +38,28 @@ def _make_args(**overrides):
 
 def test_module_import_does_not_import_numpy():
     code = """
+import builtins
 import sys
-import phykit.services.tree.relative_rate_test as module
+module_name = "phykit.services.tree.relative_rate_test"
+sys.modules.pop(module_name, None)
+sys.modules.pop("pathlib", None)
+original_import = builtins.__import__
+
+def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == "pathlib" or name.startswith("pathlib."):
+        raise AssertionError("relative_rate_test import should not import pathlib")
+    return original_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = guarded_import
+try:
+    import phykit.services.tree.relative_rate_test as module
+finally:
+    builtins.__import__ = original_import
 
 assert hasattr(module.np, "__getattr__")
 assert callable(module.print_json)
 assert callable(module.get_alignment_and_format_helper)
+assert callable(module.Path)
 assert "typing" not in sys.modules
 assert "json" not in sys.modules
 assert "numpy" not in sys.modules

@@ -1,7 +1,6 @@
 import itertools
 import math
 import os
-from pathlib import Path
 
 from .base import Tree
 from ...errors import PhykitUserError
@@ -17,6 +16,12 @@ def get_alignment_and_format_helper(*args, **kwargs):
     from ...helpers.files import get_alignment_and_format
 
     return get_alignment_and_format(*args, **kwargs)
+
+
+def Path(*args, **kwargs):
+    from pathlib import Path as _Path
+
+    return _Path(*args, **kwargs)
 
 
 def _chi2_sf(x, df):
