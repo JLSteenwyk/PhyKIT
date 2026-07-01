@@ -437,6 +437,22 @@ class TestPhyloPath:
             "_parse_models_file",
             lambda *_args, **_kwargs: {"direct": [("x", "y")]},
         )
+        monkeypatch.setattr(
+            phylo_path_module.np,
+            "mean",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("standardization should use ndarray.mean")
+            ),
+            raising=False,
+        )
+        monkeypatch.setattr(
+            phylo_path_module.np,
+            "std",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("standardization should use ndarray.std")
+            ),
+            raising=False,
+        )
 
         def trait_matrix(traits, ordered_names):
             matrix = np.array([traits[name] for name in ordered_names], dtype=float)

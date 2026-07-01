@@ -1957,6 +1957,7 @@ Results:
 | `PhyloPath.run` model-variable trait-name index resolution | 40k parsed trait columns, 1200 model variables, first duplicate index preserved | 0.684638s | 0.002820s | 242.76x |
 | `PhyloPath.run` multi-variable trait setup | 120k taxa x 12 parsed trait columns, five model variables extracted and copied | 0.062919s | 0.038572s | 1.63x |
 | `PhyloPath.run` selected-variable standardization | 120k taxa x 64 parsed trait columns, 40 model variables, side-by-side previous raw-data dict and duplicate mean pass | 0.030258s | 0.025553s | 1.18x |
+| `PhyloPath.run` selected-variable ndarray reductions | 120k taxa x 64 parsed trait columns, 40 model variables, side-by-side previous `np.mean`/`np.std` calls on copied columns | 0.108664s | 0.048551s | 2.24x |
 | `PhyloPath.run` cached read-only setup | balanced 32768-tip cached tree, three traits for every tip, VCV/d-sep/coefficient/output mocked | 0.311719s | 0.074181s | 4.20x |
 | `PhylogeneticSignal._blombergs_k` | 420 taxa SPD VCV, 1000 permutations | 0.1134s | 0.0338s | 3.4x |
 | `PhylogeneticSignal._blombergs_k` Cholesky inverse construction | 450 taxa SPD VCV, 16 seeded permutations, side-by-side previous explicit inverse | 0.007445s | 0.003480s | 2.14x |
@@ -6713,7 +6714,9 @@ Profiling summary:
   linear scans across wide trait headers. Selected-variable standardization now
   standardizes each copied column in place, reusing the computed mean and
   avoiding the intermediate `raw_data` dictionary while preserving
-  constant-column centering behavior. Trait parsing now streams directly over
+  constant-column centering behavior. The same standardization loop now uses
+  each copied column's ndarray `mean()` and `std()` methods, avoiding generic
+  NumPy reduction dispatch. Trait parsing now streams directly over
   the file handle, converts valid numeric rows through a list comprehension, and
   falls back to the detailed nonnumeric-value loop only when conversion fails,
   preserving existing filtered taxa and error messages. Exact all-shared trait

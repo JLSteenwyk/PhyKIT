@@ -177,8 +177,8 @@ class PhyloPath(Tree):
         z_data = {}
         for var in variables:
             vals = trait_matrix[:, trait_name_to_idx[var]].copy()
-            mean = float(np.mean(vals))
-            sd = float(np.std(vals, ddof=0))
+            mean = float(vals.mean())
+            sd = float(vals.std(ddof=0))
             vals -= mean
             if sd > 0:
                 vals /= sd
