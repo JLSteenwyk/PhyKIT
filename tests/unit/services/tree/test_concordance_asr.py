@@ -429,6 +429,8 @@ class TestCachedDescendantAssembly:
     def test_distribution_result_assembly_uses_cached_descendants(
         self, default_args, monkeypatch
     ):
+        import phykit.services.tree.concordance_asr as casr_module
+
         svc = ConcordanceAsr(default_args)
         svc._asr = _make_asr_helper()
         svc.ci = False
@@ -442,29 +444,43 @@ class TestCachedDescendantAssembly:
             for clade in species_tree.find_clades(order="preorder")
             if not clade.is_terminal()
         }
-        estimates = {
-            tips: 2.0
-            for tips in clade_tip_sets.values()
-            if len(tips) > 1
-        }
-
         svc._compute_gcf_per_node = lambda tree, gene_trees, taxa: gcf
-        svc._run_asr_on_tree = lambda tree, values: (estimates, {}, 1.0)
+
+        def run_asr_on_tree(tree_index, values):
+            adjusted = {
+                tips: float(tree_index)
+                for tips in clade_tip_sets.values()
+                if len(tips) > 1
+            }
+            return adjusted, {}, float(tree_index)
+
+        svc._run_asr_on_tree = run_asr_on_tree
 
         def fail_get_terminals(*args, **kwargs):
             raise AssertionError("cached descendant sets should be used")
 
+        class FailingNumpy:
+            def __getattr__(self, name):
+                raise AssertionError(
+                    "distribution summary assembly should not use NumPy"
+                )
+
         monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(casr_module, "np", FailingNumpy())
 
         result = svc._run_distribution(
-            species_tree, [object()], trait_values, all_taxa
+            species_tree, [1, 2, 3], trait_values, all_taxa
         )
 
         assert len(result["ancestral_estimates"]) == len(gcf)
+        assert result["sigma2"] == pytest.approx(2.0)
         assert all(
             entry["descendants"] == sorted(entry["descendants"])
             for entry in result["ancestral_estimates"].values()
         )
+        for entry in result["ancestral_estimates"].values():
+            assert entry["estimate"] == pytest.approx(2.0)
+            assert entry["var_topology"] == pytest.approx(2.0 / 3.0)
 
     def test_uncertainty_node_data_uses_descendant_lookup(
         self, default_args, monkeypatch

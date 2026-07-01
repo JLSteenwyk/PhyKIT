@@ -55,6 +55,15 @@ class _LazyPickle:
 pickle = _LazyPickle()
 
 
+def _mean_and_population_variance(values):
+    n = len(values)
+    mean_value = sum(values) / n
+    variance = (
+        sum((value - mean_value) * (value - mean_value) for value in values) / n
+    )
+    return float(mean_value), float(variance)
+
+
 class ConcordanceAsr(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -829,7 +838,7 @@ class ConcordanceAsr(Tree):
             if not estimates_list:
                 continue
 
-            mean_est = float(np.mean(estimates_list))
+            mean_est, var_topology = _mean_and_population_variance(estimates_list)
             entry = {
                 "estimate": mean_est,
                 "descendants": descendants,
@@ -838,7 +847,7 @@ class ConcordanceAsr(Tree):
                 "gdf1": float(gdf1),
                 "gdf2": float(gdf2),
                 "n_gene_trees_with_node": len(estimates_list),
-                "var_topology": float(np.var(estimates_list)),
+                "var_topology": var_topology,
                 "var_parameter": 0.0,
                 "gene_tree_estimates": estimates_list,
             }
@@ -853,7 +862,11 @@ class ConcordanceAsr(Tree):
 
         # Average sigma2 across gene trees
         sigma2_values = [sig for _, _, sig in gene_tree_results if sig > 0]
-        avg_sigma2 = float(np.mean(sigma2_values)) if sigma2_values else 0.0
+        avg_sigma2 = (
+            float(sum(sigma2_values) / len(sigma2_values))
+            if sigma2_values
+            else 0.0
+        )
 
         return {
             "method": "distribution",
