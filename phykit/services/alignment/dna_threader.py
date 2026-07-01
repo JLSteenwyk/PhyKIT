@@ -78,7 +78,7 @@ class DNAThreader(Alignment):
 
         if self.json_output:
             rows = [
-                dict(taxon=gene_id, sequence=sequence)
+                {"taxon": gene_id, "sequence": sequence}
                 for gene_id, sequence in pal2nal.items()
             ]
             print_json(

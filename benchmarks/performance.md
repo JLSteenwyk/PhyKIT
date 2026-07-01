@@ -433,6 +433,7 @@ Results:
 | `DNAThreader.create_mask` bounded byte status comparison | 200k all-keep ClipKIT rows expanded to nucleotide mask, identical single-space status parsing | 0.128046s | 0.104242s | 1.23x |
 | `DNAThreader.clipkit_log_data` streaming row split | 300k ClipKIT rows, identical parsed row lists | 0.058648s | 0.054238s | 1.08x |
 | `DNAThreader.run` batched FASTA text output | 100k threaded FASTA records, mocked parser/threading and identical stdout text | 0.030984s | 0.011490s | 2.70x |
+| `DNAThreader.run` JSON row construction | 500k threaded sequence rows, identical row dictionaries | 0.196943s | 0.168945s | 1.17x |
 | `dna_threader` module import without eager Bio.SeqIO/Seq | cold subprocess import after lazy Biopython sequence imports | 0.187897s | 0.084045s | 2.24x |
 | `dna_threader` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006269s | 0.004938s | 1.27x |
 | `dna_threader` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.032400s | 0.031734s | 1.02x |
