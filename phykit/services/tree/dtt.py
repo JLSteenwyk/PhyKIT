@@ -202,7 +202,7 @@ class Dtt(Tree):
         if self.index == "avg_manhattan":
             sorted_data = np.sort(data, axis=0)
             coeffs = 2 * np.arange(n) - n + 1
-            total = float(np.sum(sorted_data * coeffs[:, None]))
+            total = float(np.einsum("ij,i->", sorted_data, coeffs))
             return total / count
         else:
             # avg_sq: average squared Euclidean distance

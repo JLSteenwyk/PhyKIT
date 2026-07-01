@@ -234,6 +234,21 @@ class TestComputeDisparity:
         # pairs: 4, 8, 4; avg = 16/3
         assert svc._compute_disparity(data) == pytest.approx(16.0 / 3.0)
 
+    def test_avg_manhattan_disparity_uses_einsum_reduction(self, monkeypatch):
+        args = _make_args(index="avg_manhattan")
+        svc = Dtt(args)
+        data = np.array([[0.0, 0.0], [1.0, 3.0], [4.0, 4.0]])
+
+        monkeypatch.setattr(
+            dtt_module.np,
+            "sum",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("avg_manhattan disparity should use einsum")
+            ),
+        )
+
+        assert svc._compute_disparity(data) == pytest.approx(16.0 / 3.0)
+
     def test_identical_values_return_zero(self):
         args = _make_args()
         svc = Dtt(args)
