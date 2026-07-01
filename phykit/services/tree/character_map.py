@@ -395,7 +395,7 @@ class CharacterMap(Tree):
     def _ascii_symbol_counts_by_char(matrix, symbols):
         import numpy as np
 
-        if symbols.size >= 16:
+        if symbols.size >= 12:
             n_chars = matrix.shape[1]
             max_code = int(matrix.max()) + 1
             encoded = matrix.astype(np.int64)

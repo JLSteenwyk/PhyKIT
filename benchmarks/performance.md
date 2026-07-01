@@ -2348,6 +2348,7 @@ Results:
 | `CharacterMap._summarize_character_states` full summary byte-count reuse | 1200 taxa x 5000 single-character states, wildcard-aware state lists and counts | 0.206011s | 0.131361s | 1.57x |
 | `CharacterMap._summarize_character_states` byte-matrix state-list transpose | 1200 taxa x 5000 single-character states, wildcard-aware state lists and counts | 0.135322s | 0.100202s | 1.35x |
 | `CharacterMap._summarize_ascii_matrix` large-alphabet column counts | three repeated 5000-taxon x 2000-character ASCII matrices with 36 observed states plus wildcards, side-by-side previous per-symbol equality reductions | 2.852672s | 0.460152s | 6.20x |
+| `CharacterMap._summarize_ascii_matrix` medium-alphabet column counts | 1200 taxa x 5000 characters with 12 / 14 observed ASCII states, side-by-side previous per-symbol equality reductions | 0.266178s / 0.182221s | 0.110929s / 0.102333s | 2.40x / 1.78x |
 | `retention_index` full-column Counter | 1200 taxa x 5000 characters, wildcard-aware RI state counts | 0.370389s | 0.149759s | 2.5x |
 | `retention_index` ASCII single-character fast path | 1200 taxa x 5000 single-character states, wildcard-aware RI state counts | 0.125720s | 0.039702s | 3.17x |
 | `CharacterMap.run` state summary plus RI counts | 1200 taxa x 5000 characters, wildcard-aware counts and synthetic observed steps | 0.394492s | 0.241499s | 1.63x |
@@ -7593,10 +7594,10 @@ Profiling summary:
   summary now derives returned per-character state lists from the same byte
   matrix transpose instead of a second Python `zip` transpose. The generic
   Counter path remains the fallback for multi-character, ragged, or non-ASCII
-  states. Large observed ASCII alphabets now count per-character states with one
-  column-offset `bincount` pass instead of one equality reduction per symbol,
-  while small state alphabets keep the previous equality-count path to avoid
-  `bincount` setup overhead.
+  states. Observed ASCII alphabets with 12 or more states now count
+  per-character states with one column-offset `bincount` pass instead of one
+  equality reduction per symbol, while smaller state alphabets keep the
+  previous equality-count path to avoid `bincount` setup overhead.
 - `retention_index` baseline time rebuilt a filtered non-wildcard list before
   counting each character column. The optimized path counts the full column
   once, removes wildcard keys from the `Counter`, and derives the observed

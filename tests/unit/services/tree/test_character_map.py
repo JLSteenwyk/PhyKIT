@@ -349,6 +349,30 @@ class TestCharacterMapStateSummary:
 
         np.testing.assert_array_equal(observed, expected)
 
+    def test_ascii_symbol_counts_twelve_state_alphabet_uses_bincount(self, monkeypatch):
+        import numpy as np
+
+        alphabet = b"0123456789AB"
+        matrix = np.frombuffer(alphabet * 4, dtype=np.uint8).reshape(4, 12)
+        symbols = np.unique(matrix)
+        bincount_calls = 0
+        original_bincount = np.bincount
+
+        def counting_bincount(*args, **kwargs):
+            nonlocal bincount_calls
+            bincount_calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(np, "bincount", counting_bincount)
+
+        observed = CharacterMap._ascii_symbol_counts_by_char(matrix, symbols)
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=0) for symbol in symbols]
+        )
+
+        assert bincount_calls == 1
+        np.testing.assert_array_equal(observed, expected)
+
     def test_full_summary_reuses_ascii_summary_for_single_character_states(
         self, monkeypatch
     ):
