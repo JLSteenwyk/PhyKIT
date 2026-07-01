@@ -1705,6 +1705,7 @@ Results:
 | `PhyloLogistic` standard-error diagonal solve | 200-coefficient SPD information matrix, side-by-side previous explicit inverse diagonal extraction | 0.002265682s | 0.000320565s | 7.07x |
 | `PhyloLogistic._normal_two_tailed_p_values` vectorized special erfc | 200k z statistics, side-by-side previous scalar Python `math.erfc` loop | 0.024712s | 0.001564s | 15.80x |
 | `PhyloLogistic._logistic_starting_values` row-scaled IRLS | 1500 taxa x 8-column design matrix, synthetic binary response | 0.018337s | 0.000254s | 72.3x |
+| `PhyloLogistic`/`PhylogeneticGLM` starting-value convergence max | 2 / 4 / 8 / 32 / 128 coefficient deltas, side-by-side previous `np.max(np.abs(beta_new - beta))` loop check | 0.000007025s / 0.000007767s / 0.000007604s / 0.000008465s / 0.000007491s | 0.000003384s / 0.000004525s / 0.000003101s / 0.000004361s / 0.000004134s | 2.08x / 1.72x / 2.45x / 1.94x / 1.81x |
 | `PhyloLogistic`/`PhylogeneticGLM` binary fallback class count | 80k validated 0/1 responses, side-by-side previous two equality-mask reductions | 0.000089306s | 0.000012742s | 7.01x |
 | `phylo_logistic` module import without `scipy.stats` | cold process import for logistic regression command module | 0.624020s | 0.431614s | 1.45x |
 | `phylo_logistic` module import without eager SciPy linalg/optimize | cold process import for logistic regression command module | 0.440761s | 0.166163s | 2.7x |
@@ -6130,12 +6131,13 @@ Profiling summary:
   design matrix directly and solves against one Cholesky factorization, while
   retaining the inverse-based implementation as a fallback. Logistic IRLS
   starting values now also row-scale the design matrix instead of materializing
-  a dense diagonal weight matrix before cross-products. The inverse fallback
-  uses the same row-scaled weighted design matrix to avoid allocating a dense
-  diagonal weight matrix when Cholesky factorization cannot be used. A later
-  pass removed the eager `scipy.stats` import by computing two-tailed z-test
-  p-values with the standard-library complementary error function. A later
-  p-value pass keeps the `scipy.stats` import out of this path but uses cached
+  a dense diagonal weight matrix before cross-products, and use a direct ndarray
+  max reduction for the small coefficient convergence vector. The inverse
+  fallback uses the same row-scaled weighted design matrix to avoid allocating a
+  dense diagonal weight matrix when Cholesky factorization cannot be used. A
+  later pass removed the eager `scipy.stats` import by computing two-tailed
+  z-test p-values with the standard-library complementary error function. A
+  later p-value pass keeps the `scipy.stats` import out of this path but uses cached
   `scipy.special.erfc` as a vectorized ufunc for coefficient z statistics,
   preserving the same two-tailed normal probabilities with far less Python loop
   overhead. A subsequent startup pass replaced eager `scipy.linalg` and
@@ -6228,10 +6230,12 @@ Profiling summary:
   fallback for non-Cholesky cases. The saturated logistic starting-value
   fallback now counts validated binary response classes with one
   `np.count_nonzero` call and subtraction instead of two equality-mask
-  reductions. The SciPy linalg and optimizer wrappers now
-  cache their imported callables after first use, matching the logistic command's
-  wrapper pattern and avoiding repeated import-on-call overhead during iterative
-  fits while preserving module-level patch points. A later startup pass keeps
+  reductions. Logistic and Poisson starting-value loops now use direct ndarray
+  max reductions for their small coefficient convergence vectors. The SciPy
+  linalg and optimizer wrappers now cache their imported callables after first
+  use, matching the logistic command's wrapper pattern and avoiding repeated
+  import-on-call overhead during iterative fits while preserving module-level
+  patch points. A later startup pass keeps
   JSON output behind a lazy forwarding wrapper so plain
   imports avoid the JSON helper module. Text report output now batches the
   header, coefficient rows, and footer into one newline-joined print while

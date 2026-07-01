@@ -513,7 +513,7 @@ class TestTransformedVCV:
 
 
 class TestFit:
-    def test_logistic_starting_values_match_diagonal_weight_reference(self):
+    def test_logistic_starting_values_match_diagonal_weight_reference(self, monkeypatch):
         svc = PhyloLogistic.__new__(PhyloLogistic)
         rng = np.random.default_rng(20260623)
         n = 40
@@ -534,8 +534,15 @@ class TestFit:
                 beta = beta_new
             return beta
 
+        expected = reference()
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("starting-value convergence should use ndarray.max")
+
+        monkeypatch.setattr(phylo_logistic_module.np, "max", fail_max)
+
         observed = svc._logistic_starting_values(y, X, btol=10)
-        np.testing.assert_allclose(observed, reference())
+        np.testing.assert_allclose(observed, expected)
 
     def test_fit_returns_coefficients(self, glm_traits_args):
         """Fitting should return finite beta, SE, z, p for each coefficient."""

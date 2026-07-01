@@ -375,7 +375,7 @@ class PhyloLogistic(Tree):
                 )
             except np.linalg.LinAlgError:
                 break
-            if np.max(np.abs(beta_new - beta)) < 1e-8:
+            if np.abs(beta_new - beta).max() < 1e-8:
                 beta = beta_new
                 break
             beta = beta_new

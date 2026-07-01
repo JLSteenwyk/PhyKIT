@@ -543,7 +543,7 @@ class TestLogisticMPLE:
         assert np.isfinite(ll)
         assert ll < 0  # Log-likelihood should be negative
 
-    def test_logistic_starting_values_match_diagonal_weight_reference(self):
+    def test_logistic_starting_values_match_diagonal_weight_reference(self, monkeypatch):
         svc = PhylogeneticGLM.__new__(PhylogeneticGLM)
         rng = np.random.default_rng(20260623)
         n = 40
@@ -564,8 +564,15 @@ class TestLogisticMPLE:
                 beta = beta_new
             return beta
 
+        expected = reference()
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("starting-value convergence should use ndarray.max")
+
+        monkeypatch.setattr(phylogenetic_glm_module.np, "max", fail_max)
+
         observed = svc._logistic_starting_values(y, X, btol=10)
-        np.testing.assert_allclose(observed, reference())
+        np.testing.assert_allclose(observed, expected)
 
 class TestPoissonGEE:
     def test_convergence(self, poisson_args):
@@ -680,7 +687,7 @@ class TestPoissonGEE:
         # Intercept should be near log(mean(y))
         assert abs(beta0[0] - np.log(np.mean(y))) < 2.0
 
-    def test_poisson_starting_values_match_diagonal_weight_reference(self):
+    def test_poisson_starting_values_match_diagonal_weight_reference(self, monkeypatch):
         svc = PhylogeneticGLM.__new__(PhylogeneticGLM)
         rng = np.random.default_rng(20260623)
         n = 40
@@ -702,8 +709,15 @@ class TestPoissonGEE:
                 beta = beta_new
             return beta
 
+        expected = reference()
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("starting-value convergence should use ndarray.max")
+
+        monkeypatch.setattr(phylogenetic_glm_module.np, "max", fail_max)
+
         observed = svc._poisson_starting_values(y, X)
-        np.testing.assert_allclose(observed, reference())
+        np.testing.assert_allclose(observed, expected)
 
     def test_poisson_gee_information_and_score_match_diagonal_reference(self):
         rng = np.random.default_rng(20260623)
