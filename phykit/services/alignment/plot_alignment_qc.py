@@ -172,7 +172,7 @@ class PlotAlignmentQC(Alignment):
             )
 
         normal_mask = ~flagged_mask
-        if np.any(normal_mask):
+        if normal_mask.any():
             ax.scatter(
                 comp_values[normal_mask],
                 branch_values[normal_mask],
@@ -180,7 +180,7 @@ class PlotAlignmentQC(Alignment):
                 s=24,
                 alpha=0.85,
             )
-        if np.any(flagged_mask):
+        if flagged_mask.any():
             ax.scatter(
                 comp_values[flagged_mask],
                 branch_values[flagged_mask],

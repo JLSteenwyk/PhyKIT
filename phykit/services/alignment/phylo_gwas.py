@@ -520,7 +520,7 @@ class PhyloGwas(Alignment):
 
             # Check for zero-sum rows/columns
             col_sums = table.sum(axis=0)
-            if np.any(group_row_counts == 0) or np.any(col_sums == 0):
+            if (group_row_counts == 0).any() or (col_sums == 0).any():
                 return None
             degrees_of_freedom = n_groups - 1
             if degrees_of_freedom == 0:

@@ -358,7 +358,7 @@ class CompositionalBiasPerSite(Alignment):
         colors = config.merge_colors(default_colors)
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
-        if np.any(nonsig_mask):
+        if nonsig_mask.any():
             ax.scatter(
                 sites[nonsig_mask],
                 y_vals[nonsig_mask],
@@ -368,7 +368,7 @@ class CompositionalBiasPerSite(Alignment):
                 edgecolors="none",
                 label="Not significant",
             )
-        if np.any(sig_mask):
+        if sig_mask.any():
             ax.scatter(
                 sites[sig_mask],
                 y_vals[sig_mask],
@@ -383,7 +383,7 @@ class CompositionalBiasPerSite(Alignment):
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("-log10(corrected p-value)")
         ax.set_xlim(1, int(np.max(sites)))
-        if np.any(finite_mask):
+        if finite_mask.any():
             max_y = float(np.nanmax(y_vals))
             ax.set_ylim(0, max(sig_threshold * 1.1, max_y * 1.1))
 
