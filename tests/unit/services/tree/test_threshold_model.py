@@ -983,6 +983,31 @@ class TestComputeHPD:
 
 
 class TestRunMCMC:
+    def test_run_mcmc_mean_diagonal_uses_trace(self, monkeypatch):
+        tree = _make_tree()
+        names = sorted([t.name for t in tree.get_terminals()])
+        C = ThresholdModel._build_vcv_matrix(tree, names)
+        rng = np.random.default_rng(42)
+        t1 = {"A": 0.2, "B": 1.0, "C": 0.4, "D": 1.2}
+        t2 = {"A": 1.0, "B": 2.0, "C": 0.5, "D": 1.8}
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("MCMC setup should use np.trace instead of np.diag")
+
+        monkeypatch.setattr(
+            ThresholdModel,
+            "_vcv_inverse_and_logdet",
+            staticmethod(lambda matrix: (np.linalg.inv(matrix), 0.0)),
+        )
+        monkeypatch.setattr(threshold_model_module.np, "diag", fail_diag)
+
+        result = ThresholdModel._run_mcmc(
+            t1, t2, "continuous", "continuous",
+            names, C, 30, 10, 0.2, rng,
+        )
+
+        assert "sigma2_2" in result
+
     def test_expected_keys(self):
         tree = _make_tree()
         names = sorted([t.name for t in tree.get_terminals()])

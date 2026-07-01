@@ -776,7 +776,7 @@ class ThresholdModel(Tree):
         # For discrete traits, sigma2 is fixed at 1 and a is fixed at 0
         # for identifiability (threshold=0, sigma2=1 pins the liability scale).
         # Only continuous traits have their sigma2 and a estimated.
-        mean_diag_C = float(np.mean(np.diag(C)))
+        mean_diag_C = float(np.trace(C) / n)
         if mean_diag_C <= 0:
             mean_diag_C = 1.0
 
