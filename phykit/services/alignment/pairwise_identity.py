@@ -446,14 +446,22 @@ class PairwiseIdentity(Alignment):
         if num_records < 2:
             return None
 
-        sequences = [str(record.seq).upper() for record in records]
-        lengths = {len(sequence) for sequence in sequences}
+        raw_sequences = [str(record.seq) for record in records]
+        lengths = {len(sequence) for sequence in raw_sequences}
         if len(lengths) != 1:
             return None
         aln_len = lengths.pop()
 
-        first_sequence = sequences[0]
-        if _all_sequences_identical(sequences):
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
             identity = _identity_for_identical_sequence(
                 first_sequence,
                 is_protein,
@@ -467,6 +475,7 @@ class PairwiseIdentity(Alignment):
                 pairwise_identities["-".join(pair_id)] = identity
             stats = _constant_identity_stats(identity, len(pair_ids))
             return pair_ids, pairwise_identities, stats
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         try:
             joined_bytes = "".join(sequences).encode("ascii")
@@ -541,14 +550,22 @@ class PairwiseIdentity(Alignment):
         if num_records < 2:
             return None
 
-        sequences = [str(record.seq).upper() for record in records]
-        lengths = {len(sequence) for sequence in sequences}
+        raw_sequences = [str(record.seq) for record in records]
+        lengths = {len(sequence) for sequence in raw_sequences}
         if len(lengths) != 1:
             return None
         aln_len = lengths.pop()
 
-        first_sequence = sequences[0]
-        if _all_sequences_identical(sequences):
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
             identity = _identity_for_identical_sequence(
                 first_sequence,
                 is_protein,
@@ -556,6 +573,7 @@ class PairwiseIdentity(Alignment):
             )
             n_pairs = num_records * (num_records - 1) // 2
             return _constant_identity_stats(identity, n_pairs)
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         try:
             joined_bytes = "".join(sequences).encode("ascii")
