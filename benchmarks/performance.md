@@ -357,6 +357,7 @@ Results:
 | `CompositionalBiasPerSite` statistic result construction | 1M per-site statistic/p-value pairs converted to `Power_divergenceResult` rows | 2.121716s | 1.699578s | 1.25x |
 | `CompositionalBiasPerSite._false_discovery_control` small-list path without NumPy startup | cold subprocess, 4 p-values through Benjamini-Hochberg helper | 0.066106s | 0.024334s | 2.72x |
 | `CompositionalBiasPerSite._build_rows` literal row construction | 500k site rows with mixed valid and `"nan"` corrected p-values, identical row dictionaries | 2.175066s | 1.893878s | 1.15x |
+| `CompositionalBiasPerSite._build_rows` bound append | 500k site rows with mixed valid and `"nan"` corrected p-values, side-by-side previous unbound `rows.append` loop | 1.427984s | 1.333329s | 1.07x |
 | `CompositionalBiasPerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.072149s | 0.061021s | 1.18x |
 | `CompositionalBiasPerSite.run` direct terminal text output | 100k site rows, mocked alignment/read and identical stdout text | 0.200112s | 0.168921s | 1.18x |
 | `CompositionalBiasPerSite.run` plot-only series preparation | 1M corrected p-values with interleaved `"nan"` slots, identical rounded plotted site/value arrays without temporary row dictionaries | 0.935595s | 0.241023s | 3.88x |
@@ -3107,6 +3108,8 @@ Profiling summary:
   Column count sum-of-squares reductions now use an `einsum` column dot,
   avoiding temporary squared count matrices in ASCII block counters and Unicode
   fallback counters.
+  Row construction now binds the append method once in the per-site result
+  builder, preserving row dictionaries while reducing Python attribute lookups.
   Text-mode `run` now batches per-site rows into one
   newline-joined print while preserving stdout text, JSON payloads, and plot
   reporting. A later terminal-output pass skips the intermediate row

@@ -290,12 +290,13 @@ class CompositionalBiasPerSite(Alignment):
         p_vals_corrected: list[float | str],
     ) -> list[dict[str, int | float | None]]:
         rows = []
+        append_row = rows.append
         for idx, (stat_info, pval_cor) in enumerate(
             zip(stat_res, p_vals_corrected), start=1
         ):
             corrected = None if isinstance(pval_cor, str) else round(float(pval_cor), 4)
             raw_p = float(stat_info.pvalue)
-            rows.append(
+            append_row(
                 {
                     "site": idx,
                     "chi_square": round(float(stat_info.statistic), 4),
