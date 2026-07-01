@@ -622,11 +622,19 @@ class TestIdentityMatrixUnit:
         def fail_triu_indices(*_args, **_kwargs):
             raise AssertionError("identity summary should avoid triangular index arrays")
 
+        def fail_generic_reduction(*_args, **_kwargs):
+            raise AssertionError("identity summary should use condensed-vector methods")
+
         monkeypatch.setattr(
             identity_matrix_module.np,
             "triu_indices",
             fail_triu_indices,
         )
+        monkeypatch.setattr(identity_matrix_module.np, "mean", fail_generic_reduction)
+        monkeypatch.setattr(identity_matrix_module.np, "min", fail_generic_reduction)
+        monkeypatch.setattr(identity_matrix_module.np, "max", fail_generic_reduction)
+        monkeypatch.setattr(identity_matrix_module.np, "argmin", fail_generic_reduction)
+        monkeypatch.setattr(identity_matrix_module.np, "argmax", fail_generic_reduction)
 
         observed = IdentityMatrix._summarize_identity_matrix(
             identity_matrix,

@@ -262,18 +262,14 @@ class IdentityMatrix(Alignment):
     @staticmethod
     def _summarize_identity_matrix(identity_matrix, taxa_names):
         pairwise_values = squareform(identity_matrix, checks=False)
-        mean_val = float(np.mean(pairwise_values))
-        min_val = float(np.min(pairwise_values))
-        max_val = float(np.max(pairwise_values))
+        mean_val = float(pairwise_values.mean())
+        min_index = int(pairwise_values.argmin())
+        max_index = int(pairwise_values.argmax())
+        min_val = float(pairwise_values[min_index])
+        max_val = float(pairwise_values[max_index])
 
-        min_row, min_col = _condensed_index_to_pair(
-            int(np.argmin(pairwise_values)),
-            len(taxa_names),
-        )
-        max_row, max_col = _condensed_index_to_pair(
-            int(np.argmax(pairwise_values)),
-            len(taxa_names),
-        )
+        min_row, min_col = _condensed_index_to_pair(min_index, len(taxa_names))
+        max_row, max_col = _condensed_index_to_pair(max_index, len(taxa_names))
         min_pair = [taxa_names[min_row], taxa_names[min_col]]
         max_pair = [taxa_names[max_row], taxa_names[max_col]]
         return mean_val, min_val, min_pair, max_val, max_pair

@@ -85,6 +85,7 @@ Results:
 | `IdentityMatrix._partition_identity_strip` condensed row scan | 1200 taxa x 32 partitions, 719400 pairwise partition identities, side-by-side previous `np.triu_indices` plus `np.add.at` accumulation | 2.144036s | 0.117468s | 18.25x |
 | `IdentityMatrix._parse_partitions` partition parser | 500k RAxML-style partition rows with comments/blanks, comma/no-comma forms, and whitespace tolerance | 0.644653s | 0.564478s | 1.14x |
 | `IdentityMatrix._summarize_identity_matrix` condensed upper triangle | 3500 x 3500 symmetric identity matrix, identical mean/min/max values and min/max taxon pairs | 0.120000s | 0.019253s | 6.23x |
+| `IdentityMatrix._summarize_identity_matrix` condensed-vector reductions | 700 / 1200 / 2500 / 3500-taxon symmetric identity matrices, side-by-side previous generic `np.mean`/`np.min`/`np.max`/`np.argmin`/`np.argmax` reductions after `squareform` | 0.001703s / 0.006129s / 0.020625s / 0.048776s | 0.000981s / 0.005080s / 0.016065s / 0.036241s | 1.74x / 1.21x / 1.28x / 1.35x |
 | `IdentityMatrix._print_text_output` batched summary | 100k captured identity-matrix text summaries, identical stdout text | 0.267546s | 0.186169s | 1.44x |
 | `IdentityMatrix._print_text_output` template formatting | 100k captured identity-matrix text summaries, identical stdout text, side-by-side previous f-string join formatter | 0.186500s | 0.149763s | 1.25x |
 | `identity_matrix` module import without eager SciPy clustering | cold process import for identity-matrix command module | 0.459178s | 0.249947s | 1.8x |
@@ -2447,7 +2448,10 @@ Profiling summary:
   both participating taxa with `np.add.at`, divides by `n_taxa - 1`, and then
   applies the existing taxon order. Text summary output now batches the
   ten-line report into one newline-joined print while preserving exact stdout
-  text and the surrounding broken-pipe handling.
+  text and the surrounding broken-pipe handling. Identity matrix summaries now
+  reduce the condensed `squareform` vector with ndarray methods and reuse
+  argmin/argmax locations for min/max values, preserving reported taxon pairs
+  while avoiding generic NumPy reduction dispatch and extra scans.
 - `IdentityMatrix._parse_partitions` baseline time split valid partition rows
   into temporary lists for comma, equals, and dash separators. The optimized
   parser uses `str.partition()` in the same delimiter order, preserving comment
