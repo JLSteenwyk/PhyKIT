@@ -127,6 +127,24 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
 
         self.assertEqual(stats['mean'], 3.75)
 
+    def test_nonconstant_extrema_and_variance_use_array_reductions(self):
+        data = np.array([1.0, 2.0, 4.0, 8.0])
+        with patch(
+            'phykit.helpers.stats_summary.np.min',
+            side_effect=AssertionError("minimum should use ndarray.min"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.max',
+            side_effect=AssertionError("maximum should use ndarray.max"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.var',
+            side_effect=AssertionError("variance should use ndarray.var"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['minimum'], 1.0)
+        self.assertEqual(stats['maximum'], 8.0)
+        self.assertAlmostEqual(stats['variance'], stat.variance(data))
+
     def test_exact_integer_mean_and_median_preserve_integer_type(self):
         """Test exact integer mean/median keep legacy CLI formatting."""
         data = [85, 85, 100, 100, 100, 100, 100]
