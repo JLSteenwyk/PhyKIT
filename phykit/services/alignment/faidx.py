@@ -24,7 +24,7 @@ class Faidx(Alignment):
             rows = []
             for entry in entries:
                 rows.append(
-                    dict(entry=entry, name=entry, sequence=records[entry])
+                    {"entry": entry, "name": entry, "sequence": records[entry]}
                 )
             print_json(
                 dict(
