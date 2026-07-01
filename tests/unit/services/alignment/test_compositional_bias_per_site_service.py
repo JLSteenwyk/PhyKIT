@@ -214,6 +214,30 @@ assert "numpy" not in sys.modules
         assert np.isnan(results[0].pvalue)
         assert [result.pvalue for result in results[1:]] == [0.5, 0.125]
 
+    def test_pvalues_for_fdr_all_valid_uses_direct_tolist(self):
+        class PValues:
+            def __getitem__(self, key):
+                raise AssertionError("all-valid p-values should not be masked")
+
+            def tolist(self):
+                return [0.1, 0.2, 0.3]
+
+        class NoNanMask:
+            def any(self):
+                return False
+
+        assert cbps_module._pvalues_for_fdr(PValues(), NoNanMask()) == [
+            0.1,
+            0.2,
+            0.3,
+        ]
+
+    def test_pvalues_for_fdr_mixed_nan_filters_values(self):
+        p_values = np.array([np.nan, 0.5, 0.125], dtype=np.float64)
+        nan_mask = np.isnan(p_values)
+
+        assert cbps_module._pvalues_for_fdr(p_values, nan_mask) == [0.5, 0.125]
+
     def test_restore_nan_corrected_pvalues_all_valid_returns_directly(self, mocker):
         corrected = [0.2, 0.4, 0.6]
         nan_mask = np.array([False, False, False], dtype=bool)

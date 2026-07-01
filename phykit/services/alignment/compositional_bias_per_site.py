@@ -151,6 +151,12 @@ def _power_divergence_results_from_arrays(statistics, p_values):
     ]
 
 
+def _pvalues_for_fdr(p_values: np.ndarray, nan_mask: np.ndarray) -> list[float]:
+    if not nan_mask.any():
+        return p_values.tolist()
+    return p_values[~nan_mask].tolist()
+
+
 def _prepare_compositional_bias_plot_series(p_vals_corrected: list[float | str]):
     count = len(p_vals_corrected)
     sites = np.arange(1, count + 1, dtype=np.int32)
@@ -515,7 +521,7 @@ class CompositionalBiasPerSite(Alignment):
 
         # Apply FDR correction
         nan_mask = np.isnan(p_values)
-        p_vals = p_values[~nan_mask].tolist()
+        p_vals = _pvalues_for_fdr(p_values, nan_mask)
         if p_vals:
             p_vals_corrected = _false_discovery_control(p_vals)
         else:

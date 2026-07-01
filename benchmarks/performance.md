@@ -320,6 +320,7 @@ Results:
 | `CompositionalBiasPerSite._erfc_array` vectorized square roots | 500k chi-square half-statistics, side-by-side previous scalar `sqrt` + `erfc` loop without SciPy imports | 0.048987s | 0.040776s | 1.20x |
 | `CompositionalBiasPerSite` corrected p-value reconstruction | 100k sites, 9,916 valid p-values interleaved with `"nan"` slots | 2.063417s | 0.004771s | 432.50x |
 | `CompositionalBiasPerSite` corrected p-value all-valid restore | 1M corrected p-values with no `"nan"` slots | 0.194807s | 0.000001334s | 146019.11x |
+| `CompositionalBiasPerSite` all-valid p-value extraction | 3 repeated 1M-site p-value arrays with no NaN slots, side-by-side previous boolean-index extraction | 0.084985s | 0.077307s | 1.10x |
 | `CompositionalBiasPerSite` statistic result construction | 1M per-site statistic/p-value pairs converted to `Power_divergenceResult` rows | 2.121716s | 1.699578s | 1.25x |
 | `CompositionalBiasPerSite._false_discovery_control` small-list path without NumPy startup | cold subprocess, 4 p-values through Benjamini-Hochberg helper | 0.066106s | 0.024334s | 2.72x |
 | `CompositionalBiasPerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.072149s | 0.061021s | 1.18x |
@@ -2980,7 +2981,10 @@ Profiling summary:
   multi-symbol sequences while preserving the existing non-identical paths. A
   follow-up identical-row pass scans the existing sequence list directly instead
   of materializing `sequences[1:]`, reducing temporary allocation for high-taxon
-  conserved alignments. Per-site `Power_divergenceResult` rows are now built
+  conserved alignments. All-valid p-value correction now converts the p-value
+  array directly to a list instead of first applying an all-true boolean mask,
+  preserving mixed-NaN filtering for gappy/all-invalid sites. Per-site
+  `Power_divergenceResult` rows are now built
   with a localized list comprehension, preserving float coercion and namedtuple
   output while avoiding the explicit Python append loop.
 - `RelativeCompositionVariabilityTaxon.calculate_rows` baseline time built a
