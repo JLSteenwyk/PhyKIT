@@ -559,6 +559,7 @@ Results:
 | `Faidx._fetch_entries` selected-entry parser | 50k FASTA records x 120 bp, three requested entries, legacy `SimpleFastaParser` baseline | 0.043153s | 0.026709s | 1.62x |
 | `Faidx.run` direct sequence mapping | 100k requested FASTA entries x 120 bp, side-by-side previous `_FastaEntry` wrapper allocation/output path | 0.204819s | 0.068155s | 3.01x |
 | `Faidx.run` JSON row construction | 500k requested FASTA entries, identical row dictionaries | 0.181053s | 0.148606s | 1.22x |
+| `Faidx.run` JSON row list comprehension | 500k requested FASTA entries, side-by-side previous append-loop row construction | 0.584529s | 0.477088s | 1.23x |
 | shared `_fasta._clean_sequence` single-line fast path | 80k FASTA records x 120 bp, single-line / wrapped two-line sequences, identical first-token parser output | 0.159723s / 0.209468s | 0.116201s / 0.163365s | 1.37x / 1.28x |
 | `faidx` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.181946s | 0.079052s | 2.30x |
 | `faidx` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006110s | 0.004992s | 1.22x |
@@ -3621,7 +3622,9 @@ Profiling summary:
   joined print call, preserving the same FASTA text stream while reducing write
   overhead for large multi-entry requests. JSON output now also reuses each
   indexed record lookup while building rows and uses literal row dictionaries
-  instead of repeated `dict(...)` calls. A later pass replaced
+  instead of repeated `dict(...)` calls. The JSON row builder now uses a list
+  comprehension instead of an append loop while preserving the same `rows` and
+  `entries` payload. A later pass replaced
   `SeqIO.index` with a `SimpleFastaParser` scan that stores only requested
   records while preserving request order, first-token FASTA names, missing-entry
   `KeyError`s, and duplicate-ID `ValueError`s. A later pass uses the shared

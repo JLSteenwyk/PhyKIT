@@ -21,11 +21,10 @@ class Faidx(Alignment):
         records = self._fetch_entries(self.fasta, entries)
 
         if self.json_output:
-            rows = []
-            for entry in entries:
-                rows.append(
-                    {"entry": entry, "name": entry, "sequence": records[entry]}
-                )
+            rows = [
+                {"entry": entry, "name": entry, "sequence": records[entry]}
+                for entry in entries
+            ]
             print_json(
                 dict(
                     rows=rows,
