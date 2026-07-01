@@ -113,6 +113,16 @@ class TestLBScore(object):
 
         assert result == pytest.approx(expected)
 
+    def test_batched_tip_pairs_streams_all_pairs(self, args):
+        t = LBScore(args)
+        tips = ["tip0", "tip1", "tip2", "tip3", "tip4"]
+
+        batches = list(t._batched_tip_pairs(tips, 3))
+        observed_pairs = [pair for batch in batches for pair in batch]
+
+        assert [len(batch) for batch in batches] == [3, 3, 3, 1]
+        assert observed_pairs == list(combinations(tips, 2))
+
     def test_calculate_average_distance_between_tips_parallel_path(
         self, mocker, args
     ):

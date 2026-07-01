@@ -134,6 +134,15 @@ class LBScore(Tree):
         tree = pickle.loads(tree_pickle)
         return [tree.distance(tip1, tip2) for tip1, tip2 in tip_pairs]
 
+    @staticmethod
+    def _batched_tip_pairs(tips: list[str], batch_size: int):
+        pairs = itertools.combinations(tips, 2)
+        while True:
+            batch = list(itertools.islice(pairs, batch_size))
+            if not batch:
+                break
+            yield batch
+
     def calculate_average_distance_between_tips(
         self,
         tips: list[str],
@@ -156,14 +165,11 @@ class LBScore(Tree):
             _, distances = fast_result
             return sum(distances) / num_combos if num_combos else 0
 
-        # Get all combinations
-        all_pairs = list(itertools.combinations(tips, 2))
-
         # For small datasets, use sequential processing
         if num_combos < 100:
             total_dist = sum(
                 tree.distance(tip1, tip2)
-                for tip1, tip2 in all_pairs
+                for tip1, tip2 in itertools.combinations(tips, 2)
             )
         else:
             # Use multiprocessing for large datasets
@@ -172,8 +178,7 @@ class LBScore(Tree):
 
             with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
                 futures = []
-                for i in range(0, num_combos, batch_size):
-                    batch = all_pairs[i:i + batch_size]
+                for batch in self._batched_tip_pairs(tips, batch_size):
                     futures.append(
                         executor.submit(self._calculate_distances_batch, tree_pickle, batch)
                     )

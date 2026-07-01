@@ -1467,6 +1467,7 @@ Results:
 | `LBScore.calculate_lb_score` linear tree distance sums | balanced 512-tip tree | 0.054681s | 0.005159s | 10.6x |
 | `LBScore._calculate_lb_components_fast` historical denominator arithmetic | balanced 8192-tip tree, linear component helper, side-by-side previous `len(tip_set - set(tip))` denominator | 1.071748s | 0.015581s | 68.79x |
 | `LBScore.calculate_average_distance_of_taxon_to_other_taxa` fallback tip-set reuse | 1000 fallback taxon names, side-by-side previous per-tip `set(tips)` construction while preserving `set(tip)` behavior | 0.024459s | 0.009492s | 2.58x |
+| `LBScore.calculate_average_distance_between_tips` fallback streaming pair batches | 2000 fallback tips, 1,999,000 pair batch setup, side-by-side previous full pair-list slicing | 0.484847s | 0.317065s | 1.53x |
 | `LBScore._calculate_lb_components_fast` postorder child push | balanced 32768-tip tree, linear component helper, side-by-side previous `reversed(children)` setup | 0.159546s | 0.132146s | 1.21x |
 | `LBScore.calculate_lb_score_per_taxa` without NumPy startup | cold subprocess, 32768 average-distance values transformed to LB scores | 0.098413s | 0.029658s | 3.32x |
 | `LBScore.run` verbose text output | 200k taxon LB-score rows, mocked tree/read and identical stdout text | 0.119431s | 0.093329s | 1.28x |
