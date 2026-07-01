@@ -832,6 +832,7 @@ Results:
 | `EvoTempoMap._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.871998s | 0.283520s | 3.08x |
 | `EvoTempoMap._compute_global_treeness` | 40 balanced 512-tip gene trees plus species tree, global split concordance and treeness | 0.5462s | 0.2757s | 2.0x |
 | `EvoTempoMap._compute_global_treeness` direct split traversal | 40 balanced 512-tip gene trees plus species tree, global split concordance and treeness | 0.217001s | 0.127218s | 1.71x |
+| `EvoTempoMap._compute_global_treeness` treeness summaries | 10k mean/median summaries of 40 treeness values, identical summary values | 0.365470s | 0.016978s | 21.53x |
 | `EvoTempoMap._collect_clade_taxa` reverse-preorder postorder helper | balanced 8192-tip tree, descendant taxon sets for branch classification | 0.028838s | 0.019994s | 1.44x |
 | `EvoTempoMap._build_parent_map` direct map traversal | balanced 65536-tip tree, branch-classification parent map, optimized helper baseline | 0.026751s | 0.017737s | 1.51x |
 | `EvoTempoMap._iter_preorder_clades` binary-child fast path | balanced 131072-tip tree, branch-classification preorder helper, side-by-side previous `reversed(children)` helper | 0.039015s | 0.034670s | 1.13x |
@@ -4123,7 +4124,10 @@ Profiling summary:
   postorder clade-to-taxa maps already used by branch classification. A later
   pass moved those clade-to-taxa maps and cached split-set construction onto
   direct standard-tree traversals, retaining generic Bio.Phylo traversal as a
-  fallback for nonstandard trees.
+  fallback for nonstandard trees. A follow-up summary pass computes concordant
+  and discordant treeness means and medians directly from the collected Python
+  lists, avoiding NumPy startup when one group is too small for Mann-Whitney
+  testing.
 - `EvoTempoMap._compute_treeness` baseline time duplicated the previous
   two-traversal treeness calculation for every gene tree in global treeness
   comparisons. The optimized path reuses `Tree`'s one-pass internal/total branch

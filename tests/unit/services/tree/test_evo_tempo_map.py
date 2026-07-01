@@ -765,6 +765,29 @@ class TestGlobalTreeness:
         assert result["treeness_discordant"]["n"] == 0
         assert result["treeness_U_p"] is None  # Can't test with 0 discordant
 
+    def test_all_concordant_treeness_avoids_numpy_and_mann_whitney(
+        self, svc, monkeypatch
+    ):
+        import phykit.services.tree.evo_tempo_map as etm_module
+
+        class FailingNumpy:
+            def __getattr__(self, name):
+                raise AssertionError("treeness summaries should not use NumPy")
+
+        def fail_mann_whitney(*args, **kwargs):
+            raise AssertionError("single-group treeness should not run Mann-Whitney")
+
+        monkeypatch.setattr(etm_module, "np", FailingNumpy())
+        monkeypatch.setattr(etm_module, "_mannwhitneyu", fail_mann_whitney)
+
+        species_tree = svc.read_tree_file()
+        identical_trees = [svc.read_tree_file() for _ in range(3)]
+        result = svc._compute_global_treeness(species_tree, identical_trees)
+
+        assert result["treeness_concordant"]["n"] == 3
+        assert result["treeness_discordant"]["n"] == 0
+        assert result["treeness_U_p"] is None
+
     def test_global_treeness_uses_cached_clade_taxa(self, svc, monkeypatch):
         from io import StringIO
 

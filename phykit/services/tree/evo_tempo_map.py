@@ -72,6 +72,14 @@ def _summarize_lengths(
     return float(mean), _median(values), _sample_std(values, mean)
 
 
+def _summarize_mean_median(
+    values: list[float],
+) -> tuple[float | None, float | None]:
+    if len(values) == 0:
+        return None, None
+    return float(sum(values) / len(values)), _median(values)
+
+
 class EvoTempoMap(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -908,15 +916,22 @@ class EvoTempoMap(Tree):
             else:
                 discordant_treeness.append(treeness)
 
+        concordant_mean, concordant_median = _summarize_mean_median(
+            concordant_treeness
+        )
+        discordant_mean, discordant_median = _summarize_mean_median(
+            discordant_treeness
+        )
+
         result = dict(
             treeness_concordant=dict(
-                mean=float(np.mean(concordant_treeness)) if concordant_treeness else None,
-                median=float(np.median(concordant_treeness)) if concordant_treeness else None,
+                mean=concordant_mean,
+                median=concordant_median,
                 n=len(concordant_treeness),
             ),
             treeness_discordant=dict(
-                mean=float(np.mean(discordant_treeness)) if discordant_treeness else None,
-                median=float(np.median(discordant_treeness)) if discordant_treeness else None,
+                mean=discordant_mean,
+                median=discordant_median,
                 n=len(discordant_treeness),
             ),
         )
