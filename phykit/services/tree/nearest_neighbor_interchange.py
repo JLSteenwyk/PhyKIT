@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 from .base import Tree
 from ...errors import PhykitUserError
 
@@ -41,6 +39,14 @@ pickle = _LazyPickle()
 
 
 BranchSpec = tuple[str, list[str]]
+
+
+def _split_branch_fields(value: str) -> list[str]:
+    return [
+        part.strip()
+        for part in value.replace("\t", ",").split(",")
+        if part.strip()
+    ]
 
 
 class NearestNeighborInterchange(Tree):
@@ -90,7 +96,7 @@ class NearestNeighborInterchange(Tree):
         branch = None
         raw_branch = getattr(args, "branch", None)
         if raw_branch:
-            parts = [p.strip() for p in re.split(r"[,\t]", raw_branch) if p.strip()]
+            parts = _split_branch_fields(raw_branch)
             if len(parts) != 2:
                 raise PhykitUserError(
                     [
@@ -121,7 +127,7 @@ class NearestNeighborInterchange(Tree):
                     line = raw.strip()
                     if not line or line.startswith("#"):
                         continue
-                    parts = [p.strip() for p in re.split(r"[,\t]", line) if p.strip()]
+                    parts = _split_branch_fields(line)
                     if len(parts) < 2:
                         raise PhykitUserError(
                             [

@@ -9,6 +9,7 @@ from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.nearest_neighbor_interchange import (
     NearestNeighborInterchange,
+    _split_branch_fields,
 )
 
 
@@ -43,6 +44,28 @@ class TestNearestNeighborInterchange:
         service = NearestNeighborInterchange(args)
         assert service.output_file_path == "/tmp/nnis.tre"
         assert service.json_output is True
+
+    def test_split_branch_fields_handles_commas_tabs_and_whitespace(self):
+        assert _split_branch_fields("A,B") == ["A", "B"]
+        assert _split_branch_fields("label\tA\tB") == ["label", "A", "B"]
+        assert _split_branch_fields(" label , A\tB ") == ["label", "A", "B"]
+
+    def test_resolve_branch_specs_parses_file_without_regex(self, args, tmp_path):
+        branches = tmp_path / "branches.tsv"
+        branches.write_text(
+            "# ignored\n"
+            "A,B\n"
+            "label\tC\tD\n"
+            " label2 , E\tF \n"
+        )
+        args.branches = str(branches)
+        service = NearestNeighborInterchange(args)
+
+        assert service._resolve_branch_specs() == [
+            ("A|B", ["A", "B"]),
+            ("label", ["C", "D"]),
+            ("label2", ["E", "F"]),
+        ]
 
     def test_fast_tree_copy_returns_distinct_object(self, args):
         service = NearestNeighborInterchange(args)

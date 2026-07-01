@@ -1340,6 +1340,7 @@ Results:
 | `NearestNeighborInterchange._build_parent_map` direct traversal | balanced 32768-tip tree, parent map for NNI generation | 0.101185s | 0.010405s | 9.72x |
 | `NearestNeighborInterchange._build_parent_map` unordered child push | balanced 65536-tip tree, parent map for NNI generation, optimized helper baseline | 0.020223s | 0.014583s | 1.39x |
 | `NearestNeighborInterchange.get_neighbors` direct level-order nonterminals | balanced 8192-tip tree, NNI generation with tree-copy creation stubbed, side-by-side previous `get_nonterminals(order="level")` loop | 0.021400s | 0.011773s | 1.82x |
+| `NearestNeighborInterchange._resolve_branch_specs` branch-field parser | 300k comma/tab/mixed-whitespace branch rows, identical label/taxon specs | 0.551512s | 0.399353s | 1.38x |
 | `nearest_neighbor_interchange` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.write` proxy and postponed annotations | 0.123042s | 0.025484s | 4.83x |
 | `nearest_neighbor_interchange` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007619s | 0.006372s | 1.20x |
 | `nearest_neighbor_interchange` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006408s | 0.005053s | 1.27x |
@@ -5444,7 +5445,11 @@ Profiling summary:
   localizes stack operations and pushes children directly because the result is
   a parent map rather than an ordered traversal. NNI neighbor generation now
   also uses a direct standard-tree level-order nonterminal scan, retaining
-  `get_nonterminals(order="level")` as the fallback for nonstandard trees.
+  `get_nonterminals(order="level")` as the fallback for nonstandard trees. The
+  targeted-branch parser now splits comma/tab-delimited branch rows with
+  `str.replace(...).split(",")` instead of a regex split, preserving whitespace
+  trimming and empty-field skipping while reducing large `--branches` file
+  parsing overhead.
 - `NearestNeighborInterchange._generate_targeted_nnis` terminal-name setup
   baseline time materialized terminal clade objects before validating targeted
   branch taxa. The optimized path uses the shared direct terminal-name
