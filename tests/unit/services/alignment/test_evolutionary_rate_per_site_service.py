@@ -305,6 +305,38 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert payload["rows"] == payload["sites"]
         assert payload["plot_output"] == "erps.png"
 
+    def test_run_json_without_plot_builds_site_rows(self, mocker):
+        service = EvolutionaryRatePerSite(
+            Namespace(alignment="x.fa", json=True, plot=False)
+        )
+        mocker.patch.object(
+            EvolutionaryRatePerSite,
+            "get_alignment_and_format",
+            return_value=("alignment", "fasta", False),
+        )
+        mocker.patch.object(
+            EvolutionaryRatePerSite,
+            "calculate_evolutionary_rate_per_site",
+            return_value=[0.0, 1.23456],
+        )
+        mocked_json = mocker.patch(
+            "phykit.services.alignment.evolutionary_rate_per_site.print_json"
+        )
+
+        service.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload == {
+            "rows": [
+                {"site": 1, "evolutionary_rate": 0.0},
+                {"site": 2, "evolutionary_rate": 1.2346},
+            ],
+            "sites": [
+                {"site": 1, "evolutionary_rate": 0.0},
+                {"site": 2, "evolutionary_rate": 1.2346},
+            ],
+        }
+
     def test_run_text_without_plot_formats_site_values_directly(self, mocker, capsys):
         service = EvolutionaryRatePerSite(Namespace(alignment="x.fa", json=False, plot=False))
         mocker.patch.object(

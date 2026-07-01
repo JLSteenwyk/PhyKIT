@@ -332,6 +332,7 @@ Results:
 | `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` multi-character gap fallback | 100k records, non-ASCII column, gap tokens `--` and `?`, identical `Counter` output | 0.020868s | 0.016616s | 1.26x |
 | `EvolutionaryRatePerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.069242s | 0.055913s | 1.24x |
 | `EvolutionaryRatePerSite.run` JSON row construction | 500k mocked site-rate rows, identical row dictionaries | 0.711359s | 0.613622s | 1.16x |
+| `EvolutionaryRatePerSite.run` JSON row index loop | 500k mocked site-rate rows, side-by-side previous `enumerate(...)` plus `idx + 1` formatter | 0.428625s | 0.356849s | 1.20x |
 | `EvolutionaryRatePerSite.run` direct terminal text output | 100k site values, mocked alignment/read and identical stdout text | 0.083225s | 0.064262s | 1.30x |
 | `EvolutionaryRatePerSite.run` plot-only series preparation | 1M site rates, identical rounded plotted site/value arrays without temporary row dictionaries | 0.376116s | 0.196265s | 1.92x |
 | `evolutionary_rate_per_site` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.114353s | 0.029664s | 3.86x |
@@ -3052,7 +3053,9 @@ Profiling summary:
   per-site totals and sum-of-squares. Text-mode `run` now batches per-site rows
   into one newline-joined print, preserving the same stdout text and leaving
   JSON/plot payloads unchanged. A later terminal-output pass skips the intermediate row
-  dictionaries unless JSON or plot output needs them. A follow-up startup pass
+  dictionaries unless JSON or plot output needs them. JSON row construction now
+  uses `enumerate(..., start=1)` instead of adding one to every zero-based
+  index while preserving the same `rows` and `sites` payload. A follow-up startup pass
   defers the JSON helper behind a local wrapper and imports `PlotConfig` only
   while processing command arguments, so import-only callers avoid those helper
   modules. A later startup pass removes the runtime `TYPE_CHECKING` dependency

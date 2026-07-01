@@ -114,8 +114,8 @@ class EvolutionaryRatePerSite(Alignment):
 
         if self.plot and self.json_output:
             rows = [
-                {"site": idx + 1, "evolutionary_rate": round(value, 4)}
-                for idx, value in enumerate(pic_values)
+                {"site": idx, "evolutionary_rate": round(value, 4)}
+                for idx, value in enumerate(pic_values, start=1)
             ]
             self._plot_evolutionary_rate_per_site(rows)
         elif self.plot:
@@ -124,8 +124,8 @@ class EvolutionaryRatePerSite(Alignment):
         if self.json_output:
             if rows is None:
                 rows = [
-                    {"site": idx + 1, "evolutionary_rate": round(value, 4)}
-                    for idx, value in enumerate(pic_values)
+                    {"site": idx, "evolutionary_rate": round(value, 4)}
+                    for idx, value in enumerate(pic_values, start=1)
                 ]
             payload = dict(rows=rows, sites=rows)
             if self.plot:
