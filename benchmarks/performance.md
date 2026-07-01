@@ -494,6 +494,7 @@ Results:
 | `TaxonGroups._read_file_list` no-separator fast path | 500k simple relative paths with extensions and comments/blanks, side-by-side previous separator-guarded parser comparison | 0.139625s | 0.104450s | 1.34x |
 | `TaxonGroups.run` direct taxon-set grouping | 50k mocked file paths, 100 recurring taxon sets, grouping work isolated | 0.047093s | 0.026018s | 1.81x |
 | `TaxonGroups.run` group-size sort key | 200k mocked taxon groups with varied group sizes, side-by-side previous negated-length sort key | 0.063989s | 0.052508s | 1.22x |
+| `TaxonGroups.run` JSON group payload construction | 100k grouped taxon-set payloads, identical JSON-compatible dictionaries | 0.869918s | 0.767511s | 1.13x |
 | `TaxonGroups.run` batched text report output | 10k one-file taxon groups, mocked extraction and identical stdout text | 0.014605s | 0.010450s | 1.40x |
 | `TaxonGroups._extract_taxa` existence guard | 50k existing small file paths, taxa parser mocked | 0.257713s | 0.115714s | 2.23x |
 | `taxon_groups` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006413s | 0.004990s | 1.29x |

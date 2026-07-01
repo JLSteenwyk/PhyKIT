@@ -89,16 +89,17 @@ class TaxonGroups:
             result = {
                 "total_files": len(file_paths),
                 "total_groups": len(sorted_groups),
-                "groups": [],
+                "groups": [
+                    {
+                        "group": i,
+                        "n_files": len(files),
+                        "n_taxa": len(taxa_set),
+                        "taxa": sorted(taxa_set),
+                        "files": sorted(files),
+                    }
+                    for i, (taxa_set, files) in enumerate(sorted_groups, 1)
+                ],
             }
-            for i, (taxa_set, files) in enumerate(sorted_groups, 1):
-                result["groups"].append({
-                    "group": i,
-                    "n_files": len(files),
-                    "n_taxa": len(taxa_set),
-                    "taxa": sorted(taxa_set),
-                    "files": sorted(files),
-                })
             print_json(result)
         else:
             lines = [
