@@ -275,11 +275,11 @@ class PairwiseIdentity(Alignment):
         payload = dict(verbose=self.verbose, exclude_gaps=self.exclude_gaps)
         if self.verbose:
             rows = [
-                dict(
-                    taxon_a=pair[0],
-                    taxon_b=pair[1],
-                    identity=round(identity, 4),
-                )
+                {
+                    "taxon_a": pair[0],
+                    "taxon_b": pair[1],
+                    "identity": round(identity, 4),
+                }
                 for pair, identity in zip(pair_ids, pairwise_identities.values())
             ]
             payload["rows"] = rows

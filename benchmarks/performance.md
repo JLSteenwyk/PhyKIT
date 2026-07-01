@@ -127,6 +127,7 @@ Results:
 | `PairwiseIdentity.calculate_pairwise_identities` multiprocessing fallback streaming chunks | 2500 fallback records, 3,123,750 index-pair chunk setup, side-by-side previous full pair-list slicing | 0.720987s | 0.338193s | 2.13x |
 | `PairwiseIdentity.run` verbose batched text output | 100k pair rows, mocked alignment/read and identical stdout text | 0.054454s | 0.040773s | 1.34x |
 | `PairwiseIdentity.run` summary-only taxa-list elision | 1M mocked records, scoring and summary output mocked, non-verbose/no-plot output | 0.116345s | 0.000001s | 90068.29x |
+| `PairwiseIdentity._print_json_output` verbose row construction | 500k mocked pairwise identity rows, identical row dictionaries | 0.524115s | 0.375570s | 1.40x |
 | `PairwiseIdentity._plot_pairwise_identity_heatmap` canonical matrix fill | 1200 taxa, 719400 canonical pair identities, identical symmetric heatmap matrix with arbitrary-order fallback retained | 0.119255s | 0.055930s | 2.13x |
 | `PairwiseIdentity._pairwise_identity_matrix_from_pairs` squareform canonical fill | 2500 taxa, 3123750 canonical pair identities, identical symmetric float32 heatmap matrix | 0.404774s | 0.057102s | 7.09x |
 | `pairwise_identity` module import without eager SciPy clustering | cold process import for non-plot pairwise-identity command module | 0.423027s | 0.273540s | 1.5x |
@@ -2575,6 +2576,8 @@ Profiling summary:
   mismatch exits without a temporary list copy. Alignments with fewer than two records now return the
   existing no-pair result and no-values summary before matrix probing or
   fallback sequence-array construction.
+  Verbose JSON output now uses literal dictionaries for pair rows instead of
+  repeated `dict(...)` calls.
   Mixed-length or non-ASCII sequential fallback runs now compute the pair count
   arithmetically and stream `itertools.combinations` into the batch worker,
   reserving full pair-list materialization for the multiprocessing chunking path.
