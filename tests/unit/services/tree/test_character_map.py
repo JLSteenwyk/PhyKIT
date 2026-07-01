@@ -398,6 +398,29 @@ class TestCharacterMapStateSummary:
         ]
         assert all(count for counts in observed for count in counts.values())
 
+    def test_ascii_counts_per_char_dense_columns_accept_state_counts(self):
+        import numpy as np
+
+        symbol_labels = ["0", "1", "2"]
+        symbol_counts = np.array(
+            [
+                [2, 1],
+                [4, 3],
+                [5, 6],
+            ]
+        )
+
+        observed = CharacterMap._ascii_counts_per_char(
+            symbol_counts,
+            symbol_labels,
+            [3, 3],
+        )
+
+        assert observed == [
+            Counter({"0": 2, "1": 4, "2": 5}),
+            Counter({"0": 1, "1": 3, "2": 6}),
+        ]
+
     def test_full_summary_reuses_ascii_summary_for_single_character_states(
         self, monkeypatch
     ):

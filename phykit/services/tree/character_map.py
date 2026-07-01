@@ -382,11 +382,18 @@ class CharacterMap(Tree):
         counts_per_char = CharacterMap._ascii_counts_per_char(
             symbol_counts,
             symbol_labels,
+            n_states_per_char,
         )
         return n_states_per_char, states_by_char, n_informative, counts_per_char
 
     @staticmethod
-    def _ascii_counts_per_char(symbol_counts, symbol_labels):
+    def _ascii_counts_per_char(symbol_counts, symbol_labels, n_states_per_char=None):
+        if n_states_per_char and min(n_states_per_char) == len(symbol_labels):
+            return [
+                Counter(dict(zip(symbol_labels, column_counts.tolist())))
+                for column_counts in symbol_counts.T
+            ]
+
         return [
             Counter(
                 {

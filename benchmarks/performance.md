@@ -2349,7 +2349,7 @@ Results:
 | `CharacterMap._summarize_character_states` byte-matrix state-list transpose | 1200 taxa x 5000 single-character states, wildcard-aware state lists and counts | 0.135322s | 0.100202s | 1.35x |
 | `CharacterMap._summarize_ascii_matrix` large-alphabet column counts | three repeated 5000-taxon x 2000-character ASCII matrices with 36 observed states plus wildcards, side-by-side previous per-symbol equality reductions | 2.852672s | 0.460152s | 6.20x |
 | `CharacterMap._summarize_ascii_matrix` medium-alphabet column counts | 1200 taxa x 5000 characters with 12 / 14 observed ASCII states, side-by-side previous per-symbol equality reductions | 0.266178s / 0.182221s | 0.110929s / 0.102333s | 2.40x / 1.78x |
-| `CharacterMap._summarize_ascii_matrix` ASCII `Counter` construction | per-character `Counter` construction from precomputed symbol counts for 1200 taxa x 5000 characters with 12 / 14 observed states, 5000 taxa x 2000 characters with 36 observed states, and 8 taxa x 5000 sparse 36-state columns, side-by-side previous per-column NumPy slice iteration | 0.065020s / 0.029625s / 0.042190s / 0.025690s | 0.022574s / 0.020684s / 0.014385s / 0.021519s | 2.88x / 1.43x / 2.93x / 1.19x |
+| `CharacterMap._summarize_ascii_matrix` ASCII `Counter` construction | per-character `Counter` construction from precomputed symbol counts for 1200 taxa x 5000 characters with 12 / 14 observed states, 5000 taxa x 2000 characters with 36 observed states, and 8 taxa x 5000 sparse 36-state columns, side-by-side previous per-column NumPy slice iteration | 0.021457s / 0.043348s / 0.019924s / 0.024375s | 0.012628s / 0.014270s / 0.009855s / 0.016960s | 1.70x / 3.04x / 2.02x / 1.44x |
 | `retention_index` full-column Counter | 1200 taxa x 5000 characters, wildcard-aware RI state counts | 0.370389s | 0.149759s | 2.5x |
 | `retention_index` ASCII single-character fast path | 1200 taxa x 5000 single-character states, wildcard-aware RI state counts | 0.125720s | 0.039702s | 3.17x |
 | `CharacterMap.run` state summary plus RI counts | 1200 taxa x 5000 characters, wildcard-aware counts and synthetic observed steps | 0.394492s | 0.241499s | 1.63x |
@@ -7601,7 +7601,9 @@ Profiling summary:
   previous equality-count path to avoid `bincount` setup overhead. The returned
   per-character `Counter` objects are built by iterating the transposed count
   matrix and converting each count column to Python integers once, avoiding a
-  fresh NumPy slice and per-value `int()` call for every character.
+  fresh NumPy slice and per-value `int()` call for every character. Dense
+  columns reuse the already-computed per-character state counts to skip zero
+  filtering when every observed symbol appears in every column.
 - `retention_index` baseline time rebuilt a filtered non-wildcard list before
   counting each character column. The optimized path counts the full column
   once, removes wildcard keys from the `Counter`, and derives the observed
