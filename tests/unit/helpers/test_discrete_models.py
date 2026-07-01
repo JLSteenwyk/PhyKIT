@@ -171,6 +171,41 @@ class TestBuildQMatrix:
         Q = build_q_matrix(params, 3, "ARD")
         assert not np.allclose(Q, Q.T)
 
+    def test_small_ard_matrix_construction_uses_direct_layout(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        monkeypatch.setattr(
+            discrete_models.np,
+            "zeros",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("small ARD construction should not zero-fill first")
+            ),
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "fill_diagonal",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("small ARD construction should assign diagonal directly")
+            ),
+        )
+
+        ard2 = build_q_matrix(np.array([0.4, 0.7]), 2, "ARD")
+        ard3 = build_q_matrix(
+            np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]), 3, "ARD"
+        )
+
+        np.testing.assert_allclose(ard2, np.array([[-0.4, 0.4], [0.7, -0.7]]))
+        np.testing.assert_allclose(
+            ard3,
+            np.array(
+                [
+                    [-0.3, 0.1, 0.2],
+                    [0.3, -0.7, 0.4],
+                    [0.5, 0.6, -1.1],
+                ],
+            ),
+        )
+
     def test_ard_preserves_row_major_off_diagonal_order(self):
         params = np.arange(1, 13, dtype=float)
         Q = build_q_matrix(params, 4, "ARD")

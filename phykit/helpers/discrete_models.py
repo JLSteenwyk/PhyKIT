@@ -133,9 +133,29 @@ def build_q_matrix(params: np.ndarray, k: int, model: str) -> np.ndarray:
             Q[cols, rows] = params
             np.fill_diagonal(Q, -Q.sum(axis=1))
     elif model == "ARD":
-        Q = np.zeros((k, k))
-        Q[_ard_offdiag_mask(k)] = params
-        np.fill_diagonal(Q, -Q.sum(axis=1))
+        if k == 2:
+            rate01, rate10 = params
+            Q = np.empty((2, 2), dtype=float)
+            Q[0, 0] = -rate01
+            Q[0, 1] = rate01
+            Q[1, 0] = rate10
+            Q[1, 1] = -rate10
+        elif k == 3:
+            rate01, rate02, rate10, rate12, rate20, rate21 = params
+            Q = np.empty((3, 3), dtype=float)
+            Q[0, 0] = -(rate01 + rate02)
+            Q[0, 1] = rate01
+            Q[0, 2] = rate02
+            Q[1, 0] = rate10
+            Q[1, 1] = -(rate10 + rate12)
+            Q[1, 2] = rate12
+            Q[2, 0] = rate20
+            Q[2, 1] = rate21
+            Q[2, 2] = -(rate20 + rate21)
+        else:
+            Q = np.zeros((k, k))
+            Q[_ard_offdiag_mask(k)] = params
+            np.fill_diagonal(Q, -Q.sum(axis=1))
     return Q
 
 
