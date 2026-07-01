@@ -293,7 +293,15 @@ class Phylomorphospace(Tree):
                 break
 
         if is_numeric:
-            return np.array([float(v) for v in values]), [], "continuous"
+            return (
+                np.fromiter(
+                    (float(v) for v in values),
+                    dtype=np.float64,
+                    count=len(values),
+                ),
+                [],
+                "continuous",
+            )
         else:
             categories = sorted(set(values))
             return np.array(values), categories, "discrete"

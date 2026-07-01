@@ -12,6 +12,7 @@ from pathlib import Path
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+import phykit.services.tree.phylomorphospace as phylomorphospace_module
 from phykit.services.tree.phylomorphospace import (
     Phylomorphospace,
     _root_distance_max,
@@ -261,6 +262,38 @@ class TestRun:
 
 
 class TestPlot:
+    def test_parse_numeric_color_file_uses_fromiter(self, tmp_path, monkeypatch):
+        color_file = tmp_path / "colors.tsv"
+        ordered_names = ["a", "b", "c"]
+        color_file.write_text("a\t1.5\nb\t2.25\nc\t3.75\n")
+        svc = Phylomorphospace(
+            Namespace(
+                tree="unused",
+                trait_data="unused",
+                trait_x="x",
+                trait_y="y",
+                color_by=str(color_file),
+                plot_output=str(tmp_path / "plot.png"),
+                json=False,
+            )
+        )
+
+        def fail_array(*_args, **_kwargs):
+            raise AssertionError("numeric color files should use np.fromiter")
+
+        monkeypatch.setattr(phylomorphospace_module.np, "array", fail_array)
+
+        values, categories, kind = svc._parse_color_by(
+            str(color_file),
+            [],
+            np.empty((3, 0)),
+            ordered_names,
+        )
+
+        assert kind == "continuous"
+        assert categories == []
+        np.testing.assert_allclose(values, [1.5, 2.25, 3.75])
+
     def test_with_color_by_column(self, tmp_path):
         plot_path = str(tmp_path / "color_col.png")
         args = Namespace(

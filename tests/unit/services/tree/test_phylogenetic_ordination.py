@@ -1986,7 +1986,7 @@ class TestParseColorBy:
         assert len(values) == len(ordered_names)
         assert len(categories) == 0
 
-    def test_continuous_file(self, default_args, tmp_path):
+    def test_continuous_file(self, default_args, tmp_path, monkeypatch):
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
         tips = svc.get_tip_names_from_tree(tree)
@@ -1999,11 +1999,20 @@ class TestParseColorBy:
         lines = [f"{name}\t{i * 1.5}\n" for i, name in enumerate(ordered_names)]
         color_file.write_text("".join(lines))
 
+        def fail_array(*_args, **_kwargs):
+            raise AssertionError("numeric color files should use np.fromiter")
+
+        monkeypatch.setattr(phylogenetic_ordination_module.np, "array", fail_array)
+
         values, categories, kind = svc._parse_color_by(
             str(color_file), trait_names, Y, ordered_names
         )
         assert kind == "continuous"
         assert len(values) == len(ordered_names)
+        np.testing.assert_allclose(
+            values,
+            [i * 1.5 for i in range(len(ordered_names))],
+        )
 
     def test_discrete_file(self, default_args, tmp_path):
         svc = PhylogeneticOrdination(default_args)
