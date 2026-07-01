@@ -75,6 +75,23 @@ assert "numpy" not in sys.modules
         assert isinstance(relative_composition_variability, float)
         assert isclose(relative_composition_variability, 0.292, rel_tol=0.001)
 
+    def test_single_record_rcv_returns_before_sequence_materialization(
+        self, mocker, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError("single-record RCV should not inspect sequence")
+
+        alignment = [SimpleNamespace(seq=UnstringableSequence(), id="t1")]
+        rcv = RelativeCompositionVariability(args)
+        mocker.patch.object(
+            RelativeCompositionVariability,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
+        )
+
+        assert rcv.calculate_rcv() == 0.0
+
     def test_relative_composition_variability_handles_lowercase_ambiguity(self, mocker, args):
         alignment = MultipleSeqAlignment(
             [

@@ -115,10 +115,10 @@ class Alignment(BaseService):
 
         if num_records == 0:
             return 0.0
-
-        sequences = [str(record.seq).upper() for record in alignment]
         if num_records == 1:
             return 0.0
+
+        sequences = [str(record.seq).upper() for record in alignment]
         if _all_sequences_identical(sequences):
             return 0.0
 
