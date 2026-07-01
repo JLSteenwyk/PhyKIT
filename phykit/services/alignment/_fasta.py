@@ -1,5 +1,8 @@
 def _clean_sequence(sequence_parts: list[str]) -> str:
-    sequence = "".join(sequence_parts)
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
     if " " in sequence:
         sequence = sequence.replace(" ", "")
     if "\r" in sequence:

@@ -519,6 +519,7 @@ Results:
 | `Faidx.run` streaming FASTA fetch | 50k FASTA records x 120 bp, three requested entries | 0.333717s | 0.145065s | 2.30x |
 | `Faidx._fetch_entries` selected-entry parser | 50k FASTA records x 120 bp, three requested entries, legacy `SimpleFastaParser` baseline | 0.043153s | 0.026709s | 1.62x |
 | `Faidx.run` direct sequence mapping | 100k requested FASTA entries x 120 bp, side-by-side previous `_FastaEntry` wrapper allocation/output path | 0.204819s | 0.068155s | 3.01x |
+| shared `_fasta._clean_sequence` single-line fast path | 80k FASTA records x 120 bp, single-line / wrapped two-line sequences, identical first-token parser output | 0.159723s / 0.209468s | 0.116201s / 0.163365s | 1.37x / 1.28x |
 | `faidx` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.181946s | 0.079052s | 2.30x |
 | `faidx` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006110s | 0.004992s | 1.22x |
 | `faidx` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.002548s | 0.000926s | 2.75x |
@@ -3475,7 +3476,11 @@ Profiling summary:
   for import-only callers. A follow-up startup pass keeps JSON output behind a
   module-level forwarding wrapper, preserving the patch point while avoiding
   JSON helper startup during command discovery. A later startup pass removes the
-  annotation-only `typing` import under postponed built-in annotations.
+  annotation-only `typing` import under postponed built-in annotations. Shared
+  FASTA parsing now skips `"".join(...)` for single-line sequence records while
+  preserving whitespace cleanup and multiline record behavior, benefiting
+  `Faidx`, `SumOfPairsScore`, taxon grouping, subsampling, and other direct
+  first-token FASTA readers.
 - `AlignmentSubsample._read_alignment` baseline time materialized
   `SeqRecord` objects before extracting IDs and sequence strings. The optimized
   path uses `SimpleFastaParser`, preserving first-token IDs and last duplicate
