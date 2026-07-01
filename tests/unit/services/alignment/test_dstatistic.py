@@ -588,6 +588,29 @@ class TestDstatistic:
         assert "Z-score:" in output
         assert "p-value:" in output
 
+    def test_block_jackknife_mean_uses_array_reduction(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        aln = tmp_path / "test.fa"
+        seqs = {
+            "P1":       "AAAACCAAAAAAAAAAAAAA",
+            "P2":       "CCCCAAAAAAAAAAAAAAAA",
+            "P3":       "CCCCCCAAAAAAAAAAAAAA",
+            "Outgroup": "AAAAAAAAAAAAAAAAAAAA",
+        }
+        _write_alignment(str(aln), seqs)
+        monkeypatch.setattr(
+            module.np,
+            "mean",
+            lambda *args, **kwargs: pytest.fail(
+                "jackknife mean should use ndarray.mean"
+            ),
+        )
+
+        Dstatistic(_make_args(str(aln), block_size=5)).run()
+
+        assert "Standard error:" in capsys.readouterr().out
+
     def test_json_output(self, tmp_path):
         """JSON output has correct structure."""
         import json

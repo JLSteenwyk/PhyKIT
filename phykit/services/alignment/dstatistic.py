@@ -626,7 +626,7 @@ class Dstatistic(Alignment):
 
         if n_blocks >= 2:
             jackknife_d = self._jackknife_d_values(block_abba, block_baba)
-            mean_d = np.mean(jackknife_d)
+            mean_d = jackknife_d.mean()
             sum_sq = _sum_squared_deviations(jackknife_d, mean_d)
             se = float(np.sqrt((n_blocks - 1) / n_blocks * sum_sq))
 
