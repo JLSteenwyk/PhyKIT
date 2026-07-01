@@ -59,6 +59,13 @@ class TipToTipDistance(Tree):
             sys.exit(2)
 
         if self.all_pairs:
+            if not self.json_output and not self.plot:
+                output = self._format_all_pairwise_distances_fast(tree_zero)
+                if output is not None:
+                    if output:
+                        print(output)
+                    return
+
             rows = self.calculate_all_pairwise_distances(tree_zero)
             if self.plot:
                 self._plot_tip_distance_heatmap(rows)
@@ -70,12 +77,12 @@ class TipToTipDistance(Tree):
                 print_json(payload)
                 return
 
-            lines = [
+            output = "\n".join(
                 f"{row['taxon_a']}\t{row['taxon_b']}\t{row['tip_to_tip_distance']}"
                 for row in rows
-            ]
-            if lines:
-                print("\n".join(lines))
+            )
+            if output:
+                print(output)
             if self.plot:
                 print(f"Saved tip-to-tip heatmap: {self.plot_output}")
             return
@@ -256,6 +263,21 @@ class TipToTipDistance(Tree):
                 )
             )
         return rows
+
+    def _format_all_pairwise_distances_fast(self, tree_zero: Newick.Tree) -> str | None:
+        tips = self.calculate_terminal_names_fast(tree_zero)
+        if tips is None:
+            return None
+
+        fast_result = self.calculate_pairwise_tip_distances_fast(tree_zero, tips)
+        if fast_result is None:
+            return None
+
+        combos, distances = fast_result
+        return "\n".join(
+            f"{taxon_a}\t{taxon_b}\t{round(float(distance), 4)}"
+            for (taxon_a, taxon_b), distance in zip(combos, distances)
+        )
 
     def _build_distance_matrix(
         self,

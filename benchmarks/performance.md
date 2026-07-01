@@ -677,6 +677,7 @@ Results:
 | `Tree.calculate_pairwise_tip_distances_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 all-pairs combo/distance rows, copied old path baseline | 6.667369s | 0.862153s | 7.73x |
 | `TipToTipDistance._build_distance_matrix` sorted all-pairs heatmap fill | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous taxon-index dictionary fill | 6.848783s | 4.044856s | 1.69x |
 | `TipToTipDistance.run` all-pairs text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.082166s | 0.057857s | 1.42x |
+| `TipToTipDistance.run` all-pairs text fast-series output | balanced 900-tip tree, 404,550 all-pairs rows, captured stdout identical to previous row-dictionary path | 1.707568s | 1.242154s | 1.37x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` | balanced 32768-tip tree, opposite terminal tips | 0.1331s | 0.0189s | 7.1x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` child-list terminal check | balanced 65536-tip tree, opposite terminal tips, optimized helper baseline | 0.061879s | 0.052576s | 1.18x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` same-tip shortcut | pectinate 20000-tip tree, deepest terminal compared to itself after validation | 1.666261s | 0.856954s | 1.94x |
@@ -3877,6 +3878,9 @@ Profiling summary:
   traversal for parsed trees before entering the cached pairwise distance core.
   TipToTipDistance all-pairs text output now batches pairwise rows into one
   newline-joined print while preserving plot status output and stdout text.
+  Text-only all-pairs output also formats the fast pair/distance series
+  directly, avoiding per-pair row dictionaries when JSON and plot output are
+  not requested.
   Large all-pairs heatmap matrix construction now detects rows already in sorted
   upper-triangle order and fills the symmetric matrix from a dense distance
   vector, retaining the taxon-index dictionary fill for smaller matrices or

@@ -396,6 +396,29 @@ class TestTipToTipDistance:
         captured = capsys.readouterr()
         assert captured.out == "a\tb\t1.0\na\tc\t2.0\n"
 
+    def test_run_all_pairs_text_output_uses_fast_series(self, mocker, capsys):
+        args = Namespace(
+            tree_zero="/some/path/to/file.tre",
+            all_pairs=True,
+            plot=False,
+            json=False,
+            tip_1=None,
+            tip_2=None,
+        )
+        tree = Phylo.read(StringIO("((A:1,B:2):3,C:4);"), "newick")
+        service = TipToTipDistance(args)
+        mocker.patch.object(TipToTipDistance, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            TipToTipDistance,
+            "calculate_all_pairwise_distances",
+            side_effect=AssertionError("text output should avoid row dictionaries"),
+        )
+
+        service.run()
+
+        captured = capsys.readouterr()
+        assert captured.out == "A\tB\t3.0\nA\tC\t8.0\nB\tC\t9.0\n"
+
     def test_run_exits_without_tips_when_not_all_pairs(self, mocker):
         args = Namespace(tree_zero="/some/path/to/file.tre", all_pairs=False, tip_1=None, tip_2=None, json=False)
         service = TipToTipDistance(args)
