@@ -45,6 +45,14 @@ class RobinsonFouldsDistance(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
+        if self.tree_file_path == self.tree1_file_path:
+            tree_zero = self.read_tree_file_unmodified()
+            tip_count = self._terminal_count_direct(tree_zero)
+            if tip_count is None:
+                tip_count = tree_zero.count_terminals()
+            self._output_result(0, 0 / (2 * (tip_count - 3)))
+            return
+
         tree_zero = self.read_tree_file()
         tree_one = self.read_tree1_file()
 
@@ -71,6 +79,9 @@ class RobinsonFouldsDistance(Tree):
             tree_zero, tree_one
         )
 
+        self._output_result(plain_rf, normalized_rf)
+
+    def _output_result(self, plain_rf, normalized_rf):
         if self.json_output:
             print_json(
                 dict(

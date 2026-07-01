@@ -29,7 +29,8 @@ assert "concurrent.futures" not in sys.modules
 @pytest.fixture
 def args():
     kwargs = dict(
-        tree_zero="/some/path/to/file.tre", tree_one="/some/path/to/file.tre",
+        tree_zero="/some/path/to/file_zero.tre",
+        tree_one="/some/path/to/file_one.tre",
     )
     return Namespace(**kwargs)
 
@@ -380,8 +381,44 @@ class TestRobinsonFouldsDistance(object):
         tree_one.root_with_outgroup.assert_called_once_with("A")
         mocked_print.assert_called_once_with("4\t0.5")
 
+    def test_run_same_path_shortcuts_identical_rf(self, mocker):
+        args = Namespace(tree_zero="/some/path/to/file.tre", tree_one="/some/path/to/file.tre")
+        rf = RobinsonFouldsDistance(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        mocker.patch.object(rf, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            rf,
+            "read_tree_file",
+            side_effect=AssertionError("same-path RF should not copy tree zero"),
+        )
+        mocker.patch.object(
+            rf,
+            "read_tree1_file",
+            side_effect=AssertionError("same-path RF should not copy tree one"),
+        )
+        mocker.patch.object(
+            rf,
+            "calculate_robinson_foulds_distance",
+            side_effect=AssertionError("same-path RF should skip split comparison"),
+        )
+        mocker.patch.object(
+            tree,
+            "root_with_outgroup",
+            side_effect=AssertionError("same-path RF should not mutate tree rooting"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        rf.run()
+
+        rf.read_tree_file_unmodified.assert_called_once_with()
+        mocked_print.assert_called_once_with("0\t0.0")
+
     def test_run_json_output(self, mocker):
-        args = Namespace(tree_zero="/some/path/to/file.tre", tree_one="/some/path/to/file.tre", json=True)
+        args = Namespace(
+            tree_zero="/some/path/to/file_zero.tre",
+            tree_one="/some/path/to/file_one.tre",
+            json=True,
+        )
         rf = RobinsonFouldsDistance(args)
         tree_zero = mocker.Mock()
         tree_one = mocker.Mock()

@@ -739,6 +739,7 @@ Results:
 | `density_map` module import without eager JSON/plot/color helpers | median cold subprocess import after localizing output, PlotConfig, circular-layout, and color-annotation helpers | 0.014782s | 0.005735s | 2.58x |
 | `density_map` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.007946s | 0.005545s | 1.43x |
 | `RobinsonFouldsDistance.run` rooting-tip setup | balanced 65536-tip tree, first terminal lookup before rooting | 0.1232s | 0.000005s | 27122.6x |
+| `RobinsonFouldsDistance.run` same-path shortcut | balanced 32768-tip cached tree passed as both inputs, RF calculation and output isolated | 4.477090s | 0.039716s | 112.73x |
 | `RobinsonFouldsDistance._first_terminal_name` direct leftmost descent | balanced depth-17 tree, first terminal lookup, side-by-side previous direct stack helper | 0.000002650s | 0.000001039s | 2.55x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` | balanced 256-tip tree pair, rooted descendant-set RF semantics | 0.2184s | 0.0022s | 101.6x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` direct terminal count | balanced 4096-tip identical tree pair, rooted descendant-set RF semantics | 0.068054s | 0.055135s | 1.23x |
