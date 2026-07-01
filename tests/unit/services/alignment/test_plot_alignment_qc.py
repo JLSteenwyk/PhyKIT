@@ -29,6 +29,39 @@ assert "Bio.AlignIO" not in sys.modules
 
 
 class TestPlotAlignmentQC:
+    def test_robust_feature_center_and_sigma_large_equal_skips_median_and_std(
+        self, monkeypatch
+    ):
+        values = np.full(
+            plot_alignment_qc_module._ROBUST_SIGMA_EQUAL_CHECK_MIN_SIZE + 1,
+            0.75,
+        )
+
+        def fail_reduction(*_args, **_kwargs):
+            raise AssertionError("large equal features should skip median/std")
+
+        monkeypatch.setattr(plot_alignment_qc_module.np, "median", fail_reduction)
+        monkeypatch.setattr(plot_alignment_qc_module.np, "std", fail_reduction)
+
+        median, sigma = plot_alignment_qc_module._robust_feature_center_and_sigma(
+            values
+        )
+
+        assert median == 0.75
+        assert sigma == 0.0
+
+    def test_robust_feature_center_and_sigma_matches_mad_reference(self):
+        values = np.array([1.0, 2.0, 2.0, 4.0, 100.0])
+        median, sigma = plot_alignment_qc_module._robust_feature_center_and_sigma(
+            values
+        )
+
+        expected_median = float(np.median(values))
+        expected_mad = float(np.median(np.abs(values - expected_median)))
+
+        assert median == expected_median
+        assert sigma == 1.4826 * expected_mad
+
     def test_prepare_plot_arrays_reuses_row_values(self):
         rows = [
             {

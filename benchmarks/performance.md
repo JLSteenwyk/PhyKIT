@@ -357,6 +357,7 @@ Results:
 | `alignment_outlier_taxa` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.069810s | 0.022303s | 3.13x |
 | `PlotAlignmentQC` composition-distance scatter panel | 5000 taxa, 250 flagged taxa, Matplotlib Agg setup only | 9.036485s | 0.015365s | 588.14x |
 | `PlotAlignmentQC.run` shared plot-array preparation | 200k synthetic taxa, six QC feature arrays, occupancy/gap ordering, composition panel inputs, and heatmap z-score setup with identical arrays | 0.171046s | 0.097432s | 1.76x |
+| `PlotAlignmentQC` heatmap equal-feature sigma shortcut | 200k / 500k identical finite feature values, side-by-side previous median/MAD plus `np.std` fallback | 0.001939s / 0.005776s | 0.000040728s / 0.000188017s | 47.61x / 30.72x |
 | `PlotAlignmentQC._prepare_plot_arrays` one-pass flagged mask | 500k synthetic taxa, six QC feature arrays, and 13.5k flagged taxa, side-by-side previous `np.fromiter` mask pass | 0.363184s | 0.292066s | 1.24x |
 | `PlotAlignmentQC._prepare_plot_arrays` empty-outlier mask shortcut | 500k synthetic taxa, six QC feature arrays, and no flagged taxa, side-by-side previous per-row set membership path | 1.277690s | 1.108565s | 1.15x |
 | `PlotAlignmentQC._flag_colors` vectorized mask mapping | 1M ordered taxa flags, identical normal/flagged color sequence | 0.036504s | 0.014694s | 2.48x |

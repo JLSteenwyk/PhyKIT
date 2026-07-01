@@ -14,6 +14,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_ROBUST_SIGMA_EQUAL_CHECK_MIN_SIZE = 100_000
 
 
 def AlignmentOutlierTaxa(*args, **kwargs):
@@ -26,6 +27,23 @@ def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
     return _print_json(*args, **kwargs)
+
+
+def _robust_feature_center_and_sigma(finite_vals) -> tuple[float, float]:
+    if finite_vals.size >= _ROBUST_SIGMA_EQUAL_CHECK_MIN_SIZE:
+        first = finite_vals[0]
+        if (
+            first == finite_vals[finite_vals.size // 2]
+            and first == finite_vals[-1]
+            and finite_vals.min() == finite_vals.max()
+        ):
+            return float(first), 0.0
+
+    median = float(np.median(finite_vals))
+    mad = float(np.median(np.abs(finite_vals - median)))
+    if mad > 0:
+        return median, 1.4826 * mad
+    return median, float(np.std(finite_vals))
 
 
 class PlotAlignmentQC(Alignment):
@@ -314,9 +332,7 @@ class PlotAlignmentQC(Alignment):
             finite_vals = values[finite_mask]
             if finite_vals.size < 2:
                 continue
-            median = float(np.median(finite_vals))
-            mad = float(np.median(np.abs(finite_vals - median)))
-            sigma = 1.4826 * mad if mad > 0 else float(np.std(finite_vals))
+            median, sigma = _robust_feature_center_and_sigma(finite_vals)
             if sigma <= 0:
                 continue
             if feature == "occupancy":
