@@ -533,6 +533,7 @@ Results:
 | `PhyloGwas._test_site_categorical` two-group byte offsets | 5k biallelic ASCII sites x 600 taxa x 2 phenotype groups, repeated row totals | 0.293545s | 0.273126s | 1.07x |
 | `PhyloGwas._test_site_categorical` cached Fisher log-combinations | 5k biallelic ASCII sites x 600 taxa x 2 phenotype groups, repeated row totals | 0.092839s | 0.082627s | 1.12x |
 | `PhyloGwas._test_site_categorical` prepared two-group byte counts | 5k biallelic ASCII sites x 600 taxa x 2 phenotype groups, repeated row totals | 0.095170s | 0.060784s | 1.57x |
+| `PhyloGwas` byte major/minor ndarray minmax | 20 / 100 / 600 / 5k / 10k / 100k byte alleles, shared categorical/continuous helper, side-by-side previous `np.min`/`np.max` wrappers | 5.198329s / 2.533913s / 1.377197s / 0.196970s / 0.126234s / 0.012328s | 2.893385s / 1.602335s / 0.941029s / 0.052535s / 0.054851s / 0.009868s | 1.80x / 1.58x / 1.46x / 3.75x / 2.30x / 1.25x |
 | `PhyloGwas._test_site_continuous` | 5k biallelic sites x 600 taxa, continuous phenotype | 1.1932s | 0.1200s | 9.9x |
 | `PhyloGwas._test_site_continuous` ASCII byte-column path | 5k biallelic ASCII sites x 600 taxa, continuous phenotype | 0.122781s | 0.094730s | 1.3x |
 | `PhyloGwas._test_site_continuous` byte-count formula | 5k biallelic ASCII sites x 600 taxa, continuous phenotype | 0.094610s | 0.056158s | 1.7x |
@@ -3448,7 +3449,9 @@ Profiling summary:
   two-sided summation while reducing repeated `lgamma` calls. A later prepared
   two-group byte path counts the minor allele in group 1 directly and derives
   group 0 from the known minor count, avoiding the per-site 512-bin grouped
-  histogram and generic frequency dictionary used by multi-group tests. The
+  histogram and generic frequency dictionary used by multi-group tests. Byte
+  major/minor helpers now use ndarray `min()`/`max()` directly, avoiding lazy
+  NumPy proxy dispatch in both categorical and continuous ASCII paths. The
   Benjamini-Hochberg correction now scales and cumulative-mins the sorted
   p-value buffer in place, then scatters into an uninitialized result array,
   preserving adjusted p-values while reducing temporary allocation pressure.
@@ -3463,7 +3466,8 @@ Profiling summary:
   path computes the same binary correlation from allele counts and the summed
   centered phenotype values for derived alleles, avoiding per-site float binary
   vector allocation. The same min/max byte allele detector removes the fixed
-  histogram setup from ordinary biallelic byte columns. A later scalar cleanup
+  histogram setup from ordinary biallelic byte columns and now reduces through
+  the byte array's own `min()`/`max()` methods. A later scalar cleanup
   uses `math` for per-site square-root and NaN checks and delays importing
   `stdtr` until a non-skipped site actually needs a Student-t p-value. A
   follow-up byte path computes the centered phenotype dot product directly

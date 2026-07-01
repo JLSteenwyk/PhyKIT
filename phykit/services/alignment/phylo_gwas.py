@@ -335,8 +335,8 @@ class PhyloGwas(Alignment):
         if allele_array.size == 0:
             return None
 
-        lower = int(np.min(allele_array))
-        upper = int(np.max(allele_array))
+        lower = int(allele_array.min())
+        upper = int(allele_array.max())
         if lower == upper:
             return None
 
@@ -355,8 +355,8 @@ class PhyloGwas(Alignment):
         if allele_array.size == 0:
             return None
 
-        lower = int(np.min(allele_array))
-        upper = int(np.max(allele_array))
+        lower = int(allele_array.min())
+        upper = int(allele_array.max())
         if lower == upper:
             return None
 

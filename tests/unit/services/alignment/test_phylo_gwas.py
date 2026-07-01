@@ -1579,6 +1579,31 @@ class TestPhyloGwas:
         assert result is not None
         assert result[1:] == ("A", "G", {"X": 0.0, "Y": 1.0})
 
+    def test_byte_major_minor_helpers_use_array_minmax(self, monkeypatch):
+        alleles = np.frombuffer(b"AAAGGG", dtype=np.uint8)
+        group_codes = np.array([0, 0, 0, 1, 1, 1], dtype=np.intp)
+
+        monkeypatch.setattr(
+            phylo_gwas_module.np,
+            "min",
+            lambda *args, **kwargs: pytest.fail(
+                "byte allele helpers should use ndarray.min"
+            ),
+        )
+        monkeypatch.setattr(
+            phylo_gwas_module.np,
+            "max",
+            lambda *args, **kwargs: pytest.fail(
+                "byte allele helpers should use ndarray.max"
+            ),
+        )
+
+        assert PhyloGwas._major_minor_bytes(alleles) == (65, 71, 3)
+        assert PhyloGwas._major_minor_two_group_counts(
+            alleles,
+            group_codes,
+        ) == (65, 71, (0, 3))
+
     def test_test_site_categorical_byte_multiallelic_is_skipped(self):
         service = PhyloGwas.__new__(PhyloGwas)
         alleles = np.frombuffer(b"AACCGG", dtype=np.uint8)
