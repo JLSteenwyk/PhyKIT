@@ -753,7 +753,7 @@ class QuartetNetwork(Tree):
                 elif len(arc_taxa) > len(complement):
                     canonical = complement
                 else:
-                    canonical = arc_taxa if sorted(arc_taxa) < sorted(complement) else complement
+                    canonical = arc_taxa if min(arc_taxa) < min(complement) else complement
 
                 if canonical in seen:
                     continue

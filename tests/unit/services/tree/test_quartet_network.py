@@ -425,6 +425,34 @@ class TestCircularSplitWeights:
         )
         assert len(splits) == 0
 
+    def test_equal_size_circular_split_tiebreak_avoids_sorting(self, monkeypatch):
+        ordering = ["D", "C", "B", "A"]
+        taxa_idx = {taxon: idx for idx, taxon in enumerate(ordering)}
+        dist = [
+            [0, 2, 4, 4],
+            [2, 0, 4, 4],
+            [4, 4, 0, 2],
+            [4, 4, 2, 0],
+        ]
+
+        def fail_sorted(*_args, **_kwargs):
+            raise AssertionError("equal-size split tiebreak should use min")
+
+        monkeypatch.setattr(
+            quartet_network_module,
+            "sorted",
+            fail_sorted,
+            raising=False,
+        )
+
+        splits = QuartetNetwork._compute_circular_split_weights(
+            ordering,
+            dist,
+            taxa_idx,
+        )
+
+        assert splits == [(frozenset({"A", "B"}), 2.0)]
+
 
 class TestBuildSplitsGraph:
     class CountingOrdering(list):

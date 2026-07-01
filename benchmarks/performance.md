@@ -759,6 +759,7 @@ Results:
 | `QuartetNetwork._extract_bipartition_masks` direct postorder | balanced 32768-tip tree, bitmask split extraction setup | 0.175142s | 0.081568s | 2.1x |
 | `QuartetNetwork._extract_bipartition_masks` reverse-preorder postorder helper | balanced 32768-tip tree, bitmask split extraction setup | 0.104120s | 0.067357s | 1.55x |
 | `QuartetNetwork._extract_bipartition_masks` binary child masks | balanced 32768-tip tree, bitmask split extraction setup, side-by-side reverse-preorder helper | 0.053298s | 0.049024s | 1.09x |
+| `QuartetNetwork._compute_circular_split_weights` equal-size tiebreak | 80 / 160 / 220-taxon circular orderings, identical positive split weights, side-by-side previous sorted-half tiebreak | 0.075409s / 0.734834s / 1.975865s | 0.042086s / 0.551053s / 1.674072s | 1.79x / 1.33x / 1.18x |
 | `QuartetNetwork._build_splits_graph` | 80 taxa, 20 circular splits, 33-node quartet graph | 6.1411s | 0.0016s | 3910.4x |
 | `QuartetNetwork._draw_quartet_network` edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.027545s | 0.004864s | 5.66x |
 | `QuartetNetwork.run` batched text quartet output | 100k quartet rows, captured stdout and identical text | 0.180601s | 0.166519s | 1.08x |
@@ -3898,6 +3899,10 @@ Profiling summary:
   binary and unary clades directly before the generic multifurcating loop,
   preserving polytomy skipping while reducing balanced 32768-tip mask extraction
   time from 0.053298s to 0.049024s.
+- `QuartetNetwork._compute_circular_split_weights` equal-size canonical split
+  tiebreaks now compare the minimum taxon on each complementary side instead of
+  sorting both sides, preserving the sorted-lexicographic choice because the
+  two sides are disjoint.
 - `QuartetNetwork._build_splits_graph` baseline time enumerated every
   `2 ** n_splits` sign vector and then compared every valid-node pair to find
   graph edges. The optimized path reuses the existing forbidden-pair rules while
