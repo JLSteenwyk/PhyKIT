@@ -158,6 +158,22 @@ class TestOccupancyPerTaxon(object):
             is_protein=True,
         ) == [("solo", 5 / 9)]
 
+    def test_occupancy_for_sequence_all_valid_ascii_skips_translate(self):
+        class NoTranslateBytes(bytes):
+            def translate(self, *_args, **_kwargs):
+                raise AssertionError("all-valid ASCII sequence should not translate")
+
+        class EncodedString(str):
+            def encode(self, *_args, **_kwargs):
+                return NoTranslateBytes(super().encode(*_args, **_kwargs))
+
+        sequence = EncodedString("ACGT" * 2048)
+
+        assert occupancy_per_taxon_module._occupancy_for_sequence(
+            sequence,
+            is_protein=False,
+        ) == 1.0
+
     def test_occupancy_ascii_matrix_identical_rows_return_shared_occupancy(self):
         record_data = [
             ("a", "ACGTN-?X*"),

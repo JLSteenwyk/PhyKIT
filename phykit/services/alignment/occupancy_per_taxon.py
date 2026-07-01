@@ -15,6 +15,7 @@ _DNA_VALID_LOOKUP = None
 _PROTEIN_VALID_LOOKUP = None
 _DNA_INVALID_BYTES = b"-?*XNxn"
 _PROTEIN_INVALID_BYTES = b"-?*Xx"
+_INVALID_SCAN_BYTES = 4096
 
 
 def print_json(*args, **kwargs):
@@ -114,7 +115,19 @@ def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
 
     try:
         seq_bytes = sequence.encode("ascii")
-        valid_count = len(seq_bytes.translate(None, invalid_bytes))
+        has_invalid = any(
+            code in seq_bytes[:_INVALID_SCAN_BYTES] for code in invalid_bytes
+        )
+        if not has_invalid:
+            has_invalid = any(
+                code in seq_bytes[-_INVALID_SCAN_BYTES:] for code in invalid_bytes
+            )
+        if not has_invalid:
+            has_invalid = any(code in seq_bytes for code in invalid_bytes)
+        if has_invalid:
+            valid_count = len(seq_bytes.translate(None, invalid_bytes))
+        else:
+            valid_count = len(seq_bytes)
     except UnicodeEncodeError:
         sequence = sequence.upper()
         valid_count = len(sequence) - sum(
