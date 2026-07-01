@@ -117,6 +117,8 @@ Results:
 | `PairwiseIdentity.calculate_pairwise_identity_stats` gappy matrix condensed extraction | 1800 taxa x 1200 sites synthetic identity-count matrix, side-by-side previous `np.triu_indices` stats extraction | 0.141980s | 0.058894s | 2.41x |
 | `PairwiseIdentity.calculate_pairwise_identities` identical-sequence shortcut | 400 taxa x 1000 identical DNA sites with gaps/ambiguous symbols, `exclude_gaps=True`, lowercase/uppercase variants, side-by-side previous matrix path | 0.299976s | 0.014772s | 20.31x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` identical-sequence shortcut | 400 taxa x 1000 identical DNA sites with gaps/ambiguous symbols, `exclude_gaps=True`, summary-only stats path | 0.297837s | 0.000242s | 1231.58x |
+| `PairwiseIdentity.calculate_pairwise_identities` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous fallback sequence-array setup before no-pair result | 0.002617416s | 0.000002709s | 966.28x |
+| `PairwiseIdentity.calculate_pairwise_identity_stats` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous full-result fallback before no-values stats | 0.004708167s | 0.000002458s | 1915.27x |
 | `PairwiseIdentity._identity_for_identical_sequence` gap count | 20 repeated 4.5M-site identical DNA sequences, `exclude_gaps=True`, side-by-side previous per-character membership loop | 9.847190s | 0.367208s | 26.82x |
 | `AlignmentLengthNoGaps`/`PairwiseIdentity` identical-row no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
 | `PairwiseIdentity.calculate_pairwise_identities` sequential fallback pair streaming | 500 mixed-length records, multiprocessing disabled, worker and stats helper held constant | 1.010443s | 0.595901s | 1.70x |
@@ -2548,7 +2550,9 @@ Profiling summary:
   constant statistics directly while full-result runs still emit every pair row.
   The identical-sequence guard now scans the sequence list by index instead of
   materializing `sequences[1:]`, preserving early mismatch exits without a
-  temporary list copy.
+  temporary list copy. Alignments with fewer than two records now return the
+  existing no-pair result and no-values summary before matrix probing or
+  fallback sequence-array construction.
   Mixed-length or non-ASCII sequential fallback runs now compute the pair count
   arithmetically and stream `itertools.combinations` into the batch worker,
   reserving full pair-list materialization for the multiprocessing chunking path.

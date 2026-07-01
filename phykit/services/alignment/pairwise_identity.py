@@ -131,6 +131,17 @@ def _constant_identity_stats(identity: float, n_pairs: int):
     )
 
 
+def _empty_pairwise_identity_stats():
+    return calculate_summary_statistics_from_dict({})
+
+
+def _alignment_size(alignment):
+    try:
+        return len(alignment)
+    except TypeError:
+        return None
+
+
 def _identity_for_identical_sequence(
     first_sequence: str,
     is_protein: bool,
@@ -609,6 +620,10 @@ class PairwiseIdentity(Alignment):
         exclude_gaps: bool,
         is_protein: bool = False,
     ) -> dict[str, float]:
+        alignment_size = _alignment_size(alignment)
+        if alignment_size is not None and alignment_size < 2:
+            return _empty_pairwise_identity_stats()
+
         matrix_stats = self._calculate_pairwise_identity_stats_matrix(
             alignment,
             is_protein,
@@ -630,6 +645,10 @@ class PairwiseIdentity(Alignment):
         exclude_gaps: bool,
         is_protein: bool = False,
     ) -> tuple[list[list[str]], dict[str, float], dict[str, float]]:
+        alignment_size = _alignment_size(alignment)
+        if alignment_size is not None and alignment_size < 2:
+            return [], {}, _empty_pairwise_identity_stats()
+
         matrix_result = self._calculate_pairwise_identities_matrix(
             alignment,
             is_protein,

@@ -2,6 +2,7 @@ from argparse import Namespace
 import importlib
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -243,6 +244,48 @@ class TestPairwiseIdentity:
         assert "a-b" in identities
         assert round(identities["a-b"], 4) == 0.75
         assert "mean" in stats
+
+    def test_single_record_pairwise_identities_return_before_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError(
+                    "single-record pairwise identity should not inspect sequence"
+                )
+
+        alignment = [SimpleNamespace(id="solo", seq=UnstringableSequence())]
+        service = PairwiseIdentity(args)
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert pair_ids == []
+        assert identities == {}
+        assert stats is None
+
+    def test_single_record_pairwise_identity_stats_return_before_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError(
+                    "single-record pairwise identity stats should not inspect sequence"
+                )
+
+        alignment = [SimpleNamespace(id="solo", seq=UnstringableSequence())]
+        service = PairwiseIdentity(args)
+
+        stats = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert stats is None
 
     def test_calculate_pairwise_identities_sequential_streams_pairs(
         self, mocker, args
