@@ -663,6 +663,40 @@ class Cophylo(Tree):
         plt.close(fig)
         print(f"Saved cophylo plot: {output_path}")
 
+    @staticmethod
+    def _assign_internal_y_positions(preorder_clades, node_y) -> None:
+        for clade in reversed(preorder_clades):
+            children = clade.clades
+            if not children or id(clade) in node_y:
+                continue
+
+            child_count = len(children)
+            if child_count == 2:
+                left_y = node_y.get(id(children[0]))
+                right_y = node_y.get(id(children[1]))
+                if left_y is not None and right_y is not None:
+                    node_y[id(clade)] = (left_y + right_y) * 0.5
+                elif left_y is not None:
+                    node_y[id(clade)] = left_y
+                elif right_y is not None:
+                    node_y[id(clade)] = right_y
+                else:
+                    node_y[id(clade)] = 0.0
+                continue
+
+            if child_count == 1:
+                node_y[id(clade)] = node_y.get(id(children[0]), 0.0)
+                continue
+
+            total_y = 0.0
+            seen = 0
+            for child in children:
+                child_y = node_y.get(id(child))
+                if child_y is not None:
+                    total_y += child_y
+                    seen += 1
+            node_y[id(clade)] = total_y / seen if seen else 0.0
+
     def _draw_phylogram(
         self, ax, tree, tip_order: dict[str, int],
         direction: str = "right", color: str = "#333333",
@@ -701,15 +735,7 @@ class Cophylo(Tree):
                     node_x[id(clade)] = node_x[id(parent)] + bl
 
         # Internal node y-positions (mean of children)
-        for clade in reversed(preorder_clades):
-            if clade.clades and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = sum(child_ys) / len(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        self._assign_internal_y_positions(preorder_clades, node_y)
 
         # For mirrored trees, flip x so root is on the right
         max_x = max(node_x.values()) if node_x else 1.0

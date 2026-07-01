@@ -601,6 +601,34 @@ class TestRun:
 
         assert observed_ids == expected_ids
 
+    def test_assign_internal_y_positions_uses_binary_fast_path(self):
+        from Bio.Phylo.BaseTree import Clade
+
+        class IndexedOnlyList(list):
+            def __iter__(self):
+                raise AssertionError("binary y-position helper should not iterate")
+
+        left = Clade(name="A")
+        right = Clade(name="B")
+        binary = Clade(clades=IndexedOnlyList([left, right]))
+        singleton = Clade(name="C")
+        unary = Clade(clades=[singleton])
+        extra = Clade(name="D")
+        root = Clade(clades=[binary, unary, extra])
+        preorder_clades = [root, binary, left, right, unary, singleton, extra]
+        node_y = {
+            id(left): 0.0,
+            id(right): 4.0,
+            id(singleton): 8.0,
+            id(extra): 12.0,
+        }
+
+        Cophylo._assign_internal_y_positions(preorder_clades, node_y)
+
+        assert node_y[id(binary)] == 2.0
+        assert node_y[id(unary)] == 8.0
+        assert node_y[id(root)] == pytest.approx((2.0 + 8.0 + 12.0) / 3.0)
+
     def test_build_parent_map_handles_mixed_child_counts(self, monkeypatch):
         svc = Cophylo.__new__(Cophylo)
         tree = Phylo.read(

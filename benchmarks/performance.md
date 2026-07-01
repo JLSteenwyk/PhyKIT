@@ -1663,6 +1663,7 @@ Results:
 | `Cophylo._preorder_clades` order-preserving child push | balanced 131072-tip tree, direct preorder helper with identical clade order, side-by-side previous `reversed(children)` helper | 0.051055s | 0.043574s | 1.17x |
 | `Cophylo._terminal_clades` order-preserving child push | balanced 131072-tip tree, direct terminal helper with identical terminal order, side-by-side previous `reversed(children)` helper | 0.044053s | 0.040119s | 1.10x |
 | `Cophylo._draw_phylogram` rectangular setup | balanced 8192-tip tree, no-op axes for branch/label drawing | 0.1437s | 0.0556s | 2.6x |
+| `Cophylo._assign_internal_y_positions` binary child means | 10 y-position setup passes over balanced 8192-tip / 32768-tip trees, side-by-side previous child-list materialization and `sum` path | 0.133501s / 1.018189s | 0.079229s / 0.621230s | 1.68x / 1.64x |
 | `Cophylo._draw_phylogram` batched LineCollections | balanced 2048-tip tree, one side phylogram, real Matplotlib Agg branch/label render | 1.928144s | 0.522134s | 3.69x |
 | `Cophylo._plot_cophylo_rect` association connectors | 4096 mapped taxa, real Matplotlib Agg middle-panel connector render | 0.693452s | 0.098376s | 7.05x |
 | `Cophylo` rectangular clade-color overlay rendering | two balanced 2048-tip trees, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 2.652615s | 0.090716s | 29.24x |
@@ -6102,7 +6103,9 @@ Profiling summary:
   node coordinates and drawing branches/labels, with generic Bio.Phylo
   traversal retained as fallback for nonstandard tree-like objects. A later
   parent-map pass localizes stack operations and pushes child lists directly
-  because the helper returns a map rather than an ordered traversal. A later
+  because the helper returns a map rather than an ordered traversal. Internal
+  y-position setup now computes unary and binary child means directly, avoiding
+  a child y-value list allocation for common tree shapes. A later
   Matplotlib pass batches vertical and horizontal base branch segments into two
   `LineCollection`s on real axes, while preserving the per-plot fallback for
   lightweight axes. A later rectangular plotting pass batches middle-panel
