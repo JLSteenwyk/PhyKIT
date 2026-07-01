@@ -115,6 +115,28 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         result = cer_module._zscore([1.0, 2.0, 3.0])
         self.assertTrue(np.allclose(result, [-1.2247448714, 0.0, 1.2247448714]))
 
+    def test_zscore_small_vector_avoids_std_reduction(self):
+        values = np.arange(12.0)
+        expected = (values - np.mean(values)) / np.std(values)
+
+        with patch.object(
+            cer_module.np,
+            "std",
+            side_effect=AssertionError("small z-score should use centered sums"),
+        ):
+            result = cer_module._zscore(values)
+
+        np.testing.assert_allclose(result, expected)
+
+    def test_zscore_large_vector_keeps_numpy_std_path(self):
+        values = np.arange(cer_module._ZSCORE_FAST_MAX_SIZE + 1, dtype=float)
+
+        with patch.object(cer_module.np, "std", wraps=cer_module.np.std) as std_spy:
+            result = cer_module._zscore(values)
+
+        assert std_spy.call_count == 1
+        np.testing.assert_allclose(result, (values - np.mean(values)) / np.std(values))
+
     def test_pearsonr_matches_expected_two_sided_p_value(self):
         r_value, p_value = cer_module._pearsonr(
             [1.0, 2.0, 3.0, 4.0],

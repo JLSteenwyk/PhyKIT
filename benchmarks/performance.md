@@ -1126,6 +1126,7 @@ Results:
 | `CovaryingEvolutionaryRates._correct_branch_lengths_from_exact_splits` reference direct postorder | exact-matching balanced 16384-tip gene trees plus reference | 0.188390s | 0.153965s | 1.22x |
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` reverse-preorder helper | exact-matching balanced 16384-tip reference tree metadata | 0.064371s | 0.053343s | 1.21x |
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` order-preserving child push | balanced 32768-tip reference tree metadata, optimized helper baseline | 0.105540s | 0.092782s | 1.14x |
+| `CovaryingEvolutionaryRates._zscore` centered sum-of-squares path | 260 / 1000 / 5000 / 50000 branch-length values, side-by-side previous separate `np.mean` and `np.std` reductions | 0.000019512s / 0.000015718s / 0.000019248s / 0.000085509s | 0.000008080s / 0.000006586s / 0.000009209s / 0.000049810s | 2.41x / 2.39x / 2.09x / 1.72x |
 | `CovaryingEvolutionaryRates._pearsonr` dot-product correlation | 10k corrected branch-length pairs, SciPy already warm, side-by-side previous normalized-vector helper | 0.000086246s | 0.000045948s | 1.88x |
 | `CovaryingEvolutionaryRates._tips_to_prune_for_shared` ordered prune-list scan | 400k tree-zero tips, tree-one tips, reference tips, and 300k shared tips | 0.277122s | 0.069708s | 3.98x |
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` flat outlier indices | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, side-by-side previous `np.where(...)[0]` extraction | 0.012458s | 0.005730s | 2.17x |

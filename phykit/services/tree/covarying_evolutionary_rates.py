@@ -49,10 +49,15 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_ZSCORE_FAST_MAX_SIZE = 50_000
 
 
 def _zscore(values):
     arr = np.asarray(values, dtype=float)
+    if 0 < arr.size <= _ZSCORE_FAST_MAX_SIZE:
+        centered = arr - arr.mean()
+        variance = (centered * centered).sum() / centered.size
+        return centered / math.sqrt(float(variance))
     return (arr - np.mean(arr)) / np.std(arr)
 
 
