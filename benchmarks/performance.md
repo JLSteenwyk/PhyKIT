@@ -1313,6 +1313,7 @@ Results:
 | `parsimony_utils.fitch_uppass_acctran` direct preorder | balanced 32768-tip tree, eight-character state sets after downpass | 0.162745s | 0.077135s | 2.11x |
 | `parsimony_utils._preorder_clades_direct` binary-child fast path | balanced 32768-tip tree, direct preorder helper for parsimony uppass/change traversal | 0.013750s | 0.006956s | 1.98x |
 | `parsimony_utils.classify_changes` plain-dict transition counts | balanced 32768-tip tree, 24-character synthetic branch-change map with 1.26M changes, identical classifications | 1.033947s | 0.943712s | 1.10x |
+| `parsimony_utils.retention_index` large-alphabet ASCII state counts | 1000 characters x 500 taxa / 6000 characters x 1200 taxa / 10000 characters x 256 taxa with 22-46 observed states, side-by-side repeated equality scans | 0.790840s / 1.323010s / 1.573656s | 0.333097s / 0.462331s / 0.455574s | 2.37x / 2.86x / 3.45x |
 | `parsimony_utils` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in annotations | 0.022870s | 0.020804s | 1.10x |
 | `PhyloLogistic._build_logistic_vcv` | balanced 512-tip tree, OU-transformed VCV at alpha=0.05 | 0.1049s | 0.0970s | 1.1x |
 | `discrete_models.felsenstein_pruning` transition matrix cache | balanced 4096-tip tree, two-state ER model, repeated unit branch lengths | 0.0725s | 0.0244s | 3.0x |
@@ -5133,6 +5134,10 @@ Profiling summary:
   `classify_changes` now counts `(character, new_state)` transitions with a
   plain dictionary instead of `Counter`, avoiding the subclass overhead while
   preserving the same lookups for transitions collected from the first pass.
+  `retention_index` now counts large ASCII state alphabets with one per-character
+  `bincount` histogram instead of repeated full-matrix equality scans, while
+  retaining the equality-count path for smaller DNA-sized alphabets where it is
+  competitive.
   `resolve_polytomies` now resolves during a direct standard-tree scan and
   imports `Newick` lazily only when it finds a multifurcation; nested
   multifurcation output remains identical to the previous postorder-list path.

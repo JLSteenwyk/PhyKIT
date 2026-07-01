@@ -633,9 +633,7 @@ def _retention_index_ascii_single_char(
     if symbols.size == 0:
         return [None] * n_chars, None
 
-    symbol_counts = np.vstack(
-        [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
-    )
+    symbol_counts = _ascii_symbol_counts_by_character(matrix, symbols)
     observed_taxa = np.sum(symbol_counts, axis=0)
     n_states = np.count_nonzero(symbol_counts, axis=0)
     f_max = np.max(symbol_counts, axis=0)
@@ -659,3 +657,22 @@ def _retention_index_ascii_single_char(
         ri_overall = None
 
     return ri_per_char, ri_overall
+
+
+def _ascii_symbol_counts_by_character(matrix, symbols):
+    import numpy as np
+
+    if symbols.size >= 16:
+        n_chars = matrix.shape[0]
+        max_code = int(matrix.max()) + 1
+        encoded = matrix.astype(np.int64)
+        encoded += (np.arange(n_chars, dtype=np.int64) * max_code)[:, None]
+        counts = np.bincount(
+            encoded.ravel(),
+            minlength=n_chars * max_code,
+        ).reshape(n_chars, max_code)
+        return counts[:, symbols].T
+
+    return np.vstack(
+        [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+    )

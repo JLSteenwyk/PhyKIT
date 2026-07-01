@@ -10,6 +10,7 @@ import sys
 import builtins
 
 import pytest
+import numpy as np
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 from io import StringIO
@@ -858,6 +859,56 @@ class TestConsistencyIndex:
 # ---------------------------------------------------------------------------
 
 class TestRetentionIndex:
+    def test_ascii_symbol_counts_by_character_matches_reference(self):
+        alphabet = np.frombuffer(b"ACGT-?", dtype=np.uint8)
+        matrix = np.array(
+            [
+                [ord("A"), ord("C"), ord("A"), ord("?")],
+                [ord("G"), ord("G"), ord("-"), ord("T")],
+                [ord("C"), ord("C"), ord("C"), ord("A")],
+            ],
+            dtype=np.uint8,
+        )
+        symbols = alphabet[(alphabet != ord("?")) & (alphabet != ord("-"))]
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        np.testing.assert_array_equal(observed, expected)
+
+    def test_ascii_symbol_counts_by_character_large_alphabet_uses_bincount(
+        self,
+        monkeypatch,
+    ):
+        alphabet = np.arange(33, 57, dtype=np.uint8)
+        matrix = np.tile(alphabet, 120).reshape(80, -1)
+        symbols = np.unique(matrix)
+        original_bincount = np.bincount
+        calls = 0
+
+        def count_bincount(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(np, "bincount", count_bincount)
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        assert calls == 1
+        np.testing.assert_array_equal(observed, expected)
+
     def test_basic(self):
         """RI with known values."""
         # 4 taxa: A=0, B=0, C=1, D=1
