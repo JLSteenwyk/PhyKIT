@@ -21,7 +21,7 @@ class TestIBS(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
+        expected_calls = [
             call("mean: 6.9872"),
             call("median: 3.8738"),
             call("25th percentile: 2.0946"),
@@ -30,6 +30,9 @@ class TestIBS(object):
             call("maximum: 20.592"),
             call("standard deviation: 8.0114"),
             call("variance: 64.1826")
+        ]
+        assert mocked_print.mock_calls == [
+            call("\n".join(c.args[0] for c in expected_calls))
         ]
 
     @patch("builtins.print")
@@ -42,7 +45,7 @@ class TestIBS(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
+        expected_calls = [
             call("mean: 0.0074"),
             call("median: 0.0007"),
             call("25th percentile: 0.0004"),
@@ -51,6 +54,9 @@ class TestIBS(object):
             call("maximum: 0.0337"),
             call("standard deviation: 0.0129"),
             call("variance: 0.0002")
+        ]
+        assert mocked_print.mock_calls == [
+            call("\n".join(c.args[0] for c in expected_calls))
         ]
 
     @patch("builtins.print")
@@ -115,7 +121,7 @@ class TestIBS(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
+        expected_calls = [
             call("mean: 6.9872"),
             call("median: 3.8738"),
             call("25th percentile: 2.0946"),
@@ -125,11 +131,16 @@ class TestIBS(object):
             call("standard deviation: 8.0114"),
             call("variance: 64.1826")
         ]
+        assert mocked_print.mock_calls == [
+            call("\n".join(c.args[0] for c in expected_calls))
+        ]
 
     @patch("builtins.print")
     def test_internal_branch_stats_alias(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = ["phykit", "ibs"]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

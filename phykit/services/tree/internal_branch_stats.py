@@ -50,7 +50,7 @@ class InternalBranchStats(Tree):
         if self.json_output:
             if self.verbose:
                 rows = [
-                    dict(length=round(length, 4), terminals=names)
+                    {"length": round(length, 4), "terminals": names}
                     for length, names in lengths_and_names
                 ]
                 print_json(
