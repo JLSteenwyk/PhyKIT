@@ -1532,6 +1532,7 @@ Results:
 | `LBScore._calculate_lb_components_fast` postorder child push | balanced 32768-tip tree, linear component helper, side-by-side previous `reversed(children)` setup | 0.159546s | 0.132146s | 1.21x |
 | `LBScore.calculate_lb_score_per_taxa` without NumPy startup | cold subprocess, 32768 average-distance values transformed to LB scores | 0.098413s | 0.029658s | 3.32x |
 | `LBScore.run` verbose text output | 200k taxon LB-score rows, mocked tree/read and identical stdout text | 0.119431s | 0.093329s | 1.28x |
+| `LBScore.run` verbose JSON row construction | 500k mocked taxon LB-score rows, identical row dictionaries | 0.577324s | 0.423637s | 1.36x |
 | `LBScore.run` cached read-only tree setup | balanced 32768-tip cached tree, LB calculation and output mocked | 0.381093s | 0.000095s | 4002.74x |
 | `lb_score` module import without eager tqdm | cold subprocess import of `phykit.services.tree.lb_score` | 0.211205s | 0.182790s | 1.16x |
 | `lb_score` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.147666s | 0.046242s | 3.19x |

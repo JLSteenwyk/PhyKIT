@@ -92,7 +92,7 @@ class LBScore(Tree):
         if self.json_output:
             if self.verbose:
                 rows = [
-                    dict(taxon=tip, lb_score=round(LBi, 4))
+                    {"taxon": tip, "lb_score": round(LBi, 4)}
                     for tip, LBi in zip(tips, LBis)
                 ]
                 print_json(
