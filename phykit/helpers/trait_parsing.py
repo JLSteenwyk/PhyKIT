@@ -211,7 +211,6 @@ def response_predictor_arrays(
 ):
     """Build response and intercept design arrays from selected trait columns."""
     import numpy as np
-    from operator import itemgetter
 
     n_rows = len(ordered_names)
     if not predictor_indices:
@@ -222,20 +221,43 @@ def response_predictor_arrays(
         )
         return y, np.ones((n_rows, 1), dtype=float)
 
-    if len(predictor_indices) <= 4:
-        y = np.fromiter(
-            (traits[name][response_index] for name in ordered_names),
-            dtype=float,
-            count=n_rows,
-        )
-        X = np.ones((n_rows, len(predictor_indices) + 1), dtype=float)
-        for output_col, trait_col in enumerate(predictor_indices, start=1):
-            X[:, output_col] = np.fromiter(
-                (traits[name][trait_col] for name in ordered_names),
-                dtype=float,
-                count=n_rows,
-            )
+    predictor_count = len(predictor_indices)
+    if predictor_count <= 4:
+        y = np.empty(n_rows, dtype=float)
+        X = np.ones((n_rows, predictor_count + 1), dtype=float)
+        if predictor_count == 1:
+            pred0 = predictor_indices[0]
+            for row_idx, name in enumerate(ordered_names):
+                row = traits[name]
+                y[row_idx] = row[response_index]
+                X[row_idx, 1] = row[pred0]
+        elif predictor_count == 2:
+            pred0, pred1 = predictor_indices
+            for row_idx, name in enumerate(ordered_names):
+                row = traits[name]
+                y[row_idx] = row[response_index]
+                X[row_idx, 1] = row[pred0]
+                X[row_idx, 2] = row[pred1]
+        elif predictor_count == 3:
+            pred0, pred1, pred2 = predictor_indices
+            for row_idx, name in enumerate(ordered_names):
+                row = traits[name]
+                y[row_idx] = row[response_index]
+                X[row_idx, 1] = row[pred0]
+                X[row_idx, 2] = row[pred1]
+                X[row_idx, 3] = row[pred2]
+        else:
+            pred0, pred1, pred2, pred3 = predictor_indices
+            for row_idx, name in enumerate(ordered_names):
+                row = traits[name]
+                y[row_idx] = row[response_index]
+                X[row_idx, 1] = row[pred0]
+                X[row_idx, 2] = row[pred1]
+                X[row_idx, 3] = row[pred2]
+                X[row_idx, 4] = row[pred3]
         return y, X
+
+    from operator import itemgetter
 
     getter = itemgetter(response_index, *predictor_indices)
     selected = np.asarray([getter(traits[name]) for name in ordered_names], dtype=float)

@@ -197,7 +197,7 @@ def test_response_predictor_arrays_builds_intercept_design_matrix():
     assert X.tolist() == [[1.0, 100.0, 1.0], [1.0, 200.0, 2.0], [1.0, 300.0, 3.0]]
 
 
-def test_response_predictor_arrays_narrow_design_avoids_selected_matrix(mocker):
+def test_response_predictor_arrays_narrow_design_uses_single_row_pass(mocker):
     import numpy as np
 
     traits = {
@@ -208,7 +208,12 @@ def test_response_predictor_arrays_narrow_design_avoids_selected_matrix(mocker):
     mocked_asarray = mocker.patch.object(
         np,
         "asarray",
-        side_effect=AssertionError("narrow selected columns should use fromiter"),
+        side_effect=AssertionError("narrow selected columns should fill rows directly"),
+    )
+    mocked_fromiter = mocker.patch.object(
+        np,
+        "fromiter",
+        side_effect=AssertionError("narrow selected columns should fill rows directly"),
     )
 
     y, X = response_predictor_arrays(
@@ -219,6 +224,7 @@ def test_response_predictor_arrays_narrow_design_avoids_selected_matrix(mocker):
     )
 
     mocked_asarray.assert_not_called()
+    mocked_fromiter.assert_not_called()
     assert y.tolist() == [10.0, 20.5, 30.0]
     assert X.tolist() == [[1.0, 100.0], [1.0, 200.0], [1.0, 300.0]]
 

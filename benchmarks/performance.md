@@ -51,6 +51,7 @@ Results:
 | `trait_parsing.trait_matrix_from_rows` direct row matrix | 120k taxa x 12 numeric traits, ordered trait rows to NumPy matrix | 0.137167s | 0.038031s | 3.61x |
 | `trait_parsing.response_predictor_arrays` selected-column design matrix | 180k taxa x 10 parsed trait columns, one response plus four predictors | 0.147410s | 0.060780s | 2.43x |
 | `trait_parsing.response_predictor_arrays` narrow design matrix | 180k taxa x 20 parsed trait columns, one response plus one predictor | 0.063154s | 0.024249s | 2.60x |
+| `trait_parsing.response_predictor_arrays` narrow single-pass row fill | 180k taxa x 20 parsed trait columns, one response plus 1 / 2 / 3 / 4 predictors, side-by-side previous per-column `fromiter` fill | 0.153337s / 0.309945s / 0.625781s / 0.704461s | 0.139701s / 0.171461s / 0.233177s / 0.273237s | 1.10x / 1.81x / 2.68x / 2.58x |
 | Regression-style trait-name index resolution | 40k parsed trait columns, one response plus 800 predictors, first duplicate index preserved | 0.461402s | 0.002792s | 165.26x |
 | `trait_parsing.subset_traits_to_ordered_shared_taxa` ordered shared comparison | 300k ordered taxa, all shared / 150k shared subset, avoiding set allocation | 0.026659s / 0.034705s | 0.000216s / 0.015925s | 123.5x / 2.18x |
 | `phykit.phykit` CLI startup without registry `typing` imports | median cold subprocess import after converting registry/factory annotation-only aliases to built-in annotations | 0.035697s | 0.032062s | 1.11x |
@@ -2467,9 +2468,10 @@ Profiling summary:
   PhylogeneticOrdination, and multivariate PhylogeneticSignal use the helper.
   Regression-style design matrix setup now gathers the response and predictor
   columns in one selected-column pass with `itemgetter`, and builds the
-  intercept matrix directly; one-to-four-predictor designs now fill each
-  selected column with `np.fromiter()` to avoid a temporary tuple matrix, while
-  wider designs retain the faster `itemgetter` matrix path. PhylogeneticRegression,
+  intercept matrix directly; one-to-four-predictor designs then moved from one
+  `np.fromiter()` pass per selected column to a single row-fill pass, avoiding
+  repeated taxon dictionary lookups while still skipping the temporary tuple
+  matrix. Wider designs retain the faster `itemgetter` matrix path. PhylogeneticRegression,
   PhyloLogistic, and PhylogeneticGLM use the helper. Their run paths now build
   a first-occurrence trait-name index map once before validation and column
   extraction, preserving `list.index()` behavior for duplicate names while
