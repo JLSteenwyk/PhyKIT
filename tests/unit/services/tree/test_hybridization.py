@@ -657,6 +657,7 @@ class TestPlotCreated:
         from Bio import Phylo
         from Bio.Phylo.BaseTree import TreeMixin
         from io import StringIO
+        import numpy as numpy_module
 
         output = str(tmp_path / "test_hybrid_direct_traversal.png")
         args = _make_args(plot_output=output)
@@ -688,7 +689,13 @@ class TestPlotCreated:
         def fail_find_clades(*args, **kwargs):
             raise AssertionError("standard plotting should reuse direct traversals")
 
+        def fail_np_mean(*args, **kwargs):
+            raise AssertionError(
+                "plot coordinate setup should average child y values without NumPy"
+            )
+
         monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+        monkeypatch.setattr(numpy_module, "mean", fail_np_mean)
 
         svc._plot(
             species_tree,

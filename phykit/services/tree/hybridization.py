@@ -276,7 +276,7 @@ class Hybridization(Tree):
                     node_y[id(c)] for c in clade.clades if id(c) in node_y
                 ]
                 if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
+                    node_y[id(clade)] = sum(child_ys) / len(child_ys)
                 else:
                     node_y[id(clade)] = 0.0
 

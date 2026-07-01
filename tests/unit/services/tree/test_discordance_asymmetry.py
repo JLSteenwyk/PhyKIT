@@ -791,6 +791,7 @@ class TestPlot:
         from Bio import Phylo
         from Bio.Phylo.BaseTree import TreeMixin
         from io import StringIO
+        import numpy as numpy_module
         from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
 
         output = str(tmp_path / "test_asym_direct_traversal.png")
@@ -825,7 +826,13 @@ class TestPlot:
         def fail_find_clades(*args, **kwargs):
             raise AssertionError("standard plotting should reuse direct traversals")
 
+        def fail_np_mean(*args, **kwargs):
+            raise AssertionError(
+                "plot coordinate setup should average child y values without NumPy"
+            )
+
         monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+        monkeypatch.setattr(numpy_module, "mean", fail_np_mean)
 
         svc._plot(
             species_tree,

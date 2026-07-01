@@ -893,6 +893,7 @@ Results:
 | `DiscordanceAsymmetry._plot` significant star markers | 4096 significant branch markers, real Matplotlib Agg scatter render | 6.537405s | 0.013889s | 470.69x |
 | `DiscordanceAsymmetry._plot` repeated asymmetry-ratio color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title/legend disabled and repeated per-internal-node asymmetry ratio | 0.482074s | 0.427223s | 1.13x |
 | `Hybridization`/`DiscordanceAsymmetry` plot setup | balanced 4096-tip species tree, rectangular branch-result lookup setup | 0.1725s | 0.0696s | 2.5x |
+| `Hybridization`/`DiscordanceAsymmetry` child-y coordinate mean | balanced 32768-tip species tree, postorder node-y coordinate setup with identical positions | 0.466845s | 0.046268s | 10.09x |
 | `PolytomyTest._evaluate_tree_triplets_fast` | balanced 1024-tip tree, 8k group triplets | 5.0266s | 0.0481s | 104.4x |
 | `PolytomyTest._evaluate_tree_triplets_fast` triplet/group-set reuse | balanced 1024-tip tree, 8k group triplets, side-by-side previous per-triplet group conversion | 0.037052s | 0.025503s | 1.45x |
 | `PolytomyTest._common_ancestor_from_path_cache` triplet-node check | 2M zipped triplet path node rows, same / second-different / third-different cases, side-by-side previous `nodes[1:]` generator predicate | 2.809178s / 1.873774s / 1.963923s | 0.185879s / 0.076666s / 0.159605s | 15.11x / 24.44x / 12.30x |
@@ -4228,6 +4229,9 @@ Profiling summary:
   `DiscordanceAsymmetry._plot` pass caches colormap results by asymmetry ratio
   inside each rectangular/circular plot call, preserving colors while avoiding
   repeated normalization and colormap calls when branches share the same ratio.
+  Both plotters now compute tiny child-y coordinate means with Python arithmetic
+  during postorder setup, preserving node positions while avoiding one NumPy
+  dispatch per internal branch.
   `DiscordanceAsymmetry._output_text` now batches the branch table, summary, and
   optional verbose per-branch details into one newline-joined print while
   preserving exact stdout text. It also prepares verbose details during the
