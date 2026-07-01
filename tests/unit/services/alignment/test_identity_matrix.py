@@ -330,6 +330,11 @@ class TestIdentityMatrixUnit:
             "taxon_C": "TCGTACGA",
         })
         monkeypatch.setattr(identity_matrix_module, "_NO_INVALID_DIRECT_MIN_LENGTH", 1)
+        monkeypatch.setattr(
+            identity_matrix_module,
+            "_NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA",
+            3,
+        )
         monkeypatch.setattr(identity_matrix_module, "_NO_INVALID_DIRECT_MAX_TAXA", 10)
         mocker.patch.object(
             identity_matrix_module.np,
@@ -354,6 +359,33 @@ class TestIdentityMatrixUnit:
                 ]
             ),
         )
+
+    def test_identity_matrix_clean_ascii_long_alignment_keeps_small_taxa_generic(
+        self, tmp_path, mocker, monkeypatch
+    ):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        _write_alignment(aln_path, {
+            "taxon_A": "ACGTACGT",
+            "taxon_B": "ACGTTCGT",
+        })
+        monkeypatch.setattr(identity_matrix_module, "_NO_INVALID_DIRECT_MIN_LENGTH", 1)
+        monkeypatch.setattr(identity_matrix_module, "_NO_INVALID_DIRECT_MIN_TAXA", 3)
+        monkeypatch.setattr(
+            identity_matrix_module,
+            "_NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA",
+            4,
+        )
+        monkeypatch.setattr(identity_matrix_module, "_NO_INVALID_DIRECT_MAX_TAXA", 10)
+        isin_spy = mocker.spy(identity_matrix_module.np, "isin")
+        args = _make_args(aln_path, out_path)
+        service = IdentityMatrix(args)
+        sequences, taxa_names, _ = service._parse_alignment()
+
+        matrix = service._compute_identity_matrix(sequences, taxa_names)
+
+        assert isin_spy.called
+        np.testing.assert_allclose(matrix, np.array([[1.0, 0.875], [0.875, 1.0]]))
 
     def test_identity_matrix_all_invalid_pairs_are_zero_off_diagonal(self):
         service = IdentityMatrix.__new__(IdentityMatrix)

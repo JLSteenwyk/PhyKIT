@@ -22,6 +22,8 @@ _SQUAREFORM = None
 _IDENTITY_INVALID_BYTES = b"-?NX*nx"
 _IDENTITY_INVALID_CHARS = frozenset("-?NX*nx")
 _NO_INVALID_DIRECT_MIN_LENGTH = 2048
+_NO_INVALID_DIRECT_MIN_TAXA = 100
+_NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA = 150
 _NO_INVALID_DIRECT_MAX_TAXA = 700
 
 
@@ -464,11 +466,19 @@ class IdentityMatrix(Alignment):
         except UnicodeEncodeError:
             return self._compute_identity_matrix_pairwise(sequences, taxa_names)
 
-        if (
-            seq_len >= _NO_INVALID_DIRECT_MIN_LENGTH
+        direct_clean_ascii = (
+            seq_len > 0
             and n <= _NO_INVALID_DIRECT_MAX_TAXA
+            and (
+                n >= _NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA
+                or (
+                    n >= _NO_INVALID_DIRECT_MIN_TAXA
+                    and seq_len >= _NO_INVALID_DIRECT_MIN_LENGTH
+                )
+            )
             and not any(code in joined_bytes for code in _IDENTITY_INVALID_BYTES)
-        ):
+        )
+        if direct_clean_ascii:
             target_bytes = 16 * 1024 * 1024
             block_size = max(
                 1,
