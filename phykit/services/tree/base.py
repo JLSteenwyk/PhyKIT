@@ -653,14 +653,10 @@ class Tree(BaseService):
             list of tips from a second tree
         """
 
-        a_set = set(a)
-        b_set = set(b)
-
-        # check length
-        if len(a_set.intersection(b_set)) > 0:
-            return list(a_set.intersection(b_set))
-        else:
-            raise PhykitUserError(["no common tips"], code=2)
+        shared = set(a).intersection(b)
+        if shared:
+            return list(shared)
+        raise PhykitUserError(["no common tips"], code=2)
 
     def prune_tree_using_taxa_list(self, tree, taxa_to_prune: list):
         """

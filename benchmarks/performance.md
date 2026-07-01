@@ -1057,6 +1057,7 @@ Results:
 | `Tree.calculate_terminal_names_fast` binary child push | balanced 131072-tip tree, terminal name extraction with identical order, side-by-side previous `reversed(children)` helper | 0.021721s | 0.018765s | 1.16x |
 | `Tree.calculate_terminal_clades_fast` child push loop | balanced 65536-tip tree, terminal clade extraction with identical objects/order | 0.017121s | 0.010629s | 1.61x |
 | `Tree.calculate_terminal_clades_fast` binary child push | balanced 131072-tip tree, terminal clade extraction with identical objects/order, side-by-side previous `reversed(children)` helper | 0.021770s | 0.018708s | 1.16x |
+| `Tree.shared_tips` single intersection | 500k names per side with 250k shared names, side-by-side previous duplicate `set.intersection` call | 0.374889s | 0.119761s | 3.13x |
 | `Tree` base module import without eager Bio.Phylo/NumPy | cold subprocess import of `phykit.services.tree.base` | 0.160683s | 0.064937s | 2.47x |
 | `Tree` base module import without typing startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006148s | 0.003180s | 1.93x |
 | `Tree` base module import without `hashlib` startup | median cold subprocess import after localizing cache-key hashing to `_get_file_hash` | 0.003903s | 0.000873s | 4.47x |
@@ -5350,7 +5351,10 @@ Profiling summary:
   objects and keeping root branch-length handling unchanged. A later pass
   localizes stack operations and pushes child lists directly because validation
   does not expose traversal order, reducing the remaining optimized helper cost
-  for both required-length checks and default-length assignment.
+  for both required-length checks and default-length assignment. `shared_tips`
+  now computes the set intersection once before checking emptiness and returning
+  the list, preserving unique-tip semantics while avoiding a duplicate
+  intersection for overlapping tree/taxon lists.
 - `Tree.prune_tree_using_taxa_list` baseline time pruned named taxa directly,
   making Bio.Phylo resolve each string target during every prune. The optimized
   base helper resolves named terminal clades once and prunes objects directly

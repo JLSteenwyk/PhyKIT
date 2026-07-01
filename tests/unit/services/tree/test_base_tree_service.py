@@ -528,6 +528,11 @@ class TestTreeBase:
         shared = service.shared_tips(["a", "b"], ["b", "c"])
         assert shared == ["b"]
 
+    def test_shared_tips_preserves_unique_set_semantics(self):
+        service = Tree()
+        shared = service.shared_tips(["a", "b", "b"], ["b", "b", "c"])
+        assert shared == ["b"]
+
     def test_shared_tips_no_overlap_exits(self, capsys):
         service = Tree()
         with pytest.raises(PhykitUserError) as exc:
