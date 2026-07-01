@@ -103,8 +103,12 @@ def test_vcv_inverse_and_logdet_spd_avoids_inverse_and_slogdet(monkeypatch):
     def fail_slogdet(_matrix):
         raise AssertionError("SPD VCV logdet should use the Cholesky factor")
 
+    def fail_diag(_matrix):
+        raise AssertionError("SPD VCV logdet should read the Cholesky diagonal view")
+
     monkeypatch.setattr(threshold_model_module.np.linalg, "inv", fail_inverse)
     monkeypatch.setattr(threshold_model_module.np.linalg, "slogdet", fail_slogdet)
+    monkeypatch.setattr(threshold_model_module.np, "diag", fail_diag)
 
     observed_inv, observed_logdet = ThresholdModel._vcv_inverse_and_logdet(C)
 

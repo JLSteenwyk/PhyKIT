@@ -949,7 +949,7 @@ class OUShiftDetection(Tree):
         if sig2 <= 0:
             return theta, sig2, float("-inf")
 
-        logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
+        logdet = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
         ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
         return theta, sig2, float(ll)
 

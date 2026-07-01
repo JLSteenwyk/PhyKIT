@@ -2104,6 +2104,7 @@ Results:
 | `RateHeterogeneity._fit_single_rate` | 420 taxa SPD VCV, single continuous trait | 0.0079s | 0.0005s | 15.8x |
 | `RateHeterogeneity._fit_single_rate_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV single-rate BM likelihood evaluations, SciPy already warm | 0.053752s | 0.045064s | 1.19x |
 | `RateHeterogeneity._fit_single_rate_cholesky` cached SciPy Cholesky wrappers | 120 repeated 420-taxon SPD VCV single-rate BM likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.070947s | 0.057375s | 1.24x |
+| Tree Cholesky logdet diagonal extraction | 4 / 16 / 64 / 256 / 1024 / 2048 square factors, side-by-side previous `np.diag` copy before log-sum | 0.000001570s / 0.000002759s / 0.000002770s / 0.000004272s / 0.000005422s / 0.000009910s | 0.000001388s / 0.000001408s / 0.000001560s / 0.000002150s / 0.000005251s / 0.000009730s | 1.13x / 1.96x / 1.78x / 1.99x / 1.03x / 1.02x |
 | `RateHeterogeneity._fit_multi_rate` | 120 taxa x 3 SPD regime covariance matrices | 0.5818s | 0.0843s | 6.9x |
 | `RateHeterogeneity._multi_rate_log_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV multi-rate likelihood evaluations, SciPy already warm | 0.053230s | 0.041447s | 1.28x |
 | `OUShiftDetection` setup traversal pipeline | balanced tree with 4096 tips, parent map, lineages, edges, descendant counts | 0.2012s | 0.0344s | 5.9x |

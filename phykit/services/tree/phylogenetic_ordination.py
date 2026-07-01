@@ -364,7 +364,7 @@ class PhylogeneticOrdination(Tree):
 
         R_mle = (Z.T @ C_inv_Z) / n
 
-        logdet_C = 2.0 * float(np.log(np.diag(factor[0])).sum())
+        logdet_C = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
         sign_R, logdet_R = np.linalg.slogdet(R_mle)
 
         if sign_R <= 0:

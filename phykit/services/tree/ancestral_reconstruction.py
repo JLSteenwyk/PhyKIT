@@ -977,7 +977,7 @@ class AncestralReconstruction(Tree):
             solved = cho_solve(factor, rhs, check_finite=False)
             C_inv_ones = solved[:, 0]
             C_inv_x = solved[:, 1]
-            logdet = 2.0 * float(np.log(np.diag(factor[0])).sum())
+            logdet = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
         except (np.linalg.LinAlgError, FloatingPointError, ValueError):
             try:
                 sign, logdet = np.linalg.slogdet(C)
