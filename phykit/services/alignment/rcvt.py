@@ -116,10 +116,20 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         if num_records == 1:
             return [dict(taxon=alignment[0].id, rcvt=0.0)]
 
-        sequences = [str(record.seq).upper() for record in alignment]
+        raw_sequences = [str(record.seq) for record in alignment]
         aln_len = alignment.get_alignment_length()
-        if _all_sequences_identical(sequences):
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
             return [dict(taxon=record.id, rcvt=0.0) for record in alignment]
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         if is_protein:
             invalid_chars = ["-", "?", "*", "X"]
