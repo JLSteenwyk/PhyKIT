@@ -857,6 +857,41 @@ class TestPoissonGEE:
         assert result["family"] == "poisson"
         assert all(np.isfinite(row["estimate"]) for row in result["coefficients"].values())
 
+    def test_fit_poisson_gee_convergence_uses_delta_array_sum(
+        self, poisson_args, monkeypatch
+    ):
+        svc = PhylogeneticGLM(poisson_args)
+        ordered_names = ["A", "B", "C", "D"]
+        y = np.array([1.0, 2.0, 3.0, 4.0])
+        X = np.column_stack([np.ones(4), np.array([0.1, 0.2, 0.3, 0.4])])
+        svc._precomputed_vcv = np.eye(4)
+
+        def tiny_step(*_args, **_kwargs):
+            return np.eye(2), np.array([1e-12, -2e-12])
+
+        def fail_delta_sum(values, *args, **kwargs):
+            arr = np.asarray(values)
+            if arr.shape == (2,):
+                raise AssertionError("Poisson GEE convergence should use delta.sum")
+            return original_sum(values, *args, **kwargs)
+
+        original_sum = phylogenetic_glm_module.np.sum
+        monkeypatch.setattr(
+            svc,
+            "_poisson_gee_information_and_score_cholesky",
+            tiny_step,
+        )
+        monkeypatch.setattr(
+            svc,
+            "_poisson_gee_information_cholesky",
+            lambda *_args, **_kwargs: np.eye(2),
+        )
+        monkeypatch.setattr(phylogenetic_glm_module.np, "sum", fail_delta_sum)
+
+        result = svc._fit_poisson_gee(tree=None, y=y, X=X, ordered_names=ordered_names)
+
+        assert result["family"] == "poisson"
+
     def test_fit_poisson_gee_uses_information_only_final_covariance(
         self, poisson_args, monkeypatch
     ):

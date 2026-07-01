@@ -1736,6 +1736,7 @@ Results:
 | `PhylogeneticGLM._poisson_gee_information_and_score` RHS-first score multiply | 1200 taxa SPD correlation inverse x 8-column design matrix | 0.001306s | 0.000615s | 2.1x |
 | `PhylogeneticGLM._poisson_gee_information_and_score_cholesky` | 100 repeated 800-taxon SPD correlation x 8-column design matrix Poisson GEE information/score evaluations | 0.059989s | 0.030535s | 1.96x |
 | `PhylogeneticGLM._poisson_gee_information_cholesky` final covariance solve | 100 repeated 800-taxon SPD correlation x 8-column design matrix final Poisson GEE information evaluations | 0.018674s | 0.016339s | 1.14x |
+| `PhylogeneticGLM._fit_poisson_gee` convergence delta reduction | 2 / 4 / 8 / 32 / 128 coefficient deltas, side-by-side previous `np.sum(np.abs(delta))` loop check | 0.000006064s / 0.000004654s / 0.000006191s / 0.000005158s / 0.000006489s | 0.000002508s / 0.000001882s / 0.000002131s / 0.000002579s / 0.000002675s | 2.42x / 2.47x / 2.90x / 2.00x / 2.43x |
 | `PhylogeneticGLM` cached SciPy linalg wrappers | 5k repeated 2x2 Cholesky factor/solve calls, SciPy already warm, side-by-side previous import-on-call wrappers | 0.061566s | 0.052477s | 1.17x |
 | `PhylogeneticGLM` standard-error diagonal solve | 200-coefficient SPD information matrix, side-by-side previous explicit inverse diagonal extraction | 0.002194492s | 0.000213396s | 10.28x |
 | `PhylogeneticGLM._normal_two_tailed_p_values` vectorized special erfc | 200k z statistics, side-by-side previous scalar Python `math.erfc` loop | 0.024712s | 0.001635s | 15.11x |
@@ -6204,9 +6205,11 @@ Profiling summary:
   of materializing dense diagonal weight matrices before cross-products. The
   Poisson GEE score multiply now applies `R^-1` to the score vector first,
   avoiding a larger left-associated `X' R^-1` intermediate. A later pass
-  removed the eager `scipy.stats` import by computing two-tailed z-test p-values
-  with the standard-library complementary error function. A later p-value pass
-  keeps the `scipy.stats` import out of this path but uses cached
+  avoids generic NumPy reduction dispatch in the Poisson GEE convergence check
+  by reducing the small coefficient-delta vector directly. A later pass removed
+  the eager `scipy.stats` import by computing two-tailed z-test p-values with
+  the standard-library complementary error function. A later p-value pass keeps
+  the `scipy.stats` import out of this path but uses cached
   `scipy.special.erfc` as a vectorized ufunc for coefficient z statistics,
   preserving the same two-tailed normal probabilities with far less Python loop
   overhead. A subsequent startup pass replaced the eager `scipy.optimize` import

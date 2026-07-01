@@ -972,7 +972,7 @@ class PhylogeneticGLM(Tree):
 
             beta = beta + delta
 
-            if np.sum(np.abs(delta)) < tol:
+            if np.abs(delta).sum() < tol:
                 converged = True
                 break
 
