@@ -629,6 +629,22 @@ class TestStatisticalTests:
         assert result["mann_whitney_p"] is None
         assert result["permutation_p"] is None
 
+    def test_insufficient_data_does_not_import_numpy_or_scipy(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+svc = EvoTempoMap.__new__(EvoTempoMap)
+result = svc._test_branch([10.0], [5.0])
+assert result["concordant_mean"] == 10.0
+assert result["discordant_mean"] == 5.0
+assert result["mann_whitney_p"] is None
+assert result["permutation_p"] is None
+assert "numpy" not in sys.modules
+assert "scipy" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_summary_stats_correct(self, svc):
         conc = [10.0, 20.0, 30.0]
         disc = [5.0, 15.0, 25.0]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 from io import StringIO
 
@@ -44,6 +45,31 @@ class _LazyPhylo:
 np = _LazyNumpy()
 Phylo = _LazyPhylo()
 _FDR_VECTOR_MIN_LENGTH = 2048
+
+
+def _median(values: list[float]) -> float:
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return float(ordered[mid])
+    return float((ordered[mid - 1] + ordered[mid]) / 2.0)
+
+
+def _sample_std(values: list[float], mean: float) -> float | None:
+    n = len(values)
+    if n < 2:
+        return None
+    variance = sum((value - mean) * (value - mean) for value in values) / (n - 1)
+    return math.sqrt(variance)
+
+
+def _summarize_lengths(
+    values: list[float],
+) -> tuple[float | None, float | None, float | None]:
+    if len(values) == 0:
+        return None, None, None
+    mean = sum(values) / len(values)
+    return float(mean), _median(values), _sample_std(values, mean)
 
 
 class EvoTempoMap(Tree):
@@ -749,9 +775,6 @@ class EvoTempoMap(Tree):
         Returns a dict with summary statistics and p-values, or a dict with
         None values where tests cannot be computed.
         """
-        conc = np.array(concordant_lengths, dtype=float)
-        disc = np.array(discordant_lengths, dtype=float)
-
         result = dict(
             concordant_mean=None,
             concordant_median=None,
@@ -764,21 +787,23 @@ class EvoTempoMap(Tree):
             permutation_p=None,
         )
 
-        # Summary stats for concordant
-        if len(conc) > 0:
-            result["concordant_mean"] = float(np.mean(conc))
-            result["concordant_median"] = float(np.median(conc))
-            result["concordant_std"] = float(np.std(conc, ddof=1)) if len(conc) > 1 else None
-
-        # Summary stats for discordant
-        if len(disc) > 0:
-            result["discordant_mean"] = float(np.mean(disc))
-            result["discordant_median"] = float(np.median(disc))
-            result["discordant_std"] = float(np.std(disc, ddof=1)) if len(disc) > 1 else None
+        (
+            result["concordant_mean"],
+            result["concordant_median"],
+            result["concordant_std"],
+        ) = _summarize_lengths(concordant_lengths)
+        (
+            result["discordant_mean"],
+            result["discordant_median"],
+            result["discordant_std"],
+        ) = _summarize_lengths(discordant_lengths)
 
         # Need at least 2 observations in each group for tests
-        if len(conc) < 2 or len(disc) < 2:
+        if len(concordant_lengths) < 2 or len(discordant_lengths) < 2:
             return result
+
+        conc = np.array(concordant_lengths, dtype=float)
+        disc = np.array(discordant_lengths, dtype=float)
 
         # Mann-Whitney U test (two-sided)
         U, mw_p = _mannwhitneyu(conc, disc, alternative="two-sided")

@@ -836,6 +836,7 @@ Results:
 | `EvoTempoMap._build_parent_map` direct map traversal | balanced 65536-tip tree, branch-classification parent map, optimized helper baseline | 0.026751s | 0.017737s | 1.51x |
 | `EvoTempoMap._iter_preorder_clades` binary-child fast path | balanced 131072-tip tree, branch-classification preorder helper, side-by-side previous `reversed(children)` helper | 0.039015s | 0.034670s | 1.13x |
 | `EvoTempoMap._compute_treeness` batch | 40 balanced 4096-tip gene trees, helper-only treeness values | 0.9191s | 0.0330s | 27.8x |
+| `EvoTempoMap._test_branch` insufficient-data summaries | 10k singleton concordant vs singleton discordant length summaries, identical early-return stats | 0.676468s | 0.022739s | 29.75x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |
 | `evo_tempo_map` module import without eager `scipy.stats` | cold process import for evo-tempo-map command module | 0.690765s | 0.209734s | 3.3x |
@@ -4127,6 +4128,12 @@ Profiling summary:
   two-traversal treeness calculation for every gene tree in global treeness
   comparisons. The optimized path reuses `Tree`'s one-pass internal/total branch
   length helper while preserving this helper's `0.0` result for zero-length trees.
+- `EvoTempoMap._test_branch` eagerly converted concordant and discordant branch
+  length lists into NumPy arrays before determining whether both groups had
+  enough observations for Mann-Whitney and permutation tests. The optimized path
+  computes early-return summary statistics directly from the lists and allocates
+  arrays only after both groups are testable, preserving summary values while
+  avoiding NumPy and SciPy startup for insufficient-data branches.
 - `EvoTempoMap._fdr` baseline time sorted p-values into Python tuples and walked
   them in a reverse Python loop. The optimized path keeps the same
   Benjamini-Hochberg adjustment semantics, including ties, while using NumPy
