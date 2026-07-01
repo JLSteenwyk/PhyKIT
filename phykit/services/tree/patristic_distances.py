@@ -130,6 +130,15 @@ class PatristicDistances(Tree):
         tree = pickle.loads(tree_pickle)
         return [tree.distance(combo[0], combo[1]) for combo in combo_batch]
 
+    @staticmethod
+    def _batched_tip_pairs(tips: list[str], batch_size: int):
+        pairs = itertools.combinations(tips, 2)
+        while True:
+            batch = list(itertools.islice(pairs, batch_size))
+            if not batch:
+                break
+            yield batch
+
     def calculate_distance_between_pairs(
         self,
         tips: list[str],
@@ -193,8 +202,41 @@ class PatristicDistances(Tree):
         if fast_result is not None:
             return fast_result
 
-        _, patristic_distances = self.calculate_distance_between_pairs(tips, tree)
-        return patristic_distances
+        return self._calculate_distance_values_between_pairs_fallback(tips, tree)
+
+    def _calculate_distance_values_between_pairs_fallback(
+        self,
+        tips: list[str],
+        tree,
+    ) -> list[float]:
+        num_pairs = len(tips) * (len(tips) - 1) // 2
+        if num_pairs < 100:
+            return [
+                tree.distance(tip_a, tip_b)
+                for tip_a, tip_b in itertools.combinations(tips, 2)
+            ]
+
+        from functools import partial
+
+        tree_pickle = pickle.dumps(tree)
+        num_workers = min(mp.cpu_count(), 8)
+        chunk_size = max(1, num_pairs // (num_workers * 4))
+        pair_chunks = self._batched_tip_pairs(tips, chunk_size)
+        total_chunks = (num_pairs + chunk_size - 1) // chunk_size
+        calc_func = partial(self._calculate_distance_batch, tree_pickle)
+
+        with mp.Pool(processes=num_workers) as pool:
+            if sys.stderr.isatty():
+                results = list(_with_optional_progress(
+                    pool.imap(calc_func, pair_chunks),
+                    total=total_chunks,
+                    desc="Calculating patristic distances",
+                    unit="batch",
+                ))
+            else:
+                results = pool.map(calc_func, pair_chunks)
+
+        return [dist for chunk_result in results for dist in chunk_result]
 
     def calculate_pairwise_tip_distance_values_fast(
         self,

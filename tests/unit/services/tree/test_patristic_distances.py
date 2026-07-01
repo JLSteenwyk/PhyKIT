@@ -164,6 +164,57 @@ class TestPatristicDistances(object):
         ]
         assert np.allclose(patristic_distances, expected_distances)
 
+    def test_batched_tip_pairs_streams_all_pairs(self, args):
+        t = PatristicDistances(args)
+        tips = ["tip0", "tip1", "tip2", "tip3", "tip4"]
+
+        batches = list(t._batched_tip_pairs(tips, 3))
+        observed_pairs = [pair for batch in batches for pair in batch]
+
+        assert [len(batch) for batch in batches] == [3, 3, 3, 1]
+        assert observed_pairs == list(combinations(tips, 2))
+
+    def test_distance_values_fallback_skips_returned_combos(self, mocker, args):
+        t = PatristicDistances(args)
+        tips = [f"tip{i}" for i in range(15)]
+        tree = _IndexedDummyTree()
+
+        class DummyPool:
+            def __init__(self, processes):
+                self.processes = processes
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, func, chunks):
+                return [func(chunk) for chunk in chunks]
+
+            def imap(self, func, chunks):
+                for chunk in chunks:
+                    yield func(chunk)
+
+        mocker.patch.object(
+            PatristicDistances,
+            "calculate_distance_between_pairs",
+            side_effect=AssertionError("stats-only fallback should not return combos"),
+        )
+        mocker.patch("phykit.services.tree.patristic_distances.mp.Pool", DummyPool)
+        mocker.patch("phykit.services.tree.patristic_distances.mp.cpu_count", return_value=4)
+        mocker.patch("phykit.services.tree.patristic_distances.pickle.dumps", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.patristic_distances.pickle.loads", side_effect=lambda obj: obj)
+        mocker.patch("phykit.services.tree.patristic_distances.sys.stderr.isatty", return_value=False)
+
+        patristic_distances = t.calculate_distance_values_between_pairs(tips, tree)
+
+        expected_distances = [
+            tree.distance(*combo)
+            for combo in combinations(tips, 2)
+        ]
+        assert patristic_distances == expected_distances
+
     def test_distance_values_fast_handles_mixed_child_counts_without_distance(
         self, monkeypatch, args
     ):

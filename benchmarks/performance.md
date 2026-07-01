@@ -664,6 +664,7 @@ Results:
 | `PatristicDistances.calculate_patristic_distance_stats` stats-only path | balanced tree with 768 tips | 0.095535s | 0.078120s | 1.22x |
 | `PatristicDistances.calculate_pairwise_tip_distance_values_fast` child push | balanced 768-tip tree, stats-only pair distances, side-by-side previous `reversed(children)` setup | 0.505635s | 0.377701s | 1.34x |
 | `PatristicDistances.calculate_pairwise_tip_distance_values_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 stats-only pair distances, copied old path baseline | 6.610513s | 0.820027s | 8.06x |
+| `PatristicDistances.calculate_distance_values_between_pairs` stats-only fallback streaming pairs | 2000 nonstandard-tree tips, 1,999,000 pair values, side-by-side previous returned-combo path setup | 1.020654s | 0.610121s | 1.67x |
 | `PatristicDistances.run` verbose text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.134971s | 0.111984s | 1.21x |
 | `patristic_distances` module import without eager Bio.Phylo/tqdm | cold subprocess import of patristic-distances command module | 0.199123s | 0.121178s | 1.64x |
 | `patristic_distances` module import without eager stats NumPy | cold subprocess import after lazy shared summary helper | 0.121178s | 0.073601s | 1.65x |
