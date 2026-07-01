@@ -384,6 +384,7 @@ Results:
 | `AlignmentOutlierTaxa.calculate_outliers` long-branch matrix products | 400 taxa x 1200 sites, alphabet `ACGT-?NX*` | 0.165889s | 0.035340s | 4.69x |
 | `AlignmentOutlierTaxa._blocked_long_branch_proxy` large ambiguous DNA fallback | 3000 taxa x 300 sites, alphabet `ACGTN-`, side-by-side previous per-taxon row loop above full-matrix cutoff | 5.048598s | 2.537640s | 1.99x |
 | `AlignmentOutlierTaxa.calculate_outliers` comparable-pair row counts | 2000 x 2000 comparable-pair boolean matrix, side-by-side previous `np.sum(..., axis=1)` row counts | 0.001769s | 0.001283s | 1.38x |
+| `AlignmentOutlierTaxa.calculate_outliers` pairwise mismatch row totals | 100 / 400 / 1000 / 2000 square float mismatch matrices, side-by-side previous `np.sum(match_counts, axis=1)` reduction | 0.000061s / 0.000112s / 0.001698s / 0.004930s | 0.000027s / 0.000072s / 0.000837s / 0.004420s | 2.29x / 1.56x / 2.03x / 1.12x |
 | `AlignmentOutlierTaxa.calculate_outliers` constant-composition shortcut | 1000 taxa x 5000 sites, conserved ASCII DNA alignment, side-by-side previous full feature pipeline | 0.429936s | 0.042515s | 10.11x |
 | `AlignmentOutlierTaxa.calculate_outliers` identical multi-symbol shortcut | 1000 taxa x 5000 mixed-symbol DNA sites, lowercase/uppercase variants, side-by-side previous full feature pipeline | 8.073867s | 0.014392s | 561.01x |
 | `AlignmentOutlierTaxa` identical Unicode valid length | 100k-site uppercase Unicode identical-sequence helper, DNA / protein, side-by-side previous Python character-membership loop | 0.006644s / 0.005970s | 0.000494s / 0.000388s | 13.45x / 15.38x |
@@ -3170,7 +3171,9 @@ Profiling summary:
   guard for oversized pairwise matrices. The matrix path now counts comparable
   pair rows with `np.count_nonzero` instead of summing boolean rows; the full
   public method moved from 0.734118s to 0.008124s on the 180 x 1200 benchmark
-  while preserving no-overlap distances as `None`. Row assembly now zips the feature arrays and
+  while preserving no-overlap distances as `None`. The pairwise mismatch matrix
+  now computes row totals with the matrix's direct `sum(axis=1)`, avoiding
+  generic `np.sum` dispatch before distance averaging. Row assembly now zips the feature arrays and
   reuses each scalar for threshold checks, rounded public rows, and nested
   reason payloads, avoiding repeated NumPy indexing while preserving reason
   order and `None` no-overlap distances. Text-mode `run` now batches the header,

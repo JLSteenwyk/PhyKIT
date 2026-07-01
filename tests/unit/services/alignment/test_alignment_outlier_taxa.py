@@ -51,6 +51,25 @@ def test_average_site_entropy_common_path_uses_array_sum(monkeypatch):
     assert observed == np.mean(site_entropies)
 
 
+def test_row_sums_use_array_reduction(monkeypatch):
+    matrix = np.array([[1.0, 2.0, 3.0], [4.0, 0.5, 1.5]])
+    expected = matrix.sum(axis=1)
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("pairwise row totals should use ndarray.sum")
+
+    monkeypatch.setattr(
+        alignment_outlier_taxa_module.np,
+        "sum",
+        fail_sum,
+        raising=False,
+    )
+
+    observed = alignment_outlier_taxa_module._row_sums(matrix)
+
+    np.testing.assert_allclose(observed, expected)
+
+
 class TestAlignmentOutlierTaxa:
     def _service(self):
         args = Namespace(

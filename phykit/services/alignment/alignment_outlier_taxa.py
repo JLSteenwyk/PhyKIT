@@ -24,6 +24,10 @@ def _row_l2_norms(matrix):
     return np.sqrt(np.einsum("ij,ij->i", matrix, matrix))
 
 
+def _row_sums(matrix):
+    return matrix.sum(axis=1)
+
+
 def _column_dot(left, right):
     return np.einsum("ij,ij->j", left, right)
 
@@ -426,7 +430,7 @@ class AlignmentOutlierTaxa(Alignment):
                 where=comparable,
             )
             long_branch_proxy = np.divide(
-                np.sum(match_counts, axis=1),
+                _row_sums(match_counts),
                 comparable_counts,
                 out=np.full(n_taxa, np.nan, dtype=np.float64),
                 where=comparable_counts > 0,
