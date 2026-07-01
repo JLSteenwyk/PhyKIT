@@ -611,6 +611,8 @@ Results:
 | `PhyloGwas.run` shared-taxon setup | 1M alignment taxa x 1M phenotype taxa with 750k overlap, identical sorted shared taxa | 3.113728s | 2.794556s | 1.11x |
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
+| `PhyloGwas` categorical site-result row construction | 1M mocked categorical GWAS site results, identical row dictionaries | 2.008253s | 1.780623s | 1.13x |
+| `PhyloGwas` continuous site-result row construction | 1M mocked continuous GWAS site results, identical row dictionaries | 0.701279s | 0.440898s | 1.59x |
 | `phylo_gwas` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.225119s | 0.116552s | 1.93x |
 | `phylo_gwas` module import without eager NumPy/json/plot config | cold subprocess import after lazy NumPy proxy plus JSON and plot config helper deferral | 0.075720s | 0.024089s | 3.14x |
 | `phylo_gwas` module import without shared typing startup | median cold subprocess import after removing annotation-only `typing` imports from shared error/alignment helpers | 0.007420s | 0.006305s | 1.18x |

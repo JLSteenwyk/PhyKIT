@@ -995,13 +995,13 @@ class PhyloGwas(Alignment):
                     continue
                 p_value, allele_0, allele_1, corr_r = result
                 site_results.append(
-                    dict(
-                        position=col_idx + 1,  # 1-based
-                        allele_0=allele_0,
-                        allele_1=allele_1,
-                        p_value=p_value,
-                        correlation_r=corr_r,
-                    )
+                    {
+                        "position": col_idx + 1,  # 1-based
+                        "allele_0": allele_0,
+                        "allele_1": allele_1,
+                        "p_value": p_value,
+                        "correlation_r": corr_r,
+                    }
                 )
             else:
                 result = self._test_site_categorical(
@@ -1019,13 +1019,13 @@ class PhyloGwas(Alignment):
                     continue
                 p_value, allele_0, allele_1, group_freqs = result
                 site_results.append(
-                    dict(
-                        position=col_idx + 1,  # 1-based
-                        allele_0=allele_0,
-                        allele_1=allele_1,
-                        p_value=p_value,
-                        group_freqs=group_freqs,
-                    )
+                    {
+                        "position": col_idx + 1,  # 1-based
+                        "allele_0": allele_0,
+                        "allele_1": allele_1,
+                        "p_value": p_value,
+                        "group_freqs": group_freqs,
+                    }
                 )
 
             raw_p_values.append(p_value)
