@@ -1254,6 +1254,44 @@ class TestCircularPlot:
         assert gcf_marker_counts == [len(estimates)]
         assert output_path.exists()
 
+    def test_uncertainty_plot_mean_markers_avoid_numpy(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+
+        default_args.ylabel_fontsize = 0
+        default_args.no_title = True
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        clade_tip_sets = svc._collect_clade_tip_sets(tree)
+        estimates = {}
+        for idx, clade in enumerate(svc._iter_preorder(tree.root)):
+            if not clade.clades:
+                continue
+            estimates[f"N{idx}"] = {
+                "descendants": sorted(clade_tip_sets[id(clade)]),
+                "source_estimates": [1.0, 2.0, 4.0],
+                "gcf": 0.8,
+                "estimate": 2.0,
+            }
+
+        class FailingNumpy:
+            def __getattr__(self, name):
+                raise AssertionError(
+                    "uncertainty mean markers should not use NumPy"
+                )
+
+        monkeypatch.setattr(concordance_asr_module, "np", FailingNumpy())
+
+        output_path = tmp_path / "concordance_asr_uncertainty.png"
+        svc._plot_uncertainty(
+            tree,
+            {"method": "weighted", "ancestral_estimates": estimates},
+            str(output_path),
+        )
+
+        assert output_path.exists()
+
     def test_concordance_asr_circular(self):
         """--circular flag produces a circular layout concordance ASR plot."""
         try:

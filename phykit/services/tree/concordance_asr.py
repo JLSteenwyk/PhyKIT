@@ -1330,7 +1330,7 @@ class ConcordanceAsr(Tree):
 
         # Mean markers
         for i, d in enumerate(data):
-            mean_val = np.mean(d)
+            mean_val = sum(d) / len(d)
             ax.plot(
                 mean_val, i, "D", color="white",
                 markeredgecolor="black", markersize=5, zorder=4,
