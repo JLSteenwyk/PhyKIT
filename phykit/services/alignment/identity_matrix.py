@@ -431,14 +431,15 @@ class IdentityMatrix(Alignment):
             print("Error: no sequences found in alignment.", file=sys.stderr)
             raise SystemExit(2)
 
-        # Validate all same length
-        lengths = set(len(seq) for seq in sequences.values())
-        if len(lengths) > 1:
-            print("Error: sequences have different lengths. Is this an alignment?",
-                  file=sys.stderr)
-            raise SystemExit(2)
-
-        aln_length = lengths.pop()
+        seq_iter = iter(sequences.values())
+        aln_length = len(next(seq_iter))
+        for seq in seq_iter:
+            if len(seq) != aln_length:
+                print(
+                    "Error: sequences have different lengths. Is this an alignment?",
+                    file=sys.stderr,
+                )
+                raise SystemExit(2)
         return sequences, taxa_names, aln_length
 
     def _compute_identity_matrix(

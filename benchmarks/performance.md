@@ -81,6 +81,7 @@ Results:
 | `IdentityMatrix._compute_identity_matrix` clean ASCII direct threshold | 150 x 250 / 150 x 500 / 200 x 1000 / 300 x 250 clean DNA matrices, side-by-side previous validity-mask matrix-product path under the old length-only threshold | 0.127482s / 0.280151s / 0.633633s / 0.337570s | 0.002105s / 0.029026s / 0.022576s / 0.040665s | 60.55x / 9.65x / 28.07x / 8.30x |
 | `IdentityMatrix._compute_identity_matrix` identical-sequence shortcut | 700 taxa x 900 identical DNA sites with gaps/ambiguous symbols, side-by-side previous matrix-product path | 0.048009s | 0.000289s | 166.26x |
 | `IdentityMatrix._all_sequences_identical` no-slice taxon scan | 1M taxon-name sequence dictionary, identical / early-different / late-different cases, side-by-side previous `taxa_names[1:]` shortcut predicate | 1.024048s / 0.011813s / 0.659557s | 0.581272s / 0.000000167s / 0.630424s | 1.76x / 70736.53x / 1.05x |
+| `IdentityMatrix._parse_alignment` direct length validation | 50k alignment sequences x 120 sites, equal lengths / late mismatch / early mismatch | 0.004931988s / 0.003867640s / 0.003200509s | 0.001769494s / 0.003420405s / 0.000001007s | 2.79x / 1.13x / 3178.26x |
 | `IdentityMatrix._identical_sequence_identity_value` late valid character | 20 repeated 3.5M-site identical DNA sequences with final valid site, side-by-side previous per-character membership scan | 18.405654s | 0.083401s | 220.69x |
 | `IdentityMatrix._identical_sequence_identity_value` all invalid characters | 20 repeated 3.5M-site identical DNA sequences with only invalid symbols, side-by-side previous per-character membership scan | 20.856280s | 0.428930s | 48.62x |
 | `IdentityMatrix` pairwise fallback boolean counts | 100k-site Unicode fallback pair comparison, side-by-side previous boolean `np.sum` valid/match counts | 0.000246s | 0.000206s | 1.19x |
@@ -2494,6 +2495,10 @@ Profiling summary:
   instead of allocating two sets before every filter; FitContinuous,
   TraitCorrelation, PhylogeneticOrdination, PhylogeneticSignal,
   PhylogeneticRegression, and PhylogeneticGLM use the helper.
+- `IdentityMatrix._parse_alignment` length validation now compares parsed
+  sequences to the first observed sequence length directly, avoiding a
+  temporary length set and preserving the existing stderr/SystemExit behavior
+  for unequal alignments.
 - `IdentityMatrix._compute_identity_matrix` baseline time was dominated by
   pair-level valid-character list comprehensions and repeated `np.array`
   construction. The optimized path precomputes one sequence matrix and one

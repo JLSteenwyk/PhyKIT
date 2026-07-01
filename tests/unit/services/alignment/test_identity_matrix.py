@@ -180,6 +180,36 @@ def test_repeated_cluster_wrappers_cache_scipy_imports(monkeypatch):
 
 
 class TestIdentityMatrixUnit:
+    def test_parse_alignment_rejects_unequal_sequence_lengths(
+        self, tmp_path, capsys, monkeypatch
+    ):
+        out_path = tmp_path / "out.png"
+        args = _make_args("aln.fa", out_path)
+        service = IdentityMatrix(args)
+
+        class Record:
+            def __init__(self, record_id, seq):
+                self.id = record_id
+                self.seq = seq
+
+        monkeypatch.setattr(
+            service,
+            "get_alignment_and_format",
+            lambda: (
+                [Record("taxon_A", "ACGT"), Record("taxon_B", "ACG")],
+                "fasta",
+                False,
+            ),
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            service._parse_alignment()
+
+        assert exc_info.value.code == 2
+        assert capsys.readouterr().err == (
+            "Error: sequences have different lengths. Is this an alignment?\n"
+        )
+
     def test_identity_self_is_one(self, tmp_path):
         """Diagonal entries should all be 1.0."""
         aln_path = tmp_path / "aln.fa"
