@@ -935,11 +935,18 @@ class DiscordanceAsymmetry(Tree):
         if clade_taxa is None:
             clade_taxa = self._collect_clade_taxa(tree)
 
-        C1 = clade_taxa.get(id(node.clades[0]), frozenset()) & all_taxa_fs
-        C2 = clade_taxa.get(id(node.clades[1]), frozenset()) & all_taxa_fs
+        empty = frozenset()
+        children = node.clades
+        C1 = clade_taxa.get(id(children[0]), empty) & all_taxa_fs
+        C2 = clade_taxa.get(id(children[1]), empty) & all_taxa_fs
         # If node has >2 children (polytomy), merge extras into C2
-        for extra_child in node.clades[2:]:
-            C2 = C2 | (clade_taxa.get(id(extra_child), frozenset()) & all_taxa_fs)
+        if len(children) > 2:
+            C2 = C2.union(
+                *(
+                    clade_taxa.get(id(extra_child), empty) & all_taxa_fs
+                    for extra_child in children[2:]
+                )
+            )
 
         parent = parent_map.get(id(node))
         if parent is None:
@@ -954,9 +961,9 @@ class DiscordanceAsymmetry(Tree):
             return None
 
         chosen_sib = None
-        S = frozenset()
+        S = empty
         for sib in siblings:
-            candidate = clade_taxa.get(id(sib), frozenset()) & all_taxa_fs
+            candidate = clade_taxa.get(id(sib), empty) & all_taxa_fs
             if candidate:
                 S = candidate
                 chosen_sib = sib
@@ -974,10 +981,16 @@ class DiscordanceAsymmetry(Tree):
         if not D:
             if chosen_sib.is_terminal() or len(chosen_sib.clades) < 2:
                 return None
-            S = clade_taxa.get(id(chosen_sib.clades[0]), frozenset()) & all_taxa_fs
-            D = clade_taxa.get(id(chosen_sib.clades[1]), frozenset()) & all_taxa_fs
-            for extra in chosen_sib.clades[2:]:
-                D = D | (clade_taxa.get(id(extra), frozenset()) & all_taxa_fs)
+            sibling_children = chosen_sib.clades
+            S = clade_taxa.get(id(sibling_children[0]), empty) & all_taxa_fs
+            D = clade_taxa.get(id(sibling_children[1]), empty) & all_taxa_fs
+            if len(sibling_children) > 2:
+                D = D.union(
+                    *(
+                        clade_taxa.get(id(extra), empty) & all_taxa_fs
+                        for extra in sibling_children[2:]
+                    )
+                )
 
         # Skip if any group is empty (branch is degenerate after taxon filtering)
         if not C1 or not C2 or not S:

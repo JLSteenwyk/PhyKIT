@@ -958,6 +958,7 @@ Results:
 | `Hybridization`/`DiscordanceAsymmetry._get_terminal_clades` order-preserving binary push | balanced 131072-tip tree, mirrored terminal-clade helper with identical tip order, optimized helper baseline | 0.021994s | 0.017857s | 1.23x |
 | `Hybridization._collect_clade_taxa` reverse-preorder binary merge | balanced 65536-tip tree, mirrored clade-taxon map helper, side-by-side previous visited-stack set-update helper | 0.150542s | 0.098837s | 1.52x |
 | `DiscordanceAsymmetry._collect_clade_taxa` reverse-preorder binary merge | balanced 65536-tip tree, mirrored clade-taxon map helper, side-by-side previous visited-stack set-update helper | 0.150542s | 0.083811s | 1.80x |
+| `Hybridization`/`DiscordanceAsymmetry._get_four_groups` multifurcation child union | 500 cached C1/C2/S/D decompositions over 16x16x32 / 64x64x16 / 128x128x8 wide node/sibling groups, side-by-side previous repeated immutable-set union path | 0.297126s / 1.327789s / 2.179419s | 0.137023s / 0.426982s / 0.492795s | 2.17x / 3.11x / 4.42x |
 | `Hybridization._plot` traversal reuse | balanced 32768-tip tree, rectangular coordinate/result/branch/star traversal setup | 0.712564s | 0.160012s | 4.45x |
 | `Hybridization._plot` rectangular batched branch rendering | balanced 2048-tip tree, per-internal-node hybrid scores, real Matplotlib Agg branch render | 4.688986s | 2.918381s | 1.61x |
 | `Hybridization._plot` circular batched branch rendering | balanced 2048-tip tree, per-internal-node hybrid scores, real Matplotlib Agg branch/arc render | 1.927446s | 0.729285s | 2.64x |
