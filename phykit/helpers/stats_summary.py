@@ -97,10 +97,11 @@ def _calculate_small_sequence_statistics(values):
         median = _linear_percentile(sorted_values, (count - 1) * 0.5)
         twenty_fifth = _linear_percentile(sorted_values, (count - 1) * 0.25)
         seventy_fifth = _linear_percentile(sorted_values, (count - 1) * 0.75)
-        variance = sum(
-            (value - mean) * (value - mean)
-            for value in sorted_values
-        ) / (count - 1)
+        sum_squared_deviations = 0.0
+        for value in sorted_values:
+            delta = value - mean
+            sum_squared_deviations += delta * delta
+        variance = sum_squared_deviations / (count - 1)
     except (TypeError, ValueError):
         return _SMALL_STATS_FALLBACK
 

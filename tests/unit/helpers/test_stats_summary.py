@@ -96,6 +96,18 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
 
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_small_list_boundary_uses_python_statistics_path(self):
+        data = list(range(128))
+        with patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("small lists should avoid NumPy conversion"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertAlmostEqual(stats['mean'], 63.5)
+        self.assertEqual(stats['median'], 63.5)
+        self.assertAlmostEqual(stats['variance'], stat.variance(data))
+
     def test_identical_values(self):
         """Test statistics with identical values"""
         data = [3, 3, 3, 3, 3]
