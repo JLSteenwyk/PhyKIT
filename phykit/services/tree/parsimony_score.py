@@ -216,13 +216,14 @@ class ParsimonyScore(Tree):
                 ["Alignment file is empty."], code=2
             )
 
-        # Validate same length
-        lengths = set(len(s) for s in sequences.values())
-        if len(lengths) > 1:
-            raise PhykitUserError(
-                ["Sequences have different lengths. Provide an aligned FASTA file."],
-                code=2,
-            )
+        seq_iter = iter(sequences.values())
+        first_length = len(next(seq_iter))
+        for seq in seq_iter:
+            if len(seq) != first_length:
+                raise PhykitUserError(
+                    ["Sequences have different lengths. Provide an aligned FASTA file."],
+                    code=2,
+                )
         return sequences
 
     def _fitch_parsimony(

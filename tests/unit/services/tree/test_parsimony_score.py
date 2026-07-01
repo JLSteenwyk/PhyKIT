@@ -20,6 +20,8 @@ from pathlib import Path
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+from phykit.errors import PhykitUserError
+import phykit.services.tree.parsimony_score as module
 from phykit.services.tree.parsimony_score import ParsimonyScore
 
 
@@ -70,6 +72,34 @@ class TestFitchAlgorithm:
         sequences = ps._parse_alignment(str(aln))
 
         assert sequences == {"A": "TGCA", "B": "N-X?"}
+
+    def test_parse_alignment_stops_at_first_length_mismatch(
+        self, monkeypatch, args
+    ):
+        class EarlyMismatchSequences(dict):
+            def values(self):
+                yield "AAAA"
+                yield "AAA"
+                raise AssertionError(
+                    "length validation should stop at the first mismatch"
+                )
+
+        sequences = EarlyMismatchSequences(
+            {"A": "AAAA", "B": "AAA", "C": "AAAA"}
+        )
+        monkeypatch.setattr(
+            module,
+            "read_fasta_first_token_upper",
+            lambda _path: sequences,
+        )
+        ps = ParsimonyScore(args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ps._parse_alignment("alignment.fa")
+
+        assert exc_info.value.messages == [
+            "Sequences have different lengths. Provide an aligned FASTA file."
+        ]
 
     def test_score_matches_r(self, args, capsys):
         """Fitch parsimony score should match R's phangorn::parsimony() = 4."""

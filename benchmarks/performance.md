@@ -1403,6 +1403,7 @@ Results:
 | `ParsimonyScore.run` no-list binary polytomy pass | balanced 32768-tip tree with 4-site FASTA, JSON output captured | 0.088947s | 0.083471s | 1.07x |
 | `ParsimonyScore.run` all-shared read-only setup | balanced 32768-tip cached binary tree, four-site FASTA for every tip, Fitch scoring mocked | 0.286847s | 0.057090s | 5.02x |
 | `IndependentContrasts`/`ParsimonyScore._has_polytomies` unordered scan | balanced 131072-tip binary tree, no polytomies, optimized helper baseline | 0.023511s | 0.017187s | 1.37x |
+| `ParsimonyScore._parse_alignment` direct length validation | 50k alignment sequences x 120 sites, equal lengths / late mismatch / early mismatch | 0.003526417s / 0.004405527s / 0.004808655s | 0.003355023s / 0.002475073s / 0.000000500s | 1.05x / 1.78x / 9617.31x |
 | `parsimony_score` module import without eager stdlib JSON | median cold subprocess import after lazy `json.dumps` wrapper | 0.005933s | 0.004855s | 1.22x |
 | `parsimony_score` module import without `typing` startup | median cold subprocess import after postponing annotations and replacing annotation-only typing aliases | 0.031268s | 0.028986s | 1.08x |
 | `parsimony_utils.build_parent_map` direct traversal | balanced 65536-tip tree, parent map for every non-root clade | 0.190389s | 0.021707s | 8.77x |
@@ -6838,7 +6839,9 @@ Profiling summary:
   parser helper, avoiding Bio.SeqIO.FastaIO startup for import-only callers. A
   subsequent startup pass also defers NumPy behind a module-level proxy. Later
   startup passes keep stdlib JSON and annotation-only `typing` imports out of
-  module import while preserving JSON output and public annotations.
+  module import while preserving JSON output and public annotations. A length
+  validation pass now scans against the first sequence length directly, avoiding
+  a temporary length set and stopping as soon as a mismatch is detected.
 - `IndependentContrasts._compute_pic` baseline time called
   `clade.get_terminals()` for every internal node to build output labels,
   repeatedly walking subtrees that had already been processed. The optimized
