@@ -142,7 +142,7 @@ class OccupancyPerTaxon(Alignment):
 
         if self.json_output:
             rows = [
-                dict(taxon=taxon, occupancy=round(occupancy, 4))
+                {"taxon": taxon, "occupancy": round(occupancy, 4)}
                 for taxon, occupancy in occupancies
             ]
             print_json(
