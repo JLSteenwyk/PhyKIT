@@ -50,6 +50,22 @@ def test_binary_response_class_counts_uses_count_nonzero(monkeypatch):
     assert observed[0].tolist() == [0, 1, 1, 0, 1]
 
 
+def test_poisson_overdispersion_uses_direct_array_sum(monkeypatch):
+    y = np.array([1.0, 2.0, 4.0, 3.0, 7.0])
+    mu = np.array([1.2, 1.8, 3.5, 4.2, 6.6])
+    pearson_resid = (y - mu) / np.sqrt(mu)
+    expected = float(np.sum(pearson_resid**2)) / 3
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("Poisson overdispersion should use ndarray.sum")
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "sum", fail_sum, raising=False)
+
+    observed = phylogenetic_glm_module._poisson_overdispersion(y, mu, 3)
+
+    assert observed == pytest.approx(expected)
+
+
 def test_module_import_does_not_import_scipy_optimize(monkeypatch):
     module_name = "phykit.services.tree.phylogenetic_glm"
     previous = sys.modules.pop(module_name, None)

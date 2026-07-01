@@ -56,6 +56,15 @@ def _binary_response_class_counts(y: np.ndarray) -> tuple[int, int]:
     return n1, int(y.size - n1)
 
 
+def _poisson_overdispersion(
+    y: np.ndarray,
+    mu: np.ndarray,
+    residual_dof: int,
+) -> float:
+    pearson_resid = (y - mu) / np.sqrt(mu)
+    return float((pearson_resid * pearson_resid).sum()) / residual_dof
+
+
 def special_erfc(*args, **kwargs):
     global _SPECIAL_ERFC
 
@@ -986,8 +995,7 @@ class PhylogeneticGLM(Tree):
         mu = np.exp(eta)
 
         # Overdispersion
-        pearson_resid = (y - mu) / np.sqrt(mu)
-        phi = float(np.sum(pearson_resid**2)) / (n - p)
+        phi = _poisson_overdispersion(y, mu, n - p)
 
         # Log-likelihood (Poisson)
         from scipy.special import gammaln
