@@ -117,6 +117,19 @@ class TestTransferAnnotations:
         assert clade_taxa[id(binary)] == frozenset({"B", "C"})
         assert clade_taxa[id(tree.root)] == frozenset({"A", "B", "C"})
 
+    def test_collect_clade_taxa_multifurcation_avoids_temp_set(self, monkeypatch):
+        svc = TransferAnnotations(_make_args())
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("multifurcation collection should not build a temp set")
+
+        monkeypatch.setattr("builtins.set", fail_set)
+
+        clade_taxa = svc._collect_clade_taxa(tree)
+
+        assert clade_taxa[id(tree.root)] == frozenset({"A", "B", "C", "D"})
+
     def test_extract_and_transfer_use_direct_postorder_pass(self, monkeypatch):
         svc = TransferAnnotations(_make_args())
         source = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")

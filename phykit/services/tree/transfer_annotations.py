@@ -145,10 +145,9 @@ class TransferAnnotations(Tree):
                     | get(id_(children[1]))
                 )
             else:
-                taxa = set()
-                for child in children:
-                    taxa.update(get(id_(child)))
-                clade_taxa[id_(clade)] = frozenset(taxa)
+                clade_taxa[id_(clade)] = frozenset().union(
+                    *(get(id_(child)) for child in children)
+                )
         return clade_taxa
 
     @staticmethod
