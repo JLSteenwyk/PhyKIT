@@ -82,6 +82,20 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
 
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_small_list_statistics_do_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary as stats_summary; "
+            "stats = stats_summary.calculate_summary_statistics_from_arr([1, 2, 3, 4, 5]); "
+            "assert stats['mean'] == 3; "
+            "assert stats['median'] == 3; "
+            "assert stats['twenty_fifth'] == 2.0; "
+            "assert stats['seventy_fifth'] == 4.0; "
+            "assert 'numpy' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_identical_values(self):
         """Test statistics with identical values"""
         data = [3, 3, 3, 3, 3]

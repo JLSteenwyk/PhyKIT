@@ -1,4 +1,5 @@
 import statistics as stat
+from math import sqrt
 
 
 class _LazyNumpy:
@@ -22,6 +23,8 @@ _NO_VALUES_MESSAGE = (
     "Double check that the input alignment/phylogeny contains\n"
     "the properties you want to calculate summary statistics for."
 )
+_SMALL_SEQUENCE_STATS_MAX = 128
+_SMALL_STATS_FALLBACK = object()
 
 
 def _print_no_values_message():
@@ -46,10 +49,85 @@ def _integer_if_exact(value):
     return scalar
 
 
+def _linear_percentile(sorted_values, position):
+    lower = int(position)
+    upper = lower + 1
+    if upper >= len(sorted_values):
+        return sorted_values[lower]
+    fraction = position - lower
+    if fraction == 0:
+        return sorted_values[lower]
+    return sorted_values[lower] * (1.0 - fraction) + sorted_values[upper] * fraction
+
+
+def _calculate_small_sequence_statistics(values):
+    if not isinstance(values, (list, tuple)):
+        return _SMALL_STATS_FALLBACK
+
+    count = len(values)
+    if count < 2 or count > _SMALL_SEQUENCE_STATS_MAX:
+        return _SMALL_STATS_FALLBACK
+
+    try:
+        sorted_values = sorted(values)
+        first_value = sorted_values[0]
+        last_value = sorted_values[-1]
+        all_integer = all(type(value) is int for value in sorted_values)
+        if first_value == last_value:
+            if all_integer:
+                mean = first_value
+                median = first_value
+                quartile = float(first_value)
+            else:
+                mean = first_value
+                median = first_value
+                quartile = first_value
+            return dict(
+                mean=mean,
+                median=median,
+                twenty_fifth=quartile,
+                seventy_fifth=quartile,
+                minimum=first_value,
+                maximum=last_value,
+                standard_deviation=0.0,
+                variance=0.0,
+            )
+
+        mean = sum(sorted_values) / count
+        median = _linear_percentile(sorted_values, (count - 1) * 0.5)
+        twenty_fifth = _linear_percentile(sorted_values, (count - 1) * 0.25)
+        seventy_fifth = _linear_percentile(sorted_values, (count - 1) * 0.75)
+        variance = sum(
+            (value - mean) * (value - mean)
+            for value in sorted_values
+        ) / (count - 1)
+    except (TypeError, ValueError):
+        return _SMALL_STATS_FALLBACK
+
+    if all_integer:
+        mean = _integer_if_exact(mean)
+        median = _integer_if_exact(median)
+
+    return dict(
+        mean=mean,
+        median=median,
+        twenty_fifth=twenty_fifth,
+        seventy_fifth=seventy_fifth,
+        minimum=first_value,
+        maximum=last_value,
+        standard_deviation=sqrt(variance),
+        variance=variance,
+    )
+
+
 def _calculate_summary_statistics(values):
     try:
         if _has_too_few_values(values):
             raise stat.StatisticsError
+
+        small_stats = _calculate_small_sequence_statistics(values)
+        if small_stats is not _SMALL_STATS_FALLBACK:
+            return small_stats
 
         arr = np.asarray(values)
         if arr.size < 2:
