@@ -234,6 +234,34 @@ class TestBipartitionExtraction:
             frozenset({"A", "B"}): 3.0
         }
 
+    def test_extract_splits_handles_trifurcating_root_children(self, default_args):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = SpectralDiscordance(default_args)
+        tree = Phylo.read(
+            StringIO("((A:1,B:1):2,(C:1,D:1):3,(E:1,F:1):4);"),
+            "newick",
+        )
+        all_taxa = frozenset(["A", "B", "C", "D", "E", "F"])
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree split extraction should use direct postorder")
+
+        tree.find_clades = fail_find_clades
+
+        expected_splits = {
+            frozenset({"A", "B"}),
+            frozenset({"C", "D"}),
+            frozenset({"E", "F"}),
+        }
+        assert svc._extract_splits(tree, all_taxa) == expected_splits
+        assert svc._extract_splits_with_lengths(tree, all_taxa) == {
+            frozenset({"A", "B"}): 2.0,
+            frozenset({"C", "D"}): 3.0,
+            frozenset({"E", "F"}): 4.0,
+        }
+
     def test_bipartition_matrix_shape(self, default_args):
         svc = SpectralDiscordance(default_args)
         trees = svc._parse_gene_trees(GENE_TREES)

@@ -501,17 +501,19 @@ class SpectralDiscordance(Tree):
         if postorder is None:
             postorder = tree.find_clades(order="postorder")
 
+        empty = frozenset()
+        empty_union = empty.union
         for clade in postorder:
             children = clade.clades
             if not children:
                 if clade.name in all_taxa_fs:
                     clade_taxa[id(clade)] = frozenset({clade.name})
                 else:
-                    clade_taxa[id(clade)] = frozenset()
+                    clade_taxa[id(clade)] = empty
             else:
-                taxa = frozenset()
-                for child in children:
-                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                taxa = empty_union(
+                    *(clade_taxa.get(id(child), empty) for child in children)
+                )
                 clade_taxa[id(clade)] = taxa
 
                 # Skip polytomous nodes (>2 children = unresolved branching),
@@ -562,17 +564,19 @@ class SpectralDiscordance(Tree):
         if postorder is None:
             postorder = tree.find_clades(order="postorder")
 
+        empty = frozenset()
+        empty_union = empty.union
         for clade in postorder:
             children = clade.clades
             if not children:
                 if clade.name in all_taxa_fs:
                     clade_taxa[id(clade)] = frozenset({clade.name})
                 else:
-                    clade_taxa[id(clade)] = frozenset()
+                    clade_taxa[id(clade)] = empty
             else:
-                taxa = frozenset()
-                for child in children:
-                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                taxa = empty_union(
+                    *(clade_taxa.get(id(child), empty) for child in children)
+                )
                 clade_taxa[id(clade)] = taxa
 
                 # Skip polytomous nodes (>2 children = unresolved branching),

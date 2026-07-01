@@ -826,6 +826,7 @@ Results:
 | `SpectralDiscordance._build_bipartition_matrix` WRF | 80 balanced trees x 128 shared taxa, branch-length weighted matrix | 0.1087s | 0.0806s | 1.3x |
 | `SpectralDiscordance._extract_splits` direct postorder | balanced 2048-tip tree, identical canonical bipartition set | 0.055506s | 0.050864s | 1.09x |
 | `SpectralDiscordance._extract_splits_with_lengths` direct postorder | balanced 2048-tip tree, identical canonical branch-length map | 0.056510s | 0.050592s | 1.12x |
+| `SpectralDiscordance._extract_splits` / `_extract_splits_with_lengths` multifurcation child union | 1 split-extraction pass over 512x8 / 2048x4 / 4096x4 multifurcating groups, side-by-side previous repeated immutable-set union path | 0.104320s / 0.387799s / 1.545709s and 0.020545s / 0.291559s / 1.558810s | 0.011482s / 0.034994s / 0.020502s and 0.003823s / 0.008266s / 0.060295s | 9.09x / 11.08x / 75.39x and 5.37x / 35.27x / 25.85x |
 | `SpectralDiscordance._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.487977s | 0.186022s | 2.62x |
 | `SpectralDiscordance._canonical_split` size-first complement avoidance | 9k mixed 20-vs-1180, 1180-vs-20, and 600-vs-600 bipartitions over 1200 taxa | 0.269033s | 0.236251s | 1.14x |
 | `SpectralDiscordance._spectral_cluster` normalized Laplacian scaling | 900-item synthetic affinity matrix, diagonal scaling step | 0.029895s | 0.002207s | 13.5x |
