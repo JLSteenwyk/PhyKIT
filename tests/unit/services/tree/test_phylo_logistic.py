@@ -51,6 +51,21 @@ def test_binary_response_class_counts_uses_count_nonzero(monkeypatch):
     assert observed[0].tolist() == [0, 1, 1, 0, 1]
 
 
+def test_bernoulli_log_likelihood_uses_direct_array_sum(monkeypatch):
+    y = np.array([0.0, 1.0, 1.0, 0.0, 1.0])
+    mu = np.array([0.1, 0.8, 0.7, 0.25, 0.95])
+    expected = float(np.sum(y * np.log(mu) + (1 - y) * np.log(1 - mu)))
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("Bernoulli log-likelihood should use ndarray.sum")
+
+    monkeypatch.setattr(phylo_logistic_module.np, "sum", fail_sum, raising=False)
+
+    assert phylo_logistic_module._bernoulli_log_likelihood(y, mu) == pytest.approx(
+        expected
+    )
+
+
 def test_module_import_does_not_import_numpy_or_scipy():
     code = """
 import sys

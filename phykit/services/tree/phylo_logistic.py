@@ -25,6 +25,10 @@ def _binary_response_class_counts(y: np.ndarray) -> tuple[int, int]:
     return n1, int(y.size - n1)
 
 
+def _bernoulli_log_likelihood(y: np.ndarray, mu: np.ndarray) -> float:
+    return float(np.where(y, np.log(mu), np.log1p(-mu)).sum())
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -460,7 +464,7 @@ class PhyloLogistic(Tree):
             return 1e10
 
         # Standard Bernoulli log-likelihood
-        ll = float(np.sum(y * np.log(mu) + (1 - y) * np.log(1 - mu)))
+        ll = _bernoulli_log_likelihood(y, mu)
         if not np.isfinite(ll):
             return 1e10
 
@@ -538,7 +542,7 @@ class PhyloLogistic(Tree):
         mu = np.clip(mu, 1e-16, 1 - 1e-16)
 
         # Unpenalized log-likelihood
-        ll = float(np.sum(y * np.log(mu) + (1 - y) * np.log(1 - mu)))
+        ll = _bernoulli_log_likelihood(y, mu)
 
         # Penalized log-likelihood and standard errors
         vcv, diag_corr = self._build_logistic_vcv(
