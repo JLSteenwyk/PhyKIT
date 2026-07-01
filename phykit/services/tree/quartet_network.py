@@ -819,7 +819,12 @@ class QuartetNetwork(Tree):
                                   gap_positions_by_split=None):
         """Compute 2D direction vectors for each circular split."""
         n = len(ordering)
-        angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
+        cos_by_taxon = {}
+        sin_by_taxon = {}
+        for i, taxon in enumerate(ordering):
+            angle = 2 * math.pi * i / n
+            cos_by_taxon[taxon] = math.cos(angle)
+            sin_by_taxon[taxon] = math.sin(angle)
         directions = {}
         for split, count, freq in circular_splits:
             if gap_positions_by_split is None:
@@ -843,8 +848,14 @@ class QuartetNetwork(Tree):
                 dy /= length
             else:
                 dx, dy = 1.0, 0.0
-            cx_split = sum(math.cos(angles[t]) for t in split) / len(split)
-            cy_split = sum(math.sin(angles[t]) for t in split) / len(split)
+            cx_total = 0.0
+            cy_total = 0.0
+            for taxon in split:
+                cx_total += cos_by_taxon[taxon]
+                cy_total += sin_by_taxon[taxon]
+            center_scale = 1.0 / len(split)
+            cx_split = cx_total * center_scale
+            cy_split = cy_total * center_scale
             if dx * cx_split + dy * cy_split < 0:
                 dx = -dx
                 dy = -dy

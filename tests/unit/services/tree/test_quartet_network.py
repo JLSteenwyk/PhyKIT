@@ -560,6 +560,34 @@ class TestBuildSplitsGraph:
         for split, direction in expected.items():
             assert observed[split] == pytest.approx(direction)
 
+    def test_compute_split_directions_accumulates_split_center_once(self):
+        class CountingSplit(frozenset):
+            def __new__(cls, values):
+                obj = super().__new__(cls, values)
+                obj.iterations = 0
+                return obj
+
+            def __iter__(self):
+                self.iterations += 1
+                return super().__iter__()
+
+        ordering = ["A", "B", "C", "D", "E", "F"]
+        split = CountingSplit(["A", "B", "C"])
+        circular_splits = [(split, 1, 0.5)]
+        gap_positions_by_split = {
+            split: QuartetNetwork._circular_gap_positions(split, ordering)
+        }
+        split.iterations = 0
+
+        directions = QuartetNetwork._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
+
+        assert split in directions
+        assert split.iterations == 1
+
     @staticmethod
     def _legacy_build_splits_graph(circular_splits, all_taxa):
         splits_list = [s[0] for s in circular_splits]

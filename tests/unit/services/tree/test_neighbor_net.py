@@ -583,6 +583,34 @@ class TestCircularSplits:
         assert len(directions) == len(circular_splits)
         assert cos_calls == len(ordering) + 2 * len(circular_splits)
 
+    def test_compute_split_directions_accumulates_split_center_once(self):
+        class CountingSplit(frozenset):
+            def __new__(cls, values):
+                obj = super().__new__(cls, values)
+                obj.iterations = 0
+                return obj
+
+            def __iter__(self):
+                self.iterations += 1
+                return super().__iter__()
+
+        ordering = ["A", "B", "C", "D", "E", "F"]
+        split = CountingSplit(["A", "B", "C"])
+        circular_splits = [(split, 1.0)]
+        gap_positions_by_split = {
+            split: NeighborNet._circular_gap_positions(split, ordering)
+        }
+        split.iterations = 0
+
+        directions = NeighborNet._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
+
+        assert split in directions
+        assert split.iterations == 1
+
     def test_split_count_four_taxa(self):
         ordering = ["A", "B", "C", "D"]
         splits = NeighborNet._enumerate_circular_splits(ordering)
