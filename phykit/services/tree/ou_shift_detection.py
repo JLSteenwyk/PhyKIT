@@ -82,6 +82,10 @@ def _lars_path(*args, **kwargs):
     return lars_path(*args, **kwargs)
 
 
+def _column_l2_norms(matrix):
+    return np.sqrt(np.einsum("ij,ij->j", matrix, matrix))
+
+
 class OUShiftDetection(Tree):
     """Automatic OU shift detection using LASSO (l1ou approach).
 
@@ -555,7 +559,7 @@ class OUShiftDetection(Tree):
             beta_int_j = XtX_inv * (X_intercept.T @ X_shifts[:, j:j + 1])[0, 0]
             X_resid[:, j] = X_shifts[:, j] - X_intercept.flatten() * beta_int_j
 
-        col_norms = np.linalg.norm(X_resid, axis=0)
+        col_norms = _column_l2_norms(X_resid)
         col_norms[col_norms < 1e-12] = 1.0
         X_resid_norm = X_resid / col_norms
 

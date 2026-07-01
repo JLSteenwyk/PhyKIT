@@ -511,6 +511,20 @@ class TestBuildIndicatorDesignMatrix:
 
 
 class TestExtractLassoConfigs:
+    def test_column_l2_norms_matches_linalg_norm(self):
+        matrix = np.array(
+            [
+                [3.0, 1.0, 0.0],
+                [4.0, 2.0, 0.0],
+                [0.0, 2.0, 0.0],
+            ]
+        )
+
+        observed = ou_shift_detection_module._column_l2_norms(matrix)
+        expected = np.linalg.norm(matrix, axis=0)
+
+        np.testing.assert_allclose(observed, expected)
+
     def test_uses_flat_nonzero_for_coefficient_path(self, monkeypatch):
         svc = OUShiftDetection.__new__(OUShiftDetection)
         svc._n = 5
@@ -545,6 +559,39 @@ class TestExtractLassoConfigs:
         configs = svc._extract_lasso_configs(X_star, y_star, max_shifts=3)
 
         assert configs == [[0], [0, 1], [1, 2]]
+
+    def test_extract_lasso_configs_avoids_linalg_norm(self, monkeypatch):
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        svc._n = 5
+        X_star = np.column_stack(
+            [
+                np.ones(5),
+                np.array([0.0, 1.0, 0.0, 1.0, 0.0]),
+                np.array([1.0, 0.0, 1.0, 0.0, 1.0]),
+            ]
+        )
+        y_star = np.array([0.2, 1.0, 0.4, 1.2, 0.6])
+        coefs_path = np.array(
+            [
+                [0.0, 0.5, 0.5],
+                [0.0, 0.0, 0.25],
+            ]
+        )
+
+        def fake_lars_path(_X, _y, method, max_iter):
+            assert method == "lasso"
+            assert max_iter == 2
+            return None, None, coefs_path
+
+        def fail_norm(*_args, **_kwargs):
+            raise AssertionError("LASSO column scaling should use column L2 helper")
+
+        monkeypatch.setattr(ou_shift_detection_module, "_lars_path", fake_lars_path)
+        monkeypatch.setattr(ou_shift_detection_module.np.linalg, "norm", fail_norm)
+
+        configs = svc._extract_lasso_configs(X_star, y_star, max_shifts=2)
+
+        assert configs == [[0], [0, 1]]
 
 
 class TestComputePBIC:

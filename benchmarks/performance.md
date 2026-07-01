@@ -2076,6 +2076,7 @@ Results:
 | `OUShiftDetection._build_indicator_design_matrix` lineage-row cache | 2048-tip balanced synthetic lineage, 80 eight-shift configs | 0.161885s | 0.001258s | 128.6x |
 | `OUShiftDetection._build_shift_weight_matrix` baseline weight total | per-row shifted-regime weight vector with 2 / 3 / 4 / 8 / 16 / 32 / 128 columns, side-by-side previous `np.sum` wrapper | 0.000005610s / 0.000005376s / 0.000005409s / 0.000005934s / 0.000005992s / 0.000005708s / 0.000005718s | 0.000003521s / 0.000003595s / 0.000002428s / 0.000003187s / 0.000002629s / 0.000003032s / 0.000002396s | 1.59x / 1.50x / 2.23x / 1.86x / 2.28x / 1.88x / 2.39x |
 | `OUShiftDetection._extract_lasso_configs` flat coefficient indices | 5000 shift coefficients x 1200 LASSO-path steps, sparse nonzero coefficients, side-by-side previous `np.where(...)[0]` extraction | 0.051099s | 0.034082s | 1.50x |
+| `OUShiftDetection._extract_lasso_configs` column L2 normalization | 50x200 / 200x1000 / 1000x3000 / 5000x1000 residualized shift-design matrices, side-by-side previous `np.linalg.norm(..., axis=0)` | 0.000007166s / 0.000145125s / 0.001731750s / 0.010120416s | 0.000004417s / 0.000133042s / 0.000690542s / 0.001168125s | 1.62x / 1.09x / 2.51x / 8.66x |
 | `OUShiftDetection._compute_pbic_from_vcv` Cholesky information matrix | 520 taxa SPD VCV x 7-column indicator design | 0.003160s | 0.000817s | 3.9x |
 | `OUShiftDetection._compute_pbic_from_info` determinant-only correction | 120-parameter SPD information matrix, side-by-side previous scaled inverse determinant | 0.001747838s | 0.000093647s | 18.66x |
 | `ou_shift_detection` module import without eager `sklearn` | cold process import for OU-shift command module | 1.241723s | 0.512947s | 2.4x |
@@ -6972,7 +6973,10 @@ Profiling summary:
   still calls the same Cholesky, triangular-solve, and optimizer
   implementations. Those lazy wrappers now cache the resolved SciPy callables
   after first use, avoiding repeated import dispatch inside GLS, whitening, pBIC
-  scoring, and bounded alpha-optimization loops. The pBIC Fisher-information
+  scoring, and bounded alpha-optimization loops. LASSO path setup now computes
+  residualized shift-column L2 norms with an `einsum` reduction instead of
+  `np.linalg.norm`, preserving the same scaling while avoiding linalg dispatch.
+  The pBIC Fisher-information
   correction now computes the log determinant of the scaled inverse directly
   from `slogdet(info)`, avoiding the coefficient-covariance inverse when only
   its determinant is needed. A follow-up startup pass also
