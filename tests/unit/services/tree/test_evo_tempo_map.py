@@ -18,15 +18,30 @@ GENE_TREES = "tests/sample_files/gene_trees_simple.nwk"
 
 def test_module_import_does_not_import_numpy_biophylo_or_scipy():
     code = """
+import builtins
 import sys
-import phykit.services.tree.evo_tempo_map as module
+module_name = "phykit.services.tree.evo_tempo_map"
+sys.modules.pop(module_name, None)
+sys.modules.pop("pathlib", None)
+original_import = builtins.__import__
+def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == "pathlib" or name.startswith("pathlib."):
+        raise AssertionError("evo_tempo_map import should not import pathlib")
+    return original_import(name, globals, locals, fromlist, level)
+builtins.__import__ = guarded_import
+try:
+    import phykit.services.tree.evo_tempo_map as module
+finally:
+    builtins.__import__ = original_import
 assert callable(module.print_json)
+assert callable(module.Path)
 assert hasattr(module.np, "__getattr__")
 assert hasattr(module.Phylo, "read")
 assert "typing" not in sys.modules
 assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 assert "phykit.helpers.plot_config" not in sys.modules
+assert "pathlib" not in sys.modules
 assert "numpy" not in sys.modules
 assert "Bio.Phylo" not in sys.modules
 assert "scipy.stats" not in sys.modules

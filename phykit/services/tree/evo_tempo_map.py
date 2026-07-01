@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from io import StringIO
-from pathlib import Path
 
 from .base import Tree
 from ...errors import PhykitUserError
@@ -14,6 +13,12 @@ def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
     return _print_json(*args, **kwargs)
+
+
+def Path(*args, **kwargs):
+    from pathlib import Path as _Path
+
+    return _Path(*args, **kwargs)
 
 
 def _mannwhitneyu(x, y, *, alternative):

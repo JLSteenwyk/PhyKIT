@@ -823,6 +823,7 @@ Results:
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |
 | `evo_tempo_map` module import without eager `scipy.stats` | cold process import for evo-tempo-map command module | 0.690765s | 0.209734s | 3.3x |
 | `evo_tempo_map` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.129755s | 0.031645s | 4.10x |
+| `evo_tempo_map` module import without eager `pathlib` | median cold subprocess import after lazy gene-tree-list `Path` wrapper | 0.040799s | 0.039905s | 1.02x |
 | `evo_tempo_map` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.011676s | 0.004933s | 2.37x |
 | `evo_tempo_map` module import without `typing` startup | median cold subprocess import after replacing annotation-only typing aliases with built-in postponed annotations | 0.035356s | 0.034328s | 1.03x |
 | `EvoTempoMap.run` cached read-only species tree setup | balanced 32768-tip cached species tree, gene-tree parsing, branch classification, global treeness, and text output mocked | 0.128927s | 0.000028s | 4604.5x |
@@ -4026,7 +4027,9 @@ Profiling summary:
   over the input file and strips/filters comments in one pass instead of
   materializing `splitlines()`, preserving inline-Newick and path-list behavior.
   The path-list branch now uses the same precomputed parent-prefix resolver,
-  avoiding `Path` joins for every listed gene-tree file.
+  avoiding `Path` joins for every listed gene-tree file. A later startup pass
+  defers `pathlib.Path` behind the path-list wrapper, so command discovery avoids
+  loading `pathlib` until gene-tree path parsing is needed.
   Equal-size canonical split tiebreaks now compare the minimum taxon on each
   complementary side instead of sorting both sides, preserving the
   sorted-lexicographic choice because the two sides are disjoint.
