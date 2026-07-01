@@ -229,7 +229,7 @@ class TraitRateMap(Tree):
                 header = None
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or line.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     header = stripped.split("\t")
                     break
@@ -256,7 +256,7 @@ class TraitRateMap(Tree):
                 line_num = 2
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or line.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     saw_data = True
                     parts = stripped.split("\t", split_limit)

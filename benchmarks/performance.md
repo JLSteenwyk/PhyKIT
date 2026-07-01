@@ -1839,6 +1839,7 @@ Results:
 | `TraitRateMap._print_text_output` batched summary | 100k captured trait-rate-map text summaries, identical stdout text | 0.174115s | 0.110930s | 1.57x |
 | `TraitRateMap._parse_multi_trait_data` selected-column streaming | 200k-row TSV, comments/blanks before header, one selected continuous trait | 0.163704s | 0.155640s | 1.05x |
 | `TraitRateMap._parse_multi_trait_data` bounded selected-column split | 300k-row TSV, 8 numeric trait columns, selected early continuous trait, all taxa shared | 0.343296s | 0.281438s | 1.22x |
+| `TraitRateMap._parse_multi_trait_data` stripped comment check | 120k-row TSV with comments/blanks, selected continuous trait, all taxa shared, side-by-side previous original-line `startswith` check | 1.078650s | 0.840676s | 1.28x |
 | `trait_rate_map` module import without NumPy | cold subprocess import after replacing summary mean with Python arithmetic | 0.090290s | 0.031843s | 2.84x |
 | `trait_rate_map` module import without eager pickle/JSON/plot helpers | median cold subprocess import after localizing pickle, PlotConfig/layout helpers, circular/color helpers, and lazy JSON wrapper | 0.014715s | 0.006266s | 2.35x |
 | `trait_rate_map` module import without `typing` startup | median cold subprocess import after postponing annotations and converting typing aliases to built-in annotations | 0.006567s | 0.004268s | 1.54x |

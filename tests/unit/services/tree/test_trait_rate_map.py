@@ -217,6 +217,24 @@ class TestTraitDataParsing:
 
         assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
 
+    def test_multi_trait_parser_skips_whitespace_prefixed_comments(self, tmp_path):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "   # ignored before header\n"
+            "taxon\tbody_mass\twing\n"
+            "A\t1.0\t10.0\n"
+            "  # ignored between rows\n"
+            "B\t2.0\t20.0\n"
+            "C\t3.0\t30.0\n"
+        )
+        svc = TraitRateMap.__new__(TraitRateMap)
+
+        traits = svc._parse_multi_trait_data(
+            str(trait_file), ["A", "B", "C"], "body_mass"
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+
     def test_multi_trait_parser_preserves_logical_line_numbers(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
