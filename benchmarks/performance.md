@@ -142,6 +142,7 @@ Results:
 | `VariableSites.calculate_variable_sites` DNA no-gap direct min/max | 1200 taxa x 12000 clean DNA sites, side-by-side previous masked min/max path with identical variable-site result | 0.046271s | 0.017388s | 2.66x |
 | `VariableSites.calculate_variable_sites` clean ASCII gap-byte precheck | 80 taxa x 1M clean DNA sites, side-by-side previous full invalid-mask setup | 2.584151s | 1.359966s | 1.90x |
 | `VariableSites.calculate_variable_sites` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.014955s | 0.005998s | 2.49x |
+| `VariableSites.calculate_variable_sites` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero variable sites | 0.182161s | 0.112015s | 1.63x |
 | `VariableSites.calculate_variable_sites` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.323234s / 0.005263s / 0.141766s | 0.034174s / 0.000003s / 0.038053s | 9.46x / 1884.87x / 3.73x |
 | `VariableSites.calculate_variable_sites` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous sequence materialization before zero return | 0.004295166s | 0.000001084s | 3962.11x |
 | `VariableSites.calculate_variable_sites` Unicode final variable-column count | 1M-site fallback valid-symbol count vector, side-by-side previous boolean `np.sum` final count | 0.000235s | 0.000063s | 3.75x |
@@ -2591,13 +2592,15 @@ Profiling summary:
   direct min/max path once the gap-code scan finds no invalid symbols. Fully
   identical normalized alignments now return zero variable sites before
   byte-matrix construction, covering conserved multi-symbol sequences while
-  leaving non-identical alignments on the existing min/max path. A follow-up
-  pass reuses the shared no-slice equality helper, avoiding `sequences[1:]`
-  materialization while preserving early exit for heterogeneous alignments. The
-  single-record path now returns zero variable sites after reading the alignment
-  length, avoiding sequence materialization because one taxon cannot vary by
-  column. The Unicode fallback now counts final variable columns with `np.count_nonzero`
-  instead of summing a boolean vector.
+  leaving non-identical alignments on the existing min/max path. Raw-identical
+  alignments now test equality before uppercasing every row, avoiding the
+  normalization pass for already identical inputs while preserving mixed-case
+  equivalence. A follow-up pass reuses the shared no-slice equality helper,
+  avoiding `sequences[1:]` materialization while preserving early exit for
+  heterogeneous alignments. The single-record path now returns zero variable
+  sites after reading the alignment length, avoiding sequence materialization
+  because one taxon cannot vary by column. The Unicode fallback now counts final
+  variable columns with `np.count_nonzero` instead of summing a boolean vector.
   Parsimony-informative clean ASCII alignments pass blocks directly into the
   256-bin counter after the same gap-code scan proves there is no validity mask
   to apply, preserving the masked path for gappy alignments. Fully identical

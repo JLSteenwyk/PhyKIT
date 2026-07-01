@@ -73,11 +73,22 @@ class VariableSites(Alignment):
         if num_records <= 1:
             return 0, aln_len, 0.0
 
-        sequences = [str(record.seq).upper() for record in alignment]
         if aln_len == 0:
             return 0, aln_len, 0.0
-        if _all_sequences_identical(sequences):
+
+        raw_sequences = [str(record.seq) for record in alignment]
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
             return 0, aln_len, 0.0
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         try:
             alignment_bytes = "".join(sequences).encode("ascii")
