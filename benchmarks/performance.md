@@ -1914,6 +1914,7 @@ Results:
 | `FaithsPD.calculate_faiths_pd` selected-tip lookup | balanced 32768-tip tree, every 20th taxon selected, `include_root=True` | 0.030370s | 0.027354s | 1.11x |
 | `FaithsPD.calculate_faiths_pd` initial child push | balanced 32768-tip tree, every 20th taxon selected, `include_root=True`, side-by-side previous `reversed(children)` traversal | 0.043449s | 0.032935s | 1.32x |
 | `FaithsPD.calculate_faiths_pd` binary selected-count aggregation | balanced 8192-tip tree, every third taxon selected, `include_root=False`, side-by-side previous generator-sum child count | 0.020002s | 0.015337s | 1.30x |
+| `FaithsPD.calculate_faiths_pd` single-tip exclude-root skip | balanced 32768-tip tree, one selected taxon, `include_root=False` | 0.047379s | 0.029310s | 1.62x |
 | `FaithsPD._load_taxa` order-preserving dedupe | 400k taxa rows plus blanks, 180k unique taxa, full file load path | 0.075677s | 0.066871s | 1.13x |
 | `FaithsPD.run` cached read-only tree path | balanced 16384-tip cached tree, 2048-taxon community, taxa/output mocked | 0.138387s | 0.022596s | 6.12x |
 | `faiths_pd` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006675s | 0.005228s | 1.28x |
@@ -6601,7 +6602,9 @@ Profiling summary:
   tree scan now stores clade objects only for selected terminal names, while
   retaining the unique terminal-name set for all-tip compatibility, and the
   selected-descendant pass checks `clades` directly instead of calling
-  `is_terminal()` at each node. Community taxa deduplication now uses
+  `is_terminal()` at each node. Single-tip `include_root=False` communities now
+  return PhyKIT's documented `0.0` result immediately after taxon validation,
+  skipping the selected-descendant count pass. Community taxa deduplication now uses
   order-preserving dictionary keys in both the file loader and calculation
   entry point, preserving blank filtering and first-occurrence order while
   reducing large community-list setup time. The initial full-tree scan now

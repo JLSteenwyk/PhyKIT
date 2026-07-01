@@ -143,6 +143,11 @@ class FaithsPD(Tree):
                     clade = parent_by_id[cid]
             return total, len(taxa)
 
+        if len(taxa) == 1:
+            # picante returns NA for single-tip exclude-root communities; PhyKIT
+            # documents this as 0.0, so no selected-descendant pass is needed.
+            return 0.0, 1
+
         selected_counts = {}
         for clade in reversed(clades):
             children = clade.clades
@@ -159,22 +164,6 @@ class FaithsPD(Tree):
                 selected_counts[id(clade)] = count
             else:
                 selected_counts[id(clade)] = 1 if clade.name in selected_names else 0
-
-        if len(taxa) == 1:
-            # Single-tip community: PD with include_root=True is the path
-            # length from the root to that tip; with include_root=False it
-            # is 0 (no induced subtree). picante returns NA for the latter;
-            # we return 0 for programmatic convenience.
-            if not include_root:
-                return 0.0, 1
-            path = [
-                clade for clade in clades
-                if clade is not tree.root and selected_counts[id(clade)] > 0
-            ]
-            return (
-                sum((c.branch_length or 0.0) for c in path),
-                1,
-            )
 
         excluded_ids = set()
         if include_root:

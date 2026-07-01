@@ -296,6 +296,49 @@ class TestFaithsPD(object):
         assert n == 1
         assert pd_exc == 0.0
 
+    def test_single_tip_exclude_root_skips_selected_count_pass(
+        self, args, monkeypatch
+    ):
+        class Clade:
+            def __init__(self, name=None, branch_length=None, clades=None):
+                self.name = name
+                self.branch_length = branch_length
+                self._clades = clades or []
+                self._clades_accesses = 0
+
+            @property
+            def clades(self):
+                self._clades_accesses += 1
+                if self._clades_accesses > 1:
+                    raise AssertionError(
+                        "single-tip exclude-root should skip selected counts"
+                    )
+                return self._clades
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": Clade(
+                    clades=[
+                        Clade("A", 1.0),
+                        Clade("B", 2.0),
+                    ],
+                )
+            },
+        )()
+        svc = _service(args)
+        monkeypatch.setattr(
+            svc,
+            "validate_tree",
+            lambda *_args, **_kwargs: None,
+        )
+
+        pd_exc, n = svc.calculate_faiths_pd(tree, ["A"], include_root=False)
+
+        assert n == 1
+        assert pd_exc == 0.0
+
     def test_missing_taxon_raises(self, tree_simple, args):
         svc = _service(args)
         with pytest.raises(PhykitUserError) as exc_info:
