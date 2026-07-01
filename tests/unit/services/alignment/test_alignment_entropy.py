@@ -246,6 +246,43 @@ assert "Bio.AlignIO" not in sys.modules
 
         np.testing.assert_allclose(observed, expected)
 
+    def test_entropy_columns_uses_direct_column_dot_for_small_alphabet(
+        self, monkeypatch
+    ):
+        probs = np.array(
+            [
+                [0.2, 0.0, 0.5],
+                [0.3, 1.0, 0.5],
+                [0.5, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ],
+            dtype=np.float64,
+        )
+        log_probs = np.zeros_like(probs)
+        positive = probs > 0
+        np.log2(probs, out=log_probs, where=positive)
+        original_einsum = alignment_entropy_module.np.einsum
+        einsum_calls = []
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("entropy columns should use direct column dot")
+
+        def counting_einsum(signature, *args, **kwargs):
+            einsum_calls.append(signature)
+            return original_einsum(signature, *args, **kwargs)
+
+        monkeypatch.setattr(alignment_entropy_module.np, "sum", fail_sum)
+        monkeypatch.setattr(alignment_entropy_module.np, "einsum", counting_einsum)
+
+        observed = alignment_entropy_module._entropy_columns_from_probabilities(
+            probs,
+            log_probs,
+        )
+        expected = -original_einsum("ij,ij->j", probs, log_probs)
+
+        assert einsum_calls == ["ij,ij->j"]
+        np.testing.assert_allclose(observed, expected)
+
     def test_site_entropies_single_valid_symbol_returns_zeroes_directly(
         self, mocker
     ):

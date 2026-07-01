@@ -173,6 +173,7 @@ Results:
 | `AlignmentEntropy.calculate_site_entropies` identical-sequence shortcut | 1200 taxa x 12000 sites, identical ASCII DNA alignment, side-by-side previous byte-matrix path | 0.092795s | 0.005340s | 17.38x |
 | `AlignmentEntropy.calculate_site_entropies` identical-row no-slice scan | 1M identical ASCII DNA rows, side-by-side previous `sequences[1:]` equality scan | 0.470263s | 0.391903s | 1.20x |
 | `AlignmentEntropy.calculate_site_entropies` deferred Unicode gap-char set | 400 taxa x 2000 ASCII DNA sites, side-by-side previous unconditional `get_gap_chars` set construction | 0.389624s | 0.279371s | 1.39x |
+| `AlignmentEntropy.calculate_site_entropies` entropy column dot | 2 / 4 / 8 / 20 states by 12000 / 12000 / 12000 / 5000 sites, side-by-side previous small-alphabet multiply plus `np.sum(axis=0)` path | 0.000073515s / 0.000106187s / 0.000208391s / 0.000220500s | 0.000051922s / 0.000071867s / 0.000164666s / 0.000112586s | 1.42x / 1.48x / 1.27x / 1.96x |
 | `AlignmentEntropy.run` verbose batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.067358s | 0.055155s | 1.22x |
 | `AlignmentEntropy.run` verbose text direct rows | 100k site rows, mocked alignment/read/calculation, captured stdout and identical text, side-by-side previous row-dict formatter | 0.057309s | 0.047691s | 1.20x |
 | `AlignmentEntropy.run` nonverbose summary output | 100k site entropies, mocked alignment/read/calculation | 0.044581s | 0.000471s | 94.7x |
@@ -2599,11 +2600,11 @@ Profiling summary:
   small, and large masks. Alignment plotting and PhyloGWAS contingency guards
   now use the same no-axis mask method calls where no public NumPy patch point
   is required.
-  Protein-sized entropy matrices now reduce probability/log-probability terms
-  with an `einsum` column dot while DNA-sized matrices keep the previous
-  in-place product path. DNA-sized
-  ASCII entropy counts now use `np.count_nonzero` instead of summing boolean
-  equality masks while preserving the faster `np.sum` path for Unicode matrices.
+  Entropy matrices now reduce probability/log-probability terms with an
+  `einsum` column dot for both small DNA-sized and larger protein-sized
+  alphabets, avoiding the previous in-place product plus `np.sum` path.
+  DNA-sized ASCII entropy counts now use `np.count_nonzero` instead of summing
+  boolean equality masks while preserving the faster `np.sum` path for Unicode matrices.
   Conserved alignments with one valid observed symbol now return zero site
   entropies directly after the existing `np.unique` check, skipping count,
   probability, and log calculations while leaving multi-symbol inputs on the

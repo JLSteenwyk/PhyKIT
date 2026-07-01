@@ -72,10 +72,7 @@ def _entropy_values_to_list(entropies):
 
 
 def _entropy_columns_from_probabilities(probs, log_probs):
-    if probs.shape[0] > 8:
-        return -np.einsum("ij,ij->j", probs, log_probs)
-    probs *= log_probs
-    return -np.sum(probs, axis=0)
+    return -np.einsum("ij,ij->j", probs, log_probs)
 
 
 def _entropy_from_counts(counts, totals):
