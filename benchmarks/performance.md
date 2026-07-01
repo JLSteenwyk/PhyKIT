@@ -729,6 +729,7 @@ Results:
 | `TreeSpace._build_distance_matrix` direct split extraction | 20 balanced 512-tip trees, prune to 256 shared taxa before RF splits | 0.101763s | 0.085802s | 1.2x |
 | `TreeSpace._build_distance_matrix` RF shared-taxa direct extraction | 20 balanced 512-tip trees, 256 shared taxa before RF split matrix | 0.066800s | 0.021859s | 3.06x |
 | `TreeSpace._auto_detect_k` normalized Laplacian scaling | 900-item synthetic affinity matrix, diagonal scaling step | 0.029895s | 0.002207s | 13.5x |
+| `TreeSpace._auto_detect_k` normalized Laplacian row sums | 900 / 2500 / 5000-item synthetic affinity matrices, side-by-side previous `np.sum(..., axis=1)` degree-vector reduction | 0.000159105s / 0.003991750s / 0.015878400s | 0.000153917s / 0.001476250s / 0.008788600s | 1.03x / 2.70x / 1.81x |
 | `TreeSpace._spectral_cluster` condensed distance setup | 2500 x 2500 symmetric distance matrix, side-by-side previous triangular-index upper-distance gather for bandwidth median | 0.340237s | 0.207055s | 1.64x |
 | `TreeSpace._print_text_output` batched cluster rows | 100k cluster rows, captured stdout and identical text | 0.026882s | 0.016951s | 1.59x |
 | `TreeSpace._write_distance_matrix` row-slice CSV formatting | 800 x 800 NumPy distance matrix, identical six-decimal CSV text | 0.199160s | 0.169827s | 1.17x |
@@ -750,6 +751,7 @@ Results:
 | `SpectralDiscordance._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.487977s | 0.186022s | 2.62x |
 | `SpectralDiscordance._canonical_split` size-first complement avoidance | 9k mixed 20-vs-1180, 1180-vs-20, and 600-vs-600 bipartitions over 1200 taxa | 0.269033s | 0.236251s | 1.14x |
 | `SpectralDiscordance._spectral_cluster` normalized Laplacian scaling | 900-item synthetic affinity matrix, diagonal scaling step | 0.029895s | 0.002207s | 13.5x |
+| `SpectralDiscordance._spectral_cluster` normalized Laplacian row sums | 900 / 2500 / 5000-item synthetic affinity matrices, side-by-side previous `np.sum(..., axis=1)` degree-vector reduction | 0.000159105s / 0.003991750s / 0.015878400s | 0.000153917s / 0.001476250s / 0.008788600s | 1.03x / 2.70x / 1.81x |
 | `SpectralDiscordance._spectral_cluster` condensed distance reuse | 2500 gene-tree PCA score rows x 8 dimensions, side-by-side previous squareform plus triangular-index distance gather for bandwidth median | 0.303434s | 0.091461s | 3.32x |
 | `SpectralDiscordance._spectral_cluster` eigenvector row normalization | 200x4 / 1000x8 / 5000x12 / 10000x20 eigenvector matrices, side-by-side previous `np.linalg.norm(..., axis=1, keepdims=True)` | 0.000003750s / 0.000011625s / 0.000133792s / 0.000351958s | 0.000002667s / 0.000005625s / 0.000054666s / 0.000056291s | 1.41x / 2.07x / 2.45x / 6.25x |
 | `SpectralDiscordance._kmeans` vectorized distance and center updates | 80k rows x 8 dimensions, 12 clusters, fixed RandomState seed and identical labels | 12.232717s | 0.789952s | 15.49x |
@@ -3905,10 +3907,14 @@ Profiling summary:
   needed and constructs RF/KF distance matrices from split-presence or
   branch-length matrices with NumPy operations. TreeSpace auto-K detection now
   builds the normalized Laplacian by row/column scaling the affinity matrix
-  directly instead of materializing a dense diagonal scaling matrix. A startup
-  pass defers direct NumPy imports and Bio.Phylo loading behind lazy proxies,
-  so command discovery avoids array and tree-format parser startup until tree
-  parsing, distance-matrix construction, clustering, or plotting runs. A
+  directly instead of materializing a dense diagonal scaling matrix. Its
+  degree-vector setup now uses the matrix's own row-sum reduction, preserving
+  the same normalized Laplacian while avoiding generic NumPy reduction dispatch.
+  `einsum` was not used for the row sums because the largest 5000-row affinity
+  benchmark regressed. A startup pass defers direct NumPy imports and Bio.Phylo
+  loading behind lazy proxies, so command discovery avoids array and
+  tree-format parser startup until tree parsing, distance-matrix construction,
+  clustering, or plotting runs. A
   follow-up startup pass keeps JSON output behind a forwarding wrapper and
   localizes `PlotConfig` to argument processing, avoiding those helpers during
   import-only command discovery. A later startup pass defers pickle until a tree
@@ -3935,9 +3941,10 @@ Profiling summary:
   bipartition canonicalization now compares the smallest taxon on each disjoint
   half instead of sorting both halves, preserving the documented sorted
   lexicographic tiebreak. Spectral clustering uses the same direct
-  normalized-Laplacian scaling as TreeSpace. Eigenvector row normalization now
-  computes row L2 norms with an `einsum` reduction before the square root,
-  avoiding `np.linalg.norm` dispatch while preserving normalized rows. K-means++
+  normalized-Laplacian scaling as TreeSpace, including ndarray row sums for the
+  degree vector. Eigenvector row normalization now computes row L2 norms with
+  an `einsum` reduction before the square root, avoiding `np.linalg.norm`
+  dispatch while preserving normalized rows. K-means++
   initialization now computes each new center's squared distances with one
   `einsum` over a single difference buffer, preserving the fixed-seed center
   choices while avoiding an extra squared temporary. PCA variance explained now

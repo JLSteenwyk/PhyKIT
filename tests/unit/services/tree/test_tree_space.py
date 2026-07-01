@@ -640,6 +640,13 @@ class TestClustering:
             return original_diag(a, *args, **kwargs)
 
         monkeypatch.setattr(ts.np, "diag", diag_without_vector_to_matrix)
+        monkeypatch.setattr(
+            ts.np,
+            "sum",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("auto-K should use ndarray row sums")
+            ),
+        )
         assert svc._auto_detect_k(affinity) == expected_k
 
 

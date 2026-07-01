@@ -838,7 +838,7 @@ class SpectralDiscordance(Tree):
         W = np.exp(-dists ** 2 / (2 * sigma ** 2))
         np.fill_diagonal(W, W.diagonal() + 1e-10)
 
-        d = np.sum(W, axis=1)
+        d = W.sum(axis=1)
         d_inv_sqrt = 1.0 / np.sqrt(d)
         L_norm = np.eye(G) - (W * d_inv_sqrt[:, None]) * d_inv_sqrt[None, :]
 

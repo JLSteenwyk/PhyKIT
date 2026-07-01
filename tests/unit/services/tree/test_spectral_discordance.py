@@ -603,6 +603,13 @@ class TestSpectralClustering:
             return original_diag(a, *args, **kwargs)
 
         monkeypatch.setattr(sd.np, "diag", diag_without_vector_to_matrix)
+        monkeypatch.setattr(
+            sd.np,
+            "sum",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("spectral clustering should use ndarray row sums")
+            ),
+        )
         labels, K, eigengaps = svc._spectral_cluster(X_centered)
 
         assert len(labels) == X_centered.shape[0]

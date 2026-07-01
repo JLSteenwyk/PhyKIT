@@ -572,7 +572,7 @@ class TreeSpace(Tree):
 
     def _auto_detect_k(self, affinity: np.ndarray) -> int:
         n = affinity.shape[0]
-        d = np.sum(affinity, axis=1)
+        d = affinity.sum(axis=1)
         d_inv_sqrt = 1.0 / np.sqrt(np.maximum(d, 1e-10))
         L_norm = np.eye(n) - (
             affinity * d_inv_sqrt[:, None]
