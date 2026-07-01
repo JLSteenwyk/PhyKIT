@@ -169,6 +169,39 @@ class TestHiddenParalogyCheck(unittest.TestCase):
 
         self.assertEqual(output.getvalue(), "")
 
+    def test_print_results_json_payload(self):
+        """JSON output preserves row order and unexpected taxa sorting."""
+        self.checker.json_output = True
+        res_arr = [
+            ["monophyletic", []],
+            ["not_monophyletic", ["taxa2", "taxa1"]],
+            ["insufficient_taxon_representation"],
+        ]
+
+        with patch(
+            "phykit.services.tree.hidden_paralogy_check.print_json"
+        ) as mocked_json:
+            self.checker.print_results(res_arr)
+
+        rows = [
+            {
+                "clade_index": 1,
+                "status": "monophyletic",
+                "unexpected_taxa": [],
+            },
+            {
+                "clade_index": 2,
+                "status": "not_monophyletic",
+                "unexpected_taxa": ["taxa1", "taxa2"],
+            },
+            {
+                "clade_index": 3,
+                "status": "insufficient_taxon_representation",
+                "unexpected_taxa": [],
+            },
+        ]
+        mocked_json.assert_called_once_with({"rows": rows, "clades": rows})
+
     @patch('phykit.services.tree.hidden_paralogy_check.Phylo.read')
     def test_process_clade_batch_monophyletic(self, mock_phylo_read):
         """Test processing a batch of clades - monophyletic case"""

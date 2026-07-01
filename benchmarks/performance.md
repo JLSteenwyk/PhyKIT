@@ -1289,6 +1289,7 @@ Results:
 | `HiddenParalogyCheck._terminal_names_direct` set traversal | balanced 65536-tip clade, collect identical terminal-name set | 0.019487s | 0.012567s | 1.55x |
 | `HiddenParalogyCheck` requested-clade shared-taxa intersection | 500k three-taxon requested clades against 100k master tree tips, duplicate/off-tree semantics preserved | 0.247522s | 0.190846s | 1.30x |
 | `HiddenParalogyCheck.print_results` text output | 200k clade status rows, identical stdout text | 0.028718s | 0.004742s | 6.06x |
+| `HiddenParalogyCheck.print_results` JSON row construction | 500k clade status rows with mixed unexpected-taxa lists, identical row dictionaries | 2.142931s | 1.682672s | 1.27x |
 | `HiddenParalogyCheck.read_clades_file` bulk read split | 500k three-taxon clade rows with blank-line compatibility | 0.572789s | 0.435850s | 1.31x |
 | `HiddenParalogyCheck.read_clades_file` direct line iteration | 500k three-taxon clade rows with blank-line compatibility, side-by-side previous `read().splitlines()` parser | 0.094809s | 0.092886s | 1.02x |
 | `hidden_paralogy_check` module import without eager Bio.Phylo | cold subprocess import after lazy Phylo reader proxy | 0.135706s | 0.029766s | 4.56x |
@@ -5101,7 +5102,9 @@ Profiling summary:
   objects. A follow-up pass avoids order-preserving child reversal in that helper
   because it returns a set, preserving the same terminal-name result while
   reducing stack traversal overhead. Text output now batches clade status rows
-  into one newline-joined print. Clade-file parsing now bulk-reads rows before
+  into one newline-joined print. JSON output now builds row dictionaries through
+  a list comprehension and row helper while preserving the `rows`/`clades`
+  alias payload. Clade-file parsing now bulk-reads rows before
   applying the same whitespace split, preserving empty clade rows while reducing
   per-line iterator overhead on large clade lists. A later parser pass iterates
   the file handle directly with the same whitespace split, preserving blank-line
