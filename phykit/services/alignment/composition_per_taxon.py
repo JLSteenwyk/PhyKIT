@@ -79,17 +79,17 @@ class CompositionPerTaxon(Alignment):
         self, alignment, is_protein: bool
     ) -> tuple[list[str], list[tuple[str, np.ndarray]]]:
         invalid_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
-        records = [(record.id, str(record.seq).upper()) for record in alignment]
-        if not records:
+        raw_records = [(record.id, str(record.seq)) for record in alignment]
+        if not raw_records:
             return [], []
 
-        record_ids = [record_id for record_id, _ in records]
-        record_iter = iter(records)
-        _, first_sequence = next(record_iter)
-        aln_len = len(first_sequence)
+        record_ids = [record_id for record_id, _ in raw_records]
+        first_raw_sequence = raw_records[0][1]
+        first_sequence = first_raw_sequence.upper()
         all_identical = True
-        for _, sequence in record_iter:
-            if sequence != first_sequence:
+        for idx in range(1, len(raw_records)):
+            sequence = raw_records[idx][1]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
                 all_identical = False
                 break
 
@@ -123,7 +123,12 @@ class CompositionPerTaxon(Alignment):
                 for record_id in record_ids
             ]
 
+        records = [
+            (record_id, sequence.upper())
+            for record_id, sequence in raw_records
+        ]
         sequences = [seq for _, seq in records]
+        aln_len = len(sequences[0])
         try:
             alignment_bytes = "".join(sequences).encode("ascii")
             alignment_array = np.frombuffer(

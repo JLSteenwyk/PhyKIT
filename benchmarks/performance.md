@@ -223,6 +223,7 @@ Results:
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical frequency sum | 20-symbol identical-sequence count vector, side-by-side previous `np.sum` normalization | 0.000007918s | 0.000003764s | 2.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical-row no-slice scan | 300k conserved 20-symbol protein records, side-by-side previous `sequences[1:]` equality scan | 0.614861s | 0.460860s | 1.33x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical-row direct record scan | 300k conserved 20-symbol protein records, side-by-side previous sequence-list setup with identical symbols and frequency rows | 0.452163s | 0.366624s | 1.23x |
+| `CompositionPerTaxon.calculate_composition_per_taxon` raw-identical normalization scan | 300k conserved raw-identical 20-symbol protein records, side-by-side previous eager uppercase record setup | 0.766295s | 0.508587s | 1.51x |
 | `CompositionPerTaxon.run` text output formatting | 100k taxon rows x 4 composition symbols, mocked alignment/read and identical stdout text | 0.853874s | 0.194774s | 4.38x |
 | `CompositionPerTaxon.run` JSON payload formatting | 100k taxon rows x 4 composition symbols, mocked calculation rows, side-by-side previous index lookup loop | 0.147151s | 0.137843s | 1.07x |
 | `composition_per_taxon` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085520s | 0.023586s | 3.63x |
@@ -2763,6 +2764,10 @@ Profiling summary:
   scans the normalized record tuples directly before building the separate
   sequence list, preserving the matrix path for heterogeneous alignments while
   reducing conserved-input setup work.
+  Raw-identical conserved rows now avoid uppercasing every record before the
+  identical shortcut, while mixed-case identical rows still compare through the
+  same normalized sequence check and heterogeneous rows still uppercase before
+  the matrix path.
   Conserved alignments with one valid observed symbol now fill the one-column
   frequency output directly from valid sequence lengths, skipping the count
   matrix while preserving `0.0` frequencies for taxa with no valid sites.
