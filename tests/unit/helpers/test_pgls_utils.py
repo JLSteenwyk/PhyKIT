@@ -10,6 +10,7 @@ from Bio import Phylo
 from phykit.helpers.pgls_utils import (
     _max_lambda_fallback,
     _pgls_log_likelihood_inverse,
+    estimate_lambda,
     fit_gls,
     max_lambda,
     pgls_log_likelihood,
@@ -228,6 +229,50 @@ def test_repeated_minimize_scalar_wrapper_caches_scipy_optimize_import(monkeypat
 
     assert first_call_imports > 0
     assert scipy_optimize_imports == first_call_imports
+
+
+def test_estimate_lambda_restores_diagonal_directly(monkeypatch):
+    import phykit.helpers.pgls_utils as pgls_utils
+
+    vcv = np.array(
+        [
+            [2.0, 0.4, 0.2],
+            [0.4, 3.0, 0.5],
+            [0.2, 0.5, 4.0],
+        ]
+    )
+    y = np.array([1.0, 1.5, 2.0])
+    X = np.column_stack([np.ones(3), np.arange(3.0)])
+    original_diag = vcv.diagonal().copy()
+    likelihood_calls = 0
+
+    def fail_diag(*_args, **_kwargs):
+        raise AssertionError("estimate_lambda should use ndarray diagonal access")
+
+    def fail_fill_diagonal(*_args, **_kwargs):
+        raise AssertionError("estimate_lambda should restore diagonal directly")
+
+    def fake_likelihood(_y, _X, C_lam):
+        nonlocal likelihood_calls
+        likelihood_calls += 1
+        np.testing.assert_allclose(C_lam.diagonal(), original_diag)
+        return -abs(C_lam[0, 1] - 0.2)
+
+    def fake_minimize_scalar(fn, bounds, method):
+        assert method == "bounded"
+        x = sum(bounds) / 2.0
+        return type("Result", (), {"x": x, "fun": fn(x)})()
+
+    monkeypatch.setattr(pgls_utils.np, "diag", fail_diag)
+    monkeypatch.setattr(pgls_utils.np, "fill_diagonal", fail_fill_diagonal)
+    monkeypatch.setattr(pgls_utils, "pgls_log_likelihood", fake_likelihood)
+    monkeypatch.setattr(pgls_utils, "minimize_scalar", fake_minimize_scalar)
+
+    lambda_val, ll = estimate_lambda(y, X, vcv, max_lam=1.0)
+
+    assert 0.0 <= lambda_val <= 1.0
+    assert np.isfinite(ll)
+    assert likelihood_calls == 11
 
 
 def test_fit_gls_matches_scalar_reference():

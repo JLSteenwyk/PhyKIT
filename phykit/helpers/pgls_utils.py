@@ -256,12 +256,13 @@ def estimate_lambda(
     -------
     (lambda_hat, log_likelihood_at_lambda)
     """
-    diag_vals = np.diag(vcv).copy()
+    diag_vals = vcv.diagonal().copy()
+    diag_step = vcv.shape[0] + 1
     niter = 10
 
     def neg_ll(lam):
         C_lam = vcv * lam
-        np.fill_diagonal(C_lam, diag_vals)
+        C_lam.ravel()[::diag_step] = diag_vals
         try:
             ll = pgls_log_likelihood(y, X, C_lam)
             return -ll
@@ -282,7 +283,7 @@ def estimate_lambda(
 
     # Compute log-likelihood at fitted lambda
     C_fitted = vcv * lambda_hat
-    np.fill_diagonal(C_fitted, diag_vals)
+    C_fitted.ravel()[::diag_step] = diag_vals
     ll_fitted = pgls_log_likelihood(y, X, C_fitted)
 
     return float(lambda_hat), float(ll_fitted)
