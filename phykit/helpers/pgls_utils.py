@@ -340,7 +340,7 @@ def fit_gls(
 
 def apply_lambda(vcv: np.ndarray, lambda_val: float) -> np.ndarray:
     """Apply Pagel's lambda to a VCV matrix (scale off-diagonals, keep diagonal)."""
-    diag_vals = np.diag(vcv).copy()
+    diag_vals = vcv.diagonal().copy()
     vcv_lam = vcv * lambda_val
     np.fill_diagonal(vcv_lam, diag_vals)
     return vcv_lam

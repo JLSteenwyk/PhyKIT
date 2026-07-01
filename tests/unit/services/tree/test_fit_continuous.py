@@ -326,7 +326,7 @@ class TestBMModel:
 
 
 class TestOUModel:
-    def test_vcv_ou_matches_scalar_formula(self, svc):
+    def test_vcv_ou_matches_scalar_formula(self, svc, monkeypatch):
         C = np.array(
             [
                 [3.0, 1.0, 0.5],
@@ -346,6 +346,11 @@ class TestOUModel:
                 ) / (2.0 * alpha)
                 expected[i, j] = value
                 expected[j, i] = value
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("OU VCV should use ndarray diagonal access")
+
+        monkeypatch.setattr(fit_continuous_module.np, "diag", fail_diag)
 
         np.testing.assert_allclose(svc._vcv_ou(C, alpha), expected)
 
@@ -655,8 +660,14 @@ class TestVCVTransformations:
         eigenvalues = np.linalg.eigvalsh(V)
         assert np.all(eigenvalues > -1e-10)
 
-    def test_lambda_1_equals_bm(self, tree_vcv_data):
+    def test_lambda_1_equals_bm(self, tree_vcv_data, monkeypatch):
         d = tree_vcv_data
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("lambda VCV should use ndarray diagonal access")
+
+        monkeypatch.setattr(fit_continuous_module.np, "diag", fail_diag)
+
         V = d["svc"]._vcv_lambda(d["vcv"], 1.0)
         np.testing.assert_array_almost_equal(V, d["vcv"])
 

@@ -410,7 +410,7 @@ class FitContinuous(Tree):
         if alpha < 1e-10:
             return C.copy()
 
-        diag_vals = np.diag(C)
+        diag_vals = C.diagonal()
         unique_path = diag_vals[:, None] + diag_vals[None, :] - 2.0 * C
         return (
             np.exp(-alpha * unique_path)
@@ -420,7 +420,7 @@ class FitContinuous(Tree):
 
     def _vcv_lambda(self, C: np.ndarray, lam: float) -> np.ndarray:
         """Pagel's lambda VCV transformation."""
-        diag_vals = np.diag(C).copy()
+        diag_vals = C.diagonal().copy()
         C_lam = C * lam
         np.fill_diagonal(C_lam, diag_vals)
         return C_lam

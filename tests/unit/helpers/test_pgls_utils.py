@@ -10,6 +10,7 @@ from Bio import Phylo
 from phykit.helpers.pgls_utils import (
     _max_lambda_fallback,
     _pgls_log_likelihood_inverse,
+    apply_lambda,
     estimate_lambda,
     fit_gls,
     max_lambda,
@@ -190,6 +191,27 @@ def test_pgls_log_likelihood_singular_matrix_returns_floor():
     C = np.ones((3, 3))
 
     assert pgls_log_likelihood(y, X, C) == -1e20
+
+
+def test_apply_lambda_uses_diagonal_view(monkeypatch):
+    import phykit.helpers.pgls_utils as pgls_utils
+
+    vcv = np.array(
+        [
+            [2.0, 0.4, 0.1],
+            [0.4, 3.0, 0.6],
+            [0.1, 0.6, 5.0],
+        ]
+    )
+    expected = vcv * 0.5
+    np.fill_diagonal(expected, vcv.diagonal())
+
+    def fail_diag(*_args, **_kwargs):
+        raise AssertionError("lambda transform should use ndarray diagonal access")
+
+    monkeypatch.setattr(pgls_utils.np, "diag", fail_diag)
+
+    np.testing.assert_allclose(apply_lambda(vcv, 0.5), expected)
 
 
 def test_repeated_pgls_log_likelihood_caches_scipy_linalg_imports(monkeypatch):
