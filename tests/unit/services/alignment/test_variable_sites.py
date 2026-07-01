@@ -248,6 +248,28 @@ assert "typing" not in sys.modules
         assert aln_len == 4
         assert var_sites_per == 0.0
 
+    def test_variable_sites_single_record_returns_before_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError(
+                    "single-record variable sites should not inspect sequence"
+                )
+
+        class DummyAlignment(list):
+            def get_alignment_length(self):
+                return 8
+
+        alignment = DummyAlignment([SimpleNamespace(seq=UnstringableSequence())])
+        vs = VariableSites(args)
+
+        assert vs.calculate_variable_sites(alignment, is_protein=False) == (
+            0,
+            8,
+            0.0,
+        )
+
     def test_identical_sequence_helper_does_not_slice_rows(self):
         class NoSliceList(list):
             def __getitem__(self, key):

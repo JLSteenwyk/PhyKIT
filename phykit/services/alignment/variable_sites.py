@@ -69,9 +69,11 @@ class VariableSites(Alignment):
         is_protein: bool = False,
     ) -> tuple[int, int, float]:
         aln_len = alignment.get_alignment_length()
-        sequences = [str(record.seq).upper() for record in alignment]
-        if not sequences:
+        num_records = len(alignment)
+        if num_records <= 1:
             return 0, aln_len, 0.0
+
+        sequences = [str(record.seq).upper() for record in alignment]
         if aln_len == 0:
             return 0, aln_len, 0.0
         if _all_sequences_identical(sequences):
