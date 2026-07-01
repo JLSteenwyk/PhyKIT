@@ -44,16 +44,17 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
     if not record_data:
         return []
 
-    sequences = [sequence for _, sequence in record_data]
-    seq_len = len(sequences[0])
-    if any(len(sequence) != seq_len for sequence in sequences):
-        return None
-
-    first_sequence = sequences[0]
-    for sequence in sequences:
+    record_iter = iter(record_data)
+    _, first_sequence = next(record_iter)
+    seq_len = len(first_sequence)
+    all_identical = True
+    for _, sequence in record_iter:
+        if len(sequence) != seq_len:
+            return None
         if sequence != first_sequence:
-            break
-    else:
+            all_identical = False
+
+    if all_identical:
         try:
             sequence_bytes = first_sequence.encode("ascii")
         except UnicodeEncodeError:
@@ -69,6 +70,7 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
             for record_id, _ in record_data
         ]
 
+    sequences = [sequence for _, sequence in record_data]
     try:
         alignment_bytes = "".join(sequences).encode("ascii")
     except UnicodeEncodeError:

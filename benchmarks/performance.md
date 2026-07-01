@@ -603,6 +603,7 @@ Results:
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` no-gap protein ASCII shortcut | 2000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full matrix lookup path | 0.027621s | 0.003884s | 7.11x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` identical gappy ASCII shortcut | 1200 taxa x 12000 sites, identical mixed-symbol DNA records with gaps/ambiguous symbols, side-by-side previous byte-matrix lookup path | 0.126362s | 0.000168s | 750.48x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` identical-row no-slice scan | 1M identical mixed-symbol DNA records, side-by-side previous `sequences[1:]` equality scan | 0.569269s | 0.392282s | 1.45x |
+| `OccupancyPerTaxon._occupancy_from_ascii_matrix` combined length/identity scan | 1M mixed-symbol DNA records, identical / late-different / late variable-length cases, side-by-side previous sequence-list length pass plus identity pass | 0.288323s / 0.292319s / 0.085046s | 0.138665s / 0.282464s / 0.055508s | 2.08x / 1.03x / 1.53x |
 | `OccupancyPerTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.025741s | 0.019400s | 1.33x |
 | `occupancy_per_taxon` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy, lookup construction, and JSON helper wrapper | 0.081361s | 0.024702s | 3.29x |
 | `occupancy_per_taxon` module import without `typing` startup | median cold subprocess import after removing annotation-only typing aliases under postponed annotations | 0.002602s | 0.000946s | 2.75x |
@@ -3687,7 +3688,11 @@ Profiling summary:
   byte-matrix construction for conserved gappy alignments while preserving DNA
   and protein invalid-symbol rules. A follow-up identical-row pass scans the
   existing sequence list directly instead of materializing `sequences[1:]`,
-  reducing temporary allocation for high-taxon conserved alignments. Text-mode
+  reducing temporary allocation for high-taxon conserved alignments. A later
+  helper pass combines equal-length validation and identical-row
+  detection before building a separate sequence list, speeding conserved
+  alignments and late variable-length rejection while preserving matrix
+  behavior for non-identical equal-length inputs. Text-mode
   `run` now batches per-taxon rows into one newline-joined print, preserving
   the same stdout text and leaving JSON output unchanged. A subsequent startup
   pass defers NumPy, validity lookup

@@ -149,6 +149,20 @@ class TestOccupancyPerTaxon(object):
             is_protein=False,
         ) == [("a", 4 / 9), ("b", 4 / 9), ("c", 4 / 9)]
 
+    def test_occupancy_ascii_matrix_variable_lengths_return_none(self):
+        record_data = [
+            ("a", "ACGT"),
+            ("b", "AC"),
+        ]
+
+        assert (
+            occupancy_per_taxon_module._occupancy_from_ascii_matrix(
+                record_data,
+                is_protein=False,
+            )
+            is None
+        )
+
     def test_occupancy_per_taxon_variable_length_ascii_uses_byte_translate(
         self, args, mocker
     ):
