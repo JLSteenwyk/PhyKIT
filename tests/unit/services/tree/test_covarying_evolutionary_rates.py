@@ -123,6 +123,20 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertAlmostEqual(r_value, 0.8315218406203)
         self.assertAlmostEqual(p_value, 0.1684781593797)
 
+    def test_pearsonr_uses_dot_product_norm(self):
+        with patch.object(
+            cer_module.np.linalg,
+            "norm",
+            side_effect=AssertionError("Pearson helper should use dot products"),
+        ):
+            r_value, p_value = cer_module._pearsonr(
+                [1.0, 2.0, 3.0, 4.0],
+                [1.0, 3.0, 2.0, 5.0],
+            )
+
+        self.assertAlmostEqual(r_value, 0.8315218406203)
+        self.assertAlmostEqual(p_value, 0.1684781593797)
+
     def test_pearsonr_does_not_import_scipy_stats(self):
         original_import = builtins.__import__
 

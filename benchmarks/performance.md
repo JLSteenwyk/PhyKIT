@@ -1097,6 +1097,7 @@ Results:
 | `CovaryingEvolutionaryRates._correct_branch_lengths_from_exact_splits` reference direct postorder | exact-matching balanced 16384-tip gene trees plus reference | 0.188390s | 0.153965s | 1.22x |
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` reverse-preorder helper | exact-matching balanced 16384-tip reference tree metadata | 0.064371s | 0.053343s | 1.21x |
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` order-preserving child push | balanced 32768-tip reference tree metadata, optimized helper baseline | 0.105540s | 0.092782s | 1.14x |
+| `CovaryingEvolutionaryRates._pearsonr` dot-product correlation | 10k corrected branch-length pairs, SciPy already warm, side-by-side previous normalized-vector helper | 0.000086246s | 0.000045948s | 1.88x |
 | `CovaryingEvolutionaryRates._tips_to_prune_for_shared` ordered prune-list scan | 400k tree-zero tips, tree-one tips, reference tips, and 300k shared tips | 0.277122s | 0.069708s | 3.98x |
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` flat outlier indices | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, side-by-side previous `np.where(...)[0]` extraction | 0.012458s | 0.005730s | 2.17x |
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` empty-prior direct return | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, no existing outlier indices | 0.105751s | 0.063676s | 1.66x |
@@ -4510,7 +4511,10 @@ Profiling summary:
   branch is not an exact split in either gene tree, the existing MRCA-based
   fallback is retained. A later pass removed the eager `scipy.stats` import by
   replacing z-score and Pearson coefficient calculations locally while retaining
-  the beta-distribution p-value through lazy `scipy.special.betainc`. The exact
+  the beta-distribution p-value through lazy `scipy.special.betainc`. A later
+  Pearson helper pass computes the correlation directly from centered dot
+  products instead of normalizing two temporary vectors with `np.linalg.norm`.
+  The exact
   split path now preserves the existing terminal-first/nonterminal row order
   with a direct preorder traversal instead of calling generic
   `get_terminals()`/`get_nonterminals()` after the postorder split-map pass.

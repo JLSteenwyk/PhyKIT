@@ -1,3 +1,5 @@
+import math
+
 from .base import Tree
 
 
@@ -62,14 +64,14 @@ def _pearsonr(x_values, y_values):
     if x.size < 2:
         raise ValueError("x and y must have length at least 2")
 
-    x_centered = x - np.mean(x)
-    y_centered = y - np.mean(y)
-    x_norm = np.linalg.norm(x_centered)
-    y_norm = np.linalg.norm(y_centered)
-    if x_norm == 0.0 or y_norm == 0.0:
+    x_centered = x - x.mean()
+    y_centered = y - y.mean()
+    x_ss = float(np.dot(x_centered, x_centered))
+    y_ss = float(np.dot(y_centered, y_centered))
+    if x_ss == 0.0 or y_ss == 0.0:
         return float("nan"), float("nan")
 
-    r_value = float(np.dot(x_centered / x_norm, y_centered / y_norm))
+    r_value = float(np.dot(x_centered, y_centered) / math.sqrt(x_ss * y_ss))
     r_value = max(min(r_value, 1.0), -1.0)
     if x.size == 2:
         return r_value, 1.0
