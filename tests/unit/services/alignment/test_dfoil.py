@@ -166,6 +166,55 @@ class TestDfoilPatternCounting:
         assert counts["BBBBA"] == 1
         assert counts["AAAAA"] == 0
 
+    def test_small_ascii_with_skips_uses_lookup_validity_mask(self, mocker):
+        mocker.patch.object(
+            dfoil_module.np,
+            "ones",
+            side_effect=AssertionError(
+                "small DFOIL alignments with skips should use lookup validity mask"
+            ),
+        )
+        lookup_spy = mocker.spy(dfoil_module, "_get_skip_lookup")
+        seq_dict = _build_alignment_from_patterns(["AAABA", "AABAA"])
+        seqs = (
+            seq_dict["P1"] + "?",
+            seq_dict["P2"] + "A",
+            seq_dict["P3"] + "A",
+            seq_dict["P4"] + "C",
+            seq_dict["Outgroup"] + "A",
+        )
+
+        counts = Dfoil._count_site_patterns(*seqs)
+
+        assert counts == Dfoil._count_site_patterns_scalar(*seqs)
+        assert counts["AAABA"] == 1
+        assert counts["AABAA"] == 1
+        assert lookup_spy.call_count == 1
+
+    def test_large_ascii_with_skips_keeps_loop_validity_mask(self, monkeypatch):
+        monkeypatch.setattr(dfoil_module, "_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX", 1)
+        monkeypatch.setattr(
+            dfoil_module,
+            "_get_skip_lookup",
+            lambda: (_ for _ in ()).throw(
+                AssertionError("large DFOIL alignments should not use lookup mask")
+            ),
+        )
+        seq_dict = _build_alignment_from_patterns(["AAABA", "AABAA"])
+        seqs = (
+            seq_dict["P1"] + "?",
+            seq_dict["P2"] + "A",
+            seq_dict["P3"] + "A",
+            seq_dict["P4"] + "C",
+            seq_dict["Outgroup"] + "A",
+        )
+
+        counts = Dfoil._count_site_patterns(*seqs)
+
+        assert counts == Dfoil._count_site_patterns_scalar(*seqs)
+        assert counts["AAABA"] == 1
+        assert counts["AABAA"] == 1
+
     def test_all_invariant_sequences_skip_numpy_counting(self, mocker):
         mocker.patch.object(
             dfoil_module.np,

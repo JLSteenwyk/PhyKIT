@@ -600,6 +600,7 @@ Results:
 | `Dfoil._count_site_patterns` | 475k sites, DFOIL informative/invariant/ambiguous/non-biallelic synthetic alignment | 0.3978s | 0.0073s | 54.5x |
 | `Dfoil._count_site_patterns` pairwise derived-allele predicate | 1M valid ASCII sites, synthetic DFOIL informative/invariant/non-biallelic alignment | 0.008275s | 0.007467s | 1.11x |
 | `Dfoil._count_site_patterns` all-valid ASCII shortcut | 2M sites, clean ASCII DFOIL informative/uninformative synthetic alignment | 0.027733s | 0.021082s | 1.32x |
+| `Dfoil._count_site_patterns` small skip-code lookup mask | 1k / 5k / 10k / 100k ASCII sites with 2% skip codes, side-by-side previous six-code validity loop | 2.403774s / 1.269534s / 0.692042s / 0.224607s | 1.063043s / 0.773009s / 0.649486s / 0.209380s | 2.26x / 1.64x / 1.07x / 1.07x |
 | `Dfoil._count_site_patterns` all-invariant shortcut | 2M sites, P1/P2/P3/P4 identical to outgroup, identical all-zero pattern dictionary | 0.028345s | 0.000002s | 14172.5x |
 | `Dfoil._count_site_patterns_scalar` pattern-code fallback | 1M Unicode-containing scalar fallback sites, identical 16-pattern count dictionary | 2.091503s | 0.917063s | 2.28x |
 | `Dstatistic._print_alignment_text_output` batched report output | 50k alignment-mode D-statistic text reports, captured stdout and identical text | 0.249669s | 0.141300s | 1.77x |
@@ -3623,6 +3624,9 @@ Profiling summary:
   allocating temporary allele sets and pattern strings. Fully invariant
   five-taxon inputs now return the same all-zero pattern dictionary before
   NumPy array setup, matching the existing skipped-invariant scalar semantics.
+  Short ASCII alignments with skip codes now build the validity mask through a
+  cached byte lookup table, while longer alignments retain the previous
+  six-code vector loop that remains faster at larger sizes.
 - `Dstatistic` alignment-mode and gene-tree-mode text report baselines emitted
   each report line through separate `print()` calls. The optimized helpers build
   the same lines and emit each report with one `print()`, preserving captured
