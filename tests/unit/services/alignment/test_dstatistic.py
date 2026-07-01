@@ -844,6 +844,46 @@ class TestGeneTreeMode:
 
         assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
 
+    def test_get_quartet_topology_uses_membership_checks(self, monkeypatch):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class MembershipOnlyTips:
+            def __init__(self, values):
+                self.values = frozenset(values)
+
+            def __contains__(self, value):
+                return value in self.values
+
+            def __len__(self):
+                return len(self.values)
+
+            def __eq__(self, other):
+                return self.values == other
+
+            def __rand__(self, other):
+                raise AssertionError("quartet topology should not allocate intersections")
+
+        root = Clade(name="root", clades=[Clade(name="left"), Clade(name="right")])
+        left = root.clades[0]
+        right = root.clades[1]
+        tree = Tree(root=root)
+        svc = object.__new__(Dstatistic)
+        svc.support_threshold = None
+
+        clade_taxa = {
+            id(root): frozenset({"A", "B", "C", "O", "extra"}),
+            id(left): MembershipOnlyTips({"A", "B"}),
+            id(right): MembershipOnlyTips({"C", "O", "extra"}),
+        }
+
+        monkeypatch.setattr(
+            Dstatistic,
+            "_collect_clade_taxa_and_nonterminals",
+            staticmethod(lambda tree: (clade_taxa, [root, left, right])),
+        )
+
+        assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
+
     def test_low_support_branch_is_unresolved(self, tmp_path):
         gt_file = tmp_path / "trees.nwk"
         _write_gene_trees(gt_file, [

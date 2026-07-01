@@ -341,19 +341,6 @@ class Dstatistic(Alignment):
         # Extract bipartitions from the gene tree
         # Skip branches with support below threshold
         all_taxa = tree_taxa
-        quartet_set = frozenset((p1, p2, p3, outgroup))
-        concordant_pairs = (
-            frozenset((p1, p2)),
-            frozenset((p3, outgroup)),
-        )
-        abba_pairs = (
-            frozenset((p2, p3)),
-            frozenset((p1, outgroup)),
-        )
-        baba_pairs = (
-            frozenset((p1, p3)),
-            frozenset((p2, outgroup)),
-        )
         for clade in nonterminals:
             # Check support threshold
             if self.support_threshold is not None:
@@ -366,19 +353,21 @@ class Dstatistic(Alignment):
                 continue
 
             # Check which quartet topology the bipartition supports.
-            in_a = quartet_set & tips
-            if len(in_a) != 2:
+            has_p1 = p1 in tips
+            has_p2 = p2 in tips
+            has_p3 = p3 in tips
+            has_outgroup = outgroup in tips
+            if has_p1 + has_p2 + has_p3 + has_outgroup != 2:
                 continue
 
-            pair = frozenset(in_a)
             # Concordant: P1+P2 on one side
-            if pair == concordant_pairs[0] or pair == concordant_pairs[1]:
+            if (has_p1 and has_p2) or (has_p3 and has_outgroup):
                 return "concordant"
             # ABBA: P2+P3 on one side
-            if pair == abba_pairs[0] or pair == abba_pairs[1]:
+            if (has_p2 and has_p3) or (has_p1 and has_outgroup):
                 return "abba"
             # BABA: P1+P3 on one side
-            if pair == baba_pairs[0] or pair == baba_pairs[1]:
+            if (has_p1 and has_p3) or (has_p2 and has_outgroup):
                 return "baba"
 
         return "unresolved"

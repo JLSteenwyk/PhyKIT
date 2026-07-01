@@ -698,6 +698,7 @@ Results:
 | `Dstatistic._get_quartet_topology` | 80 balanced gene trees x 128 taxa, quartet topology classification | 0.1713s | 0.0648s | 2.6x |
 | `Dstatistic._get_quartet_topology` combined direct traversal | 80 balanced gene trees x 128 taxa, quartet topology classification | 0.059130s | 0.014816s | 3.99x |
 | `Dstatistic._get_quartet_topology` quartet-only split check | balanced 32768-tip gene tree, side-by-side previous full complement set per internal bipartition | 0.174334s | 0.082270s | 2.12x |
+| `Dstatistic._get_quartet_topology` membership topology check | 200 scans over a balanced 8192-tip gene tree with precomputed descendant taxa, side-by-side previous quartet intersection and pair-frozenset allocation | 0.038446s | 0.025955s | 1.48x |
 | `Dstatistic._chi2_sf_df1` | cold process, gene-tree mode chi-square p-value | 0.551261s | 0.000002458s | 224272.2x |
 | `TipToTipDistance.calculate_all_pairwise_distances` | balanced tree with 220 tips | 4.3503s | 0.0269s | 161.7x |
 | `TipToTipDistance.calculate_all_pairwise_distances` tip-name setup | balanced 65536-tip tree, all-pairs terminal-name extraction | 0.129071s | 0.017473s | 7.39x |
@@ -3936,7 +3937,9 @@ Profiling summary:
   preserving support-threshold behavior. A follow-up pass avoids building the
   full `all_taxa - tips` complement for every internal bipartition; after the
   four requested quartet taxa are known to be present, topology classification
-  only needs the two quartet taxa found on the current side of the split.
+  only needs the two quartet taxa found on the current side of the split. A
+  later pass checks the four quartet taxa with direct membership booleans,
+  avoiding per-branch quartet intersection and pair-frozenset allocation.
 - `TipToTipDistance` and `PatristicDistances` baseline time was dominated by
   repeated Biopython `tree.distance` calls, each of which searches paths and
   common ancestors. The optimized path caches root-to-tip depths and ancestor
