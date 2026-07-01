@@ -13,6 +13,7 @@ from unittest.mock import patch
 from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
+import phykit.services.tree.stochastic_character_map as scm_module
 from phykit.services.tree.stochastic_character_map import StochasticCharacterMap
 from phykit.errors import PhykitUserError
 
@@ -681,6 +682,32 @@ class TestStochasticMapping:
 
         assert deterministic_targets == [1, 0]
         assert optimized == baseline
+
+    def test_prepare_branch_history_context_uses_diagonal_rate_view(
+        self, default_args, monkeypatch
+    ):
+        svc = StochasticCharacterMap(default_args)
+        Q = np.array(
+            [
+                [-0.7, 0.4, 0.3],
+                [0.2, -0.5, 0.3],
+                [0.1, 0.2, -0.3],
+            ],
+            dtype=float,
+        )
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("rate extraction should use the Q diagonal view")
+
+        monkeypatch.setattr(scm_module.np, "diag", fail_diag)
+
+        rates, transition_cdfs, deterministic_targets = (
+            svc._prepare_branch_history_context(Q, Q.shape[0])
+        )
+
+        np.testing.assert_allclose(rates, -Q.diagonal())
+        assert len(transition_cdfs) == Q.shape[0]
+        assert deterministic_targets == [-1, -1, -1]
 
     def test_run_single_simulation_uses_precomputed_metadata(
         self, default_args, monkeypatch

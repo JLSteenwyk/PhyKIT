@@ -1603,6 +1603,7 @@ Results:
 | `StochasticCharacterMap._prepare_ancestral_sampling_nodes` vectorized large-state CDFs | 32768 sampling nodes, 8 states, repeated unit branch length | 0.520323s | 0.246565s | 2.11x |
 | `StochasticCharacterMap._prepare_ancestral_sampling_nodes` all-positive large-state CDFs | 32768 sampling nodes, 8 states, repeated unit branch length and positive child likelihoods | 0.393498s | 0.220084s | 1.79x |
 | `StochasticCharacterMap._simulate_branch_history` precomputed rates | 8k branch-history samples, 4 states, repeated start/end states | 0.3931s | 0.3005s | 1.3x |
+| `StochasticCharacterMap` Q diagonal rate extraction | 2 / 4 / 16 / 64 / 256 / 1024 / 2048 states, side-by-side previous `-np.diag(Q)` rate vector copy | 0.000000875s / 0.000001098s / 0.000001258s / 0.000001612s / 0.000000908s / 0.000001260s / 0.000002136s | 0.000000496s / 0.000000304s / 0.000000300s / 0.000000306s / 0.000000346s / 0.000000669s / 0.000001446s | 1.77x / 3.61x / 4.19x / 5.27x / 2.62x / 1.88x / 1.48x |
 | `StochasticCharacterMap._simulate_branch_history` precomputed transition CDFs | 8k branch-history samples, 4 states, repeated start/end states | 0.135483s | 0.094216s | 1.44x |
 | `StochasticCharacterMap._simulate_branch_history` deterministic two-state transitions | 8k branch-history samples, 2 states, repeated start/end states | 0.021078s | 0.016228s | 1.30x |
 | `StochasticCharacterMap._run_single_simulation` traversal metadata | balanced 512-tip tree, 80 stochastic mappings, cached transition matrices | 1.3863s | 1.0821s | 1.3x |

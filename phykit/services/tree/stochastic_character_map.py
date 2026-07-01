@@ -572,7 +572,7 @@ class StochasticCharacterMap(Tree):
             return [(0.0, start_state)]
 
         if rates is None:
-            rates = -np.diag(Q)
+            rates = -Q.diagonal()
         if transition_cdfs_by_state is None:
             if transition_probs_by_state is None:
                 transition_probs_by_state = self._transition_probs_by_state(Q, k)
@@ -640,7 +640,7 @@ class StochasticCharacterMap(Tree):
     def _prepare_branch_history_context(self, Q: np.ndarray, k: int):
         transition_probs_by_state = self._transition_probs_by_state(Q, k)
         return (
-            -np.diag(Q),
+            -Q.diagonal(),
             self._transition_cdfs_by_state(transition_probs_by_state),
             self._deterministic_transition_targets(transition_probs_by_state),
         )
