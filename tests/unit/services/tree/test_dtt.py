@@ -62,6 +62,15 @@ def test_permutation_p_value_ge_counts_extreme_permutations(monkeypatch):
     assert np.isnan(dtt_module._permutation_p_value_ge(np.array([]), 2.0))
 
 
+def test_batch_row_sum_squares_matches_explicit_squared_reduction():
+    values = np.arange(2 * 3 * 4, dtype=float).reshape(2, 3, 4)
+
+    observed = dtt_module._batch_row_sum_squares(values)
+    expected = np.sum(values * values, axis=(1, 2))
+
+    np.testing.assert_allclose(observed, expected)
+
+
 def test_module_import_does_not_import_numpy():
     code = """
 import sys

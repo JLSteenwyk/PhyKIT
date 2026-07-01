@@ -1733,6 +1733,7 @@ Results:
 | `Dtt._simulate_null` vectorized MDI reductions | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.119121s | 0.097534s | 1.22x |
 | `Dtt._simulate_null` MDI p-value counts | 1M simulated MDI values, side-by-side previous `np.mean(abs(sim_mdis) >= abs(mdi))` reduction | 0.000991s | 0.000390s | 2.54x |
 | `Dtt._batch_clade_disparities_avg_sq` postorder subtree aggregation | balanced 2048-tip tree x 2 traits, 50 simulated DTT curves | 0.039455s | 0.026875s | 1.47x |
+| `Dtt._simulate_null_avg_sq_batch` row sum-of-squares reductions | simulated trait cubes shaped 50x512x2 / 500x512x2 / 100x2048x4 / 1000x128x8, side-by-side previous `np.sum(values * values, ...)` reductions | 0.946699s / 1.249285s / 0.788768s / 0.593306s | 0.636814s / 0.980172s / 0.678222s / 0.359702s | 1.49x / 1.27x / 1.16x / 1.65x |
 | `Dtt._simulate_null` observed-DTT reuse | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.071679s | 0.045011s | 1.59x |
 | `Dtt._print_text` batched time-point output | 100k DTT time-point rows, captured stdout and identical text | 0.057375s | 0.046449s | 1.24x |
 | `Dtt.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected column / full matrix setup | 0.013424s / 0.134250s | 0.007369s / 0.037870s | 1.82x / 3.54x |
@@ -6169,6 +6170,10 @@ Profiling summary:
   preserving direct `_simulate_null()` callers that only provide observed times.
   MDI p-values now count extreme simulated MDI values with `np.count_nonzero`
   before dividing by the simulation count, avoiding boolean mean reductions.
+  Batched average-squared simulation reductions now compute row sum-of-squares
+  through flattened `einsum` row dots, preserving the closed-form disparity
+  values while avoiding temporary squared trait cubes for total and clade
+  disparity calculations.
   Text output now batches the header
   and per-time-point rows into one newline-joined print while preserving exact
   stdout text.

@@ -64,6 +64,11 @@ def _trapezoid(y, x):
     return np.trapezoid(y, x) if hasattr(np, "trapezoid") else np.trapz(y, x)
 
 
+def _batch_row_sum_squares(values: np.ndarray) -> np.ndarray:
+    rows = values.reshape(values.shape[0], -1)
+    return np.einsum("ij,ij->i", rows, rows)
+
+
 def _max_terminal_depth(terminals, depths, root_depth):
     iterator = iter(terminals)
     first = next(iterator)
@@ -523,9 +528,10 @@ class Dtt(Tree):
             sim_data = np.matmul(cholesky_factor, z)
 
         pair_count = n * (n - 1) / 2
+        sim_sums = np.sum(sim_data, axis=1)
         total_disp = (
-            n * np.sum(sim_data * sim_data, axis=(1, 2))
-            - np.sum(np.sum(sim_data, axis=1) ** 2, axis=1)
+            n * _batch_row_sum_squares(sim_data)
+            - _batch_row_sum_squares(sim_sums)
         ) / pair_count
 
         clade_ids = list(dtt_context["clade_index_arrays"].keys())
@@ -651,9 +657,10 @@ class Dtt(Tree):
                     continue
                 subset = sim_data[:, indices, :]
                 subset_pair_count = m * (m - 1) / 2
+                subset_sums = np.sum(subset, axis=1)
                 clade_disp[:, clade_pos] = (
-                    m * np.sum(subset * subset, axis=(1, 2))
-                    - np.sum(np.sum(subset, axis=1) ** 2, axis=1)
+                    m * _batch_row_sum_squares(subset)
+                    - _batch_row_sum_squares(subset_sums)
                 ) / subset_pair_count
             return clade_disp
 
@@ -666,7 +673,7 @@ class Dtt(Tree):
                 values = sim_data[:, terminal_idx, :]
                 counts[clade_id] = 1
                 sums[clade_id] = values
-                sums_sq[clade_id] = np.sum(values * values, axis=1)
+                sums_sq[clade_id] = _batch_row_sum_squares(values)
                 continue
 
             children = [
@@ -700,7 +707,7 @@ class Dtt(Tree):
             pair_count = count * (count - 1) / 2
             clade_disp[:, clade_pos] = (
                 count * total_sum_sq
-                - np.sum(total_sum * total_sum, axis=1)
+                - _batch_row_sum_squares(total_sum)
             ) / pair_count
 
         return clade_disp
