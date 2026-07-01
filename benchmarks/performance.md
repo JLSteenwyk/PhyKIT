@@ -1204,6 +1204,7 @@ Results:
 | `RelativeRateTest._run_single` | 140 ingroup taxa x 1500 sites plus outgroup, alphabet `ACGT-?NX` | 1.4043s | 0.0275s | 51.1x |
 | `RelativeRateTest._tajima_test` long ASCII helper | five 1M-site Tajima tests, alphabet `ACGTn` | 1.111929s | 0.012380s | 89.82x |
 | `RelativeRateTest._tajima_test` clean ASCII shortcut | 2M-site Tajima triplet, alphabet `ACGT`, side-by-side previous validity-mask vector path | 0.008916s | 0.007849s | 1.14x |
+| `RelativeRateTest._tajima_test` mid-size ASCII vector threshold | 1500-site Tajima triplet with lowercase/skipped sites, side-by-side previous scalar cutoff | 0.000530863s | 0.000104474s | 5.08x |
 | `RelativeRateTest._identify_outgroup` singleton scan | rooted tree with 32768-tip ingroup plus singleton outgroup | 0.063596s | 0.000001s | 47668.9x |
 | `RelativeRateTest._chi2_sf` df=1 scalar p-value | cold process, Tajima relative-rate chi-square survival probability | 0.538501s | 0.000002958s | 182049.0x |
 | `RelativeRateTest._run_pairwise_tests_vectorized` df=1 vector p-values | 1M synthetic chi-square statistics, large informative-pair branch | 0.151878s | 0.010071s | 15.08x |
@@ -4914,9 +4915,11 @@ Profiling summary:
   sets with Python arithmetic, avoiding NumPy startup while preserving the large
   vectorized path. The standalone Tajima helper now uses a thresholded ASCII
   byte-array path for long sequences, preserving the scalar path for short or
-  Unicode inputs. Clean ASCII triplets now sample and scan for skip codes before
-  bypassing the validity mask, while ambiguous or gapped triplets keep the
-  validity-mask path. The large vectorized pairwise path now computes df=1
+  Unicode inputs. The vector cutoff is now low enough for mid-sized 1.5kb
+  triplets, avoiding the slower scalar scan once the byte-array setup is cheaper.
+  Clean ASCII triplets now sample and scan for skip codes before bypassing the
+  validity mask, while ambiguous or gapped triplets keep the validity-mask path.
+  The large vectorized pairwise path now computes df=1
   chi-square survival probabilities with the direct
   `erfc(sqrt(chi2 / 2))` formula via `scipy.special`, avoiding the heavier
   `scipy.stats.chi2.sf` distribution machinery while matching values to

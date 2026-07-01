@@ -576,6 +576,29 @@ class TestTajimaTest:
         assert result["m2"] == 0
         assert result["chi2"] == 100.0
 
+    def test_mid_sized_ascii_sequences_use_vectorized_path(self, monkeypatch):
+        length = 1500
+        seq_out = "A" * length
+        seq_x = "C" * 60 + "A" * (length - 60)
+        seq_y = "A" * 90 + "G" * 30 + "A" * (length - 120)
+
+        def fail_scalar(*_args, **_kwargs):
+            raise AssertionError(
+                "mid-sized ASCII Tajima tests should use vector path"
+            )
+
+        monkeypatch.setattr(
+            RelativeRateTest,
+            "_tajima_test_scalar",
+            staticmethod(fail_scalar),
+        )
+
+        result = RelativeRateTest._tajima_test(seq_x, seq_y, seq_out)
+
+        assert result["m1"] == 60
+        assert result["m2"] == 30
+        assert result["chi2"] == 10.0
+
     def test_vectorized_tajima_matches_scalar_with_lowercase_and_skips(self):
         seq_out = ("ACGT" * 750)
         seq_x = list(seq_out)
