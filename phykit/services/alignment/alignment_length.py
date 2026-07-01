@@ -12,6 +12,7 @@ def print_json(*args, **kwargs):
 _FASTA_HEADER_BYTE = ord(">")
 _SPACE_BYTE = ord(" ")
 _CARRIAGE_RETURN_BYTE = ord("\r")
+_TRAILING_WHITESPACE_BYTES = (9, 11, 12, 13, 32)
 
 
 class AlignmentLength(Alignment):
@@ -55,14 +56,29 @@ class AlignmentLength(Alignment):
                         seq_len = 0
                         continue
 
-                    sequence_line = line.rstrip()
-                    if not sequence_line.isascii():
+                    if not line.isascii():
                         return None
-                    if _SPACE_BYTE in sequence_line:
-                        sequence_line = sequence_line.replace(b" ", b"")
-                    if _CARRIAGE_RETURN_BYTE in sequence_line:
-                        sequence_line = sequence_line.replace(b"\r", b"")
-                    seq_len += len(sequence_line)
+
+                    line_len = len(line)
+                    if line_len and line[-1] == 10:
+                        line_len -= 1
+
+                    if (
+                        _SPACE_BYTE in line
+                        or _CARRIAGE_RETURN_BYTE in line
+                        or (
+                            line_len
+                            and line[line_len - 1] in _TRAILING_WHITESPACE_BYTES
+                        )
+                    ):
+                        sequence_line = line.rstrip()
+                        if _SPACE_BYTE in sequence_line:
+                            sequence_line = sequence_line.replace(b" ", b"")
+                        if _CARRIAGE_RETURN_BYTE in sequence_line:
+                            sequence_line = sequence_line.replace(b"\r", b"")
+                        seq_len += len(sequence_line)
+                    else:
+                        seq_len += line_len
 
                 if aln_len is None:
                     aln_len = seq_len

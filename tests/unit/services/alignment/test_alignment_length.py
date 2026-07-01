@@ -103,6 +103,23 @@ class TestAlignmentLength(object):
         mocked_get_alignment_and_format.assert_not_called()
         mocked_print.assert_called_once_with(5)
 
+    def test_alignment_length_fast_fasta_path_strips_trailing_whitespace(
+        self, mocker, tmp_path
+    ):
+        path = tmp_path / "alignment.fa"
+        path.write_text(">a\nACGT \t\n>b\nTGCA\t\n")
+        args = Namespace(alignment=str(path))
+        mocked_get_alignment_and_format = mocker.patch(
+            "phykit.services.alignment.alignment_length.AlignmentLength.get_alignment_and_format",
+            side_effect=AssertionError("valid FASTA should use the length fast path"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        AlignmentLength(args).run()
+
+        mocked_get_alignment_and_format.assert_not_called()
+        mocked_print.assert_called_once_with(4)
+
     def test_alignment_length_inconsistent_fasta_falls_back(self, mocker, tmp_path):
         path = tmp_path / "alignment.fa"
         path.write_text(">a\nACGT\n>b\nTGCAA\n")
