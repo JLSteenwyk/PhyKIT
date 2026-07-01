@@ -512,7 +512,11 @@ class TestLogisticMPLE:
         def fail_distance(*args, **kwargs):
             raise AssertionError("distance fallback should not be called")
 
+        def fail_max(*args, **kwargs):
+            raise AssertionError("ultrametric setup should use ndarray.max")
+
         monkeypatch.setattr(tree, "distance", fail_distance)
+        monkeypatch.setattr(phylogenetic_glm_module.np, "max", fail_max)
         D, Tmax, mean_height = svc._make_ultrametric(tree, ["A", "B", "C"])
 
         np.testing.assert_allclose(D, np.array([1.0, 1.0, 0.0]))

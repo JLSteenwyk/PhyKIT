@@ -386,7 +386,7 @@ class PhylogeneticGLM(Tree):
         mean_height = mean root-to-tip distance (used for initial alpha)
         """
         heights = self._root_tip_distances(tree, ordered_names)
-        max_dist = float(np.max(heights))
+        max_dist = float(heights.max())
         mean_height = float(np.mean(heights))
         D = max_dist - heights
         Tmax = max_dist

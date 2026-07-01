@@ -1732,6 +1732,7 @@ Results:
 | `FitContinuous._concentrated_ll_cholesky` cached SciPy linalg wrappers | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.077998s | 0.057574s | 1.35x |
 | `PhylogeneticGLM._make_ultrametric` | balanced tree with 2500 tips | 2.2726s | 0.0068s | 336.2x |
 | `PhylogeneticGLM._root_tip_distances` | balanced 65536-tip tree, ordered ultrametric correction distances | 0.1598s | 0.0245s | 6.5x |
+| `PhylogeneticGLM._make_ultrametric` root-height max reduction | 120 / 1200 / 10000 / 65536 root-to-tip distances, side-by-side previous `np.max(heights)` wrapper | 0.000004475s / 0.000006131s / 0.000005739s / 0.000014409s | 0.000002587s / 0.000001470s / 0.000001774s / 0.000011340s | 1.73x / 4.17x / 3.23x / 1.27x |
 | `PhylogeneticGLM._poisson_starting_values` row-scaled IRLS | 1200 taxa x 8-column design matrix, synthetic counts | 0.015975s | 0.000268s | 59.5x |
 | `PhylogeneticGLM._poisson_gee_information_and_score` row scaling | 1200 taxa SPD correlation inverse x 8-column design matrix | 0.002394s | 0.000952s | 2.5x |
 | `PhylogeneticGLM._poisson_gee_information_and_score` RHS-first score multiply | 1200 taxa SPD correlation inverse x 8-column design matrix | 0.001306s | 0.000615s | 2.1x |
@@ -6200,8 +6201,9 @@ Profiling summary:
 - `PhylogeneticGLM._make_ultrametric` baseline time was dominated by repeated
   root-to-tip `tree.distance` calls. The optimized path computes tree depths
   once and reuses root-relative terminal depths to derive `D`, `Tmax`, and mean
-  height. `_root_tip_distances` now uses a direct name-to-distance traversal for
-  standard parsed trees before falling back to Bio.Phylo
+  height; the root-height maximum is now reduced directly on the ndarray to
+  avoid generic NumPy dispatch. `_root_tip_distances` now uses a direct
+  name-to-distance traversal for standard parsed trees before falling back to Bio.Phylo
   `depths()`/`get_terminals()` or per-tip `distance()`. Poisson/logistic IRLS
   and Poisson GEE information assembly now row-scale the design matrix instead
   of materializing dense diagonal weight matrices before cross-products. The
