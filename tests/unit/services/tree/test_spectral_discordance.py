@@ -924,6 +924,38 @@ class TestRun:
 
 
 class TestPlot:
+    def test_scatter_plot_reuses_cluster_indices_for_score_coordinates(
+        self, tmp_path, default_args
+    ):
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        class NoBooleanMaskScores(np.ndarray):
+            def __getitem__(self, key):
+                if (
+                    isinstance(key, tuple)
+                    and isinstance(key[0], np.ndarray)
+                    and key[0].dtype == bool
+                ):
+                    raise AssertionError("scatter scores should use cluster indices once")
+                return super().__getitem__(key)
+
+        scores = np.asarray(
+            [
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [2.0, 4.0],
+                [3.0, 9.0],
+            ]
+        ).view(NoBooleanMaskScores)
+        labels = np.asarray([0, 1, 0, 2])
+
+        svc = SpectralDiscordance(default_args)
+        with patch("builtins.print"):
+            svc._plot_scatter(scores, labels, 3, tmp_path / "scatter.png")
+
     @patch("builtins.print")
     def test_plots_created(self, mocked_print):
         try:

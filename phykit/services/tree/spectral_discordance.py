@@ -321,13 +321,12 @@ class SpectralDiscordance(Tree):
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         cmap = plt.get_cmap("tab10")
         for k in range(K):
-            mask = labels == k
+            idxs = np.where(labels == k)[0]
             ax.scatter(
-                scores[mask, 0], scores[mask, 1],
+                scores[idxs, 0], scores[idxs, 1],
                 c=[cmap(k)], label=f"Cluster {k + 1}",
                 s=60, edgecolors="black", linewidths=0.5, alpha=0.8,
             )
-            idxs = np.where(mask)[0]
             for idx in idxs:
                 ax.annotate(
                     str(idx + 1), (scores[idx, 0], scores[idx, 1]),
