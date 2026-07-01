@@ -376,6 +376,27 @@ class TestTreeBase:
             2.0,
         ]
 
+    def test_validate_tree_standard_min_tips_stops_after_threshold(self):
+        service = Tree()
+
+        class UnvisitedClade:
+            @property
+            def clades(self):
+                raise AssertionError("validation should stop after min_tips")
+
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    UnvisitedClade(),
+                    Clade(name="a"),
+                    Clade(name="b"),
+                    Clade(name="c"),
+                ],
+            )
+        )
+
+        service.validate_tree(tree, min_tips=3)
+
     def test_validate_tree_fallback_stops_after_minimum_tip_count(self):
         service = Tree()
 

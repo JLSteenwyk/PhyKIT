@@ -627,6 +627,32 @@ class Tree(BaseService):
         except AttributeError:
             return False
 
+        if assign_default_branch_length is None and not require_branch_lengths:
+            if min_tips <= 0:
+                return True
+
+            tip_count = 0
+            stack = [root]
+            try:
+                pop = stack.pop
+                extend = stack.extend
+                while stack:
+                    clade = pop()
+                    children = clade.clades
+                    if children:
+                        extend(children)
+                    else:
+                        tip_count += 1
+                        if tip_count >= min_tips:
+                            return True
+            except AttributeError:
+                return False
+
+            raise PhykitUserError(
+                [f"Tree must have at least {min_tips} tips{ctx}."],
+                code=2,
+            )
+
         tip_count = 0
         missing_branch_length_clades = []
         stack = [root]
