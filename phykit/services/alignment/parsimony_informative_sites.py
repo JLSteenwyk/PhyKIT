@@ -22,6 +22,7 @@ _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
 _DNA_GAP_BYTES = b"-?*XN"
 _PROTEIN_GAP_BYTES = b"-?*X"
+_DNA_STANDARD_CODES = (65, 67, 71, 84)  # A, C, G, T
 
 
 def _get_gap_codes(is_protein: bool):
@@ -58,6 +59,19 @@ def _count_ascii_parsimony_informative_sites(
         recurrent_symbol_counts = np.count_nonzero(counts >= 2, axis=1)
         pi_sites += int(np.count_nonzero(recurrent_symbol_counts >= 2))
     return pi_sites
+
+
+def _count_clean_dna_parsimony_informative_sites(alignment_array) -> int | None:
+    recurrent = np.zeros(alignment_array.shape[1], dtype=np.uint8)
+    standard_total = np.zeros(alignment_array.shape[1], dtype=np.intp)
+    for code in _DNA_STANDARD_CODES:
+        counts = np.count_nonzero(alignment_array == code, axis=0)
+        standard_total += counts
+        recurrent += counts >= 2
+
+    if int(np.sum(standard_total)) != alignment_array.size:
+        return None
+    return int(np.count_nonzero(recurrent >= 2))
 
 
 class ParsimonyInformative(Alignment):
@@ -155,6 +169,13 @@ class ParsimonyInformative(Alignment):
             ).reshape(len(sequences), aln_len)
             gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
             if not any(code in alignment_bytes for code in gap_bytes):
+                if not is_protein:
+                    pi_sites = _count_clean_dna_parsimony_informative_sites(
+                        alignment_array,
+                    )
+                    if pi_sites is not None:
+                        pi_sites_per = (pi_sites / aln_len) * 100
+                        return pi_sites, aln_len, pi_sites_per
                 valid_mask = None
             else:
                 invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)

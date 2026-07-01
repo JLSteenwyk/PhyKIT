@@ -208,7 +208,11 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("TCGT"), id="t4"),
         ])
         pi = ParsimonyInformative(args)
-        count_blocks = mocker.spy(
+        fast_count = mocker.spy(
+            pi_module,
+            "_count_clean_dna_parsimony_informative_sites",
+        )
+        generic_count = mocker.spy(
             pi_module,
             "_count_ascii_parsimony_informative_sites",
         )
@@ -218,7 +222,33 @@ assert "Bio.AlignIO" not in sys.modules
             is_protein=False,
         )
 
-        assert count_blocks.call_args.args[1] is None
+        fast_count.assert_called_once()
+        generic_count.assert_not_called()
+        assert pi_sites == 1
+        assert aln_len == 4
+        assert isclose(pi_sites_per, 25.0, rel_tol=0.001)
+
+    def test_parsimony_informative_nonstandard_dna_uses_generic_clean_path(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment([
+            SeqRecord(Seq("ABGT"), id="t1"),
+            SeqRecord(Seq("ABGA"), id="t2"),
+            SeqRecord(Seq("TBGG"), id="t3"),
+            SeqRecord(Seq("TBGG"), id="t4"),
+        ])
+        pi = ParsimonyInformative(args)
+        generic_count = mocker.spy(
+            pi_module,
+            "_count_ascii_parsimony_informative_sites",
+        )
+
+        pi_sites, aln_len, pi_sites_per = pi.calculate_parsimony_informative_sites(
+            alignment,
+            is_protein=False,
+        )
+
+        assert generic_count.call_args.args[1] is None
         assert pi_sites == 1
         assert aln_len == 4
         assert isclose(pi_sites_per, 25.0, rel_tol=0.001)
