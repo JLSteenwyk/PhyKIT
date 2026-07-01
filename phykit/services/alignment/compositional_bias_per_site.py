@@ -296,12 +296,12 @@ class CompositionalBiasPerSite(Alignment):
             corrected = None if isinstance(pval_cor, str) else round(float(pval_cor), 4)
             raw_p = float(stat_info.pvalue)
             rows.append(
-                dict(
-                    site=idx,
-                    chi_square=round(float(stat_info.statistic), 4),
-                    p_value_corrected=corrected,
-                    p_value=None if isnan(raw_p) else round(raw_p, 4),
-                )
+                {
+                    "site": idx,
+                    "chi_square": round(float(stat_info.statistic), 4),
+                    "p_value_corrected": corrected,
+                    "p_value": None if isnan(raw_p) else round(raw_p, 4),
+                }
             )
         return rows
 

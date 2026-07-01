@@ -341,6 +341,7 @@ Results:
 | `CompositionalBiasPerSite` all-valid p-value extraction | 3 repeated 1M-site p-value arrays with no NaN slots, side-by-side previous boolean-index extraction | 0.084985s | 0.077307s | 1.10x |
 | `CompositionalBiasPerSite` statistic result construction | 1M per-site statistic/p-value pairs converted to `Power_divergenceResult` rows | 2.121716s | 1.699578s | 1.25x |
 | `CompositionalBiasPerSite._false_discovery_control` small-list path without NumPy startup | cold subprocess, 4 p-values through Benjamini-Hochberg helper | 0.066106s | 0.024334s | 2.72x |
+| `CompositionalBiasPerSite._build_rows` literal row construction | 500k site rows with mixed valid and `"nan"` corrected p-values, identical row dictionaries | 2.175066s | 1.893878s | 1.15x |
 | `CompositionalBiasPerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.072149s | 0.061021s | 1.18x |
 | `CompositionalBiasPerSite.run` direct terminal text output | 100k site rows, mocked alignment/read and identical stdout text | 0.200112s | 0.168921s | 1.18x |
 | `CompositionalBiasPerSite.run` plot-only series preparation | 1M corrected p-values with interleaved `"nan"` slots, identical rounded plotted site/value arrays without temporary row dictionaries | 0.935595s | 0.241023s | 3.88x |

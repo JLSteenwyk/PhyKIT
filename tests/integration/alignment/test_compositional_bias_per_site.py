@@ -82,7 +82,7 @@ class TestCompositionalBiasPerSite(object):
             "site": 3,
         }
 
-    @patch("phykit.services.alignment.compositional_bias_per_site.CompositionalBiasPerSite._plot_compositional_bias_manhattan")
+    @patch("phykit.services.alignment.compositional_bias_per_site.CompositionalBiasPerSite._plot_compositional_bias_corrected_pvalues")
     @patch("builtins.print")
     def test_compositional_bias_per_site_plot(self, mocked_print, mocked_plot):
         testargs = [
