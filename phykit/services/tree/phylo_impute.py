@@ -455,7 +455,7 @@ class PhyloImpute(Tree):
             # Get observed values of trait j from other taxa
             obs_mask = ~np.isnan(Y[other_idx_array, j])
 
-            if not np.any(obs_mask):
+            if not obs_mask.any():
                 # No other taxa have this trait -- use phylogenetic mean
                 imputed[j] = float(a_hat[j])
                 imputed_se[j] = float(np.sqrt(max(Sigma_trait[j, j], 0.0)))
@@ -550,7 +550,7 @@ class PhyloImpute(Tree):
         for j in missing_trait_indices:
             obs_mask = ~np.isnan(Y[other_idx_array, j])
 
-            if not np.any(obs_mask):
+            if not obs_mask.any():
                 imputed[j] = float(a_hat[j])
                 imputed_se[j] = float(np.sqrt(max(Sigma_trait[j, j], 0.0)))
                 continue

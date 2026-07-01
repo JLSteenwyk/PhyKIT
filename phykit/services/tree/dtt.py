@@ -597,10 +597,10 @@ class Dtt(Tree):
         if (
             len(obs_times_arr) == len(sim_times)
             and np.array_equal(obs_times_arr, sim_times)
-            and np.all(np.diff(sim_times) > 0.0)
+            and (np.diff(sim_times) > 0.0).all()
         ):
             sim_dtt_matrix = sim_values.copy()
-            if not np.all(valid_total):
+            if not valid_total.all():
                 sim_dtt_matrix[~valid_total, :] = 1.0 - obs_times_arr
         else:
             sim_dtt_matrix = np.empty((self.nsim, len(obs_times_arr)), dtype=float)

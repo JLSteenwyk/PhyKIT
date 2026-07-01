@@ -419,14 +419,14 @@ class RelativeRateTest(Tree):
 
             chi2_values = np.zeros_like(totals, dtype=np.float64)
             informative = totals > 0
-            if np.any(informative):
+            if informative.any():
                 diff_values = m1_values - m2_values
                 chi2_values[informative] = (
                     diff_values[informative] * diff_values[informative]
                 ) / totals[informative]
 
             p_values = np.ones_like(chi2_values, dtype=np.float64)
-            if np.any(informative):
+            if informative.any():
                 p_values[informative] = erfc(
                     np.sqrt(chi2_values[informative] * 0.5)
                 )
@@ -583,7 +583,7 @@ class RelativeRateTest(Tree):
         # Fix scale so non-significant data always looks light:
         # vmin=0, vmax at least -log10(0.05) ≈ 1.3
         sig_threshold = -math.log10(0.05)
-        data_max = float(np.nanmax(matrix)) if not np.all(np.isnan(matrix)) else 0.0
+        data_max = float(np.nanmax(matrix)) if not np.isnan(matrix).all() else 0.0
         vmax = max(sig_threshold, data_max) * 1.1
 
         im = ax.imshow(

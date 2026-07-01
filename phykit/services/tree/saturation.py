@@ -460,7 +460,7 @@ class Saturation(Tree):
             valid = lengths != 0.0
             row = np.empty(len(lengths), dtype=np.float64)
             row[valid] = 1.0 - (identities[valid] / lengths[valid])
-            if np.all(valid):
+            if valid.all():
                 extend(row.tolist())
             else:
                 row[~valid] = np.nan

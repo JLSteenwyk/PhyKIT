@@ -215,14 +215,14 @@ class TraitCorrelation(Tree):
         upper_rows, upper_cols = np.triu_indices(p, k=1)
         upper_r = corr_matrix[upper_rows, upper_cols]
         perfect = np.abs(upper_r) >= 1.0 - 1e-10
-        if np.any(perfect):
+        if perfect.any():
             rows = upper_rows[perfect]
             cols = upper_cols[perfect]
             p_matrix[rows, cols] = 0.0
             p_matrix[cols, rows] = 0.0
 
         testable = ~perfect
-        if np.any(testable):
+        if testable.any():
             rows = upper_rows[testable]
             cols = upper_cols[testable]
             r = upper_r[testable]
@@ -252,7 +252,7 @@ class TraitCorrelation(Tree):
 
         rows, cols = np.unravel_index(flat_indices, p_matrix.shape)
         offdiag = rows != cols
-        if not np.any(offdiag):
+        if not offdiag.any():
             return
 
         rows = rows[offdiag]
@@ -264,7 +264,7 @@ class TraitCorrelation(Tree):
             ("*", p_values >= 0.01),
         ]
         for stars, mask in star_groups:
-            if np.any(mask):
+            if mask.any():
                 ax.scatter(
                     cols[mask],
                     rows[mask],

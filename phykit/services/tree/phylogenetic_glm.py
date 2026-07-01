@@ -234,7 +234,7 @@ class PhylogeneticGLM(Tree):
                     code=2,
                 )
         elif self.family == "poisson":
-            if np.any(y < 0):
+            if (y < 0).any():
                 raise PhykitUserError(
                     [
                         f"For poisson family, response variable '{self.response}' "
@@ -699,13 +699,13 @@ class PhylogeneticGLM(Tree):
         # Starting values (matching R's phylolm)
         beta0 = self._logistic_starting_values(y, X, self.btol)
         eta0 = X @ beta0
-        if np.any(np.abs(eta0) >= self.btol):
+        if (np.abs(eta0) >= self.btol).any():
             beta0 = np.zeros(p)
             # Try log-odds as intermediate fallback
             n1, n0 = _binary_response_class_counts(y)
             if n1 > 0 and n0 > 0:
                 beta0[0] = np.log(n1 / n0)
-                if np.any(np.abs(X @ beta0) >= self.btol):
+                if (np.abs(X @ beta0) >= self.btol).any():
                     beta0[0] = 0.0
 
         # lL = log(1/alpha); starting alpha = 1/Tmax, so lL = log(Tmax)
@@ -723,7 +723,7 @@ class PhylogeneticGLM(Tree):
             alpha = np.exp(-lL)
 
             eta = X @ beta
-            if np.any(np.abs(eta) >= self.btol):
+            if (np.abs(eta) >= self.btol).any():
                 return 1e10
 
             mu = 1.0 / (1.0 + np.exp(-eta))

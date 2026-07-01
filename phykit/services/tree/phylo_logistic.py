@@ -447,7 +447,7 @@ class PhyloLogistic(Tree):
 
         # Linear predictor
         eta = X @ beta
-        if np.any(np.abs(eta) >= btol):
+        if (np.abs(eta) >= btol).any():
             return 1e10
 
         mu = 1.0 / (1.0 + np.exp(-np.clip(eta, -btol, btol)))
@@ -501,12 +501,12 @@ class PhyloLogistic(Tree):
         # Starting values
         beta0 = self._logistic_starting_values(y, X, btol)
         eta0 = X @ beta0
-        if np.any(np.abs(eta0) >= btol):
+        if (np.abs(eta0) >= btol).any():
             beta0 = np.zeros(p)
             n1, n0 = _binary_response_class_counts(y)
             if n1 > 0 and n0 > 0:
                 beta0[0] = np.log(n1 / n0)
-                if np.any(np.abs(X @ beta0) >= btol):
+                if (np.abs(X @ beta0) >= btol).any():
                     beta0[0] = 0.0
 
         root_tip_distances = self._root_tip_distances(tree, ordered_names)

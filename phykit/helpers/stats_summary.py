@@ -56,7 +56,7 @@ def _calculate_summary_statistics(values):
             raise stat.StatisticsError
 
         first_value = arr.flat[0]
-        if first_value == arr.flat[-1] and np.all(arr == first_value):
+        if first_value == arr.flat[-1] and (arr == first_value).all():
             scalar = _python_scalar(first_value)
             if np.issubdtype(arr.dtype, np.integer):
                 mean = _integer_if_exact(scalar)

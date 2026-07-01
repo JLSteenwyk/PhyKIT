@@ -2337,6 +2337,10 @@ Profiling summary:
   validated and the configured minimum shared-taxa threshold is satisfied,
   avoiding shared/warning set construction while preserving too-few-shared-taxa
   errors.
+  No-axis boolean guard reductions in tree/statistics helpers now use ndarray
+  `any()`/`all()` methods, applying the shared mask-reduction timing win while
+  leaving axis-based reductions on their existing `np.any` paths where
+  benchmarks were mixed.
   Discordance-VCV trait subsetting now uses the sorted `shared_taxa` contract
   from `build_discordance_vcv()` and compares ordered taxon lists directly
   instead of allocating two sets before every filter; FitContinuous,

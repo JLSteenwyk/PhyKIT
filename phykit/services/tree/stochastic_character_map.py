@@ -419,7 +419,7 @@ class StochasticCharacterMap(Tree):
             else:
                 weighted = P * child_lik
                 totals = weighted.sum(axis=1)
-                if np.all(totals > 0):
+                if (totals > 0).all():
                     cdfs_by_parent = np.cumsum(
                         weighted / totals[:, None],
                         axis=1,
@@ -427,7 +427,7 @@ class StochasticCharacterMap(Tree):
                 else:
                     positive = totals > 0
                     cdfs_by_parent = np.empty((k, k), dtype=float)
-                    if np.any(positive):
+                    if positive.any():
                         cdfs_by_parent[positive] = np.cumsum(
                             weighted[positive] / totals[positive, None],
                             axis=1,
