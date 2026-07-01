@@ -41,6 +41,24 @@ def _get_valid_lookup(is_protein: bool):
     return _DNA_VALID_LOOKUP
 
 
+def _has_invalid_bytes(sequence_bytes: bytes, invalid_bytes: bytes) -> bool:
+    if len(sequence_bytes) <= _INVALID_SCAN_BYTES:
+        return any(code in sequence_bytes for code in invalid_bytes)
+
+    has_invalid = any(
+        code in sequence_bytes[:_INVALID_SCAN_BYTES]
+        for code in invalid_bytes
+    )
+    if not has_invalid:
+        has_invalid = any(
+            code in sequence_bytes[-_INVALID_SCAN_BYTES:]
+            for code in invalid_bytes
+        )
+    if not has_invalid:
+        has_invalid = any(code in sequence_bytes for code in invalid_bytes)
+    return has_invalid
+
+
 def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
     if not record_data:
         return []
@@ -115,16 +133,7 @@ def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
 
     try:
         seq_bytes = sequence.encode("ascii")
-        has_invalid = any(
-            code in seq_bytes[:_INVALID_SCAN_BYTES] for code in invalid_bytes
-        )
-        if not has_invalid:
-            has_invalid = any(
-                code in seq_bytes[-_INVALID_SCAN_BYTES:] for code in invalid_bytes
-            )
-        if not has_invalid:
-            has_invalid = any(code in seq_bytes for code in invalid_bytes)
-        if has_invalid:
+        if _has_invalid_bytes(seq_bytes, invalid_bytes):
             valid_count = len(seq_bytes.translate(None, invalid_bytes))
         else:
             valid_count = len(seq_bytes)

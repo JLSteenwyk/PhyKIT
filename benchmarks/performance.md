@@ -261,6 +261,7 @@ Results:
 | `GCContent.calculate_gc_total_value` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with ambiguous/gap symbols, lowercase/uppercase variants, side-by-side previous flat byte path | 0.059239s | 0.007356s | 8.05x |
 | `GCContent._gc_counts_from_upper_sequence` identical-row count helper | 4M clean uppercase DNA chars / 4M gappy uppercase DNA chars / 1.05M uppercase Unicode DNA chars, side-by-side previous helper re-uppercase and repeated `str.count` output | 0.105214s / 0.238117s / 0.052446s | 0.037932s / 0.051851s / 0.020863s | 2.77x / 4.59x / 2.51x |
 | `GCContent._gc_total_from_ascii` raw-identical normalized shortcut | 500k identical DNA records with ambiguous/gap symbols, side-by-side previous per-row uppercase equality scan | 0.384826s | 0.095858s | 4.01x |
+| `GCContent._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006159s / 0.000012970s / 0.000021196s | 0.000001571s / 0.000007444s / 0.000001744s | 3.92x / 1.74x / 12.16x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
 | `GCContent.run` verbose JSON row construction | 500k mocked per-sequence GC rows, identical payload dictionaries | 0.636805s | 0.571975s | 1.11x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
@@ -658,6 +659,7 @@ Results:
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` identical gappy ASCII shortcut | 1200 taxa x 12000 sites, identical mixed-symbol DNA records with gaps/ambiguous symbols, side-by-side previous byte-matrix lookup path | 0.126362s | 0.000168s | 750.48x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` single-record direct count | 4.5M-site single-record DNA alignment, side-by-side previous record-data and matrix-helper setup | 0.022511792s | 0.010062833s | 2.24x |
 | `OccupancyPerTaxon._occupancy_for_sequence` all-valid ASCII count | 4.5M-site single-record DNA sequence with no invalid symbols / mixed symbols / one late invalid symbol, side-by-side previous unconditional byte translate | 0.003542s / 0.024512s / 0.003528s | 0.002047s / 0.024318s / 0.003415s | 1.73x / 1.01x / 1.03x |
+| `OccupancyPerTaxon._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006791s / 0.000012459s / 0.000018793s | 0.000001255s / 0.000005243s / 0.000011981s | 5.41x / 2.38x / 1.57x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` identical-row no-slice scan | 1M identical mixed-symbol DNA records, side-by-side previous `sequences[1:]` equality scan | 0.569269s | 0.392282s | 1.45x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` combined length/identity scan | 1M mixed-symbol DNA records, identical / late-different / late variable-length cases, side-by-side previous sequence-list length pass plus identity pass | 0.288323s / 0.292319s / 0.085046s | 0.138665s / 0.282464s / 0.055508s | 2.08x / 1.03x / 1.53x |
 | `OccupancyPerTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.025741s | 0.019400s | 1.33x |
@@ -2884,6 +2886,10 @@ Profiling summary:
   later helper pass keeps that normalized identical-row count in bytes for
   ASCII sequences and avoids re-uppercase work, while retaining the existing
   non-ASCII string-count fallback semantics. A
+  later invalid-byte scan pass checks short ASCII buffers once instead of
+  scanning the same prefix, suffix, and full buffer when all symbols are valid,
+  while preserving the sampled long-buffer path and byte-translate fallback
+  for invalid symbols. A
   follow-up identical-row pass checks raw string equality before normalizing
   each row, avoiding repeated uppercase allocations for already-identical rows
   while preserving case-insensitive matching. A
@@ -3872,7 +3878,9 @@ Profiling summary:
   fallback path, avoiding record-data and matrix-helper setup. The single-record
   ASCII helper now samples and scans for invalid bytes before translating, so
   all-valid sequences avoid copying while mixed or late-invalid sequences retain
-  the byte-translate count path. Text-mode
+  the byte-translate count path. Short ASCII buffers now use one invalid-byte
+  scan instead of checking the same bytes as prefix, suffix, and full buffer.
+  Text-mode
   `run` now batches per-taxon rows into one newline-joined print, preserving
   the same stdout text. JSON row materialization now uses literal dictionaries
   instead of repeated `dict(...)` calls. A subsequent startup

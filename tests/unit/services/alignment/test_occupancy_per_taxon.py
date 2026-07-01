@@ -174,6 +174,25 @@ class TestOccupancyPerTaxon(object):
             is_protein=False,
         ) == 1.0
 
+    def test_invalid_byte_scan_short_buffers_avoid_slice_checks(self):
+        class NoSliceBytes(bytes):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("short invalid scan should not slice")
+                return super().__getitem__(key)
+
+        clean = NoSliceBytes(b"ACGT" * 10)
+        gapped = NoSliceBytes(b"ACGTN")
+
+        assert occupancy_per_taxon_module._has_invalid_bytes(
+            clean,
+            occupancy_per_taxon_module._DNA_INVALID_BYTES,
+        ) is False
+        assert occupancy_per_taxon_module._has_invalid_bytes(
+            gapped,
+            occupancy_per_taxon_module._DNA_INVALID_BYTES,
+        ) is True
+
     def test_occupancy_ascii_matrix_identical_rows_return_shared_occupancy(self):
         record_data = [
             ("a", "ACGTN-?X*"),

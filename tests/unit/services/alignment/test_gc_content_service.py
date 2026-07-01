@@ -63,6 +63,25 @@ assert "phykit.helpers.files" not in sys.modules
             is_protein=False,
         ) == (2, 1)
 
+    def test_invalid_byte_scan_short_buffers_avoid_slice_checks(self):
+        class NoSliceBytes(bytes):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("short invalid scan should not slice")
+                return super().__getitem__(key)
+
+        clean = NoSliceBytes(b"ACGT" * 10)
+        gapped = NoSliceBytes(b"ACGTN")
+
+        assert gc_content_module._has_invalid_bytes(
+            clean,
+            gc_content_module._DNA_INVALID_BYTES,
+        ) is False
+        assert gc_content_module._has_invalid_bytes(
+            gapped,
+            gc_content_module._DNA_INVALID_BYTES,
+        ) is True
+
     def test_calculate_gc_total_value(self, args):
         service = GCContent(args)
         records = _alignment(

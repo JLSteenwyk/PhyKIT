@@ -33,6 +33,7 @@ _DNA_INVALID_BYTES = b"-?*XNxn"
 _PROTEIN_INVALID_BYTES = b"-?*Xx"
 _DNA_INVALID_CHARS = "-?*XN"
 _PROTEIN_INVALID_CHARS = "-?*X"
+_INVALID_SCAN_BYTES = 4096
 
 
 def _get_valid_lookup(is_protein: bool):
@@ -60,6 +61,24 @@ def _get_gc_lookup():
     return _GC_LOOKUP
 
 
+def _has_invalid_bytes(sequence_bytes: bytes, invalid_bytes: bytes) -> bool:
+    if len(sequence_bytes) <= _INVALID_SCAN_BYTES:
+        return any(code in sequence_bytes for code in invalid_bytes)
+
+    has_invalid = any(
+        code in sequence_bytes[:_INVALID_SCAN_BYTES]
+        for code in invalid_bytes
+    )
+    if not has_invalid:
+        has_invalid = any(
+            code in sequence_bytes[-_INVALID_SCAN_BYTES:]
+            for code in invalid_bytes
+        )
+    if not has_invalid:
+        has_invalid = any(code in sequence_bytes for code in invalid_bytes)
+    return has_invalid
+
+
 def _gc_counts_from_upper_sequence(sequence: str, is_protein: bool) -> tuple[int, int]:
     invalid_chars = _PROTEIN_INVALID_CHARS if is_protein else _DNA_INVALID_CHARS
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
@@ -70,7 +89,7 @@ def _gc_counts_from_upper_sequence(sequence: str, is_protein: bool) -> tuple[int
         gc_count = sequence.count("G") + sequence.count("C")
         return valid_count, gc_count
 
-    if any(code in sequence_bytes for code in invalid_bytes):
+    if _has_invalid_bytes(sequence_bytes, invalid_bytes):
         valid_count = len(sequence_bytes.translate(None, invalid_bytes))
     else:
         valid_count = len(sequence_bytes)
@@ -83,7 +102,7 @@ def _gc_counts_from_ascii_bytes(
     is_protein: bool,
 ) -> tuple[int, int]:
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
-    if any(code in sequence_bytes for code in invalid_bytes):
+    if _has_invalid_bytes(sequence_bytes, invalid_bytes):
         valid_count = len(sequence_bytes.translate(None, invalid_bytes))
     else:
         valid_count = len(sequence_bytes)
@@ -168,12 +187,7 @@ def _gc_total_from_ascii(records, is_protein: bool):
 
     seq_array = np.frombuffer(alignment_bytes, dtype=np.uint8)
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
-    has_invalid = any(code in alignment_bytes[:4096] for code in invalid_bytes)
-    if not has_invalid:
-        has_invalid = any(code in alignment_bytes[-4096:] for code in invalid_bytes)
-    if not has_invalid:
-        has_invalid = any(code in alignment_bytes for code in invalid_bytes)
-    if has_invalid:
+    if _has_invalid_bytes(alignment_bytes, invalid_bytes):
         valid_lookup = _get_valid_lookup(is_protein)
         valid_count = int(np.count_nonzero(valid_lookup[seq_array]))
     else:
