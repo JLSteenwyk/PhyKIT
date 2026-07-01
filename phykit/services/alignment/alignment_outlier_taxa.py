@@ -163,9 +163,11 @@ class AlignmentOutlierTaxa(Alignment):
     @staticmethod
     def _symbol_counts_by_row(alignment_array, symbols):
         if alignment_array.dtype == np.uint8 and symbols.size >= 16:
-            n_rows = alignment_array.shape[0]
+            n_rows, aln_len = alignment_array.shape
             max_code = int(symbols.max()) + 1
-            if alignment_array.size <= 2_000_000:
+            if alignment_array.size <= 2_000_000 or (
+                n_rows >= 15_000 and aln_len <= 256
+            ):
                 encoded = alignment_array.astype(np.int64)
                 encoded += (np.arange(n_rows, dtype=np.int64) * max_code)[:, None]
                 counts = np.bincount(
