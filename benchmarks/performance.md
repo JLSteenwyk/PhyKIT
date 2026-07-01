@@ -783,6 +783,7 @@ Results:
 | `QuartetNetwork._extract_bipartition_masks` reverse-preorder postorder helper | balanced 32768-tip tree, bitmask split extraction setup | 0.104120s | 0.067357s | 1.55x |
 | `QuartetNetwork._extract_bipartition_masks` binary child masks | balanced 32768-tip tree, bitmask split extraction setup, side-by-side reverse-preorder helper | 0.053298s | 0.049024s | 1.09x |
 | `QuartetNetwork._compute_circular_split_weights` equal-size tiebreak | 80 / 160 / 220-taxon circular orderings, identical positive split weights, side-by-side previous sorted-half tiebreak | 0.075409s / 0.734834s / 1.975865s | 0.042086s / 0.551053s / 1.674072s | 1.79x / 1.33x / 1.18x |
+| `QuartetNetwork._compute_circular_split_weights` rolling arc sets | 40 / 80 / 160 / 220-taxon circular orderings, identical split order and weights, side-by-side previous per-arc set reconstruction | 0.030619s / 0.182034s / 0.589527s / 1.769014s | 0.005200s / 0.020853s / 0.555364s / 0.464726s | 5.89x / 8.73x / 1.06x / 3.81x |
 | `QuartetNetwork._build_splits_graph` | 80 taxa, 20 circular splits, 33-node quartet graph | 6.1411s | 0.0016s | 3910.4x |
 | `QuartetNetwork._draw_quartet_network` edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.027545s | 0.004864s | 5.66x |
 | `QuartetNetwork.run` batched text quartet output | 100k quartet rows, captured stdout and identical text | 0.180601s | 0.166519s | 1.08x |

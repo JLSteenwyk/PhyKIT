@@ -742,18 +742,23 @@ class QuartetNetwork(Tree):
         n = len(ordering)
         all_taxa_set = frozenset(ordering)
         seen = {}
+        arc_taxa_by_start = [
+            {ordering[start], ordering[(start + 1) % n]}
+            for start in range(n)
+        ]
 
         for arc_len in range(2, n - 1):
             for start in range(n):
-                arc_taxa = frozenset(ordering[(start + k) % n] for k in range(arc_len))
+                arc_taxa = arc_taxa_by_start[start]
                 complement = all_taxa_set - arc_taxa
 
                 if len(arc_taxa) < len(complement):
-                    canonical = arc_taxa
+                    canonical = frozenset(arc_taxa)
                 elif len(arc_taxa) > len(complement):
                     canonical = complement
                 else:
-                    canonical = arc_taxa if min(arc_taxa) < min(complement) else complement
+                    side = frozenset(arc_taxa)
+                    canonical = side if min(side) < min(complement) else complement
 
                 if canonical in seen:
                     continue
@@ -771,6 +776,10 @@ class QuartetNetwork(Tree):
                 w = (dist_matrix[ib][ie] + dist_matrix[is_][ia]
                      - dist_matrix[ib][ia] - dist_matrix[is_][ie]) / 2.0
                 seen[canonical] = max(w, 0.0)
+
+            if arc_len != n - 2:
+                for start, arc_taxa in enumerate(arc_taxa_by_start):
+                    arc_taxa.add(ordering[(start + arc_len) % n])
 
         return [(s, w) for s, w in seen.items() if w > 1e-10]
 

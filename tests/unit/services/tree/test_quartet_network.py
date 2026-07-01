@@ -453,6 +453,31 @@ class TestCircularSplitWeights:
 
         assert splits == [(frozenset({"A", "B"}), 2.0)]
 
+    def test_circular_split_weights_reuse_rolling_arcs(self):
+        class CountingOrdering(list):
+            def __init__(self, values):
+                super().__init__(values)
+                self.index_reads = 0
+
+            def __getitem__(self, idx):
+                self.index_reads += 1
+                return super().__getitem__(idx)
+
+        n_taxa = 20
+        ordering = CountingOrdering([f"t{idx}" for idx in range(n_taxa)])
+        taxa_idx = {taxon: idx for idx, taxon in enumerate(ordering)}
+        dist = [
+            [
+                0.0 if row == col else float(abs(row - col) + 1)
+                for col in range(n_taxa)
+            ]
+            for row in range(n_taxa)
+        ]
+
+        QuartetNetwork._compute_circular_split_weights(ordering, dist, taxa_idx)
+
+        assert ordering.index_reads < 1500
+
 
 class TestBuildSplitsGraph:
     class CountingOrdering(list):
