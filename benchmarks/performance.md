@@ -803,6 +803,7 @@ Results:
 | `TreeSpace._extract_splits` reverse-preorder postorder helper | 20 balanced 512-tip trees, RF splits filtered to 256 shared taxa | 0.030492s | 0.026352s | 1.16x |
 | `TreeSpace._extract_splits` binary child union | balanced 1024-tip tree, RF splits filtered to 512 shared taxa, side-by-side previous reverse-preorder helper | 0.002574s | 0.002395s | 1.07x |
 | `TreeSpace._extract_splits_with_lengths` binary child union | balanced 1024-tip tree, KF split lengths filtered to 512 shared taxa, side-by-side previous reverse-preorder helper | 0.002544s | 0.002405s | 1.06x |
+| `TreeSpace._extract_splits` / `_extract_splits_with_lengths` multifurcation child union | 1 RF/KF split-extraction pass over 512x8 / 2048x4 / 4096x4 multifurcating groups, side-by-side previous repeated immutable-set union path | 0.079318s / 0.250327s / 1.819712s and 0.019641s / 0.248539s / 1.378912s | 0.006900s / 0.008293s / 0.025139s and 0.004677s / 0.011410s / 0.039709s | 11.50x / 30.18x / 72.39x and 4.20x / 21.78x / 34.73x |
 | `TreeSpace._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.688258s | 0.257655s | 2.67x |
 | `TreeSpace._build_distance_matrix` direct split extraction | 20 balanced 512-tip trees, prune to 256 shared taxa before RF splits | 0.101763s | 0.085802s | 1.2x |
 | `TreeSpace._build_distance_matrix` RF shared-taxa direct extraction | 20 balanced 512-tip trees, 256 shared taxa before RF split matrix | 0.066800s | 0.021859s | 3.06x |

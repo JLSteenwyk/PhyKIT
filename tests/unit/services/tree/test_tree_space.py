@@ -442,6 +442,35 @@ class TestDistanceMatrix:
             frozenset({"E", "F"}): 8.0,
         }
 
+    def test_extract_splits_handles_trifurcating_root_child_pairs(
+        self, monkeypatch, default_args, kf_args
+    ):
+        tree = Phylo.read(
+            StringIO("((A:1,B:1):2,(C:1,D:1):3,(E:1,F:1):4);"),
+            "newick",
+        )
+        all_taxa = frozenset({"A", "B", "C", "D", "E", "F"})
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard split extraction should use direct postorder")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        svc = TreeSpace(default_args)
+        kf_svc = TreeSpace(kf_args)
+        expected_splits = {
+            frozenset({"A", "B"}),
+            frozenset({"C", "D"}),
+            frozenset({"E", "F"}),
+        }
+
+        assert svc._extract_splits(tree, all_taxa) == expected_splits
+        assert kf_svc._extract_splits_with_lengths(tree, all_taxa) == {
+            frozenset({"A", "B"}): 2.0,
+            frozenset({"C", "D"}): 3.0,
+            frozenset({"E", "F"}): 4.0,
+        }
+
     def test_build_distance_matrix_skips_copy_when_no_pruning_needed(
         self, monkeypatch, default_args
     ):
