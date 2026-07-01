@@ -189,6 +189,23 @@ class TestTraitParsing:
 
 
 class TestPhyloHeatmapPlot:
+    def test_build_heatmap_matrix_uses_typed_asarray(self, monkeypatch):
+        trait_data = {
+            "B": [3, 4],
+            "A": [1, 2],
+            "C": [5, 6],
+        }
+
+        def fail_array(*_args, **_kwargs):
+            raise AssertionError("heatmap matrix should use np.asarray")
+
+        monkeypatch.setattr(module.np, "array", fail_array, raising=False)
+
+        matrix = PhyloHeatmap._build_heatmap_matrix(["A", "B", "C"], trait_data)
+
+        assert str(matrix.dtype) == "float64"
+        assert matrix.tolist() == [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]
+
     def test_run_uses_fast_tip_name_helper_for_setup(self, mocker, args):
         args.json = True
         ph = PhyloHeatmap(args)

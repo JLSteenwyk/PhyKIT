@@ -1522,6 +1522,7 @@ Results:
 | `PhyloHeatmap._parse_trait_matrix` streaming parser | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.729967s | 0.701524s | 1.04x |
 | `PhyloHeatmap._parse_trait_matrix` all-shared parser fast path | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.359596s | 0.247998s | 1.45x |
 | `PhyloHeatmap._parse_trait_matrix` numeric hot-loop cleanup | 200k taxa x 8 numeric traits, comments/blanks, all taxa shared, side-by-side previous parser comparison | 0.285750s | 0.256122s | 1.12x |
+| `PhyloHeatmap._build_heatmap_matrix` typed matrix construction | 200k taxa x 8 numeric traits, ordered row lookup, side-by-side previous inline `np.array` construction | 0.173474s | 0.133871s | 1.30x |
 | `PhyloHeatmap._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.057904s | 0.027449s | 2.11x |
 | `PhyloHeatmap._plot_phylo_heatmap` node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, phylogram tree-panel coordinate setup | 0.049305s | 0.040452s | 1.22x |
 | `PhyloHeatmap._plot_phylo_heatmap_circular` phylogram setup | balanced 32768-tip tree, precomputed heatmap matrix | 0.4398s | 0.1925s | 2.3x |
@@ -5779,7 +5780,10 @@ Profiling summary:
   color-annotation helpers behind forwarding wrappers/local imports so plain
   imports avoid those helper modules. A later startup pass converts
   annotation-only `typing` aliases to built-in postponed annotations, so command
-  discovery no longer imports `typing`.
+  discovery no longer imports `typing`. Heatmap matrix construction now builds
+  the ordered row list through typed `np.asarray`, preserving float matrix
+  output while avoiding the slower inline `np.array` conversion on large
+  parser-shaped inputs.
 - `Cophylo._rotate_tree` baseline time recomputed descendant terminal lists
   for every internal child while rotating nodes. The optimized path computes
   mapped descendant target positions once in postorder and reuses each clade's

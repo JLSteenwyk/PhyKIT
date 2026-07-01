@@ -316,6 +316,13 @@ class PhyloHeatmap(Tree):
 
         return trait_names, {t: trait_data[t] for t in shared}
 
+    @staticmethod
+    def _build_heatmap_matrix(
+        tip_order: list[str],
+        trait_data: dict[str, list[float]],
+    ) -> np.ndarray:
+        return np.asarray([trait_data[taxon] for taxon in tip_order], dtype=float)
+
     def _plot_phylo_heatmap(
         self,
         tree,
@@ -339,7 +346,7 @@ class PhyloHeatmap(Tree):
         config.resolve(n_rows=n_tips, n_cols=n_traits)
 
         # Build the data matrix in tip_order
-        matrix = np.array([trait_data[taxon] for taxon in tip_order])
+        matrix = self._build_heatmap_matrix(tip_order, trait_data)
         if self.standardize:
             col_means = np.nanmean(matrix, axis=0)
             col_stds = np.nanstd(matrix, axis=0)
