@@ -764,6 +764,27 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.assertEqual(result[tree_file]["0-1"], 4)
 
+    def test_examine_all_triplets_large_does_not_materialize_product(self):
+        tips = ["a", "b", "c", "d"]
+        tree_file = "big.tre"
+        summary = {}
+        groups_of_groups = {"test": [["a", "b", "c", "d"], ["e", "f", "g", "h"], ["i", "j", "k", "l"]]}
+        outgroup_taxa = ["out"]
+
+        self.polytomy._read_tree_with_cache = Mock(return_value=Mock())
+        self.polytomy._prepare_tree_for_triplets = Mock(return_value=Mock())
+        self.polytomy._evaluate_tree_triplets_fast = Mock(return_value={"0-1": 4})
+
+        with patch(
+            "phykit.services.tree.polytomy_test.itertools.product",
+            side_effect=AssertionError("large path should not build triplets"),
+        ):
+            result = self.polytomy.examine_all_triplets_and_sister_pairing(
+                tips, tree_file, summary, groups_of_groups, outgroup_taxa
+            )
+
+        self.assertEqual(result[tree_file]["0-1"], 4)
+
     def test_examine_all_triplets_large_legacy_on_empty_fast(self):
         tips = ["a", "b", "c"]
         tree_file = "big.tre"

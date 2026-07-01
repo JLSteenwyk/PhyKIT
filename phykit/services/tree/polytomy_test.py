@@ -386,9 +386,8 @@ class PolytomyTest(Tree):
         outgroup_taxa: list[str],
     ) -> dict[str, int]:
         identifier = next(iter(groups_of_groups))
-        triplet_tips = list(itertools.product(*groups_of_groups[identifier]))
         legacy_summary: dict[str, int] = {}
-        for triplet in triplet_tips:
+        for triplet in itertools.product(*groups_of_groups[identifier]):
             tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
             if tree and hasattr(tree, "get_terminals"):
                 if self._has_exactly_three_terminals(tree):
@@ -590,11 +589,12 @@ class PolytomyTest(Tree):
         """
         # get all combinations of three tips
         identifier = next(iter(groups_of_groups))
-        triplet_tips = list(itertools.product(*groups_of_groups[identifier]))
+        triplet_groups = groups_of_groups[identifier]
+        triplet_count = math.prod(len(group) for group in triplet_groups)
 
         # For small datasets, process sequentially
-        if len(triplet_tips) < 50:
-            for triplet in triplet_tips:
+        if triplet_count < 50:
+            for triplet in itertools.product(*triplet_groups):
                 tree = self.get_triplet_tree(tips, triplet, tree_file, outgroup_taxa)
                 if tree and hasattr(tree, 'get_terminals'):
                     if self._has_exactly_three_terminals(tree):
