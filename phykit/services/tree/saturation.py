@@ -93,7 +93,12 @@ class Saturation(Tree):
             patristic_distances,
             uncorrected_distances,
         ) = self.loop_through_combos_and_calculate_pds_and_pis(
-            combos, alignment, tree, self.exclude_gaps, is_protein
+            combos,
+            alignment,
+            tree,
+            self.exclude_gaps,
+            is_protein,
+            standard_combo_order=True,
         )
 
         # calculate slope while fitting the y-intercept to zero.
@@ -298,6 +303,7 @@ class Saturation(Tree):
         seq_arrays: dict[str, np.ndarray],
         gap_mask: dict[str, np.ndarray],
         exclude_gaps: bool,
+        standard_combo_order: bool = False,
     ) -> list[float] | None:
         """Compute all requested uncorrected distances from sequence masks."""
         n_tips = len(combo_tips)
@@ -323,6 +329,7 @@ class Saturation(Tree):
                 combo_tips,
                 combos,
                 seq_matrix,
+                standard_combo_order=standard_combo_order,
             )
 
         try:
@@ -331,6 +338,7 @@ class Saturation(Tree):
                     combo_tips,
                     combos,
                     seq_matrix,
+                    standard_combo_order=standard_combo_order,
                 )
         except KeyError:
             return None
@@ -349,6 +357,7 @@ class Saturation(Tree):
             combos,
             identity_counts,
             adjusted_lengths,
+            standard_combo_order=standard_combo_order,
         )
         if standard_distances is not None:
             return standard_distances
@@ -373,6 +382,7 @@ class Saturation(Tree):
         combo_tips: list[str],
         combos: list[tuple[str, str]],
         seq_matrix,
+        standard_combo_order: bool = False,
     ) -> list[float]:
         n_tips, seq_len = seq_matrix.shape
         if seq_len == 0:
@@ -397,6 +407,7 @@ class Saturation(Tree):
             combo_tips,
             combos,
             distances,
+            standard_combo_order=standard_combo_order,
         )
         if standard_distances is not None:
             return standard_distances
@@ -430,8 +441,12 @@ class Saturation(Tree):
         combo_tips: list[str],
         combos: list[tuple[str, str]],
         values,
+        standard_combo_order: bool = False,
     ) -> list[float] | None:
-        if not cls._combos_are_standard_upper_triangle(combo_tips, combos):
+        if not standard_combo_order and not cls._combos_are_standard_upper_triangle(
+            combo_tips,
+            combos,
+        ):
             return None
 
         distances = []
@@ -447,8 +462,12 @@ class Saturation(Tree):
         combos: list[tuple[str, str]],
         identity_counts,
         adjusted_lengths,
+        standard_combo_order: bool = False,
     ) -> list[float] | None:
-        if not cls._combos_are_standard_upper_triangle(combo_tips, combos):
+        if not standard_combo_order and not cls._combos_are_standard_upper_triangle(
+            combo_tips,
+            combos,
+        ):
             return None
 
         if (adjusted_lengths != 0.0).all():
@@ -484,6 +503,7 @@ class Saturation(Tree):
         tree: Newick.Tree,
         exclude_gaps: bool,
         is_protein: bool = False,
+        standard_combo_order: bool = False,
     ) -> tuple[
         list[float],
         list[float],
@@ -558,6 +578,7 @@ class Saturation(Tree):
                 seq_arrays,
                 gap_mask,
                 exclude_gaps,
+                standard_combo_order=standard_combo_order,
             )
             if matrix_distances is not None:
                 return list(direct_pair_distances), matrix_distances

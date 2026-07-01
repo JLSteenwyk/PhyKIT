@@ -387,6 +387,25 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         self.assertIsNone(distances)
 
+    def test_standard_upper_triangle_values_trusted_order_skips_validation(self):
+        combo_tips = ["seq1", "seq2", "seq3"]
+        combos = [("seq1", "seq2"), ("seq1", "seq3"), ("seq2", "seq3")]
+        values = np.arange(9, dtype=float).reshape(3, 3)
+
+        with patch.object(
+            self.saturation,
+            "_combos_are_standard_upper_triangle",
+            side_effect=AssertionError("trusted run path should not revalidate pairs"),
+        ):
+            distances = self.saturation._standard_upper_triangle_values(
+                combo_tips,
+                combos,
+                values,
+                standard_combo_order=True,
+            )
+
+        self.assertEqual(distances, [1.0, 2.0, 5.0])
+
     def test_standard_upper_triangle_gappy_distances_preserve_nan_rows(self):
         combo_tips = ["seq1", "seq2", "seq3"]
         combos = [("seq1", "seq2"), ("seq1", "seq3"), ("seq2", "seq3")]
