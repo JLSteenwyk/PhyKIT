@@ -1741,6 +1741,7 @@ Results:
 | `Dtt._simulate_null` terminal-column masking | 200k simulated DTT rows x 80 time points, terminal observation grid final column | 0.138169s | 0.096509s | 1.43x |
 | `Dtt._simulate_null` vectorized MDI reductions | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.119121s | 0.097534s | 1.22x |
 | `Dtt._simulate_null` MDI p-value counts | 1M simulated MDI values, side-by-side previous `np.mean(abs(sim_mdis) >= abs(mdi))` reduction | 0.000991s | 0.000390s | 2.54x |
+| `Dtt._compute_disparity` observed avg-squared sum-of-squares | observed trait matrices shaped 32x2 / 300x2 / 512x8 / 2048x4, side-by-side previous `np.sum(data * data)` and `np.sum(sums * sums)` reductions | 7.283553s / 2.413355s / 1.135589s / 3.148002s | 1.361637s / 1.171414s / 0.707937s / 2.592290s | 5.35x / 2.06x / 1.60x / 1.21x |
 | `Dtt._batch_clade_disparities_avg_sq` postorder subtree aggregation | balanced 2048-tip tree x 2 traits, 50 simulated DTT curves | 0.039455s | 0.026875s | 1.47x |
 | `Dtt._simulate_null_avg_sq_batch` row sum-of-squares reductions | simulated trait cubes shaped 50x512x2 / 500x512x2 / 100x2048x4 / 1000x128x8, side-by-side previous `np.sum(values * values, ...)` reductions | 0.946699s / 1.249285s / 0.788768s / 0.593306s | 0.636814s / 0.980172s / 0.678222s / 0.359702s | 1.49x / 1.27x / 1.16x / 1.65x |
 | `Dtt._simulate_null` observed-DTT reuse | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.071679s | 0.045011s | 1.59x |
@@ -6212,6 +6213,9 @@ Profiling summary:
   preserving direct `_simulate_null()` callers that only provide observed times.
   MDI p-values now count extreme simulated MDI values with `np.count_nonzero`
   before dividing by the simulation count, avoiding boolean mean reductions.
+  Observed average-squared disparity now uses flattened dot-product
+  sum-of-squares for the trait matrix and column-sum vector, preserving the
+  closed-form pairwise-distance formula while avoiding temporary squared arrays.
   Batched average-squared simulation reductions now compute row sum-of-squares
   through flattened `einsum` row dots, preserving the closed-form disparity
   values while avoiding temporary squared trait cubes for total and clade

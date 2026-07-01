@@ -194,9 +194,10 @@ class Dtt(Tree):
             return total / count
         else:
             # avg_sq: average squared Euclidean distance
-            sum_sq = float(np.sum(data * data))
-            sums = np.sum(data, axis=0)
-            total = n * sum_sq - float(np.sum(sums * sums))
+            flattened = data.ravel()
+            sum_sq = float(np.dot(flattened, flattened))
+            sums = data.sum(axis=0)
+            total = n * sum_sq - float(np.dot(sums, sums))
             return total / count
 
     @staticmethod

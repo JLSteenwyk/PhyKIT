@@ -176,6 +176,29 @@ class TestComputeDisparity:
         # pairs: (0,1)=1, (0,3)=9, (1,3)=4; avg = 14/3
         assert svc._compute_disparity(data) == pytest.approx(14.0 / 3.0)
 
+    def test_avg_sq_disparity_uses_dot_sum_of_squares(self, monkeypatch):
+        args = _make_args(index="avg_sq")
+        svc = Dtt(args)
+        data = np.array([[0.0, 2.0], [3.0, 4.0], [6.0, 8.0]])
+        dot_calls = []
+        original_dot = dtt_module.np.dot
+
+        def counting_dot(left, right):
+            dot_calls.append((left.shape, right.shape))
+            return original_dot(left, right)
+
+        monkeypatch.setattr(dtt_module.np, "dot", counting_dot)
+        monkeypatch.setattr(
+            dtt_module.np,
+            "sum",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("avg_sq disparity should use dot reductions")
+            ),
+        )
+
+        assert svc._compute_disparity(data) == pytest.approx(110.0 / 3.0)
+        assert dot_calls == [((6,), (6,)), ((2,), (2,))]
+
     def test_three_points_avg_manhattan_multidimensional(self):
         args = _make_args(index="avg_manhattan")
         svc = Dtt(args)
