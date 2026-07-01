@@ -624,7 +624,8 @@ class PhyloAnova(Tree):
                 # Observed distance between group means
                 mean1 = Y_sub[pos1].mean(axis=0)
                 mean2 = Y_sub[pos2].mean(axis=0)
-                d_obs = float(np.linalg.norm(mean1 - mean2))
+                mean_diff = mean1 - mean2
+                d_obs = float(np.sqrt(mean_diff @ mean_diff))
 
                 # Permute residuals for pairwise test
                 resid_sub = resid_red[idx]
@@ -649,7 +650,8 @@ class PhyloAnova(Tree):
                     contrast
                 )
                 resid_diffs = weights @ resid_sub
-                d_perms = np.linalg.norm(hat_diff + resid_diffs, axis=1)
+                perm_diffs = hat_diff + resid_diffs
+                d_perms = np.sqrt(np.einsum("ij,ij->i", perm_diffs, perm_diffs))
 
                 p_val, z_val = _permutation_p_value_and_z(d_obs, d_perms)
 

@@ -2139,6 +2139,7 @@ Results:
 | `PhyloAnova._run_pairwise` residual mean permutations | 600 taxa x 5 responses, 6 groups, 1000 RRPP permutations | 0.2743s | 0.2302s | 1.2x |
 | `PhyloAnova._run_pairwise` vectorized residual mean permutations | 600 taxa x 5 responses, 6 groups, 1000 RRPP permutations | 0.2299s | 0.1177s | 2.0x |
 | `PhyloAnova._run_pairwise` contrast-weight residual permutations | 600 taxa x 5 responses, 6 groups, 1000 RRPP permutations | 0.119985s | 0.062728s | 1.9x |
+| `PhyloAnova._run_pairwise` direct L2 distance reductions | permutation difference matrices shaped 1000x2 / 1000x6 / 10000x6 / 100000x6 / 10000x32 plus observed vectors with 2 / 6 / 32 responses, side-by-side previous `np.linalg.norm` calls | matrices: 0.000029080s / 0.000033346s / 0.000239950s / 0.003130689s / 0.000655159s; vectors: 0.000002851s / 0.000002613s / 0.000002659s | matrices: 0.000014866s / 0.000020804s / 0.000107190s / 0.001361021s / 0.000194944s; vectors: 0.000001434s / 0.000002033s / 0.000002128s | matrices: 1.96x / 1.60x / 2.24x / 2.30x / 3.36x; vectors: 1.99x / 1.29x / 1.25x |
 | `PhyloAnova._run_pairwise` flat group-pair mask indices | 120 sparse boolean masks over 500k observations, side-by-side previous `np.where(mask)[0]` extraction used in pairwise setup | 0.208942s | 0.113959s | 1.83x |
 | `PhyloAnova._build_design_matrix` cached group lookup | 500k taxa, 12 groups, treatment-coded design matrix | 0.152966s | 0.047562s | 3.22x |
 | `PhyloAnova._run_manova` Pillai trace reduction | 2 / 3 / 4 / 8 / 16 trait eigenvalue vectors, side-by-side previous `np.sum` wrapper used in observed and permuted Pillai statistics | 0.000008343s / 0.000007664s / 0.000007563s / 0.000007925s / 0.000007421s | 0.000005759s / 0.000005310s / 0.000003918s / 0.000004917s / 0.000004665s | 1.45x / 1.44x / 1.93x / 1.61x / 1.59x |
@@ -7179,8 +7180,10 @@ Profiling summary:
   permuted group residual means and distances in bulk for each group pair. A
   later pairwise pass computes permuted mean differences with a contrast-weight
   matrix and one residual matrix multiply, avoiding the larger
-  `permutations x pair_size x traits` residual tensor for each group pair. A
-  design-matrix setup pass removes an unused all-ones allocation and caches
+  `permutations x pair_size x traits` residual tensor for each group pair.
+  Pairwise observed and permuted L2 distances now use direct dot/`einsum`
+  reductions instead of `np.linalg.norm` dispatch. A design-matrix setup pass
+  removes an unused all-ones allocation and caches
   group-name-to-column indices once, avoiding a linear `unique_groups.index()`
   search for every taxon while preserving treatment coding. ANOVA and MANOVA
   summary calculation now share a helper that computes permutation p-values,

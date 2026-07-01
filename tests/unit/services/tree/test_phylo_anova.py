@@ -989,6 +989,26 @@ class TestPhyloAnova:
         assert len(observed) == 3
         assert all(np.isfinite(row["z_score"]) for row in observed)
 
+    def test_pairwise_rrpp_uses_direct_l2_reductions(self, monkeypatch):
+        rng = np.random.default_rng(20260701)
+        n = 24
+        Y = rng.normal(size=(n, 3))
+        groups = np.array(["a", "b", "c"] * 8)
+        unique_groups = ["a", "b", "c"]
+        X_red = np.ones((n, 1))
+        args = _make_args(permutations=5, seed=7)
+        svc = PhyloAnova(args)
+
+        def fail_norm(*_args, **_kwargs):
+            raise AssertionError("pairwise RRPP should use direct L2 reductions")
+
+        monkeypatch.setattr(phylo_anova_module.np.linalg, "norm", fail_norm)
+
+        observed = svc._run_pairwise(Y, list(groups), unique_groups, X_red)
+
+        assert len(observed) == 3
+        assert all(np.isfinite(row["distance"]) for row in observed)
+
     def test_pairwise_rrpp_generates_legacy_permutation_sequence(self, monkeypatch):
         rng = np.random.default_rng(123)
         n = 24
