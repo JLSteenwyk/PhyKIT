@@ -560,6 +560,27 @@ assert "Bio.AlignIO" not in sys.modules
         assert captured["payload"]["plot_output"] == str(output)
         assert captured["payload"]["rows"][0]["site"] == 1
 
+    def test_run_json_verbose_without_plot_builds_rows(self, monkeypatch):
+        captured = {}
+        svc = AlignmentEntropy(
+            Namespace(alignment="x.fa", verbose=True, json=True, plot=False)
+        )
+        monkeypatch.setattr(svc, "get_alignment_and_format", lambda: ("aln", None, False))
+        monkeypatch.setattr(svc, "calculate_site_entropies", lambda _a, _p: [0.25, 0.75])
+        monkeypatch.setattr(
+            alignment_entropy_module,
+            "print_json",
+            lambda payload: captured.setdefault("payload", payload),
+        )
+
+        svc.run()
+
+        assert captured["payload"] == {
+            "verbose": True,
+            "rows": [{"site": 1, "entropy": 0.25}, {"site": 2, "entropy": 0.75}],
+            "sites": [{"site": 1, "entropy": 0.25}, {"site": 2, "entropy": 0.75}],
+        }
+
     def test_run_nonverbose_terminal_output(self, monkeypatch, capsys):
         svc = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False, json=False, plot=False))
         monkeypatch.setattr(svc, "get_alignment_and_format", lambda: ("aln", None, False))

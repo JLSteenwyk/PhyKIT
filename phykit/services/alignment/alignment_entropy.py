@@ -135,7 +135,7 @@ class AlignmentEntropy(Alignment):
 
         if self.plot and self.verbose:
             rows = [
-                dict(site=idx, entropy=round(entropy, 4))
+                {"site": idx, "entropy": round(entropy, 4)}
                 for idx, entropy in enumerate(entropies, start=1)
             ]
             self._plot_alignment_entropy(rows)
@@ -146,7 +146,7 @@ class AlignmentEntropy(Alignment):
             if self.verbose:
                 if rows is None:
                     rows = [
-                        dict(site=idx, entropy=round(entropy, 4))
+                        {"site": idx, "entropy": round(entropy, 4)}
                         for idx, entropy in enumerate(entropies, start=1)
                     ]
                 payload = dict(
