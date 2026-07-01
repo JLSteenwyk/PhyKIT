@@ -460,6 +460,39 @@ class TestPairwiseIdentity:
 
         assert stats_only == pytest.approx(full_stats)
 
+    def test_calculate_pairwise_identities_matrix_summarizes_condensed_values(
+        self, args, mocker
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("ACGA"), id="b"),
+                SeqRecord(Seq("TCGA"), id="c"),
+            ]
+        )
+        mocked_arr_stats = mocker.spy(
+            pairwise_identity_module,
+            "calculate_summary_statistics_from_arr",
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.calculate_summary_statistics_from_dict",
+            side_effect=AssertionError(
+                "matrix output should summarize condensed identity values"
+            ),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.75}
+        mocked_arr_stats.assert_called_once()
+        assert stats["mean"] == pytest.approx(2 / 3)
+
     def test_calculate_pairwise_identity_stats_gappy_matrix_uses_squareform(
         self, args, mocker
     ):

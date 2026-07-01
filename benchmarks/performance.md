@@ -109,6 +109,7 @@ Results:
 | `PairwiseIdentity.calculate_pairwise_identities` clean ASCII exclude-gaps shortcut | 400 taxa x 1000 sites, alphabet `ACGT`, multiprocessing disabled | 0.314763s | 0.130653s | 2.41x |
 | `PairwiseIdentity.calculate_pairwise_identities` byte sequence arrays | 180 taxa x 1500 sites, alphabet `ACGT`, multiprocessing disabled | 0.0772s | 0.0655s | 1.2x |
 | `PairwiseIdentity.calculate_pairwise_identities` default matrix path | 180 taxa x 1500 sites, alphabet `ACGT-?NX*`, multiprocessing disabled | 0.093963s | 0.027521s | 3.41x |
+| `PairwiseIdentity.calculate_pairwise_identities` matrix output condensed summaries | synthetic identity-count matrix output assembly for 100 / 250 / 500 / 1000 / 1500 taxa, side-by-side previous matrix indexing plus dict summary | 0.013223s / 0.158875s / 0.497973s / 1.937952s / 5.230754s | 0.003542s / 0.019972s / 0.121561s / 0.636426s / 1.944651s | 3.73x / 7.95x / 4.10x / 3.05x / 2.69x |
 | `PairwiseIdentity.run` summary-only matrix stats | 180 taxa x 1500 sites, alphabet `ACGT-?NX*`, non-verbose/no-plot output | 0.024218s | 0.008288s | 2.92x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` clean ASCII exclude-gaps shortcut | 400 taxa x 1000 sites, alphabet `ACGT`, summary-only stats path | 0.263493s | 0.031507s | 8.36x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` matrix block index reuse | 700 taxa x 900 sites, alphabet `ACGT-?NX*`, side-by-side previous per-block column index allocation | 0.131023s | 0.100191s | 1.31x |

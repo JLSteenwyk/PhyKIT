@@ -488,20 +488,26 @@ class PairwiseIdentity(Alignment):
                     sequence_matrix[start:stop, None, :] == sequence_matrix[None, :, :]
                 ).sum(axis=2, dtype=np.int32)
 
+        condensed_counts = squareform(identity_counts, checks=False)
+        if aln_len > 0:
+            identities = condensed_counts.astype(np.float64, copy=False)
+            identities /= float(aln_len)
+        else:
+            identities = np.zeros(len(condensed_counts), dtype=np.float64)
+
         pairwise_identities = {}
         pair_ids = []
-        denominator = float(aln_len)
-        for idx1, idx2 in itertools.combinations(range(num_records), 2):
-            pair_id = [records[idx1].id, records[idx2].id]
-            pair_ids.append(pair_id)
-            identity = (
-                float(identity_counts[idx1, idx2] / denominator)
-                if aln_len > 0
-                else 0.0
-            )
-            pairwise_identities["-".join(pair_id)] = identity
+        cursor = 0
+        for idx1 in range(num_records - 1):
+            left_id = records[idx1].id
+            for idx2 in range(idx1 + 1, num_records):
+                right_id = records[idx2].id
+                pair_id = [left_id, right_id]
+                pair_ids.append(pair_id)
+                pairwise_identities[f"{left_id}-{right_id}"] = float(identities[cursor])
+                cursor += 1
 
-        stats = calculate_summary_statistics_from_dict(pairwise_identities)
+        stats = calculate_summary_statistics_from_arr(identities)
         return pair_ids, pairwise_identities, stats
 
     def _calculate_pairwise_identity_stats_matrix(
