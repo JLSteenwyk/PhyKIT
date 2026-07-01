@@ -388,6 +388,21 @@ class TestLBScore(object):
         assert avg_dist == pytest.approx(expected_avg_dist)
         assert avg_pdis == pytest.approx(expected_avg_pdis)
 
+    def test_calculate_lb_components_fast_rejects_duplicate_tips(self):
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="tip0"),
+                    Clade(branch_length=1.0, name="tip1"),
+                ],
+            )
+        )
+
+        assert LBScore._calculate_lb_components_fast(
+            tree,
+            ["tip0", "tip0"],
+        ) is None
+
     def test_calculate_lb_components_fast_handles_mixed_child_counts_without_reversed(
         self, args
     ):

@@ -1553,6 +1553,7 @@ Results:
 | `LBScore.calculate_average_distance_of_taxon_to_other_taxa` fallback tip-set reuse | 1000 fallback taxon names, side-by-side previous per-tip `set(tips)` construction while preserving `set(tip)` behavior | 0.024459s | 0.009492s | 2.58x |
 | `LBScore.calculate_average_distance_between_tips` fallback streaming pair batches | 2000 fallback tips, 1,999,000 pair batch setup, side-by-side previous full pair-list slicing | 0.484847s | 0.317065s | 1.53x |
 | `LBScore._calculate_lb_components_fast` postorder child push | balanced 32768-tip tree, linear component helper, side-by-side previous `reversed(children)` setup | 0.159546s | 0.132146s | 1.21x |
+| `LBScore._calculate_lb_components_fast` unique-tip setup | 200k unique tip names, side-by-side previous duplicate-check set plus calculation set | 0.074478458s | 0.023306067s | 3.20x |
 | `LBScore.calculate_lb_score_per_taxa` without NumPy startup | cold subprocess, 32768 average-distance values transformed to LB scores | 0.098413s | 0.029658s | 3.32x |
 | `LBScore.run` verbose text output | 200k taxon LB-score rows, mocked tree/read and identical stdout text | 0.119431s | 0.093329s | 1.28x |
 | `LBScore.run` verbose JSON row construction | 500k mocked taxon LB-score rows, identical row dictionaries | 0.577324s | 0.423637s | 1.36x |
@@ -5807,7 +5808,9 @@ Profiling summary:
   tree before score calculation and output dispatch. The linear component
   helper's postorder setup now pushes binary children right-then-left and
   indexes multifurcations backward, preserving traversal order while reducing
-  balanced 32768-tip median helper time from 0.159546s to 0.132146s.
+  balanced 32768-tip median helper time from 0.159546s to 0.132146s. The
+  unique-tip fast-path setup now reuses the duplicate-check tip set, avoiding a
+  second full tip-set allocation before the linear tree traversal.
 - `Saturation.loop_through_combos_and_calculate_pds_and_pis` reuses the cached
   tree-distance helper for patristic distances while preserving combo order and
   the existing uncorrected-distance calculations. When cached pairwise

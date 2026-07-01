@@ -327,11 +327,13 @@ class LBScore(Tree):
         except AttributeError:
             return None
 
-        if len(tips) < 2 or len(set(tips)) != len(tips):
+        tip_count = len(tips)
+        if tip_count < 2:
             return None
 
         tip_set = set(tips)
-        tip_count = len(tips)
+        if len(tip_set) != tip_count:
+            return None
         subtree_tip_counts = {}
         subtree_distance_sums = {}
         branch_lengths = {root: 0.0}
