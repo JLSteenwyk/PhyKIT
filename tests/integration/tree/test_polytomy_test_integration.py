@@ -8,6 +8,27 @@ from phykit.phykit import Phykit
 
 here = Path(__file__)
 
+EXPECTED_TEST_TREES_OUTPUT = (
+    "Gene Support Frequency Results\n"
+    "==============================\n"
+    "chi-squared: 20.0\n"
+    "p-value: 4.5e-05\n"
+    "total genes: 10\n"
+    "0-1: 10\n"
+    "0-2: 0\n"
+    "1-2: 0"
+)
+EXPECTED_POLYT_OUTPUT = (
+    "Gene Support Frequency Results\n"
+    "==============================\n"
+    "chi-squared: 2.0\n"
+    "p-value: 0.367879\n"
+    "total genes: 4\n"
+    "0-1: 2\n"
+    "0-2: 2\n"
+    "1-2: 0"
+)
+
 
 @pytest.mark.integration
 class TestPTT(object):
@@ -24,24 +45,7 @@ class TestPTT(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("Gene Support Frequency Results"),
-            call("=============================="),
-            call("chi-squared: 20.0"),
-            call("p-value: 4.5e-05"),
-            call("total genes: 10"),
-            call("0-1: 10"),
-            call("0-2: 0"),
-            call("1-2: 0"),
-            # call("\nTriplet Results"),
-            # call("==============="),
-            # call("chi-squared: 320.0"),
-            # call("p-value: 0.0"),
-            # call("total triplets: 160"),
-            # call("0-1: 160"),
-            # call("0-2: 0"),
-            # call("1-2: 0")
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_TEST_TREES_OUTPUT)]
 
     @patch("builtins.print")
     def test_polytomy_test1(self, mocked_print):
@@ -56,24 +60,7 @@ class TestPTT(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("Gene Support Frequency Results"),
-            call("=============================="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total genes: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0"),
-            # call("\nTriplet Results"),
-            # call("==============="),
-            # call("chi-squared: 2.0"),
-            # call("p-value: 0.367879"),
-            # call("total triplets: 4"),
-            # call("0-1: 2"),
-            # call("0-2: 2"),
-            # call("1-2: 0")
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_POLYT_OUTPUT)]
 
     @patch("builtins.print")
     def test_polytomy_test_incorrect_group_path(self, mocked_print):
@@ -186,24 +173,7 @@ class TestPTT(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("Gene Support Frequency Results"),
-            call("=============================="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total genes: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0"),
-            # call("\nTriplet Results"),
-            # call("==============="),
-            # call("chi-squared: 2.0"),
-            # call("p-value: 0.367879"),
-            # call("total triplets: 4"),
-            # call("0-1: 2"),
-            # call("0-2: 2"),
-            # call("1-2: 0")
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_POLYT_OUTPUT)]
 
     @patch("builtins.print")
     def test_polytomy_test_alias1(self, mocked_print):
@@ -218,24 +188,7 @@ class TestPTT(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("Gene Support Frequency Results"),
-            call("=============================="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total genes: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0"),
-            # call("\nTriplet Results"),
-            # call("==============="),
-            # call("chi-squared: 2.0"),
-            # call("p-value: 0.367879"),
-            # call("total triplets: 4"),
-            # call("0-1: 2"),
-            # call("0-2: 2"),
-            # call("1-2: 0")
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_POLYT_OUTPUT)]
 
     @patch("builtins.print")
     def test_polytomy_test_alias2(self, mocked_print):
@@ -250,24 +203,7 @@ class TestPTT(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("Gene Support Frequency Results"),
-            call("=============================="),
-            call("chi-squared: 2.0"),
-            call("p-value: 0.367879"),
-            call("total genes: 4"),
-            call("0-1: 2"),
-            call("0-2: 2"),
-            call("1-2: 0"),
-            # call("\nTriplet Results"),
-            # call("==============="),
-            # call("chi-squared: 2.0"),
-            # call("p-value: 0.367879"),
-            # call("total triplets: 4"),
-            # call("0-1: 2"),
-            # call("0-2: 2"),
-            # call("1-2: 0")
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_POLYT_OUTPUT)]
 
     @patch("builtins.print")
     def test_polytomy_test_json(self, mocked_print):

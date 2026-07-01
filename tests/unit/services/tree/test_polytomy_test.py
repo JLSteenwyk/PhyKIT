@@ -972,6 +972,26 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         count2 = self.polytomy._count_groups_cached(triplet, groups)
         self.assertEqual(count2, 3)
 
+    def test_count_groups_cached_uses_membership_checks(self):
+        class MembershipOnlyGroup:
+            def __init__(self, values):
+                self.values = frozenset(values)
+
+            def __contains__(self, value):
+                return value in self.values
+
+            def intersection(self, *_args, **_kwargs):
+                raise AssertionError("group counting should avoid set intersections")
+
+        triplet = ("seq1", "seq2", "seq3")
+        groups = (
+            MembershipOnlyGroup(["seq1", "other"]),
+            MembershipOnlyGroup(["seq2"]),
+            MembershipOnlyGroup(["missing"]),
+        )
+
+        self.assertEqual(self.polytomy._count_groups_cached(triplet, groups), 2)
+
     @patch('sys.exit')
     @patch('builtins.print')
     @patch('phykit.services.tree.polytomy_test.Phylo.read')

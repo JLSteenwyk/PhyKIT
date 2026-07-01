@@ -992,6 +992,7 @@ Results:
 | `PolytomyTest.check_if_triplet_is_a_polytomy` direct internal count | 5000 resolved plus 5000 polytomy three-tip trees | 0.043043s | 0.004448s | 9.68x |
 | `PolytomyTest.check_if_triplet_is_a_polytomy` fallback nonterminal scan | nonstandard tree yielding 500k nonterminals, false case | 0.059486s | 0.000000958s | 62093.9x |
 | `PolytomyTest.count_number_of_groups_in_triplet` precomputed group-set reuse | 5k triplet group-representation checks over three 1k-taxon groups | 1.415379s | 0.617556s | 2.29x |
+| `PolytomyTest._count_groups_cached` direct triplet membership | 10 passes over 20 x 20 x 20 triplets and three precomputed group sets, side-by-side previous per-triplet set plus group intersections | 0.077732s | 0.018977s | 4.10x |
 | `PolytomyTest.sister_relationship_counter` direct nested increment | 3M repeated sister-count increments over one tree summary | 1.674614s | 0.906683s | 1.85x |
 | `PolytomyTest.set_branch_lengths_in_tree_to_one` direct traversal | balanced 65536-tip tree, reset every branch length to one | 0.202605s | 0.015667s | 12.93x |
 | `PolytomyTest.print_gene_support_freq_res` batched text output | 100k captured gene-support frequency summaries, identical stdout text | 0.234641s | 0.155517s | 1.51x |
@@ -4559,7 +4560,9 @@ Profiling summary:
   deterministic. The fast triplet evaluator now reuses one triplet set for both
   tip-presence checks and sister-pair assignment, and precomputes group
   membership frozensets once per group block instead of rebuilding them for
-  every represented triplet. Branch-length reset now uses a direct
+  every represented triplet. Cached triplet group-counting now checks the three
+  triplet taxa directly against each group, avoiding a small per-call triplet
+  set and group intersections. Branch-length reset now uses a direct
   standard-tree stack traversal, with the generic `find_clades()` fallback kept
   for mocks and nonstandard tree objects. A later startup pass keeps JSON
   output behind a lazy forwarding wrapper so command discovery avoids the shared

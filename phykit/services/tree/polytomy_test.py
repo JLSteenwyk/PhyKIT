@@ -647,11 +647,12 @@ class PolytomyTest(Tree):
     @lru_cache(maxsize=4096)
     def _count_groups_cached(self, triplet_tuple: tuple, groups_tuple: tuple) -> int:
         """Cached version of group counting."""
-        triplet_set = set(triplet_tuple)
-        num_groups_represented = sum(
-            1 for group in groups_tuple if triplet_set.intersection(group)
+        tip_a, tip_b, tip_c = triplet_tuple
+        return sum(
+            1
+            for group in groups_tuple
+            if tip_a in group or tip_b in group or tip_c in group
         )
-        return num_groups_represented
 
     def count_number_of_groups_in_triplet(
         self,
