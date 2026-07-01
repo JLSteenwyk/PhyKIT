@@ -172,6 +172,18 @@ assert "phykit.helpers.plot_config" not in sys.modules
         pic = service.calculate_pic({"A": 2, "T": 1})
         assert round(pic, 4) == 0.4444
 
+    def test_calculate_pic_uses_count_sum_of_squares(self, args):
+        service = EvolutionaryRatePerSite(args)
+
+        pic = service.calculate_pic({"A": 1, "C": 2, "G": 3, "T": 4})
+
+        assert pic == pytest.approx(0.7)
+
+    def test_calculate_pic_preserves_empty_counts_behavior(self, args):
+        service = EvolutionaryRatePerSite(args)
+
+        assert service.calculate_pic({}) == 1
+
     def test_column_sum_squares_matches_explicit_reduction(self):
         import numpy as np
 

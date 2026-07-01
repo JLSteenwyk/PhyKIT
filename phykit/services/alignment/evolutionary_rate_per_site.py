@@ -237,12 +237,16 @@ class EvolutionaryRatePerSite(Alignment):
         self,
         num_occurrences: dict[str, int],
     ) -> float:
-        total_frequencies = sum(num_occurrences.values())
-        sum_of_frequencies = sum(
-            (frequency / total_frequencies) ** 2
-            for frequency in num_occurrences.values()
-        )
-        return 1 - sum_of_frequencies
+        if not num_occurrences:
+            return 1
+
+        total_frequencies = 0
+        sum_squares = 0
+        for frequency in num_occurrences.values():
+            total_frequencies += frequency
+            sum_squares += frequency * frequency
+
+        return 1 - (sum_squares / (total_frequencies * total_frequencies))
 
     def calculate_evolutionary_rate_per_site(
         self,
