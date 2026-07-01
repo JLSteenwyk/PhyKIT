@@ -49,6 +49,20 @@ assert "phykit.helpers.files" not in sys.modules
         )
         assert gc_content_module._common_upper_sequence(["acgt", "ACGA"]) is None
 
+    def test_gc_counts_from_upper_sequence_counts_ascii_bytes_and_unicode(self):
+        assert gc_content_module._gc_counts_from_upper_sequence(
+            "ACGTGCNN--??XX",
+            is_protein=False,
+        ) == (6, 4)
+        assert gc_content_module._gc_counts_from_upper_sequence(
+            "ACGTGCNN--??XX",
+            is_protein=True,
+        ) == (8, 4)
+        assert gc_content_module._gc_counts_from_upper_sequence(
+            "G\u03a9N-",
+            is_protein=False,
+        ) == (2, 1)
+
     def test_calculate_gc_total_value(self, args):
         service = GCContent(args)
         records = _alignment(

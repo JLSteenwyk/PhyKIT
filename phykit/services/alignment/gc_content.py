@@ -60,11 +60,21 @@ def _get_gc_lookup():
     return _GC_LOOKUP
 
 
-def _gc_counts_from_single_sequence(sequence: str, is_protein: bool) -> tuple[int, int]:
-    sequence = sequence.upper()
+def _gc_counts_from_upper_sequence(sequence: str, is_protein: bool) -> tuple[int, int]:
     invalid_chars = _PROTEIN_INVALID_CHARS if is_protein else _DNA_INVALID_CHARS
-    valid_count = len(sequence) - sum(sequence.count(char) for char in invalid_chars)
-    gc_count = sequence.count("G") + sequence.count("C")
+    invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
+    try:
+        sequence_bytes = sequence.encode("ascii")
+    except UnicodeEncodeError:
+        valid_count = len(sequence) - sum(sequence.count(char) for char in invalid_chars)
+        gc_count = sequence.count("G") + sequence.count("C")
+        return valid_count, gc_count
+
+    if any(code in sequence_bytes for code in invalid_bytes):
+        valid_count = len(sequence_bytes.translate(None, invalid_bytes))
+    else:
+        valid_count = len(sequence_bytes)
+    gc_count = sequence_bytes.count(b"G") + sequence_bytes.count(b"C")
     return valid_count, gc_count
 
 
@@ -85,7 +95,7 @@ def _gc_counts_from_ascii_matrix(records, is_protein: bool):
     sequences = [sequence for _, sequence in record_data]
     first_sequence = _common_upper_sequence(sequences)
     if first_sequence is not None:
-        valid_count, gc_count = _gc_counts_from_single_sequence(
+        valid_count, gc_count = _gc_counts_from_upper_sequence(
             first_sequence,
             is_protein,
         )
@@ -126,7 +136,7 @@ def _gc_total_from_ascii(records, is_protein: bool):
 
     first_sequence = _common_upper_sequence(sequences)
     if first_sequence is not None:
-        valid_count, gc_count = _gc_counts_from_single_sequence(
+        valid_count, gc_count = _gc_counts_from_upper_sequence(
             first_sequence,
             is_protein,
         )

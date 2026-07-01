@@ -237,6 +237,7 @@ Results:
 | `GCContent.calculate_gc_total_value` mixed Unicode/ASCII fallback | 50k ASCII records x 120 bp plus one Unicode record, alphabet `ACGTN-?X*` | 0.307134s | 0.263488s | 1.17x |
 | `GCContent.calculate_gc_total_value` mixed Unicode batched ASCII fallback | 50k ASCII records x 120 bp plus one Unicode record, alphabet `ACGTN-?X*` | 0.133722s | 0.034256s | 3.90x |
 | `GCContent.calculate_gc_total_value` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with ambiguous/gap symbols, lowercase/uppercase variants, side-by-side previous flat byte path | 0.059239s | 0.007356s | 8.05x |
+| `GCContent._gc_counts_from_upper_sequence` identical-row count helper | 4M clean uppercase DNA chars / 4M gappy uppercase DNA chars / 1.05M uppercase Unicode DNA chars, side-by-side previous helper re-uppercase and repeated `str.count` output | 0.105214s / 0.238117s / 0.052446s | 0.037932s / 0.051851s / 0.020863s | 2.77x / 4.59x / 2.51x |
 | `GCContent._gc_total_from_ascii` raw-identical normalized shortcut | 500k identical DNA records with ambiguous/gap symbols, side-by-side previous per-row uppercase equality scan | 0.384826s | 0.095858s | 4.01x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
@@ -2753,6 +2754,9 @@ Profiling summary:
   count valid and GC characters from the normalized first sequence and reuse
   that result for both verbose per-sequence rows and aggregate GC, avoiding
   full byte-matrix construction while preserving invalid-symbol handling. A
+  later helper pass keeps that normalized identical-row count in bytes for
+  ASCII sequences and avoids re-uppercase work, while retaining the existing
+  non-ASCII string-count fallback semantics. A
   follow-up identical-row pass checks raw string equality before normalizing
   each row, avoiding repeated uppercase allocations for already-identical rows
   while preserving case-insensitive matching. A
