@@ -215,6 +215,7 @@ Results:
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical multi-symbol shortcut | 1200 taxa x 12000 identical protein sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.055857s | 0.006509s | 8.58x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical frequency sum | 20-symbol identical-sequence count vector, side-by-side previous `np.sum` normalization | 0.000007918s | 0.000003764s | 2.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical-row no-slice scan | 300k conserved 20-symbol protein records, side-by-side previous `sequences[1:]` equality scan | 0.614861s | 0.460860s | 1.33x |
+| `CompositionPerTaxon.calculate_composition_per_taxon` identical-row direct record scan | 300k conserved 20-symbol protein records, side-by-side previous sequence-list setup with identical symbols and frequency rows | 0.452163s | 0.366624s | 1.23x |
 | `CompositionPerTaxon.run` text output formatting | 100k taxon rows x 4 composition symbols, mocked alignment/read and identical stdout text | 0.853874s | 0.194774s | 4.38x |
 | `CompositionPerTaxon.run` JSON payload formatting | 100k taxon rows x 4 composition symbols, mocked calculation rows, side-by-side previous index lookup loop | 0.147151s | 0.137843s | 1.07x |
 | `composition_per_taxon` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085520s | 0.023586s | 3.63x |
@@ -2728,7 +2729,10 @@ Profiling summary:
   ndarray `sum()` method, avoiding a lazy NumPy reduction dispatch on that
   shortcut. A follow-up identical-row pass scans the existing sequence list
   directly instead of materializing `sequences[1:]`, reducing temporary
-  allocation for high-taxon conserved alignments.
+  allocation for high-taxon conserved alignments. A later identical-row pass
+  scans the normalized record tuples directly before building the separate
+  sequence list, preserving the matrix path for heterogeneous alignments while
+  reducing conserved-input setup work.
   Conserved alignments with one valid observed symbol now fill the one-column
   frequency output directly from valid sequence lengths, skipping the count
   matrix while preserving `0.0` frequencies for taxa with no valid sites.

@@ -84,13 +84,16 @@ class CompositionPerTaxon(Alignment):
             return [], []
 
         record_ids = [record_id for record_id, _ in records]
-        sequences = [seq for _, seq in records]
-        aln_len = len(sequences[0])
-        first_sequence = sequences[0]
-        for sequence in sequences:
+        record_iter = iter(records)
+        _, first_sequence = next(record_iter)
+        aln_len = len(first_sequence)
+        all_identical = True
+        for _, sequence in record_iter:
             if sequence != first_sequence:
+                all_identical = False
                 break
-        else:
+
+        if all_identical:
             try:
                 sequence_array = np.frombuffer(
                     first_sequence.encode("ascii"),
@@ -120,6 +123,7 @@ class CompositionPerTaxon(Alignment):
                 for record_id in record_ids
             ]
 
+        sequences = [seq for _, seq in records]
         try:
             alignment_bytes = "".join(sequences).encode("ascii")
             alignment_array = np.frombuffer(
