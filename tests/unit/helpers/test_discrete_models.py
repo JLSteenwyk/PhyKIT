@@ -94,9 +94,64 @@ class TestBuildQMatrix:
         )
         np.testing.assert_allclose(Q, expected)
 
+    def test_er_matrix_construction_avoids_zero_fill(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        monkeypatch.setattr(
+            discrete_models.np,
+            "zeros",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("ER construction should not zero-fill first")
+            ),
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "fill_diagonal",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("ER construction should assign diagonal directly")
+            ),
+        )
+
+        Q = build_q_matrix(np.array([0.5]), 4, "ER")
+
+        np.testing.assert_allclose(Q.sum(axis=1), np.zeros(4))
+
     def test_sym_is_symmetric(self):
         Q = build_q_matrix(np.array([0.1, 0.2, 0.3]), 3, "SYM")
         assert np.allclose(Q, Q.T)
+
+    def test_small_sym_matrix_construction_uses_direct_layout(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        monkeypatch.setattr(
+            discrete_models.np,
+            "zeros",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("small SYM construction should not zero-fill first")
+            ),
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "fill_diagonal",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("small SYM construction should assign diagonal directly")
+            ),
+        )
+
+        sym2 = build_q_matrix(np.array([0.4]), 2, "SYM")
+        sym3 = build_q_matrix(np.array([0.1, 0.2, 0.3]), 3, "SYM")
+
+        np.testing.assert_allclose(sym2, np.array([[-0.4, 0.4], [0.4, -0.4]]))
+        np.testing.assert_allclose(
+            sym3,
+            np.array(
+                [
+                    [-0.3, 0.1, 0.2],
+                    [0.1, -0.4, 0.3],
+                    [0.2, 0.3, -0.5],
+                ],
+            ),
+        )
 
     def test_sym_preserves_parameter_order_for_four_states(self):
         params = np.arange(1, 7, dtype=float)

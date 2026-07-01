@@ -101,26 +101,40 @@ def build_q_matrix(params: np.ndarray, k: int, model: str) -> np.ndarray:
 
     Rows sum to zero (standard continuous-time Markov chain convention).
     """
-    Q = np.zeros((k, k))
     if model == "ER":
         rate = params[0]
-        Q[:] = rate
-        np.fill_diagonal(Q, -rate * (k - 1))
+        Q = np.empty((k, k), dtype=float)
+        Q.fill(rate)
+        Q.flat[:: k + 1] = -rate * (k - 1)
     elif model == "SYM":
-        if k <= 3:
-            idx = 0
-            for i in range(k):
-                for j in range(i + 1, k):
-                    Q[i, j] = params[idx]
-                    Q[j, i] = params[idx]
-                    idx += 1
+        if k == 2:
+            rate = params[0]
+            Q = np.empty((2, 2), dtype=float)
+            Q[0, 0] = -rate
+            Q[0, 1] = rate
+            Q[1, 0] = rate
+            Q[1, 1] = -rate
+        elif k == 3:
+            rate01, rate02, rate12 = params
+            Q = np.empty((3, 3), dtype=float)
+            Q[0, 0] = -(rate01 + rate02)
+            Q[0, 1] = rate01
+            Q[0, 2] = rate02
+            Q[1, 0] = rate01
+            Q[1, 1] = -(rate01 + rate12)
+            Q[1, 2] = rate12
+            Q[2, 0] = rate02
+            Q[2, 1] = rate12
+            Q[2, 2] = -(rate02 + rate12)
         else:
+            Q = np.zeros((k, k))
             rows, cols = _sym_offdiag_indices(k)
             Q[rows, cols] = params
             Q[cols, rows] = params
+            np.fill_diagonal(Q, -Q.sum(axis=1))
     elif model == "ARD":
+        Q = np.zeros((k, k))
         Q[_ard_offdiag_mask(k)] = params
-    if model != "ER":
         np.fill_diagonal(Q, -Q.sum(axis=1))
     return Q
 

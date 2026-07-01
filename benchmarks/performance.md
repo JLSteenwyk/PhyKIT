@@ -1449,6 +1449,8 @@ Results:
 | `discrete_models._prepare_felsenstein_context` reverse-preorder postorder helper | balanced 4096-tip tree, two-state ER model, prepared pruning metadata | 0.006522s | 0.004503s | 1.45x |
 | `discrete_models._felsenstein_loglik_prepared` two-state ARD scalar transitions | balanced 512-tip tree, binary unequal-rate Q matrix, prepared pruning metadata | 0.001701s | 0.000725s | 2.35x |
 | `discrete_models.build_q_matrix` direct ER diagonal | two-state ER Q matrix, repeated optimizer-style calls | 0.00000250s | 0.00000186s | 1.34x |
+| `discrete_models.build_q_matrix` uninitialized ER fill | 2 / 3 / 4 / 8 / 20 / 100-state ER Q matrices, side-by-side previous zero-fill plus overwrite | 0.000014432s / 0.000011390s / 0.000007774s / 0.000012032s / 0.000005904s / 0.000005507s | 0.000004325s / 0.000001067s / 0.000001478s / 0.000004495s / 0.000000934s / 0.000003071s | 3.34x / 10.67x / 5.26x / 2.68x / 6.32x / 1.79x |
+| `discrete_models.build_q_matrix` direct small SYM layouts | two-state / three-state SYM Q matrices, repeated optimizer-style calls | 0.000012403s / 0.000011808s | 0.000001202s / 0.000003252s | 10.31x / 3.63x |
 | `discrete_models.build_q_matrix` cached SYM off-diagonal indices | 32-state SYM Q matrix, repeated optimizer-style calls | 0.00014780s | 0.00000732s | 20.19x |
 | `discrete_models.build_q_matrix` cached ARD off-diagonal mask | 32-state ARD Q matrix, repeated optimizer-style calls | 0.00016262s | 0.00000408s | 39.83x |
 | `discrete_models.fit_q_matrix` prepared pruning context | balanced 512-tip tree, two-state ER model, full Q fit | 1.674459s | 0.802447s | 2.1x |
@@ -5551,7 +5553,10 @@ Profiling summary:
   fitted `Q` and log-likelihood. A later pass routes that one-parameter
   two-state ER fit through bounded scalar optimization instead of multi-start
   vector optimizers, preserving the fitted log-likelihood and leaving
-  multi-parameter SYM/ARD fits on the existing optimizer path. A follow-up
+  multi-parameter SYM/ARD fits on the existing optimizer path. ER Q-matrix
+  construction now fills an uninitialized matrix directly, and two- and
+  three-state SYM matrices use direct layouts, preserving row sums and
+  parameter order while avoiding generic zero-fill/diagonal passes. A follow-up
   traversal pass builds the direct postorder list with reverse preorder instead
   of visited-flag stack entries, preserving postorder while reducing setup
   overhead. Two-column and multi-column discrete trait parsing now stream
