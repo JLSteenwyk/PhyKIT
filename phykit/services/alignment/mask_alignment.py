@@ -172,7 +172,6 @@ class MaskAlignment(Alignment):
             )
 
     def calculate_keep_mask(self, alignment, is_protein: bool) -> np.ndarray:
-        sequences = [str(record.seq).upper() for record in alignment]
         aln_len = alignment.get_alignment_length()
         if (
             self.max_entropy is None
@@ -181,6 +180,7 @@ class MaskAlignment(Alignment):
         ):
             return np.ones(aln_len, dtype=np.bool_)
 
+        sequences = [str(record.seq).upper() for record in alignment]
         if sequences:
             if _all_sequences_identical(sequences):
                 first_sequence = sequences[0]

@@ -275,6 +275,7 @@ Results:
 | `MaskAlignment.calculate_keep_mask` ASCII DNA entropy counts | 3000 taxa x 8000 sites, four observed DNA symbols, side-by-side previous boolean `np.sum(..., axis=0)` counts | 0.125266s | 0.109594s | 1.14x |
 | `MaskAlignment.calculate_keep_mask` single-symbol entropy shortcut | 2000 taxa x 12000 conserved clean DNA sites, entropy threshold enabled, side-by-side previous count/probability path | 0.104621s | 0.080733s | 1.30x |
 | `MaskAlignment.calculate_keep_mask` all-pass threshold shortcut | DNA 2000 taxa x 12000 sites, alphabet `ACGT-?NX*` / protein 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, `max_gap=1`, `min_occupancy=0`, no entropy | 0.065244s / 0.035698s | 0.013126s / 0.006714s | 4.97x / 5.32x |
+| `MaskAlignment.calculate_keep_mask` all-pass pre-materialization return | 2000 taxa x 12000 DNA sites, all-pass thresholds, side-by-side previous sequence materialization before all-true mask | 0.070370167s | 0.000251167s | 280.17x |
 | `MaskAlignment.calculate_keep_mask` clean no-entropy shortcut | 2000 taxa x 12000 clean DNA sites, `max_gap=0.2`, `min_occupancy=0.8`, no entropy threshold, side-by-side previous occupancy mask path | 0.060156s | 0.017106s | 3.52x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with gaps/ambiguous symbols, entropy threshold enabled, lowercase/uppercase variants, side-by-side previous matrix path | 0.100434s | 0.005945s | 16.89x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.196770s / 0.006034s / 0.084992s | 0.040581s / 0.000003s / 0.042880s | 4.85x / 1765.72x / 1.98x |
@@ -2854,8 +2855,10 @@ Profiling summary:
   column-major encoded byte indices, avoiding a tiled site-offset array for each
   block while preserving the same entropy thresholds. When entropy is disabled
   and the thresholds accept every possible column, `calculate_keep_mask` now
-  returns an all-true mask directly instead of building occupancy arrays. Clean
-  ASCII alignments with no entropy threshold now also return that all-true mask
+  returns an all-true mask directly instead of building occupancy arrays. A
+  follow-up moves that all-pass return before sequence materialization because
+  the result only depends on the alignment length. Clean ASCII alignments with
+  no entropy threshold now also return that all-true mask
   after a byte scan proves every column has occupancy 1.0 and gap fraction 0.0,
   preserving the slower occupancy path for gappy or entropy-filtered inputs.
   Clean ASCII alignments with an entropy threshold skip occupancy averaging and

@@ -124,6 +124,24 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert keep_mask.tolist() == [True, True, True, True]
 
+    def test_keep_mask_all_pass_thresholds_skip_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError("all-pass mask should not inspect sequences")
+
+        class DummyAlignment(list):
+            def get_alignment_length(self):
+                return 4
+
+        alignment = DummyAlignment([SimpleNamespace(seq=UnstringableSequence())])
+        masker = MaskAlignment(args)
+
+        keep_mask = masker.calculate_keep_mask(alignment, is_protein=False)
+
+        assert keep_mask.tolist() == [True, True, True, True]
+
     def test_keep_mask_clean_entropy_skips_occupancy(self, mocker, args):
         args.max_entropy = 0.0
         alignment = MultipleSeqAlignment(
