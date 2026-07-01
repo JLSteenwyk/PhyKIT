@@ -1698,6 +1698,7 @@ Results:
 | `trait_rate_map` module import without eager pickle/JSON/plot helpers | median cold subprocess import after localizing pickle, PlotConfig/layout helpers, circular/color helpers, and lazy JSON wrapper | 0.014715s | 0.006266s | 2.35x |
 | `trait_rate_map` module import without `typing` startup | median cold subprocess import after postponing annotations and converting typing aliases to built-in annotations | 0.006567s | 0.004268s | 1.54x |
 | `PhyloLogistic._build_logistic_vcv` | balanced tree with 600 tips, `alpha=0.05` | 0.3304s | 0.1492s | 2.2x |
+| `PhyloLogistic._build_logistic_vcv` diagonal correction update | 8 / 40 / 260 / 900 / 2000 taxa VCV matrices with vector correction, isolated in-place update and reset, side-by-side previous `np.fill_diagonal(np.diag(vcv) + diag_corr)` path | 0.000006873s / 0.000007194s / 0.000017359s / 0.000073396s / 0.000025940s | 0.000002899s / 0.000001468s / 0.000001254s / 0.000002492s / 0.000011652s | 2.37x / 4.90x / 13.84x / 29.45x / 2.23x |
 | `PhyloLogistic._root_tip_distances` | balanced 65536-tip tree, ordered OU diagonal distances | 0.1591s | 0.0242s | 6.6x |
 | `PhyloLogistic._neg_pen_loglik` reused root distances and scalar branch transform | balanced 256-tip tree, one Firth-correction likelihood evaluation | 0.002322s | 0.002147s | 1.08x |
 | `PhyloLogistic._compute_info_matrix` | 420 taxa SPD VCV x 3-predictor design matrix | 0.0052s | 0.0007s | 8.0x |
@@ -6134,7 +6135,9 @@ Profiling summary:
   NumPy vector exponentials for diagonal correction. The saturated-starting-value
   fallback now counts validated binary response classes with one
   `np.count_nonzero` call and subtraction instead of two equality-mask
-  reductions.
+  reductions. OU diagonal correction now updates the VCV diagonal through a flat
+  matrix view, avoiding `np.diag` allocation and `np.fill_diagonal` dispatch
+  after the transformed VCV has already been built.
 - `PhyloLogistic._compute_info_matrix` baseline time formed an explicit inverse
   of the OU-transformed VCV and allocated a dense diagonal weight matrix for
   every Firth-correction likelihood evaluation. The optimized path scales the

@@ -342,7 +342,7 @@ class PhyloLogistic(Tree):
         diag_corr = np.exp(-2 * alpha * root_tip_distances)
 
         # Add diagonal correction to VCV
-        np.fill_diagonal(vcv, np.diag(vcv) + diag_corr)
+        vcv.ravel()[:: vcv.shape[0] + 1] += diag_corr
 
         return vcv, diag_corr
 

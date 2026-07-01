@@ -407,6 +407,48 @@ class TestTransformedVCV:
         np.testing.assert_allclose(observed, expected)
         assert after_lengths == original_lengths
 
+    def test_logistic_vcv_adds_diag_correction_directly(
+        self, basic_args, monkeypatch
+    ):
+        from phykit.services.tree.vcv_utils import (
+            build_transformed_vcv_matrix,
+            build_vcv_matrix,
+        )
+
+        svc = PhyloLogistic(basic_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        alpha = 0.05
+        expected_base = build_transformed_vcv_matrix(
+            tree,
+            ordered_names,
+            lambda branch_length: (
+                0.0
+                if branch_length <= 0
+                else (1 - np.exp(-2 * alpha * branch_length)) / (2 * alpha)
+            ),
+        )
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("diagonal correction should use a matrix view")
+
+        def fail_fill_diagonal(*_args, **_kwargs):
+            raise AssertionError("diagonal correction should update the view directly")
+
+        monkeypatch.setattr(phylo_logistic_module.np, "diag", fail_diag)
+        monkeypatch.setattr(
+            phylo_logistic_module.np,
+            "fill_diagonal",
+            fail_fill_diagonal,
+        )
+
+        observed, diag_corr = svc._build_logistic_vcv(
+            tree, alpha, ordered_names, build_vcv_matrix
+        )
+
+        expected_diag = expected_base.diagonal() + diag_corr
+        np.testing.assert_allclose(observed.diagonal(), expected_diag)
+
     def test_root_tip_distances_fast_path_does_not_call_distance(
         self, basic_args, monkeypatch
     ):
