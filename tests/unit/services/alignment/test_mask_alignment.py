@@ -300,6 +300,34 @@ assert "Bio.AlignIO" not in sys.modules
         assert log_calls
         assert entropies.shape == (alignment_array.shape[1],)
 
+    def test_entropy_columns_from_probabilities_matches_explicit_sum(self):
+        np = mask_alignment_module.np
+        probs = np.array(
+            [
+                [0.2, 0.0, 0.5],
+                [0.3, 1.0, 0.5],
+                [0.5, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ],
+            dtype=np.float64,
+        )
+        log_probs = np.zeros_like(probs)
+        positive = probs > 0
+        np.log2(probs, out=log_probs, where=positive)
+
+        observed = mask_alignment_module._entropy_columns_from_probabilities(
+            probs.copy(),
+            log_probs,
+        )
+        expected = -np.sum(probs * log_probs, axis=0)
+
+        np.testing.assert_allclose(observed, expected)
+
     def test_keep_mask_unicode_fallback(self, args):
         class DummyAlignment(list):
             def get_alignment_length(self):

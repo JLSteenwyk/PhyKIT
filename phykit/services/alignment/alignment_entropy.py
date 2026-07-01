@@ -71,6 +71,13 @@ def _entropy_values_to_list(entropies):
     return entropies.tolist()
 
 
+def _entropy_columns_from_probabilities(probs, log_probs):
+    if probs.shape[0] > 8:
+        return -np.einsum("ij,ij->j", probs, log_probs)
+    probs *= log_probs
+    return -np.sum(probs, axis=0)
+
+
 def _entropy_from_counts(counts, totals):
     with np.errstate(divide="ignore", invalid="ignore"):
         probs = np.divide(
@@ -82,9 +89,8 @@ def _entropy_from_counts(counts, totals):
         positive = probs > 0
         log_probs = np.zeros_like(probs, dtype=np.float64)
         np.log2(probs, out=log_probs, where=positive)
-        probs *= log_probs
 
-    entropies = -np.sum(probs, axis=0)
+    entropies = _entropy_columns_from_probabilities(probs, log_probs)
     entropies[totals == 0] = 0.0
     return entropies
 

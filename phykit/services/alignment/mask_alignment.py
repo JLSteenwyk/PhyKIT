@@ -23,6 +23,13 @@ _DNA_INVALID_LOOKUP = None
 _PROTEIN_INVALID_LOOKUP = None
 
 
+def _entropy_columns_from_probabilities(probs, log_probs):
+    if probs.shape[0] > 8:
+        return -np.einsum("ij,ij->j", probs, log_probs)
+    probs *= log_probs
+    return -np.sum(probs, axis=0)
+
+
 def _get_invalid_lookup(is_protein: bool):
     global _DNA_INVALID_LOOKUP, _PROTEIN_INVALID_LOOKUP
     if is_protein:
@@ -77,8 +84,10 @@ def _column_entropies_from_ascii_codes(
         log_probs = np.zeros_like(probs, dtype=np.float64)
         positive_probs = probs > 0
         np.log2(probs, out=log_probs, where=positive_probs)
-        probs *= log_probs
-        entropies[start:stop] = -np.sum(probs, axis=0)
+        entropies[start:stop] = _entropy_columns_from_probabilities(
+            probs,
+            log_probs,
+        )
 
     return entropies
 
@@ -279,8 +288,10 @@ class MaskAlignment(Alignment):
                     log_probs = np.zeros_like(probs, dtype=np.float64)
                     positive_probs = probs > 0
                     np.log2(probs, out=log_probs, where=positive_probs)
-                    probs *= log_probs
-                    entropies = -np.sum(probs, axis=0)
+                    entropies = _entropy_columns_from_probabilities(
+                        probs,
+                        log_probs,
+                    )
             keep_mask &= entropies <= self.max_entropy
 
         return keep_mask
