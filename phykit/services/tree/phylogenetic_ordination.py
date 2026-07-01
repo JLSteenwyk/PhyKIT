@@ -405,12 +405,13 @@ class PhylogeneticOrdination(Tree):
     def _multi_trait_lambda(
         self, Y: np.ndarray, vcv: np.ndarray, max_lambda: float
     ) -> tuple[float, float]:
-        diag_vals = np.diag(vcv).copy()
+        diag_vals = vcv.diagonal().copy()
+        diag_step = vcv.shape[0] + 1
         niter = 10
 
         def neg_ll(lam):
             C_lam = vcv * lam
-            np.fill_diagonal(C_lam, diag_vals)
+            C_lam.ravel()[::diag_step] = diag_vals
             try:
                 ll = self._multi_trait_log_likelihood(Y, C_lam)
                 return -ll
@@ -430,7 +431,7 @@ class PhylogeneticOrdination(Tree):
                 lambda_hat = res.x
 
         C_fitted = vcv * lambda_hat
-        np.fill_diagonal(C_fitted, diag_vals)
+        C_fitted.ravel()[::diag_step] = diag_vals
         ll_fitted = self._multi_trait_log_likelihood(Y, C_fitted)
 
         return float(lambda_hat), float(ll_fitted)

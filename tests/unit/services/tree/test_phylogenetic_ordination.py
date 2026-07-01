@@ -783,6 +783,58 @@ class TestPhylogeneticPCALambda:
         assert lambda_val == pytest.approx(self.REF_LAMBDA, abs=1e-3)
         assert log_likelihood == pytest.approx(self.REF_LOG_LIKELIHOOD, abs=0.2)
 
+    def test_lambda_restores_diagonal_directly(self, lambda_args, monkeypatch):
+        svc = PhylogeneticOrdination(lambda_args)
+        vcv = np.array(
+            [
+                [2.0, 0.4, 0.2],
+                [0.4, 3.0, 0.5],
+                [0.2, 0.5, 4.0],
+            ]
+        )
+        Y = np.column_stack([
+            np.array([1.0, 1.5, 2.0]),
+            np.array([0.2, 0.4, 0.8]),
+        ])
+        original_diag = vcv.diagonal().copy()
+        likelihood_calls = 0
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("lambda search should use ndarray diagonal access")
+
+        def fail_fill_diagonal(*_args, **_kwargs):
+            raise AssertionError("lambda search should restore diagonal directly")
+
+        def fake_likelihood(_Y, C_lam):
+            nonlocal likelihood_calls
+            likelihood_calls += 1
+            np.testing.assert_allclose(C_lam.diagonal(), original_diag)
+            return -abs(C_lam[0, 1] - 0.2)
+
+        def fake_minimize_scalar(fn, bounds, method):
+            assert method == "bounded"
+            x_mid = sum(bounds) / 2.0
+            return type("Result", (), {"x": x_mid, "fun": fn(x_mid)})()
+
+        monkeypatch.setattr(phylogenetic_ordination_module.np, "diag", fail_diag)
+        monkeypatch.setattr(
+            phylogenetic_ordination_module.np,
+            "fill_diagonal",
+            fail_fill_diagonal,
+        )
+        monkeypatch.setattr(
+            phylogenetic_ordination_module,
+            "minimize_scalar",
+            fake_minimize_scalar,
+        )
+        monkeypatch.setattr(svc, "_multi_trait_log_likelihood", fake_likelihood)
+
+        lambda_val, log_likelihood = svc._multi_trait_lambda(Y, vcv, 1.0)
+
+        assert 0.0 <= lambda_val <= 1.0
+        assert np.isfinite(log_likelihood)
+        assert likelihood_calls == 11
+
     def test_eigenvalues(self, lambda_args):
         svc = PhylogeneticOrdination(lambda_args)
         tree = svc.read_tree_file()

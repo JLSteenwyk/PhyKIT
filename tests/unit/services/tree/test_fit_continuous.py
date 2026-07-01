@@ -403,6 +403,52 @@ class TestLambdaModel:
         res = d["svc"]._fit_lambda(d["x"], d["vcv"], d["max_lam"])
         assert np.isfinite(res["log_likelihood"])
 
+    def test_lambda_restores_diagonal_directly(self, monkeypatch):
+        svc = FitContinuous.__new__(FitContinuous)
+        C = np.array(
+            [
+                [2.0, 0.4, 0.2],
+                [0.4, 3.0, 0.5],
+                [0.2, 0.5, 4.0],
+            ]
+        )
+        x = np.array([1.0, 1.5, 2.0])
+        original_diag = C.diagonal().copy()
+        likelihood_calls = 0
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("lambda search should use ndarray diagonal access")
+
+        def fail_fill_diagonal(*_args, **_kwargs):
+            raise AssertionError("lambda search should restore diagonal directly")
+
+        def fake_concentrated_ll(_x, C_lam):
+            nonlocal likelihood_calls
+            likelihood_calls += 1
+            np.testing.assert_allclose(C_lam.diagonal(), original_diag)
+            return -abs(C_lam[0, 1] - 0.2), 1.0, 0.0
+
+        def fake_optimize_parameter(fn, bounds):
+            assert bounds == (0.0, 1.0)
+            lam = 0.5
+            return lam, fn(lam)
+
+        monkeypatch.setattr(fit_continuous_module.np, "diag", fail_diag)
+        monkeypatch.setattr(
+            fit_continuous_module.np,
+            "fill_diagonal",
+            fail_fill_diagonal,
+        )
+        monkeypatch.setattr(svc, "_concentrated_ll", fake_concentrated_ll)
+        monkeypatch.setattr(svc, "_optimize_parameter", fake_optimize_parameter)
+
+        result = svc._fit_lambda(x, C, max_lam=1.0)
+
+        assert result["param_name"] == "lambda"
+        assert result["param_value"] == pytest.approx(0.5)
+        assert np.isfinite(result["log_likelihood"])
+        assert likelihood_calls == 2
+
 
 # ── TestDeltaModel ───────────────────────────────────────────────────
 

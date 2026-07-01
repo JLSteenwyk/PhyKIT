@@ -566,17 +566,18 @@ class FitContinuous(Tree):
     def _fit_lambda(
         self, x: np.ndarray, C: np.ndarray, max_lam: float,
     ) -> dict:
-        diag_vals = np.diag(C).copy()
+        diag_vals = C.diagonal().copy()
+        diag_step = C.shape[0] + 1
 
         def neg_ll(lam):
             C_lam = C * lam
-            np.fill_diagonal(C_lam, diag_vals)
+            C_lam.ravel()[::diag_step] = diag_vals
             ll, _, _ = self._concentrated_ll(x, C_lam)
             return -ll
 
         lam_hat, _ = self._optimize_parameter(neg_ll, (0.0, max_lam))
         C_fitted = C * lam_hat
-        np.fill_diagonal(C_fitted, diag_vals)
+        C_fitted.ravel()[::diag_step] = diag_vals
         ll, sig2, z0 = self._concentrated_ll(x, C_fitted)
         return dict(
             model="Lambda", param_name="lambda", param_value=float(lam_hat),

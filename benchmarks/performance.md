@@ -1801,6 +1801,7 @@ Results:
 | `PhylogeneticOrdination._multi_trait_log_likelihood` | 420 taxa SPD VCV x 8 traits | 0.0084s | 0.0005s | 15.6x |
 | `PhylogeneticOrdination._multi_trait_log_likelihood_inverse` combined RHS multiply | 420 taxa SPD VCV x 700 traits, inverse fallback path | 0.074771s | 0.033401s | 2.2x |
 | `PhylogeneticOrdination._multi_trait_log_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV x 10-trait likelihood evaluations, SciPy already warm | 0.066843s | 0.053844s | 1.24x |
+| `PhylogeneticOrdination._multi_trait_lambda` lambda-matrix diagonal restoration | 8 / 40 / 260 / 900 / 2000 taxa VCV transform with precomputed diagonal, side-by-side previous `np.fill_diagonal` restoration per lambda evaluation | 0.000008163s / 0.000009956s / 0.000119735s / 0.003229405s / 0.009533993s | 0.000004753s / 0.000001878s / 0.000031953s / 0.002818906s / 0.007760870s | 1.72x / 5.30x / 3.75x / 1.15x / 1.23x |
 | `PhylogeneticOrdination` PCA GLS centering/covariance setup | 420 taxa SPD VCV x 8 traits | 0.005137s | 0.000454s | 11.3x |
 | `PhylogeneticOrdination` PCA corr-mode diagonal scaling | 420 taxa x 700 traits, synthetic covariance and centered scores | 0.023722s | 0.001051s | 22.6x |
 | `PhylogeneticOrdination._run_pca` eigenvalue total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 eigenvalues, side-by-side previous `np.sum(eigenvalues)` | 0.000005367s / 0.000005370s / 0.000004776s / 0.000004082s / 0.000004451s / 0.000004098s / 0.000004246s / 0.000005265s | 0.000001938s / 0.000002333s / 0.000001965s / 0.000002455s / 0.000002093s / 0.000002365s / 0.000002326s / 0.000002696s | 2.77x / 2.30x / 2.43x / 1.66x / 2.13x / 1.73x / 1.83x / 1.95x |
@@ -1902,6 +1903,7 @@ Results:
 | `IndependentContrasts._compute_pic` | balanced tree with 2500 tips, continuous trait | 0.0219s | 0.0039s | 5.7x |
 | `FitContinuous._concentrated_ll` | 420 taxa SPD VCV, single continuous trait | 0.0064s | 0.0005s | 12.7x |
 | `FitContinuous._concentrated_ll_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm | 0.057255s | 0.042199s | 1.36x |
+| `FitContinuous._fit_lambda` lambda-matrix diagonal restoration | 8 / 40 / 260 / 900 / 2000 taxa VCV transform with precomputed diagonal, side-by-side previous `np.fill_diagonal` restoration per lambda evaluation | 0.000008163s / 0.000009956s / 0.000119735s / 0.003229405s / 0.009533993s | 0.000004753s / 0.000001878s / 0.000031953s / 0.002818906s / 0.007760870s | 1.72x / 5.30x / 3.75x / 1.15x / 1.23x |
 | `FitContinuous._build_root_to_tip_paths` | balanced 32768-tip tree, paths for 16384 modeled tips | 2.8907s | 0.0613s | 47.1x |
 | `fit_continuous` module import without eager SciPy linalg/optimize | cold process import for continuous-model-fitting command module | 0.497876s | 0.214771s | 2.3x |
 | `fit_continuous` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS import | 0.081247s | 0.025834s | 3.15x |
@@ -6378,7 +6380,10 @@ Profiling summary:
   bounded-optimizer behavior while avoiding linalg/optimize startup on module
   import. A follow-up startup pass defers NumPy behind a module-level proxy,
   postpones annotations, and imports the shared PGLS lambda-bound helper only
-  inside the lambda-correction path that uses it.
+  inside the lambda-correction path that uses it. Lambda matrix transforms
+  inside `_multi_trait_lambda` now copy the cached source diagonal through
+  ndarray access and restore it via a flat diagonal stride, avoiding
+  `np.fill_diagonal` dispatch for each bounded-search likelihood evaluation.
 - `PhylogeneticOrdination._multi_trait_log_likelihood_inverse` keeps the
   fallback explicit inverse but multiplies it by `[ones, Y]` once, then reuses
   `C_inv_Y` and `C_inv_ones` to center traits and form `Z.T @ C_inv_Z`. This
@@ -6628,6 +6633,9 @@ Profiling summary:
   SciPy linalg and optimizer wrappers now cache their imported callables after the
   first use, avoiding import-on-call overhead during repeated model likelihood
   evaluation while preserving the module-level wrapper patch points used by tests.
+  Lambda model matrix transforms now copy the cached source diagonal through
+  ndarray access and restore it via a flat diagonal stride, avoiding
+  `np.fill_diagonal` dispatch for each bounded-optimizer likelihood evaluation.
 - `pgls_utils.max_lambda` baseline time used repeated root-to-tip and
   root-to-node `tree.distance` calls to detect ultrametricity and compute the
   lambda upper bound. The optimized path computes `tree.depths()` once, derives
