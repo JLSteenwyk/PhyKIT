@@ -403,7 +403,11 @@ class Dtt(Tree):
                 for clade_id in lineage_ids
             ]
             if lineage_disparities:
-                rel_disp = float(np.mean(lineage_disparities)) / total_disp
+                rel_disp = (
+                    sum(lineage_disparities)
+                    / len(lineage_disparities)
+                    / total_disp
+                )
             else:
                 rel_disp = 0.0
             dtt_values.append(rel_disp)

@@ -343,6 +343,35 @@ class TestComputeDtt:
         np.testing.assert_allclose(observed[0], expected[0])
         np.testing.assert_allclose(observed[1], expected[1])
 
+    def test_compute_dtt_lineage_means_avoid_numpy_dispatch(self, monkeypatch):
+        args = _make_args()
+        svc = Dtt(args)
+        newick = "((A:1,B:1):3,(C:2,(D:1,E:1):1):2);"
+        ordered_names = ["A", "B", "C", "D", "E"]
+        data = np.arange(5.0).reshape(-1, 1)
+
+        expected = svc._compute_dtt(
+            Phylo.read(StringIO(newick), "newick"),
+            data,
+            ordered_names,
+        )
+
+        monkeypatch.setattr(
+            dtt_module.np,
+            "mean",
+            lambda *_args, **_kwargs: pytest.fail(
+                "DTT lineage means should use Python list reductions"
+            ),
+        )
+        observed = svc._compute_dtt(
+            Phylo.read(StringIO(newick), "newick"),
+            data,
+            ordered_names,
+        )
+
+        np.testing.assert_allclose(observed[0], expected[0])
+        np.testing.assert_allclose(observed[1], expected[1])
+
     def test_prepare_dtt_context_matches_legacy_lineage_scan(self):
         args = _make_args()
         svc = Dtt(args)

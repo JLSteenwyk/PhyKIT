@@ -1741,6 +1741,7 @@ Results:
 | `PhylogeneticGLM._format_result` zip-based coefficient mapping | 5k coefficient JSON entries, side-by-side previous index lookups | 0.003066s | 0.002548s | 1.20x |
 | `Dtt._compute_dtt` | balanced tree with 300 tips x 2 traits | 0.8787s | 0.0472s | 18.6x |
 | `Dtt._compute_dtt` lineage event sweep | balanced tree with 300 tips x 2 traits, optimized DTT baseline | 0.0472s | 0.0110s | 4.3x |
+| `Dtt._compute_dtt` lineage list means | 5k synthetic lineage events over 20k cached clade disparities, identical DTT values | 0.153168s | 0.062355s | 2.46x |
 | `Dtt._prepare_dtt_context` direct standard-tree setup | balanced 8192-tip tree, all tips represented in trait order | 0.302738s | 0.273333s | 1.11x |
 | `Dtt._prepare_dtt_context` streaming terminal-depth max | 1M terminal depths, identical root-relative tree height without temporary list | 0.132334s | 0.078064s | 1.70x |
 | `Dtt._simulate_null` DTT context reuse | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 7.4703s | 0.5626s | 13.3x |
@@ -6242,6 +6243,9 @@ Profiling summary:
   preserving direct `_simulate_null()` callers that only provide observed times.
   MDI p-values now count extreme simulated MDI values with `np.count_nonzero`
   before dividing by the simulation count, avoiding boolean mean reductions.
+  The observed DTT event sweep now averages each already-materialized lineage
+  disparity list with Python `sum`/`len`, avoiding one NumPy array conversion
+  per lineage event while preserving identical relative-disparity values.
   Observed average-squared disparity now uses flattened dot-product
   sum-of-squares for the trait matrix and column-sum vector, preserving the
   closed-form pairwise-distance formula while avoiding temporary squared arrays.
