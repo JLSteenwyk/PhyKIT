@@ -341,6 +341,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` count-matrix column totals | count matrices shaped 260x4 / 1200x20 / 2000x20 / 50000x20, side-by-side previous `np.sum(..., axis=0)` wrapper | 3.497999s / 3.163409s / 4.144007s / 4.768939s | 1.929073s / 2.924800s / 3.469921s / 3.756192s | 1.81x / 1.08x / 1.19x / 1.27x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.069846s | 0.010896s | 6.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058848s / 0.007070s / 0.211013s | 0.042901s / 0.000004s / 0.037338s | 1.37x / 1844.67x / 5.65x |
+| `RelativeCompositionVariabilityTaxon.calculate_rows` single-record early return | 5 repeated 4.5M-site single-record RCVT calls, side-by-side previous sequence materialization before zero row | 0.001927875s | 0.000000416s | 4630.96x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` zip-based row assembly | 500k mocked taxon records and computed RCVT values, side-by-side previous index lookups | 0.317740s | 0.284361s | 1.12x |
 | `RelativeCompositionVariabilityTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.017426s | 0.011493s | 1.52x |
 | `RelativeCompositionVariabilityTaxon._plot_rcvt` plot series preparation | 300k taxon rows, repeated RCVT values, identical stable descending taxon order and plotted values | 0.068288s | 0.042674s | 1.60x |
@@ -3012,7 +3013,8 @@ Profiling summary:
   composition equals the average composition after case normalization. A
   follow-up pass reuses the shared no-slice sequence equality helper to avoid
   materializing `sequences[1:]` while preserving early exit for heterogeneous
-  alignments. Text-mode `run` now batches terminal
+  alignments. Single-record alignments now return the known zero-valued row
+  before sequence materialization. Text-mode `run` now batches terminal
   rows into one print, and plot setup now sorts an index array over extracted
   RCVT values instead of sorting full row dictionaries while preserving stable
   descending order for tied values.

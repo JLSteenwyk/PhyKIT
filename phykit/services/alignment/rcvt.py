@@ -113,6 +113,8 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         num_records = len(alignment)
         if num_records == 0:
             return []
+        if num_records == 1:
+            return [dict(taxon=alignment[0].id, rcvt=0.0)]
 
         sequences = [str(record.seq).upper() for record in alignment]
         aln_len = alignment.get_alignment_length()

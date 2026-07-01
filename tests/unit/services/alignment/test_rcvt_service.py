@@ -81,6 +81,20 @@ assert "Bio.AlignIO" not in sys.modules
         rows = service.calculate_rows(MultipleSeqAlignment([]), is_protein=False)
         assert rows == []
 
+    def test_calculate_rows_single_record_returns_before_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError("single-record RCVT should not inspect sequence")
+
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = [SimpleNamespace(seq=UnstringableSequence(), id="t1")]
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert rows == [{"taxon": "t1", "rcvt": 0.0}]
+
     def test_run_json_with_plot(self, mocker):
         args = Namespace(alignment="/some/path/to/file.fa", json=True, plot=True, plot_output="rcvt.png")
         service = RelativeCompositionVariabilityTaxon(args)
