@@ -1979,6 +1979,7 @@ Results:
 | `PhylogeneticSignal._log_likelihood` combined Cholesky RHS solve | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm | 0.059433s | 0.040428s | 1.47x |
 | `PhylogeneticSignal._log_likelihood` cached SciPy Cholesky wrappers | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.040999s | 0.039617s | 1.03x |
 | `PhylogeneticSignal._pagels_lambda` | 260 taxa SPD VCV, single continuous trait, `max_lambda=1.0` | 0.8285s | 0.0721s | 11.5x |
+| `PhylogeneticSignal._pagels_lambda`/`NetworkSignal._pagels_lambda` lambda-matrix diagonal restoration | 8 / 40 / 260 / 900 / 2000 taxa VCV transform with precomputed diagonal, side-by-side previous `np.fill_diagonal` restoration per lambda evaluation | 0.000008163s / 0.000009956s / 0.000119735s / 0.003229405s / 0.009533993s | 0.000004753s / 0.000001878s / 0.000031953s / 0.002818906s / 0.007760870s | 1.72x / 5.30x / 3.75x / 1.15x / 1.23x |
 | `PhylogeneticSignal._parse_trait_file` streaming two-column parser | 500k two-column trait rows with comments/blanks, all taxa shared, randomized old/new measurement order | 0.457297s | 0.441401s | 1.04x |
 | `PhylogeneticSignal._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.436331s | 0.239903s | 1.82x |
 | `PhylogeneticSignal._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.235394s | 0.229988s | 1.02x |
@@ -6824,11 +6825,14 @@ Profiling summary:
   longer loads `typing`. A repeated-likelihood pass now solves `[1, x]` as one
   combined Cholesky right-hand side and derives the residual solve from those
   columns, avoiding two extra triangular solves per positive-definite likelihood
-  evaluation. The two-column trait parser now streams rows directly from the
-  file handle, uses a single tab partition on valid rows, and builds taxa sets
-  directly from parsed dictionaries while preserving comment/blank filtering,
-  mismatch warnings, and detailed validation errors. A later parser pass
-  returns immediately for exact tree/trait taxon matches after all rows are
+  evaluation. Lambda matrix transforms inside `_pagels_lambda` now copy the
+  cached source diagonal through ndarray access and restore it via a flat
+  diagonal stride, avoiding `np.fill_diagonal` dispatch for each bounded-search
+  likelihood evaluation. The two-column trait parser now streams rows directly
+  from the file handle, uses a single tab partition on valid rows, and builds
+  taxa sets directly from parsed dictionaries while preserving comment/blank
+  filtering, mismatch warnings, and detailed validation errors. A later parser
+  pass returns immediately for exact tree/trait taxon matches after all rows are
   validated and at least three taxa are shared, preserving too-few-shared-taxa
   errors while avoiding shared/warning set construction.
 - `PhyloImpute._estimate_complete_case_stats` baseline time formed an explicit
@@ -7008,7 +7012,10 @@ Profiling summary:
   later repeated-call pass caches the resolved SciPy Cholesky and optimizer
   callables after first use, preserving lazy imports while avoiding import
   wrapper overhead inside repeated network likelihood and lambda-optimization
-  calls.
+  calls. Lambda matrix transforms inside `_pagels_lambda` now copy the cached
+  source diagonal through ndarray access and restore it via a flat diagonal
+  stride, avoiding `np.fill_diagonal` dispatch for each bounded-search
+  likelihood evaluation.
   The two-column trait parser now streams rows directly from the file handle,
   uses a single tab partition on valid rows, and builds taxa sets directly from
   parsed dictionaries while preserving comment/blank filtering, mismatch

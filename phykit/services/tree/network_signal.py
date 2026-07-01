@@ -595,12 +595,13 @@ class NetworkSignal(Tree):
     def _pagels_lambda(x, vcv, max_lambda=1.0):
         """Pagel's lambda with multi-interval optimization."""
         n = len(x)
-        diag_vals = np.diag(vcv).copy()
+        diag_vals = vcv.diagonal().copy()
+        diag_step = vcv.shape[0] + 1
         niter = 10
 
         def neg_ll(lam):
             C_lam = vcv * lam
-            np.fill_diagonal(C_lam, diag_vals)
+            C_lam.ravel()[::diag_step] = diag_vals
             try:
                 ll, _ = NetworkSignal._log_likelihood(x, C_lam)
                 return -ll
@@ -621,12 +622,12 @@ class NetworkSignal(Tree):
 
         # Log-likelihood at fitted lambda
         C_fitted = vcv * lambda_hat
-        np.fill_diagonal(C_fitted, diag_vals)
+        C_fitted.ravel()[::diag_step] = diag_vals
         ll_fitted, _ = NetworkSignal._log_likelihood(x, C_fitted)
 
         # Log-likelihood at lambda = 0
         C_zero = vcv * 0.0
-        np.fill_diagonal(C_zero, diag_vals)
+        C_zero.ravel()[::diag_step] = diag_vals
         ll_zero, _ = NetworkSignal._log_likelihood(x, C_zero)
 
         # Likelihood ratio test (1 df)

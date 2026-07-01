@@ -924,6 +924,59 @@ class TestPagelsLambdaNetwork:
 
         assert 0 <= result["p_value"] <= 1
 
+    def test_lambda_restores_diagonal_directly(self, monkeypatch):
+        vcv = np.array(
+            [
+                [2.0, 0.4, 0.2],
+                [0.4, 3.0, 0.5],
+                [0.2, 0.5, 4.0],
+            ]
+        )
+        x = np.array([1.0, 1.5, 2.0])
+        original_diag = vcv.diagonal().copy()
+        likelihood_calls = 0
+
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("lambda search should use ndarray diagonal access")
+
+        def fail_fill_diagonal(*_args, **_kwargs):
+            raise AssertionError("lambda search should restore diagonal directly")
+
+        def fake_likelihood(_x, C_lam):
+            nonlocal likelihood_calls
+            likelihood_calls += 1
+            np.testing.assert_allclose(C_lam.diagonal(), original_diag)
+            return -abs(C_lam[0, 1] - 0.2), 0.0
+
+        def fake_minimize_scalar(fn, bounds, method):
+            assert method == "bounded"
+            x_mid = sum(bounds) / 2.0
+            return type("Result", (), {"x": x_mid, "fun": fn(x_mid)})()
+
+        monkeypatch.setattr(network_signal_module.np, "diag", fail_diag)
+        monkeypatch.setattr(
+            network_signal_module.np,
+            "fill_diagonal",
+            fail_fill_diagonal,
+        )
+        monkeypatch.setattr(
+            network_signal_module,
+            "minimize_scalar",
+            fake_minimize_scalar,
+        )
+        monkeypatch.setattr(
+            NetworkSignal,
+            "_log_likelihood",
+            staticmethod(fake_likelihood),
+        )
+
+        result = NetworkSignal._pagels_lambda(x, vcv, max_lambda=1.0)
+
+        assert 0.0 <= result["lambda"] <= 1.0
+        assert np.isfinite(result["log_likelihood"])
+        assert 0.0 <= result["p_value"] <= 1.0
+        assert likelihood_calls == 12
+
     def test_log_likelihood_cholesky_matches_inverse(self):
         """Cholesky likelihood preserves the inverse-based likelihood."""
         nodes, parents, tip_map = _build_five_taxon_dag()
