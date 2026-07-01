@@ -617,11 +617,18 @@ class EvoTempoMap(Tree):
         if clade_taxa is None:
             clade_taxa = self._collect_clade_taxa(tree)
 
-        C1 = clade_taxa.get(id(node.clades[0]), frozenset())
-        C2 = clade_taxa.get(id(node.clades[1]), frozenset())
+        empty = frozenset()
+        children = node.clades
+        C1 = clade_taxa.get(id(children[0]), empty)
+        C2 = clade_taxa.get(id(children[1]), empty)
         # If node has >2 children (polytomy), merge extras into C2
-        for extra_child in node.clades[2:]:
-            C2 = C2 | clade_taxa.get(id(extra_child), frozenset())
+        if len(children) > 2:
+            C2 = C2.union(
+                *(
+                    clade_taxa.get(id(extra_child), empty)
+                    for extra_child in children[2:]
+                )
+            )
 
         parent = parent_map.get(id(node))
         if parent is None:
@@ -633,7 +640,7 @@ class EvoTempoMap(Tree):
         if not siblings:
             return None
 
-        S = clade_taxa.get(id(siblings[0]), frozenset())
+        S = clade_taxa.get(id(siblings[0]), empty)
         # D = everything else (other siblings + above parent)
         D = all_taxa_fs - C1 - C2 - S
 

@@ -924,6 +924,7 @@ Results:
 | `EvoTempoMap._collect_clade_taxa` reverse-preorder postorder helper | balanced 8192-tip tree, descendant taxon sets for branch classification | 0.028838s | 0.019994s | 1.44x |
 | `EvoTempoMap._build_parent_map` direct map traversal | balanced 65536-tip tree, branch-classification parent map, optimized helper baseline | 0.026751s | 0.017737s | 1.51x |
 | `EvoTempoMap._iter_preorder_clades` binary-child fast path | balanced 131072-tip tree, branch-classification preorder helper, side-by-side previous `reversed(children)` helper | 0.039015s | 0.034670s | 1.13x |
+| `EvoTempoMap._get_four_groups` multifurcation child union | 500 cached branch decompositions over 16x16x32 / 64x64x16 / 128x128x8 wide node/sibling groups, side-by-side previous repeated immutable-set union path | 0.252065s / 0.745556s / 1.417403s | 0.187053s / 0.109707s / 0.459360s | 1.35x / 6.80x / 3.09x |
 | `EvoTempoMap._compute_treeness` batch | 40 balanced 4096-tip gene trees, helper-only treeness values | 0.9191s | 0.0330s | 27.8x |
 | `EvoTempoMap._test_branch` insufficient-data summaries | 10k singleton concordant vs singleton discordant length summaries, identical early-return stats | 0.676468s | 0.022739s | 29.75x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |

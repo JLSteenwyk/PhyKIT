@@ -397,6 +397,33 @@ class TestClassifyGeneTrees:
         splits = svc._extract_bipartitions_with_lengths(tree, all_taxa, clade_taxa)
         assert frozenset({"A", "B"}) in splits
 
+    def test_get_four_groups_merges_multifurcation_extras(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("((A:1,B:1,C:1,D:1):1,(E:1,F:1,G:1,H:1):1);"),
+            "newick",
+        )
+        all_taxa = frozenset({"A", "B", "C", "D", "E", "F", "G", "H"})
+        parent_map = svc._build_parent_map(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+        node = tree.root.clades[0]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached clade taxa should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        groups = svc._get_four_groups(tree, node, parent_map, all_taxa, clade_taxa)
+        assert groups == (
+            frozenset({"A"}),
+            frozenset({"B", "C", "D"}),
+            frozenset({"E", "F", "G", "H"}),
+            frozenset(),
+        )
+
     def test_build_parent_map_handles_mixed_child_counts(self, svc, monkeypatch):
         from Bio import Phylo
         from Bio.Phylo.BaseTree import TreeMixin
