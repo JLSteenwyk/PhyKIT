@@ -25,7 +25,8 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         code = (
             "import sys; "
             "import phykit.helpers.stats_summary; "
-            "assert 'numpy' not in sys.modules"
+            "assert 'numpy' not in sys.modules; "
+            "assert 'statistics' not in sys.modules"
         )
 
         subprocess.run([sys.executable, "-c", code], check=True)

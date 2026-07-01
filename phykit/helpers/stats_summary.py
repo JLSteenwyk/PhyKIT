@@ -1,4 +1,3 @@
-import statistics as stat
 from math import sqrt
 
 
@@ -29,6 +28,11 @@ _SMALL_STATS_FALLBACK = object()
 
 def _print_no_values_message():
     print(_NO_VALUES_MESSAGE)
+
+
+def _no_values_result():
+    _print_no_values_message()
+    return None
 
 
 def _has_too_few_values(values):
@@ -122,63 +126,59 @@ def _calculate_small_sequence_statistics(values):
 
 
 def _calculate_summary_statistics(values):
-    try:
-        if _has_too_few_values(values):
-            raise stat.StatisticsError
+    if _has_too_few_values(values):
+        return _no_values_result()
 
-        small_stats = _calculate_small_sequence_statistics(values)
-        if small_stats is not _SMALL_STATS_FALLBACK:
-            return small_stats
+    small_stats = _calculate_small_sequence_statistics(values)
+    if small_stats is not _SMALL_STATS_FALLBACK:
+        return small_stats
 
-        arr = np.asarray(values)
-        if arr.size < 2:
-            raise stat.StatisticsError
+    arr = np.asarray(values)
+    if arr.size < 2:
+        return _no_values_result()
 
-        first_value = arr.flat[0]
-        if first_value == arr.flat[-1] and (arr == first_value).all():
-            scalar = _python_scalar(first_value)
-            if np.issubdtype(arr.dtype, np.integer):
-                mean = _integer_if_exact(scalar)
-                median = _integer_if_exact(scalar)
-                quartile = float(scalar)
-            else:
-                mean = scalar
-                median = scalar
-                quartile = scalar
-            return dict(
-                mean=mean,
-                median=median,
-                twenty_fifth=quartile,
-                seventy_fifth=quartile,
-                minimum=scalar,
-                maximum=scalar,
-                standard_deviation=0.0,
-                variance=0.0,
-            )
-
-        twenty_fifth, median, seventy_fifth = np.percentile(arr, [25, 50, 75])
-        mean = arr.mean()
-        minimum = arr.min()
-        maximum = arr.max()
-        variance = arr.var(ddof=1)
-        standard_deviation = np.sqrt(variance)
-        median = _python_scalar(median)
+    first_value = arr.flat[0]
+    if first_value == arr.flat[-1] and (arr == first_value).all():
+        scalar = _python_scalar(first_value)
         if np.issubdtype(arr.dtype, np.integer):
-            mean = _integer_if_exact(mean)
-            median = _integer_if_exact(median)
-        stats = dict(
-            mean=_python_scalar(mean),
+            mean = _integer_if_exact(scalar)
+            median = _integer_if_exact(scalar)
+            quartile = float(scalar)
+        else:
+            mean = scalar
+            median = scalar
+            quartile = scalar
+        return dict(
+            mean=mean,
             median=median,
-            twenty_fifth=_python_scalar(twenty_fifth),
-            seventy_fifth=_python_scalar(seventy_fifth),
-            minimum=_python_scalar(minimum),
-            maximum=_python_scalar(maximum),
-            standard_deviation=_python_scalar(standard_deviation),
-            variance=_python_scalar(variance),
+            twenty_fifth=quartile,
+            seventy_fifth=quartile,
+            minimum=scalar,
+            maximum=scalar,
+            standard_deviation=0.0,
+            variance=0.0,
         )
-    except stat.StatisticsError:
-        _print_no_values_message()
-        stats = None
+
+    twenty_fifth, median, seventy_fifth = np.percentile(arr, [25, 50, 75])
+    mean = arr.mean()
+    minimum = arr.min()
+    maximum = arr.max()
+    variance = arr.var(ddof=1)
+    standard_deviation = np.sqrt(variance)
+    median = _python_scalar(median)
+    if np.issubdtype(arr.dtype, np.integer):
+        mean = _integer_if_exact(mean)
+        median = _integer_if_exact(median)
+    stats = dict(
+        mean=_python_scalar(mean),
+        median=median,
+        twenty_fifth=_python_scalar(twenty_fifth),
+        seventy_fifth=_python_scalar(seventy_fifth),
+        minimum=_python_scalar(minimum),
+        maximum=_python_scalar(maximum),
+        standard_deviation=_python_scalar(standard_deviation),
+        variance=_python_scalar(variance),
+    )
 
     return stats
 
@@ -195,8 +195,7 @@ def calculate_summary_statistics_from_dict(dat: dict):
     calcuate summary statistics for a dictionary
     """
     if len(dat) < 2:
-        _print_no_values_message()
-        return None
+        return _no_values_result()
 
     try:
         arr = np.fromiter(dat.values(), dtype=float, count=len(dat))

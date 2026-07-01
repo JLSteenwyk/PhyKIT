@@ -28,6 +28,7 @@ Results:
 | `calculate_summary_statistics_from_dict` fromiter setup | 1M floating-point dictionary values, optimized helper baseline | 0.0395s | 0.0276s | 1.4x |
 | `calculate_summary_statistics_from_dict` combined percentiles | 1M floating-point dictionary values, optimized helper baseline | 0.0373s | 0.0356s | 1.05x |
 | `stats_summary` module import without eager NumPy | cold subprocess import of shared summary-statistics helper | 0.118467s | 0.061148s | 1.94x |
+| `stats_summary` module import without `statistics` startup | median cold subprocess load of the shared summary-statistics helper after replacing internal `StatisticsError` control flow with direct no-value returns | 0.049733s | 0.036336s | 1.37x |
 | `print_summary_statistics` batched output | 100k captured summary reports, identical stdout text | 0.437117s | 0.342506s | 1.28x |
 | `print_summary_statistics` template formatting | 100k captured summary reports, identical stdout text, side-by-side previous f-string join formatter | 1.132736s | 0.931583s | 1.22x |
 | `stats_summary._print_no_values_message` batched output | 100k captured no-values diagnostics, identical stdout text | 0.063022s | 0.030512s | 2.07x |
@@ -7895,7 +7896,11 @@ Profiling summary:
   overhead for empty summary requests. Sized empty and single-value array/dict
   inputs now return that same diagnostic before constructing NumPy arrays,
   preserving `None` results and stdout text while avoiding unnecessary NumPy
-  startup and conversion work.
+  startup and conversion work. A later startup pass removes the runtime
+  `statistics` import by replacing the internal `StatisticsError` raise/catch
+  no-values path with direct returns, preserving the same diagnostic text and
+  `None` results while reducing summary-helper import cost for commands that
+  only expose these helpers lazily.
 - `ThresholdModel._run_mcmc` baseline time recomputed full bivariate BM
   quadratic forms for every Metropolis-Hastings proposal and used scalar
   `truncnorm.rvs` calls for every discrete liability Gibbs update. The
