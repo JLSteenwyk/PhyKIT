@@ -213,7 +213,7 @@ class PairwiseIdentity(Alignment):
 
     def run(self):
         alignment, _, is_protein = self.get_alignment_and_format()
-        taxa = [record.id for record in alignment]
+        taxa = [record.id for record in alignment] if self.plot else []
 
         summary_only = not self.verbose and not self.plot
         if summary_only:

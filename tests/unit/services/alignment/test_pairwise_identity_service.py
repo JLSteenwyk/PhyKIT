@@ -649,6 +649,37 @@ class TestPairwiseIdentity:
         full_result.assert_not_called()
         mocked_summary.assert_called_once_with({"mean": 0.75})
 
+    def test_run_summary_only_does_not_materialize_taxa_ids(self, mocker):
+        class RecordWithExpensiveId:
+            @property
+            def id(self):
+                raise AssertionError("summary-only output should not read taxa IDs")
+
+        args = Namespace(
+            alignment="/some/path/to/file.fa",
+            verbose=False,
+            exclude_gaps=False,
+            json=False,
+            plot=False,
+        )
+        service = PairwiseIdentity(args)
+        alignment = [RecordWithExpensiveId()]
+        mocker.patch.object(
+            PairwiseIdentity,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
+        )
+        mocker.patch.object(
+            service,
+            "calculate_pairwise_identity_stats",
+            return_value={"mean": 0.75},
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.print_summary_statistics"
+        )
+
+        service.run()
+
     def test_matrix_pairwise_identity_matches_batch_reference(self, mocker, args):
         service = PairwiseIdentity(args)
         alignment = MultipleSeqAlignment(
