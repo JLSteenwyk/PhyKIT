@@ -383,6 +383,7 @@ Results:
 | `AlignmentOutlierTaxa.calculate_outliers` composition-distance row norms | 400 taxa x 1200 DNA sites and 1000 taxa x 5000 protein sites, side-by-side previous `np.linalg.norm(..., axis=1)` with identical rows | 0.039359s / 0.229932s | 0.016265s / 0.188438s | 2.42x / 1.22x |
 | `AlignmentOutlierTaxa.calculate_outliers` entropy column dot | site probability/log-probability matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(site_probs * log_probs, axis=0)` | 0.420023s / 0.620534s / 0.777484s / 1.564784s | 0.380694s / 0.425398s / 0.542617s / 1.111065s | 1.10x / 1.46x / 1.43x / 1.41x |
 | `AlignmentOutlierTaxa.calculate_outliers` zipped row assembly | 100k synthetic taxa with six feature arrays and nested reason rows | 0.437748s | 0.370843s | 1.18x |
+| `AlignmentOutlierTaxa.calculate_outliers` literal nested row assembly | 100k synthetic taxa with six feature arrays and nested reason rows | 1.943047s | 1.677475s | 1.16x |
 | `AlignmentOutlierTaxa.run` batched text output | 100k outlier rows, mocked alignment/read and identical stdout text | 0.103591s | 0.090365s | 1.15x |
 | `alignment_outlier_taxa` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.069810s | 0.022303s | 3.13x |
 | `PlotAlignmentQC` composition-distance scatter panel | 5000 taxa, 250 flagged taxa, Matplotlib Agg setup only | 9.036485s | 0.015365s | 588.14x |

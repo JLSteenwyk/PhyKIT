@@ -116,17 +116,17 @@ class AlignmentOutlierTaxa(Alignment):
             occupancy = 0.0
         branch_proxy = 0.0 if n_taxa > 1 else None
         rows = [
-            dict(
-                taxon=record.id,
-                gap_rate=round(float(gap_rate), 4),
-                occupancy=round(float(occupancy), 4),
-                composition_distance=0.0,
-                long_branch_proxy=branch_proxy,
-                rcvt=0.0,
-                entropy_burden=0.0,
-                flagged=False,
-                reasons=[],
-            )
+            {
+                "taxon": record.id,
+                "gap_rate": round(float(gap_rate), 4),
+                "occupancy": round(float(occupancy), 4),
+                "composition_distance": 0.0,
+                "long_branch_proxy": branch_proxy,
+                "rcvt": 0.0,
+                "entropy_burden": 0.0,
+                "flagged": False,
+                "reasons": [],
+            }
             for record in alignment
         ]
         return dict(
@@ -547,87 +547,95 @@ class AlignmentOutlierTaxa(Alignment):
 
             if np.isfinite(gap_rate) and gap_rate > gap_threshold:
                 reasons.append(
-                    dict(
-                        feature="gap_rate",
-                        value=float(gap_rate),
-                        threshold=float(gap_threshold),
-                        explanation="High fraction of gap/ambiguous symbols compared to other taxa.",
-                    )
+                    {
+                        "feature": "gap_rate",
+                        "value": float(gap_rate),
+                        "threshold": float(gap_threshold),
+                        "explanation": (
+                            "High fraction of gap/ambiguous symbols compared to other taxa."
+                        ),
+                    }
                 )
             if np.isfinite(occupancy) and occupancy < occupancy_threshold:
                 reasons.append(
-                    dict(
-                        feature="occupancy",
-                        value=float(occupancy),
-                        threshold=float(occupancy_threshold),
-                        explanation="Low fraction of valid symbols compared to other taxa.",
-                    )
+                    {
+                        "feature": "occupancy",
+                        "value": float(occupancy),
+                        "threshold": float(occupancy_threshold),
+                        "explanation": "Low fraction of valid symbols compared to other taxa.",
+                    }
                 )
             if (
                 np.isfinite(composition_distance)
                 and composition_distance > composition_threshold
             ):
                 reasons.append(
-                    dict(
-                        feature="composition_distance",
-                        value=float(composition_distance),
-                        threshold=float(composition_threshold),
-                        explanation="Unusual sequence composition profile relative to other taxa.",
-                    )
+                    {
+                        "feature": "composition_distance",
+                        "value": float(composition_distance),
+                        "threshold": float(composition_threshold),
+                        "explanation": (
+                            "Unusual sequence composition profile relative to other taxa."
+                        ),
+                    }
                 )
             branch_proxy_is_finite = np.isfinite(branch_proxy)
             if branch_proxy_is_finite and branch_proxy > distance_threshold:
                 reasons.append(
-                    dict(
-                        feature="long_branch_proxy",
-                        value=float(branch_proxy),
-                        threshold=float(distance_threshold),
-                        explanation="High mean pairwise sequence distance to other taxa.",
-                    )
+                    {
+                        "feature": "long_branch_proxy",
+                        "value": float(branch_proxy),
+                        "threshold": float(distance_threshold),
+                        "explanation": "High mean pairwise sequence distance to other taxa.",
+                    }
                 )
             if np.isfinite(rcvt) and rcvt > rcvt_threshold:
                 reasons.append(
-                    dict(
-                        feature="rcvt",
-                        value=float(rcvt),
-                        threshold=float(rcvt_threshold),
-                        explanation="High relative composition variability for this taxon.",
-                    )
+                    {
+                        "feature": "rcvt",
+                        "value": float(rcvt),
+                        "threshold": float(rcvt_threshold),
+                        "explanation": "High relative composition variability for this taxon.",
+                    }
                 )
             if np.isfinite(entropy) and entropy > entropy_threshold:
                 reasons.append(
-                    dict(
-                        feature="entropy_burden",
-                        value=float(entropy),
-                        threshold=float(entropy_threshold),
-                        explanation="High average site entropy across this taxon's valid positions.",
-                    )
+                    {
+                        "feature": "entropy_burden",
+                        "value": float(entropy),
+                        "threshold": float(entropy_threshold),
+                        "explanation": (
+                            "High average site entropy across this taxon's valid positions."
+                        ),
+                    }
                 )
 
-            row = dict(
-                taxon=taxon,
-                gap_rate=round(float(gap_rate), 4),
-                occupancy=round(float(occupancy), 4),
-                composition_distance=round(float(composition_distance), 4),
-                long_branch_proxy=(
+            row = {
+                "taxon": taxon,
+                "gap_rate": round(float(gap_rate), 4),
+                "occupancy": round(float(occupancy), 4),
+                "composition_distance": round(float(composition_distance), 4),
+                "long_branch_proxy": (
                     None
                     if not branch_proxy_is_finite
                     else round(float(branch_proxy), 4)
                 ),
-                rcvt=round(float(rcvt), 4),
-                entropy_burden=round(float(entropy), 4),
-                flagged=bool(reasons),
-                reasons=[
-                    dict(
-                        feature=r["feature"],
-                        value=round(float(r["value"]), 4),
-                        threshold=round(float(r["threshold"]), 4),
-                        direction=("low" if r["feature"] == "occupancy" else "high"),
-                        explanation=r["explanation"],
-                    )
+                "rcvt": round(float(rcvt), 4),
+                "entropy_burden": round(float(entropy), 4),
+                "flagged": bool(reasons),
+                "reasons": [
+                    {
+                        "feature": r["feature"],
+                        "value": round(float(r["value"]), 4),
+                        "threshold": round(float(r["threshold"]), 4),
+                        "direction": (
+                            "low" if r["feature"] == "occupancy" else "high"
+                        ),
+                        "explanation": r["explanation"],
+                    }
                     for r in reasons
                 ],
-            )
+            }
             rows.append(row)
             if reasons:
                 outliers.append(row)
