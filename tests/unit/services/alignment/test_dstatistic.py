@@ -803,6 +803,30 @@ class TestGeneTreeMode:
         assert clade_taxa[id(right)] == frozenset({"C", "O"})
         assert clade_taxa[id(root)] == frozenset({"A", "B", "C", "O"})
 
+    def test_direct_clade_taxa_multifurcating_children_use_single_union(
+        self, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1,C:1):1,D:1,E:1,O:1);"), "newick")
+        expected_nonterminals = list(tree.get_nonterminals())
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("direct clade collector should not use generic traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        clade_taxa, nonterminals = (
+            Dstatistic._collect_clade_taxa_and_nonterminals_direct(tree)
+        )
+
+        assert nonterminals == expected_nonterminals
+        assert clade_taxa[id(tree.root)] == frozenset({"A", "B", "C", "D", "E", "O"})
+        internal_sets = {
+            taxa for taxa in clade_taxa.values()
+            if 1 < len(taxa) < 6
+        }
+        assert frozenset({"A", "B", "C"}) in internal_sets
+
     def test_get_quartet_topology_uses_combined_direct_traversal(self, monkeypatch):
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,O:1):1);"), "newick")
         svc = object.__new__(Dstatistic)

@@ -303,6 +303,7 @@ class Dstatistic(Alignment):
 
         clade_taxa: dict[int, frozenset] = {}
         empty_taxa = frozenset()
+        empty_taxa_union = empty_taxa.union
         for clade in reversed(preorder):
             children = clade.clades
             child_count = len(children)
@@ -313,10 +314,9 @@ class Dstatistic(Alignment):
                     clade_taxa[id(children[0])] | clade_taxa[id(children[1])]
                 )
             else:
-                taxa = empty_taxa
-                for child in children:
-                    taxa = taxa | clade_taxa.get(id(child), empty_taxa)
-                clade_taxa[id(clade)] = taxa
+                clade_taxa[id(clade)] = empty_taxa_union(
+                    *(clade_taxa.get(id(child), empty_taxa) for child in children)
+                )
 
         nonterminals = [clade for clade in preorder if clade.clades]
         return clade_taxa, nonterminals

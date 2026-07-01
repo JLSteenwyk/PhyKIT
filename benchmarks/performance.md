@@ -687,6 +687,7 @@ Results:
 | `Dstatistic._print_gene_tree_text_output` single-report formatting | 50k gene-tree-mode D-statistic text reports, captured stdout and identical text, side-by-side previous line-list comparison | 0.093211s | 0.076612s | 1.22x |
 | `Dstatistic._collect_clade_taxa_and_nonterminals_direct` reverse-preorder helper | balanced 32768-tip gene tree, descendant taxon sets plus nonterminal preorder | 0.056586s | 0.046768s | 1.21x |
 | `Dstatistic._collect_clade_taxa_and_nonterminals_direct` binary descendant aggregation | balanced 32768-tip gene tree, descendant taxon sets plus nonterminal preorder | 0.046967s | 0.037408s | 1.26x |
+| `Dstatistic._collect_clade_taxa_and_nonterminals_direct` multifurcation child union | 1 descendant-taxa pass over 2048x8 / 4096x4 / 8192x4 multifurcating groups, side-by-side previous repeated immutable-set union path | 1.016979s / 1.795487s / 8.126636s | 0.029958s / 0.029908s / 0.098486s | 33.95x / 60.03x / 82.52x |
 | `dstatistic` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.219520s | 0.114720s | 1.91x |
 | `dstatistic` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.078477s | 0.025417s | 3.09x |
 | `dstatistic` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.035487s | 0.031252s | 1.14x |
