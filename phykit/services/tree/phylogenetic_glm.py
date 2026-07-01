@@ -114,16 +114,14 @@ def _standard_errors_from_info_matrix(
 ) -> np.ndarray:
     try:
         factor = cho_factor(info_matrix, lower=True, check_finite=False)
-        info_inv_diag = np.diag(
-            cho_solve(
-                factor,
-                np.eye(info_matrix.shape[0]),
-                check_finite=False,
-            )
-        )
+        info_inv_diag = cho_solve(
+            factor,
+            np.eye(info_matrix.shape[0]),
+            check_finite=False,
+        ).diagonal()
     except (np.linalg.LinAlgError, FloatingPointError, ValueError):
         try:
-            info_inv_diag = np.diag(np.linalg.inv(info_matrix))
+            info_inv_diag = np.linalg.inv(info_matrix).diagonal()
         except np.linalg.LinAlgError:
             return np.full(info_matrix.shape[0], np.nan)
 

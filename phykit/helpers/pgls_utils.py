@@ -224,7 +224,7 @@ def pgls_log_likelihood(
         C_inv_e = C_inv_y - C_inv_X @ beta_hat
         sigma2_ml = float(e @ C_inv_e) / n
 
-        diag = np.diag(factor[0])
+        diag = factor[0].diagonal()
         logdet_C = 2.0 * float(np.log(diag).sum())
         if sigma2_ml <= 0:
             return -1e20

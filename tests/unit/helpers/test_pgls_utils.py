@@ -162,6 +162,28 @@ def test_pgls_log_likelihood_uses_single_cholesky_solve(monkeypatch):
     assert observed == pytest.approx(expected, abs=1e-8)
 
 
+def test_pgls_log_likelihood_uses_diagonal_view(monkeypatch):
+    import phykit.helpers.pgls_utils as pgls_utils
+
+    rng = np.random.default_rng(20260701)
+    n = 24
+    A = rng.normal(size=(n, n))
+    C = A @ A.T + np.eye(n)
+    X = np.column_stack([np.ones(n), rng.normal(size=n)])
+    y = X @ np.array([0.3, -0.5]) + rng.normal(scale=0.05, size=n)
+    expected = _pgls_log_likelihood_inverse(y, X, C)
+
+    def fail_diag(*_args, **_kwargs):
+        raise AssertionError("PGLS logdet should use ndarray diagonal access")
+
+    monkeypatch.setattr(pgls_utils.np, "diag", fail_diag)
+
+    assert pgls_utils.pgls_log_likelihood(y, X, C) == pytest.approx(
+        expected,
+        abs=1e-8,
+    )
+
+
 def test_pgls_log_likelihood_singular_matrix_returns_floor():
     y = np.array([1.0, 2.0, 3.0])
     X = np.column_stack([np.ones(3), np.array([0.0, 1.0, 2.0])])

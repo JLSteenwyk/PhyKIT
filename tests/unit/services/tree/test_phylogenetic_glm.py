@@ -216,6 +216,26 @@ def test_standard_errors_from_info_matrix_spd_avoids_inverse(monkeypatch):
     assert np.all(np.isfinite(observed))
 
 
+def test_standard_errors_from_info_matrix_uses_diagonal_view(monkeypatch):
+    rng = np.random.default_rng(20260701)
+    A = rng.normal(size=(9, 9))
+    info_matrix = A @ A.T + np.eye(9)
+    scale = 1.4
+    expected = np.sqrt(np.abs(scale * np.linalg.inv(info_matrix).diagonal()))
+
+    def fail_diag(*_args, **_kwargs):
+        raise AssertionError("standard errors should use ndarray diagonal access")
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "diag", fail_diag)
+
+    observed = phylogenetic_glm_module._standard_errors_from_info_matrix(
+        info_matrix,
+        scale=scale,
+    )
+
+    np.testing.assert_allclose(observed, expected)
+
+
 def test_standard_errors_from_info_matrix_keeps_inverse_fallback():
     info_matrix = np.array([[1.0, 2.0], [2.0, 1.0]])
 

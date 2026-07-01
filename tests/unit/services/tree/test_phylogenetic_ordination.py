@@ -540,7 +540,7 @@ class TestPhylogeneticPCACorr:
                     f"computed={computed[pc]}, ref={ref[pc]}"
                 )
 
-    def test_run_pca_corr_mode_avoids_dense_diagonal_scaling(
+    def test_run_pca_corr_mode_uses_diagonal_view(
         self, corr_args, monkeypatch, capsys
     ):
         import phykit.services.tree.phylogenetic_ordination as po
@@ -553,15 +553,10 @@ class TestPhylogeneticPCACorr:
         Z = rng.normal(size=(n, p))
         C_inv_Z = Z.copy()
 
-        original_diag = po.np.diag
+        def fail_diag(*_args, **_kwargs):
+            raise AssertionError("corr-mode PCA should use ndarray diagonal access")
 
-        def diag_without_vector_to_matrix(a, *args, **kwargs):
-            arr = np.asarray(a)
-            if arr.ndim == 1:
-                raise AssertionError("corr-mode PCA should not allocate D_inv")
-            return original_diag(a, *args, **kwargs)
-
-        monkeypatch.setattr(po.np, "diag", diag_without_vector_to_matrix)
+        monkeypatch.setattr(po.np, "diag", fail_diag)
 
         svc._run_pca(
             Z,

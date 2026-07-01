@@ -136,7 +136,7 @@ class PhylogeneticOrdination(Tree):
 
             max_lam = compute_max_lambda(tree)
             lambda_val, log_likelihood = self._multi_trait_lambda(Y, vcv, max_lam)
-            diag_vals = np.diag(vcv).copy()
+            diag_vals = vcv.diagonal().copy()
             vcv = vcv * lambda_val
             np.fill_diagonal(vcv, diag_vals)
 
@@ -163,7 +163,7 @@ class PhylogeneticOrdination(Tree):
 
         Z_std = None
         if self.mode == "corr":
-            D_inv = 1.0 / np.sqrt(np.diag(R))
+            D_inv = 1.0 / np.sqrt(R.diagonal())
             R_corr = (R * D_inv[:, None]) * D_inv[None, :]
             eigenvalues, eigenvectors = np.linalg.eigh(R_corr)
         else:
