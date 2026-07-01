@@ -569,8 +569,14 @@ class ConsensusNetwork(Tree):
             else:
                 dx, dy = 1.0, 0.0
             # Orient toward the canonical (positive / smaller) side
-            cx_split = sum(cos_by_taxon[t] for t in split) / len(split)
-            cy_split = sum(sin_by_taxon[t] for t in split) / len(split)
+            cx_total = 0.0
+            cy_total = 0.0
+            for taxon in split:
+                cx_total += cos_by_taxon[taxon]
+                cy_total += sin_by_taxon[taxon]
+            center_scale = 1.0 / len(split)
+            cx_split = cx_total * center_scale
+            cy_split = cy_total * center_scale
             if dx * cx_split + dy * cy_split < 0:
                 dx = -dx
                 dy = -dy
