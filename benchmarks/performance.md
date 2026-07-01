@@ -1569,6 +1569,7 @@ Results:
 | `Saturation._constant_uncorrected_distance_for_identical_sequences` raw-identical normalization scan | 500k raw-identical requested tips with gappy DNA symbols, side-by-side previous eager uppercase tip dictionary and sequence list | 0.824100s | 0.671471s | 1.23x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
+| `Saturation.print_res` verbose JSON row construction | 500k pairwise rows, identical row dictionaries | 1.126429s | 0.839930s | 1.34x |
 | `saturation` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy and annotation-only Biopython imports | 0.144697s | 0.035127s | 4.12x |
 | `saturation` module import without eager multiprocessing | cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.035324s | 0.031814s | 1.11x |
 | `saturation` module import without eager plot config | cold subprocess import after localizing `PlotConfig` to argument processing | 0.029371s | 0.023684s | 1.24x |

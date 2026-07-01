@@ -88,7 +88,7 @@ class TestSaturation(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
+        expected_calls = [
             call("Kpol\tKpha\t0.3864\t0.6176"),
             call("Kpol\tSnag\t0.4346\t0.7482"),
             call("Kpol\tSuva\t0.4052\t0.6945"),
@@ -155,6 +155,9 @@ class TestSaturation(object):
             call("Sdai\tScas\t0.3644\t0.5357"),
             call("Sdai\tCgla\t0.4325\t0.7045"),
             call("Scas\tCgla\t0.4482\t0.7706"),
+        ]
+        assert mocked_print.mock_calls == [
+            call("\n".join(c.args[0] for c in expected_calls))
         ]
 
     @patch("builtins.print")

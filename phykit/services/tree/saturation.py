@@ -673,12 +673,12 @@ class Saturation(Tree):
                 payload = dict(verbose=verbose, exclude_gaps=self.exclude_gaps)
                 if verbose:
                     rows = [
-                        dict(
-                            taxon_a=cbo[0],
-                            taxon_b=cbo[1],
-                            uncorrected_distance=round(dist, 4),
-                            patristic_distance=round(pd, 4),
-                        )
+                        {
+                            "taxon_a": cbo[0],
+                            "taxon_b": cbo[1],
+                            "uncorrected_distance": round(dist, 4),
+                            "patristic_distance": round(pd, 4),
+                        }
                         for cbo, dist, pd in zip(
                             combos, uncorrected_distances, patristic_distances
                         )
