@@ -180,10 +180,18 @@ class MaskAlignment(Alignment):
         ):
             return np.ones(aln_len, dtype=np.bool_)
 
-        sequences = [str(record.seq).upper() for record in alignment]
-        if sequences:
-            if _all_sequences_identical(sequences):
-                first_sequence = sequences[0]
+        raw_sequences = [str(record.seq) for record in alignment]
+        if raw_sequences:
+            first_raw_sequence = raw_sequences[0]
+            first_sequence = first_raw_sequence.upper()
+            all_identical = True
+            for idx in range(1, len(raw_sequences)):
+                sequence = raw_sequences[idx]
+                if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                    all_identical = False
+                    break
+
+            if all_identical:
                 if is_protein:
                     invalid_chars = {"-", "?", "*", "X"}
                 else:
@@ -200,6 +208,7 @@ class MaskAlignment(Alignment):
                 if self.max_entropy is not None:
                     keep_mask &= 0.0 <= self.max_entropy
                 return keep_mask
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         if is_protein:
             invalid_chars = ["-", "?", "*", "X"]

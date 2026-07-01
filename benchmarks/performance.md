@@ -285,6 +285,7 @@ Results:
 | `MaskAlignment.calculate_keep_mask` all-pass pre-materialization return | 2000 taxa x 12000 DNA sites, all-pass thresholds, side-by-side previous sequence materialization before all-true mask | 0.070370167s | 0.000251167s | 280.17x |
 | `MaskAlignment.calculate_keep_mask` clean no-entropy shortcut | 2000 taxa x 12000 clean DNA sites, `max_gap=0.2`, `min_occupancy=0.8`, no entropy threshold, side-by-side previous occupancy mask path | 0.060156s | 0.017106s | 3.52x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with gaps/ambiguous symbols, entropy threshold enabled, lowercase/uppercase variants, side-by-side previous matrix path | 0.100434s | 0.005945s | 16.89x |
+| `MaskAlignment.calculate_keep_mask` raw-identical normalization scan | 300k raw-identical DNA rows x 32 sites, entropy threshold enabled, side-by-side previous eager uppercase sequence setup with identical valid-site mask | 0.118741s | 0.100796s | 1.18x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.196770s / 0.006034s / 0.084992s | 0.040581s / 0.000003s / 0.042880s | 4.85x / 1765.72x / 1.98x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence byte mask | 8 taxa x 1,000,000 identical DNA sites with gaps/ambiguous symbols, entropy threshold enabled, side-by-side previous Python generator mask path | 0.416832s | 0.009614s | 43.35x |
 | `MaskAlignment.apply_mask` | 1200 taxa x 3000 sites, 2000 kept sites | 0.1349s | 0.0044s | 30.7x |
@@ -2908,10 +2909,12 @@ Profiling summary:
   probability arrays.
   Fully identical normalized alignments now derive occupancy and zero entropy
   from one sequence before matrix construction, preserving gap, occupancy, and
-  entropy thresholds for conserved multi-symbol inputs. A follow-up pass uses
-  the shared no-slice equality helper for that shortcut, avoiding
-  `sequences[1:]` materialization while preserving early exit for heterogeneous
-  alignments. The identical-sequence valid-site mask now uses the shared ASCII
+  entropy thresholds for conserved multi-symbol inputs. Raw-identical
+  alignments now test equality before uppercasing every row, avoiding the
+  normalization pass for already identical inputs while preserving mixed-case
+  equivalence. A follow-up pass uses the shared no-slice equality helper for
+  that shortcut, avoiding `sequences[1:]` materialization while preserving
+  early exit for heterogeneous alignments. The identical-sequence valid-site mask now uses the shared ASCII
   invalid-byte lookup, with the prior Python generator retained for Unicode
   fallback.
   `MaskAlignment.apply_mask` also filters a single alignment matrix now, instead
