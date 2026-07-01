@@ -191,7 +191,7 @@ class AlignmentOutlierTaxa(Alignment):
 
     @staticmethod
     def _symbol_counts_by_site(alignment_array, symbols):
-        if alignment_array.dtype == np.uint8 and alignment_array.size <= 8_000_000:
+        if alignment_array.dtype == np.uint8 and alignment_array.size <= 32_000_000:
             n_sites = alignment_array.shape[1]
             max_code = int(symbols.max()) + 1
             encoded = alignment_array.astype(np.int64)

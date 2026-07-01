@@ -476,6 +476,54 @@ class TestAlignmentOutlierTaxa:
             expected,
         )
 
+    def test_ascii_symbol_counts_by_site_uses_bincount_above_old_cutoff(
+        self,
+        monkeypatch,
+    ):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY-X?*"
+        row = alignment_outlier_taxa_module.np.frombuffer(
+            alphabet * 11,
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        )
+        matrix = alignment_outlier_taxa_module.np.tile(row, (32_000, 1))
+        invalid = alignment_outlier_taxa_module.np.zeros(256, dtype=bool)
+        invalid[
+            alignment_outlier_taxa_module.np.frombuffer(
+                b"-?*X",
+                dtype=alignment_outlier_taxa_module.np.uint8,
+            )
+        ] = True
+        symbols = alignment_outlier_taxa_module.np.unique(matrix)
+        symbols = symbols[~invalid[symbols]]
+        original_bincount = alignment_outlier_taxa_module.np.bincount
+        calls = 0
+
+        def count_bincount(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module.np,
+            "bincount",
+            count_bincount,
+        )
+
+        observed = AlignmentOutlierTaxa._symbol_counts_by_site(matrix, symbols)
+        expected = alignment_outlier_taxa_module.np.zeros(
+            (symbols.size, matrix.shape[1]),
+            dtype=alignment_outlier_taxa_module.np.float64,
+        )
+        first_row = matrix[0]
+        for index, symbol in enumerate(symbols):
+            expected[index, first_row == symbol] = matrix.shape[0]
+
+        assert calls == 1
+        alignment_outlier_taxa_module.np.testing.assert_array_equal(
+            observed,
+            expected,
+        )
+
     def test_variable_ascii_outliers_use_symbol_count_helpers(self, monkeypatch):
         service = self._service()
         alignment = MultipleSeqAlignment(
