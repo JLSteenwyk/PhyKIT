@@ -88,6 +88,11 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
         except UnicodeEncodeError:
             return None
         invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
+        if not _has_invalid_bytes(sequence_bytes, invalid_bytes):
+            return [
+                (record_id, 1.0)
+                for record_id, _ in record_data
+            ]
         occupancy = (
             0.0
             if seq_len == 0

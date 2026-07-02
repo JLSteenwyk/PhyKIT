@@ -215,6 +215,29 @@ class TestOccupancyPerTaxon(object):
             is_protein=False,
         ) == [("a", 4 / 9), ("b", 4 / 9), ("c", 4 / 9)]
 
+    def test_occupancy_ascii_matrix_identical_all_valid_skips_translate(self):
+        class NoTranslateBytes(bytes):
+            def translate(self, *_args, **_kwargs):
+                raise AssertionError(
+                    "all-valid identical ASCII occupancy should not translate"
+                )
+
+        class EncodedString(str):
+            def encode(self, *_args, **_kwargs):
+                return NoTranslateBytes(super().encode(*_args, **_kwargs))
+
+        sequence = EncodedString("ACGT" * 2048)
+        record_data = [
+            ("a", sequence),
+            ("b", sequence),
+            ("c", sequence),
+        ]
+
+        assert occupancy_per_taxon_module._occupancy_from_ascii_matrix(
+            record_data,
+            is_protein=False,
+        ) == [("a", 1.0), ("b", 1.0), ("c", 1.0)]
+
     def test_occupancy_ascii_matrix_variable_lengths_return_none(self):
         record_data = [
             ("a", "ACGT"),
