@@ -1393,6 +1393,7 @@ Results:
 | `LTT._terminal_clades` setup | balanced 65536-tip tree, terminal clade list for gamma/LTT helpers | 0.1272s | 0.0172s | 7.4x |
 | `LTT._terminal_clades` order-preserving binary push | balanced 131072-tip tree, terminal clade list with identical tip order, optimized helper baseline | 0.022452s | 0.017732s | 1.27x |
 | `LTT._depths_from_root` direct stack traversal | balanced 32768-tip tree, root-depth map setup | 0.014824s | 0.010569s | 1.40x |
+| `LTT._depths_from_root` binary child push | balanced 8192-tip / 32768-tip / 65536-tip / 131072-tip tree, root-depth map setup, side-by-side previous `reversed(clade.clades)` traversal | 0.005942s / 0.032764s / 0.084676s / 0.237848s | 0.005623s / 0.032008s / 0.074865s / 0.146352s | 1.06x / 1.02x / 1.13x / 1.63x |
 | `LTT._compute_gamma` + `_compute_ltt` internal-depth scans | balanced 32768-tip tree, shared terminal list and depth map | 0.1966s | 0.0398s | 4.9x |
 | `LTT._compute_gamma` cumulative-stat loop | balanced 65536-tip tree, shared terminal list and depth map, identical gamma, p-value, branching times, and intervals | 0.039136s | 0.034603s | 1.13x |
 | `LTT._compute_gamma` combined ST/stat accumulation | 65536 internode intervals, side-by-side previous separate `ST` generator pass plus cumulative-stat loop | 0.021182s | 0.006768s | 3.13x |
@@ -5343,7 +5344,9 @@ Profiling summary:
   pushing binary children explicitly and indexing multifurcations backward,
   avoiding the `reversed(children)` iterator on common bifurcating trees.
   Root-depth setup now uses a direct stack traversal for
-  standard parsed trees before falling back to generic `tree.depths()`. With
+  standard parsed trees before falling back to generic `tree.depths()`. A later
+  depth-map pass pushes binary children explicitly during that traversal,
+  avoiding the `reversed(clade.clades)` iterator on common bifurcating trees. With
   the shared depth map available, `_compute_gamma` and `_compute_ltt` now
   collect internal node depths with direct stack traversals instead of separate
   `find_clades(order="level")` scans, while retaining those scans as a fallback

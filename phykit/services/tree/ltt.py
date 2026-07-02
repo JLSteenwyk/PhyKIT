@@ -136,12 +136,31 @@ class LTT(Tree):
             depths = {root: 0.0}
             stack = [root]
             try:
+                pop = stack.pop
+                append = stack.append
                 while stack:
-                    clade = stack.pop()
+                    clade = pop()
                     parent_depth = depths[clade]
-                    for child in reversed(clade.clades):
-                        depths[child] = parent_depth + (child.branch_length or 0.0)
-                        stack.append(child)
+                    children = clade.clades
+                    if children:
+                        child_count = len(children)
+                        if child_count == 2:
+                            child = children[1]
+                            depths[child] = parent_depth + (
+                                child.branch_length or 0.0
+                            )
+                            append(child)
+                            child = children[0]
+                            depths[child] = parent_depth + (
+                                child.branch_length or 0.0
+                            )
+                            append(child)
+                        else:
+                            for child in reversed(children):
+                                depths[child] = parent_depth + (
+                                    child.branch_length or 0.0
+                                )
+                                append(child)
             except (AttributeError, TypeError):
                 pass
             else:

@@ -98,6 +98,19 @@ RECENT_BURST_TREE = str(SAMPLE_FILES / "ltt_test_recent_burst.tre")
 EARLY_BURST_TREE = str(SAMPLE_FILES / "ltt_test_early_burst.tre")
 
 
+class _NoReversedList(list):
+    def __reversed__(self):
+        raise AssertionError("binary depth traversal should not call reversed")
+
+
+def _wrap_binary_child_lists_no_reversed(clade):
+    children = clade.clades
+    if len(children) == 2:
+        clade.clades = _NoReversedList(children)
+    for child in clade.clades:
+        _wrap_binary_child_lists_no_reversed(child)
+
+
 class TestGammaStat:
     def test_terminal_clades_preserves_order_with_mixed_child_counts(self):
         tree = Phylo.read(
@@ -249,6 +262,27 @@ class TestGammaStat:
         assert root is tree.root
         assert root_depth == 0.0
         assert max(depths[tip] for tip in tree.get_terminals()) == pytest.approx(3.0)
+
+    def test_depths_from_root_binary_path_avoids_reversed_children(self):
+        tree = Phylo.read(
+            StringIO("((A:1,B:2):3,(C:4,D:5):6);"),
+            "newick",
+        )
+        _wrap_binary_child_lists_no_reversed(tree.root)
+
+        root, depths, root_depth = LTT._depths_from_root(tree)
+
+        assert root is tree.root
+        assert root_depth == 0.0
+        assert {
+            tip.name: depths[tip]
+            for tip in tree.get_terminals()
+        } == {
+            "A": 4.0,
+            "B": 5.0,
+            "C": 10.0,
+            "D": 11.0,
+        }
 
     def test_internal_depths_from_root_handles_mixed_child_counts(self, monkeypatch):
         tree = Phylo.read(
