@@ -50,6 +50,19 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 _ZSCORE_FAST_MAX_SIZE = 50_000
+_PLOT_DIRECT_EXTREMA_LIMIT = 1_000
+
+
+def _plot_min(values):
+    if values.size <= _PLOT_DIRECT_EXTREMA_LIMIT:
+        return values.min()
+    return np.min(values)
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_EXTREMA_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 def _zscore(values):
@@ -288,7 +301,7 @@ class CovaryingEvolutionaryRates(Tree):
 
         if x.size >= 2:
             slope, intercept = np.polyfit(x, y, 1)
-            x_line = np.linspace(float(np.min(x)), float(np.max(x)), 200)
+            x_line = np.linspace(float(_plot_min(x)), float(_plot_max(x)), 200)
             y_line = slope * x_line + intercept
             ax.plot(
                 x_line,

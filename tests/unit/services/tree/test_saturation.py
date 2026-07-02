@@ -78,6 +78,32 @@ assert "phykit.helpers.plot_config" not in sys.modules
         with patch.dict("os.environ", {"PHYKIT_FORCE_MP": "1"}, clear=False):
             self.assertTrue(self.saturation._should_use_multiprocessing(1))
 
+    def test_plot_max_uses_array_method_for_small_plot_vectors(self):
+        values = np.array([0.4, 0.1, 0.9])
+
+        with patch(
+            "phykit.services.tree.saturation.np.max",
+            side_effect=AssertionError("small saturation plot maxima should use ndarray.max"),
+        ):
+            self.assertAlmostEqual(saturation_module._plot_max(values), 0.9)
+
+    def test_plot_max_preserves_large_vector_numpy_path(self):
+        values = np.ones(saturation_module._PLOT_DIRECT_EXTREMA_LIMIT + 1)
+        calls = []
+        original_max = saturation_module.np.max
+
+        def max_spy(observed, *args, **kwargs):
+            calls.append(observed.shape)
+            return original_max(observed, *args, **kwargs)
+
+        with patch("phykit.services.tree.saturation.np.max", side_effect=max_spy):
+            self.assertAlmostEqual(saturation_module._plot_max(values), 1.0)
+
+        self.assertEqual(
+            calls,
+            [(saturation_module._PLOT_DIRECT_EXTREMA_LIMIT + 1,)],
+        )
+
     def test_process_combo_batch_without_gaps(self):
         """Test processing combination batch without gap exclusion"""
         # Mock tree

@@ -176,6 +176,48 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertAlmostEqual(r_value, 0.8315218406203)
         self.assertAlmostEqual(p_value, 0.1684781593797)
 
+    def test_plot_extrema_use_array_methods_for_small_plot_vectors(self):
+        values = np.array([0.4, 0.1, 0.9])
+
+        with patch.object(
+            cer_module.np,
+            "min",
+            side_effect=AssertionError("small plot minima should use ndarray.min"),
+        ), patch.object(
+            cer_module.np,
+            "max",
+            side_effect=AssertionError("small plot maxima should use ndarray.max"),
+        ):
+            self.assertAlmostEqual(cer_module._plot_min(values), 0.1)
+            self.assertAlmostEqual(cer_module._plot_max(values), 0.9)
+
+    def test_plot_extrema_preserve_large_vector_numpy_paths(self):
+        values = np.ones(cer_module._PLOT_DIRECT_EXTREMA_LIMIT + 1)
+        min_calls = []
+        max_calls = []
+        original_min = cer_module.np.min
+        original_max = cer_module.np.max
+
+        def min_spy(observed, *args, **kwargs):
+            min_calls.append(observed.shape)
+            return original_min(observed, *args, **kwargs)
+
+        def max_spy(observed, *args, **kwargs):
+            max_calls.append(observed.shape)
+            return original_max(observed, *args, **kwargs)
+
+        with patch.object(cer_module.np, "min", side_effect=min_spy), patch.object(
+            cer_module.np,
+            "max",
+            side_effect=max_spy,
+        ):
+            self.assertAlmostEqual(cer_module._plot_min(values), 1.0)
+            self.assertAlmostEqual(cer_module._plot_max(values), 1.0)
+
+        expected_shape = (cer_module._PLOT_DIRECT_EXTREMA_LIMIT + 1,)
+        self.assertEqual(min_calls, [expected_shape])
+        self.assertEqual(max_calls, [expected_shape])
+
     def test_get_indices_of_outlier_branch_lengths(self):
         """Test outlier detection in branch lengths"""
         # Test with normal values

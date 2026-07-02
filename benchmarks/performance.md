@@ -1283,6 +1283,7 @@ Results:
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` order-preserving child push | balanced 32768-tip reference tree metadata, optimized helper baseline | 0.105540s | 0.092782s | 1.14x |
 | `CovaryingEvolutionaryRates._zscore` centered sum-of-squares path | 260 / 1000 / 5000 / 50000 branch-length values, side-by-side previous separate `np.mean` and `np.std` reductions | 0.000019512s / 0.000015718s / 0.000019248s / 0.000085509s | 0.000008080s / 0.000006586s / 0.000009209s / 0.000049810s | 2.41x / 2.39x / 2.09x / 1.72x |
 | `CovaryingEvolutionaryRates._pearsonr` dot-product correlation | 10k corrected branch-length pairs, SciPy already warm, side-by-side previous normalized-vector helper | 0.000086246s | 0.000045948s | 1.88x |
+| `CovaryingEvolutionaryRates`/`Saturation` scatter plot extent extrema | plotted finite-value arrays sized 10 / 1000 / 100k / 1M, side-by-side previous `np.min`/`np.max` wrappers with the large-array NumPy path preserved | min: 0.000003554s / 0.000001653s / 0.000011168s / 0.000102863s; max: 0.000003032s / 0.000002014s / 0.000011166s / 0.000101525s | min: 0.000001198s / 0.000000865s / 0.000011168s / 0.000102863s; max: 0.000001213s / 0.000001098s / 0.000011166s / 0.000101525s | min: 2.97x / 1.91x / 1.00x / 1.00x; max: 2.50x / 1.83x / 1.00x / 1.00x |
 | `CovaryingEvolutionaryRates._tips_to_prune_for_shared` ordered prune-list scan | 400k tree-zero tips, tree-one tips, reference tips, and 300k shared tips | 0.277122s | 0.069708s | 3.98x |
 | `CovaryingEvolutionaryRates.run` no-prune cached tree setup | balanced 32768-tip cached tree used for both gene trees and reference, downstream branch correction and output mocked | 6.055261s | 0.166395s | 36.39x |
 | `CovaryingEvolutionaryRates.get_indices_of_outlier_branch_lengths` flat outlier indices | 3M corrected branch lengths with sparse `abs(x) > 5` and `NaN` outliers, side-by-side previous `np.where(...)[0]` extraction | 0.012458s | 0.005730s | 2.17x |
@@ -5130,7 +5131,10 @@ Profiling summary:
   prune lists without constructing three full temporary tip sets. Outlier
   filtering now filters NumPy branch-length arrays directly and uses normalized
   set membership for ordinary Python row lists, avoiding a temporary NumPy mask
-  followed by a Python enumerate loop for every input type.
+  followed by a Python enumerate loop for every input type. Scatter plot
+  regression-line extrema now use ndarray min/max for small plotted branch
+  vectors while preserving the generic NumPy reductions for larger arrays where
+  they benchmark better.
 - `LastCommonAncestorSubtree.run` baseline time performed an extra
   pickle/unpickle copy after `read_tree_file()` had already returned a copied
   tree from the cache. The optimized path calls `common_ancestor()` directly on
@@ -6072,7 +6076,10 @@ Profiling summary:
   Cached read-only `Saturation.run` now uses the explicit unmodified tree read
   helper to avoid copying the cached parsed tree before tip-pair setup and
   pairwise distance calculation. Verbose text output now batches pairwise rows
-  into one newline-joined print while preserving the same stdout text.
+  into one newline-joined print while preserving the same stdout text. The
+  saturation scatter trendline extent now uses the ndarray maximum for small
+  plotted distance vectors while preserving the generic NumPy path for larger
+  vectors.
 - The `saturation` command now keeps the module-level `mp.cpu_count` and
   `mp.Pool` access points through a lazy proxy and imports `functools.partial`
   only when the large-workload multiprocessing branch is used, so command

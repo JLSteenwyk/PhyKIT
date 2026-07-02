@@ -26,6 +26,13 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_PLOT_DIRECT_EXTREMA_LIMIT = 1_000
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_EXTREMA_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 def _all_sequences_identical(sequences) -> bool:
@@ -166,7 +173,7 @@ class Saturation(Tree):
         )
 
         if patristic_distances.size > 0:
-            x_line = np.linspace(0.0, float(np.max(patristic_distances)), 200)
+            x_line = np.linspace(0.0, float(_plot_max(patristic_distances)), 200)
             y_line = slope * x_line
             ax.plot(
                 x_line,
