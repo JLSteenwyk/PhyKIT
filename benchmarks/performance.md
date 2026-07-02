@@ -340,6 +340,7 @@ Results:
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero PIC values | 0.158051s | 0.099522s | 1.59x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.223614s / 0.006108s / 0.073953s | 0.104555s / 0.000004s / 0.049539s | 2.14x / 1610.87x / 1.49x |
 | `EvolutionaryRatePerSite`/`CompositionalBiasPerSite` column count sum-of-squares | count matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(counts * counts, axis=0)` | 0.426963s / 0.656234s / 0.739237s / 0.859598s | 0.317205s / 0.516822s / 0.375821s / 0.573535s | 1.35x / 1.27x / 1.97x / 1.50x |
+| `EvolutionaryRatePerSite`/`CompositionalBiasPerSite` column count totals | count matrices shaped 2x12000 / 4x12000 / 8x12000 / 20x5000 / 64x20000 / 4x100000 / 20x100000, side-by-side previous `np.sum(..., axis=0)` with long-matrix path preserved | 0.000011651s / 0.000014699s / 0.000026446s / 0.000040235s / 0.000310031s / 0.000101960s / 0.000490983s | 0.000008207s / 0.000013289s / 0.000024361s / 0.000022335s / 0.000304789s / 0.000101960s / 0.000490983s | 1.42x / 1.11x / 1.09x / 1.80x / 1.02x / 1.00x / 1.00x |
 | `EvolutionaryRatePerSite.remove_gap_characters` cached translate deletion | 2M-character mixed-case sequence, gap/ambiguous symbols `-?*XxNn`, identical uppercase filtered output | 0.307932s | 0.012577s | 24.48x |
 | `EvolutionaryRatePerSite.calculate_pic` sum-of-squares helper | 2 / 4 / 20 / 64 / 256 observed states, identical PIC values | 0.000000906s / 0.000001400s / 0.000006728s / 0.000018253s / 0.000076865s | 0.000000823s / 0.000000430s / 0.000001133s / 0.000006420s / 0.000018289s | 1.10x / 3.26x / 5.94x / 2.84x / 4.20x |
 | `EvolutionaryRatePerSite.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 1.473608s | 0.948019s | 1.55x |
@@ -3178,7 +3179,9 @@ Profiling summary:
   counts skip the full valid mask, while protein alignments containing gap
   symbols keep the filtered-mask path. Column count sum-of-squares reductions
   now use an `einsum` column dot, avoiding temporary squared count matrices in
-  ASCII block counters and Unicode fallback counters.
+  ASCII block counters and Unicode fallback counters. Column count totals now
+  use direct ndarray reductions through 20k-site count matrices while preserving
+  the generic reduction for longer matrices where it remains faster.
 - `CompositionalBiasPerSite.calculate_compositional_bias_per_site` baseline
   time filtered each column, called `np.unique`, and ran `chisquare` per site.
   The optimized path uses the same symbol-by-site count matrix pattern to
@@ -3198,7 +3201,9 @@ Profiling summary:
   no-`"nan"` result.
   Column count sum-of-squares reductions now use an `einsum` column dot,
   avoiding temporary squared count matrices in ASCII block counters and Unicode
-  fallback counters.
+  fallback counters. Column count totals now use direct ndarray reductions
+  through 20k-site count matrices while preserving the generic reduction for
+  longer matrices where it remains faster.
   Row construction now binds the append method once in the per-site result
   builder, preserving row dictionaries while reducing Python attribute lookups.
   Text-mode `run` now batches per-site rows into one

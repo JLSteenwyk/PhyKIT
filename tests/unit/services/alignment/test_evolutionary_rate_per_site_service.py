@@ -12,6 +12,7 @@ from Bio.SeqRecord import SeqRecord
 from phykit.services.alignment.evolutionary_rate_per_site import EvolutionaryRatePerSite
 from phykit.services.alignment.evolutionary_rate_per_site import (
     _GAP_DELETE_TABLES,
+    _column_totals,
     _column_sum_squares,
     _column_totals_and_sum_squares_from_ascii_codes,
     _prepare_evolutionary_rate_plot_series,
@@ -200,6 +201,35 @@ assert "phykit.helpers.plot_config" not in sys.modules
             _column_sum_squares(counts),
             np.sum(counts * counts, axis=0),
         )
+
+    def test_column_totals_use_array_reduction_for_common_counts(self, monkeypatch):
+        import numpy as np
+
+        counts = np.arange(4 * 12000, dtype=np.float64).reshape(4, 12000)
+        expected = counts.sum(axis=0)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("common evolutionary-rate totals should use ndarray.sum")
+
+        monkeypatch.setattr(erps_module.np, "sum", fail_sum)
+
+        np.testing.assert_allclose(_column_totals(counts), expected)
+
+    def test_column_totals_preserve_long_matrix_sum_path(self, monkeypatch):
+        import numpy as np
+
+        counts = np.ones((4, 20001), dtype=np.float64)
+        original_sum = erps_module.np.sum
+        calls = []
+
+        def sum_spy(values, *args, **kwargs):
+            calls.append((values.shape, kwargs.get("axis")))
+            return original_sum(values, *args, **kwargs)
+
+        monkeypatch.setattr(erps_module.np, "sum", sum_spy)
+
+        np.testing.assert_allclose(_column_totals(counts), np.full(20001, 4.0))
+        assert calls == [((4, 20001), 0)]
 
     def test_ascii_column_totals_helper_matches_reference_counts(self):
         import numpy as np

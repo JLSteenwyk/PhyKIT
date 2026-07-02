@@ -29,6 +29,12 @@ def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
     return np.einsum("ij,ij->j", counts, counts, dtype=np.float64)
 
 
+def _column_totals(counts: np.ndarray) -> np.ndarray:
+    if counts.shape[1] <= 20000:
+        return counts.sum(axis=0)
+    return np.sum(counts, axis=0)
+
+
 def _get_gap_lookup(is_protein: bool):
     global _DNA_GAP_LOOKUP, _PROTEIN_GAP_LOOKUP
     if is_protein:
@@ -505,7 +511,7 @@ class CompositionalBiasPerSite(Alignment):
                     dtype=np.float64,
                 )
                 category_counts = np.count_nonzero(counts, axis=0)
-                totals = np.sum(counts, axis=0)
+                totals = _column_totals(counts)
                 sum_squares = _column_sum_squares(counts)
             statistics = np.divide(
                 category_counts * sum_squares,

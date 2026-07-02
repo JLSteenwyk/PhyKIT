@@ -22,6 +22,12 @@ def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
     return np.einsum("ij,ij->j", counts, counts, dtype=np.float64)
 
 
+def _column_totals(counts: np.ndarray) -> np.ndarray:
+    if counts.shape[1] <= 20000:
+        return counts.sum(axis=0)
+    return np.sum(counts, axis=0)
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -320,7 +326,7 @@ class EvolutionaryRatePerSite(Alignment):
                 ],
                 dtype=np.float64,
             )
-            totals = np.sum(counts, axis=0)
+            totals = _column_totals(counts)
             sum_squares = _column_sum_squares(counts)
         squared_frequency_sums = np.divide(
             sum_squares,

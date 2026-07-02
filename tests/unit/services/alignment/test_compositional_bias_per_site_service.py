@@ -482,6 +482,34 @@ assert "numpy" not in sys.modules
             np.sum(counts * counts, axis=0),
         )
 
+    def test_column_totals_use_array_reduction_for_common_counts(self, monkeypatch):
+        counts = np.arange(4 * 12000, dtype=np.float64).reshape(4, 12000)
+        expected = counts.sum(axis=0)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("common compositional-bias totals should use ndarray.sum")
+
+        monkeypatch.setattr(cbps_module.np, "sum", fail_sum)
+
+        np.testing.assert_allclose(cbps_module._column_totals(counts), expected)
+
+    def test_column_totals_preserve_long_matrix_sum_path(self, monkeypatch):
+        counts = np.ones((4, 20001), dtype=np.float64)
+        original_sum = cbps_module.np.sum
+        calls = []
+
+        def sum_spy(values, *args, **kwargs):
+            calls.append((values.shape, kwargs.get("axis")))
+            return original_sum(values, *args, **kwargs)
+
+        monkeypatch.setattr(cbps_module.np, "sum", sum_spy)
+
+        np.testing.assert_allclose(
+            cbps_module._column_totals(counts),
+            np.full(20001, 4.0),
+        )
+        assert calls == [((4, 20001), 0)]
+
     def test_column_count_stats_from_ascii_codes_matches_repeated_counts(self, mocker):
         alignment_array = np.array(
             [
