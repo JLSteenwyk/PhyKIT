@@ -35,6 +35,17 @@ assert module._MINIMIZE_SCALAR is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = network_signal_module._LazyNumpy()
+
+    first_empty = lazy_np.empty
+    second_empty = lazy_np.empty
+
+    assert lazy_np._module is not None
+    assert first_empty is second_empty
+    assert lazy_np.__dict__["empty"] is first_empty
+
+
 def test_matrix_column_sums_uses_array_reduction_for_large_matrices(monkeypatch):
     matrix = np.arange(180 * 3, dtype=float).reshape(180, 3)
     expected = matrix.sum(axis=0)

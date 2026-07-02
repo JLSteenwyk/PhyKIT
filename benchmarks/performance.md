@@ -2315,6 +2315,7 @@ Results:
 | `NetworkSignal._log_likelihood` | 420 taxa SPD VCV, single continuous trait | 0.0088s | 0.0005s | 17.6x |
 | `NetworkSignal._log_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm | 0.054446s | 0.039508s | 1.38x |
 | `NetworkSignal._log_likelihood_cholesky` cached SciPy Cholesky wrappers | 120 repeated 420-taxon SPD VCV likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.090518s | 0.069456s | 1.30x |
+| `NetworkSignal._log_likelihood_cholesky` cached lazy NumPy attributes | 4500 repeated 64-taxon SPD VCV likelihood evaluations, SciPy already warm, side-by-side previous lazy proxy lookup path, identical likelihood and mean | 0.615552s | 0.426219s | 1.44x |
 | `NetworkSignal._pagels_lambda` | 260 taxa SPD VCV, single continuous trait, `max_lambda=1.0` | 0.7070s | 0.0638s | 11.1x |
 | `NetworkSignal.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, DAG construction, VCV, signal statistic, and output mocked | 0.497249s | 0.003029s | 164.16x |
 | `NetworkSignal._output` indexed hybrid donor lookup | 10k-tip network output with 2k hybrid recipients sharing a late donor parent, captured stdout | 1.392050s | 0.002664s | 522.62x |
