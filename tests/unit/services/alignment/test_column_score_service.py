@@ -10,6 +10,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.column_score import ColumnScore
+import phykit.services.alignment.column_score as module
 
 
 def test_module_import_does_not_import_numpy_bio_align_or_json_helpers():
@@ -26,6 +27,16 @@ assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    frombuffer_attr = lazy_np.frombuffer
+
+    assert lazy_np.__dict__["frombuffer"] is frombuffer_attr
+    assert lazy_np.frombuffer is frombuffer_attr
+    assert lazy_np._module is not None
 
 
 @pytest.fixture
