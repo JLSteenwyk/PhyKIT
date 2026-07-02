@@ -224,6 +224,29 @@ class TestPhyloGwas:
 
         assert PhyloGwas._sorted_shared_taxa(seqs, phenotypes) == ["sp1", "sp2"]
 
+    def test_sorted_shared_taxa_filters_smaller_phenotype_mapping(self):
+        seqs = {
+            "sp5": "AAA",
+            "sp1": "AAA",
+            "sp4": "AAA",
+            "sp2": "AAA",
+            "sp3": "AAA",
+        }
+        phenotypes = {"sp4": "case", "missing": "case", "sp2": "control"}
+
+        assert PhyloGwas._sorted_shared_taxa(seqs, phenotypes) == ["sp2", "sp4"]
+
+    def test_sorted_shared_taxa_filters_smaller_sequence_mapping(self):
+        seqs = {"sp4": "AAA", "sp2": "AAA"}
+        phenotypes = {
+            "sp5": "case",
+            "sp4": "case",
+            "sp1": "control",
+            "sp2": "case",
+        }
+
+        assert PhyloGwas._sorted_shared_taxa(seqs, phenotypes) == ["sp2", "sp4"]
+
     def test_sorted_shared_taxa_exact_keys_skips_intersection_set(self, monkeypatch):
         seqs = {"sp3": "AAA", "sp1": "AAA", "sp2": "AAA"}
         phenotypes = {"sp2": "case", "sp3": "case", "sp1": "control"}

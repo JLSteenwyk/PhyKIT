@@ -635,6 +635,7 @@ Results:
 | `PhyloGwas._read_fasta` shared first-token parser | 50k FASTA records, lowercase 120 bp each, legacy `SimpleFastaParser` baseline | 0.051468s | 0.040648s | 1.27x |
 | `PhyloGwas._read_phenotype` bounded row split | 1M phenotype TSV rows with comments/blanks and three ignored trailing columns, side-by-side previous full-row split | 0.959486s | 0.867587s | 1.11x |
 | `PhyloGwas._read_phenotype` binary bounded row split | 1M phenotype TSV rows with comments/blanks and three ignored trailing columns, identical first-two-column/duplicate output | 0.402401s | 0.382109s | 1.05x |
+| `PhyloGwas._sorted_shared_taxa` smaller mapping scan | 1M alignment taxa and 10k phenotype taxa with complete overlap, side-by-side previous full alignment-key set intersection | 0.125687s | 0.001881s | 66.81x |
 | `PhyloGwas` allele extraction | 600 taxa x 5k ASCII sites, no ambiguous columns | 0.2494s | 0.0264s | 9.4x |
 | `PhyloGwas._extract_column_alleles` non-ASCII fallback ambiguity check | 300k shared non-ASCII sequences, side-by-side previous per-character `_is_ambiguous` helper call | 0.207304s | 0.116982s | 1.77x |
 | `PhyloGwas` ASCII valid-column prefilter | 600 taxa x 50k ASCII sites, 1% ambiguous character rate | 0.116165s | 0.033381s | 3.48x |

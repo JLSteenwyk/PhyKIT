@@ -896,7 +896,9 @@ class PhyloGwas(Alignment):
     def _sorted_shared_taxa(seqs: dict, phenotypes: dict) -> list[str]:
         if len(seqs) == len(phenotypes) and seqs.keys() == phenotypes.keys():
             return sorted(seqs)
-        return sorted(set(seqs).intersection(phenotypes))
+        if len(phenotypes) < len(seqs):
+            return sorted(taxon for taxon in phenotypes if taxon in seqs)
+        return sorted(taxon for taxon in seqs if taxon in phenotypes)
 
     # ------------------------------------------------------------------
     # Main run
