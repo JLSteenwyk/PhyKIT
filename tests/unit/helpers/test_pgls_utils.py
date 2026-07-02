@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from Bio import Phylo
 
+import phykit.helpers.pgls_utils as pgls_utils_module
 from phykit.helpers.pgls_utils import (
     _max_lambda_fallback,
     _pgls_log_likelihood_inverse,
@@ -67,6 +68,17 @@ assert "scipy.optimize" not in sys.modules
     import subprocess
 
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = pgls_utils_module._LazyNumpy()
+
+    first_empty = lazy_np.empty
+    second_empty = lazy_np.empty
+
+    assert lazy_np._module is not None
+    assert first_empty is second_empty
+    assert lazy_np.__dict__["empty"] is first_empty
 
 
 def test_max_lambda_fast_path_matches_fallback_without_distance(monkeypatch):
