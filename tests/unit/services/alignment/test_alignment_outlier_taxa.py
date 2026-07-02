@@ -30,6 +30,16 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = alignment_outlier_taxa_module._LazyNumpy()
+
+    zeros_attr = lazy_np.zeros
+
+    assert lazy_np.__dict__["zeros"] is zeros_attr
+    assert lazy_np.zeros is zeros_attr
+    assert lazy_np._module is not None
+
+
 def test_average_site_entropy_common_path_uses_array_sum(monkeypatch):
     site_entropies = np.array([0.5, 1.0, 1.5, 2.0])
 
