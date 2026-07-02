@@ -2155,6 +2155,7 @@ Results:
 | `PhylogeneticSignal._blombergs_k` Cholesky inverse construction | 450 taxa SPD VCV, 16 seeded permutations, side-by-side previous explicit inverse | 0.007445s | 0.003480s | 2.14x |
 | `PhylogeneticSignal._kmult_permutations` | 320 taxa x 5 traits SPD VCV, 1000 permutations | 0.143512s | 0.049227s | 2.9x |
 | `PhylogeneticSignal`/`NetworkSignal` permutation p-value counts | 1M permutation statistics, side-by-side previous `np.mean(permutations >= observed)` reduction | 0.000991s | 0.000390s | 2.54x |
+| `PhylogeneticSignal`/`NetworkSignal` permutation column weights | dense inverse covariance matrices sized 180 / 500 / 1000 / 2000 taxa, side-by-side previous top-level `np.sum(C_inv, axis=0)` while preserving the small-matrix path | 0.000020770s / 0.000331990s / 0.000946556s / 0.003983379s | 0.000011649s / 0.000076683s / 0.000268573s / 0.003070479s | 1.78x / 4.33x / 3.52x / 1.30x |
 | `PhylogeneticSignal._compute_r2_phylo` | 420 taxa SPD VCV, single continuous trait | 0.0047s | 0.0015s | 3.2x |
 | `PhylogeneticSignal._compute_r2_phylo` combined RHS solve | 120 repeated 420-taxon SPD VCV R2 effect-size evaluations, SciPy already warm | 0.052471s | 0.039279s | 1.34x |
 | `PhylogeneticSignal._compute_r2_phylo` white-noise variance reduction | 260 / 420 / 1000 trait values, side-by-side previous `np.var(x)` wrapper | 0.000006042s / 0.000006084s / 0.000006667s | 0.000005459s / 0.000005541s / 0.000006083s | 1.11x / 1.10x / 1.10x |

@@ -31,12 +31,19 @@ np = _LazyNumpy()
 _CHO_FACTOR = None
 _CHO_SOLVE = None
 _MINIMIZE_SCALAR = None
+_COLUMN_SUM_METHOD_MIN_SIZE = 180
 
 
 def _permutation_p_value_ge(permutations: np.ndarray, observed: float) -> float:
     if permutations.size == 0:
         return float("nan")
     return float(np.count_nonzero(permutations >= observed) / permutations.size)
+
+
+def _matrix_column_sums(matrix: np.ndarray) -> np.ndarray:
+    if matrix.shape[0] >= _COLUMN_SUM_METHOD_MIN_SIZE:
+        return matrix.sum(axis=0)
+    return np.sum(matrix, axis=0)
 
 
 def cho_factor(*args, **kwargs):
@@ -569,7 +576,7 @@ class NetworkSignal(Tree):
     ):
         rng = np.random.default_rng(seed=42)
         n = len(x)
-        weights = np.sum(C_inv, axis=0)
+        weights = _matrix_column_sums(C_inv)
         x_sum = float(x.sum())
         x_sumsq = float(x @ x)
         k_perm = np.empty(n_perm, dtype=np.float64)

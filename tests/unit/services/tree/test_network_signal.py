@@ -35,6 +35,21 @@ assert module._MINIMIZE_SCALAR is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_matrix_column_sums_uses_array_reduction_for_large_matrices(monkeypatch):
+    matrix = np.arange(180 * 3, dtype=float).reshape(180, 3)
+    expected = matrix.sum(axis=0)
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("large network-signal column weights should use ndarray.sum")
+
+    monkeypatch.setattr(network_signal_module.np, "sum", fail_sum)
+
+    np.testing.assert_allclose(
+        network_signal_module._matrix_column_sums(matrix),
+        expected,
+    )
+
+
 def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
     module_name = "phykit.services.tree.network_signal"
     previous = sys.modules.pop(module_name, None)

@@ -77,6 +77,18 @@ def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
                 delattr(parent, child_name)
 
 
+def test_matrix_column_sums_uses_array_reduction_for_large_matrices(monkeypatch):
+    matrix = np.arange(180 * 3, dtype=float).reshape(180, 3)
+    expected = matrix.sum(axis=0)
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("large signal column weights should use ndarray.sum")
+
+    monkeypatch.setattr(ps_module.np, "sum", fail_sum)
+
+    np.testing.assert_allclose(ps_module._matrix_column_sums(matrix), expected)
+
+
 def test_permutation_p_value_ge_counts_extreme_permutations(monkeypatch):
     permutations = np.array([0.5, 1.5, 2.5, 3.5])
     original_count_nonzero = ps_module.np.count_nonzero
