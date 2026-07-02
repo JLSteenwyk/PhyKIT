@@ -1924,6 +1924,7 @@ Results:
 | `PhylogeneticGLM._make_ultrametric` | balanced tree with 2500 tips | 2.2726s | 0.0068s | 336.2x |
 | `PhylogeneticGLM._root_tip_distances` | balanced 65536-tip tree, ordered ultrametric correction distances | 0.1598s | 0.0245s | 6.5x |
 | `PhylogeneticGLM._make_ultrametric` root-height max reduction | 120 / 1200 / 10000 / 65536 root-to-tip distances, side-by-side previous `np.max(heights)` wrapper | 0.000004475s / 0.000006131s / 0.000005739s / 0.000014409s | 0.000002587s / 0.000001470s / 0.000001774s / 0.000011340s | 1.73x / 4.17x / 3.23x / 1.27x |
+| `PhylogeneticGLM._compute_dia` vectorized branch scaling | 8 / 40 / 260 / 900 / 2000 / 10k / 100k binomial probabilities and root distances, side-by-side previous scalar loop | 0.000012315s / 0.000081040s / 0.000327432s / 0.001039713s / 0.004016681s / 0.013887300s / 0.156834600s | 0.000011826s / 0.000009855s / 0.000008160s / 0.000012291s / 0.000017038s / 0.000054498s / 0.000515617s | 1.04x / 8.22x / 40.12x / 84.59x / 235.74x / 254.82x / 304.17x |
 | `PhylogeneticGLM._poisson_starting_values` row-scaled IRLS | 1200 taxa x 8-column design matrix, synthetic counts | 0.015975s | 0.000268s | 59.5x |
 | `PhylogeneticGLM._poisson_gee_information_and_score` row scaling | 1200 taxa SPD correlation inverse x 8-column design matrix | 0.002394s | 0.000952s | 2.5x |
 | `PhylogeneticGLM._poisson_gee_information_and_score` RHS-first score multiply | 1200 taxa SPD correlation inverse x 8-column design matrix | 0.001306s | 0.000615s | 2.1x |
@@ -6676,6 +6677,8 @@ Profiling summary:
   by reducing the small coefficient-delta vector directly. A later overdispersion
   pass reduces the final Pearson residual sum of squares through the ndarray
   method, avoiding generic `np.sum` dispatch in the fitted Poisson summary.
+  The binomial Fisher-information diagonal scaling now uses vectorized branch
+  selection and in-place tiny-value flooring instead of a Python loop over taxa.
   A later pass removed the eager `scipy.stats` import by computing two-tailed
   z-test p-values with the standard-library complementary error function. A later p-value pass keeps
   the `scipy.stats` import out of this path but uses cached

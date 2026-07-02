@@ -672,19 +672,18 @@ class PhylogeneticGLM(Tree):
         n = len(ordered_names)
         meanp = float(np.mean(mu))
         meanq = 1.0 - meanp
-
-        dia = np.zeros(n)
-        for i in range(n):
-            mui = float(mu[i])
-            Di = float(D[i])
-            if mui < meanp:
-                m = mui * np.sqrt(meanq / max(meanp, 1e-300))
-            else:
-                m = (1.0 - mui) * np.sqrt(meanp / max(meanq, 1e-300))
-            m2 = max(m * m, 1e-300)
-            dia[i] = np.sqrt(m2) * np.exp(alpha * Di)
-
-        return dia
+        low_scale = np.sqrt(meanq / max(meanp, 1e-300))
+        high_scale = np.sqrt(meanp / max(meanq, 1e-300))
+        mu_arr = np.asarray(mu, dtype=float)[:n]
+        D_arr = np.asarray(D, dtype=float)[:n]
+        dia = np.where(
+            mu_arr < meanp,
+            mu_arr * low_scale,
+            (1.0 - mu_arr) * high_scale,
+        )
+        np.abs(dia, out=dia)
+        np.maximum(dia, 1e-150, out=dia)
+        return dia * np.exp(alpha * D_arr)
 
     def _fit_logistic_mple(
         self, tree, y: np.ndarray, X: np.ndarray, ordered_names: list[str]

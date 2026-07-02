@@ -597,6 +597,30 @@ class TestLogisticMPLE:
             expected
         )
 
+    def test_compute_dia_matches_scalar_reference_without_zero_loop(self, monkeypatch):
+        svc = PhylogeneticGLM.__new__(PhylogeneticGLM)
+        mu = np.array([0.12, 0.31, 0.47, 0.78, 0.93], dtype=float)
+        D = np.array([0.0, 0.5, 1.25, 2.0, 3.5], dtype=float)
+        alpha = 0.17
+        meanp = float(np.mean(mu))
+        meanq = 1.0 - meanp
+        expected = []
+        for mui, Di in zip(mu, D):
+            if mui < meanp:
+                m = mui * np.sqrt(meanq / max(meanp, 1e-300))
+            else:
+                m = (1.0 - mui) * np.sqrt(meanp / max(meanq, 1e-300))
+            expected.append(np.sqrt(max(m * m, 1e-300)) * np.exp(alpha * Di))
+
+        def fail_zeros(*_args, **_kwargs):
+            raise AssertionError("dia computation should use vectorized selection")
+
+        monkeypatch.setattr(phylogenetic_glm_module.np, "zeros", fail_zeros)
+
+        observed = svc._compute_dia(["A", "B", "C", "D", "E"], alpha, mu, D)
+
+        np.testing.assert_allclose(observed, np.array(expected))
+
     def test_logistic_starting_values_match_diagonal_weight_reference(self, monkeypatch):
         svc = PhylogeneticGLM.__new__(PhylogeneticGLM)
         rng = np.random.default_rng(20260623)
