@@ -24,6 +24,7 @@ Results:
 | `calculate_summary_statistics_from_arr` ndarray extrema/variance reductions | 5 / 50 / 1000 / 100k floating-point values, side-by-side previous `np.min`/`np.max`/`np.var` wrappers | 2.558751s / 1.764250s / 0.233506s / 0.628135s | 1.982603s / 0.715148s / 0.220886s / 0.295009s | 1.29x / 2.47x / 1.06x / 2.13x |
 | `calculate_summary_statistics_from_arr` small sequence scalar path | 5 / 10 / 20 / 50 / 100 floating-point list values, side-by-side previous list-to-NumPy summary path | 0.000035458s / 0.000036250s / 0.000036583s / 0.000037083s / 0.000038500s | 0.000001708s / 0.000002083s / 0.000002708s / 0.000004750s / 0.000008167s | 20.76x / 17.40x / 13.51x / 7.81x / 4.71x |
 | `calculate_summary_statistics_from_arr` small sequence variance loop | 20k small-list summary calls for 32 integer / 128 integer / 128 floating-point values, side-by-side previous generator-sum variance path | 0.267407s / 1.160988s / 0.717073s | 0.150625s / 0.724965s / 0.380794s | 1.78x / 1.60x / 1.88x |
+| `calculate_summary_statistics_from_arr` two-value scalar summary | 100k two-value integer / floating-point / equal-integer list summaries, side-by-side previous small-sequence sort/loop path | 0.380812s / 0.288351s / 0.122273s | 0.134694s / 0.090756s / 0.054581s | 2.83x / 3.18x / 2.24x |
 | `calculate_summary_statistics_from_dict` | 1M floating-point dictionary values | 1.1465s | 0.0539s | 21.3x |
 | `calculate_summary_statistics_from_dict` fromiter setup | 1M floating-point dictionary values, optimized helper baseline | 0.0395s | 0.0276s | 1.4x |
 | `calculate_summary_statistics_from_dict` combined percentiles | 1M floating-point dictionary values, optimized helper baseline | 0.0373s | 0.0356s | 1.05x |
@@ -7925,6 +7926,9 @@ Profiling summary:
   short support/branch-length summaries. The small-sequence variance path now
   accumulates squared deviations in a direct loop instead of a generator-fed
   `sum`, reducing per-call overhead while preserving sample variance results.
+  Two-value small summaries now compute sorted extrema, linear quartiles,
+  sample variance, and exact integer mean/median formatting directly, avoiding
+  the generic small-sequence sort and variance loop for common tiny summaries.
   A startup pass wraps the NumPy module in a lazy proxy so importing commands
   that only reference summary helpers does not import NumPy until a summary is
   calculated. Summary output now emits the existing eight-line report through

@@ -73,6 +73,53 @@ def _calculate_small_sequence_statistics(values):
         return _SMALL_STATS_FALLBACK
 
     try:
+        if count == 2:
+            first_value, last_value = values
+            all_integer = type(first_value) is int and type(last_value) is int
+            if last_value < first_value:
+                first_value, last_value = last_value, first_value
+
+            if first_value == last_value:
+                if all_integer:
+                    mean = first_value
+                    median = first_value
+                    quartile = float(first_value)
+                else:
+                    mean = first_value
+                    median = first_value
+                    quartile = first_value
+                return dict(
+                    mean=mean,
+                    median=median,
+                    twenty_fifth=quartile,
+                    seventy_fifth=quartile,
+                    minimum=first_value,
+                    maximum=last_value,
+                    standard_deviation=0.0,
+                    variance=0.0,
+                )
+
+            mean = (first_value + last_value) / 2
+            median = mean
+            span = last_value - first_value
+            twenty_fifth = first_value + span * 0.25
+            seventy_fifth = first_value + span * 0.75
+            delta = first_value - mean
+            variance = 2.0 * delta * delta
+            if all_integer:
+                mean = _integer_if_exact(mean)
+                median = _integer_if_exact(median)
+            return dict(
+                mean=mean,
+                median=median,
+                twenty_fifth=twenty_fifth,
+                seventy_fifth=seventy_fifth,
+                minimum=first_value,
+                maximum=last_value,
+                standard_deviation=sqrt(variance),
+                variance=variance,
+            )
+
         sorted_values = sorted(values)
         first_value = sorted_values[0]
         last_value = sorted_values[-1]

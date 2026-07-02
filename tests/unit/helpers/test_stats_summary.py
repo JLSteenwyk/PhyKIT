@@ -109,6 +109,22 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(stats['median'], 63.5)
         self.assertAlmostEqual(stats['variance'], stat.variance(data))
 
+    def test_two_value_small_list_uses_scalar_summary(self):
+        with patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("two-value summaries should avoid NumPy"),
+        ):
+            stats = calculate_summary_statistics_from_arr([3, 1])
+
+        self.assertEqual(stats['mean'], 2)
+        self.assertEqual(stats['median'], 2)
+        self.assertEqual(stats['twenty_fifth'], 1.5)
+        self.assertEqual(stats['seventy_fifth'], 2.5)
+        self.assertEqual(stats['minimum'], 1)
+        self.assertEqual(stats['maximum'], 3)
+        self.assertAlmostEqual(stats['standard_deviation'], stat.stdev([1, 3]))
+        self.assertEqual(stats['variance'], stat.variance([1, 3]))
+
     def test_identical_values(self):
         """Test statistics with identical values"""
         data = [3, 3, 3, 3, 3]
