@@ -530,6 +530,24 @@ class TestFitchAlgorithm:
         small_spy.assert_not_called()
         assert total == sum(per_site)
 
+    def test_vectorized_fitch_reuses_repeated_terminal_sequence_states(
+        self, args, mocker
+    ):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        sequences = {
+            "A": "ACGT" * 5,
+            "B": "ACGT" * 5,
+            "C": "TGCA" * 5,
+            "D": "TGCA" * 5,
+        }
+        frombuffer_spy = mocker.spy(module.np, "frombuffer")
+
+        total, per_site = ps._fitch_parsimony(tree, sequences, 20)
+
+        assert total == sum(per_site)
+        assert frombuffer_spy.call_count == 2
+
     def test_vectorized_fitch_uses_direct_postorder_traversal(self, args, monkeypatch):
         ps = ParsimonyScore(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")

@@ -299,6 +299,7 @@ class ParsimonyScore(Tree):
         else:
             total_score = 0
         default_states = np.full(aln_length, wildcard_mask, dtype=np.uint64)
+        sequence_state_cache = {}
 
         clades = self._postorder_clades_fast(tree)
         if clades is None:
@@ -307,21 +308,25 @@ class ParsimonyScore(Tree):
         for clade in clades:
             if not clade.clades:
                 seq = sequences[clade.name]
-                if state_lookup is not None:
-                    node_states[id(clade)] = state_lookup[
-                        np.frombuffer(seq.encode("latin-1"), dtype=np.uint8)
-                    ]
-                else:
-                    node_states[id(clade)] = np.fromiter(
-                        (
-                            wildcard_mask
-                            if char in wildcard_chars
-                            else state_masks[char]
-                            for char in seq
-                        ),
-                        dtype=np.uint64,
-                        count=aln_length,
-                    )
+                states = sequence_state_cache.get(seq)
+                if states is None:
+                    if state_lookup is not None:
+                        states = state_lookup[
+                            np.frombuffer(seq.encode("latin-1"), dtype=np.uint8)
+                        ]
+                    else:
+                        states = np.fromiter(
+                            (
+                                wildcard_mask
+                                if char in wildcard_chars
+                                else state_masks[char]
+                                for char in seq
+                            ),
+                            dtype=np.uint64,
+                            count=aln_length,
+                        )
+                    sequence_state_cache[seq] = states
+                node_states[id(clade)] = states
             else:
                 if len(clade.clades) != 2:
                     continue

@@ -2152,6 +2152,7 @@ Results:
 | `faiths_pd` module import without eager file helper | median cold subprocess import, interleaved lazy import vs eager-equivalent `phykit.helpers.files` preload | 0.029179s | 0.028322s | 1.03x |
 | `ParsimonyScore._fitch_parsimony` | balanced tree with 256 tips x 2000 sites, alphabet `ACGT-?NX` | 1.8456s | 0.0488s | 37.8x |
 | `ParsimonyScore._fitch_parsimony` byte lookup masks | balanced tree with 256 tips x 2000 sites, alphabet `ACGT-?NX` | 0.0484s | 0.0157s | 3.1x |
+| `ParsimonyScore._fitch_parsimony` repeated sequence-state cache | balanced 8192-tip tree x 2000 sites, 16 repeated DNA/ambiguous sequence patterns, side-by-side previous per-tip byte lookup path | 0.349453s | 0.269042s | 1.30x |
 | `ParsimonyScore._fitch_parsimony` small-alignment path | balanced 32768-tip tree x 4 sites, alphabet `ACGT-?N` | 0.124124s | 0.044296s | 2.8x |
 | `ParsimonyScore._fitch_parsimony` small repeated-sequence cache | balanced 32768-tip tree x 4 sites, four repeated sequence patterns | 0.081057s | 0.050042s | 1.6x |
 | `ParsimonyScore._fitch_parsimony` reverse-preorder postorder helper | balanced 32768-tip tree x 4 sites, four repeated sequence patterns | 0.042540s | 0.035535s | 1.20x |
