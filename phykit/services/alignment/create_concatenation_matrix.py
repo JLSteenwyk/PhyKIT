@@ -606,6 +606,16 @@ class CreateConcatenationMatrix(Alignment):
 
         return occupancy, excluded
 
+    @staticmethod
+    def _excluded_taxa_info(
+        excluded: set,
+        occupancy_scores: dict[str, float],
+    ) -> list[dict[str, str | float]]:
+        return [
+            {"taxon": taxon, "effective_occupancy": round(occupancy_scores[taxon], 4)}
+            for taxon in sorted(excluded)
+        ]
+
     def create_concatenation_matrix(self, alignment_list_path: str, prefix: str) -> None:
         alignment_paths = self.read_alignment_paths(alignment_list_path)
         taxa = self.get_taxa_names(alignment_paths)
@@ -753,12 +763,9 @@ class CreateConcatenationMatrix(Alignment):
                 concatenated_seqs, self.threshold
             )
             if excluded:
-                excluded_taxa_info = sorted(
-                    [
-                        {"taxon": t, "effective_occupancy": round(occupancy_scores[t], 4)}
-                        for t in excluded
-                    ],
-                    key=lambda x: x["taxon"],
+                excluded_taxa_info = self._excluded_taxa_info(
+                    excluded,
+                    occupancy_scores,
                 )
                 for t in excluded:
                     del concatenated_seqs[t]

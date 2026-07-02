@@ -991,6 +991,18 @@ class TestCreateConcatenationMatrix:
         assert printed.call_args_list[1].args == ("Complete!\n",)
         assert printed.call_count == 2
 
+    def test_excluded_taxa_info_sorts_names_before_building_rows(self):
+        rows = CreateConcatenationMatrix._excluded_taxa_info(
+            {"taxon_c", "taxon_a", "taxon_b"},
+            {"taxon_a": 0.12345, "taxon_b": 0.0, "taxon_c": 0.98765},
+        )
+
+        assert rows == [
+            {"taxon": "taxon_a", "effective_occupancy": 0.1235},
+            {"taxon": "taxon_b", "effective_occupancy": 0.0},
+            {"taxon": "taxon_c", "effective_occupancy": 0.9877},
+        ]
+
     def test_threshold_zero_disables_filtering(self, tmp_path):
         gene1 = tmp_path / "g1.fa"
         gene2 = tmp_path / "g2.fa"

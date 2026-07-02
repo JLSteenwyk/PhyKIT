@@ -539,6 +539,7 @@ Results:
 | `CreateConcatenationMatrix.fasta_file_write` batched FASTA rows | 80k taxa x 80 sequence chunks, identical FASTA text via generated `writelines` rows | 0.194861s | 0.177925s | 1.10x |
 | `CreateConcatenationMatrix.fasta_file_write` chunked FASTA row writes | 80k taxa x 80 sequence chunks, identical FASTA text, side-by-side previous generator `writelines` writer | 0.231785s | 0.178997s | 1.29x |
 | `CreateConcatenationMatrix` threshold exclusion text output | 100k excluded taxa rows, captured stdout and identical text | 0.040259s | 0.028425s | 1.42x |
+| `CreateConcatenationMatrix` threshold excluded-taxa row construction | 10k / 100k / 500k excluded taxa, identical sorted row dictionaries, side-by-side previous build-then-sort-dicts path | 0.007385s / 0.456533s / 5.427206s | 0.004853s / 0.452542s / 1.913344s | 1.52x / 1.01x / 2.84x |
 | `CreateConcatenationMatrix._get_taxa_from_alignment` | 50k FASTA records, 12 bp each | 0.0441s | 0.0238s | 1.9x |
 | `CreateConcatenationMatrix._get_taxa_from_alignment` header-only parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.060259s | 0.038296s | 1.57x |
 | `create_concatenation_matrix` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.206190s | 0.135351s | 1.52x |
@@ -3730,7 +3731,10 @@ Profiling summary:
   `defaultdict` lookups while appending each ordered parsed alignment result.
   Threshold filtering now batches the exclusion summary and per-taxon effective
   occupancy rows into one newline-joined print while preserving exact stdout
-  text. FASTA output now accumulates bounded row chunks and writes each chunk as
+  text. Excluded-threshold JSON rows now sort taxon names before constructing
+  dictionaries, avoiding row-dictionary key lookups during sorting while
+  preserving sorted output and rounded effective occupancy values. FASTA output
+  now accumulates bounded row chunks and writes each chunk as
   one string, preserving record order and text while reducing per-record file
   write overhead without materializing the full output. Command-module import now
   defers `textwrap.dedent` until the verbose start-message path is used.
