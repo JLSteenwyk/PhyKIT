@@ -71,6 +71,12 @@ def _ascii_rcv_count_matrix(alignment_array, unique_chars, valid_mask):
     return count_matrix
 
 
+def _rcv_row_sums(abs_diffs):
+    if abs_diffs.shape[1] <= 4:
+        return abs_diffs.sum(axis=1)
+    return np.sum(abs_diffs, axis=1)
+
+
 class Alignment(BaseService):
     def __init__(
         self,
@@ -192,7 +198,7 @@ class Alignment(BaseService):
         abs_diffs = np.abs(count_matrix - average_counts)
 
         # Sum across characters for each sequence
-        seq_rcv_sums = np.sum(abs_diffs, axis=1)
+        seq_rcv_sums = _rcv_row_sums(abs_diffs)
 
         # Normalize each sequence by its valid (non-gap/non-ambiguous) length.
         # Sequences with no valid symbols contribute 0.

@@ -177,6 +177,25 @@ assert "numpy" not in sys.modules
         assert rcv.calculate_rcv() > 0.0
         assert all("axis" in call.kwargs for call in sum_spy.call_args_list)
 
+    def test_rcv_row_sums_use_array_reduction_for_narrow_matrices(self, monkeypatch):
+        abs_diffs = alignment_base_module.np.array(
+            [
+                [0.0, 1.0, 0.5, 0.5],
+                [0.25, 0.25, 0.25, 0.25],
+            ],
+            dtype=alignment_base_module.np.float64,
+        )
+        expected = abs_diffs.sum(axis=1)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("narrow RCV row sums should use ndarray.sum")
+
+        monkeypatch.setattr(alignment_base_module.np, "sum", fail_sum)
+
+        observed = alignment_base_module._rcv_row_sums(abs_diffs)
+
+        alignment_base_module.np.testing.assert_allclose(observed, expected)
+
     def test_relative_composition_variability_protein_ascii_uses_bincount(
         self, mocker, args
     ):
