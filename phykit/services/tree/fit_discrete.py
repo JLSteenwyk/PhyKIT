@@ -70,9 +70,7 @@ class FitDiscrete(Tree):
             self.trait_data_path, tree_tips, trait_column=self.trait_column
         )
 
-        # Prune tree to shared taxa
-        shared_taxa = set(tip_states.keys())
-        tips_to_prune = [t for t in tree_tips if t not in shared_taxa]
+        tips_to_prune = self._tips_to_prune_for_states(tree_tips, tip_states)
         if tips_to_prune:
             if not copied_tree:
                 tree = self._fast_copy(tree)
@@ -96,6 +94,18 @@ class FitDiscrete(Tree):
             self._print_json(results, n_obs, states)
         else:
             self._print_text(results, n_obs, states)
+
+    @staticmethod
+    def _tips_to_prune_for_states(tree_tips, tip_states):
+        if len(tree_tips) == len(tip_states):
+            for tip_name, state_name in zip(tree_tips, tip_states):
+                if tip_name != state_name:
+                    break
+            else:
+                return []
+
+        shared_taxa = set(tip_states)
+        return [tip for tip in tree_tips if tip not in shared_taxa]
 
     @staticmethod
     def _needs_default_branch_lengths(tree) -> bool:

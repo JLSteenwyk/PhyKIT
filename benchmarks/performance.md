@@ -1529,6 +1529,7 @@ Results:
 | `discrete_models` generic root likelihood total | 2 / 3 / 4 / 8 / 16 / 64-state prior-weighted likelihood vectors, side-by-side previous `np.sum(pi * root_lik)` | 0.000006310s / 0.000006381s / 0.000006961s / 0.000006135s / 0.000005135s / 0.000005092s | 0.000001144s / 0.000001084s / 0.000001175s / 0.000001519s / 0.000001047s / 0.000001155s | 5.52x / 5.89x / 5.93x / 4.04x / 4.90x / 4.41x |
 | `FitDiscrete.run` shared pruning context | balanced 8192-tip tree, ER/SYM/ARD setup context reuse | 0.045272s | 0.014442s | 3.13x |
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
+| `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
 | `fit_discrete` module import without eager NumPy/discrete helper | cold subprocess import after lazy helper wrappers and local model constant | 0.090685s | 0.026126s | 3.47x |
 | `fit_discrete` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006547s | 0.005270s | 1.24x |
@@ -5741,7 +5742,9 @@ Profiling summary:
   lengths are complete, copies before default branch-length assignment, and only
   copies for pruning when the trait file omits tree tips. The complete-branch
   preflight now pushes child lists directly because it only tests whether any
-  branch length is missing. Discrete trait parsing now streams both two-column
+  branch length is missing. Ordered all-shared parsed states now skip the
+  shared-state set construction before pruning while preserving the existing
+  set-backed path for omitted tree tips. Discrete trait parsing now streams both two-column
   and named multi-column TSV files, avoiding
   `readlines()` materialization while preserving comment/blank filtering,
   logical error line numbers, and shared-taxon validation.

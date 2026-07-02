@@ -209,6 +209,28 @@ class TestFitModel:
 
 
 class TestFitDiscreteRun:
+    def test_tips_to_prune_for_states_ordered_all_shared_skips_set(self, monkeypatch):
+        tree_tips = ["A", "B", "C"]
+        tip_states = {"A": "x", "B": "x", "C": "y"}
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError(
+                "ordered all-shared states should not build a set"
+            )
+
+        monkeypatch.setattr("builtins.set", fail_set)
+
+        assert FitDiscrete._tips_to_prune_for_states(tree_tips, tip_states) == []
+
+    def test_tips_to_prune_for_states_preserves_partial_pruning(self):
+        tree_tips = ["A", "B", "C", "D"]
+        tip_states = {"A": "x", "C": "y"}
+
+        assert FitDiscrete._tips_to_prune_for_states(tree_tips, tip_states) == [
+            "B",
+            "D",
+        ]
+
     def _stub_run_tail(self, monkeypatch, fd, tip_states, captured):
         monkeypatch.setattr(
             "phykit.services.tree.fit_discrete.parse_discrete_traits",
