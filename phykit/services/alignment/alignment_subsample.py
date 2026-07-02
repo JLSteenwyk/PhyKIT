@@ -182,7 +182,7 @@ class AlignmentSubsample(Alignment):
         with open(path) as fh:
             for line in fh:
                 stripped = line.strip()
-                if stripped and not stripped.startswith("#"):
+                if stripped and stripped[0] != "#":
                     entries.append(stripped)
         return entries
 
@@ -200,7 +200,7 @@ class AlignmentSubsample(Alignment):
         with open(path) as fh:
             for line in fh:
                 stripped = line.strip()
-                if not stripped or stripped.startswith("#"):
+                if not stripped or stripped[0] == "#":
                     continue
                 partition = AlignmentSubsample._parse_partition_line(stripped)
                 if partition is not None:

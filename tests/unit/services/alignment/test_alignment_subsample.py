@@ -88,7 +88,7 @@ class TestPartitionParsing:
     def test_parse_partition_file_handles_comments_whitespace_and_trailing_text(self, tmp_path):
         path = os.path.join(str(tmp_path), "test.partition")
         with open(path, "w") as fh:
-            fh.write("# ignored\n")
+            fh.write("   # ignored\n")
             fh.write("\n")
             fh.write("AUTO, gene1=1-3\n")
             fh.write("DNA,   gene2   =   4   -   6 trailing text\n")
@@ -100,6 +100,17 @@ class TestPartitionParsing:
             ("gene1", 1, 3),
             ("gene2", 4, 6),
         ]
+
+    def test_read_list_file_skips_whitespace_prefixed_comments(self, tmp_path):
+        path = os.path.join(str(tmp_path), "taxa.txt")
+        with open(path, "w") as fh:
+            fh.write("   # ignored\n")
+            fh.write("\n")
+            fh.write("taxon_a\n")
+            fh.write("\t# ignored\n")
+            fh.write("taxon_b\n")
+
+        assert AlignmentSubsample._read_list_file(path) == ["taxon_a", "taxon_b"]
 
 
 # ---------------------------------------------------------------------------

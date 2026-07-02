@@ -580,6 +580,8 @@ Results:
 | `AlignmentSubsample._write_fasta` chunked output | 1M FASTA records x 40 bp, identical output file text, previous per-record write baseline | 0.273654s | 0.193250s | 1.42x |
 | `AlignmentSubsample._write_partition_file` chunked output | 1M RAxML-style partition rows, identical output file text, previous per-row write baseline | 0.276847s | 0.200761s | 1.38x |
 | `AlignmentSubsample._parse_partition_file` split parser | 100k RAxML-style partition rows, preserving comments/invalid-row skips and trailing text tolerance | 0.264859s | 0.155592s | 1.70x |
+| `AlignmentSubsample._parse_partition_file` stripped comment check | 250k RAxML-style partition rows with whitespace-prefixed comments/blanks and invalid rows | 0.782216s | 0.546225s | 1.43x |
+| `AlignmentSubsample._read_list_file` stripped comment check | 250k taxa/gene list rows with whitespace-prefixed comments/blanks | 0.222545s | 0.206451s | 1.08x |
 | `alignment_subsample` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.188059s | 0.110484s | 1.70x |
 | `alignment_subsample` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.008061s | 0.006792s | 1.19x |
 | `alignment_subsample` module import without eager random | median cold subprocess import after localizing command-run sampling import | 0.007269s | 0.005914s | 1.23x |
