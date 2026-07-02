@@ -311,8 +311,10 @@ class RateHeterogeneity(Tree):
                 regimes,
             )
 
-        shared = set(trait_values)
-        shared.intersection_update(regime_assignments)
+        shared = RateHeterogeneity._shared_trait_regime_taxa(
+            trait_values,
+            regime_assignments,
+        )
         if len(shared) < 3:
             raise PhykitUserError(
                 [
@@ -342,6 +344,15 @@ class RateHeterogeneity(Tree):
             ordered_names,
             regimes,
         )
+
+    @staticmethod
+    def _shared_trait_regime_taxa(
+        trait_values: dict[str, float],
+        regime_assignments: dict[str, str],
+    ) -> set[str]:
+        if len(regime_assignments) < len(trait_values):
+            return {name for name in regime_assignments if name in trait_values}
+        return {name for name in trait_values if name in regime_assignments}
 
     @staticmethod
     def _count_regime_tips(

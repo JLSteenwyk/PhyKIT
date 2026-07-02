@@ -1220,6 +1220,36 @@ class TestRun:
         assert ordered_names == ["A", "B", "C"]
         assert regimes == ["r1", "r2"]
 
+    def test_shared_trait_regime_taxa_scans_smaller_mapping(self):
+        class NoIterTraitValues(dict):
+            def __iter__(self):
+                raise AssertionError("large trait mapping should not be scanned")
+
+        trait_values = NoIterTraitValues(
+            {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0, "E": 5.0}
+        )
+        regime_assignments = {"B": "r1", "D": "r2"}
+
+        assert RateHeterogeneity._shared_trait_regime_taxa(
+            trait_values,
+            regime_assignments,
+        ) == {"B", "D"}
+
+    def test_shared_trait_regime_taxa_scans_traits_when_smaller(self):
+        class NoIterRegimeAssignments(dict):
+            def __iter__(self):
+                raise AssertionError("large regime mapping should not be scanned")
+
+        trait_values = {"B": 2.0, "D": 4.0}
+        regime_assignments = NoIterRegimeAssignments(
+            {"A": "r1", "B": "r1", "C": "r2", "D": "r2", "E": "r3"}
+        )
+
+        assert RateHeterogeneity._shared_trait_regime_taxa(
+            trait_values,
+            regime_assignments,
+        ) == {"B", "D"}
+
     def test_prepare_shared_trait_regime_data_exact_keys_prunes_tree_only_tips(
         self, monkeypatch
     ):
@@ -1278,6 +1308,35 @@ class TestRun:
         assert shared_regimes == {"A": "r1", "B": "r2", "C": "r1"}
         assert tips_to_prune == ["D"]
         assert ordered_names == ["A", "B", "C"]
+        assert regimes == ["r1", "r2"]
+
+    def test_prepare_shared_trait_regime_data_partial_overlap_scans_smaller_mapping(self):
+        class NoIterTraitValues(dict):
+            def __iter__(self):
+                raise AssertionError("large trait mapping should not be scanned")
+
+        tree_tips = ["A", "B", "C", "D", "E"]
+        trait_values = NoIterTraitValues(
+            {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0, "E": 5.0}
+        )
+        regime_assignments = {"B": "r1", "C": "r1", "D": "r2", "regime_only": "r3"}
+
+        (
+            shared_traits,
+            shared_regimes,
+            tips_to_prune,
+            ordered_names,
+            regimes,
+        ) = RateHeterogeneity._prepare_shared_trait_regime_data(
+            tree_tips,
+            trait_values,
+            regime_assignments,
+        )
+
+        assert shared_traits == {"B": 2.0, "C": 3.0, "D": 4.0}
+        assert shared_regimes == {"B": "r1", "C": "r1", "D": "r2"}
+        assert tips_to_prune == ["A", "E"]
+        assert ordered_names == ["B", "C", "D"]
         assert regimes == ["r1", "r2"]
 
     def test_sum_vcv_matrices_accumulates_without_mutating_inputs(self):
