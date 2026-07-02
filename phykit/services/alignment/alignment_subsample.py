@@ -152,7 +152,7 @@ class AlignmentSubsample(Alignment):
         n = self._compute_n(aln_len, "sites")
 
         if not self.bootstrap and n == aln_len:
-            new_sequences = dict(sequences)
+            new_sequences = sequences
         else:
             indices = list(range(aln_len))
             if self.bootstrap:

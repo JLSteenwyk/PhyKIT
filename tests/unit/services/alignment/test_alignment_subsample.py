@@ -281,6 +281,31 @@ class TestSitesMode:
 
         assert _read_fasta(f"{prefix}.fa") == _read_fasta(aln)
 
+    def test_sites_mode_full_nonbootstrap_writes_original_sequence_mapping(
+        self, tmp_path, monkeypatch
+    ):
+        sequences = {"t1": "AAAA", "t2": "CCCC"}
+        captured = {}
+        args = Namespace(
+            mode="sites", alignment="aln.fa", list=None, partition=None,
+            number=4, fraction=None, seed=42, bootstrap=False,
+            output=os.path.join(str(tmp_path), "out"), json=False,
+        )
+        service = AlignmentSubsample(args)
+        monkeypatch.setattr(service, "_read_alignment", lambda _path: sequences)
+        monkeypatch.setattr(
+            service,
+            "_write_fasta",
+            lambda _path, written_sequences: captured.setdefault(
+                "sequences", written_sequences
+            ),
+        )
+        monkeypatch.setattr(service, "_print_summary", lambda *_args: None)
+
+        service._run_sites(None)
+
+        assert captured["sequences"] is sequences
+
     def test_sites_mode_stops_at_first_length_mismatch(
         self, tmp_path, monkeypatch
     ):
