@@ -652,26 +652,26 @@ class CharacterMap(Tree):
         classified: dict[int, list[tuple[int, str, str, str]]],
         node_labels: dict[int, str],
     ) -> None:
+        changes_by_char = defaultdict(list)
+        for cid, branch_changes in classified.items():
+            label = node_labels.get(cid, f"id_{cid}")
+            for char_idx, old, new, cls_type in branch_changes:
+                changes_by_char[char_idx].append({
+                    "branch": label,
+                    "from": old,
+                    "to": new,
+                    "type": cls_type,
+                })
+
         characters = []
         for i, name in enumerate(char_names):
-            changes = []
-            for cid, branch_changes in classified.items():
-                for char_idx, old, new, cls_type in branch_changes:
-                    if char_idx == i:
-                        label = node_labels.get(cid, f"id_{cid}")
-                        changes.append({
-                            "branch": label,
-                            "from": old,
-                            "to": new,
-                            "type": cls_type,
-                        })
             characters.append({
                 "index": i,
                 "name": name,
                 "steps": observed_per_char[i],
                 "ci": round(ci_per_char[i], 4) if ci_per_char[i] is not None else None,
                 "ri": round(ri_per_char[i], 4) if ri_per_char[i] is not None else None,
-                "changes": changes,
+                "changes": changes_by_char.get(i, []),
             })
 
         payload = {

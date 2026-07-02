@@ -981,6 +981,72 @@ class TestCharacterMapJson:
             assert "ri" in char_entry
             assert "changes" in char_entry
 
+    def test_print_json_groups_changes_with_single_classified_scan(
+        self,
+        mocker,
+        tmp_path,
+    ):
+        class CountingClassified(dict):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.items_calls = 0
+
+            def items(self):
+                self.items_calls += 1
+                return super().items()
+
+        args = _make_args(tmp_path, json=True)
+        cm = CharacterMap(args)
+        classified = CountingClassified(
+            {
+                10: [(1, "0", "1", "convergence"), (0, "1", "0", "reversal")],
+                20: [(1, "1", "2", "synapomorphy")],
+            }
+        )
+        mocked_json = mocker.patch(
+            "phykit.services.tree.character_map.print_json"
+        )
+
+        cm._print_json(
+            ["char0", "char1", "char2"],
+            3,
+            2,
+            4,
+            0.75,
+            0.5,
+            [1.0, None, 0.5],
+            [0.5, 0.25, None],
+            [1, 2, 3],
+            classified,
+            {10: "node_a", 20: "node_b"},
+        )
+
+        assert classified.items_calls == 1
+        characters = mocked_json.call_args.args[0]["characters"]
+        assert characters[0]["changes"] == [
+            {
+                "branch": "node_a",
+                "from": "1",
+                "to": "0",
+                "type": "reversal",
+            }
+        ]
+        assert characters[1]["changes"] == [
+            {
+                "branch": "node_a",
+                "from": "0",
+                "to": "1",
+                "type": "convergence",
+            },
+            {
+                "branch": "node_b",
+                "from": "1",
+                "to": "2",
+                "type": "synapomorphy",
+            },
+        ]
+        assert characters[2]["changes"] == []
+
     def test_json_deltran(self, mocker, tmp_path):
         args = _make_args(tmp_path, json=True, optimization="deltran")
         cm = CharacterMap(args)

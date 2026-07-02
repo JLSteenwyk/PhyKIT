@@ -2362,6 +2362,7 @@ Results:
 | `CharacterMap._parse_character_matrix` streaming parser | 300k-row TSV character matrix, 16 characters, blank rows included | 0.564221s | 0.483253s | 1.17x |
 | `CharacterMap._print_summary` batched summary output | 100k captured character-map text summaries, alternating numeric/N/A metrics, identical stdout text | 0.149204s | 0.078751s | 1.89x |
 | `CharacterMap._print_verbose` grouped change rows | 1k characters, 20k classified changes, captured stdout and identical text | 0.957803s | 0.006996s | 136.91x |
+| `CharacterMap._print_json` grouped change rows | 200 characters, 5000 branches, 30k classified changes, identical JSON character payload | 0.615209709s | 0.006269292s | 98.13x |
 | `CharacterMap._plot_character_map` phylogram layout setup | balanced 32768-tip tree, precomputed classified changes and parent map | 0.5485s | 0.0787s | 7.0x |
 | `CharacterMap._plot_character_map` cladogram layout setup | balanced 32768-tip tree, precomputed classified changes and parent map | 0.7097s | 0.1002s | 7.1x |
 | `CharacterMap._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.058023s | 0.041283s | 1.41x |
