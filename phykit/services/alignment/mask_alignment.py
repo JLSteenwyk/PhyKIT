@@ -331,6 +331,20 @@ class MaskAlignment(Alignment):
                 for record in records
             }
 
+        if mask_len:
+            run_start = int(keep_mask.argmax())
+            run_stop = mask_len - int(keep_mask[::-1].argmax())
+            if keep_mask[run_start:run_stop].all():
+                masked = {}
+                for record in records:
+                    sequence = str(record.seq)
+                    if len(sequence) != mask_len:
+                        masked = None
+                        break
+                    masked[record.id] = sequence[run_start:run_stop].upper()
+                if masked is not None:
+                    return masked
+
         sequences = [str(record.seq).upper() for record in records]
         try:
             alignment_array = np.frombuffer(

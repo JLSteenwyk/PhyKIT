@@ -326,6 +326,7 @@ Results:
 | `MaskAlignment.apply_mask` | 1200 taxa x 3000 sites, 2000 kept sites | 0.1349s | 0.0044s | 30.7x |
 | `MaskAlignment.apply_mask` all-keep shortcut | 2000 taxa x 5000 sites, lowercase ASCII sequences and all-true keep mask, side-by-side previous matrix-slice path | 0.032670s | 0.006820s | 4.79x |
 | `MaskAlignment.apply_mask` all-trim shortcut | 2000 taxa x 5000 sites, lowercase ASCII sequences and all-false keep mask, side-by-side previous matrix-slice path | 0.008348s | 0.001225s | 6.81x |
+| `MaskAlignment.apply_mask` contiguous interval shortcut | 20k taxa x 4000 lowercase ASCII sites, one 3000-site retained interval, side-by-side previous matrix-slice path | 1.013834s | 0.145516s | 6.97x |
 | `MaskAlignment.run` batched FASTA text output | 100k masked FASTA records, mocked alignment/read and identical stdout text | 0.021122s | 0.011388s | 1.85x |
 | `MaskAlignment.run` JSON row construction | 500k masked sequence rows, identical row dictionaries | 0.308298s | 0.156746s | 1.97x |
 | `MaskAlignment.run` JSON kept-site count | 2M-site boolean keep mask, side-by-side previous boolean `np.sum` count | 0.000407500s | 0.000067708s | 6.02x |

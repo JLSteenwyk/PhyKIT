@@ -546,6 +546,32 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert frombuffer_spy.call_count == 1
 
+    def test_apply_mask_contiguous_interval_slices_sequences_directly(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("acgtac"), id="a"),
+                SeqRecord(Seq("tgcagt"), id="b"),
+            ]
+        )
+        masker = MaskAlignment(args)
+        mocker.patch(
+            "phykit.services.alignment.mask_alignment.np.frombuffer",
+            side_effect=AssertionError(
+                "contiguous partial masks should not build a matrix"
+            ),
+        )
+
+        masked = masker.apply_mask(
+            alignment,
+            keep_mask=mask_alignment_module.np.array(
+                [False, True, True, True, False, False]
+            ),
+        )
+
+        assert masked == {"a": "CGT", "b": "GCA"}
+
     def test_apply_mask_falls_back_for_non_ascii_sequences(self, args):
         alignment = [
             SimpleNamespace(seq="A\u00d1GT", id="a"),
