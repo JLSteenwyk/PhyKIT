@@ -69,7 +69,7 @@ def _count_clean_dna_parsimony_informative_sites(alignment_array) -> int | None:
         standard_total += counts
         recurrent += counts >= 2
 
-    if int(np.sum(standard_total)) != alignment_array.size:
+    if int(standard_total.sum()) != alignment_array.size:
         return None
     return int(np.count_nonzero(recurrent >= 2))
 

@@ -216,6 +216,10 @@ assert "Bio.AlignIO" not in sys.modules
             pi_module,
             "_count_ascii_parsimony_informative_sites",
         )
+        mocker.patch(
+            "phykit.services.alignment.parsimony_informative_sites.np.sum",
+            side_effect=AssertionError("clean DNA helper should use ndarray.sum"),
+        )
 
         pi_sites, aln_len, pi_sites_per = pi.calculate_parsimony_informative_sites(
             alignment,

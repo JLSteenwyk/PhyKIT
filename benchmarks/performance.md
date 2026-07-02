@@ -174,6 +174,7 @@ Results:
 | `ParsimonyInformative.calculate_parsimony_informative_sites` clean ASCII block counting | 1200 taxa x 12000 clean DNA sites, side-by-side previous always-masked block counter with identical PI-site result | 0.157442s | 0.142948s | 1.10x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` clean ASCII gap-byte precheck | 80 taxa x 1M clean DNA sites, side-by-side previous full invalid-mask setup | 15.602653s | 14.708943s | 1.06x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` clean ACGT recurrent-state count | 1200 taxa x 12000 clean DNA sites, side-by-side previous generic 256-bin column histogram | 0.391066s | 0.092313s | 4.24x |
+| `ParsimonyInformative.calculate_parsimony_informative_sites` clean DNA standard-total reduction | 120 / 1200 / 12000 / 100k / 1M-site clean DNA totals, side-by-side previous `np.sum` dispatch | 0.000003308s / 0.000003409s / 0.000005694s / 0.000015202s / 0.000120350s | 0.000001243s / 0.000001986s / 0.000002578s / 0.000012174s / 0.000115898s | 2.66x / 1.72x / 2.21x / 1.25x / 1.04x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous block-count path | 0.142054s | 0.005836s | 24.34x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` identical-row no-slice scan | 1M identical ASCII DNA rows, side-by-side previous `sequences[1:]` equality scan | 0.390887s | 0.279042s | 1.40x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` combined sequence-build identity scan | 1M mixed-symbol DNA rows, identical / late-different setup cases, side-by-side previous sequence-list build plus identity pass | 0.230124s / 0.285500s | 0.174743s / 0.217506s | 1.32x / 1.31x |
@@ -2781,8 +2782,10 @@ Profiling summary:
   to apply, preserving the masked path for gappy alignments. Fully identical
   normalized alignments now return zero parsimony-informative sites before
   byte-matrix construction, covering conserved multi-symbol sequences while
-  leaving non-identical alignments on the existing block-count path. A follow-up
-  identical-row pass scans the existing sequence list directly instead of
+  leaving non-identical alignments on the existing block-count path. The clean
+  DNA standard-symbol total check now reduces through the ndarray method,
+  avoiding generic `np.sum` dispatch while preserving the non-ACGT fallback.
+  A follow-up identical-row pass scans the existing sequence list directly instead of
   materializing `sequences[1:]`, reducing temporary allocation for high-taxon
   conserved alignments. A later setup pass combines sequence-list construction
   with identical-row detection, removing an extra pass over conserved inputs
