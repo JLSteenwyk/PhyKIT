@@ -229,7 +229,7 @@ class PhyloGwas(Alignment):
         with open(path) as fh:
             for line in fh:
                 line = line.strip()
-                if not line or line.startswith("#"):
+                if not line or line[0] == "#":
                     continue
                 # Match: TYPE, name = start-end
                 m = match(line)

@@ -1162,7 +1162,7 @@ class TestPhyloGwas:
     def test_parse_partition_file_preserves_regex_tolerance(self, tmp_path):
         part_path = tmp_path / "test.part"
         part_path.write_text(
-            "# ignored\n"
+            "   # ignored\n"
             "DNA,   gene1   =   1   -   100 trailing text\n"
             ",gene2=101-200\n"
             "invalid row\n"

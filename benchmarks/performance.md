@@ -607,6 +607,7 @@ Results:
 | `PhyloGwas.run` zip-based FDR result annotation | 1M site result rows with adjusted p-value array, side-by-side previous index lookups | 0.263524s | 0.181904s | 1.45x |
 | `PhyloGwas` partition gene lookup | 10k result positions across 10k sorted partitions | 1.3198s | 0.0028s | 472.5x |
 | `PhyloGwas._parse_partition_file` cached regex matcher | 300k RAxML-style partition rows with comments/blanks, whitespace tolerance, and trailing text tolerance | 0.404678s | 0.344136s | 1.18x |
+| `PhyloGwas._parse_partition_file` stripped comment check | 300k RAxML-style partition rows with whitespace-prefixed comments/blanks, invalid rows, and trailing text tolerance | 0.699599s | 0.649138s | 1.08x |
 | `PhyloGwas._test_site_categorical` | 5k biallelic sites x 600 taxa x 6 phenotype groups | 1.8773s | 0.3523s | 5.3x |
 | `PhyloGwas._test_site_categorical` ASCII allele counting | 5k biallelic ASCII sites x 600 taxa x 6 phenotype groups | 0.207769s | 0.177623s | 1.17x |
 | `PhyloGwas._test_site_categorical` ASCII byte-column path | 5k biallelic ASCII sites x 600 taxa x 6 phenotype groups | 0.096297s | 0.063694s | 1.5x |
