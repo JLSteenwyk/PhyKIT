@@ -1935,6 +1935,7 @@ Results:
 | `PhylogeneticGLM._make_ultrametric` | balanced tree with 2500 tips | 2.2726s | 0.0068s | 336.2x |
 | `PhylogeneticGLM._root_tip_distances` | balanced 65536-tip tree, ordered ultrametric correction distances | 0.1598s | 0.0245s | 6.5x |
 | `PhylogeneticGLM._make_ultrametric` root-height max reduction | 120 / 1200 / 10000 / 65536 root-to-tip distances, side-by-side previous `np.max(heights)` wrapper | 0.000004475s / 0.000006131s / 0.000005739s / 0.000014409s | 0.000002587s / 0.000001470s / 0.000001774s / 0.000011340s | 1.73x / 4.17x / 3.23x / 1.27x |
+| `PhylogeneticGLM._root_tip_distances` ordered distance array construction | 1024 / 16384 / 65536 / 200k ordered tip distances, side-by-side previous list comprehension plus `np.array` with large-array path preserved | 0.000253s / 0.001228s / 0.006045s / 0.027965s | 0.000069s / 0.001024s / 0.006045s / 0.027965s | 3.65x / 1.20x / 1.00x / 1.00x |
 | `PhylogeneticGLM._compute_dia` vectorized branch scaling | 8 / 40 / 260 / 900 / 2000 / 10k / 100k binomial probabilities and root distances, side-by-side previous scalar loop | 0.000012315s / 0.000081040s / 0.000327432s / 0.001039713s / 0.004016681s / 0.013887300s / 0.156834600s | 0.000011826s / 0.000009855s / 0.000008160s / 0.000012291s / 0.000017038s / 0.000054498s / 0.000515617s | 1.04x / 8.22x / 40.12x / 84.59x / 235.74x / 254.82x / 304.17x |
 | `PhylogeneticGLM._poisson_starting_values` row-scaled IRLS | 1200 taxa x 8-column design matrix, synthetic counts | 0.015975s | 0.000268s | 59.5x |
 | `PhylogeneticGLM._poisson_gee_information_and_score` row scaling | 1200 taxa SPD correlation inverse x 8-column design matrix | 0.002394s | 0.000952s | 2.5x |
@@ -6715,7 +6716,10 @@ Profiling summary:
   height; the root-height maximum is now reduced directly on the ndarray to
   avoid generic NumPy dispatch. `_root_tip_distances` now uses a direct
   name-to-distance traversal for standard parsed trees before falling back to Bio.Phylo
-  `depths()`/`get_terminals()` or per-tip `distance()`. Poisson/logistic IRLS
+  `depths()`/`get_terminals()` or per-tip `distance()`. Standard-tree ordered
+  distance arrays now use `np.fromiter` for small and medium model sizes while
+  preserving the previous list-backed array path for larger trees where it
+  benchmarks better. Poisson/logistic IRLS
   and Poisson GEE information assembly now row-scale the design matrix instead
   of materializing dense diagonal weight matrices before cross-products. The
   Poisson GEE score multiply now applies `R^-1` to the score vector first,

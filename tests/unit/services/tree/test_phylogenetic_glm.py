@@ -102,6 +102,25 @@ def test_poisson_log_likelihood_preserves_large_vector_sum_path(monkeypatch):
     assert calls == [(20001,)]
 
 
+def test_ordered_distance_array_preserves_large_list_path(monkeypatch):
+    count = phylogenetic_glm_module._ROOT_DISTANCE_FROMITER_MAX_TIPS + 1
+    ordered_names = [f"taxon_{idx}" for idx in range(count)]
+    distance_by_name = {name: float(idx) for idx, name in enumerate(ordered_names)}
+
+    def fail_fromiter(*_args, **_kwargs):
+        raise AssertionError("large distance vectors should preserve np.array path")
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "fromiter", fail_fromiter)
+
+    observed = phylogenetic_glm_module._ordered_distance_array(
+        distance_by_name,
+        ordered_names,
+    )
+
+    assert observed.shape == (count,)
+    assert observed[-1] == pytest.approx(float(count - 1))
+
+
 def test_module_import_does_not_import_scipy_optimize(monkeypatch):
     module_name = "phykit.services.tree.phylogenetic_glm"
     previous = sys.modules.pop(module_name, None)
@@ -568,9 +587,13 @@ class TestLogisticMPLE:
         def fail_distance(*args, **kwargs):
             raise AssertionError("distance fallback should not be called")
 
+        def fail_array(*args, **kwargs):
+            raise AssertionError("small standard-tree distances should use fromiter")
+
         monkeypatch.setattr(tree, "depths", fail_depths)
         monkeypatch.setattr(tree, "get_terminals", fail_get_terminals)
         monkeypatch.setattr(tree, "distance", fail_distance)
+        monkeypatch.setattr(phylogenetic_glm_module.np, "array", fail_array)
         distances = svc._root_tip_distances(tree, ["A", "B", "C"])
 
         np.testing.assert_allclose(distances, np.array([2.0, 2.0, 3.0]))

@@ -49,6 +49,18 @@ _CHO_FACTOR = None
 _CHO_SOLVE = None
 _MINIMIZE = None
 _SPECIAL_ERFC = None
+_ROOT_DISTANCE_FROMITER_MAX_TIPS = 16_384
+
+
+def _ordered_distance_array(distance_by_name, ordered_names):
+    count = len(ordered_names)
+    if count <= _ROOT_DISTANCE_FROMITER_MAX_TIPS:
+        return np.fromiter(
+            (distance_by_name[name] for name in ordered_names),
+            dtype=float,
+            count=count,
+        )
+    return np.array([distance_by_name[name] for name in ordered_names])
 
 
 def _binary_response_class_counts(y: np.ndarray) -> tuple[int, int]:
@@ -375,7 +387,7 @@ class PhylogeneticGLM(Tree):
                             )
                     else:
                         distance_by_name[clade.name] = distance
-                return np.array([distance_by_name[name] for name in ordered_names])
+                return _ordered_distance_array(distance_by_name, ordered_names)
             except (AttributeError, KeyError, TypeError):
                 pass
 
