@@ -2499,6 +2499,7 @@ Results:
 | `threshold_model` module import without eager JSON/plot/VCV helpers | median cold subprocess import after localizing PlotConfig, JSON output, and VCV helper import | 0.019158s | 0.005869s | 3.26x |
 | `threshold_model` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006424s | 0.004589s | 1.40x |
 | `ThresholdModel.run` all-shared read-only setup | balanced 32768-tip cached tree, two traits for every tip, VCV/MCMC/summary/output mocked | 0.326072s | 0.102394s | 3.18x |
+| `ThresholdModel.run` ordered trait prune setup | 300k ordered tree tips with all traits / 75k tree-only tail tips / interleaved fallback, side-by-side previous set-and-scan prune target setup | 0.063443s / 0.065132s / 0.057556s | 0.013197s / 0.009719s / 0.040561s | 4.81x / 6.70x / 1.42x |
 | `ouwie` module import without eager SciPy linalg/optimize | cold process import for OUwie command module | 0.442738s | 0.169719s | 2.6x |
 | `ouwie` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.169719s | 0.025757s | 6.59x |
 | `ouwie` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007878s | 0.006670s | 1.18x |
@@ -8212,7 +8213,10 @@ Profiling summary:
   `ThresholdModel.run` now
   reads the cached tree directly for validation and copies only when parsed
   trait taxa omit one or more tree tips before pruning, so all-shared trait
-  matrices avoid the protective copy and no-op prune traversal. Text output now
+  matrices avoid the protective copy and no-op prune traversal. Ordered trait
+  prune setup now uses the shared ordered-name helper, skipping set-and-scan
+  prune target construction for all-shared ordered tips or tree-only tail tips.
+  Text output now
   batches the fixed threshold-model summary report into one newline-joined print
   while preserving exact stdout text and broken-pipe handling. A follow-up
   output pass formats the same fixed report as one f-string, preserving exact

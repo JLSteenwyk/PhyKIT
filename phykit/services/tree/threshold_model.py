@@ -195,11 +195,13 @@ class ThresholdModel(Tree):
         )
 
         # Prune tree to shared taxa
-        shared_set = set(ordered_names)
-        tips_to_prune = [name for name in tree_tips if name not in shared_set]
+        tips_to_prune = self._tips_to_prune_for_ordered_names(
+            tree_tips,
+            ordered_names,
+        )
         if tips_to_prune:
             tree = self._fast_copy(tree)
-            self._prune_tree_to_taxa(tree, shared_set)
+            self._prune_tree_to_taxa(tree, ordered_names)
 
         C = self._build_vcv_matrix(tree, ordered_names)
 

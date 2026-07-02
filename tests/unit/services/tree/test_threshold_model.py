@@ -1267,7 +1267,7 @@ class TestRun:
         assert captured["names"] == ordered_names
         assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
 
-    def test_run_missing_trait_taxa_copies_before_pruning(self, monkeypatch):
+    def test_run_missing_trait_taxa_copies_before_pruning(self, monkeypatch, mocker):
         tree = _make_tree()
         svc = ThresholdModel(self._make_args())
         original_fast_copy = svc._fast_copy
@@ -1282,10 +1282,12 @@ class TestRun:
 
         monkeypatch.setattr(svc, "read_tree_file_unmodified", lambda: tree)
         monkeypatch.setattr(svc, "_fast_copy", copy_spy)
+        prune_helper = mocker.spy(svc, "_tips_to_prune_for_ordered_names")
         self._stub_run_tail(monkeypatch, svc, ordered_names, captured)
 
         svc.run()
 
+        prune_helper.assert_called_once_with(["A", "B", "C", "D"], ordered_names)
         assert len(copied_trees) == 1
         assert captured["tree"] is copied_trees[0]
         assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
