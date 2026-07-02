@@ -139,6 +139,13 @@ class TestDfoilPatternCounting:
             if pattern not in {"BAAAA", "BBBBA"}:
                 assert counts[pattern] == 0
 
+    def test_scalar_counting_uses_shared_skip_character_constant(self, monkeypatch):
+        monkeypatch.setattr(dfoil_module, "_SCALAR_SKIP_CHARS", "")
+
+        counts = Dfoil._count_site_patterns_scalar("-", "A", "A", "A", "A")
+
+        assert counts["BAAAA"] == 1
+
     def test_all_valid_ascii_counting_skips_validity_mask(self, mocker):
         mocker.patch.object(
             dfoil_module.np,

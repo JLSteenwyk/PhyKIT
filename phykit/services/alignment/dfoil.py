@@ -49,6 +49,7 @@ _INFORMATIVE_PATTERN_GROUPS = tuple(
 )
 _SKIP_CODES = (ord("-"), ord("N"), ord("?"), ord("X"), ord("n"), ord("x"))
 _SKIP_BYTES = b"-N?Xnx"
+_SCALAR_SKIP_CHARS = "-N?Xnx"
 _SKIP_SCAN_BYTES = 4096
 _SKIP_LOOKUP_SMALL_ALIGNMENT_MAX = 8192
 _SKIP_LOOKUP = None
@@ -221,16 +222,13 @@ class Dfoil(Alignment):
 
     @staticmethod
     def _count_site_patterns_scalar(seq_p1, seq_p2, seq_p3, seq_p4, seq_outgroup):
-        skip_chars = {"-", "N", "?", "X", "n", "x"}
         counts: dict[str, int] = {p: 0 for p in PATTERNS}
+        patterns = PATTERNS
+        skip_chars = _SCALAR_SKIP_CHARS
 
-        for site in range(len(seq_p1)):
-            p1 = seq_p1[site]
-            p2 = seq_p2[site]
-            p3 = seq_p3[site]
-            p4 = seq_p4[site]
-            o = seq_outgroup[site]
-
+        for p1, p2, p3, p4, o in zip(
+            seq_p1, seq_p2, seq_p3, seq_p4, seq_outgroup
+        ):
             if (
                 p1 in skip_chars
                 or p2 in skip_chars
@@ -270,7 +268,7 @@ class Dfoil(Alignment):
                 | (2 if diff3 else 0)
                 | (1 if diff4 else 0)
             )
-            counts[PATTERNS[pattern_code]] += 1
+            counts[patterns[pattern_code]] += 1
 
         return counts
 

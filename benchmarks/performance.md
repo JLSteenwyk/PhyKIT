@@ -755,6 +755,7 @@ Results:
 | `Dfoil._count_site_patterns` small skip-code lookup mask | 1k / 5k / 10k / 100k ASCII sites with 2% skip codes, side-by-side previous six-code validity loop | 2.403774s / 1.269534s / 0.692042s / 0.224607s | 1.063043s / 0.773009s / 0.649486s / 0.209380s | 2.26x / 1.64x / 1.07x / 1.07x |
 | `Dfoil._count_site_patterns` all-invariant shortcut | 2M sites, P1/P2/P3/P4 identical to outgroup, identical all-zero pattern dictionary | 0.028345s | 0.000002s | 14172.5x |
 | `Dfoil._count_site_patterns_scalar` pattern-code fallback | 1M Unicode-containing scalar fallback sites, identical 16-pattern count dictionary | 2.091503s | 0.917063s | 2.28x |
+| `Dfoil._count_site_patterns_scalar` shared skip constants and zipped rows | 1M Unicode-containing scalar fallback sites with sparse skipped sites, identical 16-pattern count dictionary | 2.300239s | 1.765096s | 1.30x |
 | `Dstatistic._print_alignment_text_output` batched report output | 50k alignment-mode D-statistic text reports, captured stdout and identical text | 0.249669s | 0.141300s | 1.77x |
 | `Dstatistic._print_gene_tree_text_output` batched report output | 50k gene-tree-mode D-statistic text reports, captured stdout and identical text | 0.243808s | 0.134732s | 1.81x |
 | `Dstatistic._print_alignment_text_output` single-report formatting | 50k alignment-mode D-statistic text reports, captured stdout and identical text, side-by-side previous line-list comparison | 0.095364s | 0.074071s | 1.29x |
@@ -4273,7 +4274,11 @@ Profiling summary:
   NumPy array setup, matching the existing skipped-invariant scalar semantics.
   Short ASCII alignments with skip codes now build the validity mask through a
   cached byte lookup table, while longer alignments retain the previous
-  six-code vector loop that remains faster at larger sizes.
+  six-code vector loop that remains faster at larger sizes. A later scalar
+  fallback pass reuses a module-level skip-character constant, scans the five
+  sequences as zipped rows, and caches the pattern table locally to avoid
+  repeated per-call set construction and global lookups on Unicode-containing
+  alignments.
 - `Dstatistic` alignment-mode and gene-tree-mode text report baselines emitted
   each report line through separate `print()` calls. The optimized helpers build
   the same lines and emit each report with one `print()`, preserving captured
