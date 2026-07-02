@@ -320,6 +320,10 @@ class OccupancyFilter:
     def _write_wrapped_fasta_sequence(handle, sequence: str, width: int = 60) -> None:
         if not sequence:
             return
+        if len(sequence) <= width:
+            handle.write(sequence)
+            handle.write("\n")
+            return
         handle.write(
             "\n".join(
                 [

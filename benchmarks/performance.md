@@ -564,6 +564,7 @@ Results:
 | `OccupancyFilter._filter_fasta` streaming retained-sequence parser | 50k FASTA records x 120 bp, 10k retained, legacy `SimpleFastaParser` baseline | 0.050271s | 0.036378s | 1.38x |
 | `OccupancyFilter._write_wrapped_fasta_sequence` | 25k retained sequences x 1200 bp, 60-char wrapping | 0.0686s | 0.0553s | 1.2x |
 | `OccupancyFilter._write_wrapped_fasta_sequence` list-backed chunks | 25k retained sequences x 1200 bp, 60-char wrapping | 0.0799s | 0.0553s | 1.4x |
+| `OccupancyFilter._write_wrapped_fasta_sequence` short-sequence direct write | 100k retained sequences x 48 bp, side-by-side previous one-chunk wrapping path | 0.052051s | 0.008982s | 5.80x |
 | `OccupancyFilter.run` threshold classification without dead sort | 500k shuffled taxa occupancy counts, classify kept/removed sets | 0.186998s | 0.057841s | 3.23x |
 | `OccupancyFilter.run` batched occupancy Counter updates | 200 input files x 20k taxa sampled from 500k taxa, identical occupancy counts | 0.843763s | 0.414411s | 2.04x |
 | `OccupancyFilter._filter_tree` | balanced 2048-tip Newick tree, prune 1024 tips and write filtered tree | 0.5579s | 0.4044s | 1.4x |
@@ -3766,8 +3767,11 @@ Profiling summary:
   helper now emits a whole wrapped sequence with one joined write while
   preserving empty-sequence behavior and line widths. A later pass builds the
   wrapped chunks as a list before joining, avoiding generator overhead in large
-  retained FASTA outputs. A later streaming parser pass only accumulates
-  sequence lines for retained records, preserving wrapped output while skipping
+  retained FASTA outputs. Short retained sequences now write directly when
+  their length is at or below the wrapping width, preserving the trailing
+  newline while avoiding one-chunk slice/list/join overhead. A later streaming
+  parser pass only accumulates sequence lines for retained records, preserving
+  wrapped output while skipping
   sequence joining and cleanup for records that will be dropped.
 - `OccupancyFilter._print_text` now batches the occupancy summary, removed-taxa
   table, per-taxon status rows, and output-file rows into one newline-joined

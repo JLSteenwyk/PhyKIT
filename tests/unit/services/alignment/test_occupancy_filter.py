@@ -243,6 +243,19 @@ class TestOccupancyFilter:
 
         assert output_fasta.read_text() == f"{'A' * 60}\n{'A' * 5}\n"
 
+    def test_write_wrapped_fasta_sequence_short_sequence_skips_slicing(self, tmp_path):
+        class NoSliceStr(str):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("short sequences should be written directly")
+                return super().__getitem__(key)
+
+        output_fasta = tmp_path / "wrapped_short.fa"
+        with open(output_fasta, "w") as handle:
+            OccupancyFilter._write_wrapped_fasta_sequence(handle, NoSliceStr("ACGT"))
+
+        assert output_fasta.read_text() == "ACGT\n"
+
     def test_write_wrapped_fasta_sequence_custom_width(self, tmp_path):
         output_fasta = tmp_path / "wrapped_custom.fa"
         with open(output_fasta, "w") as handle:
