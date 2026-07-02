@@ -927,6 +927,7 @@ Results:
 | `QuartetNetwork._classify_quartet` chi-square p-values | cold process, one hybrid-like quartet count vector | 0.494692s | 0.000012084s | 40937.8x |
 | `QuartetNetwork._star_test` direct three-count chi-square | 420k mixed quartet count vectors, identical star-test p-values, side-by-side previous generic `sum` path | 1.559743s | 0.677730s | 2.30x |
 | `QuartetNetwork._tree_test` direct three-count G-test | 400k mixed quartet count vectors, identical conservative T3 p-values, side-by-side previous sorted-count path | 2.082686s | 0.767069s | 2.72x |
+| `QuartetNetwork.run` direct quartet concordance factors | 270k quartet count rows, identical CF triplets, side-by-side previous generic `sum` plus list-comprehension path | 0.391966s | 0.085454s | 4.59x |
 | `QuartetNetwork._compute_nanuq_distance` topology index helpers | 42 taxa, 111930 quartet classifications, mixed tree/hybrid/unresolved results | 0.111250s | 0.096283s | 1.16x |
 | `QuartetNetwork._extract_bipartitions` direct ordered traversal | balanced 4096-tip tree, public frozenset bipartition helper | 0.389116s | 0.366308s | 1.06x |
 | `QuartetNetwork._extract_bipartition_masks` | balanced 32768-tip tree, bitmask split extraction setup | 0.2149s | 0.1446s | 1.5x |
@@ -4548,7 +4549,9 @@ Profiling summary:
   first-index tie behavior. The star-test p-value path now sums and reduces the
   three counts directly, and the T3 tree-test p-value path computes the major
   and two minor counts directly, avoiding a three-item sort and temporary
-  expected-count list for every quartet classification.
+  expected-count list for every quartet classification. Quartet concordance
+  factors now use the same direct three-count total when building per-quartet
+  output rows.
 - `QuartetNetwork._extract_bipartition_masks` baseline time made a postorder
   pass to build clade masks, then a second Bio.Phylo nonterminal traversal to
   filter split masks. The optimized path emits eligible masks during the same

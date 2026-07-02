@@ -318,6 +318,27 @@ class TestClassifyQuartet:
         result = QuartetNetwork._classify_quartet([4, 1, 5], alpha=0.05, beta=0.95)
         assert result["classification"] == "tree"
 
+    def test_quartet_cfs_from_counts_sums_three_counts_directly(self, monkeypatch):
+        original_sum = builtins.sum
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("quartet CFs should sum three counts directly")
+
+        monkeypatch.setattr(builtins, "sum", fail_sum)
+
+        assert QuartetNetwork._quartet_cfs_from_counts([3, 2, 1]) == [
+            0.5,
+            1 / 3,
+            1 / 6,
+        ]
+        assert QuartetNetwork._quartet_cfs_from_counts([0, 0, 0]) == [
+            0.0,
+            0.0,
+            0.0,
+        ]
+
+        monkeypatch.setattr(builtins, "sum", original_sum)
+
 
 class TestNanuqDistance:
     def test_format_quartet_uses_selected_topology_only(self):

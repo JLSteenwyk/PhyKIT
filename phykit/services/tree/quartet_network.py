@@ -647,6 +647,14 @@ class QuartetNetwork(Tree):
         return 2, 1
 
     @staticmethod
+    def _quartet_cfs_from_counts(counts):
+        c0, c1, c2 = counts
+        total = c0 + c1 + c2
+        if total > 0:
+            return [c0 / total, c1 / total, c2 / total]
+        return [0.0, 0.0, 0.0]
+
+    @staticmethod
     def _compute_nanuq_distance(all_taxa, quartet_results):
         """Compute NANUQ distance matrix from quartet classifications.
 
@@ -1128,8 +1136,7 @@ class QuartetNetwork(Tree):
         for quartet, counts in quartet_cfs.items():
             result = self._classify_quartet(counts, self.alpha, self.beta)
             result["counts"] = counts
-            total = sum(counts)
-            result["cfs"] = [c / total if total > 0 else 0.0 for c in counts]
+            result["cfs"] = self._quartet_cfs_from_counts(counts)
             quartet_results[quartet] = result
 
             if result["classification"] == "tree":
