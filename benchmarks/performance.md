@@ -184,6 +184,7 @@ Results:
 | `ParsimonyInformative.calculate_parsimony_informative_sites` combined sequence-build identity scan | 1M mixed-symbol DNA rows, identical / late-different setup cases, side-by-side previous sequence-list build plus identity pass | 0.230124s / 0.285500s | 0.174743s / 0.217506s | 1.32x / 1.31x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous sequence materialization before zero return | 0.005767500s | 0.000001250s | 4614.61x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` Unicode final PI-site count | 1M-site fallback recurrent-state count vector, side-by-side previous boolean `np.sum` final count | 0.000235s | 0.000063s | 3.73x |
+| `ParsimonyInformative.calculate_parsimony_informative_sites` cached NumPy attribute proxy | 1000 taxa x 8000 sites, alphabet `ACGT-?NX*`, side-by-side previous uncached lazy NumPy proxy | 0.541302s | 0.456806s | 1.18x |
 | `ParsimonyInformative.get_number_of_occurrences_per_character` record-wise direct count loop | 200 sampled columns from 5000 taxa x 2000 sites, alphabet `ACGT-?NX*`, side-by-side previous column slicing path with identical `Counter` output | 0.834731s | 0.524695s | 1.59x |
 | `ParsimonyInformative.is_parsimony_informative` early recurrent-state exit | 20k repeated checks over 1000 recurrent and 1000 singleton states, identical truth value | 0.930823s | 0.002989s | 311.41x |
 | `parsimony_informative_sites` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.101964s | 0.023527s | 4.33x |
@@ -2920,7 +2921,10 @@ Profiling summary:
   construction while preserving `Counter` output, and the predicate exits as
   soon as two recurrent states are found instead of scanning every state count.
   The Unicode fallback now counts final recurrent-state columns with
-  `np.count_nonzero` instead of summing a boolean vector.
+  `np.count_nonzero` instead of summing a boolean vector. Repeated
+  parsimony-informative calculations now cache resolved NumPy attributes on the
+  lazy proxy, preserving import deferral while avoiding repeated import and
+  attribute dispatch in the matrix and histogram paths.
   A follow-up parsimony-informative startup pass applies the same lazy lookup
   construction and Bio.Align annotation deferral while preserving its
   module-level `np.isin` patch point. A later alignment-entropy
