@@ -483,7 +483,7 @@ class TestIdentityMatrixUnit:
     ):
         partition_file = tmp_path / "test.partition"
         partition_file.write_text(
-            "# ignored\n"
+            "   # ignored\n"
             "\n"
             "AUTO, gene1=1-10\n"
             "DNA,   gene2   =   11   -   20\n"

@@ -287,7 +287,7 @@ class IdentityMatrix(Alignment):
         with open(path) as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith("#"):
+                if not line or line[0] == "#":
                     continue
                 # Format: AUTO, name=start-end  OR  DNA, name=start-end
                 if "=" in line and "-" in line:
