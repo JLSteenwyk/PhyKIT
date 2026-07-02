@@ -1741,6 +1741,7 @@ Results:
 | `Cophylo` circular clade-color overlay rendering | two balanced 2048-tip trees, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.287788s | 0.057825s | 22.27x |
 | `Cophylo._plot_cophylo_circular` circular coordinate and terminal-list reuse | two balanced 32768-tip trees, node x positions, parent maps, preorder lists, and tips already available | 0.136640s | 0.093813s | 1.46x |
 | `Cophylo.run` cached tree2 setup | two balanced 32768-tip trees, validation, tip ordering, plotting, and text output mocked | 0.245234s | 0.209092s | 1.17x |
+| `Cophylo.run` default shared-tip mapping | 5 default-mapping setup passes over two 200k-tip name lists, 200k / 100k shared taxa | 3.342252s / 1.595292s | 1.498223s / 0.736646s | 2.23x / 2.17x |
 | `Cophylo._print_text_output` batched summary | 100k captured cophylo text summaries, identical stdout text | 0.099878s | 0.057622s | 1.73x |
 | `Cophylo._parse_mapping_file` streaming parser | 1M two-column mapped taxa rows with comments/blanks | 0.393696s | 0.391772s | 1.00x |
 | `Cophylo._parse_mapping_file` partition parser | 1M two-column mapped taxa rows with comments/blanks, side-by-side previous split parser comparison | 0.392522s | 0.351642s | 1.12x |
@@ -6295,9 +6296,12 @@ Profiling summary:
   direct NumPy use by computing internal y-position means with Python arithmetic,
   so command import avoids NumPy entirely. The run path now routes tree2 through
   the shared cached tree reader while still receiving a mutable copy for
-  validation, ladderization, and rotation. Later startup work keeps JSON output
-  behind a forwarding wrapper and localizes `PlotConfig` plus
-  cladogram layout helper imports to argument processing and plotting paths.
+  validation, ladderization, and rotation. Default identical-name mapping now
+  builds tree tip-name sets once and treats the intersection-derived mapping as
+  already valid, avoiding a redundant validation scan over large shared
+  tanglegrams. Later startup work keeps JSON output behind a forwarding wrapper
+  and localizes `PlotConfig` plus cladogram layout helper imports to argument
+  processing and plotting paths.
   A follow-up import pass removes the remaining annotation-only `typing` import
   with postponed built-in annotations. Mapping-file parsing now streams rows
   directly from the file handle instead of materializing `readlines()`, preserving

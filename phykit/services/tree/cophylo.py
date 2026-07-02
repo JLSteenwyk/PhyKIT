@@ -67,13 +67,19 @@ class Cophylo(Tree):
 
         tips1 = self.get_tip_names_from_tree(tree1)
         tips2 = self.get_tip_names_from_tree(tree2)
+        tips1_set = set(tips1)
+        tips2_set = set(tips2)
 
         # Build mapping
         if self.mapping_file_path:
             mapping = self._parse_mapping_file(self.mapping_file_path)
+            mapping_valid = {}
+            for t1, t2 in mapping.items():
+                if t1 in tips1_set and t2 in tips2_set:
+                    mapping_valid[t1] = t2
         else:
             # Default: match by identical names
-            shared = set(tips1) & set(tips2)
+            shared = tips1_set & tips2_set
             if len(shared) < 2:
                 raise PhykitUserError(
                     [
@@ -83,15 +89,7 @@ class Cophylo(Tree):
                     ],
                     code=2,
                 )
-            mapping = {name: name for name in shared}
-
-        # Validate mapping
-        mapping_valid = {}
-        tips1_set = set(tips1)
-        tips2_set = set(tips2)
-        for t1, t2 in mapping.items():
-            if t1 in tips1_set and t2 in tips2_set:
-                mapping_valid[t1] = t2
+            mapping_valid = {name: name for name in shared}
 
         if len(mapping_valid) < 2:
             raise PhykitUserError(

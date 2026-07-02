@@ -153,6 +153,50 @@ class TestRun:
 
         read_tree2.assert_called_once_with(TREE2, "tree2_file_path")
 
+    def test_run_default_mapping_scans_tip_names_once(self, mocker):
+        class CountingList(list):
+            def __init__(self, values):
+                super().__init__(values)
+                self.iterations = 0
+
+            def __iter__(self):
+                self.iterations += 1
+                return super().__iter__()
+
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output="out.png",
+            mapping=None,
+            json=False,
+        )
+        svc = Cophylo(args)
+        tree1 = object()
+        tree2 = object()
+        tips1 = CountingList(["A", "B", "C"])
+        tips2 = CountingList(["A", "B", "C"])
+
+        mocker.patch.object(svc, "read_tree_file", return_value=tree1)
+        mocker.patch.object(svc, "_read_tree_with_error", return_value=tree2)
+        mocker.patch.object(svc, "_validate_tree")
+        mocker.patch.object(
+            svc,
+            "get_tip_names_from_tree",
+            side_effect=[tips1, tips2],
+        )
+        mocker.patch.object(
+            svc,
+            "_optimize_tip_order",
+            return_value=({"A": 0, "B": 1, "C": 2}, {"A": 0, "B": 1, "C": 2}),
+        )
+        mocker.patch.object(svc, "_plot_cophylo")
+        mocker.patch("builtins.print")
+
+        svc.run()
+
+        assert tips1.iterations == 1
+        assert tips2.iterations == 1
+
     def test_validate_tree_uses_direct_standard_tree_traversal(self, monkeypatch):
         svc = Cophylo.__new__(Cophylo)
         tree = Phylo.read(StringIO("((A,B),(C,D));"), "newick")
