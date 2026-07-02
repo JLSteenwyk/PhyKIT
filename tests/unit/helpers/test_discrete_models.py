@@ -694,6 +694,57 @@ class TestFelsensteinPruning:
 
         assert _felsenstein_loglik_prepared(context, Q, pi) < 0
 
+    def test_prepared_three_state_sym_loglik_uses_eigendecomp_transition_path(
+        self, monkeypatch
+    ):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        branch_length=0.25,
+                        clades=[
+                            Clade(branch_length=0.5, name="A"),
+                            Clade(branch_length=0.75, name="B"),
+                        ],
+                    ),
+                    Clade(branch_length=1.25, name="C"),
+                ],
+            )
+        )
+        context = _prepare_felsenstein_context(
+            tree, {"A": "0", "B": "1", "C": "2"}, ["0", "1", "2"]
+        )
+        Q = build_q_matrix(np.array([0.2, 0.3, 0.4]), 3, "SYM")
+        pi = np.ones(3) / 3.0
+        expected = _felsenstein_loglik_prepared(context, Q, pi)
+
+        def fail_matrix_exp(*_args, **_kwargs):
+            raise AssertionError(
+                "small prepared pruning should use eigendecomposition"
+            )
+
+        monkeypatch.setattr(discrete_models, "matrix_exp", fail_matrix_exp)
+
+        assert _felsenstein_loglik_prepared(context, Q, pi) == pytest.approx(
+            expected,
+            rel=1e-12,
+            abs=1e-12,
+        )
+
+    def test_complex_eigendecomposition_context_falls_back(self):
+        import phykit.helpers.discrete_models as discrete_models
+
+        Q = build_q_matrix(
+            np.array([0.2, 0.3, 0.4, 0.15, 0.05, 0.25]),
+            3,
+            "ARD",
+        )
+
+        assert discrete_models._matrix_exp_eigendecomp_context(Q) is None
+
     def test_two_state_er_rate_loglik_matches_prepared_q_likelihood(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
         import phykit.helpers.discrete_models as discrete_models

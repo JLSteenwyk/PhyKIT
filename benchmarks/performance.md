@@ -1535,9 +1535,11 @@ Results:
 | `discrete_models.fit_q_matrix` two-state ER scalar optimizer | balanced 512-tip tree, two-state ER model, full Q fit with equal log-likelihood | 0.296045s | 0.022109s | 13.39x |
 | `discrete_models` two-state scalar exp/log primitives | one scalar transition decay and one scalar root log-likelihood operation, side-by-side previous NumPy ufunc dispatch | 0.000000403s | 0.000000145s | 2.79x |
 | `discrete_models` generic root likelihood total | 2 / 3 / 4 / 8 / 16 / 64-state prior-weighted likelihood vectors, side-by-side previous `np.sum(pi * root_lik)` | 0.000006310s / 0.000006381s / 0.000006961s / 0.000006135s / 0.000005135s / 0.000005092s | 0.000001144s / 0.000001084s / 0.000001175s / 0.000001519s / 0.000001047s / 0.000001155s | 5.52x / 5.89x / 5.93x / 4.04x / 4.90x / 4.41x |
+| `discrete_models.fit_q_matrix` small real-eigensystem transitions | sample `tree_simple` three-state SYM fit, side-by-side previous SciPy `expm` transition path, log-likelihood diff `1.8e-15` | 0.714704s | 0.580039s | 1.23x |
 | `FitDiscrete.run` shared pruning context | balanced 8192-tip tree, ER/SYM/ARD setup context reuse | 0.045272s | 0.014442s | 3.13x |
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
 | `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |
+| `FitDiscrete.run` small real-eigensystem transitions | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous SciPy `expm` transition path with identical stdout | 5.374444s | 3.653641s | 1.47x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
 | `fit_discrete` module import without eager NumPy/discrete helper | cold subprocess import after lazy helper wrappers and local model constant | 0.090685s | 0.026126s | 3.47x |
 | `fit_discrete` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006547s | 0.005270s | 1.24x |
@@ -5845,6 +5847,12 @@ Profiling summary:
   loop. The two-state scalar transition and log-likelihood paths now use
   `math.exp` and `math.log` instead of scalar NumPy ufunc calls, reducing
   dispatch overhead in repeated binary pruning evaluations.
+  A later small-state pass lets prepared pruning for three- and four-state
+  matrices with real eigensystems reuse one eigendecomposition per likelihood
+  evaluation and compute branch transition matrices from scalar exponentials.
+  Matrices with complex eigenvectors, ill-conditioned eigenvectors, or invalid
+  values fall back to the existing SciPy `expm` path, avoiding the slower
+  complex-eigendecomposition case observed for some ARD matrices.
   A later `fit_discrete` startup pass
   keeps the public helper patch points as thin lazy wrappers and stores the
   model-name constant locally, so importing the command module no longer imports

@@ -167,6 +167,36 @@ def matrix_exp(Q: np.ndarray, t: float) -> np.ndarray:
     return expm(Q * t)
 
 
+def _matrix_exp_eigendecomp_context(Q: np.ndarray):
+    try:
+        eigenvalues, eigenvectors = np.linalg.eig(Q)
+        if np.iscomplexobj(eigenvalues) or np.iscomplexobj(eigenvectors):
+            return None
+        inverse_eigenvectors = np.linalg.inv(eigenvectors)
+        if np.iscomplexobj(inverse_eigenvectors):
+            return None
+        if np.linalg.cond(eigenvectors) > 1e8:
+            return None
+    except (np.linalg.LinAlgError, ValueError, FloatingPointError):
+        return None
+
+    if not (
+        np.isfinite(eigenvalues).all()
+        and np.isfinite(eigenvectors).all()
+        and np.isfinite(inverse_eigenvectors).all()
+    ):
+        return None
+    return eigenvalues, eigenvectors, inverse_eigenvectors
+
+
+def _matrix_exp_from_eigendecomp(context, t: float):
+    eigenvalues, eigenvectors, inverse_eigenvectors = context
+    transition = (
+        eigenvectors * np.exp(eigenvalues * t)
+    ) @ inverse_eigenvectors
+    return np.asarray(transition, dtype=float)
+
+
 def _matrix_exp_two_state(Q: np.ndarray, t: float):
     rates = _two_state_ctmc_rates(Q)
     if rates is None:
@@ -363,12 +393,23 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
             return -1e20
         return math.log(total_lik)
 
+    eigendecomp_context = (
+        _matrix_exp_eigendecomp_context(Q)
+        if 3 <= k <= 4
+        else None
+    )
+
     for idx, children, lengths in internal_entries:
         lik = np.ones(k)
         for child_idx, t in zip(children, lengths):
             P = transition_cache.get(t)
             if P is None:
-                P = matrix_exp(Q, t)
+                if eigendecomp_context is None:
+                    P = matrix_exp(Q, t)
+                else:
+                    P = _matrix_exp_from_eigendecomp(eigendecomp_context, t)
+                    if P is None:
+                        P = matrix_exp(Q, t)
                 transition_cache[t] = P
             lik *= P @ cond_liks[child_idx]
         cond_liks[idx] = lik
