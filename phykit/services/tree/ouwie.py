@@ -105,31 +105,26 @@ class OUwie(Tree):
             self.regime_data_path, tree_tips
         )
 
-        shared = self._shared_trait_regime_taxa(traits, regime_assignments)
-        if len(shared) < 3:
-            raise PhykitUserError(
-                [
-                    f"Only {len(shared)} shared taxa among tree, trait, and regime files.",
-                    "At least 3 shared taxa are required.",
-                ],
-                code=2,
-            )
-
-        traits = {k: traits[k] for k in shared}
-        regime_assignments = {k: regime_assignments[k] for k in shared}
-
-        tips_to_prune = [t for t in tree_tips if t not in shared]
+        (
+            traits,
+            regime_assignments,
+            tips_to_prune,
+            ordered_names,
+            regimes,
+        ) = self._prepare_shared_trait_regime_data(
+            tree_tips,
+            traits,
+            regime_assignments,
+        )
         tree_for_analysis = self._fast_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
             tree_for_analysis = self.prune_tree_using_taxa_list(
                 tree_for_analysis, tips_to_prune
             )
 
-        ordered_names = sorted(shared)
         n = len(ordered_names)
         x = np.array([traits[name] for name in ordered_names])
 
-        regimes = sorted(set(regime_assignments.values()))
         n_regimes = len(regimes)
 
         if n_regimes < 2:
@@ -183,6 +178,44 @@ class OUwie(Tree):
         regime_assignments: dict[str, str],
     ) -> set[str]:
         return set(traits).intersection(regime_assignments)
+
+    @staticmethod
+    def _prepare_shared_trait_regime_data(
+        tree_tips,
+        traits,
+        regime_assignments,
+    ):
+        shared = set(traits)
+        shared.intersection_update(regime_assignments)
+        if len(shared) < 3:
+            raise PhykitUserError(
+                [
+                    f"Only {len(shared)} shared taxa among tree, trait, and regime files.",
+                    "At least 3 shared taxa are required.",
+                ],
+                code=2,
+            )
+
+        if len(shared) == len(traits) == len(regime_assignments):
+            shared_traits = traits
+            shared_regime_assignments = regime_assignments
+        else:
+            shared_traits = {name: traits[name] for name in shared}
+            shared_regime_assignments = {
+                name: regime_assignments[name]
+                for name in shared
+            }
+
+        tips_to_prune = [name for name in tree_tips if name not in shared]
+        ordered_names = sorted(shared)
+        regimes = sorted(set(shared_regime_assignments.values()))
+        return (
+            shared_traits,
+            shared_regime_assignments,
+            tips_to_prune,
+            ordered_names,
+            regimes,
+        )
 
     def process_args(self, args) -> dict:
         models = ALL_MODELS[:]

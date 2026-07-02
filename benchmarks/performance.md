@@ -2465,7 +2465,7 @@ Results:
 | `OUwie.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with trait/regime data | 0.0672s | 0.0077s | 8.7x |
 | `OUwie.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, regime parsing, model fitting, and output mocked; protective prune-copy retained | 1.174518s | 0.358352s | 3.28x |
 | `OUwie.run` all-shared read-only setup | balanced 32768-tip cached tree, trait/regime parsing, model fitting/output mocked | 0.292509s | 0.073640s | 3.97x |
-| `OUwie.run` shared trait/regime setup | 300k trait taxa x 300k regime taxa with 225k overlap, identical filtered maps and sorted names | 2.820324s | 2.602742s | 1.08x |
+| `OUwie.run` shared trait/regime setup | default setup over 32768 / 200k / 300k / 50k tree tips with 32768 / 200k / 225k / 40k shared trait-regime taxa | 6.554888s / 1.585357s / 2.900188s / 0.441264s | 2.587766s / 1.238885s / 0.864087s / 0.290580s | 2.53x / 1.28x / 3.36x / 1.52x |
 | `OUwie._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.470183s | 0.452638s | 1.04x |
 | `OUwie._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.433626s | 0.241180s | 1.80x |
 | `OUwie._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.241349s | 0.224103s | 1.08x |
@@ -8088,7 +8088,10 @@ Profiling summary:
   Cached read-only `OUwie.run` now avoids the extra cached tree copy before
   creating its protective copy for pruning. A later all-shared run-setup pass
   skips that protective copy entirely when every tree tip has trait and regime
-  data, while still copying before pruning missing taxa. A follow-up regime
+  data, while still copying before pruning missing taxa. Shared trait/regime
+  setup now updates the shared taxon set in place and reuses the original
+  trait/regime dictionaries when their key sets already match, avoiding two
+  large filtering comprehensions on all-shared inputs. A follow-up regime
   setup pass builds the object parent map with a direct stack traversal and
   computes branch regime assignments and the root regime from one direct
   state-set traversal instead of running the same Fitch-style pass twice.
