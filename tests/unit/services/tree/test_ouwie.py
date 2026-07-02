@@ -462,6 +462,32 @@ class TestWeightMatrix:
         np.testing.assert_allclose(W.sum(axis=1), 1.0, atol=1e-10)
         assert alphas.get_count == 6
 
+    def test_multi_alpha_weight_decay_uses_scalar_work_buffer(
+        self, svc, monkeypatch
+    ):
+        ordered_names = ["A"]
+        lineage_info = {
+            "A": [
+                ("root", 1.0, "r1", 0.0, 1.0),
+                ("tip", 2.0, "r2", 1.0, 3.0),
+            ]
+        }
+
+        def fail_ones(*_args, **_kwargs):
+            raise AssertionError("multi-alpha weights should not allocate np.ones")
+
+        monkeypatch.setattr(ouwie_module.np, "ones", fail_ones)
+
+        W = svc._build_weight_matrix_multi_alpha(
+            ordered_names,
+            lineage_info,
+            ["r1", "r2"],
+            {"r1": 0.2, "r2": 0.4},
+            "r1",
+        )
+
+        np.testing.assert_allclose(W.sum(axis=1), 1.0, atol=1e-10)
+
     @pytest.mark.parametrize("alpha", [1e-12, 0.5])
     def test_single_alpha_weight_cache_matches_direct_builder(
         self, precomputed, alpha
@@ -1205,6 +1231,32 @@ class TestVCV:
             coeff("r1", 3.0),
         ])
         np.testing.assert_allclose(observed, expected)
+
+    def test_multi_alpha_vcv_decay_uses_scalar_work_buffer(
+        self, svc, monkeypatch
+    ):
+        ordered_names = ["A"]
+        lineage_info = {
+            "A": [
+                ("root", 1.0, "r1", 0.0, 1.0),
+                ("tip", 2.0, "r2", 1.0, 3.0),
+            ]
+        }
+
+        def fail_ones(*_args, **_kwargs):
+            raise AssertionError("multi-alpha VCV should not allocate np.ones")
+
+        monkeypatch.setattr(ouwie_module.np, "ones", fail_ones)
+
+        observed = svc._build_ou_vcv_multi_alpha(
+            ordered_names,
+            lineage_info,
+            ["r1", "r2"],
+            {"r1": 0.2, "r2": 0.4},
+            {"r1": 1.0, "r2": 2.0},
+        )
+
+        assert observed[0, 0] > 0.0
 
 
 # ── TestBM1 ──────────────────────────────────────────────────────────

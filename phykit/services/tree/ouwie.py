@@ -830,6 +830,7 @@ class OUwie(Tree):
         regime_idx = {r: j for j, r in enumerate(regimes)}
         root_col = regime_idx.get(root_regime)
         W = np.zeros((n, R))
+        exp = math.exp
 
         for i, name in enumerate(ordered_names):
             path = lineage_info[name]
@@ -840,11 +841,13 @@ class OUwie(Tree):
             n_branches = len(path)
             # Precompute cumulative decay factor from branch end to tip
             # decay_to_tip[b] = product of exp(-alpha_r * bl_r) for all branches after b
-            decay_to_tip = np.ones(n_branches)
+            decay_to_tip = [1.0] * n_branches
             for b in range(n_branches - 2, -1, -1):
                 _, bl_next, regime_next, _, _ = path[b + 1]
                 alpha_next = alphas_dict.get(regime_next, 0.01)
-                decay_to_tip[b] = decay_to_tip[b + 1] * np.exp(-alpha_next * bl_next)
+                decay_to_tip[b] = decay_to_tip[b + 1] * exp(
+                    -alpha_next * bl_next
+                )
 
             for b_idx, (_, bl, regime, _d_start, _d_end) in enumerate(path):
                 if regime not in regime_idx:
@@ -856,7 +859,7 @@ class OUwie(Tree):
                 if alpha_r < 1e-10:
                     contribution = bl
                 else:
-                    contribution = (1.0 - np.exp(-alpha_r * bl))
+                    contribution = 1.0 - exp(-alpha_r * bl)
 
                 # Decay to tip from end of this branch
                 if b_idx < n_branches - 1:
@@ -870,9 +873,7 @@ class OUwie(Tree):
                 if n_branches:
                     _, bl_first, regime_first, _, _ = path[0]
                     alpha_first = alphas_dict.get(regime_first, 0.01)
-                    total_decay = decay_to_tip[0] * np.exp(
-                        -alpha_first * bl_first
-                    )
+                    total_decay = decay_to_tip[0] * exp(-alpha_first * bl_first)
                 W[i, root_col] += total_decay
 
         return W
@@ -1008,16 +1009,15 @@ class OUwie(Tree):
         branch_to_indices = {}
         branch_info = {}
         branch_decays = {}
+        exp = math.exp
 
         for idx, name in enumerate(ordered_names):
             path = lineage_info[name]
-            decay_to_tip = np.ones(len(path))
+            decay_to_tip = [1.0] * len(path)
             for b in range(len(path) - 2, -1, -1):
                 _, bl_next, r_next, _, _ = path[b + 1]
                 alpha_next = alphas_dict.get(r_next, 0.01)
-                decay_to_tip[b] = decay_to_tip[b + 1] * np.exp(
-                    -alpha_next * bl_next
-                )
+                decay_to_tip[b] = decay_to_tip[b + 1] * exp(-alpha_next * bl_next)
 
             for branch_idx, (
                 clade_id, bl, regime, _d_start, _d_end,
@@ -1036,7 +1036,7 @@ class OUwie(Tree):
                 coeff = sigma2_r * bl
             else:
                 coeff = sigma2_r / (2.0 * alpha_r) * (
-                    1.0 - np.exp(-2.0 * alpha_r * bl)
+                    1.0 - exp(-2.0 * alpha_r * bl)
                 )
             if len(indices) == 1:
                 decay = branch_decays[clade_id][0]

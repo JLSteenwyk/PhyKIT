@@ -2566,6 +2566,8 @@ Results:
 | `OUwie.run` cached lazy NumPy attributes | sample `tree_simple` all-model JSON run, side-by-side previous lazy proxy lookup path, BM1 `r_squared` unchanged at `0.0` | 2.985246s | 2.937676s | 1.02x |
 | `OUwie._build_ou_H_matrices` direct block indexing | balanced 512-tip synthetic lineage x 3 regimes, side-by-side previous `np.ix_` block helper, identical H matrices | 0.021549s | 0.016779s | 1.28x |
 | `OUwie._build_weight_matrix_multi_alpha` root decay reuse | balanced 4096-tip synthetic lineage x 3 regimes, side-by-side previous second root-decay path scan, identical W matrix | 0.236037s | 0.189050s | 1.25x |
+| `OUwie._build_weight_matrix_multi_alpha` scalar decay buffer | balanced 2048-tip synthetic lineage x 3 regimes, side-by-side previous per-tip `np.ones` buffer and scalar `np.exp`, identical W matrix | 0.121188s | 0.049184s | 2.46x |
+| `OUwie._build_ou_vcv_multi_alpha` scalar decay buffer | balanced 2048-tip synthetic lineage x 3 regimes, side-by-side previous per-tip `np.ones` buffer and scalar `np.exp`, identical VCV matrix | 0.320867s | 0.297005s | 1.08x |
 
 Profiling summary:
 
