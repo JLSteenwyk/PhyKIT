@@ -2332,6 +2332,7 @@ Results:
 | `RateHeterogeneity.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, regime parsing, fitting, and output mocked; protective prune-copy retained | 1.725839s | 0.618584s | 2.79x |
 | `RateHeterogeneity.run` all-shared read-only setup | balanced 32768-tip cached tree, trait/regime parsing, fitting/output mocked, ladderize off | 0.330438s | 0.084517s | 3.91x |
 | `RateHeterogeneity.run` shared trait/regime setup | default setup over 32768 / 200k / 200k tree tips with 32768 / 200k / 150k shared trait-regime taxa | 6.041303s / 2.831969s / 2.430412s | 2.318693s / 1.029549s / 0.942063s | 2.61x / 2.75x / 2.58x |
+| `RateHeterogeneity.run` cached lazy NumPy attributes | sample `tree_simple` JSON run with 10 simulations, side-by-side previous uncached lazy proxy | 0.131484s | 0.118130s | 1.11x |
 | `RateHeterogeneity._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.035051s | 0.024073s | 1.46x |
 | `RateHeterogeneity._iter_postorder` reverse-preorder helper | balanced 131072-tip tree, postorder generator materialized as a list, side-by-side previous visited-tuple helper | 0.091678s | 0.045672s | 2.01x |
 | `RateHeterogeneity._parse_trait_file` streaming parse | 500k two-column trait rows with comments/blanks | 0.729276s | 0.653401s | 1.12x |
