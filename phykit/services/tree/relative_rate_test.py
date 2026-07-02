@@ -638,44 +638,55 @@ class RelativeRateTest(Tree):
     # ------------------------------------------------------------------
 
     def _output_single(self, outgroup: str, results: list[dict]):
-        n_ingroup = len(
-            set(r["taxon1"] for r in results) | set(r["taxon2"] for r in results)
-        )
-
         if self.json_output:
+            taxa = set()
+            output_results = []
+            append_result = output_results.append
+            add_taxon = taxa.add
+            for r in results:
+                taxon1 = r["taxon1"]
+                taxon2 = r["taxon2"]
+                add_taxon(taxon1)
+                add_taxon(taxon2)
+                append_result({
+                    "taxon1": taxon1, "taxon2": taxon2,
+                    "m1": r["m1"], "m2": r["m2"],
+                    "chi2": round(r["chi2"], 4),
+                    "p_value": r["p_value"],
+                    "p_bonferroni": r["p_bonf"],
+                    "p_fdr": r["p_fdr"],
+                })
             print_json({
                 "outgroup": outgroup,
-                "n_ingroup_taxa": n_ingroup,
+                "n_ingroup_taxa": len(taxa),
                 "n_tests": len(results),
-                "results": [
-                    {
-                        "taxon1": r["taxon1"], "taxon2": r["taxon2"],
-                        "m1": r["m1"], "m2": r["m2"],
-                        "chi2": round(r["chi2"], 4),
-                        "p_value": r["p_value"],
-                        "p_bonferroni": r["p_bonf"],
-                        "p_fdr": r["p_fdr"],
-                    }
-                    for r in results
-                ],
+                "results": output_results,
             })
         else:
             try:
+                taxa = set()
+                body_lines = []
+                append_body = body_lines.append
+                add_taxon = taxa.add
+                for r in results:
+                    taxon1 = r["taxon1"]
+                    taxon2 = r["taxon2"]
+                    add_taxon(taxon1)
+                    add_taxon(taxon2)
+                    sig = "*" if r["p_fdr"] < 0.05 else ""
+                    append_body(
+                        f"{taxon1}\t{taxon2}\t{r['m1']}\t{r['m2']}\t"
+                        f"{r['chi2']:.4f}\t{r['p_value']:.4e}\t{r['p_bonf']:.4e}\t"
+                        f"{r['p_fdr']:.4e}\t{sig}"
+                    )
                 lines = [
                     f"Outgroup: {outgroup}",
-                    f"Number of ingroup taxa: {n_ingroup}",
+                    f"Number of ingroup taxa: {len(taxa)}",
                     f"Number of pairwise tests: {len(results)}",
                     "---",
                     "taxon1\ttaxon2\tm1\tm2\tchi2\tp_value\tp_bonf\tp_fdr\tsignificant",
                 ]
-                append = lines.append
-                for r in results:
-                    sig = "*" if r["p_fdr"] < 0.05 else ""
-                    append(
-                        f"{r['taxon1']}\t{r['taxon2']}\t{r['m1']}\t{r['m2']}\t"
-                        f"{r['chi2']:.4f}\t{r['p_value']:.4e}\t{r['p_bonf']:.4e}\t"
-                        f"{r['p_fdr']:.4e}\t{sig}"
-                    )
+                lines.extend(body_lines)
                 print("\n".join(lines))
             except BrokenPipeError:
                 pass

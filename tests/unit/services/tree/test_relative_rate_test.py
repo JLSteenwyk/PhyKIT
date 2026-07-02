@@ -475,6 +475,70 @@ class TestPairwiseTajima:
 
 
 class TestTextOutput:
+    def test_output_single_json_builds_rows_in_one_pass(self, mocker):
+        class CountingResults(list):
+            iter_calls = 0
+
+            def __iter__(self):
+                self.iter_calls += 1
+                return super().__iter__()
+
+        svc = RelativeRateTest(_make_args(json=True))
+        print_json = mocker.patch.object(relative_rate_test_module, "print_json")
+        results = CountingResults([
+            {
+                "taxon1": "A",
+                "taxon2": "B",
+                "m1": 1,
+                "m2": 3,
+                "chi2": 2.12345,
+                "p_value": 0.0455,
+                "p_bonf": 0.091,
+                "p_fdr": 0.04,
+            },
+            {
+                "taxon1": "A",
+                "taxon2": "C",
+                "m1": 2,
+                "m2": 2,
+                "chi2": 0.0,
+                "p_value": 1.0,
+                "p_bonf": 1.0,
+                "p_fdr": 1.0,
+            },
+        ])
+
+        svc._output_single("O", results)
+
+        assert results.iter_calls == 1
+        print_json.assert_called_once_with({
+            "outgroup": "O",
+            "n_ingroup_taxa": 3,
+            "n_tests": 2,
+            "results": [
+                {
+                    "taxon1": "A",
+                    "taxon2": "B",
+                    "m1": 1,
+                    "m2": 3,
+                    "chi2": 2.1235,
+                    "p_value": 0.0455,
+                    "p_bonferroni": 0.091,
+                    "p_fdr": 0.04,
+                },
+                {
+                    "taxon1": "A",
+                    "taxon2": "C",
+                    "m1": 2,
+                    "m2": 2,
+                    "chi2": 0.0,
+                    "p_value": 1.0,
+                    "p_bonferroni": 1.0,
+                    "p_fdr": 1.0,
+                },
+            ],
+        })
+
     def test_output_single_batches_text_rows(self, mocker):
         svc = RelativeRateTest(_make_args())
         printed = mocker.patch("builtins.print")
