@@ -662,6 +662,7 @@ Results:
 | `PhyloGwas.run` ASCII biallelic column prefilter | 400 taxa x 50,000 sites, continuous phenotype scan, 90% invariant / 5% multiallelic / 5% biallelic ASCII columns | 0.352346s | 0.119668s | 2.94x |
 | `PhyloGwas.run` phylo-pattern minor-taxa scan | 400 taxa x 50,000 sites with 5000 significant tree-classified sites, side-by-side previous temporary allele-list filter | 2.555218s | 1.682205s | 1.52x |
 | `PhyloGwas.run` shared-taxon setup | 1M alignment taxa x 1M phenotype taxa with 750k overlap, identical sorted shared taxa | 3.113728s | 2.794556s | 1.11x |
+| `PhyloGwas.run` exact shared-taxon setup | 500k alignment taxa x 500k phenotype taxa with identical taxon sets, side-by-side previous intersection-set construction | 0.570533s | 0.099172s | 5.75x |
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
 | `PhyloGwas` categorical site-result row construction | 1M mocked categorical GWAS site results, identical row dictionaries | 2.008253s | 1.780623s | 1.13x |
@@ -3847,6 +3848,10 @@ Profiling summary:
   fields. A follow-up parser pass reads rows in binary mode and decodes only
   the retained first two fields, preserving the same parsed phenotype mapping
   while avoiding text decoding and string allocation for ignored trailing fields.
+  Exact alignment/phenotype taxon matches now return sorted alignment keys
+  directly after a key-view equality check, preserving partial-overlap
+  intersection behavior while avoiding a large temporary intersection set for
+  common all-shared GWAS inputs.
 - `PhyloGwas` allele extraction baseline time performed one dictionary lookup
   per taxon per tested alignment column. The optimized path builds one ASCII
   byte matrix for shared taxa, extracts columns through `tobytes().decode()`,

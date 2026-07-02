@@ -890,6 +890,8 @@ class PhyloGwas(Alignment):
 
     @staticmethod
     def _sorted_shared_taxa(seqs: dict, phenotypes: dict) -> list[str]:
+        if len(seqs) == len(phenotypes) and seqs.keys() == phenotypes.keys():
+            return sorted(seqs)
         return sorted(set(seqs).intersection(phenotypes))
 
     # ------------------------------------------------------------------

@@ -223,6 +223,23 @@ class TestPhyloGwas:
 
         assert PhyloGwas._sorted_shared_taxa(seqs, phenotypes) == ["sp1", "sp2"]
 
+    def test_sorted_shared_taxa_exact_keys_skips_intersection_set(self, monkeypatch):
+        seqs = {"sp3": "AAA", "sp1": "AAA", "sp2": "AAA"}
+        phenotypes = {"sp2": "case", "sp3": "case", "sp1": "control"}
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError(
+                "exact shared taxa should not build an intersection set"
+            )
+
+        monkeypatch.setattr("builtins.set", fail_set)
+
+        assert PhyloGwas._sorted_shared_taxa(seqs, phenotypes) == [
+            "sp1",
+            "sp2",
+            "sp3",
+        ]
+
     def test_extract_column_alleles_from_ascii_matrix(self):
         sequences = ["ACG", "ATG", "AGG"]
         matrix = PhyloGwas._build_ascii_alignment_matrix(sequences, 3)
