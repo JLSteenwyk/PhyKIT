@@ -512,6 +512,26 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(gene_res.statistic, 2.0)
         self.assertAlmostEqual(gene_res.pvalue, 0.36787944117144233)
 
+    def test_chisquare_three_counts_avoids_generic_sum(self):
+        observed = [45.0, 35.0, 20.0]
+        total = sum(observed)
+        expected = total / len(observed)
+        expected_statistic = sum(
+            (value - expected) ** 2 / expected for value in observed
+        )
+        expected_pvalue = module.math.exp(-expected_statistic / 2.0)
+
+        with patch(
+            "builtins.sum",
+            side_effect=AssertionError(
+                "three-count polytomy chi-square should sum directly"
+            ),
+        ):
+            result = module.chisquare([45, 35, 20])
+
+        self.assertEqual(result.statistic, expected_statistic)
+        self.assertEqual(result.pvalue, expected_pvalue)
+
     @patch('builtins.print')
     def test_print_gene_support_freq_res(self, mock_print):
         """Test printing gene support frequency results"""

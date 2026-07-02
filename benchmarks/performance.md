@@ -1076,6 +1076,7 @@ Results:
 | `PolytomyTest._evaluate_tree_triplets_fast` triplet/group-set reuse | balanced 1024-tip tree, 8k group triplets, side-by-side previous per-triplet group conversion | 0.037052s | 0.025503s | 1.45x |
 | `PolytomyTest._common_ancestor_from_path_cache` triplet-node check | 2M zipped triplet path node rows, same / second-different / third-different cases, side-by-side previous `nodes[1:]` generator predicate | 2.809178s / 1.873774s / 1.963923s | 0.185879s / 0.076666s / 0.159605s | 15.11x / 24.44x / 12.30x |
 | `PolytomyTest.chisquare_tests` p-value helper | cold process, two three-category equal-frequency chi-square tests | 0.487223s | 0.000007208s | 67594.8x |
+| `PolytomyTest.chisquare` direct three-count statistic | 1M mixed three-category observed-count vectors, identical statistic and p-value | 4.439998s | 3.126441s | 1.42x |
 | `PolytomyTest.determine_sisters_and_add_to_counter` polytomy check | 5000 resolved three-tip counter evaluations | 0.250329s | 0.201572s | 1.24x |
 | `PolytomyTest._has_exactly_three_terminals` triplet check | 5000 resolved three-tip trees before legacy sister counting | 0.027710s | 0.002097s | 13.21x |
 | `PolytomyTest._has_exactly_three_terminals` fallback terminal scan | nonstandard tree yielding 500k terminals, false case | 0.043168s | 0.000001167s | 36990.6x |
@@ -4888,8 +4889,8 @@ Profiling summary:
   those nonstandard `get_terminals()` and `get_nonterminals()` scans as soon as
   the exact-three-tip or single-internal-node result is known, avoiding full list
   materialization and full generator scans in false cases. Legacy triplet-tree
-  preparation now builds
-  the prune list by scanning `tips` against a three-item triplet set, avoiding a
+  preparation now builds the prune list by scanning `tips` against a three-item
+  triplet set, avoiding a
   full `set(tips)` allocation for every triplet and making prune order
   deterministic. The fast triplet evaluator now reuses one triplet set for both
   tip-presence checks and sister-pair assignment, and precomputes group
@@ -4909,7 +4910,9 @@ Profiling summary:
   behavior while avoiding an O(n) allocation for large group maps. The tree-list
   reader now uses a local forwarding wrapper, preserving the module-level patch
   point while avoiding `phykit.helpers.files` during import-only command
-  discovery.
+  discovery. The local chi-square wrapper now computes common three-category
+  statistics directly, avoiding a temporary observed list and generic
+  reductions while keeping the generic SciPy-compatible path for other inputs.
 - `TransferAnnotations.run` taxa validation setup baseline time collected
   target and source taxon sets through `get_terminals()`. The optimized path
   uses the shared direct terminal-name traversal while retaining fallback

@@ -75,7 +75,27 @@ def chisquare(*args, **kwargs):
         from scipy.stats import chisquare as _chisquare
         return _chisquare(*args, **kwargs)
 
-    observed = [float(value) for value in args[0]]
+    values = args[0]
+    try:
+        if len(values) == 3:
+            value_0 = float(values[0])
+            value_1 = float(values[1])
+            value_2 = float(values[2])
+            total = value_0 + value_1 + value_2
+            if total == 0:
+                return Power_divergenceResult(float("nan"), float("nan"))
+
+            expected = total / 3
+            statistic = (
+                (value_0 - expected) ** 2 / expected
+                + (value_1 - expected) ** 2 / expected
+                + (value_2 - expected) ** 2 / expected
+            )
+            return Power_divergenceResult(statistic, math.exp(-statistic / 2.0))
+    except (IndexError, TypeError):
+        pass
+
+    observed = [float(value) for value in values]
     total = sum(observed)
     if total == 0:
         return Power_divergenceResult(float("nan"), float("nan"))
