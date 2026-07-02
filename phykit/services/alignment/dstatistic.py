@@ -81,6 +81,14 @@ def _chi2_sf_df1(chi2_stat: float) -> float:
     return math.erfc(math.sqrt(chi2_stat / 2.0))
 
 
+def _discordant_chi2_stat(abba_count: int, baba_count: int) -> float:
+    n_informative = abba_count + baba_count
+    if n_informative == 0:
+        return 0.0
+    diff = abba_count - baba_count
+    return (diff * diff) / n_informative
+
+
 class Dstatistic(Alignment):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -167,8 +175,7 @@ class Dstatistic(Alignment):
         p_value = None
         chi2_stat = None
         if n_informative > 0:
-            expected = n_informative / 2.0
-            chi2_stat = ((abba_count - expected) ** 2 + (baba_count - expected) ** 2) / expected
+            chi2_stat = _discordant_chi2_stat(abba_count, baba_count)
             p_value = _chi2_sf_df1(chi2_stat)
 
         # Output

@@ -41,6 +41,18 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_discordant_chi2_stat_matches_expected_count_formula():
+    abba_count = 45
+    baba_count = 20
+    expected = (
+        (abba_count - ((abba_count + baba_count) / 2.0)) ** 2
+        + (baba_count - ((abba_count + baba_count) / 2.0)) ** 2
+    ) / ((abba_count + baba_count) / 2.0)
+
+    assert module._discordant_chi2_stat(abba_count, baba_count) == expected
+    assert module._discordant_chi2_stat(0, 0) == 0.0
+
+
 def _write_alignment(path, seqs):
     with open(path, "w") as f:
         for name, seq in seqs.items():

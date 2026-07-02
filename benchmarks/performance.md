@@ -731,6 +731,7 @@ Results:
 | `Dstatistic._count_site_patterns` single-pattern mask shortcut | 5M sites, P1/outgroup identical and P2/P3 identical, ABBA possible and BABA impossible, side-by-side previous two-mask vector path | 0.014601s | 0.009187s | 1.59x |
 | `Dstatistic._count_site_patterns_scalar` direct skip checks | 1M Unicode-containing scalar fallback sites, block size 1000, identical ABBA/BABA totals and block arrays | 0.967857s | 0.443901s | 2.18x |
 | `Dstatistic._normal_two_tailed_p_value` | cold process, alignment-mode jackknife z-score p-value | 0.556567s | 0.000003125s | 178101.4x |
+| `Dstatistic` gene-tree discordant chi-square statistic | 500k ABBA/BABA count pairs, identical df=1 chi-square statistic, side-by-side previous expected-count formula | 0.475967s | 0.236921s | 2.01x |
 | `Dstatistic._jackknife_d_values` | 300k ABBA/BABA jackknife blocks | 0.0972s | 0.0022s | 43.3x |
 | `Dstatistic._jackknife_d_values` block total reductions | 300k ABBA/BABA jackknife blocks, side-by-side previous `np.sum` totals | 0.000460071s | 0.000216358s | 2.13x |
 | `Dstatistic` jackknife mean reduction | 10 / 20 / 50 / 100 / 1000 / 4000 / 10000 / 300k jackknife D values, side-by-side previous `np.mean` wrapper | 3.081938167s / 4.086735041s / 2.810416792s / 2.284828209s / 0.727887375s / 0.418584084s / 0.231934833s / 0.050983125s | 2.317377792s / 2.801813542s / 3.321993875s / 2.227213833s / 0.376665792s / 0.149053916s / 0.121398167s / 0.047169209s | 1.33x / 1.46x / 0.85x / 1.03x / 1.93x / 2.81x / 1.91x / 1.08x |
@@ -4178,7 +4179,9 @@ Profiling summary:
   ndarray `mean()` method, avoiding the generic `np.mean` wrapper.
   Alignment-mode jackknife standard-error setup now computes the centered
   sum-of-squares with a dot product, avoiding the temporary squared deviation
-  reduction while preserving the same standard-error formula.
+  reduction while preserving the same standard-error formula. Gene-tree mode now
+  computes the two-category chi-square statistic as `(ABBA - BABA)^2 / n`
+  directly instead of materializing the expected-count expression.
 - `Dstatistic._read_fasta` and `Dfoil._read_fasta` baseline time materialized
   `SeqRecord` objects while alignment mode only needed IDs and uppercase
   sequences. The optimized path uses `SimpleFastaParser`, preserving first-token
