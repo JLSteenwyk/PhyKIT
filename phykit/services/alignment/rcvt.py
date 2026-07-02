@@ -17,6 +17,8 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _DNA_INVALID_LOOKUP = None
 _PROTEIN_INVALID_LOOKUP = None
+_ASCII_GLOBAL_BINCOUNT_MIN_RECORDS = 1_000
+_ASCII_GLOBAL_BINCOUNT_MAX_LENGTH = 256
 
 
 def _get_invalid_lookup(is_protein: bool):
@@ -203,7 +205,11 @@ class RelativeCompositionVariabilityTaxon(Alignment):
     @staticmethod
     def _ascii_count_matrix(alignment_array, unique_chars, valid_mask):
         num_records, aln_len = alignment_array.shape
-        if valid_mask is None and num_records >= 10_000 and aln_len <= 256:
+        if (
+            valid_mask is None
+            and num_records >= _ASCII_GLOBAL_BINCOUNT_MIN_RECORDS
+            and aln_len <= _ASCII_GLOBAL_BINCOUNT_MAX_LENGTH
+        ):
             encoded = alignment_array.astype(np.int64)
             encoded += (np.arange(num_records, dtype=np.int64) * 256)[:, None]
             counts = np.bincount(

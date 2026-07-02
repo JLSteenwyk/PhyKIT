@@ -322,6 +322,36 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert bincount_calls == matrix.shape[0]
 
+    def test_ascii_count_matrix_short_large_rows_use_global_bincount(
+        self, monkeypatch
+    ):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY"
+        matrix = rcvt_module.np.tile(
+            rcvt_module.np.frombuffer(alphabet, dtype=rcvt_module.np.uint8),
+            (8, 4),
+        )
+        unique_chars = rcvt_module.np.unique(matrix)
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MIN_RECORDS", 8)
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MAX_LENGTH", 80)
+        bincount_calls = 0
+        original_bincount = rcvt_module.np.bincount
+
+        def count_bincount(*args, **kwargs):
+            nonlocal bincount_calls
+            bincount_calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(rcvt_module.np, "bincount", count_bincount)
+
+        observed = RelativeCompositionVariabilityTaxon._ascii_count_matrix(
+            matrix,
+            unique_chars,
+            None,
+        )
+
+        assert bincount_calls == 1
+        assert observed.shape == (matrix.shape[0], len(unique_chars))
+
     def test_calculate_rows_identical_sequences_skip_matrix_path(self, mocker, args):
         service = RelativeCompositionVariabilityTaxon(args)
         alignment = MultipleSeqAlignment(
