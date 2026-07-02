@@ -121,6 +121,32 @@ def test_ordered_distance_array_preserves_large_list_path(monkeypatch):
     assert observed[-1] == pytest.approx(float(count - 1))
 
 
+def test_mean_1d_uses_array_method_for_small_vectors(monkeypatch):
+    values = np.array([1.0, 2.0, 6.0])
+
+    def fail_mean(*_args, **_kwargs):
+        raise AssertionError("small GLM vectors should use ndarray.mean")
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "mean", fail_mean)
+
+    assert phylogenetic_glm_module._mean_1d(values) == pytest.approx(3.0)
+
+
+def test_mean_1d_preserves_large_numpy_path(monkeypatch):
+    values = np.ones(phylogenetic_glm_module._DIRECT_MEAN_MAX_SIZE + 1)
+    original_mean = phylogenetic_glm_module.np.mean
+    calls = []
+
+    def mean_spy(observed, *args, **kwargs):
+        calls.append(observed.shape)
+        return original_mean(observed, *args, **kwargs)
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "mean", mean_spy)
+
+    assert phylogenetic_glm_module._mean_1d(values) == pytest.approx(1.0)
+    assert calls == [(phylogenetic_glm_module._DIRECT_MEAN_MAX_SIZE + 1,)]
+
+
 def test_module_import_does_not_import_scipy_optimize(monkeypatch):
     module_name = "phykit.services.tree.phylogenetic_glm"
     previous = sys.modules.pop(module_name, None)
@@ -610,8 +636,12 @@ class TestLogisticMPLE:
         def fail_max(*args, **kwargs):
             raise AssertionError("ultrametric setup should use ndarray.max")
 
+        def fail_mean(*args, **kwargs):
+            raise AssertionError("ultrametric setup should use _mean_1d")
+
         monkeypatch.setattr(tree, "distance", fail_distance)
         monkeypatch.setattr(phylogenetic_glm_module.np, "max", fail_max)
+        monkeypatch.setattr(phylogenetic_glm_module.np, "mean", fail_mean)
         D, Tmax, mean_height = svc._make_ultrametric(tree, ["A", "B", "C"])
 
         np.testing.assert_allclose(D, np.array([1.0, 1.0, 0.0]))

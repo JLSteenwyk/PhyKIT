@@ -50,6 +50,7 @@ _CHO_SOLVE = None
 _MINIMIZE = None
 _SPECIAL_ERFC = None
 _ROOT_DISTANCE_FROMITER_MAX_TIPS = 16_384
+_DIRECT_MEAN_MAX_SIZE = 10_000
 
 
 def _ordered_distance_array(distance_by_name, ordered_names):
@@ -61,6 +62,12 @@ def _ordered_distance_array(distance_by_name, ordered_names):
             count=count,
         )
     return np.array([distance_by_name[name] for name in ordered_names])
+
+
+def _mean_1d(values):
+    if values.size <= _DIRECT_MEAN_MAX_SIZE:
+        return values.mean()
+    return np.mean(values)
 
 
 def _binary_response_class_counts(y: np.ndarray) -> tuple[int, int]:
@@ -415,7 +422,7 @@ class PhylogeneticGLM(Tree):
         """
         heights = self._root_tip_distances(tree, ordered_names)
         max_dist = float(heights.max())
-        mean_height = float(np.mean(heights))
+        mean_height = float(_mean_1d(heights))
         D = max_dist - heights
         Tmax = max_dist
         return D, Tmax, mean_height
@@ -473,7 +480,7 @@ class PhylogeneticGLM(Tree):
         """
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
 
-        meanp = float(np.mean(mu))
+        meanp = float(_mean_1d(mu))
         meanq = 1.0 - meanp
 
         NEG_INF = float("-inf")
@@ -580,7 +587,7 @@ class PhylogeneticGLM(Tree):
         dk = X_mat.shape[1]
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
 
-        meanp = float(np.mean(mu))
+        meanp = float(_mean_1d(mu))
         meanq = 1.0 - meanp
 
         # Compute node heights and distFromRoot
@@ -691,7 +698,7 @@ class PhylogeneticGLM(Tree):
         relative to meanp.
         """
         n = len(ordered_names)
-        meanp = float(np.mean(mu))
+        meanp = float(_mean_1d(mu))
         meanq = 1.0 - meanp
         low_scale = np.sqrt(meanq / max(meanp, 1e-300))
         high_scale = np.sqrt(meanp / max(meanq, 1e-300))
@@ -864,7 +871,7 @@ class PhylogeneticGLM(Tree):
         """Standard Poisson GLM via IRLS as starting values."""
         n, p = X.shape
         beta = np.zeros(p)
-        beta[0] = np.log(max(np.mean(y), 0.1))
+        beta[0] = np.log(max(_mean_1d(y), 0.1))
 
         for _ in range(50):
             eta = X @ beta
