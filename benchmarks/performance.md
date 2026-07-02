@@ -2425,6 +2425,7 @@ Results:
 | `PhyloAnova._cholesky_transform` | 420 taxa SPD VCV x 6 responses, 4-group design | 0.0062s | 0.0012s | 5.2x |
 | `PhyloAnova._run_anova` | 500 taxa, 4 groups, 1000 RRPP permutations | 0.0383s | 0.0118s | 3.2x |
 | `PhyloAnova._run_anova` projection residual SS | 500 taxa, 4 groups, 1000 RRPP permutations, side-by-side previous materialized full-model residuals | 0.016085s | 0.012779s | 1.26x |
+| `PhyloAnova._run_anova` cached NumPy attribute proxy | 250 taxa, 3 groups, 3000 seeded RRPP permutations, side-by-side previous uncached lazy NumPy proxy | 0.143246s | 0.127777s | 1.12x |
 | `PhyloAnova._run_manova` | 500 taxa x 6 responses, 4 groups, 1000 RRPP permutations | 0.0652s | 0.0386s | 1.7x |
 | `PhyloAnova._run_manova` projection residual SSCP | 500 taxa x 6 responses, 4 groups, 1000 RRPP permutations, side-by-side previous materialized full-model residual matrices | 0.054512s | 0.048688s | 1.12x |
 | `PhyloAnova` permutation summary reductions | 1M permutation statistics, side-by-side previous duplicate `std` reduction | 0.003426s | 0.002183s | 1.57x |

@@ -65,6 +65,16 @@ assert "scipy.linalg" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = phylo_anova_module._LazyNumpy()
+
+    array_attr = lazy_np.array
+
+    assert lazy_np.__dict__["array"] is array_attr
+    assert lazy_np.array is array_attr
+    assert lazy_np._module is not None
+
+
 def test_permutation_p_value_and_z_matches_legacy_reductions():
     permutations = np.array([0.5, 1.5, 2.5, 3.5])
     observed = 2.0
