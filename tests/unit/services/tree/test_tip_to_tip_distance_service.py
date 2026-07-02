@@ -304,6 +304,49 @@ class TestTipToTipDistance:
             ),
         )
 
+    def test_build_distance_matrix_infers_taxa_for_sorted_upper_triangle(
+        self, monkeypatch, args
+    ):
+        class ExplodingStr(str):
+            def __str__(self):
+                raise AssertionError(
+                    "sorted-row fast path should not rescan all labels"
+                )
+
+        service = TipToTipDistance(args)
+        monkeypatch.setattr(TipToTipDistance, "_MATRIX_FAST_FILL_MIN_ROWS", 0)
+        rows = [
+            {"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.0},
+            {"taxon_a": "a", "taxon_b": "c", "tip_to_tip_distance": 2.0},
+            {
+                "taxon_a": ExplodingStr("b"),
+                "taxon_b": ExplodingStr("c"),
+                "tip_to_tip_distance": 3.0,
+            },
+        ]
+
+        taxa, matrix = service._build_distance_matrix(rows)
+
+        assert taxa == ["a", "b", "c"]
+        assert np.allclose(
+            matrix,
+            np.array(
+                [
+                    [0.0, 1.0, 2.0],
+                    [1.0, 0.0, 3.0],
+                    [2.0, 3.0, 0.0],
+                ]
+            ),
+        )
+
+    def test_sorted_upper_triangle_taxa_inference_rejects_nontriangular_rows(self):
+        rows = [
+            {"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.0},
+            {"taxon_a": "a", "taxon_b": "c", "tip_to_tip_distance": 2.0},
+        ]
+
+        assert TipToTipDistance._sorted_upper_triangle_taxa_from_rows(rows) is None
+
     def test_sorted_upper_triangle_check_skips_unneeded_string_coercion(self):
         class ExplodingStr(str):
             def __str__(self):

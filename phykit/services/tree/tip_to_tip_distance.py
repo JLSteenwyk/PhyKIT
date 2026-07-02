@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import itertools
+import math
 
 
 from .base import Tree
@@ -300,22 +301,28 @@ class TipToTipDistance(Tree):
         self,
         rows: list[dict[str, object]],
     ) -> tuple[list[str], np.ndarray]:
-        taxa = sorted({str(row["taxon_a"]) for row in rows} | {str(row["taxon_b"]) for row in rows})
-        n_taxa = len(taxa)
         if (
             len(rows) >= self._MATRIX_FAST_FILL_MIN_ROWS
-            and self._rows_are_sorted_upper_triangle(taxa, rows)
         ):
-            matrix = np.zeros((n_taxa, n_taxa), dtype=np.float64)
-            distances = np.fromiter(
-                (float(row["tip_to_tip_distance"]) for row in rows),
-                dtype=np.float64,
-                count=len(rows),
-            )
-            upper_i, upper_j = np.triu_indices(n_taxa, 1)
-            matrix[upper_i, upper_j] = distances
-            matrix[upper_j, upper_i] = distances
-            return taxa, matrix
+            taxa = self._sorted_upper_triangle_taxa_from_rows(rows)
+            if taxa is not None and self._rows_are_sorted_upper_triangle(taxa, rows):
+                n_taxa = len(taxa)
+                matrix = np.zeros((n_taxa, n_taxa), dtype=np.float64)
+                distances = np.fromiter(
+                    (float(row["tip_to_tip_distance"]) for row in rows),
+                    dtype=np.float64,
+                    count=len(rows),
+                )
+                upper_i, upper_j = np.triu_indices(n_taxa, 1)
+                matrix[upper_i, upper_j] = distances
+                matrix[upper_j, upper_i] = distances
+                return taxa, matrix
+
+        taxa = sorted(
+            {str(row["taxon_a"]) for row in rows}
+            | {str(row["taxon_b"]) for row in rows}
+        )
+        n_taxa = len(taxa)
 
         taxon_to_index = {taxon: idx for idx, taxon in enumerate(taxa)}
         matrix = np.zeros((n_taxa, n_taxa), dtype=np.float64)
@@ -327,6 +334,31 @@ class TipToTipDistance(Tree):
             matrix[i, j] = distance
             matrix[j, i] = distance
         return taxa, matrix
+
+    @staticmethod
+    def _sorted_upper_triangle_taxa_from_rows(
+        rows: list[dict[str, object]],
+    ) -> list[str] | None:
+        row_count = len(rows)
+        if row_count == 0:
+            return []
+
+        discriminant = 1 + 8 * row_count
+        root = math.isqrt(discriminant)
+        if root * root != discriminant:
+            return None
+
+        n_taxa = (1 + root) // 2
+        if n_taxa * (n_taxa - 1) // 2 != row_count:
+            return None
+
+        try:
+            first_row = rows[0]
+            taxa = [str(first_row["taxon_a"])]
+            taxa.extend(str(rows[idx]["taxon_b"]) for idx in range(n_taxa - 1))
+        except (IndexError, KeyError, TypeError):
+            return None
+        return taxa
 
     @staticmethod
     def _rows_are_sorted_upper_triangle(
