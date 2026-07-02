@@ -310,7 +310,7 @@ class PhyloPath(Tree):
                 header_parts = None
                 for line in f:
                     stripped = line.strip()
-                    if stripped and not stripped.startswith("#"):
+                    if stripped and stripped[0] != "#":
                         header_parts = stripped.split("\t")
                         break
 
@@ -327,7 +327,7 @@ class PhyloPath(Tree):
                 saw_data = False
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     saw_data = True
                     parts = stripped.split("\t")

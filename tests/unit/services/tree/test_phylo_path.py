@@ -173,10 +173,10 @@ class TestPhyloPath:
     def test_parse_trait_file_streams_comments_and_blanks(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
-            "# comment\n\n"
+            "   # comment\n\n"
             "taxon\tbody_mass\tbrain_size\n"
             "A\t1.0\t10.0\n"
-            "# ignored between rows\n"
+            "\t# ignored between rows\n"
             "B\t2.0\t20.0\n"
             "C\t3.0\t30.0\n"
             "D\t4.0\t40.0\n"

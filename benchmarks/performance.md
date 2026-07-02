@@ -2131,6 +2131,7 @@ Results:
 | `PhyloPath._plot_dag` node circle rendering | 4096 data-coordinate node circles, real Matplotlib Agg render | 3.024579s | 0.155128s | 19.50x |
 | `PhyloPath._parse_trait_file` streaming valid-row parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.654959s | 0.457753s | 1.43x |
 | `PhyloPath._parse_trait_file` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.449593s | 0.311079s | 1.45x |
+| `PhyloPath._parse_trait_file` stripped comment check | 300k-row multi-trait TSV, 3 numeric trait columns, whitespace-prefixed comments/blanks, all taxa shared | 1.541952s | 1.337712s | 1.15x |
 | `PhyloPath._parse_models_file` streaming parser | 300k candidate path models, three edges per model, comments/blanks included | 1.162768s | 0.905995s | 1.28x |
 | `PhyloPath._parse_models_file` bounded model row parsing | 300k candidate path models, three edges per model, whitespace-prefixed comments/blanks included | 4.971978s | 4.427189s | 1.12x |
 | `PhyloPath._is_dag` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.095966s | 0.011607s | 8.27x |
