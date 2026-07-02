@@ -324,9 +324,11 @@ class TipToTipDistance(Tree):
         for idx, taxon_a in enumerate(taxa[:-1]):
             for taxon_b in taxa[idx + 1:]:
                 row = rows[cursor]
+                row_a = row["taxon_a"]
+                row_b = row["taxon_b"]
                 if (
-                    str(row["taxon_a"]) != taxon_a
-                    or str(row["taxon_b"]) != taxon_b
+                    (row_a != taxon_a and str(row_a) != taxon_a)
+                    or (row_b != taxon_b and str(row_b) != taxon_b)
                 ):
                     return False
                 cursor += 1

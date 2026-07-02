@@ -736,6 +736,7 @@ Results:
 | `TipToTipDistance.calculate_all_pairwise_distances` row construction | 500k mocked fast pair/distance rows, identical row dictionaries | 0.908584s | 0.661274s | 1.37x |
 | `Tree.calculate_pairwise_tip_distances_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 all-pairs combo/distance rows, copied old path baseline | 6.667369s | 0.862153s | 7.73x |
 | `TipToTipDistance._build_distance_matrix` sorted all-pairs heatmap fill | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous taxon-index dictionary fill | 6.848783s | 4.044856s | 1.69x |
+| `TipToTipDistance._rows_are_sorted_upper_triangle` raw-label fast path | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous per-row string coercion | 0.635139s | 0.501365s | 1.27x |
 | `TipToTipDistance.run` all-pairs text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.082166s | 0.057857s | 1.42x |
 | `TipToTipDistance.run` all-pairs text fast-series output | balanced 900-tip tree, 404,550 all-pairs rows, captured stdout identical to previous row-dictionary path | 1.707568s | 1.242154s | 1.37x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` | balanced 32768-tip tree, opposite terminal tips | 0.1331s | 0.0189s | 7.1x |

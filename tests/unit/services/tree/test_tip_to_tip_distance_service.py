@@ -282,6 +282,42 @@ class TestTipToTipDistance:
             ),
         )
 
+    def test_sorted_upper_triangle_check_skips_unneeded_string_coercion(self):
+        class ExplodingStr(str):
+            def __str__(self):
+                raise AssertionError(
+                    "matching row labels should not need string coercion"
+                )
+
+        taxa = ["a", "b", "c"]
+        rows = [
+            {
+                "taxon_a": ExplodingStr("a"),
+                "taxon_b": ExplodingStr("b"),
+                "tip_to_tip_distance": 1.0,
+            },
+            {
+                "taxon_a": ExplodingStr("a"),
+                "taxon_b": ExplodingStr("c"),
+                "tip_to_tip_distance": 2.0,
+            },
+            {
+                "taxon_a": ExplodingStr("b"),
+                "taxon_b": ExplodingStr("c"),
+                "tip_to_tip_distance": 3.0,
+            },
+        ]
+
+        assert TipToTipDistance._rows_are_sorted_upper_triangle(taxa, rows) is True
+
+    def test_sorted_upper_triangle_check_preserves_coercion_fallback(self):
+        taxa = ["1", "2"]
+        rows = [
+            {"taxon_a": 1, "taxon_b": 2, "tip_to_tip_distance": 1.0},
+        ]
+
+        assert TipToTipDistance._rows_are_sorted_upper_triangle(taxa, rows) is True
+
     def test_build_distance_matrix_fallback_handles_arbitrary_row_order(
         self, mocker, args
     ):
