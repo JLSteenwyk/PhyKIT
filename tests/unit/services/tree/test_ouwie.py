@@ -1034,6 +1034,32 @@ class TestVCV:
         )
         np.testing.assert_allclose(observed["r2"], np.diag([0.0, coeff(2.0), 0.0]))
 
+    def test_H_matrices_shared_branches_skip_ix_helper(self, svc, monkeypatch):
+        ordered_names = ["A", "B", "C"]
+        lineage_info = {
+            "A": [
+                ("AB_shared", 1.0, "r1", 0.0, 1.0),
+                ("A_tip", 1.0, "r1", 1.0, 2.0),
+            ],
+            "B": [
+                ("AB_shared", 1.0, "r1", 0.0, 1.0),
+                ("B_tip", 1.0, "r2", 1.0, 2.0),
+            ],
+            "C": [("C_tip", 2.0, "r2", 0.0, 2.0)],
+        }
+
+        def fail_ix(*_args, **_kwargs):
+            raise AssertionError("shared branch blocks should index directly")
+
+        monkeypatch.setattr(ouwie_module.np, "ix_", fail_ix)
+
+        observed = svc._build_ou_H_matrices(
+            ordered_names, lineage_info, ["r1", "r2"], alpha=0.7,
+        )
+
+        assert observed["r1"][0, 1] > 0.0
+        assert observed["r1"][1, 0] == pytest.approx(observed["r1"][0, 1])
+
     def test_multi_alpha_positive_definite(self, precomputed):
         d = precomputed
         alphas_dict = {r: 0.5 for r in d["regimes"]}

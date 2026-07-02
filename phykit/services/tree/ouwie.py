@@ -984,11 +984,11 @@ class OUwie(Tree):
                 continue
             idx = np.asarray(indices, dtype=np.intp)
             if alpha < 1e-10:
-                H[regime][np.ix_(idx, idx)] += bl
+                H[regime][idx[:, None], idx] += bl
             else:
                 decay = np.exp(-alpha * (tip_heights[idx] - d_end))
                 coeff = (1.0 - np.exp(-2.0 * alpha * bl)) / (2.0 * alpha)
-                H[regime][np.ix_(idx, idx)] += coeff * np.outer(decay, decay)
+                H[regime][idx[:, None], idx] += coeff * np.outer(decay, decay)
 
         return H
 
