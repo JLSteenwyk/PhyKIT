@@ -509,6 +509,36 @@ class TestTreeBase:
 
         assert service.get_tip_names_from_tree(tree) == ["a", "b", "c", "d"]
 
+    def test_tips_to_prune_for_ordered_mapping_uses_ordered_tail(self):
+        class MappingLike(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered path should not use membership")
+
+        values = MappingLike({"a": 1.0, "b": 2.0, "c": 3.0})
+
+        assert Tree._tips_to_prune_for_ordered_mapping(
+            ["a", "b", "c", "d", "e"],
+            values,
+            min_ordered_size=0,
+        ) == ["d", "e"]
+
+    def test_tips_to_prune_for_ordered_mapping_falls_back_for_interleaved_tips(self):
+        values = {"a": 1.0, "b": 2.0, "c": 3.0}
+
+        assert Tree._tips_to_prune_for_ordered_mapping(
+            ["a", "d", "b", "c"],
+            values,
+            min_ordered_size=0,
+        ) == ["d"]
+
+    def test_tips_to_prune_for_ordered_mapping_keeps_small_input_membership_path(self):
+        values = {"a": 1.0, "b": 2.0, "c": 3.0}
+
+        assert Tree._tips_to_prune_for_ordered_mapping(
+            ["a", "b", "c", "d"],
+            values,
+        ) == ["d"]
+
     def test_get_first_tip_name_from_tree_uses_direct_leftmost_terminal(
         self, monkeypatch
     ):

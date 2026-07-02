@@ -52,7 +52,9 @@ class TraitRateMap(Tree):
         n = len(ordered_names)
 
         # Prune tree to shared taxa
-        tips_to_prune = [t for t in tree_tips if t not in trait_values]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            tree_tips, trait_values
+        )
         tree_for_analysis = tree
         if tips_to_prune or self.plot_config.ladderize:
             tree_for_analysis = self._fast_copy(tree)

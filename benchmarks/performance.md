@@ -1884,6 +1884,7 @@ Results:
 | `TraitRateMap.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.0671s | 0.0071s | 9.5x |
 | `TraitRateMap.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, reconstruction, branch-rate calculation, plotting, and output mocked; protective prune-copy retained | 1.578476s | 0.628135s | 2.51x |
 | `TraitRateMap.run` all-shared read-only setup | balanced 32768-tip cached tree, one trait for every tip, ladderize off, reconstruction/rates/plot/output mocked | 0.283459s | 0.061932s | 4.58x |
+| `Phenogram`/`ContMap`/`TraitRateMap` ordered trait prune setup | 300k ordered tree tips with all traits / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.031790s / 0.042057s | 0.011724s / 0.010134s | 2.71x / 4.15x |
 | `TraitRateMap._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.044759s | 0.035023s | 1.28x |
 | `TraitRateMap._parse_single_trait_data` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.467069s | 0.460840s | 1.01x |
 | `TraitRateMap._parse_single_trait_data` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.435507s | 0.238663s | 1.82x |
@@ -6542,7 +6543,10 @@ Profiling summary:
   protective copy entirely when all tree tips have trait values, copying only
   before pruning missing trait taxa. ContMap now uses the same read-only
   all-shared path when ladderize is disabled, and copies only before pruning or
-  ladderizing would mutate the cached tree. Their single-trait parsers now
+  ladderizing would mutate the cached tree. Phenogram, ContMap, and TraitRateMap
+  now share a large-input ordered trait prune helper that avoids dictionary
+  membership scans when parsed trait rows match tree-tip order or have only
+  tree-only tail tips. Their single-trait parsers now
   stream input rows, validate the two-column shape with `partition("\t")`, and
   avoid `readlines()` plus temporary split lists on valid rows. A later parser
   pass returns immediately for exact tree/trait taxon matches after all rows

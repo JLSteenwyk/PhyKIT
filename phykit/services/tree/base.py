@@ -9,6 +9,7 @@ from ...errors import PhykitUserError
 
 class Tree(BaseService):
     _PAIRWISE_LCA_DEPTH_THRESHOLD = 64
+    _ORDERED_MAPPING_PRUNE_MIN_SIZE = 200_000
 
     def __init__(
         self,
@@ -158,6 +159,25 @@ class Tree(BaseService):
         if names is not None:
             return names
         return [tip.name for tip in tree.get_terminals()]
+
+    @staticmethod
+    def _tips_to_prune_for_ordered_mapping(
+        tree_tips,
+        values,
+        min_ordered_size=None,
+    ):
+        if min_ordered_size is None:
+            min_ordered_size = Tree._ORDERED_MAPPING_PRUNE_MIN_SIZE
+
+        n_values = len(values)
+        if n_values >= min_ordered_size and len(tree_tips) >= n_values:
+            for index, key in enumerate(values):
+                if tree_tips[index] != key:
+                    break
+            else:
+                return tree_tips[n_values:]
+
+        return [tip for tip in tree_tips if tip not in values]
 
     def get_first_tip_name_from_tree(self, tree) -> str:
         name = self.calculate_first_terminal_name_fast(tree)
