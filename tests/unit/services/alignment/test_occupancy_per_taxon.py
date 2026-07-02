@@ -28,6 +28,16 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = occupancy_per_taxon_module._LazyNumpy()
+
+    ones_attr = lazy_np.ones
+
+    assert lazy_np.__dict__["ones"] is ones_attr
+    assert lazy_np.ones is ones_attr
+    assert lazy_np._module is not None
+
+
 @pytest.fixture
 def args():
     kwargs = dict(alignment="/some/path/to/file.fa")

@@ -715,6 +715,7 @@ Results:
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` single-record direct count | 4.5M-site single-record DNA alignment, side-by-side previous record-data and matrix-helper setup | 0.022511792s | 0.010062833s | 2.24x |
 | `OccupancyPerTaxon._occupancy_for_sequence` all-valid ASCII count | 4.5M-site single-record DNA sequence with no invalid symbols / mixed symbols / one late invalid symbol, side-by-side previous unconditional byte translate | 0.003542s / 0.024512s / 0.003528s | 0.002047s / 0.024318s / 0.003415s | 1.73x / 1.01x / 1.03x |
 | `OccupancyPerTaxon._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006791s / 0.000012459s / 0.000018793s | 0.000001255s / 0.000005243s / 0.000011981s | 5.41x / 2.38x / 1.57x |
+| `OccupancyPerTaxon.calculate_occupancy_per_taxon` cached lazy NumPy attributes | gapped DNA alignments sized 1000 x 8000 / 3000 x 5000 / 5000 x 3000, side-by-side previous uncached lazy proxy, identical per-taxon rows | 0.139115s / 0.287776s / 0.234177s | 0.118474s / 0.238364s / 0.209573s | 1.17x / 1.21x / 1.12x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` identical-row no-slice scan | 1M identical mixed-symbol DNA records, side-by-side previous `sequences[1:]` equality scan | 0.569269s | 0.392282s | 1.45x |
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` combined length/identity scan | 1M mixed-symbol DNA records, identical / late-different / late variable-length cases, side-by-side previous sequence-list length pass plus identity pass | 0.288323s / 0.292319s / 0.085046s | 0.138665s / 0.282464s / 0.055508s | 2.08x / 1.03x / 1.53x |
 | `OccupancyPerTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.025741s | 0.019400s | 1.33x |
@@ -4145,8 +4146,10 @@ Profiling summary:
   instead of repeated `dict(...)` calls. A subsequent startup
   pass defers NumPy, validity lookup
   construction, and the JSON output helper until occupancy calculation or JSON
-  output actually needs them. A follow-up startup pass removes the annotation-only
-  `typing` import under postponed annotations.
+  output actually needs them. A follow-up pass caches resolved lazy NumPy
+  attributes during repeated gapped matrix calculations while preserving import
+  deferral. A later startup pass removes the annotation-only `typing` import
+  under postponed annotations.
 - `Dstatistic._run_alignment_mode` baseline time scanned every site in Python
   once for total ABBA/BABA counts and again for block jackknife counts. The
   optimized path builds byte-backed arrays for the four focal sequences,
