@@ -1569,6 +1569,7 @@ Results:
 | `ConsensusTree` / `ConsensusNetwork` / `QuartetNetwork` `_normalize_taxa` identical taxon sets | 80 precomputed taxon sets x 1024 shared taxa, defer shared intersection until needed | 2.673776s | 0.475789s | 5.62x |
 | `ConsensusTree` / `ConsensusNetwork` / `QuartetNetwork` `_normalize_taxa` identical tip-set no-slice scan | 1M precomputed tip sets, identical / early-different / late-different cases, side-by-side previous `tip_sets[1:]` shortcut predicate | 0.267546s / 0.006743s / 0.105294s | 0.226317s / 0.000000208s / 0.077291s | 1.18x / 32392.41x / 1.36x |
 | `ConsensusTree._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.090417s | 0.067520s | 1.34x |
+| `ConsensusTree`/`ConsensusNetwork`/`QuartetNetwork._parse_trees_from_source` stripped comment cleanup | 600k path-like rows with whitespace-prefixed comments/blanks, source cleanup before tree parsing | 0.267016s | 0.239204s | 1.12x |
 | `ConsensusTree._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
 | `consensus_tree` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read` and `Consensus` proxies | 0.129701s | 0.025590s | 5.07x |
 | `consensus_tree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006000s | 0.004952s | 1.21x |

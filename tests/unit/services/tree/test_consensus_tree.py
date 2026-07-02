@@ -72,7 +72,7 @@ class TestConsensusTree:
         tree_file = tmp_path / "trees.nwk"
         _write(
             tree_file,
-            "# ignored\n\n  ((A,B),(C,D));  \n# also ignored\n((A,B),(C,D));\n",
+            "   # ignored\n\n  ((A,B),(C,D));  \n\t# also ignored\n((A,B),(C,D));\n",
         )
         svc = ConsensusTree(
             Namespace(

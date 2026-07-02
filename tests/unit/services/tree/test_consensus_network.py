@@ -802,7 +802,7 @@ class TestConsensusNetworkRun:
         tree_file = tmp_path / "trees.nwk"
         _write(
             tree_file,
-            "# ignored\n\n  ((A,B),(C,D));  \n# also ignored\n((A,C),(B,D));\n",
+            "   # ignored\n\n  ((A,B),(C,D));  \n\t# also ignored\n((A,C),(B,D));\n",
         )
         svc = ConsensusNetwork(
             Namespace(
