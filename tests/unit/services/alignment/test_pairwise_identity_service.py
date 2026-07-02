@@ -116,6 +116,17 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = pairwise_identity_module._LazyNumpy()
+
+    first_fromiter = lazy_np.fromiter
+    second_fromiter = lazy_np.fromiter
+
+    assert lazy_np._module is not None
+    assert first_fromiter is second_fromiter
+    assert lazy_np.__dict__["fromiter"] is first_fromiter
+
+
 class TestPairwiseIdentity:
     def test_init_sets_expected_attrs(self, args):
         service = PairwiseIdentity(args)

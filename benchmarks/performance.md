@@ -145,6 +145,7 @@ Results:
 | `PairwiseIdentity._print_json_output` verbose row construction | 500k mocked pairwise identity rows, identical row dictionaries | 0.524115s | 0.375570s | 1.40x |
 | `PairwiseIdentity._plot_pairwise_identity_heatmap` canonical matrix fill | 1200 taxa, 719400 canonical pair identities, identical symmetric heatmap matrix with arbitrary-order fallback retained | 0.119255s | 0.055930s | 2.13x |
 | `PairwiseIdentity._pairwise_identity_matrix_from_pairs` squareform canonical fill | 2500 taxa, 3123750 canonical pair identities, identical symmetric float32 heatmap matrix | 0.404774s | 0.057102s | 7.09x |
+| `PairwiseIdentity._pairwise_identity_matrix_from_pairs` cached lazy NumPy attributes | 1500 taxa, 1,124,250 canonical pair identities, side-by-side previous lazy proxy lookup path, identical matrix sum | 1.083869s | 0.863953s | 1.25x |
 | `pairwise_identity` module import without eager SciPy clustering | cold process import for non-plot pairwise-identity command module | 0.423027s | 0.273540s | 1.5x |
 | `pairwise_identity` module import without eager Bio.Align/tqdm | cold subprocess import after lazy annotation/progress imports | 0.208326s | 0.134796s | 1.55x |
 | `pairwise_identity` module import without eager NumPy lookup tables | cold subprocess import after lazy class-level gap lookup construction | 0.088633s | 0.039021s | 2.27x |
