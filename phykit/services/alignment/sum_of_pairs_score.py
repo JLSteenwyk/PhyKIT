@@ -172,25 +172,44 @@ class SumOfPairsScore(Alignment):
             return None
 
         seq_len = len(ref_seqs[0])
-        for seq in ref_seqs:
-            if len(seq) != seq_len:
+        number_of_records = len(record_ids)
+        sparse_change_limit = (number_of_records - 1) // 2
+        changed_count = 0
+        changed_ref_seqs = []
+        changed_query_seqs = []
+        for ref_seq, query_seq in zip(ref_seqs, query_seqs):
+            if len(ref_seq) != seq_len or len(query_seq) != seq_len:
                 return None
-        for seq in query_seqs:
-            if len(seq) != seq_len:
-                return None
+            if ref_seq != query_seq:
+                changed_count += 1
+                if changed_count <= sparse_change_limit:
+                    changed_ref_seqs.append(ref_seq)
+                    changed_query_seqs.append(query_seq)
         if seq_len == 0:
             return 0, 0
 
         total_pairs = (len(record_ids) * (len(record_ids) - 1) // 2) * seq_len
-        if ref_seqs == query_seqs:
+        if changed_count == 0:
             return total_pairs, total_pairs
 
-        ref_array, query_array = SumOfPairsScore._stack_equal_length_sequence_pairs(
-            ref_seqs,
-            query_seqs,
-            seq_len,
-        )
-        matching_taxa_per_site = np.count_nonzero(ref_array == query_array, axis=0)
+        if changed_count <= sparse_change_limit:
+            ref_array, query_array = SumOfPairsScore._stack_equal_length_sequence_pairs(
+                changed_ref_seqs,
+                changed_query_seqs,
+                seq_len,
+            )
+            matching_taxa_per_site = (
+                np.count_nonzero(ref_array == query_array, axis=0)
+                + number_of_records
+                - changed_count
+            )
+        else:
+            ref_array, query_array = SumOfPairsScore._stack_equal_length_sequence_pairs(
+                ref_seqs,
+                query_seqs,
+                seq_len,
+            )
+            matching_taxa_per_site = np.count_nonzero(ref_array == query_array, axis=0)
         matches_per_site = (
             matching_taxa_per_site * (matching_taxa_per_site - 1)
         ) // 2
