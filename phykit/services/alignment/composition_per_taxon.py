@@ -29,6 +29,7 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _COMPOSITION_ROW_ZIP_MIN_COUNT = 50_000
 _IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
+_IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
 
 
 def _composition_output_rows(record_ids, freqs):
@@ -37,6 +38,15 @@ def _composition_output_rows(record_ids, freqs):
     return [
         (record_id, freqs[row_idx])
         for row_idx, record_id in enumerate(record_ids)
+    ]
+
+
+def _identical_composition_output_rows(record_ids, freqs):
+    if len(record_ids) >= _IDENTICAL_ROW_TILE_MIN_COUNT:
+        return list(zip(record_ids, np.tile(freqs, (len(record_ids), 1))))
+    return [
+        (record_id, freqs.copy())
+        for record_id in record_ids
     ]
 
 
@@ -168,10 +178,10 @@ class CompositionPerTaxon(Alignment):
                             return [], []
 
                         freqs = counts.astype(np.float64) / float(counts.sum())
-                        return symbols, [
-                            (record_id, freqs.copy())
-                            for record_id in record_ids
-                        ]
+                        return symbols, _identical_composition_output_rows(
+                            record_ids,
+                            freqs,
+                        )
             except (AttributeError, IndexError, TypeError):
                 pass
 
@@ -214,10 +224,7 @@ class CompositionPerTaxon(Alignment):
                 return [], []
 
             freqs = counts.astype(np.float64) / float(counts.sum())
-            return symbols, [
-                (record_id, freqs.copy())
-                for record_id in record_ids
-            ]
+            return symbols, _identical_composition_output_rows(record_ids, freqs)
 
         records = [
             (record_id, sequence.upper())

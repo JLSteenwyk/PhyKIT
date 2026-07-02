@@ -388,6 +388,34 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert symbols == ["A", "C", "G", "T"]
         assert np.allclose(rows[1][1], np.full(4, 0.25))
 
+    def test_large_identical_composition_rows_use_tiled_matrix(
+        self, args, monkeypatch, mocker
+    ):
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_IDENTICAL_ROW_TILE_MIN_COUNT",
+            3,
+        )
+        tile_spy = mocker.spy(composition_per_taxon_module.np, "tile")
+        svc = CompositionPerTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("ACGT"), id="t2"),
+                SeqRecord(Seq("ACGT"), id="t3"),
+            ]
+        )
+
+        symbols, rows = svc.calculate_composition_per_taxon(
+            alignment,
+            is_protein=False,
+        )
+        rows[0][1][0] = 0.0
+
+        tile_spy.assert_called_once()
+        assert symbols == ["A", "C", "G", "T"]
+        assert np.allclose(rows[1][1], np.full(4, 0.25))
+
     def test_ascii_path_uses_invalid_lookup_instead_of_isin(self, args, mocker):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(
