@@ -163,6 +163,15 @@ def _identity_for_identical_sequence(
     if not exclude_gaps:
         return 1.0
 
+    if not is_protein:
+        try:
+            return (
+                len(first_sequence.encode("ascii").translate(None, b"-?*XN"))
+                / float(aln_len)
+            )
+        except UnicodeEncodeError:
+            pass
+
     gap_chars = "-?*X" if is_protein else "-?*XN"
     nongap_count = aln_len
     for gap_char in gap_chars:

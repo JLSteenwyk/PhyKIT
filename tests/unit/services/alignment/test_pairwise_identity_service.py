@@ -37,6 +37,18 @@ def test_identity_for_identical_sequence_counts_dna_gap_characters():
     )
 
 
+def test_identity_for_identical_sequence_dna_ascii_skips_count_loop():
+    class NoCountStr(str):
+        def count(self, *args, **kwargs):
+            raise AssertionError("ASCII DNA gap counting should use byte deletion")
+
+    sequence = NoCountStr("ACGTN-?*X")
+
+    assert _identity_for_identical_sequence(sequence, False, True) == pytest.approx(
+        4 / 9
+    )
+
+
 def test_identity_for_identical_sequence_keeps_protein_n_as_nongap():
     assert _identity_for_identical_sequence("ACGTN-?*X", True, True) == pytest.approx(
         5 / 9
