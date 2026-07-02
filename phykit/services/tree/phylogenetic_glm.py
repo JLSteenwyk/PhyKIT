@@ -65,6 +65,15 @@ def _poisson_overdispersion(
     return float((pearson_resid * pearson_resid).sum()) / residual_dof
 
 
+def _poisson_log_likelihood(y: np.ndarray, mu: np.ndarray) -> float:
+    from scipy.special import gammaln
+
+    terms = y * np.log(np.clip(mu, 1e-300, None)) - mu - gammaln(y + 1)
+    if terms.size <= 20000:
+        return float(terms.sum())
+    return float(np.sum(terms))
+
+
 def special_erfc(*args, **kwargs):
     global _SPECIAL_ERFC
 
@@ -995,10 +1004,7 @@ class PhylogeneticGLM(Tree):
         phi = _poisson_overdispersion(y, mu, n - p)
 
         # Log-likelihood (Poisson)
-        from scipy.special import gammaln
-        ll = float(np.sum(
-            y * np.log(np.clip(mu, 1e-300, None)) - mu - gammaln(y + 1)
-        ))
+        ll = _poisson_log_likelihood(y, mu)
 
         # Covariance: phi * I^{-1}
         if R_factor is not None:

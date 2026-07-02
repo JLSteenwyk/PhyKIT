@@ -66,6 +66,42 @@ def test_poisson_overdispersion_uses_direct_array_sum(monkeypatch):
     assert observed == pytest.approx(expected)
 
 
+def test_poisson_log_likelihood_uses_direct_array_sum(monkeypatch):
+    from scipy.special import gammaln
+
+    y = np.arange(260, dtype=float) % 7
+    mu = np.linspace(0.5, 8.5, y.size)
+    terms = y * np.log(np.clip(mu, 1e-300, None)) - mu - gammaln(y + 1)
+    expected = float(terms.sum())
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("Poisson likelihood should use ndarray.sum")
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "sum", fail_sum, raising=False)
+
+    observed = phylogenetic_glm_module._poisson_log_likelihood(y, mu)
+
+    assert observed == pytest.approx(expected)
+
+
+def test_poisson_log_likelihood_preserves_large_vector_sum_path(monkeypatch):
+    y = np.arange(20001, dtype=float) % 5
+    mu = np.linspace(0.5, 12.0, y.size)
+    original_sum = phylogenetic_glm_module.np.sum
+    calls = []
+
+    def sum_spy(values, *args, **kwargs):
+        calls.append(np.asarray(values).shape)
+        return original_sum(values, *args, **kwargs)
+
+    monkeypatch.setattr(phylogenetic_glm_module.np, "sum", sum_spy, raising=False)
+
+    observed = phylogenetic_glm_module._poisson_log_likelihood(y, mu)
+
+    assert np.isfinite(observed)
+    assert calls == [(20001,)]
+
+
 def test_module_import_does_not_import_scipy_optimize(monkeypatch):
     module_name = "phykit.services.tree.phylogenetic_glm"
     previous = sys.modules.pop(module_name, None)
