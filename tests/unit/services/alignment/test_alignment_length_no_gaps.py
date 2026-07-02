@@ -153,6 +153,27 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
         gap_codes_spy.assert_called_once_with(False)
 
+    def test_get_sites_no_gaps_count_ascii_path_skips_gap_char_set(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTA"), id="a"),
+                SeqRecord(Seq("ANG-A"), id="b"),
+                SeqRecord(Seq("ACGTx"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        mocker.patch.object(
+            aln,
+            "get_gap_chars",
+            side_effect=AssertionError(
+                "ASCII path should not build Unicode fallback gap characters"
+            ),
+        )
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
+
     def test_get_sites_no_gaps_count_no_gap_ascii_returns_length(self, mocker, args):
         alignment = MultipleSeqAlignment(
             [

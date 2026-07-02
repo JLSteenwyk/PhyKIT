@@ -131,7 +131,6 @@ class AlignmentLengthNoGaps(Alignment):
         """
         Count sites in the alignment with no gaps
         """
-        gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
         sequences = [str(record.seq) for record in alignment]
 
         if not sequences:
@@ -158,6 +157,7 @@ class AlignmentLengthNoGaps(Alignment):
             for gap_code in gap_codes:
                 columns_with_gaps |= np.any(alignment_array == gap_code, axis=0)
         except UnicodeEncodeError:
+            gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
             sequences = [seq.upper() for seq in sequences]
             alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
             gap_chars_array = np.array(list(gap_chars), dtype="U1")
