@@ -168,7 +168,7 @@ class TestTraitParsing:
     def test_single_trait_skips_comments_and_blanks(self, default_args, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
-            "# ignored\n"
+            "   # ignored\n"
             "\n"
             "raccoon\t1.04\n"
             "bear\t2.39\n"

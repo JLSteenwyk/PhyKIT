@@ -2033,6 +2033,7 @@ Results:
 | `AncestralReconstruction._plot_discrete_asr` circular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 0.626749s | 0.028314s | 22.14x |
 | `AncestralReconstruction._parse_single_trait_data` streaming parser | 500k two-column continuous trait rows with comments/blanks, all taxa shared | 0.467832s | 0.436189s | 1.07x |
 | `AncestralReconstruction._parse_single_trait_data` all-shared parser fast path | 500k two-column continuous trait rows with comments/blanks, all taxa shared | 0.434114s | 0.235606s | 1.84x |
+| `AncestralReconstruction._parse_single_trait_data` stripped comment check | 500k two-column continuous trait rows with whitespace-prefixed comments/blanks, all taxa shared | 0.971940s | 0.732084s | 1.33x |
 | `AncestralReconstruction._parse_multi_trait_data` single-pass parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.366382s | 0.299851s | 1.22x |
 | `AncestralReconstruction._parse_multi_trait_data` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.273898s | 0.171096s | 1.60x |
 | `AncestralReconstruction._parse_discrete_trait_data_single` streaming parser | 500k two-column categorical trait rows with comments/blanks, all taxa shared | 0.384133s | 0.375407s | 1.02x |

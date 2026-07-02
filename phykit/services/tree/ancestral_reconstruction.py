@@ -360,7 +360,7 @@ class AncestralReconstruction(Tree):
             with open(path) as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
-                    if not line or line.startswith("#"):
+                    if not line or line[0] == "#":
                         continue
                     taxon, sep, value_str = line.partition("\t")
                     if not sep or "\t" in value_str:
