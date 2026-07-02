@@ -1693,6 +1693,7 @@ Results:
 | `tree_paths.build_root_path_map` | balanced 32768-tip tree, root-to-node path lists for all clades | 0.146555s | 0.050841s | 2.9x |
 | `LTT._compute_gamma` + `LTT._compute_ltt` | balanced tree with 500 tips | 0.3363s | 0.0077s | 43.8x |
 | `Chronogram._compute_root_to_tip` | balanced tree with 5000 tips | 9.8673s | 0.0041s | 2417.5x |
+| `Chronogram._compute_root_to_tip` binary child push | 8192 / 32768 / 131072-tip balanced trees, median of randomized old/new seed medians, side-by-side previous `reversed(children)` tuple-stack helper | 0.005745s / 0.026191s / 0.175226s | 0.005262s / 0.023514s / 0.158405s | 1.09x / 1.11x / 1.11x |
 | `Chronogram._print_json` payload construction | balanced tree with 2048 tips, printing stubbed | 0.0577s | 0.0214s | 2.7x |
 | `Chronogram._print_json` direct traversal payload construction | balanced tree with 32768 tips, printing stubbed | 0.227351s | 0.072172s | 3.15x |
 | `Chronogram._build_descendant_tip_name_cache` exact direct postorder helper | balanced 4096-tip tree, sorted descendant tip names for JSON node ages | 0.005863s | 0.003530s | 1.66x |
@@ -6171,7 +6172,10 @@ Profiling summary:
   each gamma/LTT call site.
 - `Chronogram._compute_root_to_tip` baseline time called `tree.get_path()` for
   every node before summing branch lengths. The optimized path walks the tree
-  once, carrying each parent's root-relative distance to its children.
+  once, carrying each parent's root-relative distance to its children. A later
+  traversal pass handles binary nodes directly and iterates multifurcations by
+  index, avoiding one `reversed(children)` iterator per internal node while
+  preserving the same node-distance mapping.
 - `Chronogram._print_json` baseline time called `clade.get_terminals()` for
   every internal node and `tree.count_terminals()` for the tip count. The
   optimized path builds sorted descendant tip-name tuples once in postorder and

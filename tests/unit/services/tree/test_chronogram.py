@@ -455,7 +455,7 @@ class TestChronogram:
 
     def test_compute_root_to_tip_does_not_call_get_path(self, monkeypatch):
         svc = Chronogram(_make_args())
-        tree = Phylo.read(StringIO("((A:1,B:2):3,C:4):0;"), "newick")
+        tree = Phylo.read(StringIO("((A:1,B:2,D:3):3,C:4):0;"), "newick")
 
         def fail_get_path(self, *args, **kwargs):
             raise AssertionError("get_path should not be called")
@@ -466,7 +466,7 @@ class TestChronogram:
 
         by_name = {clade.name: distances[id(clade)] for clade in tree.get_terminals()}
         assert distances[id(tree.root)] == 0.0
-        assert by_name == {"A": 4.0, "B": 5.0, "C": 4.0}
+        assert by_name == {"A": 4.0, "B": 5.0, "D": 6.0, "C": 4.0}
 
     def test_postorder_clades_direct_matches_biopython_order(self):
         tree = Phylo.read(

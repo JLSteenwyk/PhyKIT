@@ -236,12 +236,23 @@ class Chronogram(Tree):
         """Compute root-to-node distance for every node."""
         distances = {}
         stack = [(tree.root, 0.0)]
+        pop = stack.pop
+        append = stack.append
         while stack:
-            clade, distance = stack.pop()
+            clade, distance = pop()
             distances[id(clade)] = distance
-            for child in reversed(clade.clades):
-                branch_length = child.branch_length or 0.0
-                stack.append((child, distance + branch_length))
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    child = children[1]
+                    append((child, distance + (child.branch_length or 0.0)))
+                    child = children[0]
+                    append((child, distance + (child.branch_length or 0.0)))
+                else:
+                    for idx in range(child_count - 1, -1, -1):
+                        child = children[idx]
+                        append((child, distance + (child.branch_length or 0.0)))
         return distances
 
     @staticmethod
