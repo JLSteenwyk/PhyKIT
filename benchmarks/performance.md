@@ -741,6 +741,7 @@ Results:
 | `Dstatistic._count_site_patterns` impossible sister-pair shortcut | 5M sites, P1/P2 identical with P3/outgroup different, block size 1000, side-by-side previous byte-array scan path | 0.013529s | 0.000002958s | 4573.80x |
 | `Dstatistic._count_site_patterns` single-pattern mask shortcut | 5M sites, P1/outgroup identical and P2/P3 identical, ABBA possible and BABA impossible, side-by-side previous two-mask vector path | 0.014601s | 0.009187s | 1.59x |
 | `Dstatistic._count_site_patterns_scalar` direct skip checks | 1M Unicode-containing scalar fallback sites, block size 1000, identical ABBA/BABA totals and block arrays | 0.967857s | 0.443901s | 2.18x |
+| `Dstatistic._count_site_patterns_scalar` list-backed block counters | 500k Unicode-containing scalar fallback sites with sparse skipped sites, block size 1000, interleaved side-by-side timing, identical ABBA/BABA totals and block arrays | 0.413669s | 0.288322s | 1.43x |
 | `Dstatistic._normal_two_tailed_p_value` | cold process, alignment-mode jackknife z-score p-value | 0.556567s | 0.000003125s | 178101.4x |
 | `Dstatistic` gene-tree discordant chi-square statistic | 500k ABBA/BABA count pairs, identical df=1 chi-square statistic, side-by-side previous expected-count formula | 0.475967s | 0.236921s | 2.01x |
 | `Dstatistic._jackknife_d_values` | 300k ABBA/BABA jackknife blocks | 0.0972s | 0.0022s | 43.3x |
@@ -4256,7 +4257,10 @@ Profiling summary:
   `typing`. The scalar fallback for non-ASCII alignments now uses direct skip
   checks and computes block membership only for counted sites, preserving
   ABBA/BABA totals and jackknife block arrays while avoiding per-site list and
-  generator allocation. Gene-tree descendant collection now records
+  generator allocation. A later scalar fallback pass reuses a module-level
+  skip-character constant, scans rows with `zip`, and accumulates block counts
+  in Python lists before one NumPy conversion at return. Gene-tree descendant
+  collection now records
   nonterminals during the preorder traversal instead of rescanning every clade
   after the taxon pass, preserving nonterminal order.
 - `Dfoil._count_site_patterns` baseline time scanned every five-taxon site in

@@ -335,6 +335,28 @@ class TestDstatistic:
         assert block_abba.tolist() == [1.0, 0.0]
         assert block_baba.tolist() == [0.0, 1.0]
 
+    def test_scalar_counting_uses_shared_skip_constant_and_float_blocks(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(module, "_SCALAR_SKIP_CHARS", "")
+
+        abba, baba, block_abba, block_baba = (
+            Dstatistic._count_site_patterns_scalar(
+                "AA",
+                "-C",
+                "-C",
+                "AA",
+                block_size=2,
+            )
+        )
+
+        assert abba == 2
+        assert baba == 0
+        assert block_abba.dtype == np.dtype(float)
+        assert block_baba.dtype == np.dtype(float)
+        assert block_abba.tolist() == [2.0]
+        assert block_baba.tolist() == [0.0]
+
     def test_jackknife_d_values_match_leave_one_out_loop(self, monkeypatch):
         block_abba = np.array([4.0, 0.0, 3.0, 1.0, 0.0])
         block_baba = np.array([1.0, 2.0, 0.0, 1.0, 0.0])

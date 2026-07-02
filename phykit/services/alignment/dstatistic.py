@@ -34,6 +34,7 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _SKIP_CODES = (ord("-"), ord("N"), ord("?"), ord("X"), ord("n"), ord("x"))
 _SKIP_BYTES = b"-N?Xnx"
+_SCALAR_SKIP_CHARS = "-N?Xnx"
 _SKIP_SCAN_BYTES = 4096
 
 
@@ -525,21 +526,18 @@ class Dstatistic(Alignment):
 
     @staticmethod
     def _count_site_patterns_scalar(seq_p1, seq_p2, seq_p3, seq_outgroup, block_size):
-        skip_chars = {"-", "N", "?", "X", "n", "x"}
+        skip_chars = _SCALAR_SKIP_CHARS
         aln_length = len(seq_p1)
         n_blocks = aln_length // block_size
         n_block_sites = n_blocks * block_size
-        block_abba = np.zeros(n_blocks)
-        block_baba = np.zeros(n_blocks)
+        block_abba = [0.0] * n_blocks
+        block_baba = [0.0] * n_blocks
         abba_count = 0
         baba_count = 0
 
-        for site in range(aln_length):
-            p1 = seq_p1[site]
-            p2 = seq_p2[site]
-            p3 = seq_p3[site]
-            o = seq_outgroup[site]
-
+        for site, (p1, p2, p3, o) in enumerate(
+            zip(seq_p1, seq_p2, seq_p3, seq_outgroup)
+        ):
             if (
                 p1 in skip_chars
                 or p2 in skip_chars
@@ -551,13 +549,18 @@ class Dstatistic(Alignment):
             if p1 == o and p2 != o and p3 != o and p2 == p3:
                 abba_count += 1
                 if site < n_block_sites:
-                    block_abba[site // block_size] += 1
+                    block_abba[site // block_size] += 1.0
             elif p2 == o and p1 != o and p3 != o and p1 == p3:
                 baba_count += 1
                 if site < n_block_sites:
-                    block_baba[site // block_size] += 1
+                    block_baba[site // block_size] += 1.0
 
-        return abba_count, baba_count, block_abba, block_baba
+        return (
+            abba_count,
+            baba_count,
+            np.asarray(block_abba, dtype=float),
+            np.asarray(block_baba, dtype=float),
+        )
 
     @staticmethod
     def _jackknife_d_values(block_abba, block_baba) -> np.ndarray:
