@@ -1420,6 +1420,7 @@ Results:
 | `CollapseBranches.count_internal_nodes` | balanced 65536-tip tree, JSON collapsed-branch count setup | 0.1224s | 0.0099s | 12.4x |
 | `CollapseBranches.run` JSON no-op setup scan | supported balanced 65536-tip tree, no branches below threshold | 0.074100s | 0.046069s | 1.6x |
 | `CollapseBranches.run` non-JSON weak-branch pre-scan | weak-root balanced 262144-tip tree, pre-collapse setup only | 0.054011s | 0.000009708s | 5563.49x |
+| `CollapseBranches._has_collapsible_branch_standard_tree` localized stack scan | supported balanced 65536-tip tree, no branches below threshold, side-by-side previous stack method lookup | 0.374269s | 0.300787s | 1.24x |
 | `collapse_branches` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006097s | 0.004794s | 1.27x |
 | `collapse_branches` module import without `typing` startup | median cold subprocess import after converting the annotation-only typing alias to a built-in postponed annotation | 0.007718s | 0.004077s | 1.89x |
 | `Spr.run` single-taxon terminal validation and subtree lookup | balanced 65536-tip tree, single terminal subtree | 0.2741s | 0.0171s | 16.0x |
@@ -5368,11 +5369,13 @@ Profiling summary:
   by non-JSON runs. A later non-JSON pass routes standard trees directly to
   the boolean weak-support scan instead of the JSON count-and-scan helper, so
   runs with an early weak branch can proceed to copy/collapse without counting
-  the entire tree first. A follow-up startup pass keeps JSON output behind a
-  module-level forwarding wrapper, preserving the patch point while avoiding
-  JSON helper startup during command discovery. Another startup pass removes
-  the annotation-only `typing` import with a built-in postponed annotation, so
-  command discovery no longer loads `typing`.
+  the entire tree first. That non-JSON weak-support scan now localizes stack
+  operations for the full-tree no-collapse case while leaving the JSON combined
+  count-and-scan traversal unchanged. A follow-up startup pass keeps JSON output
+  behind a module-level forwarding wrapper, preserving the patch point while
+  avoiding JSON helper startup during command discovery. Another startup pass
+  removes the annotation-only `typing` import with a built-in postponed
+  annotation, so command discovery no longer loads `typing`.
 - `RenameTreeTips.run` baseline time made a second full-tree pickle/unpickle
   copy before renaming terminal labels. The optimized path renames the isolated
   tree returned by `read_tree_file()` directly before writing it. A later

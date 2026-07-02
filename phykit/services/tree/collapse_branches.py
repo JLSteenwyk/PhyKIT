@@ -101,14 +101,16 @@ class CollapseBranches(Tree):
 
         stack = [root]
         try:
+            pop = stack.pop
+            extend = stack.extend
             while stack:
-                node = stack.pop()
+                node = pop()
                 confidence = node.confidence
                 if confidence and confidence < support:
                     return True
                 children = node.clades
                 if children:
-                    stack.extend(children)
+                    extend(children)
         except AttributeError:
             return None
         return False
