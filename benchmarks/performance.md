@@ -594,6 +594,7 @@ Results:
 | `RenameFastaEntries.replace_ids_in_file_and_write` combined record write | 30k FASTA records x 120 bp, 15k renamed | 0.060598s | 0.052972s | 1.14x |
 | `RenameFastaEntries.replace_ids_in_file_and_write` short-sequence no-wrap path | 120k FASTA records x 50 bp, half renamed, identical headers and sequence output | 0.087410s | 0.072161s | 1.21x |
 | `RenameFastaEntries.load_idmap` explicit split loop | 500k two-column ID-map rows, identical whitespace parsing and duplicate-key behavior | 1.323420s | 1.219563s | 1.09x |
+| `RenameFastaEntries.load_idmap` localized split loop | 500k two-column ID-map rows plus duplicate-key overwrite, identical parsed dictionary | 0.570144s | 0.517416s | 1.10x |
 | `RenameFastaEntries._write_wrapped_fasta_sequence` | 25k renamed sequences x 1200 bp, 60-char wrapping | 0.0692s | 0.0597s | 1.2x |
 | `RenameFastaEntries._write_wrapped_fasta_sequence` list-backed chunks | 25k renamed sequences x 1200 bp, 60-char wrapping | 0.0598s | 0.0541s | 1.1x |
 | `RenameFastaEntries.run` FASTA existence guard | 100k existing FASTA path checks before ID-map loading and streaming rewrite, side-by-side previous open/close guard | 3.874264s | 0.556639s | 6.96x |

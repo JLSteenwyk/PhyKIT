@@ -60,8 +60,9 @@ class RenameFastaEntries(Alignment):
         try:
             with open(idmap_file) as f:
                 idmap = {}
+                split = str.split
                 for line in f:
-                    key, val = line.split()
+                    key, val = split(line)
                     idmap[key] = val
                 return idmap
         except FileNotFoundError:
