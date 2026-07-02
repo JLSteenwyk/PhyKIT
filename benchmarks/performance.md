@@ -1272,6 +1272,7 @@ Results:
 | `NeighborNet._nj_circular_ordering` lower-triangle row conversion | 1500 x 1500 symmetric distance matrix, identical BioPython lower-triangle payload | 0.186708s | 0.035887s | 5.20x |
 | `NeighborNet._estimate_split_weights` | 80 taxa, 3080 circular splits, dense NNLS design matrix | 3.5731s | 2.9731s | 1.2x |
 | `NeighborNet._build_splits_graph` | 80 taxa, first 20 circular splits, 21-node Buneman graph | 3.3135s | 0.0010s | 3262.5x |
+| `NeighborNet._build_splits_graph` bitmask valid-node representation | 80 taxa, 16 balanced random splits, 65,536 valid nodes and 524,288 graph edges, identical public sign tuples | 4.240900s | 2.017494s | 2.10x |
 | `NeighborNet` / `ConsensusNetwork` / `QuartetNetwork` split-graph extent helper | 500k node positions, identical maximum x/y extent without temporary coordinate lists | 0.070550s | 0.029240s | 2.41x |
 | `NeighborNet` / `ConsensusNetwork` network edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.025885s | 0.012323s | 2.10x |
 | `NeighborNet` / `ConsensusNetwork` unlabeled fallback point rendering | 4096 taxa without accepted splits, real Matplotlib Agg point render | 0.756119s | 0.026598s | 28.43x |
@@ -5176,7 +5177,10 @@ Profiling summary:
   sign vectors before rejecting invalid combinations and then checked every
   valid-node pair for edges. The optimized path assigns signs incrementally and
   prunes forbidden split-pair states as soon as they are introduced, then builds
-  edges by flipping one split sign and checking set membership. Network plotting
+  edges by flipping one split sign and checking set membership. The valid-node
+  graph pass now uses integer bitmasks internally and converts back to public
+  sign tuples only for returned nodes and edges, reducing tuple slicing and
+  membership overhead for larger split graphs. Network plotting
   now batches internal split-graph edges and pendant taxon edges into
   `LineCollection`s while preserving per-pendant linewidth and alpha. Pendant
   edge scaling now computes the split-graph x/y extent in one pass without

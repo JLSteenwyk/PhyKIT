@@ -561,10 +561,20 @@ class NeighborNet:
         n_splits = len(splits_list)
         if n_splits == 0:
             return {}, set(), [], [], []
+        bit_values = [1 << idx for idx in range(n_splits)]
         taxon_signs = {}
+        taxon_masks = []
         for taxon in all_taxa:
-            signs = tuple(1 if taxon in sp else -1 for sp in splits_list)
-            taxon_signs[taxon] = signs
+            sign_mask = 0
+            signs = []
+            for split_idx, sp in enumerate(splits_list):
+                if taxon in sp:
+                    signs.append(1)
+                    sign_mask |= bit_values[split_idx]
+                else:
+                    signs.append(-1)
+            taxon_signs[taxon] = tuple(signs)
+            taxon_masks.append(sign_mask)
         forbidden = {}
         for i in range(n_splits):
             for j in range(i + 1, n_splits):
@@ -583,18 +593,22 @@ class NeighborNet:
                     fb.add((-1, -1))
                 if fb:
                     forbidden[(i, j)] = fb
-        valid_nodes = set()
+        valid_masks = set()
         constraints_by_split = [[] for _ in range(n_splits)]
         for (i, j), fb_pairs in forbidden.items():
             constraints_by_split[j].append((i, fb_pairs))
 
         signs = [-1] * n_splits
 
-        def add_valid_signs(split_idx):
+        def add_valid_signs(split_idx, sign_mask):
             if split_idx == n_splits:
-                valid_nodes.add(tuple(signs))
+                valid_masks.add(sign_mask)
                 return
-            for sign in (-1, 1):
+            bit_value = bit_values[split_idx]
+            for sign, next_mask in (
+                (-1, sign_mask),
+                (1, sign_mask | bit_value),
+            ):
                 valid = True
                 for prev_idx, fb_pairs in constraints_by_split[split_idx]:
                     if (signs[prev_idx], sign) in fb_pairs:
@@ -602,21 +616,29 @@ class NeighborNet:
                         break
                 if valid:
                     signs[split_idx] = sign
-                    add_valid_signs(split_idx + 1)
+                    add_valid_signs(split_idx + 1, next_mask)
 
-        add_valid_signs(0)
-        for signs in taxon_signs.values():
-            valid_nodes.add(signs)
+        add_valid_signs(0, 0)
+        valid_masks.update(taxon_masks)
+
+        signs_cache = {}
+
+        def mask_to_signs(mask):
+            try:
+                return signs_cache[mask]
+            except KeyError:
+                sign_tuple = tuple(1 if mask & bit else -1 for bit in bit_values)
+                signs_cache[mask] = sign_tuple
+                return sign_tuple
+
+        valid_nodes = {mask_to_signs(mask) for mask in valid_masks}
         edges = []
-        for node in valid_nodes:
-            for split_idx in range(n_splits):
-                flipped = (
-                    node[:split_idx]
-                    + (-node[split_idx],)
-                    + node[split_idx + 1:]
-                )
-                if flipped in valid_nodes and node < flipped:
-                    edges.append((node, flipped, split_idx))
+        for mask in valid_masks:
+            node = mask_to_signs(mask)
+            for split_idx, bit_value in enumerate(bit_values):
+                flipped = mask ^ bit_value
+                if flipped in valid_masks and mask < flipped:
+                    edges.append((node, mask_to_signs(flipped), split_idx))
         return taxon_signs, valid_nodes, edges, splits_list, weights
 
     def _draw_network(
