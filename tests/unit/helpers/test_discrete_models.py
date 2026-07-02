@@ -735,6 +735,25 @@ class TestFelsensteinPruning:
             abs=1e-12,
         )
 
+    def test_symmetric_eigendecomposition_context_avoids_inverse(
+        self, monkeypatch
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        Q = build_q_matrix(np.array([0.2, 0.3, 0.4]), 3, "SYM")
+
+        def fail_inverse(*_args, **_kwargs):
+            raise AssertionError("symmetric matrices should use eigh")
+
+        monkeypatch.setattr(discrete_models.np.linalg, "inv", fail_inverse)
+        monkeypatch.setattr(discrete_models.np.linalg, "cond", fail_inverse)
+
+        context = discrete_models._matrix_exp_eigendecomp_context(Q)
+
+        assert context[0] == "symmetric"
+        transition = discrete_models._matrix_exp_from_eigendecomp(context, 0.75)
+        np.testing.assert_allclose(transition, matrix_exp(Q, 0.75))
+
     def test_complex_eigendecomposition_context_falls_back(self):
         import phykit.helpers.discrete_models as discrete_models
 

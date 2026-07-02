@@ -168,6 +168,16 @@ def matrix_exp(Q: np.ndarray, t: float) -> np.ndarray:
 
 
 def _matrix_exp_eigendecomp_context(Q: np.ndarray):
+    exp = np.exp
+    try:
+        if _is_exact_symmetric_matrix(Q):
+            eigenvalues, eigenvectors = np.linalg.eigh(Q)
+            if not (np.isfinite(eigenvalues).all() and np.isfinite(eigenvectors).all()):
+                return None
+            return "symmetric", eigenvalues, eigenvectors, eigenvectors.T, exp
+    except (np.linalg.LinAlgError, ValueError, FloatingPointError):
+        return None
+
     try:
         eigenvalues, eigenvectors = np.linalg.eig(Q)
         if np.iscomplexobj(eigenvalues) or np.iscomplexobj(eigenvectors):
@@ -186,15 +196,34 @@ def _matrix_exp_eigendecomp_context(Q: np.ndarray):
         and np.isfinite(inverse_eigenvectors).all()
     ):
         return None
-    return eigenvalues, eigenvectors, inverse_eigenvectors
+    return "generic", eigenvalues, eigenvectors, inverse_eigenvectors, exp, np.asarray
+
+
+def _is_exact_symmetric_matrix(Q: np.ndarray) -> bool:
+    try:
+        size = Q.shape[0]
+        if Q.shape[1] != size:
+            return False
+    except (AttributeError, IndexError):
+        return False
+
+    for row in range(1, size):
+        for col in range(row):
+            if Q[row, col] != Q[col, row]:
+                return False
+    return True
 
 
 def _matrix_exp_from_eigendecomp(context, t: float):
-    eigenvalues, eigenvectors, inverse_eigenvectors = context
+    if context[0] == "symmetric":
+        _, eigenvalues, eigenvectors, eigenvectors_t, exp = context
+        return (eigenvectors * exp(eigenvalues * t)) @ eigenvectors_t
+
+    _, eigenvalues, eigenvectors, inverse_eigenvectors, exp, asarray = context
     transition = (
-        eigenvectors * np.exp(eigenvalues * t)
+        eigenvectors * exp(eigenvalues * t)
     ) @ inverse_eigenvectors
-    return np.asarray(transition, dtype=float)
+    return asarray(transition, dtype=float)
 
 
 def _matrix_exp_two_state(Q: np.ndarray, t: float):
