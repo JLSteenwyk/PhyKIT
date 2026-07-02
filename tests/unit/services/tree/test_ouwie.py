@@ -435,6 +435,33 @@ class TestWeightMatrix:
         row_sums = W.sum(axis=1)
         np.testing.assert_allclose(row_sums, 1.0, atol=1e-10)
 
+    def test_multi_alpha_root_decay_reuses_downstream_decay(self, svc):
+        class CountingAlphas(dict):
+            def __init__(self, values):
+                super().__init__(values)
+                self.get_count = 0
+
+            def get(self, key, default=None):
+                self.get_count += 1
+                return super().get(key, default)
+
+        ordered_names = ["A"]
+        lineage_info = {
+            "A": [
+                ("root", 1.0, "r1", 0.0, 1.0),
+                ("mid", 2.0, "r2", 1.0, 3.0),
+                ("tip", 3.0, "r1", 3.0, 6.0),
+            ]
+        }
+        alphas = CountingAlphas({"r1": 0.2, "r2": 0.4})
+
+        W = svc._build_weight_matrix_multi_alpha(
+            ordered_names, lineage_info, ["r1", "r2"], alphas, "r1",
+        )
+
+        np.testing.assert_allclose(W.sum(axis=1), 1.0, atol=1e-10)
+        assert alphas.get_count == 6
+
     @pytest.mark.parametrize("alpha", [1e-12, 0.5])
     def test_single_alpha_weight_cache_matches_direct_builder(
         self, precomputed, alpha

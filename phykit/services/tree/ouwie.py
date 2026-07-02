@@ -828,6 +828,7 @@ class OUwie(Tree):
         n = len(ordered_names)
         R = len(regimes)
         regime_idx = {r: j for j, r in enumerate(regimes)}
+        root_col = regime_idx.get(root_regime)
         W = np.zeros((n, R))
 
         for i, name in enumerate(ordered_names):
@@ -845,7 +846,7 @@ class OUwie(Tree):
                 alpha_next = alphas_dict.get(regime_next, 0.01)
                 decay_to_tip[b] = decay_to_tip[b + 1] * np.exp(-alpha_next * bl_next)
 
-            for b_idx, (_, bl, regime, d_start, d_end) in enumerate(path):
+            for b_idx, (_, bl, regime, _d_start, _d_end) in enumerate(path):
                 if regime not in regime_idx:
                     continue
                 j = regime_idx[regime]
@@ -864,14 +865,15 @@ class OUwie(Tree):
                 W[i, j] += contribution
 
             # root.station: add decay from root to tip for root regime
-            if root_regime in regime_idx:
-                j_root = regime_idx[root_regime]
-                # Total decay from root to tip
+            if root_col is not None:
                 total_decay = 1.0
-                for _, bl, regime, _, _ in path:
-                    alpha_r = alphas_dict.get(regime, 0.01)
-                    total_decay *= np.exp(-alpha_r * bl)
-                W[i, j_root] += total_decay
+                if n_branches:
+                    _, bl_first, regime_first, _, _ = path[0]
+                    alpha_first = alphas_dict.get(regime_first, 0.01)
+                    total_decay = decay_to_tip[0] * np.exp(
+                        -alpha_first * bl_first
+                    )
+                W[i, root_col] += total_decay
 
         return W
 
