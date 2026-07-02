@@ -510,6 +510,10 @@ class TestPICRun:
     def test_run_missing_trait_taxa_copies_before_pruning(
         self, monkeypatch, args, capsys
     ):
+        class OrderedTraitValues(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         from Bio import Phylo
         from io import StringIO
 
@@ -518,7 +522,7 @@ class TestPICRun:
         original_fast_copy = ic._fast_copy
         copied_trees = []
         captured = {}
-        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        tip_traits = OrderedTraitValues({"A": 1.0, "B": 2.0, "C": 3.0})
 
         def copy_spy(tree_to_copy):
             copied_tree = original_fast_copy(tree_to_copy)
@@ -526,6 +530,7 @@ class TestPICRun:
             return copied_tree
 
         monkeypatch.setattr(ic, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(ic_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0)
         monkeypatch.setattr(ic, "_fast_copy", copy_spy)
         self._stub_run_tail(monkeypatch, ic, tip_traits, captured)
 

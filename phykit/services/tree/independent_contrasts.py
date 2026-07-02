@@ -63,8 +63,9 @@ class IndependentContrasts(Tree):
 
         # Prune tree to shared taxa
         if len(tip_traits) != len(tree_tips):
-            shared = set(tip_traits.keys())
-            tips_to_prune = [t for t in tree_tips if t not in shared]
+            tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+                tree_tips, tip_traits
+            )
             if tips_to_prune:
                 if not copied_tree:
                     tree = self._fast_copy(tree)

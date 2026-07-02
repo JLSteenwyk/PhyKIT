@@ -1471,6 +1471,7 @@ Results:
 | `IndependentContrasts` text-output compact descendant summaries | pectinate 12000-tip tree, compute PIC and captured text output with identical displayed tip previews/counts | 0.520021s | 0.030507s | 17.05x |
 | `IndependentContrasts._postorder_clades_fast` reverse-preorder helper | balanced 32768-tip tree, direct PIC postorder traversal | 0.010762s | 0.003350s | 3.21x |
 | `IndependentContrasts.run` trait parsing/prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.030738s | 0.018286s | 1.68x |
+| `IndependentContrasts.run` ordered trait prune setup | 300k ordered trait rows plus 75k tree-only tail tips, side-by-side previous shared-set construction and membership scan | 0.080876s | 0.008993s | 8.99x |
 | `IndependentContrasts._parse_trait_data` exact-order all-shared fast path | 500k two-column trait rows with comments/blanks, file order matching tree-tip order, identical dict order | 0.599368s | 0.372073s | 1.61x |
 | `IndependentContrasts._parse_trait_data` stripped comment check | 200k two-column trait rows with whitespace-prefixed comments/blanks, file order matching tree-tip order, identical parsed traits | 0.269181s | 0.161897s | 1.66x |
 | `IndependentContrasts.run` all-shared read-only setup | balanced 32768-tip cached binary tree, one trait value for every tip, PIC/output mocked | 0.281312s | 0.050213s | 5.60x |
@@ -5656,7 +5657,10 @@ Profiling summary:
   the annotation-only `typing` import, so command discovery no longer loads
   `typing`. A boolean-scan pass pushes child lists directly in the default
   branch-length and polytomy checks, since those helpers only return whether a
-  condition exists and do not expose traversal order.
+  condition exists and do not expose traversal order. Ordered filtered trait
+  mappings now reuse the shared large-input prune helper, skipping shared-set
+  construction and the membership scan when only tree-only tail tips need
+  pruning.
 - `ParsimonyScore.run` baseline time made a second full-tree pickle/unpickle
   copy before validation, polytomy resolution, optional pruning, and Fitch
   traversal. The optimized path performs those mutations on the isolated tree
