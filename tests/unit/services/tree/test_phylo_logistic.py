@@ -121,6 +121,16 @@ def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
                 delattr(parent, child_name)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = phylo_logistic_module._LazyNumpy()
+
+    log_attr = lazy_np.log
+
+    assert lazy_np.__dict__["log"] is log_attr
+    assert lazy_np.log is log_attr
+    assert lazy_np._module is not None
+
+
 def test_repeated_info_matrix_caches_scipy_linalg_imports(basic_args, monkeypatch):
     previous_cho_factor = phylo_logistic_module._CHO_FACTOR
     previous_cho_solve = phylo_logistic_module._CHO_SOLVE

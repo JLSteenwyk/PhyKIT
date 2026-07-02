@@ -1944,6 +1944,7 @@ Results:
 | `PhyloLogistic` root-tip distance mean reduction | root-tip distance vectors sized 10 / 100 / 1000 / 100k, side-by-side previous `np.mean` wrapper | 0.000006776s / 0.000004550s / 0.000010497s / 0.000039791s | 0.000005238s / 0.000002929s / 0.000004368s / 0.000034072s | 1.29x / 1.55x / 2.40x / 1.17x |
 | `PhyloLogistic._neg_pen_loglik` reused root distances and scalar branch transform | balanced 256-tip tree, one Firth-correction likelihood evaluation | 0.002322s | 0.002147s | 1.08x |
 | `PhyloLogistic` Bernoulli log-likelihood reduction | 8 / 40 / 260 / 900 / 2000 binary responses, side-by-side previous two-product `np.sum` expression used in optimizer and final fit likelihoods | 0.000017315s / 0.000016086s / 0.000013044s / 0.000020070s / 0.000043277s | 0.000007118s / 0.000005828s / 0.000008730s / 0.000017206s / 0.000034731s | 2.43x / 2.76x / 1.49x / 1.17x / 1.25x |
+| `PhyloLogistic` Bernoulli lazy NumPy attribute cache | 80 / 260 / 900 / 2000 binary responses, side-by-side previous uncached lazy proxy under `_bernoulli_log_likelihood`, identical log-likelihood | 0.000003917s / 0.000005584s / 0.000011375s / 0.000022625s | 0.000002750s / 0.000004417s / 0.000010209s / 0.000021208s | 1.42x / 1.26x / 1.11x / 1.07x |
 | `PhyloLogistic._compute_info_matrix` | 420 taxa SPD VCV x 3-predictor design matrix | 0.0052s | 0.0007s | 8.0x |
 | `PhyloLogistic._compute_info_matrix_cholesky` cached SciPy linalg wrappers | 2k repeated 8-taxon SPD VCV x 2-column design matrix calls, SciPy already warm | 0.024984s | 0.022490s | 1.11x |
 | `PhyloLogistic._compute_info_matrix_inverse` row scaling | 900 taxa SPD VCV x 8-column design matrix, inverse already available | 0.001697s | 0.000365s | 4.7x |
@@ -6782,6 +6783,8 @@ Profiling summary:
   evaluation now selects log-probabilities directly and reduces through the
   ndarray method, avoiding the previous two temporary product arrays and generic
   `np.sum` dispatch in both optimizer and final-fit likelihood calculations.
+  A follow-up pass caches resolved lazy NumPy attributes for repeated logistic
+  likelihood calls while preserving import deferral.
   The root-tip distance mean used for alpha initialization now also reduces
   through the distance vector's ndarray method, avoiding the generic `np.mean`
   wrapper after the vector has already been materialized.
