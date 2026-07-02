@@ -717,8 +717,13 @@ class QuartetNetwork(Tree):
         while len(active) > 2:
             m = len(active)
             r = {}
+            d_get = d.get
             for i in active:
-                r[i] = sum(d.get((i, j), 0) for j in active if j != i)
+                total = 0
+                for j in active:
+                    if j != i:
+                        total += d_get((i, j), 0)
+                r[i] = total
 
             best_q = float("inf")
             best_i, best_j = active[0], active[1]

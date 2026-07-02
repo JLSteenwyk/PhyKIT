@@ -447,6 +447,26 @@ class TestNeighborJoiningOrder:
         ordering = QuartetNetwork._neighbor_joining_order(["X", "Y"], [[0, 1], [1, 0]])
         assert ordering == ["X", "Y"]
 
+    def test_row_totals_avoid_generic_sum(self, monkeypatch):
+        original_sum = builtins.sum
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("NJ row totals should scan active distances directly")
+
+        monkeypatch.setattr(builtins, "sum", fail_sum)
+
+        taxa = ["A", "B", "C", "D"]
+        dist = [
+            [0, 2, 4, 4],
+            [2, 0, 4, 4],
+            [4, 4, 0, 2],
+            [4, 4, 2, 0],
+        ]
+        ordering = QuartetNetwork._neighbor_joining_order(taxa, dist)
+
+        monkeypatch.setattr(builtins, "sum", original_sum)
+        assert set(ordering) == {"A", "B", "C", "D"}
+
 
 class TestCircularSplitWeights:
     def test_tree_distance_one_positive_split(self):
