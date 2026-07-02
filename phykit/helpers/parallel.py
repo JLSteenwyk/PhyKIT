@@ -74,6 +74,9 @@ class ParallelProcessor:
         Returns:
             Optimal number of workers
         """
+        if min_chunk_size > 0 and data_size <= min_chunk_size:
+            return 1
+
         max_workers = _cpu_count()
         optimal_workers = min(max_workers, max(1, data_size // min_chunk_size))
         return min(optimal_workers, 8)  # Cap at 8 to avoid overhead

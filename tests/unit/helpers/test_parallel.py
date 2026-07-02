@@ -75,6 +75,21 @@ class TestParallelProcessor(unittest.TestCase):
         parallel_module._clear_cpu_count_cache()
         self.assertEqual(calls, 1)
 
+    def test_get_optimal_workers_small_data_skips_cpu_count(self):
+        """Test sequential-size jobs avoid multiprocessing setup."""
+        parallel_module._clear_cpu_count_cache()
+        with patch.object(
+            parallel_module.mp,
+            "cpu_count",
+            side_effect=AssertionError("small jobs should not ask for CPU count"),
+        ):
+            self.assertEqual(ParallelProcessor.get_optimal_workers(0), 1)
+            self.assertEqual(ParallelProcessor.get_optimal_workers(5), 1)
+            self.assertEqual(
+                ParallelProcessor.get_optimal_workers(10, min_chunk_size=10),
+                1,
+            )
+
     def test_chunk_data(self):
         """Test data chunking"""
         # Even division

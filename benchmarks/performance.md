@@ -509,6 +509,7 @@ Results:
 | `parallel` module import without eager multiprocessing/NumPy/executors | cold subprocess import after lazy worker, array, and executor proxies | 0.070840s | 0.001929s | 36.72x |
 | `parallel` module import without `typing` startup | median cold subprocess import after converting annotation-only collection/callable/optional aliases to built-in postponed annotations | 0.024022s | 0.020614s | 1.17x |
 | `ParallelProcessor.get_optimal_workers` cached CPU count | 500k repeated worker-selection calls with varying data sizes, identical worker counts | 2.401188s | 0.699817s | 3.43x |
+| `ParallelProcessor.get_optimal_workers` small-job early return | 50k batched worker selections for data sizes 0 / 5 / 10 with `min_chunk_size=10`, side-by-side previous unconditional CPU-count lookup | 0.000000423s / 0.000000358s / 0.000000304s | 0.000000090s / 0.000000094s / 0.000000185s | 4.69x / 3.79x / 1.64x |
 | `NumpyParallel.parallel_pairwise_operation` explicit sequential symmetric path | 1200 items, symmetric pairwise absolute-difference matrix, `num_workers=1`, identical matrix output | 0.328311s | 0.157943s | 2.08x |
 | `NumpyParallel.parallel_pairwise_operation` small default direct path | 5-item symmetric absolute-difference matrix / 4-item non-symmetric subtraction matrix, side-by-side previous pair-list setup before sequential `parallel_map` fallback | 0.000028341s / 0.000030722s | 0.000017988s / 0.000016394s | 1.58x / 1.87x |
 | `ParallelProcessor.parallel_reduce` no-initial iterator reduction | 1M-item sequential identity map plus additive reduce, side-by-side previous `results[1:]` slice | 0.209717s | 0.151342s | 1.39x |
@@ -3689,9 +3690,11 @@ Profiling summary:
   dispatches through `ParallelProcessor.parallel_map`. Worker selection now
   caches the process CPU count after the first lookup, preserving lazy
   multiprocessing startup while avoiding repeated `cpu_count()` calls across
-  repeated batch setup. `ParallelProcessor.parallel_reduce` without an initial
-  value now consumes the mapped results through an iterator after taking the
-  first value, avoiding a near-full-list `results[1:]` copy before reduction.
+  repeated batch setup. It also returns immediately for data sizes that cannot
+  exceed one chunk, so sequential jobs avoid multiprocessing setup entirely.
+  `ParallelProcessor.parallel_reduce` without an initial value now consumes the
+  mapped results through an iterator after taking the first value, avoiding a
+  near-full-list `results[1:]` copy before reduction.
   `NumpyParallel.parallel_apply_along_axis` now passes `range` index streams to
   `parallel_map` instead of eagerly materializing `list(range(...))`, preserving
   ordered row/column application while avoiding large temporary index lists.
