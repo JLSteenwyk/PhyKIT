@@ -220,6 +220,7 @@ def apply_label_colors(ax, label_colors):
 
 
 def _range_wedge_angle_bounds(sorted_angles):
+    two_pi = 2 * pi
     if len(sorted_angles) >= 2:
         min_gap = sorted_angles[1] - sorted_angles[0]
         max_gap = min_gap
@@ -232,7 +233,7 @@ def _range_wedge_angle_bounds(sorted_angles):
                 max_gap = gap
                 max_gap_idx = idx
         pad = min_gap * 0.5
-        complement_gap = (2 * pi) - (sorted_angles[-1] - sorted_angles[0])
+        complement_gap = two_pi - (sorted_angles[-1] - sorted_angles[0])
         if complement_gap > max_gap:
             max_gap_idx = len(sorted_angles) - 1
     else:
@@ -243,7 +244,7 @@ def _range_wedge_angle_bounds(sorted_angles):
         angle_min = sorted_angles[max_gap_idx + 1] - pad
         angle_max = sorted_angles[max_gap_idx] + pad
         if angle_max < angle_min:
-            angle_max += 2 * pi
+            angle_max += two_pi
     else:
         angle_min = sorted_angles[0] - pad
         angle_max = sorted_angles[-1] + pad

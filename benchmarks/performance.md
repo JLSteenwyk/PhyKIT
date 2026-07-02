@@ -1068,6 +1068,7 @@ Results:
 | `color_annotations._terminal_clades` order-preserving child push | balanced 131072-tip clade, terminal list for highlighted ranges/clades, optimized helper baseline | 0.038837s | 0.034347s | 1.13x |
 | `color_annotations._valid_mrca_taxa` order-preserving child push | balanced 131072-tip tree, validate first and last requested taxa, optimized helper baseline | 0.040392s | 0.037106s | 1.09x |
 | `color_annotations._range_wedge_angle_bounds` | 100 repeated 100k-tip circular range angle-bound calculations | 1.148038s | 0.468314s | 2.45x |
+| `color_annotations._range_wedge_angle_bounds` local two-pi reuse | 100 repeated 100k-tip circular range angle-bound calculations, side-by-side previous repeated `2 * pi` expression | 1.681404s | 1.388825s | 1.21x |
 | `color_annotations._range_rect_tip_bounds` | 500k highlighted tips, identical rectangular x/y range bounds without temporary coordinate lists | 0.328038s | 0.295813s | 1.11x |
 | `color_annotations.apply_label_colors` | 4096 label colors matched against 4096 real Matplotlib text artists | 1.220676s | 0.006927s | 176.21x |
 | `color_annotations.parse_color_file` streaming parser | 500k mixed label/range/clade TSV rows with comments/blanks | 0.679407s | 0.642493s | 1.06x |
@@ -4748,7 +4749,9 @@ Profiling summary:
   in terminal-list extraction and MRCA taxa validation while preserving
   left-to-right tip order.
   Circular range wedge drawing now derives the minimum and maximum angular gaps
-  in one pass over sorted tip angles instead of building two gap lists.
+  in one pass over sorted tip angles instead of building two gap lists. The
+  angle-bound helper now reuses a local `2 * pi` value across complement and
+  wraparound calculations for large circular range overlays.
   Rectangular range drawing now computes independent x/y bounds in one tip scan
   without temporary coordinate lists. Label
   recoloring now scans Matplotlib text artists once and applies matching colors

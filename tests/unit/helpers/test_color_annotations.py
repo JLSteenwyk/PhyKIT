@@ -507,9 +507,11 @@ class TestDrawRangeRect:
 class TestDrawRangeWedge:
     def test_range_wedge_angle_bounds_matches_legacy_two_pass_calculation(self):
         cases = [
+            [0.1],
             [0.1, 0.2, 0.35, 0.6],
             [0.05, 0.12, 6.05, 6.15],
             [0.2, 2.2],
+            [idx * 0.01 for idx in range(100)],
         ]
         for angles in cases:
             assert _range_wedge_angle_bounds(angles) == pytest.approx(
