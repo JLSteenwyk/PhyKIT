@@ -555,3 +555,23 @@ class TestDrawRangeWedge:
         draw_range_wedge(ax2, tree, mrca, "#00ff00", coords)
         plt.close(fig)
         plt.close(fig2)
+
+    def test_draw_range_wedge_uses_mrca_and_tip_radii(self):
+        import math
+
+        tree = _make_tree("((A:1,B:1):1,C:1);")
+        mrca = tree.common_ancestor(["A", "B"])
+        tip_a, tip_b = mrca.clades
+        coords = {
+            id(tip_a): {"angle": 0.0, "radius": 2.0},
+            id(tip_b): {"angle": math.pi / 2, "radius": 3.0},
+            id(mrca): {"angle": math.pi / 4, "radius": 0.5},
+        }
+
+        fig, ax = plt.subplots()
+        draw_range_wedge(ax, tree, mrca, "#00ff00", coords)
+
+        wedge = ax.patches[0]
+        assert wedge.r == pytest.approx(3.125)
+        assert wedge.width == pytest.approx(2.625)
+        plt.close(fig)

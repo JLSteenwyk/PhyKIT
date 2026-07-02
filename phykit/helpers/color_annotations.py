@@ -342,15 +342,28 @@ def draw_range_wedge(ax, tree, clade, color, coords, alpha=0.15):
     if not tips:
         return
 
-    tip_coords = [
-        coords[id(t)] for t in tips if id(t) in coords
-    ]
-    if len(tip_coords) < 2:
-        return
+    angles = []
+    append_angle = angles.append
+    have_radius = False
+    min_radius = max_radius = 0.0
+    coords_get = coords.get
+    for tip in tips:
+        coord = coords_get(id(tip))
+        if coord is None:
+            continue
+        append_angle(coord["angle"])
+        radius = coord["radius"]
+        if have_radius:
+            if radius < min_radius:
+                min_radius = radius
+            elif radius > max_radius:
+                max_radius = radius
+        else:
+            min_radius = max_radius = radius
+            have_radius = True
 
-    # Extract angles and radii from coords dicts
-    angles = [c["angle"] for c in tip_coords]
-    radii = [c["radius"] for c in tip_coords]
+    if len(angles) < 2:
+        return
 
     # Sort angles for range computation
     sorted_angles = sorted(angles)
@@ -362,9 +375,9 @@ def draw_range_wedge(ax, tree, clade, color, coords, alpha=0.15):
     if mrca_coord is not None:
         r_inner = mrca_coord["radius"]
     else:
-        r_inner = min(radii)
+        r_inner = min_radius
 
-    r_outer = max(radii)
+    r_outer = max_radius
     r_pad = (r_outer - r_inner) * 0.05 if r_outer > r_inner else 0.02
     r_outer += r_pad
 

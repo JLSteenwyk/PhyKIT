@@ -1084,6 +1084,7 @@ Results:
 | `color_annotations._range_wedge_angle_bounds` | 100 repeated 100k-tip circular range angle-bound calculations | 1.148038s | 0.468314s | 2.45x |
 | `color_annotations._range_wedge_angle_bounds` local two-pi reuse | 100 repeated 100k-tip circular range angle-bound calculations, side-by-side previous repeated `2 * pi` expression | 1.681404s | 1.388825s | 1.21x |
 | `color_annotations._range_rect_tip_bounds` | 500k highlighted tips, identical rectangular x/y range bounds without temporary coordinate lists | 0.328038s | 0.295813s | 1.11x |
+| `color_annotations.draw_range_wedge` one-pass tip coordinate scan | 8192 / 32768 / 65536-tip circular highlighted clades, side-by-side previous tip-coordinate and radius-list setup | 0.007798s / 0.049606s / 0.115952s | 0.006107s / 0.038891s / 0.056468s | 1.28x / 1.28x / 2.05x |
 | `color_annotations.apply_label_colors` | 4096 label colors matched against 4096 real Matplotlib text artists | 1.220676s | 0.006927s | 176.21x |
 | `color_annotations.parse_color_file` streaming parser | 500k mixed label/range/clade TSV rows with comments/blanks | 0.679407s | 0.642493s | 1.06x |
 | `color_annotations.parse_color_file` lowercase fast path | 500k mixed label/range/clade TSV rows with comments/blanks, side-by-side original parser comparison | 0.735540s | 0.712200s | 1.03x |
@@ -4825,7 +4826,9 @@ Profiling summary:
   Circular range wedge drawing now derives the minimum and maximum angular gaps
   in one pass over sorted tip angles instead of building two gap lists. The
   angle-bound helper now reuses a local `2 * pi` value across complement and
-  wraparound calculations for large circular range overlays.
+  wraparound calculations for large circular range overlays. Circular wedge
+  setup now also scans tip coordinates once, collecting angles and min/max
+  radii directly instead of building separate coordinate and radius lists.
   Rectangular range drawing now computes independent x/y bounds in one tip scan
   without temporary coordinate lists. Label
   recoloring now scans Matplotlib text artists once and applies matching colors
