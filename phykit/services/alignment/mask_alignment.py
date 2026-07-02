@@ -27,6 +27,12 @@ def _entropy_columns_from_probabilities(probs, log_probs):
     return -np.einsum("ij,ij->j", probs, log_probs)
 
 
+def _entropy_count_totals(counts):
+    if counts.shape[1] <= 20000 or counts.shape[0] >= 8:
+        return counts.sum(axis=0)
+    return np.sum(counts, axis=0)
+
+
 def _get_invalid_lookup(is_protein: bool):
     global _DNA_INVALID_LOOKUP, _PROTEIN_INVALID_LOOKUP
     if is_protein:
@@ -71,7 +77,7 @@ def _column_entropies_from_ascii_codes(
             count_index,
             minlength=width * 256,
         ).reshape(width, 256)[:, symbol_codes].T.astype(np.float64, copy=False)
-        totals = counts.sum(axis=0)
+        totals = _entropy_count_totals(counts)
         probs = np.divide(
             counts,
             totals,
@@ -284,7 +290,7 @@ class MaskAlignment(Alignment):
                         ],
                         dtype=np.float64,
                     )
-                    totals = np.sum(counts, axis=0)
+                    totals = _entropy_count_totals(counts)
                     probs = np.divide(
                         counts,
                         totals,

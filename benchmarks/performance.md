@@ -310,6 +310,7 @@ Results:
 | `MaskAlignment._column_entropies_from_ascii_codes` masked log terms | 1000 taxa x 12000 clean protein sites with two symbols per site, side-by-side previous boolean-indexed `log2` terms | 0.141908s | 0.124990s | 1.14x |
 | `MaskAlignment.calculate_keep_mask` ASCII DNA entropy counts | 3000 taxa x 8000 sites, four observed DNA symbols, side-by-side previous boolean `np.sum(..., axis=0)` counts | 0.125266s | 0.109594s | 1.14x |
 | `MaskAlignment._entropy_columns_from_probabilities` small-alphabet column dot | probability/log-probability matrices shaped 2x12000 / 4x12000 / 8x12000, side-by-side previous in-place multiply plus `np.sum(..., axis=0)` | 0.000064339s / 0.000104129s / 0.000098882s | 0.000031712s / 0.000023389s / 0.000048833s | 2.03x / 4.45x / 2.02x |
+| `MaskAlignment` entropy count-total reductions | count matrices shaped 2x12000 / 4x12000 / 8x12000 / 20x5000 / 64x20000 / 4x100000 / 20x100000, side-by-side previous `np.sum(..., axis=0)` with long narrow path preserved | 0.000012505s / 0.000014556s / 0.000110707s / 0.000018286s / 0.000318842s / 0.000195316s / 0.000839713s | 0.000010676s / 0.000013451s / 0.000024514s / 0.000017256s / 0.000308731s / 0.000195316s / 0.000511917s | 1.17x / 1.08x / 4.52x / 1.06x / 1.03x / 1.00x / 1.64x |
 | `MaskAlignment.calculate_keep_mask` single-symbol entropy shortcut | 2000 taxa x 12000 conserved clean DNA sites, entropy threshold enabled, side-by-side previous count/probability path | 0.104621s | 0.080733s | 1.30x |
 | `MaskAlignment.calculate_keep_mask` all-pass threshold shortcut | DNA 2000 taxa x 12000 sites, alphabet `ACGT-?NX*` / protein 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, `max_gap=1`, `min_occupancy=0`, no entropy | 0.065244s / 0.035698s | 0.013126s / 0.006714s | 4.97x / 5.32x |
 | `MaskAlignment.calculate_keep_mask` all-pass pre-materialization return | 2000 taxa x 12000 DNA sites, all-pass thresholds, side-by-side previous sequence materialization before all-true mask | 0.070370167s | 0.000251167s | 280.17x |
@@ -3100,7 +3101,9 @@ Profiling summary:
   in-place product path. DNA-sized
   ASCII entropy counts now use `np.count_nonzero` instead of summing boolean
   equality masks while preserving the faster `np.sum` fallback for Unicode
-  matrices. When only one valid symbol is observed, entropy-filtered runs now
+  matrices. Entropy count totals now use direct ndarray reductions for common
+  matrix widths and wider alphabets while preserving the generic reduction for
+  very long narrow matrices where it remains faster. When only one valid symbol is observed, entropy-filtered runs now
   keep the zero-entropy columns directly instead of constructing count and
   probability arrays.
   Fully identical normalized alignments now derive occupancy and zero entropy
