@@ -2477,6 +2477,7 @@ Results:
 | `OUwie._assign_branch_regimes_and_root` binary state-set merge | balanced 32768-tip tree, three alternating regimes, side-by-side previous generic child-set merge | 0.153070s | 0.115853s | 1.32x |
 | `OUwie._build_root_to_tip_paths` set-backed tip filter | balanced 8192-tip tree, all ordered tips included in lineage setup | 0.299838s | 0.033505s | 8.95x |
 | `OUwie._build_lineage_info` set-backed tip filter | balanced 8192-tip tree, all ordered tips included in lineage setup, identical lineage output | 0.491299s | 0.072740s | 6.75x |
+| `OUwie` root-to-tip terminal-map setup | balanced 32768 / 131072 / 131072-tip trees with 32768 / 65536 / 1024 requested ordered names, side-by-side previous `get_terminals()` map setup | 0.286544s / 1.941562s / 1.372615s | 0.032084s / 0.081466s / 0.034778s | 8.93x / 23.83x / 39.47x |
 | `OUwie._print_text_output` batched model and parameter rows | 100k regimes, 300k best-model parameter rows, captured stdout and identical text | 0.093383s | 0.061903s | 1.51x |
 | `OUwie._compute_model_comparison` scalar AICc weights | seven synthetic model-result dictionaries, identical normalized weights | 0.000018015s | 0.000006892s | 2.61x |
 | `OUwie._compute_model_comparison` unweighted multi-regime sigma2 average | 25 model-result dictionaries x 100k regime sigma2 values, no regime-tip weights, identical R2 inputs | 0.023221s | 0.014002s | 1.66x |
@@ -8107,7 +8108,10 @@ Profiling summary:
   ordered names instead of scanning the full ordered-name list for every tip.
   Lineage-info setup applies the same set-backed terminal filter before OU
   weight and covariance construction, preserving lineage order and contents
-  while avoiding another O(n²) ordered-name membership scan. The run path now
+  while avoiding another O(n²) ordered-name membership scan. A later terminal-map
+  setup pass uses a direct standard-tree scan for both root-to-tip path builders
+  instead of materializing all terminal clades through Bio.Phylo before filtering
+  requested names. The run path now
   passes the already-built lineage info into per-regime VCV construction,
   avoiding a second root-to-tip path rebuild before model fitting.
   Model-comparison R2 setup now averages unweighted multi-regime sigma2

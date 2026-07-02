@@ -516,11 +516,7 @@ class OUwie(Tree):
     def _build_root_to_tip_paths(
         self, tree, ordered_names: list[str], parent_map: dict
     ) -> dict[str, list]:
-        ordered_name_set = set(ordered_names)
-        tip_map = {}
-        for tip in tree.get_terminals():
-            if tip.name in ordered_name_set:
-                tip_map[tip.name] = tip
+        tip_map = self._terminal_map_for_ordered_names(tree, ordered_names)
 
         paths = {}
         for name in ordered_names:
@@ -614,11 +610,7 @@ class OUwie(Tree):
         Returns dict mapping tip_name -> list of tuples:
             (clade_id, branch_length, regime, dist_from_root_start, dist_from_root_end)
         """
-        ordered_name_set = set(ordered_names)
-        tip_map = {}
-        for tip in tree.get_terminals():
-            if tip.name in ordered_name_set:
-                tip_map[tip.name] = tip
+        tip_map = self._terminal_map_for_ordered_names(tree, ordered_names)
 
         lineage_info = {}
         for name in ordered_names:
@@ -644,6 +636,46 @@ class OUwie(Tree):
             lineage_info[name] = enriched
 
         return lineage_info
+
+    @staticmethod
+    def _terminal_map_for_ordered_names(tree, ordered_names):
+        ordered_name_set = set(ordered_names)
+        tip_map = {}
+
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            for tip in tree.get_terminals():
+                if tip.name in ordered_name_set:
+                    tip_map[tip.name] = tip
+            return tip_map
+
+        stack = [root]
+        try:
+            pop = stack.pop
+            append = stack.append
+            contains = ordered_name_set.__contains__
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    child_count = len(children)
+                    if child_count == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            append(children[idx])
+                elif contains(clade.name):
+                    tip_map[clade.name] = clade
+        except AttributeError:
+            tip_map = {}
+            for tip in tree.get_terminals():
+                if tip.name in ordered_name_set:
+                    tip_map[tip.name] = tip
+
+        return tip_map
 
     # ── Weight matrix construction ───────────────────────────────────
 

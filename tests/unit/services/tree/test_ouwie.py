@@ -619,6 +619,25 @@ class TestVCV:
         assert set(paths) == set(d["ordered_names"])
         assert all(paths[name] for name in d["ordered_names"])
 
+    def test_build_root_to_tip_paths_uses_direct_terminal_map(
+        self, precomputed, monkeypatch
+    ):
+        d = precomputed
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("standard tree terminal map should be direct")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        paths = d["svc"]._build_root_to_tip_paths(
+            d["tree"],
+            d["ordered_names"],
+            d["svc"]._build_parent_map(d["tree"]),
+        )
+
+        assert set(paths) == set(d["ordered_names"])
+        assert all(paths[name] for name in d["ordered_names"])
+
     def test_build_lineage_info_uses_set_for_tip_filtering(self, precomputed):
         class NoContainsList(list):
             def __contains__(self, _item):
@@ -629,6 +648,26 @@ class TestVCV:
         lineage_info = d["svc"]._build_lineage_info(
             d["tree"],
             ordered_names,
+            d["svc"]._build_parent_map(d["tree"]),
+            {},
+        )
+
+        assert set(lineage_info) == set(d["ordered_names"])
+        assert all(lineage_info[name] for name in d["ordered_names"])
+
+    def test_build_lineage_info_uses_direct_terminal_map(
+        self, precomputed, monkeypatch
+    ):
+        d = precomputed
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("standard tree terminal map should be direct")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        lineage_info = d["svc"]._build_lineage_info(
+            d["tree"],
+            d["ordered_names"],
             d["svc"]._build_parent_map(d["tree"]),
             {},
         )
