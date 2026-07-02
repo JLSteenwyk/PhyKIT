@@ -1320,6 +1320,7 @@ Results:
 | `MonophylyCheck.get_bootstrap_statistics` direct support traversal | balanced 32768-tip clade, support on every internal node | 0.066024s | 0.006910s | 9.56x |
 | `MonophylyCheck._collect_bootstrap_values_direct` unordered support scan | balanced 131072-tip clade, support on every internal node, optimized helper baseline | 0.028672s | 0.021346s | 1.34x |
 | `MonophylyCheck.print_results` batched text output | 200k mixed status/support rows, captured stdout and identical text | 0.301773s | 0.271484s | 1.11x |
+| `MonophylyCheck.print_results` JSON row literals | 500k mixed status/support rows, identical JSON row dictionaries | 1.410068s | 1.195951s | 1.18x |
 | `monophyly_check` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.137385s | 0.030312s | 4.53x |
 | `monophyly_check` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.010405s | 0.009056s | 1.15x |
 | `monophyly_check` module import without eager stats helper | median cold subprocess import after lazy forwarding wrapper for bootstrap summary helper | 0.030237s | 0.024028s | 1.26x |
@@ -5211,6 +5212,9 @@ Profiling summary:
   used for bootstrap support summaries until those summaries are computed. Text
   output now batches mixed support/status rows into one newline-joined print
   while preserving exact stdout text and the existing offending-taxa sorting. A
+  follow-up JSON output pass builds full and status-only row dictionaries with
+  literals and localized helpers, preserving the same row payload while avoiding
+  one `dict()` call and repeated global lookups per result row. A
   later startup pass removes annotation-only `typing` aliases by using built-in
   postponed annotations. The bootstrap support-value scan now pushes child lists
   directly because the values are immediately reduced to summary statistics, so

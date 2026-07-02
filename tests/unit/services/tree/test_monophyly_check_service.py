@@ -104,12 +104,16 @@ class TestMonophylyCheck:
         service = MonophylyCheck(args)
         mocked_json = mocker.patch("phykit.services.tree.monophyly_check.print_json")
         service.print_results(
-            [["not_monophyletic", 95.0, 100.0, 85.0, 7.0, ["z", "a"]]]
+            [
+                ["not_monophyletic", 95.0, 100.0, 85.0, 7.0, ["z", "a"]],
+                ["insufficient_taxon_representation"],
+            ]
         )
         payload = mocked_json.call_args.args[0]
         assert payload["rows"] == payload["results"]
         assert payload["rows"][0]["status"] == "not_monophyletic"
         assert payload["rows"][0]["offending_taxa"] == ["a", "z"]
+        assert payload["rows"][1] == {"status": "insufficient_taxon_representation"}
 
     def test_run_insufficient_taxa_exits(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", list_of_taxa="/some/path/to/taxa.txt")
