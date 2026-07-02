@@ -502,6 +502,19 @@ class TestTransformedVCV:
 
         np.testing.assert_allclose(distances, np.array([2.0, 2.0, 2.0]))
 
+    def test_mean_root_tip_distance_uses_array_method(self, basic_args, monkeypatch):
+        svc = PhyloLogistic(basic_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2):0.5;"), "newick")
+
+        def fail_mean(*_args, **_kwargs):
+            raise AssertionError("root-tip mean should use ndarray.mean")
+
+        monkeypatch.setattr(phylo_logistic_module.np, "mean", fail_mean, raising=False)
+
+        assert svc._mean_root_tip_distance(tree, ["A", "B", "C"]) == pytest.approx(
+            2.0
+        )
+
     def test_fit_reuses_root_tip_distances_for_vcv_builds(
         self, basic_args, monkeypatch
     ):
@@ -523,12 +536,16 @@ class TestTransformedVCV:
         def fake_minimize(_objective, x0, *args, **kwargs):
             return Namespace(x=x0, status=0)
 
+        def fail_mean(*_args, **_kwargs):
+            raise AssertionError("fit setup should use root_tip_distances.mean")
+
         monkeypatch.setattr(
             PhyloLogistic,
             "_root_tip_distances",
             staticmethod(counting_root_tip_distances),
         )
         monkeypatch.setattr(phylo_logistic_module, "minimize", fake_minimize)
+        monkeypatch.setattr(phylo_logistic_module.np, "mean", fail_mean, raising=False)
 
         svc._fit(tree, y, X, ordered_names, build_vcv_matrix)
 

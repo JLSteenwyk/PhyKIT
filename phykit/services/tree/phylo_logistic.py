@@ -350,7 +350,7 @@ class PhyloLogistic(Tree):
 
     def _mean_root_tip_distance(self, tree, ordered_names: list[str]) -> float:
         """Mean root-to-tip distance across all tips."""
-        return float(np.mean(self._root_tip_distances(tree, ordered_names)))
+        return float(self._root_tip_distances(tree, ordered_names).mean())
 
     # ----------------------------------------------------------------
     # Starting values
@@ -512,7 +512,7 @@ class PhyloLogistic(Tree):
                     beta0[0] = 0.0
 
         root_tip_distances = self._root_tip_distances(tree, ordered_names)
-        mean_rt = float(np.mean(root_tip_distances))
+        mean_rt = float(root_tip_distances.mean())
         log_alpha_bound = 4.0
         lL_init = np.log(max(mean_rt, 1e-10))
         lL_lower = lL_init - log_alpha_bound
