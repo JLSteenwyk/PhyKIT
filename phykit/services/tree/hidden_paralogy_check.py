@@ -35,18 +35,6 @@ class _LazyMultiprocessing:
 
 mp = _LazyMultiprocessing()
 
-
-def _hidden_paralogy_result_row(idx: int, res: list[list | str]) -> dict[str, object]:
-    unexpected = []
-    if len(res) > 1 and isinstance(res[1], list):
-        unexpected = sorted(res[1])
-    return {
-        "clade_index": idx,
-        "status": res[0],
-        "unexpected_taxa": unexpected,
-    }
-
-
 class HiddenParalogyCheck(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -264,10 +252,19 @@ class HiddenParalogyCheck(Tree):
 
     def print_results(self, res_arr: list[list[list | str]]) -> None:
         if self.json_output:
-            rows = [
-                _hidden_paralogy_result_row(idx, res)
-                for idx, res in enumerate(res_arr, start=1)
-            ]
+            rows = []
+            append_row = rows.append
+            for idx, res in enumerate(res_arr, start=1):
+                unexpected = []
+                if len(res) > 1 and isinstance(res[1], list):
+                    unexpected = sorted(res[1])
+                append_row(
+                    {
+                        "clade_index": idx,
+                        "status": res[0],
+                        "unexpected_taxa": unexpected,
+                    }
+                )
             print_json(dict(rows=rows, clades=rows))
             return
 
