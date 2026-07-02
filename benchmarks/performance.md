@@ -509,6 +509,7 @@ Results:
 | `CreateConcatenationMatrix._compute_effective_occupancy` clean ASCII invalid-byte precheck | 1200 taxa x two 12k-site clean DNA parts, side-by-side previous unconditional byte deletion | 0.033407s | 0.029966s | 1.11x |
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` | 800 taxa x 220 genes x 180 sites, occupancy plot state matrix | 2.8920s | 0.2351s | 12.3x |
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` batched gene lookup | 800 taxa x 220 genes x 180 sites, 80% present, occupancy plot state matrix | 0.249490s | 0.061994s | 4.0x |
+| `CreateConcatenationMatrix._build_occupancy_state_matrix` cached lazy NumPy attributes | 800 taxa x 24 genes x 180 sites, 85% present, side-by-side previous uncached lazy NumPy proxy | 0.039713s | 0.016847s | 2.36x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` gene-boundary rendering | 4096 gene boundary lines, real Matplotlib Agg render | 0.796482s | 0.055704s | 14.30x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` represented-row counts | 6000 taxa x 4000 concatenated-position state matrix, side-by-side previous boolean `np.sum(..., axis=1)` | 0.010258s | 0.007614s | 1.35x |
 | `CreateConcatenationMatrix.add_to_occupancy_info` cached taxa | 800 occupancy rows over 6000 taxa, sorted missing-taxa lists | 0.2575s | 0.1625s | 1.6x |
