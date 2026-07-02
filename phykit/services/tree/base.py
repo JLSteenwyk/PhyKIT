@@ -364,8 +364,10 @@ class Tree(BaseService):
         internal_len = 0.0
         total_len = 0.0
         stack = [root]
+        pop = stack.pop
+        extend = stack.extend
         while stack:
-            clade = stack.pop()
+            clade = pop()
             branch_length = clade.branch_length
             children = clade.clades
 
@@ -375,7 +377,7 @@ class Tree(BaseService):
                     internal_len += branch_length
 
             if children:
-                stack.extend(children)
+                extend(children)
 
         return internal_len, total_len
 
