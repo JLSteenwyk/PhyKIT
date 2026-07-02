@@ -702,6 +702,13 @@ def _parse_multi_column_stream(
 def _validate_shared_taxa(
     traits: dict[str, str], tree_tips: list[str]
 ) -> dict[str, str]:
+    if len(traits) >= 3 and len(tree_tips) == len(traits):
+        for tip_name, trait_name in zip(tree_tips, traits):
+            if tip_name != trait_name:
+                break
+        else:
+            return traits
+
     tree_tip_set = set(tree_tips)
     if (
         len(tree_tip_set) >= 3

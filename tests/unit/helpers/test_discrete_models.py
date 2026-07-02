@@ -850,6 +850,23 @@ class TestParseDiscreteTraits:
         assert result == {"A": "carnivore", "B": "herbivore", "C": "omnivore"}
         assert capsys.readouterr().err == ""
 
+    def test_parse_multi_column_ordered_all_shared_skips_set_validation(
+        self, tmp_path, monkeypatch
+    ):
+        f = tmp_path / "traits.tsv"
+        f.write_text("taxon\tdiet\nA\tcarnivore\nB\therbivore\nC\tomnivore\n")
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError(
+                "ordered all-shared validation should not build a set"
+            )
+
+        monkeypatch.setattr("builtins.set", fail_set)
+
+        assert parse_discrete_traits(
+            str(f), ["A", "B", "C"], trait_column="diet"
+        ) == {"A": "carnivore", "B": "herbivore", "C": "omnivore"}
+
     def test_parse_multi_column_streams_without_readlines(self, monkeypatch):
         class StreamingOnlyFile:
             def __enter__(self):
@@ -935,6 +952,25 @@ class TestParseDiscreteTraits:
 
         assert result == {"A": "carnivore", "B": "herbivore", "C": "omnivore"}
         assert capsys.readouterr().err == ""
+
+    def test_parse_two_column_ordered_all_shared_skips_set_validation(
+        self, tmp_path, monkeypatch
+    ):
+        f = tmp_path / "traits.tsv"
+        f.write_text("A\tcarnivore\nB\therbivore\nC\tomnivore\n")
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError(
+                "ordered all-shared validation should not build a set"
+            )
+
+        monkeypatch.setattr("builtins.set", fail_set)
+
+        assert parse_discrete_traits(str(f), ["A", "B", "C"]) == {
+            "A": "carnivore",
+            "B": "herbivore",
+            "C": "omnivore",
+        }
 
     def test_parse_two_column_skips_comments_and_preserves_logical_line_numbers(
         self, tmp_path
