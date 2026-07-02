@@ -35,6 +35,15 @@ assert "Bio.Phylo" not in sys.modules
 
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_lazy_numpy_caches_resolved_attributes(self):
+        lazy_np = bss_module._LazyNumpy()
+
+        sort_attr = lazy_np.sort
+
+        assert lazy_np.__dict__["sort"] is sort_attr
+        assert lazy_np.sort is sort_attr
+        assert lazy_np._module is not None
+
     def test_init_sets_tree_file_path(self, args):
         t = BipartitionSupportStats(args)
         assert t.tree_file_path == args.tree
