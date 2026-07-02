@@ -24,10 +24,7 @@ _PROTEIN_INVALID_LOOKUP = None
 
 
 def _entropy_columns_from_probabilities(probs, log_probs):
-    if probs.shape[0] > 8:
-        return -np.einsum("ij,ij->j", probs, log_probs)
-    probs *= log_probs
-    return -np.sum(probs, axis=0)
+    return -np.einsum("ij,ij->j", probs, log_probs)
 
 
 def _get_invalid_lookup(is_protein: bool):

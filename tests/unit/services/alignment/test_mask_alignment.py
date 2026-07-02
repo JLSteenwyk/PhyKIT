@@ -346,6 +346,33 @@ assert "Bio.AlignIO" not in sys.modules
 
         np.testing.assert_allclose(observed, expected)
 
+    def test_entropy_columns_from_probabilities_uses_column_dot(self, monkeypatch):
+        np = mask_alignment_module.np
+        probs = np.array(
+            [
+                [0.2, 0.0, 0.5],
+                [0.3, 1.0, 0.5],
+                [0.5, 0.0, 0.0],
+            ],
+            dtype=np.float64,
+        )
+        log_probs = np.zeros_like(probs)
+        positive = probs > 0
+        np.log2(probs, out=log_probs, where=positive)
+        expected = -np.einsum("ij,ij->j", probs, log_probs)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("entropy columns should use a column dot")
+
+        monkeypatch.setattr(mask_alignment_module.np, "sum", fail_sum)
+
+        observed = mask_alignment_module._entropy_columns_from_probabilities(
+            probs.copy(),
+            log_probs,
+        )
+
+        np.testing.assert_allclose(observed, expected)
+
     def test_keep_mask_unicode_fallback(self, args):
         class DummyAlignment(list):
             def get_alignment_length(self):
