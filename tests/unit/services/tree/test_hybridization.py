@@ -132,7 +132,7 @@ class TestPerBranchCounts:
     def test_parse_gene_trees_skips_comments_blanks_and_whitespace(self, tmp_path):
         gene_trees = tmp_path / "gene_trees.nwk"
         gene_trees.write_text(
-            "# ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n# also ignored\n"
+            "   # ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n\t# also ignored\n"
         )
         svc = _make_svc(gene_trees=str(gene_trees))
 

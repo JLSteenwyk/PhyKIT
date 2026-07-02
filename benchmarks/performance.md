@@ -915,6 +915,7 @@ Results:
 | `ConcordanceAsr._parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.094455s | 0.071398s | 1.32x |
 | `ConcordanceAsr._parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
 | `ConcordanceAsr._parse_gene_trees` streaming rows | 500k mixed relative path and inline-Newick rows with comments/blanks, tree parsing mocked, side-by-side previous cleaned-list parser | 1.160041s | 0.920783s | 1.26x |
+| `ConcordanceAsr._parse_gene_trees` stripped streaming row checks | 500k mixed relative path and inline-Newick rows with whitespace-prefixed comments/blanks, tree parsing mocked | 0.294567s | 0.229393s | 1.28x |
 | `ConcordanceAsr._run_asr_on_tree` no-prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.1338s | 0.0078s | 17.2x |
 | `ConcordanceAsr._run_asr_on_tree` no-prune copy skip | balanced 32768-tip tree, all tips shared with trait data, ASR internals mocked | 0.640786s | 0.385320s | 1.66x |
 | `ConcordanceAsr._run_asr_on_tree` prune-needed setup | balanced 32768-tip tree, half tips shared with trait data | 0.1367s | 0.0145s | 9.4x |
@@ -943,6 +944,7 @@ Results:
 | `EvoTempoMap._parse_and_validate_gene_trees` branch-length validation | 80 balanced 2048-tip gene trees, identical validated branch count | 0.494464s | 0.048419s | 10.21x |
 | `EvoTempoMap._parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.097501s | 0.072305s | 1.35x |
 | `EvoTempoMap._parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
+| `EvoTempoMap`/`Hybridization`/`DiscordanceAsymmetry._parse_gene_trees` stripped source cleanup | 500k mixed path/inline-Newick rows with whitespace-prefixed comments/blanks, cleanup before tree parsing | 0.179441s | 0.108817s | 1.65x |
 | `EvoTempoMap._classify_gene_trees` shared-taxa/no-prune setup | 80 balanced gene trees x 512 taxa plus species tree | 0.1580s | 0.0088s | 17.9x |
 | `EvoTempoMap._classify_gene_trees` single-pass gene splits | 40 balanced 256-tip gene trees plus species tree, branch concordance classification | 0.0817s | 0.0621s | 1.3x |
 | `EvoTempoMap._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.871998s | 0.283520s | 3.08x |

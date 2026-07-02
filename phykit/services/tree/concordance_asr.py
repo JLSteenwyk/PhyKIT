@@ -219,9 +219,9 @@ class ConcordanceAsr(Tree):
             with source.open() as handle:
                 for line in handle:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
-                    if stripped.startswith("("):
+                    if stripped[0] == "(":
                         trees_append(Phylo.read(StringIO(stripped), "newick"))
                     else:
                         tree_path = (

@@ -653,7 +653,7 @@ class DiscordanceAsymmetry(Tree):
                     stripped
                     for line in handle
                     if (stripped := line.strip())
-                    and not stripped.startswith("#")
+                    and stripped[0] != "#"
                 ]
         except FileNotFoundError:
             raise PhykitUserError(

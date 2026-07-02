@@ -162,7 +162,7 @@ class TestGeneTreeParsing:
     ):
         gene_trees = tmp_path / "gene_trees.nwk"
         gene_trees.write_text(
-            "# ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n# also ignored\n"
+            "   # ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n\t# also ignored\n"
         )
         svc = ConcordanceAsr(default_args)
 
