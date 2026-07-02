@@ -924,6 +924,7 @@ Results:
 | `QuartetNetwork._compute_quartet_cfs` | 50 balanced trees x 24 taxa, all quartet topology counts | 1.0438s | 0.2805s | 3.7x |
 | `QuartetNetwork._compute_quartet_cfs` precomputed quartet masks | 50 balanced trees x 24 taxa, all quartet topology counts | 0.363644s | 0.286839s | 1.27x |
 | `QuartetNetwork._classify_quartet` chi-square p-values | cold process, one hybrid-like quartet count vector | 0.494692s | 0.000012084s | 40937.8x |
+| `QuartetNetwork._star_test` direct three-count chi-square | 420k mixed quartet count vectors, identical star-test p-values, side-by-side previous generic `sum` path | 1.559743s | 0.677730s | 2.30x |
 | `QuartetNetwork._tree_test` direct three-count G-test | 400k mixed quartet count vectors, identical conservative T3 p-values, side-by-side previous sorted-count path | 2.082686s | 0.767069s | 2.72x |
 | `QuartetNetwork._compute_nanuq_distance` topology index helpers | 42 taxa, 111930 quartet classifications, mixed tree/hybrid/unresolved results | 0.111250s | 0.096283s | 1.16x |
 | `QuartetNetwork._extract_bipartitions` direct ordered traversal | balanced 4096-tip tree, public frozenset bipartition helper | 0.389116s | 0.366308s | 1.06x |
@@ -4541,8 +4542,9 @@ Profiling summary:
   fallback behavior. NANUQ distance and quartet report setup now use small
   stable comparison helpers for dominant and top-two topology indices, avoiding
   per-quartet `max()+index()` and three-item `sorted()` calls while preserving
-  first-index tie behavior. The T3 tree-test p-value path also computes the
-  major and two minor counts directly, avoiding a three-item sort and temporary
+  first-index tie behavior. The star-test p-value path now sums and reduces the
+  three counts directly, and the T3 tree-test p-value path computes the major
+  and two minor counts directly, avoiding a three-item sort and temporary
   expected-count list for every quartet classification.
 - `QuartetNetwork._extract_bipartition_masks` baseline time made a postorder
   pass to build clade masks, then a second Bio.Phylo nonterminal traversal to

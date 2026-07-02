@@ -199,6 +199,19 @@ class TestStarTest:
         p = QuartetNetwork._star_test([8, 0, 2])
         assert abs(p - 0.005517) < 0.001
 
+    def test_star_test_avoids_generic_sum(self, monkeypatch):
+        original_sum = builtins.sum
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("star test should sum three counts directly")
+
+        monkeypatch.setattr(builtins, "sum", fail_sum)
+
+        p = QuartetNetwork._star_test([8, 0, 2])
+
+        monkeypatch.setattr(builtins, "sum", original_sum)
+        assert abs(p - 0.005517) < 0.001
+
 
 class TestTreeTest:
     def test_perfect_tree_p_one(self):

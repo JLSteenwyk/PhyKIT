@@ -513,11 +513,15 @@ class QuartetNetwork(Tree):
 
         Returns p-value.
         """
-        total = sum(counts)
+        c0, c1, c2 = counts
+        total = c0 + c1 + c2
         if total == 0:
             return 1.0
         expected = total / 3.0
-        stat = sum((obs - expected) ** 2 / expected for obs in counts)
+        d0 = c0 - expected
+        d1 = c1 - expected
+        d2 = c2 - expected
+        stat = (d0 * d0 + d1 * d1 + d2 * d2) / expected
         return _chi2_sf(stat, df=2)
 
     @staticmethod
