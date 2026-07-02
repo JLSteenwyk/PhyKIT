@@ -40,15 +40,14 @@ class StreamingFastaReader:
         """
         Stream sequences in chunks for batch processing.
         """
-        chunk = []
-        for record in self.stream_sequences():
-            chunk.append(record)
-            if len(chunk) >= self.chunk_size:
-                yield chunk
-                chunk = []
+        from itertools import islice
 
-        # Yield remaining sequences
-        if chunk:
+        sequence_iter = iter(self.stream_sequences())
+        chunk_size = self.chunk_size
+        while True:
+            chunk = list(islice(sequence_iter, chunk_size))
+            if not chunk:
+                break
             yield chunk
 
     def get_sequence_count(self) -> int:

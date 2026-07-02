@@ -8,6 +8,7 @@ import tempfile
 import os
 import subprocess
 import sys
+import itertools
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -94,6 +95,24 @@ class TestStreamingFastaReader(unittest.TestCase):
 
         self.assertEqual(len(chunks), 1)
         self.assertEqual(len(chunks[0]), 3)
+
+    def test_stream_chunks_batches_with_islice(self):
+        """Test chunking uses iterator batches while preserving records."""
+        original_islice = itertools.islice
+        calls = []
+
+        def tracking_islice(iterator, chunk_size):
+            calls.append(chunk_size)
+            return original_islice(iterator, chunk_size)
+
+        with patch("itertools.islice", tracking_islice):
+            chunks = list(self.reader.stream_chunks())
+
+        self.assertEqual([[record.id for record in chunk] for chunk in chunks], [
+            ["seq1", "seq2"],
+            ["seq3"],
+        ])
+        self.assertEqual(calls, [2, 2, 2])
 
     def test_get_sequence_count(self):
         """Test counting sequences without loading entire file"""
