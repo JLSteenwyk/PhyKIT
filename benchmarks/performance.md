@@ -2037,6 +2037,7 @@ Results:
 | `AncestralReconstruction._parse_multi_trait_data` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.273898s | 0.171096s | 1.60x |
 | `AncestralReconstruction._parse_discrete_trait_data_single` streaming parser | 500k two-column categorical trait rows with comments/blanks, all taxa shared | 0.384133s | 0.375407s | 1.02x |
 | `AncestralReconstruction._parse_discrete_trait_data_single` all-shared parser fast path | 500k two-column categorical trait rows with comments/blanks, all taxa shared | 0.411670s | 0.214221s | 1.92x |
+| `AncestralReconstruction._parse_discrete_trait_data_single` stripped comment check | 500k two-column categorical trait rows with whitespace-prefixed comments/blanks, all taxa shared | 0.843245s | 0.663841s | 1.27x |
 | `AncestralReconstruction._parse_discrete_trait_data_multi` streaming parser | 300k-row categorical TSV, 5 state columns, all taxa shared | 0.263099s | 0.257110s | 1.02x |
 | `AncestralReconstruction._parse_discrete_trait_data_multi` all-shared parser fast path | 300k-row categorical TSV, 5 state columns, all taxa shared | 0.242633s | 0.132431s | 1.83x |
 | `AncestralReconstruction._parse_discrete_trait_data_multi` stripped comment check | 300k-row categorical TSV, 4 state columns, whitespace-prefixed comments/blanks, all taxa shared | 0.394656s | 0.370798s | 1.06x |

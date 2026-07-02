@@ -1832,7 +1832,7 @@ class TestDiscreteTraitParsing:
         svc = AncestralReconstruction(discrete_args)
         trait_file = tmp_path / "states.tsv"
         trait_file.write_text(
-            "# ignored\n"
+            "   # ignored\n"
             "\n"
             "raccoon\tcarnivore\n"
             "bear\tomnivore\n"
