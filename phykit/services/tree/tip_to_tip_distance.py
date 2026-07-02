@@ -37,7 +37,7 @@ TreeMixin = _LazyTreeMixin()
 
 
 class TipToTipDistance(Tree):
-    _MATRIX_FAST_FILL_MIN_ROWS = 2_000_000
+    _MATRIX_FAST_FILL_MIN_ROWS = 200_000
 
     def __init__(self, args) -> None:
         parsed = self.process_args(args)

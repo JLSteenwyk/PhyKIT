@@ -778,6 +778,7 @@ Results:
 | `TipToTipDistance.calculate_all_pairwise_distances` row construction | 500k mocked fast pair/distance rows, identical row dictionaries | 0.908584s | 0.661274s | 1.37x |
 | `Tree.calculate_pairwise_tip_distances_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 all-pairs combo/distance rows, copied old path baseline | 6.667369s | 0.862153s | 7.73x |
 | `TipToTipDistance._build_distance_matrix` sorted all-pairs heatmap fill | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous taxon-index dictionary fill | 6.848783s | 4.044856s | 1.69x |
+| `TipToTipDistance._build_distance_matrix` lower sorted-fill threshold | sorted upper-triangle all-pairs rows for 650 / 800 / 1200 / 1600 taxa, side-by-side previous dictionary fill path below the old 2M-row cutoff | 0.109926s / 0.649215s / 1.254830s / 2.677450s | 0.044824s / 0.067757s / 0.153729s / 1.186269s | 2.45x / 9.58x / 8.16x / 2.26x |
 | `TipToTipDistance._build_distance_matrix` inferred sorted taxa | 1800 taxa, 1,619,100 sorted upper-triangle all-pairs rows, side-by-side previous set-union taxa discovery | 0.944815s | 0.749121s | 1.26x |
 | `TipToTipDistance._rows_are_sorted_upper_triangle` raw-label fast path | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous per-row string coercion | 0.635139s | 0.501365s | 1.27x |
 | `TipToTipDistance.run` all-pairs text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.082166s | 0.057857s | 1.42x |
@@ -4289,7 +4290,11 @@ Profiling summary:
   Large all-pairs heatmap matrix construction now detects rows already in sorted
   upper-triangle order and fills the symmetric matrix from a dense distance
   vector, retaining the taxon-index dictionary fill for smaller matrices or
-  arbitrary row orders. A follow-up pass infers the taxa for sorted
+  arbitrary row orders. A follow-up threshold pass applies that sorted-fill path
+  to mid-sized heatmaps starting at 200k all-pairs rows; side-by-side timings
+  were faster at 650, 800, 1200, and 1600 taxa, with the previous dictionary
+  path still used for smaller matrices below the new threshold. A follow-up
+  pass infers the taxa for sorted
   upper-triangle rows from the row count and first row block, avoiding the
   preliminary all-row set union before order validation.
   PatristicDistances verbose text output now batches pairwise rows into one

@@ -304,6 +304,11 @@ class TestTipToTipDistance:
             ),
         )
 
+    def test_build_distance_matrix_fast_path_threshold_covers_mid_sized_heatmaps(self):
+        n_taxa = 650
+        row_count = n_taxa * (n_taxa - 1) // 2
+        assert TipToTipDistance._MATRIX_FAST_FILL_MIN_ROWS <= row_count
+
     def test_build_distance_matrix_infers_taxa_for_sorted_upper_triangle(
         self, monkeypatch, args
     ):
