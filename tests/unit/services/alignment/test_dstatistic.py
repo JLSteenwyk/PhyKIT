@@ -776,6 +776,41 @@ class TestGeneTreeMode:
         assert nonterminals == expected_nonterminals
         assert clade_taxa[id(tree.root)] == expected_root_taxa
 
+    def test_direct_clade_taxa_collects_nonterminals_during_preorder(self):
+        class LimitedClade:
+            def __init__(self, name, children=(), max_clades_accesses=2):
+                self.name = name
+                self._children = list(children)
+                self._max_clades_accesses = max_clades_accesses
+                self._clades_accesses = 0
+
+            @property
+            def clades(self):
+                self._clades_accesses += 1
+                if self._clades_accesses > self._max_clades_accesses:
+                    raise AssertionError(
+                        "direct collector should not rescan clades to find nonterminals"
+                    )
+                return self._children
+
+        left = LimitedClade(
+            "left",
+            [LimitedClade("A"), LimitedClade("B")],
+        )
+        right = LimitedClade(
+            "right",
+            [LimitedClade("C"), LimitedClade("O")],
+        )
+        root = LimitedClade("root", [left, right], max_clades_accesses=3)
+        tree = type("Tree", (), {"root": root})()
+
+        clade_taxa, nonterminals = (
+            Dstatistic._collect_clade_taxa_and_nonterminals_direct(tree)
+        )
+
+        assert nonterminals == [root, left, right]
+        assert clade_taxa[id(root)] == frozenset({"A", "B", "C", "O"})
+
     def test_direct_clade_taxa_binary_children_use_indexed_aggregation(self):
         from Bio.Phylo.BaseTree import Clade, Tree
 

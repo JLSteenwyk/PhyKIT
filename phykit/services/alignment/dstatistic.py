@@ -287,8 +287,10 @@ class Dstatistic(Alignment):
             return None
 
         preorder = []
+        nonterminals = []
         stack = [root]
         append = preorder.append
+        append_nonterminal = nonterminals.append
         pop = stack.pop
         extend = stack.extend
         try:
@@ -297,6 +299,7 @@ class Dstatistic(Alignment):
                 append(clade)
                 children = clade.clades
                 if children:
+                    append_nonterminal(clade)
                     extend(reversed(children))
         except AttributeError:
             return None
@@ -318,7 +321,6 @@ class Dstatistic(Alignment):
                     *(clade_taxa.get(id(child), empty_taxa) for child in children)
                 )
 
-        nonterminals = [clade for clade in preorder if clade.clades]
         return clade_taxa, nonterminals
 
     def _get_quartet_topology(self, tree, quartet) -> str:
