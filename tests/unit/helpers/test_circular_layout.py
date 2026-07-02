@@ -13,6 +13,7 @@ import pytest
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+import phykit.helpers.circular_layout as circular_layout_module
 from phykit.helpers.circular_layout import (
     _preorder_clades_direct,
     _terminal_clades_direct,
@@ -39,6 +40,17 @@ assert "typing" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = circular_layout_module._LazyNumpy()
+
+    first_cos = lazy_np.cos
+    second_cos = lazy_np.cos
+
+    assert lazy_np._module is not None
+    assert first_cos is second_cos
+    assert lazy_np.__dict__["cos"] is first_cos
 
 
 # ---------------------------------------------------------------------------
