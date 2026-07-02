@@ -2201,6 +2201,7 @@ Results:
 | `PhyloPath._fit_gls_from_vcv` combined normal-equation RHS | 420 taxa SPD VCV x 6-predictor design matrix, side-by-side previous explicit normal-matrix inverse | 0.000462s | 0.000388s | 1.19x |
 | `PhyloPath._dsep_test` | 260 taxa SPD VCV x 3 conditioning/predictor columns, including lambda estimation | 0.0783s | 0.0446s | 1.8x |
 | `PhyloPath._design_matrix_from_z` preallocated PGLS design matrix | 10k repeated 260-taxon x 4-predictor design matrix builds, side-by-side previous `np.column_stack([ones] + predictors)` setup | 0.113720s | 0.021587s | 5.27x |
+| `PhyloPath._design_matrix_from_z` cached lazy NumPy attributes | 40k repeated 260-taxon x 4-predictor design matrix builds, side-by-side previous lazy proxy lookup path, identical matrix sum | 0.711640s | 0.357503s | 1.99x |
 | `phylo_path` module import without `scipy.stats` | cold process import for path-analysis command module | 0.616865s | 0.486959s | 1.27x |
 | `phylo_path` module import without eager SciPy linalg | cold process import for path-analysis command module | 0.326131s | 0.157336s | 2.1x |
 | `phylo_path` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS imports | 0.157336s | 0.031335s | 5.02x |

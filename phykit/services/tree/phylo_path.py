@@ -29,10 +29,20 @@ def trait_matrix_from_rows(*args, **kwargs):
 
 
 class _LazyNumpy:
-    def __getattr__(self, name):
-        import numpy as _np
+    def __init__(self):
+        self._module = None
 
-        return getattr(_np, name)
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        attr = getattr(module, name)
+        setattr(self, name, attr)
+        return attr
 
 
 np = _LazyNumpy()

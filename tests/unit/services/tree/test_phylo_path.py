@@ -67,6 +67,17 @@ assert "scipy.linalg" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = phylo_path_module._LazyNumpy()
+
+    first_empty = lazy_np.empty
+    second_empty = lazy_np.empty
+
+    assert lazy_np._module is not None
+    assert first_empty is second_empty
+    assert lazy_np.__dict__["empty"] is first_empty
+
+
 def _make_args(**overrides):
     defaults = dict(
         tree=TREE, traits=TRAITS, models=MODELS,
