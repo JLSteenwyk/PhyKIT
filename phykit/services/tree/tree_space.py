@@ -64,7 +64,7 @@ def _condensed_distance_vector(dist_matrix):
 def _shared_gene_tree_taxa(gene_trees, get_tips):
     shared = set(get_tips(gene_trees[0]))
     for idx in range(1, len(gene_trees)):
-        shared &= set(get_tips(gene_trees[idx]))
+        shared.intersection_update(get_tips(gene_trees[idx]))
     return shared
 
 

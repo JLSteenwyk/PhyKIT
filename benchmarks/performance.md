@@ -830,6 +830,7 @@ Results:
 | `kf_distance` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005886s | 0.004585s | 1.28x |
 | `TreeSpace._get_shared_taxa` terminal-name intersections | 80 balanced trees x 512 shared taxa | 0.0770s | 0.0095s | 8.1x |
 | `TreeSpace`/`SpectralDiscordance._get_shared_taxa` no-slice gene-tree scan | 200k cached-tip gene-tree objects, identical 64 shared taxa, side-by-side previous `gene_trees[1:]` loop | 2.905650s | 2.567368s | 1.13x |
+| `TreeSpace`/`SpectralDiscordance._get_shared_taxa` in-place intersection | 200k cached-tip gene-tree objects, identical 64 shared taxa, side-by-side previous temporary-set update | 0.819285s | 0.385707s | 2.12x |
 | `TreeSpace._build_distance_matrix` no-prune setup checks | 80 balanced trees x 512 shared taxa | 0.0771s | 0.0087s | 8.9x |
 | `TreeSpace._build_distance_matrix` copied-tree batch pruning setup | balanced 8192-tip tree, prune 4096 copied tips before split extraction | 3.2511s | 0.0324s | 100.5x |
 | `TreeSpace._prune_to_taxa` batch standard-tree pruning | balanced 4096-tip tree, prune to 2048 retained tips during shared-taxa normalization | 6.366311s | 0.102619s | 62.04x |
@@ -4315,6 +4316,8 @@ Profiling summary:
   reducing overhead before tree parsing. Shared-taxa setup now walks gene-tree
   indices directly instead of materializing `gene_trees[1:]`, preserving
   intersection behavior while avoiding one large list copy for large tree sets.
+  The intersection loop now updates the retained shared set directly from each
+  tree's tip iterable, avoiding one temporary set per remaining gene tree.
 - `SpectralDiscordance._build_bipartition_matrix` baseline time deep-copied
   every tree even when all taxa were already shared, then checked every known
   bipartition against every gene tree while filling the matrix. The optimized
@@ -4322,9 +4325,12 @@ Profiling summary:
   each tree's extracted splits through a bipartition-to-column lookup.
   Shared-taxa setup now uses the shared terminal-name traversal for every gene
   tree and the optional species tree, and walks gene-tree indices directly
-  instead of materializing `gene_trees[1:]` during the intersection loop. Split extraction now also uses a direct
-  postorder clade list for standard trees in both NRF and WRF paths, retaining
-  the Bio.Phylo traversal fallback for nonstandard objects. Equal-size
+  instead of materializing `gene_trees[1:]` during the intersection loop. The
+  intersection loop updates the retained shared set directly from each tree's
+  tip iterable, avoiding one temporary set per remaining gene tree. Split
+  extraction now also uses a direct postorder clade list for standard trees in
+  both NRF and WRF paths, retaining the Bio.Phylo traversal fallback for
+  nonstandard objects. Equal-size
   bipartition canonicalization now compares the smallest taxon on each disjoint
   half instead of sorting both halves, preserving the documented sorted
   lexicographic tiebreak. Spectral clustering uses the same direct

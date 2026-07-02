@@ -46,9 +46,9 @@ def test_shared_gene_tree_taxa_does_not_slice_gene_trees():
 
     trees = NoSliceList(["t0", "t1", "t2"])
     tip_sets = {
-        "t0": {"A", "B", "C", "D"},
-        "t1": {"A", "B", "C"},
-        "t2": {"B", "C", "E"},
+        "t0": ("A", "B", "C", "D"),
+        "t1": ("A", "B", "C"),
+        "t2": ("B", "C", "E"),
     }
 
     assert tree_space_module._shared_gene_tree_taxa(
