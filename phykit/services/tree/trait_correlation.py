@@ -243,7 +243,7 @@ class TraitCorrelation(Tree):
         return ""
 
     def _draw_significance_stars(self, ax, p_matrix: np.ndarray) -> None:
-        if p_matrix.size == 0 or np.min(p_matrix) >= self.alpha:
+        if p_matrix.size == 0 or p_matrix.min() >= self.alpha:
             return
 
         flat_indices = np.flatnonzero(p_matrix < self.alpha)

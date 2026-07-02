@@ -438,7 +438,16 @@ class TestTraitCorrelation:
         def fail_flatnonzero(*_args, **_kwargs):
             raise AssertionError("no-star path should skip coordinate extraction")
 
+        def fail_min(*_args, **_kwargs):
+            raise AssertionError("no-star guard should use ndarray.min")
+
         monkeypatch.setattr(trait_correlation_module.np, "eye", fail_eye)
+        monkeypatch.setattr(
+            trait_correlation_module.np,
+            "min",
+            fail_min,
+            raising=False,
+        )
         monkeypatch.setattr(
             trait_correlation_module.np,
             "flatnonzero",

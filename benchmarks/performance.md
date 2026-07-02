@@ -2292,6 +2292,7 @@ Results:
 | `TraitCorrelation._draw_significance_stars` sparse significant coordinates | 2500 x 2500 p-value matrix, sparse symmetric significant pairs, fake scatter calls, side-by-side previous full-mask grouping | 0.218060s | 0.065593s | 3.32x |
 | `TraitCorrelation._draw_significance_stars` flat-index sparse coordinates | 2500 x 2500 p-value matrix, sparse symmetric significant pairs, fake scatter calls, side-by-side previous `np.nonzero` coordinate path | 0.100309s | 0.012676s | 7.91x |
 | `TraitCorrelation._draw_significance_stars` min-guard no-hit return | 2500 x 2500 all-nonsignificant p-value matrix, no scatter calls, side-by-side previous coordinate extraction path | 0.110337s | 0.001154s | 95.65x |
+| `TraitCorrelation._draw_significance_stars` ndarray min guard | 2500 x 2500 all-nonsignificant p-value matrix, 120 repeated no-hit guard checks, side-by-side previous `np.min` dispatch | 0.439665s | 0.388701s | 1.13x |
 | `TraitCorrelation._print_text` joined matrix rows | 700-trait correlation matrix, captured stdout and identical text | 0.299372s | 0.264128s | 1.13x |
 | `TraitCorrelation._print_text` inline star thresholds | 700-trait correlation matrix, captured stdout and identical text, optimized text baseline | 0.265591s | 0.231011s | 1.15x |
 | `TraitCorrelation._print_text` local row-cell joins | 700-trait correlation matrix, captured stdout and identical text, side-by-side previous row append comparison | 0.232587s | 0.204576s | 1.14x |
