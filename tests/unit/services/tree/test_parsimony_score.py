@@ -40,6 +40,16 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    uint64_attr = lazy_np.uint64
+
+    assert lazy_np.__dict__["uint64"] is uint64_attr
+    assert lazy_np.uint64 is uint64_attr
+    assert lazy_np._module is not None
+
+
 @pytest.fixture
 def args():
     return Namespace(
