@@ -770,6 +770,30 @@ class TestFelsensteinPruning:
         transition = discrete_models._matrix_exp_from_eigendecomp(context, 0.75)
         np.testing.assert_allclose(transition, matrix_exp(Q, 0.75))
 
+    def test_generic_eigendecomposition_transition_avoids_array_cast(
+        self, monkeypatch
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        Q = build_q_matrix(
+            np.array([0.06, 0.15, 0.04, 0.2, 0.06, 0.12]),
+            3,
+            "ARD",
+        )
+
+        def fail_asarray(*_args, **_kwargs):
+            raise AssertionError("generic transition should already be float")
+
+        monkeypatch.setattr(discrete_models.np, "asarray", fail_asarray)
+
+        context = discrete_models._matrix_exp_eigendecomp_context(Q)
+
+        assert context[0] == "generic"
+        assert len(context) == 5
+        transition = discrete_models._matrix_exp_from_eigendecomp(context, 0.75)
+        assert transition.dtype == np.float64
+        np.testing.assert_allclose(transition, matrix_exp(Q, 0.75))
+
     def test_complex_eigendecomposition_context_falls_back(self):
         import phykit.helpers.discrete_models as discrete_models
 
@@ -860,6 +884,7 @@ class TestFelsensteinPruning:
         pi = np.ones(3) / 3.0
         Q = build_q_matrix(np.array([rate]), 3, "ER")
         expected = _felsenstein_loglik_prepared(context, Q, pi)
+        context["internal_entries"] = [(999, (), ())]
 
         def fail_matrix_exp(*_args, **_kwargs):
             raise AssertionError(

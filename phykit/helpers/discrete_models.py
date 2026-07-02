@@ -205,7 +205,7 @@ def _matrix_exp_eigendecomp_context(Q: np.ndarray):
         and np.isfinite(inverse_eigenvectors).all()
     ):
         return None
-    return "generic", eigenvalues, eigenvectors, inverse_eigenvectors, exp, np.asarray
+    return "generic", eigenvalues, eigenvectors, inverse_eigenvectors, exp
 
 
 def _is_exact_symmetric_matrix(Q: np.ndarray) -> bool:
@@ -228,11 +228,8 @@ def _matrix_exp_from_eigendecomp(context, t: float):
         _, eigenvalues, eigenvectors, eigenvectors_t, exp = context
         return (eigenvectors * exp(eigenvalues * t)) @ eigenvectors_t
 
-    _, eigenvalues, eigenvectors, inverse_eigenvectors, exp, asarray = context
-    transition = (
-        eigenvectors * exp(eigenvalues * t)
-    ) @ inverse_eigenvectors
-    return asarray(transition, dtype=float)
+    _, eigenvalues, eigenvectors, inverse_eigenvectors, exp = context
+    return (eigenvectors * exp(eigenvalues * t)) @ inverse_eigenvectors
 
 
 def _matrix_exp_two_state(Q: np.ndarray, t: float):
@@ -545,15 +542,30 @@ def _felsenstein_loglik_er_rate(context, rate: float, pi: np.ndarray) -> float:
         return _felsenstein_loglik_prepared(context, Q, pi)
 
     cond_liks = tip_liks.copy()
-    transition_cache = {}
+    indexed_entries = context.get("internal_entries_by_length_index")
+    unique_branch_lengths = context.get("unique_branch_lengths")
+    use_indexed_lengths = (
+        indexed_entries is not None and unique_branch_lengths is not None
+    )
+    if use_indexed_lengths:
+        transition_cache = [None] * len(unique_branch_lengths)
+        entries = indexed_entries
+    else:
+        transition_cache = {}
+        entries = internal_entries
     inv_k = 1.0 / k
 
-    for idx, children, lengths in internal_entries:
+    for idx, children, lengths in entries:
         lik = np.ones(k)
         for child_idx, t in zip(children, lengths):
-            transition = transition_cache.get(t)
+            if use_indexed_lengths:
+                transition = transition_cache[t]
+                length = unique_branch_lengths[t]
+            else:
+                transition = transition_cache.get(t)
+                length = t
             if transition is None:
-                decay = math.exp(-k * rate * t)
+                decay = math.exp(-k * rate * length)
                 different = inv_k * (1.0 - decay)
                 transition = (decay, different)
                 transition_cache[t] = transition
