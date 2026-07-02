@@ -35,6 +35,12 @@ def _get_invalid_lookup(is_protein: bool):
     return _DNA_INVALID_LOOKUP
 
 
+def _row_deviation_sums(deviations):
+    if deviations.shape[1] <= 4:
+        return deviations.sum(axis=1)
+    return np.sum(deviations, axis=1)
+
+
 class RelativeCompositionVariabilityTaxon(Alignment):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -180,7 +186,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
 
         average_counts = count_matrix.sum(axis=0) / num_records
         deviations = np.abs(count_matrix - average_counts)
-        seq_sums = np.sum(deviations, axis=1)
+        seq_sums = _row_deviation_sums(deviations)
         denom = num_records * valid_lengths
         rcv_values = np.divide(
             seq_sums,

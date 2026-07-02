@@ -228,6 +228,27 @@ assert "Bio.AlignIO" not in sys.modules
             for call in sum_spy.call_args_list
         )
 
+    def test_row_deviation_sums_use_array_reduction_for_narrow_matrices(
+        self, monkeypatch
+    ):
+        deviations = rcvt_module.np.array(
+            [
+                [0.0, 1.0, 0.5, 0.5],
+                [0.25, 0.25, 0.25, 0.25],
+            ],
+            dtype=rcvt_module.np.float32,
+        )
+        expected = deviations.sum(axis=1)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("narrow RCVT row sums should use ndarray.sum")
+
+        monkeypatch.setattr(rcvt_module.np, "sum", fail_sum)
+
+        observed = rcvt_module._row_deviation_sums(deviations)
+
+        rcvt_module.np.testing.assert_allclose(observed, expected)
+
     def test_calculate_rows_no_gap_ascii_uses_full_lengths(self, mocker, args):
         service = RelativeCompositionVariabilityTaxon(args)
         alignment = MultipleSeqAlignment(
