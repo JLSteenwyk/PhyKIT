@@ -1541,6 +1541,7 @@ Results:
 | `discrete_models.fit_q_matrix` small real-eigensystem transitions | sample `tree_simple` three-state SYM fit, side-by-side previous SciPy `expm` transition path, log-likelihood diff `1.8e-15` | 0.714704s | 0.580039s | 1.23x |
 | `discrete_models.fit_q_matrix` symmetric eigensystem transitions | sample `tree_simple` three-state SYM fit, side-by-side previous generic `eig`/inverse/condition setup, log-likelihood diff `1.6e-14` | 0.410922s | 0.290375s | 1.42x |
 | `discrete_models.fit_q_matrix` cached lazy NumPy attributes | sample `tree_simple` three-state ARD fit, side-by-side previous lazy proxy lookup path, identical log-likelihood `-8.384537341535` | 2.343589s | 2.157279s | 1.09x |
+| `discrete_models._felsenstein_loglik_prepared` indexed transition cache | sample `tree_simple` three-state ARD likelihood, 2000 repeated prepared evaluations, side-by-side previous per-call branch-length dict cache, identical log-likelihood | 0.661269s | 0.481554s | 1.37x |
 | `FitDiscrete.run` shared pruning context | balanced 8192-tip tree, ER/SYM/ARD setup context reuse | 0.045272s | 0.014442s | 3.13x |
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
 | `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |

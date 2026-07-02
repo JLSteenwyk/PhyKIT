@@ -309,8 +309,11 @@ def _prepare_felsenstein_context(tree, tip_states: dict[str, str], states: list[
 
     child_indices = []
     branch_lengths = []
+    branch_length_to_index = {}
+    unique_branch_lengths = []
     tip_state_indices = np.full(len(postorder), -1, dtype=np.intp)
     internal_entries = []
+    internal_entries_by_length_index = []
 
     for idx, clade in enumerate(postorder):
         if clade.is_terminal():
@@ -319,16 +322,26 @@ def _prepare_felsenstein_context(tree, tip_states: dict[str, str], states: list[
             child_indices.append(())
             branch_lengths.append(())
         else:
-            child_indices.append(
-                tuple(node_index[id(child)] for child in clade.clades)
+            children = tuple(node_index[id(child)] for child in clade.clades)
+            lengths = tuple(
+                child.branch_length if child.branch_length else 1e-8
+                for child in clade.clades
             )
-            branch_lengths.append(
-                tuple(
-                    child.branch_length if child.branch_length else 1e-8
-                    for child in clade.clades
-                )
+            length_indices = []
+            for length in lengths:
+                length_index = branch_length_to_index.get(length)
+                if length_index is None:
+                    length_index = len(unique_branch_lengths)
+                    branch_length_to_index[length] = length_index
+                    unique_branch_lengths.append(length)
+                length_indices.append(length_index)
+
+            child_indices.append(children)
+            branch_lengths.append(lengths)
+            internal_entries.append((idx, children, lengths))
+            internal_entries_by_length_index.append(
+                (idx, children, tuple(length_indices))
             )
-            internal_entries.append((idx, child_indices[-1], branch_lengths[-1]))
 
     tip_liks = np.zeros((len(postorder), len(states)), dtype=float)
     observed_tip_rows = np.nonzero(tip_state_indices >= 0)[0]
@@ -343,6 +356,8 @@ def _prepare_felsenstein_context(tree, tip_states: dict[str, str], states: list[
         "tip_state_indices": tip_state_indices,
         "tip_liks": tip_liks,
         "internal_entries": internal_entries,
+        "internal_entries_by_length_index": internal_entries_by_length_index,
+        "unique_branch_lengths": tuple(unique_branch_lengths),
         "root_index": node_index[id(tree.root)],
         "n_states": len(states),
     }
@@ -372,6 +387,8 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
     k = context["n_states"]
     tip_liks = context.get("tip_liks")
     internal_entries = context.get("internal_entries")
+    indexed_entries = context.get("internal_entries_by_length_index")
+    unique_branch_lengths = context.get("unique_branch_lengths")
     if tip_liks is None or internal_entries is None:
         tip_state_indices = context["tip_state_indices"]
         child_indices = context["child_indices"]
@@ -390,22 +407,35 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
                 internal_entries.append((idx, children, branch_lengths[idx]))
     else:
         cond_liks = tip_liks.copy()
-    transition_cache = {}
+
+    use_indexed_lengths = (
+        indexed_entries is not None and unique_branch_lengths is not None
+    )
+    if use_indexed_lengths:
+        transition_cache = [None] * len(unique_branch_lengths)
+    else:
+        transition_cache = {}
 
     two_state_rates = _two_state_ctmc_rates(Q) if k == 2 else None
     if two_state_rates is not None:
         rate01, rate10 = two_state_rates
         total_rate = rate01 + rate10
-        for idx, children, lengths in internal_entries:
+        entries = indexed_entries if use_indexed_lengths else internal_entries
+        for idx, children, lengths in entries:
             lik0 = 1.0
             lik1 = 1.0
             for child_idx, t in zip(children, lengths):
-                transition = transition_cache.get(t)
+                if use_indexed_lengths:
+                    transition = transition_cache[t]
+                    length = unique_branch_lengths[t]
+                else:
+                    transition = transition_cache.get(t)
+                    length = t
                 if transition is None:
                     if total_rate == 0.0:
                         transition = (1.0, 0.0, 0.0, 1.0)
                     else:
-                        decay = math.exp(-total_rate * t)
+                        decay = math.exp(-total_rate * length)
                         transition = (
                             (rate10 / total_rate)
                             + (rate01 / total_rate) * decay,
@@ -437,17 +467,23 @@ def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> floa
         else None
     )
 
-    for idx, children, lengths in internal_entries:
+    entries = indexed_entries if use_indexed_lengths else internal_entries
+    for idx, children, lengths in entries:
         lik = np.ones(k)
         for child_idx, t in zip(children, lengths):
-            P = transition_cache.get(t)
+            if use_indexed_lengths:
+                P = transition_cache[t]
+                length = unique_branch_lengths[t]
+            else:
+                P = transition_cache.get(t)
+                length = t
             if P is None:
                 if eigendecomp_context is None:
-                    P = matrix_exp(Q, t)
+                    P = matrix_exp(Q, length)
                 else:
-                    P = _matrix_exp_from_eigendecomp(eigendecomp_context, t)
+                    P = _matrix_exp_from_eigendecomp(eigendecomp_context, length)
                     if P is None:
-                        P = matrix_exp(Q, t)
+                        P = matrix_exp(Q, length)
                 transition_cache[t] = P
             lik *= P @ cond_liks[child_idx]
         cond_liks[idx] = lik

@@ -530,6 +530,10 @@ class TestFelsensteinPruning:
         assert context["root_index"] == 2
         assert context["child_indices"][2] == (0, 1)
         assert context["branch_lengths"][2] == (1.0, 2.0)
+        assert context["unique_branch_lengths"] == (1.0, 2.0)
+        assert context["internal_entries_by_length_index"] == [
+            (2, (0, 1), (0, 1))
+        ]
         assert context["tip_state_indices"].tolist() == [0, 1, -1]
         assert len(context["internal_entries"]) == 1
         assert context["tip_liks"].tolist() == [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]
