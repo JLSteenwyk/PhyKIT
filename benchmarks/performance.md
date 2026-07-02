@@ -608,6 +608,7 @@ Results:
 | `AlignmentSubsample._read_alignment` | 50k FASTA records, 12 bp each | 0.0508s | 0.0244s | 2.1x |
 | `AlignmentSubsample._read_alignment` shared case-preserving parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.047439s | 0.036622s | 1.30x |
 | `AlignmentSubsample._run_sites` site selection | 500 taxa x 10k sites, 5k sampled sites without replacement | 0.0911s | 0.0324s | 2.8x |
+| `AlignmentSubsample._select_site_ranges` list-backed slice join | 500 taxa x 100k sites, 10k sampled single-site ranges, identical selected sequences | 3.055759s | 1.235984s | 2.47x |
 | `AlignmentSubsample._run_sites` full-site non-bootstrap shortcut | 500 taxa x 10000 sites, selected site count equals alignment length, mocked FASTA write and summary output | 0.076459s | 0.000031s | 2459.84x |
 | `AlignmentSubsample._run_sites` full-site mapping reuse | 250k taxa x 120 sites, selected site count equals alignment length, mocked FASTA write and summary output, side-by-side previous dictionary copy | 0.012216s | 0.009435s | 1.29x |
 | `AlignmentSubsample._run_sites` direct length validation | 50k alignment sequences x 120 sites, equal lengths / late mismatch / early mismatch / empty alignment | 0.004171107s / 0.005440565s / 0.003542095s / 0.000001152s | 0.002701266s / 0.001679951s / 0.000000500s / 0.000001066s | 1.54x / 3.24x / 7084.19x / 1.08x |
@@ -3905,10 +3906,12 @@ Profiling summary:
   avoiding random sampling, `itemgetter` construction, and per-taxon sequence
   rebuilds while leaving bootstrap and partial-site sampling on the existing
   path. A later pass sends that original sequence mapping directly to the FASTA
-  writer instead of copying it first. Length validation now compares each
-  sequence to the first observed sequence length directly, avoiding a temporary
-  length set and stopping at the first mismatch while preserving the
-  empty-alignment user error.
+  writer instead of copying it first. Site-range selection now joins a concrete
+  list of selected slices, reducing generator overhead for many short sampled
+  ranges while preserving the same selected sequence text. Length validation now
+  compares each sequence to the first observed sequence length directly,
+  avoiding a temporary length set and stopping at the first mismatch while
+  preserving the empty-alignment user error.
 - `AlignmentSubsample._run_partitions` baseline time walked every selected
   partition and then every taxon, repeatedly looking up taxon sequences while
   collecting partition slices. The optimized path builds selected slice ranges

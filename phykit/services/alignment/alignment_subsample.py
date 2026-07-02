@@ -320,7 +320,7 @@ class AlignmentSubsample(Alignment):
 
     @staticmethod
     def _select_site_ranges(seq: str, ranges: list[tuple[int, int]]) -> str:
-        return "".join(seq[start:stop] for start, stop in ranges)
+        return "".join([seq[start:stop] for start, stop in ranges])
 
     @staticmethod
     def _assemble_partition_subsample(

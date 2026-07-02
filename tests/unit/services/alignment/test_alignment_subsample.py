@@ -215,6 +215,14 @@ class TestSitesMode:
             [(0, 2), (4, 8)],
         ) == "ACACGT"
 
+    def test_select_site_ranges_handles_many_short_ranges(self):
+        sequence = "ACGT" * 100
+        ranges = [(idx, idx + 1) for idx in range(0, len(sequence), 2)]
+        assert (
+            AlignmentSubsample._select_site_ranges(sequence, ranges)
+            == sequence[::2]
+        )
+
     def test_read_alignment_uses_first_header_token_and_last_duplicate(self, tmp_path):
         aln = os.path.join(str(tmp_path), "aln.fa")
         with open(aln, "w") as fh:
