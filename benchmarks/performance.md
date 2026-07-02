@@ -1951,6 +1951,7 @@ Results:
 | `Phylomorphospace._preorder_clades_direct` order-preserving child push | balanced 131072-tip tree, plotting preorder helper with identical clade order, side-by-side previous `reversed(children)` helper | 0.051598s | 0.047193s | 1.09x |
 | `Phylomorphospace.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected x/y axes plus full color matrix | 0.194092s | 0.038694s | 5.02x |
 | `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` numeric file values | 200k numeric color values, side-by-side previous list comprehension plus `np.array` conversion | 0.029553s | 0.025725s | 1.15x |
+| `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` bounded color row parsing | 250k external color TSV rows with whitespace-prefixed comments and ignored trailing columns | 0.633684s | 0.548724s | 1.15x |
 | `Phylomorphospace.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, reconstruction, plotting, and output mocked | 0.277017s | 0.000037s | 7486.95x |
 | `phylomorphospace` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.089377s | 0.031532s | 2.83x |
 | `phylomorphospace` module import without eager pickle/JSON/plot/trait helpers | median cold subprocess import after localizing pickle/PlotConfig and lazy helper wrappers | 0.014470s | 0.005942s | 2.44x |

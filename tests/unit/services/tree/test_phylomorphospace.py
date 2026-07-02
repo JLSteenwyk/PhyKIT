@@ -265,7 +265,12 @@ class TestPlot:
     def test_parse_numeric_color_file_uses_fromiter(self, tmp_path, monkeypatch):
         color_file = tmp_path / "colors.tsv"
         ordered_names = ["a", "b", "c"]
-        color_file.write_text("a\t1.5\nb\t2.25\nc\t3.75\n")
+        color_file.write_text(
+            "   # ignored\n"
+            "a\t1.5\textra\n"
+            "b\t2.25\textra\n"
+            "c\t3.75\textra\n"
+        )
         svc = Phylomorphospace(
             Namespace(
                 tree="unused",

@@ -632,14 +632,14 @@ class PhylogeneticOrdination(Tree):
         with open(color_by) as f:
             for line in f:
                 stripped = line.strip()
-                if not stripped or stripped.startswith("#"):
+                if not stripped or stripped[0] == "#":
                     continue
-                parts = stripped.split("\t")
-                if len(parts) < 2:
+                taxon, sep, rest = stripped.partition("\t")
+                if not sep:
                     continue
-                taxon = parts[0]
-                if taxon in name_to_idx:
-                    values[name_to_idx[taxon]] = parts[1]
+                idx = name_to_idx.get(taxon)
+                if idx is not None:
+                    values[idx] = rest.partition("\t")[0]
 
         missing = [ordered_names[i] for i, v in enumerate(values) if v is None]
         if missing:
@@ -1001,16 +1001,15 @@ class PhylogeneticOrdination(Tree):
             with open(tree_color_by) as f:
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
-                    parts = stripped.split("\t")
-                    if len(parts) < 2:
+                    taxon, sep, rest = stripped.partition("\t")
+                    if not sep:
                         continue
-                    taxon = parts[0]
                     idx = name_to_idx.get(taxon)
                     if idx is not None:
                         try:
-                            tip_vals[idx] = float(parts[1])
+                            tip_vals[idx] = float(rest.partition("\t")[0])
                         except ValueError:
                             return None, None, None
                         found.add(taxon)

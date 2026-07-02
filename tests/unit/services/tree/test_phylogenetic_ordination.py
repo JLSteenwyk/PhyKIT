@@ -1099,7 +1099,7 @@ class TestTreeColorTrait:
             def __iter__(self):
                 return iter(
                     [
-                        "# ignored\n",
+                        "   # ignored\n",
                         "\n",
                         "A\t1.0\textra\n",
                         "B\t2.0\n",
@@ -2043,7 +2043,10 @@ class TestParseColorBy:
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
 
         color_file = tmp_path / "colors.tsv"
-        lines = [f"{name}\t{i * 1.5}\n" for i, name in enumerate(ordered_names)]
+        lines = ["   # ignored\n"]
+        lines.extend(
+            f"{name}\t{i * 1.5}\textra\n" for i, name in enumerate(ordered_names)
+        )
         color_file.write_text("".join(lines))
 
         def fail_array(*_args, **_kwargs):
@@ -2071,8 +2074,10 @@ class TestParseColorBy:
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
 
         color_file = tmp_path / "groups.tsv"
-        lines = [f"{name}\t{'A' if i % 2 == 0 else 'B'}\n"
-                 for i, name in enumerate(ordered_names)]
+        lines = [
+            f"{name}\t{'A' if i % 2 == 0 else 'B'}\textra\n"
+            for i, name in enumerate(ordered_names)
+        ]
         color_file.write_text("".join(lines))
 
         values, categories, kind = svc._parse_color_by(
