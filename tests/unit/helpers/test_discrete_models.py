@@ -861,11 +861,11 @@ class TestParseDiscreteTraits:
             def __iter__(self):
                 return iter(
                     [
-                        "# ignored before header\n",
+                        "   # ignored before header\n",
                         "\n",
                         "taxon\tdiet\thabitat\n",
                         "A\tcarnivore\tforest\n",
-                        "# ignored between rows\n",
+                        "\t# ignored between rows\n",
                         "B\therbivore\tplain\n",
                         "C\tomnivore\twetland\n",
                     ]
@@ -943,9 +943,9 @@ class TestParseDiscreteTraits:
         f.write_text(
             "\n".join(
                 [
-                    "# ignored before data",
+                    "   # ignored before data",
                     "A\tcarnivore",
-                    "# ignored between rows",
+                    "\t# ignored between rows",
                     "B\therbivore",
                     "C",
                 ]

@@ -1496,8 +1496,10 @@ Results:
 | `discrete_models.parse_discrete_traits` multi-column streaming parser | 300k-row multi-column discrete trait TSV, 300k tree tips | 0.210558s | 0.201712s | 1.04x |
 | `discrete_models.parse_discrete_traits` two-column all-shared parser fast path | 300k-row two-column discrete trait TSV, all taxa shared | 0.229224s | 0.129126s | 1.78x |
 | `discrete_models.parse_discrete_traits` two-column partition parser | 300k-row two-column discrete trait TSV with comments/blanks, all taxa shared, side-by-side previous split parser comparison | 0.131254s | 0.127151s | 1.03x |
+| `discrete_models.parse_discrete_traits` two-column stripped comment check | 300k-row two-column discrete trait TSV with whitespace-prefixed comments/blanks, all taxa shared | 0.419014s | 0.399101s | 1.05x |
 | `discrete_models.parse_discrete_traits` multi-column all-shared parser fast path | 300k-row multi-column discrete trait TSV, all taxa shared | 0.244142s | 0.135837s | 1.80x |
 | `discrete_models.parse_discrete_traits` multi-column bounded selected-column split | 300k-row x 24-trait discrete TSV, all taxa shared, selected early trait column, side-by-side previous full row split | 0.284023s | 0.214614s | 1.32x |
+| `discrete_models.parse_discrete_traits` multi-column stripped comment check | 300k-row multi-column discrete trait TSV with whitespace-prefixed comments/blanks, all taxa shared | 0.661861s | 0.541921s | 1.22x |
 | `discrete_models.matrix_exp` cached SciPy expm wrapper | 20k four-state ARD transition matrices, SciPy already warm | 0.136597s | 0.125134s | 1.09x |
 | `discrete_models.matrix_exp` two-state ER analytic path | 20k two-state ER transition matrices | 0.105901s | 0.034737s | 3.05x |
 | `discrete_models.matrix_exp` two-state ARD analytic path | 20k binary unequal-rate transition matrices, side-by-side previous SciPy `expm` path | 0.125131s | 0.042341s | 2.96x |

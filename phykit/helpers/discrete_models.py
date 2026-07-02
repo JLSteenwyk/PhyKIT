@@ -620,7 +620,7 @@ def _parse_two_column_stream(lines, tree_tips: list[str]) -> dict[str, str]:
     line_idx = 1
     for line in lines:
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line or line[0] == "#":
             continue
         taxon, sep, state = line.partition("\t")
         if not sep or "\t" in state:
@@ -646,7 +646,7 @@ def _parse_multi_column_stream(
 
     for line in lines:
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line or line[0] == "#":
             continue
         line_idx += 1
 
