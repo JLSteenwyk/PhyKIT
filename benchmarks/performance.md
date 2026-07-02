@@ -961,6 +961,7 @@ Results:
 | `quartet_utils` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in annotations | 0.022979s | 0.020954s | 1.10x |
 | `ConcordanceAsr._compute_gcf_per_node` | 80 balanced gene trees x 128 taxa plus species tree, weighted-ASR gCF/gDF proportions | 0.1748s | 0.0843s | 2.1x |
 | `ConcordanceAsr._compute_gcf_per_node` direct preorder iterators | 80 balanced gene trees x 512 taxa plus species tree, weighted-ASR gCF/gDF proportions, side-by-side previous `get_nonterminals`/`find_clades` iterators | 0.500742s | 0.417360s | 1.20x |
+| `ConcordanceAsr._compute_gcf_per_node` single-pass topology counts | 550 species-node topology queries over 1000 synthetic gene-tree split sets, equal-target edge cases included | 0.301985s | 0.241031s | 1.25x |
 | `ConcordanceAsr._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.822011s | 0.289217s | 2.84x |
 | `ConcordanceAsr._canonical_split` size-first complement avoidance | 9k mixed 20-vs-1180, 1180-vs-20, and 600-vs-600 bipartitions over 1200 taxa | 0.262131s | 0.237326s | 1.10x |
 | `ConcordanceAsr._normalize_taxa` setup | 80 balanced gene trees x 512 taxa plus species tree | 0.0819s | 0.0101s | 8.1x |
@@ -4624,7 +4625,10 @@ Profiling summary:
   retaining the generic Bio.Phylo iterators as fallbacks. Equal-size canonical
   split tiebreaks now compare the minimum taxon on each complementary side
   instead of sorting both sides, preserving the
-  sorted-lexicographic choice because the two sides are disjoint.
+  sorted-lexicographic choice because the two sides are disjoint. The per-node
+  gCF/gDF counter now checks concordant and two NNI alternative bipartitions in
+  one pass over gene-tree split sets instead of three separate generator scans,
+  while preserving independent counts when queried bipartitions are equal.
 - `ConcordanceAsr._run_distribution` result assembly baseline time recomputed
   descendant taxa with `get_terminals()` while matching species-tree nodes to
   per-gene-tree ASR estimates. The optimized weighted, distribution, uncertainty

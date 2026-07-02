@@ -507,14 +507,11 @@ class ConcordanceAsr(Tree):
             nni_alt1_bp = self._canonical_split(S | C2, all_taxa_fs)
             nni_alt2_bp = self._canonical_split(C1 | S, all_taxa_fs)
 
-            concordant = sum(
-                1 for splits in gene_tree_splits if concordant_bp in splits
-            )
-            disc1 = sum(
-                1 for splits in gene_tree_splits if nni_alt1_bp in splits
-            )
-            disc2 = sum(
-                1 for splits in gene_tree_splits if nni_alt2_bp in splits
+            concordant, disc1, disc2 = self._count_gcf_topologies(
+                gene_tree_splits,
+                concordant_bp,
+                nni_alt1_bp,
+                nni_alt2_bp,
             )
 
             total = concordant + disc1 + disc2
@@ -530,6 +527,25 @@ class ConcordanceAsr(Tree):
             result[id(clade)] = (gcf, gdf1, gdf2)
 
         return result
+
+    @staticmethod
+    def _count_gcf_topologies(
+        gene_tree_splits,
+        concordant_bp,
+        nni_alt1_bp,
+        nni_alt2_bp,
+    ):
+        concordant = 0
+        disc1 = 0
+        disc2 = 0
+        for splits in gene_tree_splits:
+            if concordant_bp in splits:
+                concordant += 1
+            if nni_alt1_bp in splits:
+                disc1 += 1
+            if nni_alt2_bp in splits:
+                disc2 += 1
+        return concordant, disc1, disc2
 
     # ------------------------------------------------------------------
     # NNI alternative tree building

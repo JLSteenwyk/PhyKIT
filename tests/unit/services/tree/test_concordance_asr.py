@@ -1,4 +1,5 @@
 import copy
+import builtins
 import json
 import math
 import subprocess
@@ -295,6 +296,30 @@ def _make_asr_helper():
 
 
 class TestGCFComputation:
+    def test_gcf_topology_counter_scans_once_and_preserves_equal_targets(
+        self, monkeypatch
+    ):
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("gCF topology counts should scan splits once")
+
+        monkeypatch.setattr(builtins, "sum", fail_sum)
+
+        concordant = frozenset({"A", "B"})
+        alt = frozenset({"A", "C"})
+        gene_tree_splits = [
+            {concordant, alt},
+            {concordant},
+            {alt},
+            set(),
+        ]
+
+        assert ConcordanceAsr._count_gcf_topologies(
+            gene_tree_splits,
+            concordant,
+            concordant,
+            alt,
+        ) == (2, 2, 2)
+
     def test_collect_clade_tip_sets_standard_tree_avoids_find_clades(
         self, default_args, mocker
     ):
