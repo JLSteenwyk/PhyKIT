@@ -30,11 +30,11 @@ def test_parse_multi_trait_file_skips_comments_and_filters_shared_taxa(
     trait_file.write_text(
         "\n".join(
             [
-                "# ignored before header",
+                "   # ignored before header",
                 "taxon\tbody_mass\tlength",
                 "",
                 "A\t1.0\t10.0",
-                "# ignored between rows",
+                "\t# ignored between rows",
                 "B\t2.0\t20.0",
                 "C\t3.0\t30.0",
                 "off_tree\t4.0\t40.0",

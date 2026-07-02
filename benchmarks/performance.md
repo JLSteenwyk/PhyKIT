@@ -50,6 +50,7 @@ Results:
 | `trait_parsing.parse_multi_trait_file` valid-row float conversion | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.634490s | 0.537817s | 1.18x |
 | `trait_parsing.parse_multi_trait_file` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.423491s | 0.277321s | 1.53x |
 | `trait_parsing.parse_multi_trait_file` narrow-row float conversion | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared, identical parsed traits and nonnumeric fallback messages | 0.367998s | 0.331910s | 1.11x |
+| `trait_parsing.parse_multi_trait_file` stripped comment check | 300k-row multi-trait TSV, 3 numeric trait columns, whitespace-prefixed comments/blanks, all taxa shared | 1.205110s | 1.025197s | 1.18x |
 | `trait_parsing.trait_column_from_rows` direct column vector | 120k taxa x 12 parsed trait columns, one selected trait column | 0.013424s | 0.007369s | 1.82x |
 | `trait_parsing.trait_matrix_from_rows` direct row matrix | 120k taxa x 12 numeric traits, ordered trait rows to NumPy matrix | 0.137167s | 0.038031s | 3.61x |
 | `trait_parsing.response_predictor_arrays` selected-column design matrix | 180k taxa x 10 parsed trait columns, one response plus four predictors | 0.147410s | 0.060780s | 2.43x |

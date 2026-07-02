@@ -59,7 +59,7 @@ def parse_multi_trait_file(
             header_parts = None
             for line in f:
                 stripped = line.strip()
-                if not stripped or stripped.startswith("#"):
+                if not stripped or stripped[0] == "#":
                     continue
                 header_parts = stripped.split("\t")
                 break
@@ -87,7 +87,7 @@ def parse_multi_trait_file(
             data_line_idx = 2
             for line in f:
                 stripped = line.strip()
-                if not stripped or stripped.startswith("#"):
+                if not stripped or stripped[0] == "#":
                     continue
                 saw_data = True
                 parts = stripped.split("\t")
