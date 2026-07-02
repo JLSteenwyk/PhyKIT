@@ -69,6 +69,12 @@ def _batch_row_sum_squares(values: np.ndarray) -> np.ndarray:
     return np.einsum("ij,ij->i", rows, rows)
 
 
+def _batch_trait_sums(values: np.ndarray) -> np.ndarray:
+    if 1 < values.shape[2] <= 4:
+        return values.sum(axis=1)
+    return np.sum(values, axis=1)
+
+
 def _mean_selected_columns(values: np.ndarray, positions: list[int]) -> np.ndarray:
     if len(positions) == 1:
         return values[:, positions[0]]
@@ -545,7 +551,7 @@ class Dtt(Tree):
             sim_data = np.matmul(cholesky_factor, z)
 
         pair_count = n * (n - 1) / 2
-        sim_sums = np.sum(sim_data, axis=1)
+        sim_sums = _batch_trait_sums(sim_data)
         total_disp = (
             n * _batch_row_sum_squares(sim_data)
             - _batch_row_sum_squares(sim_sums)
@@ -674,7 +680,7 @@ class Dtt(Tree):
                     continue
                 subset = sim_data[:, indices, :]
                 subset_pair_count = m * (m - 1) / 2
-                subset_sums = np.sum(subset, axis=1)
+                subset_sums = _batch_trait_sums(subset)
                 clade_disp[:, clade_pos] = (
                     m * _batch_row_sum_squares(subset)
                     - _batch_row_sum_squares(subset_sums)

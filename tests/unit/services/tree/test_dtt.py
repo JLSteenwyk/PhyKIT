@@ -99,6 +99,56 @@ def test_batch_row_sum_squares_matches_explicit_squared_reduction():
     np.testing.assert_allclose(observed, expected)
 
 
+def test_batch_trait_sums_use_array_method_for_multi_trait_cubes(monkeypatch):
+    values = np.arange(2 * 3 * 4, dtype=float).reshape(2, 3, 4)
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("multi-trait batch sums should use ndarray.sum")
+
+    monkeypatch.setattr(dtt_module.np, "sum", fail_sum)
+
+    np.testing.assert_allclose(
+        dtt_module._batch_trait_sums(values),
+        values.sum(axis=1),
+    )
+
+
+def test_batch_trait_sums_keep_numpy_path_for_single_trait_cubes(monkeypatch):
+    values = np.arange(2 * 3, dtype=float).reshape(2, 3, 1)
+    calls = []
+    original_sum = dtt_module.np.sum
+
+    def tracking_sum(*args, **kwargs):
+        calls.append((args, kwargs))
+        return original_sum(*args, **kwargs)
+
+    monkeypatch.setattr(dtt_module.np, "sum", tracking_sum)
+
+    np.testing.assert_allclose(
+        dtt_module._batch_trait_sums(values),
+        np.sum(values, axis=1),
+    )
+    assert len(calls) == 1
+
+
+def test_batch_trait_sums_keep_numpy_path_for_wide_trait_cubes(monkeypatch):
+    values = np.arange(2 * 3 * 8, dtype=float).reshape(2, 3, 8)
+    calls = []
+    original_sum = dtt_module.np.sum
+
+    def tracking_sum(*args, **kwargs):
+        calls.append((args, kwargs))
+        return original_sum(*args, **kwargs)
+
+    monkeypatch.setattr(dtt_module.np, "sum", tracking_sum)
+
+    np.testing.assert_allclose(
+        dtt_module._batch_trait_sums(values),
+        np.sum(values, axis=1),
+    )
+    assert len(calls) == 1
+
+
 def test_module_import_does_not_import_numpy():
     code = """
 import sys
