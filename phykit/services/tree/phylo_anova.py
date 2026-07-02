@@ -990,24 +990,50 @@ class PhyloAnova(Tree):
                 if children:
                     for child in children:
                         parent_map[id(child)] = clade
-                    stack.extend(reversed(children))
+                    child_count = len(children)
+                    if child_count == 2:
+                        stack.append(children[1])
+                        stack.append(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            stack.append(children[idx])
         except AttributeError:
             return None
 
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
         node_coords = {}
+        node_coords_get = node_coords.get
+        id_ = id
         for clade in reversed(preorder_clades):
             children = clade.clades
             if not children:
                 idx = name_to_idx.get(clade.name)
                 if idx is not None:
-                    node_coords[id(clade)] = pc[idx]
+                    node_coords[id_(clade)] = pc[idx]
+                continue
+
+            child_count = len(children)
+            if child_count == 2:
+                left = node_coords_get(id_(children[0]))
+                right = node_coords_get(id_(children[1]))
+                if left is not None:
+                    if right is not None:
+                        node_coords[id_(clade)] = (left + right) * 0.5
+                    else:
+                        node_coords[id_(clade)] = left.copy()
+                elif right is not None:
+                    node_coords[id_(clade)] = right.copy()
+                continue
+            if child_count == 1:
+                coord = node_coords_get(id_(children[0]))
+                if coord is not None:
+                    node_coords[id_(clade)] = coord.copy()
                 continue
 
             coord_sum = None
             count = 0
             for child in children:
-                coord = node_coords.get(id(child))
+                coord = node_coords_get(id_(child))
                 if coord is None:
                     continue
                 if coord_sum is None:
@@ -1016,6 +1042,6 @@ class PhyloAnova(Tree):
                     coord_sum += coord
                 count += 1
             if count:
-                node_coords[id(clade)] = coord_sum / count
+                node_coords[id_(clade)] = coord_sum / count
 
         return parent_map, node_coords, preorder_clades

@@ -414,6 +414,28 @@ class TestPhyloAnova:
         np.testing.assert_allclose(node_coords[id(tree.root)], [1.0, 0.5])
         assert preorder[0] is tree.root
 
+    def test_phylomorphospace_overlay_handles_unary_and_missing_binary_child(self):
+        tree = Phylo.read(StringIO("(((A:1):1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "C"]
+        pc = np.array([
+            [1.0, 2.0],
+            [5.0, 6.0],
+        ])
+
+        parent_map, node_coords, _ = PhyloAnova._prepare_phylomorphospace_overlay(
+            tree, ordered_names, pc
+        )
+
+        tips = {tip.name: tip for tip in tree.get_terminals()}
+        unary_internal = parent_map[id(tips["A"])]
+        left_internal = parent_map[id(unary_internal)]
+        right_internal = parent_map[id(tips["C"])]
+
+        np.testing.assert_allclose(node_coords[id(unary_internal)], [1.0, 2.0])
+        np.testing.assert_allclose(node_coords[id(left_internal)], [1.0, 2.0])
+        np.testing.assert_allclose(node_coords[id(right_internal)], [5.0, 6.0])
+        np.testing.assert_allclose(node_coords[id(tree.root)], [3.0, 4.0])
+
     def test_cholesky_transform_matches_explicit_inverse(self):
         """Triangular-solve whitening matches the previous L inverse path."""
         rng = np.random.default_rng(123)

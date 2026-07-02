@@ -2396,6 +2396,7 @@ Results:
 | `PhyloAnova._permutation_p_value_and_z` ndarray mean/std reductions | 10 / 100 / 1000 / 10k / 100k permutation statistics, side-by-side previous `np.mean` and `np.std` wrappers | 0.000021215s / 0.000020485s / 0.000020951s / 0.000030437s / 0.000162023s | 0.000015491s / 0.000016347s / 0.000019552s / 0.000025833s / 0.000142907s | 1.37x / 1.25x / 1.07x / 1.18x / 1.13x |
 | `PhyloAnova._prepare_phylomorphospace_overlay` direct traversal | balanced 65536-tip tree, parent map and ancestral coordinate setup | 0.958097s | 0.304198s | 3.15x |
 | `PhyloAnova._prepare_phylomorphospace_overlay` single-pass parent map and child means | balanced 32768-tip tree, parent map and ancestral coordinate setup | 0.198770s | 0.067740s | 2.93x |
+| `PhyloAnova._prepare_phylomorphospace_overlay` binary child-coordinate fast path | balanced 8192 / 32768 / 65536-tip tree, parent map and ancestral coordinate setup, side-by-side previous generic child-coordinate loop | 0.022359s / 0.092461s / 0.396281s | 0.022608s / 0.084433s / 0.264315s | 0.99x / 1.10x / 1.50x |
 | `PhyloAnova._plot_boxplot` vectorized group masks | 500k taxa across 12 groups, univariate plot group-value preparation, side-by-side previous per-group Python list masks | 0.377527s | 0.053611s | 7.04x |
 | `PhyloAnova._plot_phylomorphospace` branch rendering | 4096 phylomorphospace branch segments, real Matplotlib Agg line render | 0.699849s | 0.032767s | 21.36x |
 | `PhyloAnova._plot_phylomorphospace` PCA variance total | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 singular values, side-by-side previous `np.sum(S ** 2)` | 0.000005887s / 0.000006054s / 0.000005545s / 0.000005994s / 0.000006021s / 0.000006877s / 0.000004525s / 0.000006631s | 0.000001281s / 0.000001132s / 0.000001423s / 0.000001156s / 0.000001312s / 0.000001259s / 0.000000879s / 0.000001432s | 4.60x / 5.35x / 3.90x / 5.19x / 4.59x / 5.46x / 5.15x / 4.63x |
@@ -7838,6 +7839,9 @@ Profiling summary:
   Phylomorphospace plotting now batches
   gray parent-child branch segments into one `LineCollection`, preserving branch
   styling while leaving group-colored tip scatter points and labels unchanged.
+  The phylomorphospace overlay setup now also handles binary internal nodes with
+  direct child-coordinate averaging and preserves the generic available-child
+  average for unary, missing-tip, and multifurcating cases.
   `_print_results` now batches ANOVA/MANOVA summary and pairwise comparison
   rows into one newline-joined print while preserving exact text formatting.
   A later run-setup pass reads the cached tree without copying when branch
