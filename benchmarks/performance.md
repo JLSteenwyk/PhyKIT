@@ -2325,6 +2325,7 @@ Results:
 | `RateHeterogeneity._plot_regime_tree` circular coordinate clade-list reuse | balanced 32768-tip tree, node positions plus preorder/tip lists already available | 0.057115s | 0.045826s | 1.25x |
 | `RateHeterogeneity._plot_regime_tree` rectangular batched regime branches | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/label/legend render | 1.970551s | 0.531163s | 3.71x |
 | `RateHeterogeneity._plot_regime_tree` circular batched regime branches/arcs | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/arc/legend render | 1.475253s | 0.261012s | 5.65x |
+| `RateHeterogeneity.run` ordered exact trait/regime setup | 300k trait/regime taxa in identical insertion order plus 75k tree-only tips, side-by-side previous shared-set construction | 0.251396s | 0.066233s | 3.80x |
 | `RateHeterogeneity._build_per_regime_vcv` branch accumulation | balanced 1024-tip synthetic root-to-tip paths x 3 regimes | 0.345525s | 0.019535s | 17.7x |
 | `RateHeterogeneity._build_per_regime_vcv` single-tip diagonal updates | balanced 2048-tip prepared branch groups x 3 regimes | 0.067988s | 0.054495s | 1.25x |
 | `RateHeterogeneity._sum_vcv_matrices` first-copy accumulation | 120 taxa x 3 regimes / 420 taxa x 3 regimes / 420 taxa x 8 regimes SPD-like VCV matrices, side-by-side previous Python `sum()` matrix accumulation | 0.000028s / 0.000310729s / 0.000795989s | 0.000009s / 0.000150399s / 0.000609011s | 3.11x / 2.07x / 1.31x |
@@ -2494,6 +2495,7 @@ Results:
 | `OUwie.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, regime parsing, model fitting, and output mocked; protective prune-copy retained | 1.174518s | 0.358352s | 3.28x |
 | `OUwie.run` all-shared read-only setup | balanced 32768-tip cached tree, trait/regime parsing, model fitting/output mocked | 0.292509s | 0.073640s | 3.97x |
 | `OUwie.run` shared trait/regime setup | default setup over 32768 / 200k / 300k / 50k tree tips with 32768 / 200k / 225k / 40k shared trait-regime taxa | 6.554888s / 1.585357s / 2.900188s / 0.441264s | 2.587766s / 1.238885s / 0.864087s / 0.290580s | 2.53x / 1.28x / 3.36x / 1.52x |
+| `OUwie.run` ordered exact trait/regime setup | 200k trait/regime taxa in identical insertion order, side-by-side previous shared-set construction | 0.192907s | 0.024995s | 7.72x |
 | `OUwie._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.470183s | 0.452638s | 1.04x |
 | `OUwie._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.433626s | 0.241180s | 1.80x |
 | `OUwie._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.241349s | 0.224103s | 1.08x |
@@ -7620,7 +7622,9 @@ Profiling summary:
   Shared trait/regime setup now builds the shared taxon set with an in-place key
   intersection and reuses the original trait/regime dictionaries when their keys
   already match, avoiding two large filtering comprehensions on all-shared
-  inputs.
+  inputs. When trait and regime mappings have the same ordered keys, setup now
+  skips the shared-set construction entirely and uses dict-key membership for
+  tree-only prune target discovery.
   Text output now batches the summary and per-regime sigma rows into one
   newline-joined print while preserving exact stdout text. Trait-file parsing
   now streams directly over the file handle instead of materializing all input
@@ -8199,7 +8203,9 @@ Profiling summary:
   data, while still copying before pruning missing taxa. Shared trait/regime
   setup now updates the shared taxon set in place and reuses the original
   trait/regime dictionaries when their key sets already match, avoiding two
-  large filtering comprehensions on all-shared inputs. A follow-up regime
+  large filtering comprehensions on all-shared inputs. Ordered exact
+  trait/regime mappings now bypass the shared-set construction entirely and
+  use dict-key membership while preserving tree-only pruning. A follow-up regime
   setup pass builds the object parent map with a direct stack traversal and
   computes branch regime assignments and the root regime from one direct
   state-set traversal instead of running the same Fitch-style pass twice.

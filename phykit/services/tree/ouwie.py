@@ -15,6 +15,15 @@ def print_json(*args, **kwargs):
     return _print_json(*args, **kwargs)
 
 
+def _same_ordered_keys(left, right) -> bool:
+    if len(left) != len(right):
+        return False
+    for left_key, right_key in zip(left, right):
+        if left_key != right_key:
+            return False
+    return True
+
+
 class _LazyPickle:
     def dumps(self, *args, **kwargs):
         import pickle as _pickle
@@ -185,6 +194,27 @@ class OUwie(Tree):
         traits,
         regime_assignments,
     ):
+        if _same_ordered_keys(traits, regime_assignments):
+            if len(traits) < 3:
+                raise PhykitUserError(
+                    [
+                        "Only "
+                        f"{len(traits)} shared taxa among tree, trait, and regime files.",
+                        "At least 3 shared taxa are required.",
+                    ],
+                    code=2,
+                )
+            tips_to_prune = [name for name in tree_tips if name not in traits]
+            ordered_names = sorted(traits)
+            regimes = sorted(set(regime_assignments.values()))
+            return (
+                traits,
+                regime_assignments,
+                tips_to_prune,
+                ordered_names,
+                regimes,
+            )
+
         shared = set(traits)
         shared.intersection_update(regime_assignments)
         if len(shared) < 3:

@@ -234,6 +234,29 @@ class TestProcessArgs:
         assert ordered_names == ["A", "B", "C"]
         assert regime_names == ["r1", "r2"]
 
+    def test_prepare_shared_trait_regime_data_exact_keys_prunes_tree_only_tips(self):
+        tree_tips = ["A", "B", "C", "D"]
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        regimes = {"A": "r1", "B": "r2", "C": "r1"}
+
+        (
+            shared_traits,
+            shared_regimes,
+            tips_to_prune,
+            ordered_names,
+            regime_names,
+        ) = OUwie._prepare_shared_trait_regime_data(
+            tree_tips,
+            traits,
+            regimes,
+        )
+
+        assert shared_traits is traits
+        assert shared_regimes is regimes
+        assert tips_to_prune == ["D"]
+        assert ordered_names == ["A", "B", "C"]
+        assert regime_names == ["r1", "r2"]
+
     def test_prepare_shared_trait_regime_data_filters_partial_overlap(self):
         tree_tips = ["A", "B", "C", "D"]
         traits = {"A": 1.0, "B": 2.0, "C": 3.0, "trait_only": 4.0}
