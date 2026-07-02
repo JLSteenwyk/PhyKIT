@@ -822,6 +822,25 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
             frozenset(["A", "B", "C", "D", "E", "F", "G"]),
         )
 
+    def test_reference_tipsets_and_order_handles_unary_binary_name_order(self):
+        tree = Phylo.read(
+            StringIO("(((A:1):2,B:3):4,(C:5,D:6):7);"),
+            "newick",
+        )
+
+        result = self.cov_rates._reference_tipsets_and_order_direct(tree)
+        tips_by_id, tip_names_by_id, terminals, nonterminals = result
+
+        self.assertEqual([terminal.name for terminal in terminals], ["A", "B", "C", "D"])
+        self.assertEqual(tip_names_by_id[id(tree.root)], ("A", "B", "C", "D"))
+        self.assertEqual(tips_by_id[id(tree.root.clades[0])], frozenset(["A", "B"]))
+        self.assertEqual(tip_names_by_id[id(tree.root.clades[0])], ("A", "B"))
+        self.assertEqual(tip_names_by_id[id(tree.root.clades[0].clades[0])], ("A",))
+        self.assertEqual(
+            [tip_names_by_id[id(clade)] for clade in nonterminals],
+            [("A", "B", "C", "D"), ("A", "B"), ("A",), ("C", "D")],
+        )
+
     @patch('builtins.print')
     def test_run_non_verbose(self, mock_print):
         """Test run method in non-verbose mode"""

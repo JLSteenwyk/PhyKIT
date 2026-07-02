@@ -1286,6 +1286,7 @@ Results:
 | `CovaryingEvolutionaryRates._correct_branch_lengths_from_exact_splits` reference direct postorder | exact-matching balanced 16384-tip gene trees plus reference | 0.188390s | 0.153965s | 1.22x |
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` reverse-preorder helper | exact-matching balanced 16384-tip reference tree metadata | 0.064371s | 0.053343s | 1.21x |
 | `CovaryingEvolutionaryRates._reference_tipsets_and_order` order-preserving child push | balanced 32768-tip reference tree metadata, optimized helper baseline | 0.105540s | 0.092782s | 1.14x |
+| `CovaryingEvolutionaryRates._reference_tipsets_and_order` binary descendant-name tuples | balanced 4096 / 16384 / 32768-tip reference tree metadata, side-by-side previous nested generator tuple construction | 0.012671s / 0.102034s / 0.343245s | 0.009558s / 0.055474s / 0.217417s | 1.33x / 1.84x / 1.58x |
 | `CovaryingEvolutionaryRates._zscore` centered sum-of-squares path | 260 / 1000 / 5000 / 50000 branch-length values, side-by-side previous separate `np.mean` and `np.std` reductions | 0.000019512s / 0.000015718s / 0.000019248s / 0.000085509s | 0.000008080s / 0.000006586s / 0.000009209s / 0.000049810s | 2.41x / 2.39x / 2.09x / 1.72x |
 | `CovaryingEvolutionaryRates._pearsonr` dot-product correlation | 10k corrected branch-length pairs, SciPy already warm, side-by-side previous normalized-vector helper | 0.000086246s | 0.000045948s | 1.88x |
 | `CovaryingEvolutionaryRates`/`Saturation` scatter plot extent extrema | plotted finite-value arrays sized 10 / 1000 / 100k / 1M, side-by-side previous `np.min`/`np.max` wrappers with the large-array NumPy path preserved | min: 0.000003554s / 0.000001653s / 0.000011168s / 0.000102863s; max: 0.000003032s / 0.000002014s / 0.000011166s / 0.000101525s | min: 0.000001198s / 0.000000865s / 0.000011168s / 0.000102863s; max: 0.000001213s / 0.000001098s / 0.000011166s / 0.000101525s | min: 2.97x / 1.91x / 1.00x / 1.00x; max: 2.50x / 1.83x / 1.00x / 1.00x |
@@ -5156,7 +5157,9 @@ Profiling summary:
   preserving split maps and terminal/nonterminal reference order. A later
   reference metadata pass avoids `reversed(children)` iterator allocation while
   preserving terminal/nonterminal reference order and combines binary child
-  tipsets directly. A later
+  tipsets directly. Binary reference metadata now also concatenates cached child
+  descendant-name tuples directly, while unary and multifurcating clades retain
+  equivalent ordered descendants. A later
   startup pass defers NumPy behind a module-level proxy while keeping the same
   numerical call sites. A subsequent startup pass preserves the module-level
   `ProcessPoolExecutor` and `as_completed` patch points through lazy proxies,

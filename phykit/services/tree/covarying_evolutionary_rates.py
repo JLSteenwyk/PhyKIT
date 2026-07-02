@@ -574,20 +574,31 @@ class CovaryingEvolutionaryRates(Tree):
             for clade in reversed(preorder):
                 children = clade.clades
                 if children:
-                    if len(children) == 2:
+                    child_count = len(children)
+                    if child_count == 2:
+                        left = children[0]
+                        right = children[1]
                         tips = (
-                            sp_tips_by_id[id(children[0])]
-                            | sp_tips_by_id[id(children[1])]
+                            sp_tips_by_id[id(left)]
+                            | sp_tips_by_id[id(right)]
                         )
+                        tip_names = (
+                            sp_tip_names_by_id[id(left)]
+                            + sp_tip_names_by_id[id(right)]
+                        )
+                    elif child_count == 1:
+                        child = children[0]
+                        tips = sp_tips_by_id[id(child)]
+                        tip_names = sp_tip_names_by_id[id(child)]
                     else:
                         tips = frozenset().union(
                             *(sp_tips_by_id[id(child)] for child in children)
                         )
-                    tip_names = tuple(
-                        name
-                        for child in children
-                        for name in sp_tip_names_by_id[id(child)]
-                    )
+                        tip_names = tuple(
+                            name
+                            for child in children
+                            for name in sp_tip_names_by_id[id(child)]
+                        )
                 else:
                     tips = frozenset([clade.name])
                     tip_names = (clade.name,)
