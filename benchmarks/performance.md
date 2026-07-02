@@ -1911,6 +1911,7 @@ Results:
 | `PhylogeneticGLM` cached SciPy linalg wrappers | 5k repeated 2x2 Cholesky factor/solve calls, SciPy already warm, side-by-side previous import-on-call wrappers | 0.061566s | 0.052477s | 1.17x |
 | `PhylogeneticGLM` standard-error diagonal solve | 200-coefficient SPD information matrix, side-by-side previous explicit inverse diagonal extraction | 0.002194492s | 0.000213396s | 10.28x |
 | `PhylogeneticGLM._normal_two_tailed_p_values` vectorized special erfc | 200k z statistics, side-by-side previous scalar Python `math.erfc` loop | 0.024712s | 0.001635s | 15.11x |
+| `PhylogeneticGLM._bernoulli_log_likelihood` selected log-term reduction | binary response vectors with 80 / 260 / 900 / 2000 / 10k / 100k observations, side-by-side previous two-product `np.sum` expression | 0.000043416s / 0.000021154s / 0.000034634s / 0.000153475s / 0.000201397s / 0.002948673s | 0.000005093s / 0.000007376s / 0.000017774s / 0.000059743s / 0.000137503s / 0.002789085s | 8.52x / 2.87x / 1.95x / 2.57x / 1.46x / 1.06x |
 | `phylogenetic_glm` module import without `scipy.stats` | cold process import for binomial/Poisson GLM command module | 0.625725s | 0.467757s | 1.34x |
 | `phylogenetic_glm` module import without eager SciPy optimize | cold process import for binomial/Poisson GLM command module | 0.459322s | 0.156656s | 2.9x |
 | `phylogenetic_glm` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085569s | 0.026700s | 3.20x |

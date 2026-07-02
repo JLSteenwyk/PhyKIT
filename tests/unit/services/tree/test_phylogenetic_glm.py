@@ -583,6 +583,20 @@ class TestLogisticMPLE:
         assert np.isfinite(ll)
         assert ll < 0  # Log-likelihood should be negative
 
+    def test_bernoulli_likelihood_uses_array_sum(self, monkeypatch):
+        y = np.array([0.0, 1.0, 1.0, 0.0])
+        mu = np.array([0.2, 0.7, 0.8, 0.1])
+        expected = float(np.sum(y * np.log(mu) + (1 - y) * np.log(1 - mu)))
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("Bernoulli likelihood should use ndarray.sum")
+
+        monkeypatch.setattr(phylogenetic_glm_module.np, "sum", fail_sum)
+
+        assert PhylogeneticGLM._bernoulli_log_likelihood(y, mu) == pytest.approx(
+            expected
+        )
+
     def test_logistic_starting_values_match_diagonal_weight_reference(self, monkeypatch):
         svc = PhylogeneticGLM.__new__(PhylogeneticGLM)
         rng = np.random.default_rng(20260623)

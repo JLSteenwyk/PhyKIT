@@ -437,9 +437,7 @@ class PhylogeneticGLM(Tree):
         only through the Firth penalty, not through the likelihood itself.
         """
         mu_safe = np.clip(mu, 1e-10, 1 - 1e-10)
-        return float(np.sum(
-            y * np.log(mu_safe) + (1 - y) * np.log(1 - mu_safe)
-        ))
+        return float(np.where(y, np.log(mu_safe), np.log1p(-mu_safe)).sum())
 
     def _pruning_log_likelihood(
         self, tree, y: np.ndarray, mu: np.ndarray,
