@@ -62,6 +62,33 @@ class TestPlotAlignmentQC:
         assert median == expected_median
         assert sigma == 1.4826 * expected_mad
 
+    def test_plot_max_uses_array_reduction_for_plot_sized_arrays(self, monkeypatch):
+        values = np.array([0.1, 0.9, 0.4])
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("plot-sized maxima should use ndarray.max")
+
+        monkeypatch.setattr(plot_alignment_qc_module.np, "max", fail_max)
+
+        assert plot_alignment_qc_module._plot_max(values) == pytest.approx(0.9)
+
+    def test_plot_max_preserves_large_array_np_max_path(self, monkeypatch):
+        values = np.ones(
+            plot_alignment_qc_module._PLOT_DIRECT_MAX_LIMIT + 1,
+            dtype=np.float64,
+        )
+        original_max = plot_alignment_qc_module.np.max
+        calls = []
+
+        def max_spy(observed, *args, **kwargs):
+            calls.append(observed.shape)
+            return original_max(observed, *args, **kwargs)
+
+        monkeypatch.setattr(plot_alignment_qc_module.np, "max", max_spy)
+
+        assert plot_alignment_qc_module._plot_max(values) == pytest.approx(1.0)
+        assert calls == [(plot_alignment_qc_module._PLOT_DIRECT_MAX_LIMIT + 1,)]
+
     def test_prepare_plot_arrays_reuses_row_values(self):
         rows = [
             {

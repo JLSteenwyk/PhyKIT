@@ -15,6 +15,7 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 _ROBUST_SIGMA_EQUAL_CHECK_MIN_SIZE = 100_000
+_PLOT_DIRECT_MAX_LIMIT = 100_000
 
 
 def AlignmentOutlierTaxa(*args, **kwargs):
@@ -44,6 +45,12 @@ def _robust_feature_center_and_sigma(finite_vals) -> tuple[float, float]:
     if mad > 0:
         return median, 1.4826 * mad
     return median, float(np.std(finite_vals))
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_MAX_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 class PlotAlignmentQC(Alignment):
@@ -231,7 +238,7 @@ class PlotAlignmentQC(Alignment):
             ax.axhline(dist_thr, color="black", linestyle="--", linewidth=1)
             finite_branch_values = branch_values[np.isfinite(branch_values)]
             upper = (
-                max(dist_thr + 0.1, float(np.max(finite_branch_values) + 0.05))
+                max(dist_thr + 0.1, float(_plot_max(finite_branch_values) + 0.05))
                 if finite_branch_values.size
                 else dist_thr + 0.1
             )
@@ -305,7 +312,7 @@ class PlotAlignmentQC(Alignment):
         gap_thr = thresholds["gap_rate"]
         if gap_thr is not None:
             ax.axhline(gap_thr, color="black", linestyle="--", linewidth=1)
-            ax.axhspan(gap_thr, max(1.0, float(np.max(gap_ordered) + 0.05)), color=flagged_color, alpha=0.08)
+            ax.axhspan(gap_thr, max(1.0, float(_plot_max(gap_ordered) + 0.05)), color=flagged_color, alpha=0.08)
         ax.set_title(f"Gap Rate Per Taxon (thr={gap_thr})")
         ax.set_ylabel("Gap Rate")
         ax.set_xticks(x_positions)

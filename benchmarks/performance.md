@@ -432,6 +432,7 @@ Results:
 | `PlotAlignmentQC._prepare_plot_arrays` one-pass flagged mask | 500k synthetic taxa, six QC feature arrays, and 13.5k flagged taxa, side-by-side previous `np.fromiter` mask pass | 0.363184s | 0.292066s | 1.24x |
 | `PlotAlignmentQC._prepare_plot_arrays` empty-outlier mask shortcut | 500k synthetic taxa, six QC feature arrays, and no flagged taxa, side-by-side previous per-row set membership path | 1.277690s | 1.108565s | 1.15x |
 | `PlotAlignmentQC._flag_colors` vectorized mask mapping | 1M ordered taxa flags, identical normal/flagged color sequence | 0.036504s | 0.014694s | 2.48x |
+| `PlotAlignmentQC` plot extent max reductions | plotted finite-value arrays sized 10 / 1000 / 100k / 1M, side-by-side previous `np.max(...)` with large-array path preserved | 0.000003432s / 0.000002161s / 0.000011253s / 0.000123167s | 0.000001027s / 0.000000811s / 0.000010299s / 0.000123167s | 3.34x / 2.66x / 1.09x / 1.00x |
 | `plot_alignment_qc` module import without eager NumPy/outlier/json/plot helpers | cold subprocess import after lazy NumPy proxy and forwarding helper wrappers | 0.075926s | 0.026252s | 2.89x |
 | `plot_alignment_qc` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.036055s | 0.034670s | 1.04x |
 | `ColumnScore.get_columns_from_alignments` + column matching | 260 taxa x 5000 sites query/reference alignments, alphabet `ACGT-?NX*` | 0.4111s | 0.0232s | 17.7x |
@@ -3362,7 +3363,9 @@ Profiling summary:
   heatmap z-score setup. The flagged mask is now filled during that row pass,
   removing the previous second `np.fromiter` pass over every taxon. Occupancy
   and gap bar colors are now selected with vectorized mask mapping, and the two
-  bar panels reuse one x-position array. A later
+  bar panels reuse one x-position array. Plot extent maxima now reduce through
+  the ndarray method for ordinary plot arrays while preserving the generic
+  `np.max` path for very large arrays where it remains faster. A later
   startup pass defers NumPy, JSON output, plot config, and the alignment-outlier
   service behind lazy proxy/wrapper functions while preserving the existing
   `AlignmentOutlierTaxa` monkeypatch point. A follow-up startup pass converts
