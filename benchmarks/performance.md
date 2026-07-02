@@ -947,6 +947,7 @@ Results:
 | `ConcordanceAsr._run_asr_on_tree` prune-needed setup | balanced 32768-tip tree, half tips shared with trait data | 0.1367s | 0.0145s | 9.4x |
 | `ConcordanceAsr.run` species-copy prune setup | balanced 32768-tip species tree, all tips shared with trait data | 0.0693s | 0.0076s | 9.2x |
 | `ConcordanceAsr.run` all-shared species-copy skip | balanced 32768-tip cached species tree, all species tips have trait values, gene/ASR/output mocked | 0.652220s | 0.238411s | 2.74x |
+| `ConcordanceAsr.run`/`_run_asr_on_tree` ordered trait prune setup | 300k ordered tree tips with all trait values / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.056759s / 0.052554s | 0.011654s / 0.010577s | 4.87x / 4.97x |
 | `ConcordanceAsr._run_distribution` result assembly | balanced 2048-tip species tree, ASR/gCF stubs, 20 gene-tree result dictionaries | 0.1196s | 0.0494s | 2.4x |
 | `ConcordanceAsr._run_distribution` scalar estimate summaries | 2047 species-tree nodes x 20 gene-tree estimates, identical mean/population variance and sigma2 average | 0.078126s | 0.003796s | 20.58x |
 | `ConcordanceAsr._law_of_total_variance` scalar small-list path | three weighted topology estimates, identical total/within/between variances | 0.000039046s | 0.000004145s | 9.42x |
@@ -4544,7 +4545,10 @@ Profiling summary:
   terminal-name traversal for species and gene tree taxon extraction. A later
   run-level pass skips the second species-tree copy when every retained species
   tip has a trait value and ladderizing is disabled, while preserving copy
-  isolation before trait pruning or ladderizing. Gene-tree source cleanup now
+  isolation before trait pruning or ladderizing. Ordered trait mappings now reuse
+  the shared large-input prune helper in both `run` species setup and
+  `_run_asr_on_tree`, avoiding dictionary membership scans when trait rows match
+  tree-tip order or leave only tree-only tail tips to prune. Gene-tree source cleanup now
   streams over the input file and strips/filters comments in one pass instead
   of materializing `splitlines()`, preserving inline-Newick and path-list
   behavior. The path-list branch now resolves relative rows with a precomputed

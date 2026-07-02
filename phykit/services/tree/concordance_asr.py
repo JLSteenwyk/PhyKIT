@@ -166,7 +166,9 @@ class ConcordanceAsr(Tree):
 
         # Prune species tree to shared taxa with trait data
         sp_tips = self.get_tip_names_from_tree(species_tree)
-        tips_to_prune = [t for t in sp_tips if t not in trait_values]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            sp_tips, trait_values
+        )
         needs_species_copy = bool(tips_to_prune) or self.plot_config.ladderize
         species_copy = (
             self._fast_tree_copy(species_tree) if needs_species_copy else species_tree
@@ -596,7 +598,9 @@ class ConcordanceAsr(Tree):
     def _run_asr_on_tree(self, tree, trait_values):
         """Run _fast_anc on one tree, return results keyed by descendant frozensets."""
         tip_names = self.get_tip_names_from_tree(tree)
-        tips_to_prune = [t for t in tip_names if t not in trait_values]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            tip_names, trait_values
+        )
         tree_for_analysis = self._fast_tree_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
             tree_for_analysis = self.prune_tree_using_taxa_list(

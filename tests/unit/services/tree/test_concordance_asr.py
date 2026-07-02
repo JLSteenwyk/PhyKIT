@@ -756,8 +756,12 @@ class TestWeightedMethod:
         assert fast_anc.call_args.args[0] is tree
 
     def test_run_asr_on_tree_uses_fast_tip_name_helper_after_pruning(
-        self, default_args, mocker
+        self, default_args, monkeypatch, mocker
     ):
+        class OrderedTraitValues(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         svc = ConcordanceAsr(default_args)
         svc._asr = _make_asr_helper()
         tree = svc.read_tree_file()
@@ -766,7 +770,11 @@ class TestWeightedMethod:
         all_taxa = set(svc.get_tip_names_from_tree(tree))
         trait_values = svc._asr._parse_single_trait_data(TRAITS_FILE, sorted(all_taxa))
         trait_values.pop("dog")
+        trait_values = OrderedTraitValues(trait_values)
         spy = mocker.spy(svc, "get_tip_names_from_tree")
+        monkeypatch.setattr(
+            concordance_asr_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0
+        )
         fast_copy = mocker.patch.object(svc, "_fast_tree_copy", return_value=tree_copy)
         prune = mocker.patch.object(
             svc, "prune_tree_using_taxa_list", return_value=pruned_tree
@@ -914,23 +922,33 @@ class TestRun:
         fast_copy.assert_not_called()
         assert run_weighted.call_args.args[0] is species_tree
 
-    def test_run_copies_species_tree_before_trait_pruning(self, default_args, mocker):
+    def test_run_copies_species_tree_before_trait_pruning(
+        self, default_args, monkeypatch, mocker
+    ):
+        class OrderedTraitValues(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         svc = ConcordanceAsr(default_args)
         species_tree = svc.read_tree_file()
         species_copy = svc.read_tree_file()
         pruned_species = svc.read_tree_file()
         gene_trees = svc._parse_gene_trees(GENE_TREES)
         all_taxa = set(svc.get_tip_names_from_tree(species_tree))
-        trait_values = {
-            taxon: float(index)
-            for index, taxon in enumerate(sorted(all_taxa))
+        species_tip_order = svc.get_tip_names_from_tree(species_tree)
+        trait_values = OrderedTraitValues(
+            (taxon, float(index))
+            for index, taxon in enumerate(species_tip_order)
             if taxon != "dog"
-        }
+        )
 
         mocker.patch.object(svc, "read_tree_file", return_value=species_tree)
         mocker.patch.object(svc, "_parse_gene_trees", return_value=gene_trees)
         mocker.patch.object(
             svc, "_normalize_taxa", return_value=(gene_trees, all_taxa)
+        )
+        monkeypatch.setattr(
+            concordance_asr_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0
         )
         mocker.patch(
             "phykit.services.tree.ancestral_reconstruction."
