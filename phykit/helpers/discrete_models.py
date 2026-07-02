@@ -211,10 +211,20 @@ def _matrix_exp_eigendecomp_context(Q: np.ndarray):
 
 
 def _eigenvector_condition_estimate(eigenvectors, inverse_eigenvectors) -> float:
-    return float(
-        np.max(np.sum(np.abs(eigenvectors), axis=1))
-        * np.max(np.sum(np.abs(inverse_eigenvectors), axis=1))
-    )
+    size = eigenvectors.shape[0]
+    max_vector_row_sum = 0.0
+    max_inverse_row_sum = 0.0
+    for row in range(size):
+        vector_row_sum = 0.0
+        inverse_row_sum = 0.0
+        for col in range(size):
+            vector_row_sum += abs(float(eigenvectors[row, col]))
+            inverse_row_sum += abs(float(inverse_eigenvectors[row, col]))
+        if vector_row_sum > max_vector_row_sum:
+            max_vector_row_sum = vector_row_sum
+        if inverse_row_sum > max_inverse_row_sum:
+            max_inverse_row_sum = inverse_row_sum
+    return max_vector_row_sum * max_inverse_row_sum
 
 
 def _is_exact_symmetric_matrix(Q: np.ndarray) -> bool:
