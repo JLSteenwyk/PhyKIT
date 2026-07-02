@@ -1558,6 +1558,7 @@ Results:
 | `build_discordance_vcv` direct pruned-subset VCV | 10 balanced 1024-tip gene trees, 512 shared taxa before averaging VCVs | 0.118993s | 0.086442s | 1.38x |
 | `build_discordance_vcv` pruned-subset single-tip diagonal updates | balanced 4096-tip gene tree, 2048 retained taxa | 0.069937s | 0.051761s | 1.35x |
 | `build_discordance_vcv` pruned-subset broadcast block indexing | 10 balanced 1024-tip gene trees, 512 shared taxa before averaging VCVs | 0.059726s | 0.052204s | 1.14x |
+| `vcv_utils._build_pruned_subset_vcv_matrix` binary preorder setup | balanced 1024-tip / 2048-tip / 4096-tip gene tree, every other taxon retained, side-by-side previous `stack.extend(reversed(children))` preorder setup | 0.008361s / 0.028597s / 0.194257s | 0.007390s / 0.022282s / 0.121728s | 1.13x / 1.28x / 1.60x |
 | `build_discordance_vcv` gene-tree branch-length validation | 20 balanced 4096-tip gene trees | 0.2277s | 0.0156s | 14.6x |
 | `build_discordance_vcv` combined gene-tree tip scan and branch validation | 20 balanced 4096-tip gene trees | 0.035306s | 0.018838s | 1.87x |
 | `build_discordance_vcv` PSD fast path | 10 balanced 1024-tip gene trees, all taxa shared before VCV averaging | 0.376386s | 0.301010s | 1.25x |
@@ -6201,7 +6202,9 @@ Profiling summary:
   one-element index arrays and `np.ix_` tuples for every terminal branch.
   Copied gene-tree pruning now collects terminal prune targets with localized
   indexed child pushes instead of allocating a `reversed(children)` iterator at
-  each internal node.
+  each internal node. Descendant-index VCV builders now also use direct binary
+  child pushes when preparing preorder lists, preserving the existing
+  `reversed(children)` route for higher-degree multifurcations.
 - `DVMC.determine_dvmc` baseline time was dominated by repeated terminal
   `tree.distance` calls. The optimized path computes depths once and reuses
   root-relative terminal depths for the same variance calculation.

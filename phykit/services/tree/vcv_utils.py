@@ -186,12 +186,20 @@ def _build_vcv_from_descendant_indices(
     preorder = []
     stack = [root]
     try:
+        pop = stack.pop
+        append = stack.append
+        extend = stack.extend
+        append_preorder = preorder.append
         while stack:
-            clade = stack.pop()
-            preorder.append(clade)
+            clade = pop()
+            append_preorder(clade)
             children = clade.clades
             if children:
-                stack.extend(reversed(children))
+                if len(children) == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    extend(reversed(children))
     except AttributeError:
         return None
 
@@ -469,12 +477,20 @@ def _build_pruned_subset_vcv_matrix(gene_tree, ordered_names: list[str]):
     preorder = []
     stack = [root]
     try:
+        pop = stack.pop
+        append = stack.append
+        extend = stack.extend
+        append_preorder = preorder.append
         while stack:
-            clade = stack.pop()
-            preorder.append(clade)
+            clade = pop()
+            append_preorder(clade)
             children = clade.clades
             if children:
-                stack.extend(reversed(children))
+                if len(children) == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    extend(reversed(children))
     except AttributeError:
         return None
 

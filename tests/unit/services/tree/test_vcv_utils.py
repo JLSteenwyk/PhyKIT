@@ -83,6 +83,19 @@ def _make_tree(newick):
     return Phylo.read(StringIO(newick), "newick")
 
 
+class _NoReversedList(list):
+    def __reversed__(self):
+        raise AssertionError("binary preorder should not call reversed(children)")
+
+
+def _wrap_binary_child_lists_no_reversed(clade):
+    children = clade.clades
+    if len(children) == 2:
+        clade.clades = _NoReversedList(children)
+    for child in clade.clades:
+        _wrap_binary_child_lists_no_reversed(child)
+
+
 class TestBuildVcvMatrix:
     def test_symmetric(self):
         tree = _read_tree(TREE_SIMPLE)
@@ -206,6 +219,26 @@ class TestBuildVcvMatrix:
             [0.0, 0.5, 1.0],
         ])
         np.testing.assert_allclose(vcv, expected)
+
+    def test_binary_preorder_setup_avoids_reversed_children(self):
+        tree = _make_tree("((A:1.0,B:1.0):1.0,(C:1.0,D:1.0):1.0);")
+        _wrap_binary_child_lists_no_reversed(tree.root)
+
+        vcv = build_vcv_matrix(tree, ["A", "B", "C", "D"])
+        pruned_vcv = _build_pruned_subset_vcv_matrix(tree, ["A", "C"])
+
+        np.testing.assert_allclose(
+            vcv,
+            np.array(
+                [
+                    [2.0, 1.0, 0.0, 0.0],
+                    [1.0, 2.0, 0.0, 0.0],
+                    [0.0, 0.0, 2.0, 1.0],
+                    [0.0, 0.0, 1.0, 2.0],
+                ]
+            ),
+        )
+        np.testing.assert_allclose(pruned_vcv, np.diag([2.0, 2.0]))
 
     def test_single_tip_branches_skip_block_indexing(self, monkeypatch):
         tree = _make_tree("(A:1.0,B:2.0,C:3.0);")
