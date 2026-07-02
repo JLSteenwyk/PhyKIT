@@ -532,25 +532,34 @@ class QuartetNetwork(Tree):
 
         Returns p-value.
         """
-        total = sum(counts)
+        c0, c1, c2 = counts
+        total = c0 + c1 + c2
         if total == 0:
             return 1.0
 
-        sorted_counts = sorted(counts, reverse=True)
-        major = sorted_counts[0]
+        if c0 >= c1:
+            if c0 >= c2:
+                major, minor1, minor2 = c0, c1, c2
+            else:
+                major, minor1, minor2 = c2, c0, c1
+        elif c1 >= c2:
+            major, minor1, minor2 = c1, c0, c2
+        else:
+            major, minor1, minor2 = c2, c0, c1
         remainder = total - major
 
         if remainder == 0:
             # All counts in one topology — perfect tree, p=1
             return 1.0
 
-        expected = [major, remainder / 2.0, remainder / 2.0]
+        expected_minor = remainder / 2.0
 
         # G-statistic (power divergence with lambda=0)
         g_stat = 0.0
-        for obs, exp in zip(sorted_counts, expected):
-            if obs > 0 and exp > 0:
-                g_stat += 2.0 * obs * math.log(obs / exp)
+        if minor1 > 0:
+            g_stat += 2.0 * minor1 * math.log(minor1 / expected_minor)
+        if minor2 > 0:
+            g_stat += 2.0 * minor2 * math.log(minor2 / expected_minor)
 
         # Conservative p-value: chi-squared with df=1
         return _chi2_sf(g_stat, df=1)

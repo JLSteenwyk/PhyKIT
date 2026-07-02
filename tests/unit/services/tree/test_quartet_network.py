@@ -1,3 +1,4 @@
+import builtins
 import itertools
 from argparse import Namespace
 from io import StringIO
@@ -221,6 +222,19 @@ class TestTreeTest:
     def test_empty_counts(self):
         p = QuartetNetwork._tree_test([0, 0, 0])
         assert p == 1.0
+
+    def test_tree_test_avoids_sorting_three_counts(self, monkeypatch):
+        original_sorted = builtins.sorted
+
+        def fail_sorted(*_args, **_kwargs):
+            raise AssertionError("tree test should avoid sorting three counts")
+
+        monkeypatch.setattr(builtins, "sorted", fail_sorted)
+
+        p = QuartetNetwork._tree_test([45, 35, 20])
+
+        monkeypatch.setattr(builtins, "sorted", original_sorted)
+        assert abs(p - 0.0418) < 0.005
 
 
 class TestClassifyQuartet:
