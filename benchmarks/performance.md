@@ -404,6 +404,7 @@ Results:
 | `AlignmentOutlierTaxa._blocked_long_branch_proxy` large ambiguous DNA fallback | 3000 taxa x 300 sites, alphabet `ACGTN-`, side-by-side previous per-taxon row loop above full-matrix cutoff | 5.048598s | 2.537640s | 1.99x |
 | `AlignmentOutlierTaxa.calculate_outliers` comparable-pair row counts | 2000 x 2000 comparable-pair boolean matrix, side-by-side previous `np.sum(..., axis=1)` row counts | 0.001769s | 0.001283s | 1.38x |
 | `AlignmentOutlierTaxa.calculate_outliers` pairwise mismatch row totals | 100 / 400 / 1000 / 2000 square float mismatch matrices, side-by-side previous `np.sum(match_counts, axis=1)` reduction | 0.000061s / 0.000112s / 0.001698s / 0.004930s | 0.000027s / 0.000072s / 0.000837s / 0.004420s | 2.29x / 1.56x / 2.03x / 1.12x |
+| `AlignmentOutlierTaxa._all_valid_long_branch_proxy` wide row totals | all-valid same-symbol count matrices shaped 120x2000 / 1200x12000 / 3000x300 / 10000x256 / 50000x64, side-by-side previous `np.sum(..., axis=1)` with short-matrix path preserved | 0.000050s / 0.004679s / 0.000187s / 0.001710s / 0.001128s | 0.000049s / 0.003070s / 0.000187s / 0.001710s / 0.001128s | 1.03x / 1.52x / 1.00x / 1.00x / 1.00x |
 | `AlignmentOutlierTaxa.calculate_outliers` constant-composition shortcut | 1000 taxa x 5000 sites, conserved ASCII DNA alignment, side-by-side previous full feature pipeline | 0.429936s | 0.042515s | 10.11x |
 | `AlignmentOutlierTaxa.calculate_outliers` identical multi-symbol shortcut | 1000 taxa x 5000 mixed-symbol DNA sites, lowercase/uppercase variants, side-by-side previous full feature pipeline | 8.073867s | 0.014392s | 561.01x |
 | `AlignmentOutlierTaxa` identical Unicode valid length | 100k-site uppercase Unicode identical-sequence helper, DNA / protein, side-by-side previous Python character-membership loop | 0.006644s / 0.005970s | 0.000494s / 0.000388s | 13.45x / 15.38x |
@@ -3327,7 +3328,10 @@ Profiling summary:
   The all-valid ASCII long-branch proxy now reuses per-site
   symbol counts to compute each taxon's exact mean distance to all other taxa,
   avoiding the previous taxon-by-taxon pairwise match matrix while preserving
-  the gapped and Unicode fallback paths. Composition-distance setup now computes
+  the gapped and Unicode fallback paths. A later wide-alignment pass reduces
+  same-symbol row totals through the ndarray method for 1000+ site all-valid
+  matrices while keeping the previous generic reduction for short matrices where
+  it remains faster. Composition-distance setup now computes
   row L2 norms with an `einsum` reduction instead of `np.linalg.norm`, avoiding
   linalg dispatch while preserving the same rounded row distances. Entropy
   burden now computes per-site probability/log-probability products with an

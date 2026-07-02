@@ -254,7 +254,10 @@ class AlignmentOutlierTaxa(Alignment):
             symbol_indices,
             np.arange(aln_len, dtype=np.intp),
         ]
-        other_matches = np.sum(same_symbol_counts, axis=1) - aln_len
+        if aln_len >= 1000:
+            other_matches = same_symbol_counts.sum(axis=1) - aln_len
+        else:
+            other_matches = np.sum(same_symbol_counts, axis=1) - aln_len
         denom = float(aln_len * (n_taxa - 1))
         long_branch_proxy[:] = 1.0 - (other_matches / denom)
         return long_branch_proxy

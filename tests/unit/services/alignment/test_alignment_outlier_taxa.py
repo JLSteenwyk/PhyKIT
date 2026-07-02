@@ -762,6 +762,35 @@ class TestAlignmentOutlierTaxa:
             alignment_outlier_taxa_module.np.array(expected),
         )
 
+    def test_all_valid_long_branch_proxy_wide_rows_use_array_reduction(
+        self, monkeypatch
+    ):
+        row_a = b"ACGT" * 250
+        row_b = b"ACGA" * 250
+        row_c = b"TCGA" * 250
+        matrix = alignment_outlier_taxa_module.np.frombuffer(
+            row_a + row_b + row_c,
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        ).reshape(3, 1000)
+        symbols = alignment_outlier_taxa_module.np.unique(matrix)
+        site_counts = AlignmentOutlierTaxa._symbol_counts_by_site(matrix, symbols)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("wide long-branch rows should use ndarray.sum")
+
+        monkeypatch.setattr(alignment_outlier_taxa_module.np, "sum", fail_sum)
+
+        observed = AlignmentOutlierTaxa._all_valid_long_branch_proxy(
+            matrix,
+            symbols,
+            site_counts,
+        )
+
+        alignment_outlier_taxa_module.np.testing.assert_allclose(
+            observed,
+            alignment_outlier_taxa_module.np.array([0.375, 0.25, 0.375]),
+        )
+
     def test_all_valid_ascii_long_branch_uses_site_counts(self, monkeypatch):
         service = self._service()
         alignment = MultipleSeqAlignment(
