@@ -1295,6 +1295,7 @@ Results:
 | `RelativeRateTest._fdr` | 1M synthetic p-values | 0.698518s | 0.164136s | 4.3x |
 | `RelativeRateTest._add_multiple_testing_corrections` zip-based correction assignment | 1M result rows with Bonferroni/FDR arrays, side-by-side previous index lookups | 0.293454s | 0.222238s | 1.32x |
 | `RelativeRateTest` small multiple-testing corrections without NumPy startup | cold subprocess, 7 p-values through Bonferroni and FDR helpers | 0.087782s | 0.027210s | 3.23x |
+| Multiple-testing correction vector cutoff | 128 / 512 / 1024 p-values through Bonferroni and Benjamini-Hochberg helpers, side-by-side previous 2048-element vector cutoff | Bonferroni 0.000011792s / 0.000045750s / 0.000090500s; FDR 0.000034708s / 0.000142625s / 0.000300375s | Bonferroni 0.000004291s / 0.000013958s / 0.000026917s; FDR 0.000008208s / 0.000023667s / 0.000045208s | Bonferroni 2.75x / 3.28x / 3.36x; FDR 4.23x / 6.03x / 6.64x |
 | `RelativeRateTest._output_single` JSON row construction | 500k pairwise relative-rate rows, identical row dictionaries | 1.108593s | 0.994351s | 1.11x |
 | `RelativeRateTest._output_single` one-pass JSON rows and taxa | 500k pairwise relative-rate rows, identical JSON payload while combining ingroup-taxon collection with result row construction | 0.955992s | 0.793613s | 1.20x |
 | `RelativeRateTest._output_single` batched text output | 100k pairwise relative-rate rows, captured stdout and identical text | 0.124079s | 0.111355s | 1.11x |
@@ -4776,7 +4777,10 @@ Profiling summary:
   ordering and a reverse cumulative minimum for large arrays. A later small-list
   branch uses the same ordering and reverse cumulative-minimum semantics in
   Python, avoiding NumPy startup for direct helper use while retaining the
-  vectorized path for large correction sets. A later pass deferred the
+  vectorized path for large correction sets. The vectorization cutoff is now
+  lower for medium-sized correction sets, so 128-1024 p-value lists use the
+  faster NumPy path while very small direct helper calls still avoid NumPy
+  startup. A later pass deferred the
   `scipy.stats.mannwhitneyu` import until a statistical test has enough
   observations to run, preserving Mann-Whitney U behavior while avoiding
   `scipy.stats` on normal module import. A follow-up startup pass defers direct
@@ -4825,7 +4829,8 @@ Profiling summary:
   second verbose traversal. Their FDR helpers now use the same small-list Python
   Benjamini-Hochberg path and large-array NumPy reverse cumulative-minimum path
   as `EvoTempoMap._fdr`, preserving scalar results including tied p-values while
-  avoiding NumPy startup for direct small correction sets. A later pass removed
+  avoiding NumPy startup for direct small correction sets. Their vectorization
+  cutoff now matches the medium-sized correction benchmark above. A later pass removed
   the eager `scipy.stats` import by evaluating the symmetric two-sided binomial
   test with lazy `scipy.special.bdtr`. Follow-up startup
   passes for `hybridization` and `discordance_asymmetry` defer NumPy behind a
@@ -5201,7 +5206,10 @@ Profiling summary:
   with sorting and a reverse cumulative minimum instead of tuple sorting plus a
   Python reverse loop. A later small-list path handles typical small correction
   sets with Python arithmetic, avoiding NumPy startup while preserving the large
-  vectorized path. The standalone Tajima helper now uses a thresholded ASCII
+  vectorized path. The correction vector cutoff now starts the NumPy path at
+  medium-sized correction lists, improving 128-1024 p-value workloads while
+  keeping the no-NumPy startup behavior for tiny lists. The standalone Tajima
+  helper now uses a thresholded ASCII
   byte-array path for long sequences, preserving the scalar path for short or
   Unicode inputs. The vector cutoff is now low enough for mid-sized 1.5kb
   triplets, avoiding the slower scalar scan once the byte-array setup is cheaper.

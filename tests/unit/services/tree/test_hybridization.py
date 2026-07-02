@@ -1146,6 +1146,23 @@ class TestFDR:
 
         assert Hybridization._fdr(pvals) == pytest.approx(expected)
 
+    def test_medium_fdr_matches_scalar_reference(self):
+        from phykit.services.tree.hybridization import Hybridization
+
+        pvals = [((idx * 37) % 101) / 1000 for idx in range(128)]
+        indexed = sorted(enumerate(pvals), key=lambda x: x[1])
+        expected = [0.0] * len(pvals)
+        previous = 1.0
+        for rank_minus_1 in range(len(pvals) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(pvals) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert Hybridization._fdr(pvals) == pytest.approx(expected)
+
     def test_small_fdr_does_not_import_numpy(self):
         code = """
 import sys

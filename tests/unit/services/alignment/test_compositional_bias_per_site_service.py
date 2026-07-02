@@ -129,6 +129,22 @@ assert "Bio.AlignIO" not in sys.modules
         corrected = cbps_module._false_discovery_control([0.01, 0.04, 0.03, 0.2])
         assert corrected == pytest.approx([0.04, 0.0533333333, 0.0533333333, 0.2])
 
+    def test_medium_false_discovery_control_matches_scalar_reference(self):
+        p_values = [((idx * 37) % 101) / 1000 for idx in range(128)]
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        expected = [0.0] * len(p_values)
+        previous = 1.0
+        for rank_minus_1 in range(len(p_values) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(p_values) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        corrected = cbps_module._false_discovery_control(p_values)
+        assert corrected == pytest.approx(expected)
+
     def test_erfc_array_vectorizes_square_root(self, mocker):
         values = np.array([0.0, 0.5, 2.0])
         sqrt_spy = mocker.spy(cbps_module.np, "sqrt")

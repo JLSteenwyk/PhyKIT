@@ -910,6 +910,25 @@ class TestMultipleTestingCorrection:
 
         assert RelativeRateTest._fdr(p_values) == pytest.approx(expected)
 
+    def test_medium_corrections_match_scalar_references(self):
+        p_values = [((idx * 37) % 101) / 1000 for idx in range(128)]
+
+        expected_bonf = [min(value * len(p_values), 1.0) for value in p_values]
+        assert RelativeRateTest._bonferroni(p_values) == pytest.approx(expected_bonf)
+
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        expected_fdr = [0.0] * len(p_values)
+        previous = 1.0
+        for rank_minus_1 in range(len(p_values) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(p_values) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected_fdr[original_idx] = adjusted
+            previous = adjusted
+
+        assert RelativeRateTest._fdr(p_values) == pytest.approx(expected_fdr)
+
     def test_small_corrections_do_not_import_numpy(self):
         code = """
 import sys
