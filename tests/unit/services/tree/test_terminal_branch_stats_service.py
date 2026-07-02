@@ -8,6 +8,7 @@ from Bio.Phylo.BaseTree import TreeMixin
 import pytest
 
 from phykit.services.tree.terminal_branch_stats import TerminalBranchStats
+import phykit.services.tree.terminal_branch_stats as tbs_module
 
 
 def test_module_import_defers_json_helper_and_heavy_tree_dependencies():
@@ -26,6 +27,16 @@ assert "Bio.Phylo" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = tbs_module._LazyNumpy()
+
+    fromiter_attr = lazy_np.fromiter
+
+    assert lazy_np.__dict__["fromiter"] is fromiter_attr
+    assert lazy_np.fromiter is fromiter_attr
+    assert lazy_np._module is not None
 
 
 @pytest.fixture

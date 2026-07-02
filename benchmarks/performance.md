@@ -1210,6 +1210,7 @@ Results:
 | `TerminalBranchStats.calculate_terminal_branch_stats` non-verbose | 32768-tip balanced tree, branch length on every terminal branch | 0.0895s | 0.0868s | 1.03x |
 | `TerminalBranchStats.calculate_terminal_branch_stats` direct array non-verbose | 32768-tip balanced tree, branch length on every terminal branch | 0.011780s | 0.007040s | 1.67x |
 | `TerminalBranchStats._get_terminal_branch_lengths_array_direct` order-preserving child push | balanced 131072-tip tree, side-by-side previous `reversed(children)` array helper | 0.024257s | 0.020686s | 1.17x |
+| `TerminalBranchStats._get_terminal_branch_lengths_array_direct` cached NumPy attribute proxy | balanced 65536-tip tree, side-by-side previous uncached lazy NumPy proxy, identical terminal-length array | 0.057327s | 0.025557s | 2.24x |
 | `TerminalBranchStats.get_terminal_branch_lengths` direct non-verbose traversal | balanced 65536-tip tree, branch length on every terminal branch | 0.1379s | 0.0187s | 7.4x |
 | `TerminalBranchStats.get_terminal_branch_lengths` direct verbose traversal | balanced 65536-tip tree, branch length and taxon name for every terminal branch | 0.1697s | 0.0480s | 3.5x |
 | `TerminalBranchStats._get_terminal_branch_lengths_direct` order-preserving child push | balanced 65536-tip tree, branch length and taxon name for every terminal branch, side-by-side previous `reversed(children)` helper | 0.016234s | 0.012539s | 1.29x |
@@ -8287,7 +8288,10 @@ Profiling summary:
   `typing` aliases by using built-in postponed annotations. The direct array
   helper now pushes binary children explicitly and indexes larger child lists
   backward, preserving terminal-length order while avoiding the per-node
-  `reversed(children)` iterator. The list-returning direct helper now uses the
+  `reversed(children)` iterator. The direct array helper now caches resolved
+  NumPy attributes on its lazy proxy, preserving import deferral while avoiding
+  repeated import and attribute dispatch during repeated terminal-length
+  collection. The list-returning direct helper now uses the
   same order-preserving child push for verbose and non-verbose API callers.
   Command execution can now request `return_lengths=False`, so non-verbose
   `run()` keeps the default API return shape available to direct callers while
