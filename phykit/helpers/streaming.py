@@ -155,7 +155,7 @@ class MemoryEfficientAlignmentProcessor:
         reader = StreamingFastaReader(file_path, chunk_size=batch_size)
         results = []
 
-        for batch_num, batch in enumerate(reader.stream_chunks()):
+        for batch in reader.stream_chunks():
             batch_result = processing_func(batch)
             results.append(batch_result)
 

@@ -268,6 +268,27 @@ class TestMemoryEfficientAlignmentProcessor(unittest.TestCase):
         self.assertEqual(results[0], 2)  # First batch has 2 sequences
         self.assertEqual(results[1], 2)  # Second batch has 2 sequences
 
+    @patch('phykit.helpers.streaming.StreamingFastaReader')
+    def test_process_large_alignment_in_batches_does_not_enumerate_chunks(
+        self, mock_reader_class
+    ):
+        """Test batch processing does not build unused chunk indices."""
+        mock_reader = MagicMock()
+        mock_reader_class.return_value = mock_reader
+        mock_reader.stream_chunks.return_value = iter([[1], [2]])
+
+        with patch(
+            "builtins.enumerate",
+            side_effect=AssertionError("batch processor should not enumerate"),
+        ):
+            results = MemoryEfficientAlignmentProcessor.process_large_alignment_in_batches(
+                "dummy.fasta",
+                len,
+                batch_size=1,
+            )
+
+        self.assertEqual(results, [1, 1])
+
     def test_process_large_alignment_with_aggregation(self):
         """Test processing with custom aggregation function"""
         # Define processing function that returns sequence lengths
