@@ -634,7 +634,7 @@ def _retention_index_ascii_single_char(
         return [None] * n_chars, None
 
     symbol_counts = _ascii_symbol_counts_by_character(matrix, symbols)
-    observed_taxa = np.sum(symbol_counts, axis=0)
+    observed_taxa = symbol_counts.sum(axis=0)
     n_states = np.count_nonzero(symbol_counts, axis=0)
     f_max = np.max(symbol_counts, axis=0)
     max_changes = observed_taxa - f_max
@@ -649,9 +649,9 @@ def _retention_index_ascii_single_char(
         for index, value in zip(np.flatnonzero(valid), numerators / denominators):
             ri_per_char[int(index)] = float(value)
 
-        sum_den = int(np.sum(denominators))
+        sum_den = int(denominators.sum())
         ri_overall = (
-            float(np.sum(numerators) / sum_den) if sum_den > 0 else None
+            float(numerators.sum() / sum_den) if sum_den > 0 else None
         )
     else:
         ri_overall = None
