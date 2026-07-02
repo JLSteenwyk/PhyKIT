@@ -354,7 +354,7 @@ class TestTraitParsing:
     def test_comments_and_blanks(self, service, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
-            "# comment\n\nraccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\n"
+            "   # comment\n\nraccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\n"
             "seal\t4.0\nmonkey\t5.0\ncat\t6.0\nweasel\t7.0\ndog\t8.0\n"
         )
         tree = service.read_tree_file()

@@ -2258,6 +2258,7 @@ Results:
 | `RateHeterogeneity._parse_trait_file` valid-row parsing | 500k two-column trait rows with comments/blanks, all taxa shared | 0.474866s | 0.457581s | 1.04x |
 | `RateHeterogeneity._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.438800s | 0.238584s | 1.84x |
 | `RateHeterogeneity._parse_trait_file` strict split row parsing | 500k two-column trait rows with comments/blanks, all taxa shared, identical traits and error column counts | 0.404013s | 0.371445s | 1.09x |
+| `RateHeterogeneity._parse_trait_file` stripped comment check | 500k two-column trait rows with whitespace-prefixed comments/blanks, all taxa shared | 1.014449s | 0.882941s | 1.15x |
 | `RateHeterogeneity._parse_regime_file` all-shared parser fast path | 500k two-column regime rows with comments/blanks, all taxa shared, randomized old/new measurement order | 0.397329s | 0.232471s | 1.71x |
 | `RateHeterogeneity._parse_regime_file` binary strict split row parsing | 500k two-column regime rows with comments/blanks, all taxa shared, identical regime assignments and error column counts | 0.487937s | 0.352139s | 1.39x |
 | `RateHeterogeneity._print_text_output` batched regime rows | 100k regime sigma rows, captured stdout and identical text | 0.047003s | 0.036191s | 1.30x |
