@@ -293,6 +293,17 @@ class TestClassifyQuartet:
 
 
 class TestNanuqDistance:
+    def test_format_quartet_uses_selected_topology_only(self):
+        quartet = ("A", "B", "C", "D")
+
+        assert QuartetNetwork._format_quartet(quartet, 0) == "{A, B} | {C, D}"
+        assert QuartetNetwork._format_quartet(quartet, 1) == "{A, C} | {B, D}"
+        assert QuartetNetwork._format_quartet(quartet, 2) == "{A, D} | {B, C}"
+
+    def test_format_quartet_preserves_invalid_topology_error(self):
+        with pytest.raises(KeyError):
+            QuartetNetwork._format_quartet(("A", "B", "C", "D"), 3)
+
     def test_topology_index_helpers_preserve_stable_ties(self):
         assert QuartetNetwork._dominant_topology_index([5, 5, 4]) == 0
         assert QuartetNetwork._dominant_topology_index([4, 5, 5]) == 1

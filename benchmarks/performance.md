@@ -896,6 +896,7 @@ Results:
 | `QuartetNetwork._compute_split_directions` cached one-pass split centers | 500 circular splits over 2000 taxa with cached gap positions, side-by-side previous per-split trigonometric center sums | 0.098739s | 0.041051s | 2.41x |
 | `QuartetNetwork._build_splits_graph` | 80 taxa, 20 circular splits, 33-node quartet graph | 6.1411s | 0.0016s | 3910.4x |
 | `QuartetNetwork._draw_quartet_network` edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.027545s | 0.004864s | 5.66x |
+| `QuartetNetwork._format_quartet` selected-topology formatter | 300k quartet topology labels, identical strings and invalid-index `KeyError` behavior | 0.595635s | 0.186209s | 3.20x |
 | `QuartetNetwork.run` batched text quartet output | 100k quartet rows, captured stdout and identical text | 0.180601s | 0.166519s | 1.08x |
 | `QuartetNetwork._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.091090s | 0.067767s | 1.34x |
 | `QuartetNetwork._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |

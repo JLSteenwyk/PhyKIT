@@ -1067,12 +1067,17 @@ class QuartetNetwork(Tree):
     @staticmethod
     def _format_quartet(quartet: tuple[str, str, str, str], topo_idx: int) -> str:
         a, b, c, d = quartet
-        pairs_by_topo = {
-            0: (f"{{{a}, {b}}}", f"{{{c}, {d}}}"),
-            1: (f"{{{a}, {c}}}", f"{{{b}, {d}}}"),
-            2: (f"{{{a}, {d}}}", f"{{{b}, {c}}}"),
-        }
-        left, right = pairs_by_topo[topo_idx]
+        if topo_idx == 0:
+            left = f"{{{a}, {b}}}"
+            right = f"{{{c}, {d}}}"
+        elif topo_idx == 1:
+            left = f"{{{a}, {c}}}"
+            right = f"{{{b}, {d}}}"
+        elif topo_idx == 2:
+            left = f"{{{a}, {d}}}"
+            right = f"{{{b}, {c}}}"
+        else:
+            raise KeyError(topo_idx)
         return f"{left} | {right}"
 
     # ------------------------------------------------------------------
