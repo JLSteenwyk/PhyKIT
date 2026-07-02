@@ -1427,6 +1427,7 @@ Results:
 | `IndependentContrasts._postorder_clades_fast` reverse-preorder helper | balanced 32768-tip tree, direct PIC postorder traversal | 0.010762s | 0.003350s | 3.21x |
 | `IndependentContrasts.run` trait parsing/prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.030738s | 0.018286s | 1.68x |
 | `IndependentContrasts._parse_trait_data` exact-order all-shared fast path | 500k two-column trait rows with comments/blanks, file order matching tree-tip order, identical dict order | 0.599368s | 0.372073s | 1.61x |
+| `IndependentContrasts._parse_trait_data` stripped comment check | 200k two-column trait rows with whitespace-prefixed comments/blanks, file order matching tree-tip order, identical parsed traits | 0.269181s | 0.161897s | 1.66x |
 | `IndependentContrasts.run` all-shared read-only setup | balanced 32768-tip cached binary tree, one trait value for every tip, PIC/output mocked | 0.281312s | 0.050213s | 5.60x |
 | `IndependentContrasts`/`FitDiscrete._needs_default_branch_lengths` unordered scan | balanced 131072-tip tree, complete branch lengths, optimized helper baseline | 0.023833s | 0.016582s | 1.44x |
 | `independent_contrasts` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.081544s | 0.025828s | 3.16x |

@@ -381,6 +381,23 @@ class TestPICComputation:
         assert list(tip_traits) == ["A", "B", "C"]
         assert tip_traits == {"A": 1.0, "B": 2.0, "C": 3.0}
 
+    def test_parse_trait_data_skips_whitespace_prefixed_comments(
+        self, monkeypatch, args
+    ):
+        from io import StringIO
+
+        def open_stream(*_args, **_kwargs):
+            return StringIO("   # comment\nA\t1\n\t# comment\nB\t2\nC\t3\n")
+
+        monkeypatch.setattr("builtins.open", open_stream)
+        ic = IndependentContrasts(args)
+
+        tip_traits = ic._parse_trait_data("traits.tsv", ["A", "B", "C"])
+
+        assert list(tip_traits) == ["A", "B", "C"]
+        assert tip_traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+
+
 class TestPICRun:
     @staticmethod
     def _stub_run_tail(monkeypatch, ic, tip_traits, captured):

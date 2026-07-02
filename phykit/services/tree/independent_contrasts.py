@@ -154,7 +154,7 @@ class IndependentContrasts(Tree):
                 traits = {}
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     parts = stripped.split("\t")
                     if len(parts) != 2:
