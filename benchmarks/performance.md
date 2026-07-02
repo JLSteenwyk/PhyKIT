@@ -578,6 +578,7 @@ Results:
 | `OccupancyFilter._filter_fasta` streaming retained-sequence parser | 50k FASTA records x 120 bp, 10k retained, legacy `SimpleFastaParser` baseline | 0.050271s | 0.036378s | 1.38x |
 | `OccupancyFilter._write_wrapped_fasta_sequence` | 25k retained sequences x 1200 bp, 60-char wrapping | 0.0686s | 0.0553s | 1.2x |
 | `OccupancyFilter._write_wrapped_fasta_sequence` list-backed chunks | 25k retained sequences x 1200 bp, 60-char wrapping | 0.0799s | 0.0553s | 1.4x |
+| `OccupancyFilter._write_wrapped_fasta_sequence` generator chunk join | 80 repeated 1M-base retained sequences, 60-char wrapping through `StringIO`, identical output | 0.445474s | 0.320916s | 1.39x |
 | `OccupancyFilter._write_wrapped_fasta_sequence` short-sequence direct write | 100k retained sequences x 48 bp, side-by-side previous one-chunk wrapping path | 0.052051s | 0.008982s | 5.80x |
 | `OccupancyFilter.run` threshold classification without dead sort | 500k shuffled taxa occupancy counts, classify kept/removed sets | 0.186998s | 0.057841s | 3.23x |
 | `OccupancyFilter.run` batched occupancy Counter updates | 200 input files x 20k taxa sampled from 500k taxa, identical occupancy counts | 0.843763s | 0.414411s | 2.04x |

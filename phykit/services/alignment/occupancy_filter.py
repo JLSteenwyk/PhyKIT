@@ -326,10 +326,8 @@ class OccupancyFilter:
             return
         handle.write(
             "\n".join(
-                [
-                    sequence[idx:idx + width]
-                    for idx in range(0, len(sequence), width)
-                ]
+                sequence[idx:idx + width]
+                for idx in range(0, len(sequence), width)
             )
         )
         handle.write("\n")
