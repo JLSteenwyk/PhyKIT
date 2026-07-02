@@ -840,6 +840,8 @@ Results:
 | `TreeSpace._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
 | `TreeSpace._parse_trees_from_source` streamed row parsing | 200k rows with comments/blanks, old cleaned-list parser vs streaming parser with tree parsing mocked | 0.237905s | 0.220375s | 1.08x |
 | `TreeSpace._parse_trees_from_source` inline-Newick streamed row parsing | 200k inline Newick rows with comments/blanks, old cleaned-list parser vs streaming parser with tree parsing mocked | 0.316756s | 0.214420s | 1.48x |
+| `TreeSpace._parse_trees_from_source` stripped path-list row checks | 250k path-list rows with whitespace-prefixed comments/blanks, tree parsing mocked | 0.160735s | 0.146039s | 1.10x |
+| `TreeSpace._parse_trees_from_source` stripped inline-Newick row checks | 250k inline Newick rows with whitespace-prefixed comments/blanks, tree parsing mocked | 0.329209s | 0.252431s | 1.30x |
 | `TreeSpace._plot_heatmap` condensed distance vector setup | 4000 x 4000 symmetric distance matrix, identical upper-triangle condensed vector | 0.808634s | 0.005716s | 141.46x |
 | `tree_space` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.112687s | 0.031951s | 3.53x |
 | `tree_space` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.015061s | 0.007018s | 2.15x |

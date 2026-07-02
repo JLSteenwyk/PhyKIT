@@ -131,11 +131,11 @@ class TreeSpace(Tree):
                 path_mode = False
                 for line in handle:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     if path_mode:
                         append_path_tree(stripped)
-                    elif stripped.startswith("("):
+                    elif stripped[0] == "(":
                         pending_newick.append(stripped)
                     else:
                         path_mode = True

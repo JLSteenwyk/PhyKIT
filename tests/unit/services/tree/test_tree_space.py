@@ -137,7 +137,7 @@ class TestTreeParsing:
     def test_parse_trees_skips_comments_and_blank_lines(self, tmp_path, default_args):
         tree_file = tmp_path / "trees.nwk"
         tree_file.write_text(
-            "# ignored\n\n  ((A,B),(C,D));  \n# also ignored\n((A,C),(B,D));\n"
+            "   # ignored\n\n  ((A,B),(C,D));  \n\t# also ignored\n((A,C),(B,D));\n"
         )
         svc = TreeSpace(default_args)
 
