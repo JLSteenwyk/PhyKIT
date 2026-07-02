@@ -515,6 +515,33 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         self.assertEqual(distances, [0.25, 0.25, 0.5])
 
+    def test_standard_no_gap_matrix_path_skips_square_distance_matrix(self):
+        combo_tips = ["seq1", "seq2", "seq3"]
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq2", "seq3"),
+        ]
+        seq_matrix = np.vstack([
+            self.saturation._sequence_to_array("ATCG"),
+            self.saturation._sequence_to_array("ATGG"),
+            self.saturation._sequence_to_array("AACG"),
+        ])
+
+        with patch(
+            "phykit.services.tree.saturation.np.empty",
+            side_effect=AssertionError(
+                "standard no-gap distances should stream the upper triangle"
+            ),
+        ):
+            distances = self.saturation._calculate_uncorrected_distances_no_gap_matrix(
+                combo_tips,
+                combos,
+                seq_matrix,
+            )
+
+        self.assertEqual(distances, [0.25, 0.25, 0.5])
+
     def test_calculate_uncorrected_distances_exclude_gaps_clean_alignment_uses_no_gap_path(self):
         seq_arrays = {
             "seq1": self.saturation._sequence_to_array("ATCG"),

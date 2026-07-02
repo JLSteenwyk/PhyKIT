@@ -403,6 +403,12 @@ class Saturation(Tree):
             tip_indices = {tip: idx for idx, tip in enumerate(combo_tips)}
             return [float("nan") for _ in combos]
 
+        if standard_combo_order or cls._combos_are_standard_upper_triangle(
+            combo_tips,
+            combos,
+        ):
+            return cls._standard_upper_triangle_no_gap_distances(seq_matrix)
+
         target_bytes = 16 * 1024 * 1024
         block_size = max(
             1,
@@ -431,6 +437,30 @@ class Saturation(Tree):
             float(distances[tip_indices[tip_a], tip_indices[tip_b]])
             for tip_a, tip_b in combos
         ]
+
+    @staticmethod
+    def _standard_upper_triangle_no_gap_distances(seq_matrix) -> list[float]:
+        n_tips, seq_len = seq_matrix.shape
+        target_bytes = 16 * 1024 * 1024
+        block_size = max(
+            1,
+            min(64, target_bytes // max(1, n_tips * max(1, seq_len))),
+        )
+        denominator = float(seq_len)
+        distances = []
+        extend = distances.extend
+
+        for start in range(0, n_tips - 1, block_size):
+            stop = min(n_tips - 1, start + block_size)
+            identity_counts = (
+                seq_matrix[start:stop, None, :]
+                == seq_matrix[None, start + 1:, :]
+            ).sum(axis=2, dtype=np.int32)
+            block_distances = 1.0 - (identity_counts / denominator)
+            for local_idx in range(stop - start):
+                extend(block_distances[local_idx, local_idx:].tolist())
+
+        return distances
 
     @staticmethod
     def _combos_are_standard_upper_triangle(
