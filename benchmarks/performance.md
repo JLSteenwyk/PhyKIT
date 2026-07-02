@@ -861,6 +861,7 @@ Results:
 | `TreeSpace._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.688258s | 0.257655s | 2.67x |
 | `TreeSpace._build_distance_matrix` direct split extraction | 20 balanced 512-tip trees, prune to 256 shared taxa before RF splits | 0.101763s | 0.085802s | 1.2x |
 | `TreeSpace._build_distance_matrix` RF shared-taxa direct extraction | 20 balanced 512-tip trees, 256 shared taxa before RF split matrix | 0.066800s | 0.021859s | 3.06x |
+| `TreeSpace` cached lazy NumPy attributes | 600 synthetic split rows through RF and KF matrix builders, side-by-side previous uncached lazy proxy, identical matrices | 1.389004s | 1.233550s | 1.13x |
 | `TreeSpace._auto_detect_k` normalized Laplacian scaling | 900-item synthetic affinity matrix, diagonal scaling step | 0.029895s | 0.002207s | 13.5x |
 | `TreeSpace._auto_detect_k` normalized Laplacian row sums | 900 / 2500 / 5000-item synthetic affinity matrices, side-by-side previous `np.sum(..., axis=1)` degree-vector reduction | 0.000159105s / 0.003991750s / 0.015878400s | 0.000153917s / 0.001476250s / 0.008788600s | 1.03x / 2.70x / 1.81x |
 | `TreeSpace._spectral_cluster` condensed distance setup | 2500 x 2500 symmetric distance matrix, side-by-side previous triangular-index upper-distance gather for bandwidth median | 0.340237s | 0.207055s | 1.64x |

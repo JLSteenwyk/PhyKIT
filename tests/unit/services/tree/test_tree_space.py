@@ -37,6 +37,16 @@ assert "phykit.helpers.plot_config" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = tree_space_module._LazyNumpy()
+
+    array_attr = lazy_np.array
+
+    assert lazy_np.__dict__["array"] is array_attr
+    assert lazy_np.array is array_attr
+    assert lazy_np._module is not None
+
+
 def test_shared_gene_tree_taxa_does_not_slice_gene_trees():
     class NoSliceList(list):
         def __getitem__(self, key):
