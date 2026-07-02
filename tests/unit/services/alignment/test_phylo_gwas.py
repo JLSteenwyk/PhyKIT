@@ -1,5 +1,6 @@
 """Unit tests for the PhyloGwas service."""
 
+import builtins
 import csv
 import json
 import os
@@ -1729,6 +1730,23 @@ class TestPhyloGwas:
         assert PhyloGwas._binary_alleles_from_unicode_site(
             ["β", "β", "α"]
         ) == ("β", "α")
+
+    def test_unicode_binary_site_orders_two_alleles_without_sorting(self, monkeypatch):
+        original_sorted = builtins.sorted
+
+        def fail_sorted(*_args, **_kwargs):
+            raise AssertionError("Unicode biallelic sites should compare two keys directly")
+
+        monkeypatch.setattr(builtins, "sorted", fail_sorted)
+
+        assert PhyloGwas._binary_alleles_from_unicode_site(
+            ["β", "α", "β", "α"]
+        ) == ("α", "β")
+        assert PhyloGwas._binary_alleles_from_unicode_site(
+            ["β", "β", "α"]
+        ) == ("β", "α")
+
+        monkeypatch.setattr(builtins, "sorted", original_sorted)
 
     def test_test_site_continuous_biallelic(self):
         """Biallelic site with continuous phenotype should return correlation."""

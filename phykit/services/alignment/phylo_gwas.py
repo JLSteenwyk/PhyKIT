@@ -567,7 +567,11 @@ class PhyloGwas(Alignment):
         if len(allele_counts) != 2:
             return None
 
-        allele_0, allele_1 = sorted(allele_counts)
+        allele_iter = iter(allele_counts)
+        allele_0 = next(allele_iter)
+        allele_1 = next(allele_iter)
+        if allele_1 < allele_0:
+            allele_0, allele_1 = allele_1, allele_0
         if allele_counts[allele_0] < allele_counts[allele_1]:
             allele_0, allele_1 = allele_1, allele_0
         return allele_0, allele_1

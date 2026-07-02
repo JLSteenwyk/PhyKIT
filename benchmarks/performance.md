@@ -682,6 +682,7 @@ Results:
 | `PhyloGwas.run` exact shared-taxon setup | 500k alignment taxa x 500k phenotype taxa with identical taxon sets, side-by-side previous intersection-set construction | 0.570533s | 0.099172s | 5.75x |
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
+| `PhyloGwas._binary_alleles_from_unicode_site` two-allele ordering | 21k non-ASCII biallelic sites with mixed major/minor and equal-count cases, identical allele ordering | 0.876059s | 0.761983s | 1.15x |
 | `PhyloGwas` categorical site-result row construction | 1M mocked categorical GWAS site results, identical row dictionaries | 2.008253s | 1.780623s | 1.13x |
 | `PhyloGwas` continuous site-result row construction | 1M mocked continuous GWAS site results, identical row dictionaries | 0.701279s | 0.440898s | 1.59x |
 | `phylo_gwas` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.225119s | 0.116552s | 1.93x |
@@ -3958,7 +3959,10 @@ Profiling summary:
   stricter biallelic mask so those columns never enter the per-site association
   tests; all-biallelic scans keep the lighter non-ambiguous mask. The non-ASCII
   fallback now checks ambiguous symbols inline while building the allele list,
-  avoiding one helper call per shared taxon.
+  avoiding one helper call per shared taxon. Unicode biallelic site handling now
+  orders the two observed allele keys with a direct comparison instead of
+  sorting a two-key dictionary for every tested site, preserving the
+  lexicographic tie-break and major-allele-first behavior.
 - `PhyloGwas._benjamini_hochberg` baseline time walked sorted p-values in a
   Python reverse loop to enforce monotonic adjusted values. The optimized path
   computes ranked p-values in NumPy and applies a vectorized reverse cumulative
