@@ -191,6 +191,24 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert np.allclose(by_taxon["t1"], np.array([0.5, 0.5, 0.0, 0.0]))
         assert np.allclose(by_taxon["t2"], np.array([0.0, 0.0, 0.5, 0.5]))
 
+    def test_calculate_composition_per_taxon_preserves_variable_row_order(self, args):
+        svc = CompositionPerTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("aacc"), id="first"),
+                SeqRecord(Seq("GGTT"), id="second"),
+                SeqRecord(Seq("ACGT"), id="third"),
+            ]
+        )
+
+        symbols, rows = svc.calculate_composition_per_taxon(alignment, is_protein=False)
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert [taxon for taxon, _ in rows] == ["first", "second", "third"]
+        assert np.allclose(rows[0][1], np.array([0.5, 0.5, 0.0, 0.0]))
+        assert np.allclose(rows[1][1], np.array([0.0, 0.0, 0.5, 0.5]))
+        assert np.allclose(rows[2][1], np.full(4, 0.25))
+
     def test_calculate_composition_per_taxon_ascii_small_alphabet_skips_bincount(self, args, mocker):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(
@@ -305,6 +323,43 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert symbols == list(protein)
         for taxon in ("t1", "t2", "t3"):
             assert np.allclose(by_taxon[taxon], np.full(20, 0.05))
+
+    def test_large_indexed_identical_sequences_skip_raw_record_iteration(
+        self, args, monkeypatch
+    ):
+        class IndexedAlignment:
+            def __init__(self):
+                self.records = [
+                    SimpleNamespace(seq="ACGT", id="t1"),
+                    SimpleNamespace(seq="acgt", id="t2"),
+                    SimpleNamespace(seq="ACGT", id="t3"),
+                ]
+
+            def __len__(self):
+                return len(self.records)
+
+            def __getitem__(self, idx):
+                return self.records[idx]
+
+            def __iter__(self):
+                raise AssertionError("indexed identical path should not iterate")
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_IDENTICAL_INDEXED_SCAN_MIN_RECORDS",
+            3,
+        )
+        svc = CompositionPerTaxon(args)
+
+        symbols, rows = svc.calculate_composition_per_taxon(
+            IndexedAlignment(),
+            is_protein=False,
+        )
+        rows[0][1][0] = 0.0
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert [taxon for taxon, _ in rows] == ["t1", "t2", "t3"]
+        assert np.allclose(rows[1][1], np.full(4, 0.25))
 
     def test_identical_composition_rows_return_independent_arrays(self, args):
         svc = CompositionPerTaxon(args)

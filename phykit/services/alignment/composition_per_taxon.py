@@ -18,6 +18,7 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 _COMPOSITION_ROW_ZIP_MIN_COUNT = 50_000
+_IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
 
 
 def _composition_output_rows(record_ids, freqs):
@@ -89,6 +90,81 @@ class CompositionPerTaxon(Alignment):
         self, alignment, is_protein: bool
     ) -> tuple[list[str], list[tuple[str, np.ndarray]]]:
         invalid_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
+        try:
+            alignment_len = len(alignment)
+        except TypeError:
+            alignment_len = None
+
+        if (
+            alignment_len is not None
+            and alignment_len >= _IDENTICAL_INDEXED_SCAN_MIN_RECORDS
+        ):
+            try:
+                first_record = alignment[0]
+                first_raw_sequence = str(first_record.seq)
+                first_sequence = first_raw_sequence.upper()
+                sampled_identical = True
+                for sample_idx in {alignment_len // 2, alignment_len - 1}:
+                    if sample_idx == 0:
+                        continue
+                    sample_sequence = str(alignment[sample_idx].seq)
+                    if (
+                        sample_sequence != first_raw_sequence
+                        and sample_sequence.upper() != first_sequence
+                    ):
+                        sampled_identical = False
+                        break
+                if sampled_identical:
+                    record_ids = [first_record.id]
+                    for idx in range(1, alignment_len):
+                        record = alignment[idx]
+                        sequence = str(record.seq)
+                        if (
+                            sequence != first_raw_sequence
+                            and sequence.upper() != first_sequence
+                        ):
+                            break
+                        record_ids.append(record.id)
+                    else:
+                        try:
+                            sequence_array = np.frombuffer(
+                                first_sequence.encode("ascii"),
+                                dtype=np.uint8,
+                            )
+                            invalid_lookup = self._invalid_lookup_for_chars(
+                                invalid_chars
+                            )
+                            valid_symbols_raw, counts = np.unique(
+                                sequence_array[~invalid_lookup[sequence_array]],
+                                return_counts=True,
+                            )
+                            symbols = [
+                                chr(int(symbol)) for symbol in valid_symbols_raw
+                            ]
+                        except UnicodeEncodeError:
+                            sequence_array = np.array(list(first_sequence), dtype="U1")
+                            invalid_chars_array = np.array(
+                                list(invalid_chars), dtype="U1"
+                            )
+                            valid_symbols_raw, counts = np.unique(
+                                sequence_array[
+                                    ~np.isin(sequence_array, invalid_chars_array)
+                                ],
+                                return_counts=True,
+                            )
+                            symbols = valid_symbols_raw.tolist()
+
+                        if not symbols:
+                            return [], []
+
+                        freqs = counts.astype(np.float64) / float(counts.sum())
+                        return symbols, [
+                            (record_id, freqs.copy())
+                            for record_id in record_ids
+                        ]
+            except (AttributeError, IndexError, TypeError):
+                pass
+
         raw_records = [(record.id, str(record.seq)) for record in alignment]
         if not raw_records:
             return [], []

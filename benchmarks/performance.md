@@ -251,6 +251,7 @@ Results:
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical-row no-slice scan | 300k conserved 20-symbol protein records, side-by-side previous `sequences[1:]` equality scan | 0.614861s | 0.460860s | 1.33x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical-row direct record scan | 300k conserved 20-symbol protein records, side-by-side previous sequence-list setup with identical symbols and frequency rows | 0.452163s | 0.366624s | 1.23x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` raw-identical normalization scan | 300k conserved raw-identical 20-symbol protein records, side-by-side previous eager uppercase record setup | 0.766295s | 0.508587s | 1.51x |
+| `CompositionPerTaxon.calculate_composition_per_taxon` large indexed identical scan | 300k conserved mixed-case 20-symbol protein records, side-by-side previous tuple-backed raw record setup | 0.388295s | 0.264273s | 1.47x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` large output row assembly | frequency matrices shaped 50k x 4 / 100k x 4 / 100k x 20 / 500k x 4, side-by-side previous explicit enumerate/index row tuple construction while preserving the smaller-output path | 0.023209s / 0.034664s / 0.037950s / 0.254949s | 0.008918s / 0.030972s / 0.034110s / 0.158465s | 2.60x / 1.12x / 1.11x / 1.61x |
 | `CompositionPerTaxon.run` text output formatting | 100k taxon rows x 4 composition symbols, mocked alignment/read and identical stdout text | 0.853874s | 0.194774s | 4.38x |
 | `CompositionPerTaxon.run` JSON payload formatting | 100k taxon rows x 4 composition symbols, mocked calculation rows, side-by-side previous index lookup loop | 0.147151s | 0.137843s | 1.07x |
@@ -3001,7 +3002,10 @@ Profiling summary:
   Raw-identical conserved rows now avoid uppercasing every record before the
   identical shortcut, while mixed-case identical rows still compare through the
   same normalized sequence check and heterogeneous rows still uppercase before
-  the matrix path.
+  the matrix path. Large indexed conserved alignments now probe midpoint/end
+  rows and, when they remain identical after normalization, scan through indexed
+  records directly for the identical shortcut instead of first materializing
+  tuple-backed raw records.
   Conserved alignments with one valid observed symbol now fill the one-column
   frequency output directly from valid sequence lengths, skipping the count
   matrix while preserving `0.0` frequencies for taxa with no valid sites.
