@@ -455,6 +455,35 @@ class TestSumOfPairsScore:
         assert matches == expected_matches
         assert pairs == expected_pairs
 
+    def test_sequence_match_masks_for_pairs_cache_per_taxon(self, mocker):
+        reference_records = _make_records({
+            "id1": "ACGT",
+            "id2": "ACG",
+            "id3": "TTTT",
+        })
+        query_records = _make_records({
+            "id1": "ACGA",
+            "id2": "ATG",
+            "id3": "TTTA",
+        })
+        pair_batch = [("id1", "id2"), ("id1", "id3"), ("id2", "id3")]
+        array_spy = mocker.spy(SumOfPairsScore, "_sequence_arrays")
+
+        masks = SumOfPairsScore._sequence_match_masks_for_pairs(
+            pair_batch,
+            reference_records,
+            query_records,
+        )
+
+        assert array_spy.call_count == len(reference_records)
+        assert set(masks) == set(reference_records)
+        assert masks["id1"][0] == 4
+        assert masks["id2"][0] == 3
+        assert masks["id3"][0] == 4
+        assert masks["id1"][1].tolist() == [True, True, True, False]
+        assert masks["id2"][1].tolist() == [True, False, True]
+        assert masks["id3"][1].tolist() == [True, True, True, False]
+
     def test_process_pair_batch_non_ascii_fallback_matches_scalar_reference(self, args):
         reference_records = {
             "id1": SimpleNamespace(seq="AΩC"),

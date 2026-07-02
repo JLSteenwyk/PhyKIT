@@ -224,6 +224,35 @@ class SumOfPairsScore(Alignment):
         return total_pairs, total_pairs
 
     @staticmethod
+    def _sequence_match_masks_for_pairs(
+        record_id_pairs: list[tuple[str, str]],
+        reference_records: dict[str, object],
+        query_records: dict[str, object],
+    ) -> dict[str, tuple[int, object]]:
+        seq_masks = {}
+        record_seq = SumOfPairsScore._record_seq
+        sequence_arrays = SumOfPairsScore._sequence_arrays
+
+        for pair in record_id_pairs:
+            for seq_id in pair:
+                if seq_id in seq_masks:
+                    continue
+                ref_seq = record_seq(reference_records[seq_id])
+                query_seq = record_seq(query_records[seq_id])
+                ref_array, query_array = sequence_arrays(ref_seq, query_seq)
+                comparable_len = min(len(ref_array), len(query_array))
+                if comparable_len > 0:
+                    match_mask = (
+                        ref_array[:comparable_len]
+                        == query_array[:comparable_len]
+                    )
+                else:
+                    match_mask = None
+                seq_masks[seq_id] = (comparable_len, match_mask)
+
+        return seq_masks
+
+    @staticmethod
     def _process_pair_batch(
         pair_batch: list[tuple[str, str]],
         reference_records: dict[str, object],
@@ -233,52 +262,21 @@ class SumOfPairsScore(Alignment):
         batch_matches = 0
         batch_total = 0
         count_nonzero = np.count_nonzero
-
-        # Pre-convert sequences to numpy arrays for the batch
-        seq_arrays = {}
-        for pair in pair_batch:
-            for seq_id in pair:
-                if seq_id not in seq_arrays:
-                    ref_seq = SumOfPairsScore._record_seq(reference_records[seq_id])
-                    query_seq = SumOfPairsScore._record_seq(query_records[seq_id])
-                    ref_array, query_array = SumOfPairsScore._sequence_arrays(
-                        ref_seq,
-                        query_seq,
-                    )
-                    seq_arrays[seq_id] = (ref_seq, query_seq, ref_array, query_array)
+        seq_masks = SumOfPairsScore._sequence_match_masks_for_pairs(
+            pair_batch,
+            reference_records,
+            query_records,
+        )
 
         for first_in_pair, second_in_pair in pair_batch:
-            ref_seq1_str, query_seq1_str, ref_seq1, query_seq1 = seq_arrays[
-                first_in_pair
-            ]
-            ref_seq2_str, query_seq2_str, ref_seq2, query_seq2 = seq_arrays[
-                second_in_pair
-            ]
-
-            # Check if all sequences have the same length
-            if (len(ref_seq1) == len(query_seq1) and
-                len(ref_seq2) == len(query_seq2) and
-                len(ref_seq1) == len(ref_seq2)):
-                # Use vectorized comparison
-                matches = (ref_seq1 == query_seq1) & (ref_seq2 == query_seq2)
-                batch_matches += count_nonzero(matches)
-                batch_total += len(ref_seq1)
-            else:
-                min_len = min(len(ref_seq1_str), len(ref_seq2_str),
-                             len(query_seq1_str), len(query_seq2_str))
-
-                # Vectorize the mismatched comparison when possible
-                if min_len > 0:
-                    ref1_trimmed = ref_seq1[:min_len]
-                    ref2_trimmed = ref_seq2[:min_len]
-                    query1_trimmed = query_seq1[:min_len]
-                    query2_trimmed = query_seq2[:min_len]
-
-                    matches = (ref1_trimmed == query1_trimmed) & (
-                        ref2_trimmed == query2_trimmed
-                    )
-                    batch_matches += count_nonzero(matches)
-                    batch_total += min_len
+            len1, matches1 = seq_masks[first_in_pair]
+            len2, matches2 = seq_masks[second_in_pair]
+            min_len = min(len1, len2)
+            if min_len > 0:
+                batch_matches += count_nonzero(
+                    matches1[:min_len] & matches2[:min_len]
+                )
+                batch_total += min_len
 
         return int(batch_matches), batch_total
 
@@ -308,52 +306,21 @@ class SumOfPairsScore(Alignment):
         if len(record_id_pairs) < 50:
             number_of_matches = 0
             number_of_total_pairs = 0
-            seq_arrays = {}
             count_nonzero = np.count_nonzero
-            record_seq = self._record_seq
-            sequence_arrays = self._sequence_arrays
+            seq_masks = self._sequence_match_masks_for_pairs(
+                record_id_pairs,
+                reference_records,
+                query_records,
+            )
 
             for first_in_pair, second_in_pair in record_id_pairs:
-                if first_in_pair not in seq_arrays:
-                    ref_seq = record_seq(reference_records[first_in_pair])
-                    query_seq = record_seq(query_records[first_in_pair])
-                    ref_array, query_array = sequence_arrays(ref_seq, query_seq)
-                    seq_arrays[first_in_pair] = (
-                        ref_seq,
-                        query_seq,
-                        ref_array,
-                        query_array,
-                    )
-                if second_in_pair not in seq_arrays:
-                    ref_seq = record_seq(reference_records[second_in_pair])
-                    query_seq = record_seq(query_records[second_in_pair])
-                    ref_array, query_array = sequence_arrays(ref_seq, query_seq)
-                    seq_arrays[second_in_pair] = (
-                        ref_seq,
-                        query_seq,
-                        ref_array,
-                        query_array,
-                    )
-
-                ref_seq1_str, query_seq1_str, ref_seq1, query_seq1 = seq_arrays[
-                    first_in_pair
-                ]
-                ref_seq2_str, query_seq2_str, ref_seq2, query_seq2 = seq_arrays[
-                    second_in_pair
-                ]
-                min_len = min(
-                    len(ref_seq1_str),
-                    len(ref_seq2_str),
-                    len(query_seq1_str),
-                    len(query_seq2_str),
-                )
-
+                len1, matches1 = seq_masks[first_in_pair]
+                len2, matches2 = seq_masks[second_in_pair]
+                min_len = min(len1, len2)
                 if min_len > 0:
-                    matches = (
-                        (ref_seq1[:min_len] == query_seq1[:min_len])
-                        & (ref_seq2[:min_len] == query_seq2[:min_len])
+                    number_of_matches += int(
+                        count_nonzero(matches1[:min_len] & matches2[:min_len])
                     )
-                    number_of_matches += int(count_nonzero(matches))
                     number_of_total_pairs += min_len
 
             return int(number_of_matches), number_of_total_pairs
