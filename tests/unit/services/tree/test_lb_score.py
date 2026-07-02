@@ -7,6 +7,7 @@ from itertools import combinations
 from math import isclose
 from Bio.Phylo.Newick import Clade, Tree
 
+import phykit.services.tree.lb_score as lb_score_module
 from phykit.services.tree.lb_score import LBScore
 
 
@@ -528,6 +529,36 @@ class TestLBScore(object):
 
         assert observed_pairwise == pytest.approx(expected_avg_pdis)
         assert observed_fast == pytest.approx(expected_avg_pdis)
+
+    def test_historical_denominator_scan_preserves_duplicate_character_quirk(self):
+        tip_count = lb_score_module._DENOMINATOR_SCAN_MIN_TIPS
+        tip_set = {"A", "B", "AABB"}
+
+        assert (
+            LBScore._historical_other_taxa_denominator("AABB", tip_set, tip_count)
+            == tip_count - 2
+        )
+
+    def test_historical_denominator_large_tip_count_avoids_set_constructor(
+        self,
+        monkeypatch,
+    ):
+        tip_count = lb_score_module._DENOMINATOR_SCAN_MIN_TIPS
+        tip_set = {f"taxon_{idx}" for idx in range(tip_count)}
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("large denominator path should scan tip characters")
+
+        monkeypatch.setattr(lb_score_module, "set", fail_set, raising=False)
+
+        assert (
+            LBScore._historical_other_taxa_denominator(
+                "taxon_5000",
+                tip_set,
+                tip_count,
+            )
+            == tip_count
+        )
 
     def test_calculate_lb_score_falls_back_for_nonstandard_tree(self, mocker, args):
         t = LBScore(args)

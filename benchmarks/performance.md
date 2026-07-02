@@ -1638,6 +1638,7 @@ Results:
 | `LBScore.calculate_lb_score` direct per-tip distance sums | balanced 512-tip tree, shared pairwise cache | 0.1777s | 0.0707s | 2.5x |
 | `LBScore.calculate_lb_score` linear tree distance sums | balanced 512-tip tree | 0.054681s | 0.005159s | 10.6x |
 | `LBScore._calculate_lb_components_fast` historical denominator arithmetic | balanced 8192-tip tree, linear component helper, side-by-side previous `len(tip_set - set(tip))` denominator | 1.071748s | 0.015581s | 68.79x |
+| `LBScore._historical_other_taxa_denominator` large-tip character scan | 10k / 200k ordinary multi-character taxon names, side-by-side previous per-tip `set(tip)` allocation with small-tip path preserved | 0.011693s / 0.256935s | 0.007688s / 0.196247s | 1.52x / 1.31x |
 | `LBScore.calculate_average_distance_of_taxon_to_other_taxa` fallback tip-set reuse | 1000 fallback taxon names, side-by-side previous per-tip `set(tips)` construction while preserving `set(tip)` behavior | 0.024459s | 0.009492s | 2.58x |
 | `LBScore.calculate_average_distance_between_tips` fallback streaming pair batches | 2000 fallback tips, 1,999,000 pair batch setup, side-by-side previous full pair-list slicing | 0.484847s | 0.317065s | 1.53x |
 | `LBScore._calculate_lb_components_fast` postorder child push | balanced 32768-tip tree, linear component helper, side-by-side previous `reversed(children)` setup | 0.159546s | 0.132146s | 1.21x |
@@ -6026,7 +6027,9 @@ Profiling summary:
   counting matching tip-name characters directly, avoiding a full `tip_set`
   copy for every tip in the linear helper and pairwise-cache path. The fallback
   per-taxon distance path now also builds the tip set once before constructing
-  legacy `set(tip)` other-taxon lists. A later
+  legacy `set(tip)` other-taxon lists. Large-tip denominator calls now avoid the
+  per-tip `set(tip)` allocation entirely by scanning unique matched characters,
+  while smaller calls keep the previous path where it benchmarks better. A later
   startup pass postpones annotations and
   removes the annotation-only `Bio.Phylo.Newick` import, leaving tree parser
   startup to the shared tree reader instead of module import. A subsequent

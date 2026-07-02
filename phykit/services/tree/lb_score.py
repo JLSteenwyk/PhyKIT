@@ -19,6 +19,7 @@ class _LazyPickle:
 
 
 pickle = _LazyPickle()
+_DENOMINATOR_SCAN_MIN_TIPS = 10_000
 
 
 def calculate_summary_statistics_from_arr(*args, **kwargs):
@@ -310,10 +311,20 @@ class LBScore(Tree):
         tip_set: set[str],
         tip_count: int,
     ) -> int:
+        if tip_count < _DENOMINATOR_SCAN_MIN_TIPS:
+            return len(tip_set - set(tip))
+
         denominator = tip_count
-        for character in set(tip):
-            if character in tip_set:
+        matched = None
+        for character in tip:
+            if character in tip_set and (
+                matched is None or character not in matched
+            ):
                 denominator -= 1
+                if matched is None:
+                    matched = {character}
+                else:
+                    matched.add(character)
         return denominator
 
     @staticmethod
