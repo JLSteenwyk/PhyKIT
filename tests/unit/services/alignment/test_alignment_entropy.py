@@ -461,6 +461,33 @@ assert "Bio.AlignIO" not in sys.modules
         np.testing.assert_array_equal(sites, row_sites)
         np.testing.assert_array_equal(values, row_values)
 
+    def test_plot_max_uses_array_reduction_for_plot_sized_arrays(self, monkeypatch):
+        values = np.array([0.1, 0.9, 0.4])
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("plot-sized entropy maxima should use ndarray.max")
+
+        monkeypatch.setattr(alignment_entropy_module.np, "max", fail_max)
+
+        assert alignment_entropy_module._plot_max(values) == pytest.approx(0.9)
+
+    def test_plot_max_preserves_large_array_np_max_path(self, monkeypatch):
+        values = np.ones(
+            alignment_entropy_module._PLOT_DIRECT_MAX_LIMIT + 1,
+            dtype=np.float64,
+        )
+        original_max = alignment_entropy_module.np.max
+        calls = []
+
+        def max_spy(observed, *args, **kwargs):
+            calls.append(observed.shape)
+            return original_max(observed, *args, **kwargs)
+
+        monkeypatch.setattr(alignment_entropy_module.np, "max", max_spy)
+
+        assert alignment_entropy_module._plot_max(values) == pytest.approx(1.0)
+        assert calls == [(alignment_entropy_module._PLOT_DIRECT_MAX_LIMIT + 1,)]
+
     def test_entropy_from_ascii_codes_avoids_tiled_site_offsets(self, mocker):
         alignment_array = np.array(
             [

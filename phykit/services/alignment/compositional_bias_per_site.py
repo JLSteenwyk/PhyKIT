@@ -23,6 +23,7 @@ np = _LazyNumpy()
 _DNA_GAP_LOOKUP = None
 _PROTEIN_GAP_LOOKUP = None
 _FDR_VECTOR_MIN_LENGTH = 2048
+_PLOT_DIRECT_MAX_LIMIT = 100_000
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -33,6 +34,12 @@ def _column_totals(counts: np.ndarray) -> np.ndarray:
     if counts.shape[1] <= 20000:
         return counts.sum(axis=0)
     return np.sum(counts, axis=0)
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_MAX_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 def _get_gap_lookup(is_protein: bool):
@@ -395,7 +402,7 @@ class CompositionalBiasPerSite(Alignment):
         ax.axhline(sig_threshold, color=colors[2], linestyle="--", linewidth=1.5, label=f"-log10({alpha})")
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("-log10(corrected p-value)")
-        ax.set_xlim(1, int(np.max(sites)))
+        ax.set_xlim(1, int(_plot_max(sites)))
         if finite_mask.any():
             max_y = float(np.nanmax(y_vals))
             ax.set_ylim(0, max(sig_threshold * 1.1, max_y * 1.1))

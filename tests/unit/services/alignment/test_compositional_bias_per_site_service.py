@@ -196,6 +196,30 @@ assert "numpy" not in sys.modules
         np.testing.assert_array_equal(sites, row_sites)
         np.testing.assert_allclose(pvals, row_pvals, equal_nan=True)
 
+    def test_plot_max_uses_array_reduction_for_plot_sized_arrays(self, monkeypatch):
+        values = np.array([1, 3, 2], dtype=np.int32)
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("plot-sized compositional-bias maxima should use ndarray.max")
+
+        monkeypatch.setattr(cbps_module.np, "max", fail_max)
+
+        assert cbps_module._plot_max(values) == 3
+
+    def test_plot_max_preserves_large_array_np_max_path(self, monkeypatch):
+        values = np.ones(cbps_module._PLOT_DIRECT_MAX_LIMIT + 1, dtype=np.int32)
+        original_max = cbps_module.np.max
+        calls = []
+
+        def max_spy(observed, *args, **kwargs):
+            calls.append(observed.shape)
+            return original_max(observed, *args, **kwargs)
+
+        monkeypatch.setattr(cbps_module.np, "max", max_spy)
+
+        assert cbps_module._plot_max(values) == 1
+        assert calls == [(cbps_module._PLOT_DIRECT_MAX_LIMIT + 1,)]
+
     def test_power_divergence_results_from_arrays_preserves_float_results(self):
         statistics = np.array([0, 1.25, 2.5], dtype=np.float64)
         p_values = np.array([np.nan, 0.5, 0.125], dtype=np.float64)

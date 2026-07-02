@@ -16,6 +16,7 @@ np = _LazyNumpy()
 _DNA_GAP_LOOKUP = None
 _PROTEIN_GAP_LOOKUP = None
 _GAP_DELETE_TABLES = {}
+_PLOT_DIRECT_MAX_LIMIT = 100_000
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -26,6 +27,12 @@ def _column_totals(counts: np.ndarray) -> np.ndarray:
     if counts.shape[1] <= 20000:
         return counts.sum(axis=0)
     return np.sum(counts, axis=0)
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_MAX_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 def print_json(*args, **kwargs):
@@ -201,8 +208,8 @@ class EvolutionaryRatePerSite(Alignment):
         ax.scatter(sites, rates, s=8, color=colors[0], alpha=0.75, edgecolors="none")
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("Evolutionary rate")
-        ax.set_xlim(1, int(np.max(sites)))
-        ax.set_ylim(0, max(1.0, float(np.max(rates) * 1.1)))
+        ax.set_xlim(1, int(_plot_max(sites)))
+        ax.set_ylim(0, max(1.0, float(_plot_max(rates) * 1.1)))
 
         if config.show_title:
             ax.set_title(config.title or "Evolutionary Rate Per Site", fontsize=config.title_fontsize)

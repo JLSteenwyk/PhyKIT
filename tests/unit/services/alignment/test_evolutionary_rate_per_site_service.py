@@ -310,6 +310,34 @@ assert "phykit.helpers.plot_config" not in sys.modules
         np.testing.assert_array_equal(sites, row_sites)
         np.testing.assert_array_equal(rates, row_rates)
 
+    def test_plot_max_uses_array_reduction_for_plot_sized_arrays(self, monkeypatch):
+        import numpy as np
+
+        values = np.array([0.1, 0.9, 0.4])
+
+        def fail_max(*_args, **_kwargs):
+            raise AssertionError("plot-sized rate maxima should use ndarray.max")
+
+        monkeypatch.setattr(erps_module.np, "max", fail_max)
+
+        assert erps_module._plot_max(values) == pytest.approx(0.9)
+
+    def test_plot_max_preserves_large_array_np_max_path(self, monkeypatch):
+        import numpy as np
+
+        values = np.ones(erps_module._PLOT_DIRECT_MAX_LIMIT + 1, dtype=np.float64)
+        original_max = erps_module.np.max
+        calls = []
+
+        def max_spy(observed, *args, **kwargs):
+            calls.append(observed.shape)
+            return original_max(observed, *args, **kwargs)
+
+        monkeypatch.setattr(erps_module.np, "max", max_spy)
+
+        assert erps_module._plot_max(values) == pytest.approx(1.0)
+        assert calls == [(erps_module._PLOT_DIRECT_MAX_LIMIT + 1,)]
+
     def test_calculate_evolutionary_rate_per_site(self, args):
         service = EvolutionaryRatePerSite(args)
         values = service.calculate_evolutionary_rate_per_site(_alignment(), is_protein=False)

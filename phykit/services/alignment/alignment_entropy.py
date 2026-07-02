@@ -18,6 +18,7 @@ np = _LazyNumpy()
 _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
 _PROTEIN_GAP_BYTES = b"-?*X"
+_PLOT_DIRECT_MAX_LIMIT = 100_000
 
 
 def _get_gap_codes(is_protein: bool):
@@ -80,6 +81,12 @@ def _entropy_count_totals(counts):
 
 def _entropy_columns_from_probabilities(probs, log_probs):
     return -np.einsum("ij,ij->j", probs, log_probs)
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_MAX_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 def _entropy_from_counts(counts, totals):
@@ -245,8 +252,8 @@ class AlignmentEntropy(Alignment):
         ax.scatter(sites, entropies, s=8, color=colors[0], alpha=0.75, edgecolors="none")
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("Shannon entropy")
-        ax.set_xlim(1, int(np.max(sites)))
-        max_entropy = float(np.max(entropies)) if entropies.size else 0.0
+        ax.set_xlim(1, int(_plot_max(sites)))
+        max_entropy = float(_plot_max(entropies)) if entropies.size else 0.0
         ax.set_ylim(0, max(1.0, max_entropy * 1.1))
 
         if config.show_title:
