@@ -20,6 +20,53 @@ def args():
 
 
 class TestCompositionPerTaxon(object):
+    def test_composition_output_rows_index_small_outputs(self, monkeypatch):
+        class IndexedRows:
+            def __init__(self):
+                self.rows = [np.array([1.0]), np.array([0.5])]
+                self.indexes = []
+
+            def __getitem__(self, idx):
+                self.indexes.append(idx)
+                return self.rows[idx]
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_ROW_ZIP_MIN_COUNT",
+            3,
+        )
+        freqs = IndexedRows()
+
+        rows = composition_per_taxon_module._composition_output_rows(
+            ["t1", "t2"],
+            freqs,
+        )
+
+        assert [taxon for taxon, _ in rows] == ["t1", "t2"]
+        assert freqs.indexes == [0, 1]
+
+    def test_composition_output_rows_zip_large_outputs(self, monkeypatch):
+        class IterableRows:
+            def __iter__(self):
+                return iter([np.array([1.0]), np.array([0.5]), np.array([0.0])])
+
+            def __getitem__(self, _idx):
+                raise AssertionError("large composition row output should iterate")
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_ROW_ZIP_MIN_COUNT",
+            3,
+        )
+
+        rows = composition_per_taxon_module._composition_output_rows(
+            ["t1", "t2", "t3"],
+            IterableRows(),
+        )
+
+        assert [taxon for taxon, _ in rows] == ["t1", "t2", "t3"]
+        assert [values.tolist() for _, values in rows] == [[1.0], [0.5], [0.0]]
+
     def test_composition_mask_and_sop_modules_defer_heavy_imports(self):
         modules = [
             "phykit.services.alignment.composition_per_taxon",

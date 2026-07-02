@@ -17,6 +17,16 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_COMPOSITION_ROW_ZIP_MIN_COUNT = 50_000
+
+
+def _composition_output_rows(record_ids, freqs):
+    if len(record_ids) >= _COMPOSITION_ROW_ZIP_MIN_COUNT:
+        return list(zip(record_ids, freqs))
+    return [
+        (record_id, freqs[row_idx])
+        for row_idx, record_id in enumerate(record_ids)
+    ]
 
 
 class CompositionPerTaxon(Alignment):
@@ -165,10 +175,7 @@ class CompositionPerTaxon(Alignment):
         if len(symbol_values) == 1:
             freqs = np.zeros((len(sequences), 1), dtype=np.float64)
             freqs[valid_lengths > 0, 0] = 1.0
-            return symbols, [
-                (record_id, freqs[row_idx])
-                for row_idx, record_id in enumerate(record_ids)
-            ]
+            return symbols, _composition_output_rows(record_ids, freqs)
 
         if alignment_array.dtype == np.uint8:
             if len(symbol_values) <= 8 or (
@@ -204,9 +211,6 @@ class CompositionPerTaxon(Alignment):
             where=valid_lengths[:, None] > 0,
         )
 
-        output = [
-            (record_id, freqs[row_idx])
-            for row_idx, record_id in enumerate(record_ids)
-        ]
+        output = _composition_output_rows(record_ids, freqs)
 
         return symbols, output
