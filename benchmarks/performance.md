@@ -2349,6 +2349,7 @@ Results:
 | `TraitCorrelation._print_json` vectorized matrix rounding and upper-triangle pairs | 700-trait correlation and p-value matrices, print_json stubbed, identical rounded payload | 0.260765s | 0.014778s | 17.65x |
 | `TraitCorrelation._build_significant_pairs` vectorized value gather | 2500-trait correlation and p-value matrices, 390385 significant upper-triangle pairs with identical JSON rows | 0.859738s | 0.579571s | 1.48x |
 | `TraitCorrelation._build_significant_pairs` sparse row scan | 2500-trait correlation and p-value matrices, 3095 significant upper-triangle pairs with identical JSON rows | 0.024440s | 0.012631s | 1.93x |
+| `TraitCorrelation._build_significant_pairs` cached NumPy attribute proxy | 2500-trait correlation and p-value matrices, 834 sparse significant upper-triangle pairs, side-by-side previous uncached lazy NumPy proxy | 0.060228s | 0.042773s | 1.41x |
 | `trait_correlation` module import without `scipy.stats` | cold process import for trait-correlation command module | 0.621309s | 0.338620s | 1.8x |
 | `trait_correlation` module import without eager SciPy linalg | cold process import for trait-correlation command module | 0.310193s | 0.162593s | 1.9x |
 | `trait_correlation` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.162593s | 0.031299s | 5.19x |
@@ -7763,7 +7764,10 @@ Profiling summary:
   preserving rounded payload values and upper-triangle pair order. Sparse
   significant-pair output now scans upper-triangle rows directly and keeps the
   vectorized gather for dense outputs, avoiding full triangular-mask allocation
-  when few pairs pass `alpha`. Another startup pass removes the annotation-only
+  when few pairs pass `alpha`. Repeated significant-pair builds now cache
+  resolved NumPy attributes on the lazy proxy, preserving deferred import while
+  avoiding repeated import and attribute dispatch in sparse and dense JSON
+  output paths. Another startup pass removes the annotation-only
   `typing` import by using postponed built-in collection annotations. A
   repeated-correlation pass now solves `[1, Y]` as one
   combined Cholesky right-hand side and derives the centered weighted trait

@@ -69,6 +69,16 @@ assert "scipy.linalg" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = trait_correlation_module._LazyNumpy()
+
+    count_nonzero_attr = lazy_np.count_nonzero
+
+    assert lazy_np.__dict__["count_nonzero"] is count_nonzero_attr
+    assert lazy_np.count_nonzero is count_nonzero_attr
+    assert lazy_np._module is not None
+
+
 def test_t_two_tailed_p_values_match_expected_values():
     p_values = trait_correlation_module._t_two_tailed_p_values(
         np.array([0.0, 2.2281388519649385, -2.2281388519649385]),
