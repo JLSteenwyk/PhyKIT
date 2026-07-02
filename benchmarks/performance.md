@@ -307,6 +307,7 @@ Results:
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` identical-sequence shortcut | 2000 taxa x 12000 DNA sites, identical no-gap/gappy sequences; 1200 taxa x 12000 identical protein sites, side-by-side previous alignment-wide byte path | 0.032510s / 0.063387s / 0.008216s | 0.000157s / 0.000284s / 0.000088s | 207.13x / 223.03x / 93.32x |
 | `AlignmentLengthNoGaps` identical Unicode fallback counts | 100k-site mixed-case Unicode identical sequence helper, DNA / protein, side-by-side previous `upper()` plus uppercase gap counts | 0.000486s / 0.000401s | 0.000379s / 0.000251s | 1.28x / 1.60x |
 | `AlignmentLengthNoGaps` identical-row no-slice scan | see shared `PairwiseIdentity` rows above for common helper benchmarks | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
+| `AlignmentLengthNoGaps.get_sites_no_gaps_count` cached lazy NumPy attributes | gapped DNA alignments sized 3000 x 5000 / 5000 x 3000, side-by-side previous uncached lazy proxy, identical no-gap site count | 0.027813s / 0.030966s | 0.022778s / 0.025327s | 1.22x / 1.22x |
 | `alignment_length_no_gaps` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.116950s | 0.024571s | 4.76x |
 | `alignment_length_no_gaps` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007086s | 0.006015s | 1.18x |
 | `alignment_length_no_gaps` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.004736s | 0.002167s | 2.18x |
@@ -3152,7 +3153,9 @@ Profiling summary:
   uppercase and lowercase gap
   codes directly instead of allocating an uppercased copy before counting.
   A subsequent startup pass builds those lookup tables lazily and defers the
-  annotation-only Bio.Align import. The shared `alignment.base` RCV lookup
+  annotation-only Bio.Align import. A follow-up pass caches resolved lazy NumPy
+  attributes during repeated gapped matrix calculations while preserving import
+  deferral. The shared `alignment.base` RCV lookup
   tables now use the same lazy NumPy construction, preserving the module-level
   `np.isin` patch point used by fallback-path tests. A follow-up startup pass
   keeps JSON output behind a module-level forwarding wrapper, preserving the

@@ -32,6 +32,15 @@ assert "Bio.AlignIO" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_lazy_numpy_caches_resolved_attributes(self):
+        lazy_np = alg_module._LazyNumpy()
+
+        any_attr = lazy_np.any
+
+        assert lazy_np.__dict__["any"] is any_attr
+        assert lazy_np.any is any_attr
+        assert lazy_np._module is not None
+
     def test_all_sequences_identical_does_not_slice(self):
         class NoSliceList(list):
             def __getitem__(self, key):
