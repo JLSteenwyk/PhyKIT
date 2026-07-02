@@ -194,7 +194,9 @@ def _matrix_exp_eigendecomp_context(Q: np.ndarray):
         inverse_eigenvectors = np.linalg.inv(eigenvectors)
         if np.iscomplexobj(inverse_eigenvectors):
             return None
-        if np.linalg.cond(eigenvectors) > 1e8:
+        if _eigenvector_condition_estimate(
+            eigenvectors, inverse_eigenvectors
+        ) > 1e8:
             return None
     except (np.linalg.LinAlgError, ValueError, FloatingPointError):
         return None
@@ -206,6 +208,13 @@ def _matrix_exp_eigendecomp_context(Q: np.ndarray):
     ):
         return None
     return "generic", eigenvalues, eigenvectors, inverse_eigenvectors, exp
+
+
+def _eigenvector_condition_estimate(eigenvectors, inverse_eigenvectors) -> float:
+    return float(
+        np.max(np.sum(np.abs(eigenvectors), axis=1))
+        * np.max(np.sum(np.abs(inverse_eigenvectors), axis=1))
+    )
 
 
 def _is_exact_symmetric_matrix(Q: np.ndarray) -> bool:

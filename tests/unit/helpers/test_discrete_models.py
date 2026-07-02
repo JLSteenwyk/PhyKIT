@@ -763,6 +763,11 @@ class TestFelsensteinPruning:
 
         monkeypatch.setattr(discrete_models.np.linalg, "inv", fail_inverse)
         monkeypatch.setattr(discrete_models.np.linalg, "cond", fail_inverse)
+        monkeypatch.setattr(
+            discrete_models,
+            "_eigenvector_condition_estimate",
+            fail_inverse,
+        )
 
         context = discrete_models._matrix_exp_eigendecomp_context(Q)
 
@@ -793,6 +798,21 @@ class TestFelsensteinPruning:
         transition = discrete_models._matrix_exp_from_eigendecomp(context, 0.75)
         assert transition.dtype == np.float64
         np.testing.assert_allclose(transition, matrix_exp(Q, 0.75))
+
+    def test_ill_conditioned_eigendecomposition_context_falls_back(self):
+        import phykit.helpers.discrete_models as discrete_models
+
+        eigenvectors = np.array(
+            [
+                [1.0, 1.0, 0.0],
+                [0.0, 1e-8, 1.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+        eigenvalues = np.diag([0.0, -0.2, -0.5])
+        Q = eigenvectors @ eigenvalues @ np.linalg.inv(eigenvectors)
+
+        assert discrete_models._matrix_exp_eigendecomp_context(Q) is None
 
     def test_complex_eigendecomposition_context_falls_back(self):
         import phykit.helpers.discrete_models as discrete_models
