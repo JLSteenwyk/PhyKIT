@@ -1291,6 +1291,40 @@ class TestPhyloGwas:
             frozenset({"A", "B", "C", "D", "E", "F"}),
         }
 
+    def test_build_phylo_pattern_index_handles_unary_child_nodes(self, monkeypatch):
+        from Bio.Phylo.BaseTree import Clade, Tree, TreeMixin
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        clades=[
+                            Clade(name="A"),
+                        ],
+                    ),
+                    Clade(
+                        clades=[
+                            Clade(name="B"),
+                            Clade(name="C"),
+                        ],
+                    ),
+                ],
+            )
+        )
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("generic postorder traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        assert PhyloGwas._build_phylo_pattern_index(tree) == {
+            frozenset({"A"}),
+            frozenset({"B"}),
+            frozenset({"C"}),
+            frozenset({"B", "C"}),
+            frozenset({"A", "B", "C"}),
+        }
+
     def test_prune_tree_to_taxa_uses_direct_terminal_pass(self, monkeypatch):
         from Bio import Phylo
         from Bio.Phylo.BaseTree import TreeMixin

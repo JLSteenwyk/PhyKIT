@@ -649,6 +649,7 @@ Results:
 | `PhyloGwas._build_phylo_pattern_index` direct postorder | balanced 32768-tip tree, descendant taxon-set index for monophyly classification | 0.276455s | 0.187328s | 1.48x |
 | `PhyloGwas._build_phylo_pattern_index` reverse-preorder helper | balanced 32768-tip tree, descendant taxon-set index for monophyly classification | 0.068807s | 0.055296s | 1.24x |
 | `PhyloGwas._build_phylo_pattern_index` binary child union | balanced 65536-tip tree, descendant taxon-set index for monophyly classification, side-by-side previous generic child-set union | 0.189455s | 0.179548s | 1.06x |
+| `PhyloGwas._build_phylo_pattern_index` binary child preorder push | balanced 1024 / 8192 / 32768-tip trees, descendant taxon-set index for monophyly classification, side-by-side previous `extend(children)` preorder setup | 0.000948s / 0.025561s / 0.154470s | 0.000875s / 0.014170s / 0.071026s | 1.08x / 1.80x / 2.17x |
 | `PhyloGwas._benjamini_hochberg` in-place adjustment allocation | 1M synthetic p-values | 0.108093s | 0.106394s | 1.02x |
 | `PhyloGwas._create_manhattan_plot` partition span rendering | 4096 partitions / 2048 alternating gray spans, real Matplotlib Agg render | 0.570093s | 0.089715s | 6.35x |
 | `PhyloGwas._create_manhattan_plot` point series preparation | 1M GWAS result rows with mixed FDR-significant phylogenetic patterns, identical positions, colors, transformed p-values, and FDR threshold | 0.155766s | 0.135860s | 1.15x |
@@ -3939,9 +3940,12 @@ Profiling summary:
   by collecting preorder once and iterating it in reverse, preserving the
   monophyletic-set index while avoiding visited-flag stack tuples. Balanced
   binary nodes now combine their two child tipsets directly, while unary nodes
-  and multifurcations retain their existing paths. The run path now also builds
-  each significant site's minor-allele taxon list in one direct shared-taxon
-  scan, avoiding the previous temporary per-site allele list before
+  and multifurcations retain their existing paths. The preorder setup for that
+  reverse traversal now pushes one- and two-child nodes explicitly while keeping
+  multifurcations in their original order, reducing stack helper overhead on
+  large balanced trees. The run path now also builds each significant site's
+  minor-allele taxon list in one direct shared-taxon scan, avoiding the
+  previous temporary per-site allele list before
   phylogenetic-pattern classification.
 - `PhyloGwas._create_manhattan_plot` partition shading baseline time added one
   `axvspan` artist per shaded partition. The optimized path batches alternating

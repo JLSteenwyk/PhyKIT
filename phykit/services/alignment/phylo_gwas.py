@@ -731,14 +731,22 @@ class PhyloGwas(Alignment):
         stack = [root]
         append = preorder.append
         pop = stack.pop
-        extend = stack.extend
+        append_stack = stack.append
         try:
             while stack:
                 clade = pop()
                 append(clade)
                 children = clade.clades
                 if children:
-                    extend(children)
+                    child_count = len(children)
+                    if child_count == 2:
+                        append_stack(children[0])
+                        append_stack(children[1])
+                    elif child_count == 1:
+                        append_stack(children[0])
+                    else:
+                        for child in children:
+                            append_stack(child)
         except AttributeError:
             return None
 
