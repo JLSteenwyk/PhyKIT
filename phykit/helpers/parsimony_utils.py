@@ -662,7 +662,7 @@ def _retention_index_ascii_single_char(
 def _ascii_symbol_counts_by_character(matrix, symbols):
     import numpy as np
 
-    if symbols.size >= 16:
+    if symbols.size >= 15:
         n_chars = matrix.shape[0]
         max_code = int(matrix.max()) + 1
         encoded = matrix.astype(np.int64)

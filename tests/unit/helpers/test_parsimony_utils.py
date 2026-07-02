@@ -909,6 +909,57 @@ class TestRetentionIndex:
         assert calls == 1
         np.testing.assert_array_equal(observed, expected)
 
+    def test_ascii_symbol_counts_by_character_fifteen_states_uses_bincount(
+        self,
+        monkeypatch,
+    ):
+        alphabet = np.arange(33, 48, dtype=np.uint8)
+        matrix = np.tile(alphabet, 80).reshape(75, -1)
+        symbols = np.unique(matrix)
+        original_bincount = np.bincount
+        calls = 0
+
+        def count_bincount(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(np, "bincount", count_bincount)
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        assert calls == 1
+        np.testing.assert_array_equal(observed, expected)
+
+    def test_ascii_symbol_counts_by_character_twelve_states_skips_bincount(
+        self,
+        monkeypatch,
+    ):
+        alphabet = np.arange(33, 45, dtype=np.uint8)
+        matrix = np.tile(alphabet, 100).reshape(80, -1)
+        symbols = np.unique(matrix)
+
+        def fail_bincount(*_args, **_kwargs):
+            raise AssertionError("12-state ASCII counts should use equality scans")
+
+        monkeypatch.setattr(np, "bincount", fail_bincount)
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        np.testing.assert_array_equal(observed, expected)
+
     def test_basic(self):
         """RI with known values."""
         # 4 taxa: A=0, B=0, C=1, D=1
