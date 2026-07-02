@@ -1982,6 +1982,7 @@ Results:
 | `phylogenetic_glm` module import without `scipy.stats` | cold process import for binomial/Poisson GLM command module | 0.625725s | 0.467757s | 1.34x |
 | `phylogenetic_glm` module import without eager SciPy optimize | cold process import for binomial/Poisson GLM command module | 0.459322s | 0.156656s | 2.9x |
 | `phylogenetic_glm` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085569s | 0.026700s | 3.20x |
+| `PhylogeneticGLM.run` cached lazy NumPy attributes | median binomial logistic MPLE run with output mocked, side-by-side previous uncached lazy NumPy proxy | 0.049017s | 0.026684s | 1.84x |
 | `phylogenetic_glm` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006674s | 0.005485s | 1.22x |
 | `phylogenetic_glm` module import without trait parsing/typing startup | median cold subprocess import after lazy trait parser wrapper and built-in postponed annotations | 0.006709s | 0.005068s | 1.32x |
 | `PhylogeneticGLM.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, two model fits, and output mocked | 0.233055s | 0.000038s | 6133.03x |
