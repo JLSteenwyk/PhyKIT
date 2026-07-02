@@ -1641,6 +1641,7 @@ Results:
 | `vcv_utils._nearest_psd` cached SciPy eigvalsh wrapper | 2k repeated 8 x 8 already-PSD matrices, SciPy already warm | 0.027812s | 0.026592s | 1.05x |
 | `vcv_utils._nearest_psd` correction reconstruction | 900 x 900 eigenvector matrix with clipped eigenvalues | 0.029000s | 0.015881s | 1.8x |
 | `vcv_utils._nearest_psd_from_eigendecomposition` eigenvalue minimum | 8 / 64 / 1024 / 100k / 1M eigenvalues, side-by-side previous `np.min` wrapper | 2.048513s / 0.970033s / 0.288490s / 0.105668s / 0.029085s | 1.375394s / 0.674878s / 0.170990s / 0.095815s / 0.025196s | 1.49x / 1.44x / 1.69x / 1.10x / 1.15x |
+| `vcv_utils` cached lazy NumPy attributes | 1M warmed proxy access loops over `zeros` / `asarray` / `intp`, side-by-side previous uncached lazy proxy | 5.514033s | 0.808722s | 6.82x |
 | `vcv_utils` module import without eager SciPy linalg | cold process import for shared VCV helpers | 0.323420s | 0.183398s | 1.8x |
 | `vcv_utils` module import without eager Bio.Phylo | cold subprocess import with lazy `Phylo.read` proxy | 0.174747s | 0.112800s | 1.55x |
 | `vcv_utils` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.112800s | 0.024335s | 4.64x |
@@ -6320,6 +6321,9 @@ Profiling summary:
   explicitly and indexing multifurcations backward. The all-shared prune
   preflight uses the same unordered direct scan before returning the original
   gene tree; pruning paths still keep their existing copied-tree collection order.
+  The lazy NumPy proxy now caches resolved attributes after the first use,
+  preserving import deferral while avoiding repeated proxy dispatch in VCV
+  builders and PSD checks.
 - A later `Tree.calculate_pairwise_tip_distances_fast` pass replaces
   Bio.Phylo `depths()`/`get_terminals()` setup and per-pair ancestor-set scans
   with one direct depth/parent traversal plus root-path prefix comparison for

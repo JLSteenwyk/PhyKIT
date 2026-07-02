@@ -75,6 +75,16 @@ assert "Bio.Align" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = vcv_utils._LazyNumpy()
+
+    zeros_attr = lazy_np.zeros
+
+    assert lazy_np.__dict__["zeros"] is zeros_attr
+    assert lazy_np.zeros is zeros_attr
+    assert lazy_np._module is not None
+
+
 def _read_tree(path):
     return Phylo.read(path, "newick")
 
