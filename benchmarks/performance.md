@@ -166,6 +166,7 @@ Results:
 | `VariableSites.calculate_variable_sites` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.323234s / 0.005263s / 0.141766s | 0.034174s / 0.000003s / 0.038053s | 9.46x / 1884.87x / 3.73x |
 | `VariableSites.calculate_variable_sites` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous sequence materialization before zero return | 0.004295166s | 0.000001084s | 3962.11x |
 | `VariableSites.calculate_variable_sites` Unicode final variable-column count | 1M-site fallback valid-symbol count vector, side-by-side previous boolean `np.sum` final count | 0.000235s | 0.000063s | 3.75x |
+| `VariableSites.calculate_variable_sites` cached NumPy attribute proxy | 1000 taxa x 8000 sites, alphabet `ACGTN-?X*`, side-by-side previous uncached lazy NumPy proxy | 0.136453s | 0.102651s | 1.33x |
 | `variable_sites` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.119398s | 0.023496s | 5.08x |
 | `variable_sites` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006383s | 0.005138s | 1.24x |
 | `variable_sites` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.003050s | 0.000955s | 3.19x |
