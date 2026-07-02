@@ -759,18 +759,28 @@ class PhylogeneticOrdination(Tree):
         log_likelihood,
     ) -> dict:
         dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
-        result = {
-            "method": self.method,
-            "correction": self.correction,
-            "n_components": self.n_components,
-            "parameters": params,
-            "embedding": {
+        if self.n_components == 2:
+            embedding_rows = {
+                taxon: {
+                    "Dim1": round(float(row[0]), 6),
+                    "Dim2": round(float(row[1]), 6),
+                }
+                for taxon, row in zip(taxon_names, embedding)
+            }
+        else:
+            embedding_rows = {
                 taxon: {
                     label: round(float(value), 6)
                     for label, value in zip(dim_labels, row)
                 }
                 for taxon, row in zip(taxon_names, embedding.tolist())
-            },
+            }
+        result = {
+            "method": self.method,
+            "correction": self.correction,
+            "n_components": self.n_components,
+            "parameters": params,
+            "embedding": embedding_rows,
         }
         if lambda_val is not None:
             result["lambda"] = float(lambda_val)
@@ -806,9 +816,20 @@ class PhylogeneticOrdination(Tree):
         append("")
         append("Embedding:")
         append("\t" + "\t".join(dim_labels))
-        for taxon, values in zip(taxon_names, embedding.tolist()):
-            row = "\t".join(fmt(value) for value in values)
-            append(f"{taxon}\t{row}")
+        if self.n_components == 2:
+            try:
+                dim1_values = embedding[:, 0].tolist()
+                dim2_values = embedding[:, 1].tolist()
+            except (AttributeError, IndexError, TypeError):
+                for taxon, values in zip(taxon_names, embedding):
+                    append(f"{taxon}\t{values[0]:.6f}\t{values[1]:.6f}")
+            else:
+                for taxon, dim1, dim2 in zip(taxon_names, dim1_values, dim2_values):
+                    append(f"{taxon}\t{dim1:.6f}\t{dim2:.6f}")
+        else:
+            for taxon, values in zip(taxon_names, embedding.tolist()):
+                row = "\t".join(fmt(value) for value in values)
+                append(f"{taxon}\t{row}")
 
         if lambda_val is not None:
             append("")

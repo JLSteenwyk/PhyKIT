@@ -1462,6 +1462,36 @@ class TestRun:
             "Log-likelihood: -12.250000"
         )
 
+    def test_dimreduce_text_output_two_dimensions_skips_generic_list_conversion(
+        self, tsne_args, mocker
+    ):
+        class TwoDimEmbedding:
+            def __iter__(self):
+                return iter([(1.2345678, 2.0)])
+
+            def tolist(self):
+                raise AssertionError("2-D output should not call tolist")
+
+        svc = PhylogeneticOrdination(tsne_args)
+        printed = mocker.patch("builtins.print")
+
+        svc._print_dimreduce_text_output(
+            embedding=TwoDimEmbedding(),
+            taxon_names=["taxon_a"],
+            params={},
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        printed.assert_called_once_with(
+            "Method: tsne\n"
+            "Correction: BM\n"
+            "\n"
+            "Embedding:\n"
+            "\tDim1\tDim2\n"
+            "taxon_a\t1.234568\t2.000000"
+        )
+
     def test_dimreduce_text_output_formats_converted_rows(self, tsne_args, mocker):
         svc = PhylogeneticOrdination(tsne_args)
         svc.n_components = 3
@@ -1510,6 +1540,39 @@ class TestRun:
             },
             "lambda": 0.5,
             "log_likelihood": -12.25,
+        }
+
+    def test_format_dimreduce_result_two_dimensions_skips_generic_list_conversion(
+        self, tsne_args
+    ):
+        class TwoDimEmbedding:
+            def __iter__(self):
+                return iter([(1.2345678, 2.0)])
+
+            def tolist(self):
+                raise AssertionError("2-D output should not call tolist")
+
+        svc = PhylogeneticOrdination(tsne_args)
+
+        result = svc._format_dimreduce_result(
+            embedding=TwoDimEmbedding(),
+            taxon_names=["taxon_a"],
+            params={"perplexity": 3.5},
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        assert result == {
+            "method": "tsne",
+            "correction": "BM",
+            "n_components": 2,
+            "parameters": {"perplexity": 3.5},
+            "embedding": {
+                "taxon_a": {
+                    "Dim1": 1.234568,
+                    "Dim2": 2.0,
+                },
+            },
         }
 
     def test_tsne_json_output(self, capsys):
