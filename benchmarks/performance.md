@@ -748,6 +748,7 @@ Results:
 | `dstatistic` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.219520s | 0.114720s | 1.91x |
 | `dstatistic` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.078477s | 0.025417s | 3.09x |
 | `dstatistic` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.035487s | 0.031252s | 1.14x |
+| `Dstatistic._count_site_patterns` cached NumPy attribute proxy | four 2M-site sequences, alphabet `ACGTN-`, side-by-side previous uncached lazy NumPy proxy | 0.034843s | 0.026356s | 1.32x |
 | `dfoil` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.207642s | 0.119953s | 1.73x |
 | `dfoil` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.074428s | 0.025339s | 2.94x |
 | `dfoil` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.003288s | 0.001646s | 2.00x |
