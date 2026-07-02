@@ -136,8 +136,9 @@ class PhyloHeatmap(Tree):
         )
 
         # Prune tree to shared taxa
-        shared_taxa = set(trait_data.keys())
-        tips_to_prune = [t for t in tree_tips if t not in shared_taxa]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            tree_tips, trait_data
+        )
         if tips_to_prune:
             if not copied_tree:
                 tree = self._fast_copy(tree)

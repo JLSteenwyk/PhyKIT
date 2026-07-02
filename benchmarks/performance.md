@@ -1724,6 +1724,7 @@ Results:
 | `PhyloHeatmap.run` initial tip-name setup | balanced 32768-tip tree, all tips shared with data | 0.0667s | 0.0069s | 9.7x |
 | `PhyloHeatmap.run` tip-order setup | balanced 32768-tip tree after pruning/ladderize step | 0.0661s | 0.0060s | 10.9x |
 | `PhyloHeatmap.run` all-shared read-only setup | balanced 32768-tip cached tree, two numeric traits for every tip, plotting/output mocked | 0.301831s | 0.063210s | 4.78x |
+| `PhyloHeatmap.run` ordered trait-matrix prune setup | 300k ordered tree tips with all trait rows / 75k tree-only tail tips, side-by-side previous set construction and membership scan | 0.060437s / 0.079515s | 0.010515s / 0.013215s | 5.75x / 6.02x |
 | `PhyloHeatmap._parse_trait_matrix` streaming parser | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.729967s | 0.701524s | 1.04x |
 | `PhyloHeatmap._parse_trait_matrix` all-shared parser fast path | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.359596s | 0.247998s | 1.45x |
 | `PhyloHeatmap._parse_trait_matrix` numeric hot-loop cleanup | 200k taxa x 8 numeric traits, comments/blanks, all taxa shared, side-by-side previous parser comparison | 0.285750s | 0.256122s | 1.12x |
@@ -6314,7 +6315,10 @@ Profiling summary:
   validated and at least three taxa are shared, avoiding shared/warning set
   construction while preserving too-few-shared-taxa errors. The branch-length
   preflight now pushes child lists directly because it only tests whether any
-  branch length is missing.
+  branch length is missing. Ordered trait-matrix rows now reuse the shared
+  large-input prune helper, skipping both shared-set construction and the
+  membership scan when the data rows match tree-tip order or leave only
+  tree-only tail tips to prune.
 - `PhyloHeatmap._plot_phylo_heatmap_circular` baseline setup materialized
   terminal clades to map names to node ids and used extra preorder scans for
   clade-color overlays. The optimized path reuses a direct preorder list for

@@ -272,15 +272,19 @@ class TestPhyloHeatmapPlot:
     def test_run_missing_traits_copies_before_pruning(
         self, monkeypatch, args, capsys
     ):
+        class OrderedTraitData(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         tree = Phylo.read(
             StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
             "newick",
         )
-        trait_data = {
+        trait_data = OrderedTraitData({
             "A": [1.0],
             "B": [2.0],
             "C": [3.0],
-        }
+        })
         ph = PhyloHeatmap(args)
         original_fast_copy = ph._fast_copy
         copied_trees = []
@@ -292,6 +296,7 @@ class TestPhyloHeatmapPlot:
             return copied_tree
 
         monkeypatch.setattr(ph, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0)
         monkeypatch.setattr(ph, "_fast_copy", copy_spy)
         monkeypatch.setattr(
             ph,
