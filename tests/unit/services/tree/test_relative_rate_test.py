@@ -200,7 +200,7 @@ class TestRun:
     ):
         list_path = tmp_path / "alignments.txt"
         list_path.write_text(
-            "# ignored\n\n  first.fa  \n# also ignored\n  nested/second.fa\n"
+            "   # ignored\n\n  first.fa  \n\t# also ignored\n  nested/second.fa\n"
         )
         args = _make_args(alignment=None, alignment_list=str(list_path))
         svc = RelativeRateTest(args)

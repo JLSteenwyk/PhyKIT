@@ -487,7 +487,7 @@ class RelativeRateTest(Tree):
                     stripped
                     for line in handle
                     if (stripped := line.strip())
-                    and not stripped.startswith("#")
+                    and stripped[0] != "#"
                 ]
             if not aln_paths:
                 raise PhykitUserError(["No alignment paths found in list file."])

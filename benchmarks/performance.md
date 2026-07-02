@@ -1233,6 +1233,7 @@ Results:
 | `RelativeRateTest._output_batch` batched text output | 100k pair summary rows, captured stdout and identical text | 0.121325s | 0.109700s | 1.11x |
 | `RelativeRateTest._output_batch` gene-result summary | 100k taxon-pair result groups x 8 gene results, identical reject counts and median chi-square values | 0.116062s | 0.107860s | 1.08x |
 | `RelativeRateTest.run` batch list cleanup | 500k alignment-list rows with comments/blanks, cleanup before per-alignment analysis | 0.088629s | 0.067571s | 1.31x |
+| `RelativeRateTest.run` stripped batch list cleanup | 800k alignment-list rows with whitespace-prefixed comments/blanks, cleanup before per-alignment analysis | 0.338586s | 0.212526s | 1.59x |
 | `RelativeRateTest.run` batch list path resolver | 100k relative alignment-list rows, alignment analysis mocked | 0.461438s | 0.029321s | 15.74x |
 | `RelativeRateTest._plot_heatmap` matrix/significance setup | 80 taxa, 3160 pairwise FDR results | 0.9333s | 0.0015s | 605.8x |
 | `RelativeRateTest._plot_heatmap` significance marker rendering | 4096 significant heatmap cells, real Matplotlib Agg star render | 0.650818s | 0.022971s | 28.33x |
