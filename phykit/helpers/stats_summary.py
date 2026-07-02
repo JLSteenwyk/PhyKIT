@@ -190,7 +190,12 @@ def _calculate_summary_statistics(values):
         return _no_values_result()
 
     first_value = arr.flat[0]
-    if first_value == arr.flat[-1] and (arr == first_value).all():
+    minimum = None
+    maximum = None
+    if first_value == arr.flat[-1]:
+        minimum = arr.min()
+        maximum = arr.max()
+    if minimum is not None and minimum == maximum:
         scalar = _python_scalar(first_value)
         if np.issubdtype(arr.dtype, np.integer):
             mean = _integer_if_exact(scalar)
@@ -213,8 +218,10 @@ def _calculate_summary_statistics(values):
 
     twenty_fifth, median, seventy_fifth = np.percentile(arr, [25, 50, 75])
     mean = arr.mean()
-    minimum = arr.min()
-    maximum = arr.max()
+    if minimum is None:
+        minimum = arr.min()
+    if maximum is None:
+        maximum = arr.max()
     variance = arr.var(ddof=1)
     standard_deviation = np.sqrt(variance)
     median = _python_scalar(median)

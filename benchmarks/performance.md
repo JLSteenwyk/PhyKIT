@@ -20,6 +20,7 @@ Results:
 | `calculate_summary_statistics_from_arr` combined quantiles | 1M floating-point values, optimized helper baseline | 0.0327s | 0.0187s | 1.75x |
 | `calculate_summary_statistics_from_arr` variance/std reuse | 1M floating-point values, optimized helper baseline | 0.005185s | 0.004021s | 1.29x |
 | `calculate_summary_statistics_from_arr` constant-array shortcut | 1M identical floating-point values, side-by-side previous percentile/variance path | 0.049040s | 0.000533s | 92.01x |
+| `calculate_summary_statistics_from_arr` constant-array min/max detection | 20 repeated 1M-identical-float summaries, side-by-side previous full equality-mask constant check | 0.011267s | 0.004215s | 2.67x |
 | `calculate_summary_statistics_from_arr` ndarray mean reduction | 10 / 100 / 1000 / 100k / 1M floating-point values, side-by-side previous `np.mean` wrapper | 0.000008843s / 0.000008838s / 0.000007437s / 0.000078838s / 0.000916197s | 0.000006742s / 0.000005305s / 0.000006767s / 0.000061452s / 0.000516858s | 1.31x / 1.67x / 1.10x / 1.28x / 1.77x |
 | `calculate_summary_statistics_from_arr` ndarray extrema/variance reductions | 5 / 50 / 1000 / 100k floating-point values, side-by-side previous `np.min`/`np.max`/`np.var` wrappers | 2.558751s / 1.764250s / 0.233506s / 0.628135s | 1.982603s / 0.715148s / 0.220886s / 0.295009s | 1.29x / 2.47x / 1.06x / 2.13x |
 | `calculate_summary_statistics_from_arr` small sequence scalar path | 5 / 10 / 20 / 50 / 100 floating-point list values, side-by-side previous list-to-NumPy summary path | 0.000035458s / 0.000036250s / 0.000036583s / 0.000037083s / 0.000038500s | 0.000001708s / 0.000002083s / 0.000002708s / 0.000004750s / 0.000008167s | 20.76x / 17.40x / 13.51x / 7.81x / 4.71x |
@@ -8192,9 +8193,12 @@ Profiling summary:
   avoiding a second full-array reduction while preserving the reported values.
   Constant arrays now return after a guarded equality check, preserving identical
   summary values while skipping percentile, variance, and standard-deviation
-  reductions for common all-equal branch-length/support summaries. Nonconstant
-  summaries now compute the mean through the ndarray method, avoiding generic
-  `np.mean` dispatch while preserving exact integer-mean formatting. The same
+  reductions for common all-equal branch-length/support summaries. A later pass
+  detects those constant arrays with min/max reductions after the endpoint guard
+  instead of allocating a full equality mask, while reusing the extrema if the
+  array is not actually constant. Nonconstant summaries now compute the mean
+  through the ndarray method, avoiding generic `np.mean` dispatch while
+  preserving exact integer-mean formatting. The same
   direct ndarray reduction path now covers minimum, maximum, and sample
   variance, avoiding lazy proxy dispatch for the remaining non-quantile summary
   reductions. Small list/tuple inputs now use a scalar Python summary path for

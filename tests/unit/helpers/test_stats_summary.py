@@ -160,6 +160,21 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(stats['standard_deviation'], 0.0)
         self.assertEqual(stats['variance'], 0.0)
 
+    def test_identical_array_shortcut_avoids_full_equality_mask(self):
+        class NoArrayEquality(np.ndarray):
+            def __eq__(self, other):
+                raise AssertionError(
+                    "constant-array shortcut should not build equality masks"
+                )
+
+        data = np.ones(256, dtype=float).view(NoArrayEquality)
+
+        stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 1.0)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
     def test_nonconstant_mean_uses_array_reduction(self):
         data = np.array([1.0, 2.0, 4.0, 8.0])
         with patch(
