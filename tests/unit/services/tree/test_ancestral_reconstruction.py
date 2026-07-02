@@ -237,9 +237,9 @@ class TestTraitParsing:
         trait_file.write_text(
             "\n".join(
                 [
-                    "# ignored before header",
+                    "   # ignored before header",
                     "taxon\tbody_mass\tlength",
-                    "# ignored between rows",
+                    "\t# ignored between rows",
                     "raccoon\t1.04\t10",
                     "bear\t2.39\t20",
                     "weasel\t-0.30\t30",
@@ -1899,7 +1899,7 @@ class TestDiscreteTraitParsing:
             "# ignored before header\n"
             "\n"
             "taxon\tdiet\tactivity\n"
-            "# ignored before data\n"
+            "\t# ignored before data\n"
             "\n"
             "raccoon\tomnivore\tnocturnal\n"
             "bear\tomnivore\tdiurnal\n"

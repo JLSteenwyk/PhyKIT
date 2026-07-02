@@ -1820,7 +1820,7 @@ class AncestralReconstruction(Tree):
                 header_parts = None
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     header_parts = stripped.split("\t")
                     break
@@ -1857,7 +1857,7 @@ class AncestralReconstruction(Tree):
                 data_line_idx = 2
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
                     parts = stripped.split("\t")
                     if len(parts) != n_cols:
