@@ -2167,6 +2167,7 @@ Results:
 | `phylo_path` cached lazy SciPy special helpers | 200k chi-square and 200k Student-t p-value helper calls, SciPy already warm | 0.419375s | 0.344857s | 1.22x |
 | `phylo_path` even-df chi-square survival helper | 200k Fisher's C chi-square survival probabilities at df=6 | 0.149460s | 0.054022s | 2.77x |
 | `PhyloPath` Fisher's C scalar p-value logs | 16 p-values in one basis set, side-by-side previous scalar `np.log` generator | 0.000004624s | 0.000001691s | 2.73x |
+| `PhyloPath` Fisher's C direct log accumulation | 4 / 16 / 128 p-values, randomized old/new measurement order, side-by-side previous `sum(math.log(...))` generator | 0.137236s / 0.352848s / 0.444243s | 0.066495s / 0.245612s / 0.360165s | 2.06x / 1.44x / 1.23x |
 | `PhyloPath` model-weight relative likelihoods | 1000 model deltas, side-by-side previous scalar `np.exp` list loop | 0.000241713s | 0.000063842s | 3.79x |
 | `PhyloPath._print_text` batched report output | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text | 0.299066s | 0.269681s | 1.11x |
 | `PhyloPath._print_text` row-template formatting | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text, side-by-side previous f-string row formatter comparison | 0.286284s | 0.260257s | 1.10x |
@@ -7263,9 +7264,11 @@ Profiling summary:
   matching Fisher's C model-comparison calls (`df = 2k`) while retaining the
   cached SciPy-special fallback for non-even helper calls. Fisher's C now uses
   scalar `math.log` for each already-clamped p-value, avoiding scalar NumPy
-  dispatch in the model-comparison loop. Model relative likelihoods now likewise
-  use scalar `math.exp` for each delta value, avoiding scalar NumPy dispatch in
-  the model-weight loop. DAG node circles are
+  dispatch in the model-comparison loop. A later Fisher's C pass accumulates
+  those logs in a direct loop, avoiding generator-frame overhead in the small
+  basis-set path while preserving summation order. Model relative likelihoods
+  now likewise use scalar `math.exp` for each delta value, avoiding scalar NumPy
+  dispatch in the model-weight loop. DAG node circles are
   now batched into one `PatchCollection`, preserving data-coordinate circle
   geometry and labels while avoiding one Matplotlib patch artist per variable
   node. Text output now batches ranked model rows and path coefficient rows into

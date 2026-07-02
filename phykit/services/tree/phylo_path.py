@@ -87,7 +87,10 @@ def _chi2_sf(value: float, df: int) -> float:
 
 
 def _fishers_c_from_p_values(p_values: list[float]) -> float:
-    return -2.0 * sum(math.log(p_value) for p_value in p_values)
+    log_total = 0.0
+    for p_value in p_values:
+        log_total += math.log(p_value)
+    return -2.0 * log_total
 
 
 def _relative_likelihood_from_delta(delta: float) -> float:
