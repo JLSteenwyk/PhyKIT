@@ -1,5 +1,8 @@
+_JSON_SCALAR_TYPES = (str, int, float, bool)
+
+
 def to_builtin_json_types(value):
-    if value is None or type(value) in (str, int, float, bool):
+    if value is None or type(value) in _JSON_SCALAR_TYPES:
         return value
     if isinstance(value, dict):
         converted = None
