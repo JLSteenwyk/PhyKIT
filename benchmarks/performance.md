@@ -944,6 +944,7 @@ Results:
 | `QuartetNetwork._compute_circular_split_weights` rolling arc sets | 40 / 80 / 160 / 220-taxon circular orderings, identical split order and weights, side-by-side previous per-arc set reconstruction | 0.030619s / 0.182034s / 0.589527s / 1.769014s | 0.005200s / 0.020853s / 0.555364s / 0.464726s | 5.89x / 8.73x / 1.06x / 3.81x |
 | `QuartetNetwork._compute_split_directions` cached one-pass split centers | 500 circular splits over 2000 taxa with cached gap positions, side-by-side previous per-split trigonometric center sums | 0.098739s | 0.041051s | 2.41x |
 | `QuartetNetwork._build_splits_graph` | 80 taxa, 20 circular splits, 33-node quartet graph | 6.1411s | 0.0016s | 3910.4x |
+| `QuartetNetwork._build_splits_graph` bitmask valid-node representation | 80 taxa, 16 balanced random splits, 65,536 valid nodes and 524,288 graph edges, identical public sign tuples | 4.357698s | 1.141341s | 3.82x |
 | `QuartetNetwork._draw_quartet_network` edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.027545s | 0.004864s | 5.66x |
 | `QuartetNetwork._format_quartet` selected-topology formatter | 300k quartet topology labels, identical strings and invalid-index `KeyError` behavior | 0.595635s | 0.186209s | 3.20x |
 | `QuartetNetwork.run` batched text quartet output | 100k quartet rows, captured stdout and identical text | 0.180601s | 0.166519s | 1.08x |
@@ -4593,7 +4594,10 @@ Profiling summary:
   `2 ** n_splits` sign vector and then compared every valid-node pair to find
   graph edges. The optimized path reuses the existing forbidden-pair rules while
   assigning signs incrementally, pruning invalid partial assignments early, and
-  finding edges by flipping one split at a time. A later startup pass replaces
+  finding edges by flipping one split at a time. The valid-node representation
+  now uses integer bitmasks internally and converts back to public sign tuples
+  only for returned nodes and edges, reducing tuple allocation and comparison
+  overhead for larger quartet split graphs. A later startup pass replaces
   the eager Bio.Phylo import with a lazy `Phylo.read` proxy, preserving the
   tree-parser patch point while avoiding Biopython startup for import-only
   callers. A follow-up startup pass keeps JSON output behind a forwarding
