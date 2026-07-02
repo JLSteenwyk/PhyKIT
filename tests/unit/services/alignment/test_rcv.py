@@ -196,6 +196,50 @@ assert "numpy" not in sys.modules
 
         alignment_base_module.np.testing.assert_allclose(observed, expected)
 
+    def test_rcv_column_totals_use_array_reduction_for_common_matrices(
+        self, monkeypatch
+    ):
+        count_matrix = alignment_base_module.np.array(
+            [
+                [10.0, 2.0, 5.0, 1.0],
+                [4.0, 8.0, 3.0, 7.0],
+                [6.0, 1.0, 9.0, 2.0],
+            ],
+            dtype=alignment_base_module.np.float64,
+        )
+        expected = count_matrix.sum(axis=0)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("common RCV column totals should use ndarray.sum")
+
+        monkeypatch.setattr(alignment_base_module.np, "sum", fail_sum)
+
+        observed = alignment_base_module._rcv_column_totals(count_matrix)
+
+        alignment_base_module.np.testing.assert_allclose(observed, expected)
+
+    def test_rcv_column_totals_preserve_large_matrix_sum_path(self, monkeypatch):
+        count_matrix = alignment_base_module.np.ones(
+            (1201, 20),
+            dtype=alignment_base_module.np.float64,
+        )
+        original_sum = alignment_base_module.np.sum
+        calls = []
+
+        def sum_spy(values, *args, **kwargs):
+            calls.append((values.shape, kwargs.get("axis")))
+            return original_sum(values, *args, **kwargs)
+
+        monkeypatch.setattr(alignment_base_module.np, "sum", sum_spy)
+
+        observed = alignment_base_module._rcv_column_totals(count_matrix)
+
+        alignment_base_module.np.testing.assert_allclose(
+            observed,
+            alignment_base_module.np.full(20, 1201.0),
+        )
+        assert calls == [((1201, 20), 0)]
+
     def test_relative_composition_variability_protein_ascii_uses_bincount(
         self, mocker, args
     ):

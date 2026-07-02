@@ -675,6 +675,7 @@ Results:
 | `Alignment.calculate_rcv` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.163491s / 0.008818s / 0.075810s | 0.050280s / 0.000004s / 0.031403s | 3.25x / 2377.98x / 2.41x |
 | shared alignment `_all_sequences_identical` iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `Alignment.calculate_rcv` final RCV total | median per-call reduction of 260 / 1200 / 2000 per-taxon RCV values, side-by-side previous `np.sum` wrapper | 0.000003516s / 0.000005445s / 0.000004957s | 0.000002338s / 0.000002423s / 0.000003238s | 1.50x / 2.25x / 1.53x |
+| `Alignment.calculate_rcv` count-matrix column totals | count matrices shaped 260x4 / 1200x20 / 2000x20 / 10000x20 / 50000x20 / 500000x4, side-by-side previous `np.sum(..., axis=0)` with large-matrix path preserved | 0.000007130s / 0.000019668s / 0.000020609s / 0.000095322s / 0.000472392s / 0.005389200s | 0.000004007s / 0.000012013s / 0.000020609s / 0.000095322s / 0.000472392s / 0.005389200s | 1.78x / 1.64x / 1.00x / 1.00x / 1.00x / 1.00x |
 | `Alignment.calculate_rcv` narrow deviation row sums | count-difference matrices shaped 260x4 / 500000x4, side-by-side previous top-level `np.sum(..., axis=1)` wrapper while preserving the wider-matrix path | 0.000018676s / 0.015092927s | 0.000004325s / 0.006486581s | 4.32x / 2.33x |
 | `Alignment.calculate_rcv` clean large-short ASCII count matrix | 10000 taxa x 128 sites / 50000 taxa x 64 sites / 200000 taxa x 32 sites, 20 valid symbols, side-by-side previous per-row `bincount` loop | 5.113480s / 5.967428s / 6.979634s | 1.557019s / 1.341158s / 1.625248s | 3.28x / 4.45x / 4.29x |
 | `Alignment.calculate_rcv` single-record early return | 5 repeated 4.5M-site single-record RCV calls, side-by-side previous sequence materialization before zero return | 0.014365s | 0.000000417s | 34428.75x |
@@ -3968,7 +3969,9 @@ Profiling summary:
   late-different early-exit checks used by RCV and other alignment commands. The
   final per-taxon RCV total now uses the ndarray reduction method directly,
   avoiding the generic `np.sum` dispatch on the realistic taxon-vector sizes
-  covered by the RCV benchmarks. Clean large-short ASCII matrices now use a
+  covered by the RCV benchmarks. Count-matrix column totals now use the same
+  direct reduction for common matrix heights while preserving the generic
+  `np.sum` path for larger matrices where it remains faster. Clean large-short ASCII matrices now use a
   single encoded `bincount` count matrix pass, matching the existing row-wise
   count output while avoiding one Python loop iteration per taxon. Single-record
   alignments now return zero RCV before sequence materialization, preserving the

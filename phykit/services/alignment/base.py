@@ -79,6 +79,12 @@ def _rcv_row_sums(abs_diffs):
     return np.sum(abs_diffs, axis=1)
 
 
+def _rcv_column_totals(count_matrix):
+    if count_matrix.shape[0] <= 1200:
+        return count_matrix.sum(axis=0)
+    return np.sum(count_matrix, axis=0)
+
+
 class Alignment(BaseService):
     def __init__(
         self,
@@ -192,7 +198,7 @@ class Alignment(BaseService):
             ).T
 
         # Calculate total counts and averages using matrix operations
-        total_counts = np.sum(count_matrix, axis=0)
+        total_counts = _rcv_column_totals(count_matrix)
         average_counts = total_counts / num_records
 
         # Calculate RCV values using vectorized operations
