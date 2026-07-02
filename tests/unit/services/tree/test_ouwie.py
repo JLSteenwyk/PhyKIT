@@ -221,6 +221,30 @@ class TestProcessArgs:
 
         assert OUwie._shared_trait_regime_taxa(traits, regimes) == {"A", "B"}
 
+    def test_shared_trait_regime_taxa_scans_smaller_mapping(self):
+        class NoIterTraits(dict):
+            def __iter__(self):
+                raise AssertionError("large trait mapping should not be scanned")
+
+        traits = NoIterTraits(
+            {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0, "E": 5.0}
+        )
+        regimes = {"B": "r1", "D": "r2"}
+
+        assert OUwie._shared_trait_regime_taxa(traits, regimes) == {"B", "D"}
+
+    def test_shared_trait_regime_taxa_scans_traits_when_smaller(self):
+        class NoIterRegimes(dict):
+            def __iter__(self):
+                raise AssertionError("large regime mapping should not be scanned")
+
+        traits = {"B": 2.0, "D": 4.0}
+        regimes = NoIterRegimes(
+            {"A": "r1", "B": "r1", "C": "r2", "D": "r2", "E": "r3"}
+        )
+
+        assert OUwie._shared_trait_regime_taxa(traits, regimes) == {"B", "D"}
+
     def test_prepare_shared_trait_regime_data_reuses_all_shared_dicts(self):
         tree_tips = ["A", "B", "C"]
         traits = {"A": 1.0, "B": 2.0, "C": 3.0}
@@ -295,6 +319,35 @@ class TestProcessArgs:
         assert shared_regimes == {"A": "r1", "B": "r2", "C": "r1"}
         assert tips_to_prune == ["D"]
         assert ordered_names == ["A", "B", "C"]
+        assert regime_names == ["r1", "r2"]
+
+    def test_prepare_shared_trait_regime_data_partial_overlap_scans_smaller_mapping(self):
+        class NoIterTraits(dict):
+            def __iter__(self):
+                raise AssertionError("large trait mapping should not be scanned")
+
+        tree_tips = ["A", "B", "C", "D", "E"]
+        traits = NoIterTraits(
+            {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0, "E": 5.0}
+        )
+        regimes = {"B": "r1", "C": "r1", "D": "r2", "regime_only": "r3"}
+
+        (
+            shared_traits,
+            shared_regimes,
+            tips_to_prune,
+            ordered_names,
+            regime_names,
+        ) = OUwie._prepare_shared_trait_regime_data(
+            tree_tips,
+            traits,
+            regimes,
+        )
+
+        assert shared_traits == {"B": 2.0, "C": 3.0, "D": 4.0}
+        assert shared_regimes == {"B": "r1", "C": "r1", "D": "r2"}
+        assert tips_to_prune == ["A", "E"]
+        assert ordered_names == ["B", "C", "D"]
         assert regime_names == ["r1", "r2"]
 
 

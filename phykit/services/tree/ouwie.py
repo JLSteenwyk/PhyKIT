@@ -195,7 +195,9 @@ class OUwie(Tree):
         traits: dict[str, float],
         regime_assignments: dict[str, str],
     ) -> set[str]:
-        return set(traits).intersection(regime_assignments)
+        if len(regime_assignments) < len(traits):
+            return {name for name in regime_assignments if name in traits}
+        return {name for name in traits if name in regime_assignments}
 
     @staticmethod
     def _prepare_shared_trait_regime_data(
@@ -226,8 +228,7 @@ class OUwie(Tree):
                 regimes,
             )
 
-        shared = set(traits)
-        shared.intersection_update(regime_assignments)
+        shared = OUwie._shared_trait_regime_taxa(traits, regime_assignments)
         if len(shared) < 3:
             raise PhykitUserError(
                 [

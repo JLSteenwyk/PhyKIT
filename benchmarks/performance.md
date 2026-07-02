@@ -2574,6 +2574,7 @@ Results:
 | `OUwie.run` all-shared read-only setup | balanced 32768-tip cached tree, trait/regime parsing, model fitting/output mocked | 0.292509s | 0.073640s | 3.97x |
 | `OUwie.run` shared trait/regime setup | default setup over 32768 / 200k / 300k / 50k tree tips with 32768 / 200k / 225k / 40k shared trait-regime taxa | 6.554888s / 1.585357s / 2.900188s / 0.441264s | 2.587766s / 1.238885s / 0.864087s / 0.290580s | 2.53x / 1.28x / 3.36x / 1.52x |
 | `OUwie.run` ordered exact trait/regime setup | 200k trait/regime taxa in identical insertion order, side-by-side previous shared-set construction | 0.192907s | 0.024995s | 7.72x |
+| `OUwie._prepare_shared_trait_regime_data` smaller mapping scan | 1M trait taxa, 10k regime taxa, and 12k tree tips with complete trait/regime overlap, side-by-side previous full trait-key set intersection | 0.091934s | 0.014519s | 6.33x |
 | `OUwie._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.470183s | 0.452638s | 1.04x |
 | `OUwie._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.433626s | 0.241180s | 1.80x |
 | `OUwie._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.241349s | 0.224103s | 1.08x |
