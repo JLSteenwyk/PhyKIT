@@ -1219,6 +1219,7 @@ Results:
 | `TipLabels.run` tip-name extraction | balanced 65536-tip tree, terminal labels before output | 0.135883s | 0.017736s | 7.66x |
 | `TipLabels.run` cached read-only tree path | balanced 32768-tip cached tree, output mocked | 0.112631s | 0.004871s | 23.12x |
 | `TipLabels.run` JSON row literals | 500k terminal labels, JSON row payload construction only, side-by-side previous `dict(taxon=...)` rows | 0.092065s | 0.063262s | 1.45x |
+| `TipLabels.run` text output direct write | 500k terminal labels, captured stdout and identical trailing newline | 0.029063s | 0.021958s | 1.32x |
 | `tip_labels` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006193s | 0.004810s | 1.29x |
 | `tip_labels` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.011704s | 0.007020s | 1.67x |
 | `NeighborNet._compute_distances_from_alignment` | 180 taxa x 1200 sites, default p-distance, alphabet `ACGT-?NX` | 1.0017s | 0.0792s | 12.6x |
@@ -5474,8 +5475,9 @@ Profiling summary:
   pass removes the annotation-only `typing` import, so command discovery no
   longer loads `typing`. JSON output row construction now uses literal row
   dictionaries instead of `dict(taxon=...)` calls while preserving the same
-  `rows` and `tips` payload.
-  longer loads `typing`.
+  `rows` and `tips` payload. Text output now writes the joined label block plus
+  trailing newline directly to stdout, preserving exact output while avoiding
+  `print()` overhead for large label lists.
 - `tree_paths.build_root_path_map` now builds root-to-node path lists with a
   direct stack traversal for standard trees rooted at `tree.root`, avoiding
   Bio.Phylo's generic preorder iterator in ancestral-reconstruction path setup.

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from .base import Tree
 
 
@@ -23,7 +25,7 @@ class TipLabels(Tree):
             print_json(dict(rows=rows, tips=tips))
             return
         try:
-            print("\n".join(tips))
+            sys.stdout.write("\n".join(tips) + "\n")
         except BrokenPipeError:
             pass
 

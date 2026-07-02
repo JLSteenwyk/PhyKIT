@@ -48,18 +48,17 @@ class TestTipLabels:
         assert service.tree_file_path == args.tree
         assert service.json_output is False
 
-    def test_run_prints_tip_names(self, mocker, args):
+    def test_run_prints_tip_names(self, mocker, args, capsys):
         mocker.patch.object(
             TipLabels,
             "read_tree_file_unmodified",
             return_value=_Tree(["a", "b", "c"]),
         )
-        mocked_print = mocker.patch("builtins.print")
 
         service = TipLabels(args)
         service.run()
 
-        mocked_print.assert_called_once_with("a\nb\nc")
+        assert capsys.readouterr().out == "a\nb\nc\n"
 
     def test_run_uses_unmodified_tree_read(self, mocker, args):
         tree = _Tree(["a", "b"])
@@ -69,12 +68,12 @@ class TestTipLabels:
             "read_tree_file_unmodified",
             return_value=tree,
         )
-        mocked_print = mocker.patch("builtins.print")
+        mocked_write = mocker.patch("phykit.services.tree.tip_labels.sys.stdout.write")
 
         service.run()
 
         read_tree.assert_called_once_with()
-        mocked_print.assert_called_once_with("a\nb")
+        mocked_write.assert_called_once_with("a\nb\n")
 
     def test_run_json_prints_structured_payload(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", json=True)
@@ -100,12 +99,12 @@ class TestTipLabels:
 
         mocker.patch.object(TipLabels, "read_tree_file_unmodified", return_value=tree)
         mocker.patch.object(tree, "get_terminals", side_effect=fail_get_terminals)
-        mocked_print = mocker.patch("builtins.print")
+        mocked_write = mocker.patch("phykit.services.tree.tip_labels.sys.stdout.write")
 
         service = TipLabels(Namespace(tree="x.tre"))
         service.run()
 
-        mocked_print.assert_called_once_with("a\nb\nc")
+        mocked_write.assert_called_once_with("a\nb\nc\n")
 
     def test_run_ignores_broken_pipe(self, mocker, args):
         mocker.patch.object(
@@ -113,7 +112,10 @@ class TestTipLabels:
             "read_tree_file_unmodified",
             return_value=_Tree(["a"]),
         )
-        mocker.patch("builtins.print", side_effect=BrokenPipeError)
+        mocker.patch(
+            "phykit.services.tree.tip_labels.sys.stdout.write",
+            side_effect=BrokenPipeError,
+        )
 
         service = TipLabels(args)
         service.run()
