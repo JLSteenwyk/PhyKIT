@@ -746,6 +746,7 @@ Results:
 | `TipToTipDistance.run` all-pairs text fast-series output | balanced 900-tip tree, 404,550 all-pairs rows, captured stdout identical to previous row-dictionary path | 1.707568s | 1.242154s | 1.37x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` | balanced 32768-tip tree, opposite terminal tips | 0.1331s | 0.0189s | 7.1x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` child-list terminal check | balanced 65536-tip tree, opposite terminal tips, optimized helper baseline | 0.061879s | 0.052576s | 1.18x |
+| `TipToTipDistance.calculate_tip_to_tip_distance` binary child push | balanced 32768-tip / 65536-tip opposite terminal tips and 65536-tip nearby terminal tips, side-by-side previous `reversed(children)` single-pair traversal | 0.044132s / 0.140251s / 0.000080s | 0.034980s / 0.070132s / 0.000076s | 1.26x / 2.00x / 1.05x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` same-tip shortcut | pectinate 20000-tip tree, deepest terminal compared to itself after validation | 1.666261s | 0.856954s | 1.94x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` same-tip validation scan | pectinate 20000-tip tree, deepest terminal compared to itself, side-by-side previous same-tip shortcut | 1.326063s | 0.515092s | 2.57x |
 | `TipToTipDistance.run` cached read-only tree setup | balanced 32768-tip cached tree, single-pair calculation and output mocked | 0.376594s | 0.000098s | 3823.29x |
@@ -4226,8 +4227,10 @@ Profiling summary:
   `check_leaves()`/`TreeMixin.distance()` fallback. A later scan pass uses each
   clade's child list directly instead of calling `is_terminal()` for every
   visited clade, preserving the same standard-tree traversal and fallback
-  behavior while reducing large-tree single-pair setup overhead. A later startup pass
-  deferred SciPy hierarchical-clustering imports until heatmap plotting, so
+  behavior while reducing large-tree single-pair setup overhead. A follow-up
+  traversal pass now pushes binary children explicitly instead of allocating a
+  `reversed(children)` iterator while searching for the two target tips. A later
+  startup pass deferred SciPy hierarchical-clustering imports until heatmap plotting, so
   normal non-plot single-pair and all-pairs runs no longer import the clustering
   stack. Cached read-only `TipToTipDistance.run` now uses the explicit
   unmodified tree read helper to avoid copying the cached parsed tree before

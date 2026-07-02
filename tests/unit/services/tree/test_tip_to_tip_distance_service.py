@@ -194,6 +194,28 @@ class TestTipToTipDistance:
             tree, "A", "D"
         ) == pytest.approx(15.0)
 
+    def test_calculate_tip_to_tip_distance_binary_path_avoids_reversed(
+        self, args
+    ):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("binary fast path should not call reversed")
+
+        def wrap_binary_children(clade):
+            children = clade.clades
+            if len(children) == 2:
+                clade.clades = NoReversedList(children)
+            for child in clade.clades:
+                wrap_binary_children(child)
+
+        service = TipToTipDistance(args)
+        tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6);"), "newick")
+        wrap_binary_children(tree.root)
+
+        assert service.calculate_tip_to_tip_distance(
+            tree, "A", "D"
+        ) == pytest.approx(15.0)
+
     def test_calculate_tip_to_tip_distance_same_tip_returns_zero_fast(
         self, monkeypatch, args
     ):

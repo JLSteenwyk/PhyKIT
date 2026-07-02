@@ -161,10 +161,27 @@ class TipToTipDistance(Tree):
                 children = clade.clades
                 if children:
                     parent_depth = depth_by_node[clade]
-                    for child in reversed(children):
+                    child_count = len(children)
+                    if child_count == 2:
+                        child = children[1]
                         parent_map[child] = clade
-                        depth_by_node[child] = parent_depth + (child.branch_length or 0.0)
+                        depth_by_node[child] = parent_depth + (
+                            child.branch_length or 0.0
+                        )
                         append(child)
+                        child = children[0]
+                        parent_map[child] = clade
+                        depth_by_node[child] = parent_depth + (
+                            child.branch_length or 0.0
+                        )
+                        append(child)
+                    else:
+                        for child in reversed(children):
+                            parent_map[child] = clade
+                            depth_by_node[child] = parent_depth + (
+                                child.branch_length or 0.0
+                            )
+                            append(child)
                 elif clade.name in targets:
                     found.setdefault(clade.name, clade)
 
