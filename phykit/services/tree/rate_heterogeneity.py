@@ -111,21 +111,17 @@ class RateHeterogeneity(Tree):
             self.regime_data_path, tree_tips
         )
 
-        # Use intersection of all three sets
-        shared = set(trait_values) & set(regime_assignments)
-        if len(shared) < 3:
-            raise PhykitUserError(
-                [
-                    f"Only {len(shared)} shared taxa among tree, trait, and regime files.",
-                    "At least 3 shared taxa are required.",
-                ],
-                code=2,
-            )
-
-        trait_values = {k: trait_values[k] for k in shared}
-        regime_assignments = {k: regime_assignments[k] for k in shared}
-
-        tips_to_prune = [t for t in tree_tips if t not in shared]
+        (
+            trait_values,
+            regime_assignments,
+            tips_to_prune,
+            ordered_names,
+            regimes,
+        ) = self._prepare_shared_trait_regime_data(
+            tree_tips,
+            trait_values,
+            regime_assignments,
+        )
         needs_working_copy = bool(tips_to_prune) or bool(
             self.plot_output and self.plot_config.ladderize
         )
@@ -135,11 +131,9 @@ class RateHeterogeneity(Tree):
                 tree_for_analysis, tips_to_prune
             )
 
-        ordered_names = sorted(trait_values.keys())
         n = len(ordered_names)
         y = np.array([trait_values[name] for name in ordered_names])
 
-        regimes = sorted(set(regime_assignments.values()))
         k = len(regimes)
 
         if k < 2:
@@ -268,6 +262,44 @@ class RateHeterogeneity(Tree):
             plot_output=getattr(args, "plot", None),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
+        )
+
+    @staticmethod
+    def _prepare_shared_trait_regime_data(
+        tree_tips,
+        trait_values,
+        regime_assignments,
+    ):
+        shared = set(trait_values)
+        shared.intersection_update(regime_assignments)
+        if len(shared) < 3:
+            raise PhykitUserError(
+                [
+                    f"Only {len(shared)} shared taxa among tree, trait, and regime files.",
+                    "At least 3 shared taxa are required.",
+                ],
+                code=2,
+            )
+
+        if len(shared) == len(trait_values) == len(regime_assignments):
+            shared_trait_values = trait_values
+            shared_regime_assignments = regime_assignments
+        else:
+            shared_trait_values = {name: trait_values[name] for name in shared}
+            shared_regime_assignments = {
+                name: regime_assignments[name]
+                for name in shared
+            }
+
+        tips_to_prune = [name for name in tree_tips if name not in shared]
+        ordered_names = sorted(shared)
+        regimes = sorted(set(shared_regime_assignments.values()))
+        return (
+            shared_trait_values,
+            shared_regime_assignments,
+            tips_to_prune,
+            ordered_names,
+            regimes,
         )
 
     @staticmethod
