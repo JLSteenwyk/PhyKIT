@@ -1210,11 +1210,20 @@ class TestRun:
         assert ordered_names == ["A", "B", "C"]
         assert regimes == ["r1", "r2"]
 
-    def test_prepare_shared_trait_regime_data_exact_keys_prunes_tree_only_tips(self):
+    def test_prepare_shared_trait_regime_data_exact_keys_prunes_tree_only_tips(
+        self, monkeypatch
+    ):
+        class OrderedTraitValues(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         tree_tips = ["A", "B", "C", "D"]
-        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0}
+        trait_values = OrderedTraitValues({"A": 1.0, "B": 2.0, "C": 3.0})
         regime_assignments = {"A": "r1", "B": "r2", "C": "r1"}
 
+        monkeypatch.setattr(
+            rate_heterogeneity_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0
+        )
         (
             shared_traits,
             shared_regimes,

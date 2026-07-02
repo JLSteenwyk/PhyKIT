@@ -289,7 +289,9 @@ class RateHeterogeneity(Tree):
                     ],
                     code=2,
                 )
-            tips_to_prune = [name for name in tree_tips if name not in trait_values]
+            tips_to_prune = Tree._tips_to_prune_for_ordered_mapping(
+                tree_tips, trait_values
+            )
             ordered_names = sorted(trait_values)
             regimes = sorted(set(regime_assignments.values()))
             return (

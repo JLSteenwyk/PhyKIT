@@ -2334,6 +2334,7 @@ Results:
 | `RateHeterogeneity._plot_regime_tree` rectangular batched regime branches | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/label/legend render | 1.970551s | 0.531163s | 3.71x |
 | `RateHeterogeneity._plot_regime_tree` circular batched regime branches/arcs | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/arc/legend render | 1.475253s | 0.261012s | 5.65x |
 | `RateHeterogeneity.run` ordered exact trait/regime setup | 300k trait/regime taxa in identical insertion order plus 75k tree-only tips, side-by-side previous shared-set construction | 0.251396s | 0.066233s | 3.80x |
+| `RateHeterogeneity`/`OUwie` ordered trait/regime prune targets | 300k ordered trait/regime taxa with all tree tips / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.052482s / 0.053780s | 0.011896s / 0.013496s | 4.41x / 3.98x |
 | `RateHeterogeneity._build_per_regime_vcv` branch accumulation | balanced 1024-tip synthetic root-to-tip paths x 3 regimes | 0.345525s | 0.019535s | 17.7x |
 | `RateHeterogeneity._build_per_regime_vcv` single-tip diagonal updates | balanced 2048-tip prepared branch groups x 3 regimes | 0.067988s | 0.054495s | 1.25x |
 | `RateHeterogeneity._sum_vcv_matrices` first-copy accumulation | 120 taxa x 3 regimes / 420 taxa x 3 regimes / 420 taxa x 8 regimes SPD-like VCV matrices, side-by-side previous Python `sum()` matrix accumulation | 0.000028s / 0.000310729s / 0.000795989s | 0.000009s / 0.000150399s / 0.000609011s | 3.11x / 2.07x / 1.31x |
@@ -7652,8 +7653,8 @@ Profiling summary:
   intersection and reuses the original trait/regime dictionaries when their keys
   already match, avoiding two large filtering comprehensions on all-shared
   inputs. When trait and regime mappings have the same ordered keys, setup now
-  skips the shared-set construction entirely and uses dict-key membership for
-  tree-only prune target discovery.
+  skips the shared-set construction entirely and uses the shared large-input
+  prune helper for tree-only prune target discovery.
   Text output now batches the summary and per-regime sigma rows into one
   newline-joined print while preserving exact stdout text. Trait-file parsing
   now streams directly over the file handle instead of materializing all input
@@ -8234,7 +8235,8 @@ Profiling summary:
   trait/regime dictionaries when their key sets already match, avoiding two
   large filtering comprehensions on all-shared inputs. Ordered exact
   trait/regime mappings now bypass the shared-set construction entirely and
-  use dict-key membership while preserving tree-only pruning. A follow-up regime
+  use the shared large-input prune helper while preserving tree-only pruning.
+  A follow-up regime
   setup pass builds the object parent map with a direct stack traversal and
   computes branch regime assignments and the root regime from one direct
   state-set traversal instead of running the same Fitch-style pass twice.

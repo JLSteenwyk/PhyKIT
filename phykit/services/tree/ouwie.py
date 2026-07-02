@@ -204,7 +204,9 @@ class OUwie(Tree):
                     ],
                     code=2,
                 )
-            tips_to_prune = [name for name in tree_tips if name not in traits]
+            tips_to_prune = Tree._tips_to_prune_for_ordered_mapping(
+                tree_tips, traits
+            )
             ordered_names = sorted(traits)
             regimes = sorted(set(regime_assignments.values()))
             return (

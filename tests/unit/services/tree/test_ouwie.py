@@ -234,11 +234,18 @@ class TestProcessArgs:
         assert ordered_names == ["A", "B", "C"]
         assert regime_names == ["r1", "r2"]
 
-    def test_prepare_shared_trait_regime_data_exact_keys_prunes_tree_only_tips(self):
+    def test_prepare_shared_trait_regime_data_exact_keys_prunes_tree_only_tips(
+        self, monkeypatch
+    ):
+        class OrderedTraits(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         tree_tips = ["A", "B", "C", "D"]
-        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        traits = OrderedTraits({"A": 1.0, "B": 2.0, "C": 3.0})
         regimes = {"A": "r1", "B": "r2", "C": "r1"}
 
+        monkeypatch.setattr(ouwie_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0)
         (
             shared_traits,
             shared_regimes,
