@@ -1546,6 +1546,7 @@ Results:
 | `vcv_utils._copy_prune_gene_tree_to_shared_taxa` all-shared copy skip | balanced 32768-tip gene tree, all taxa shared | 0.425988s | 0.008369s | 50.9x |
 | `vcv_utils`/`SpectralDiscordance` all-shared prune preflight scan | balanced 131072-tip standard tree, all taxa shared, optimized direct-scan baseline | 0.034115s | 0.021787s | 1.57x |
 | `vcv_utils.parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.096195s | 0.072211s | 1.33x |
+| `vcv_utils.parse_gene_trees` stripped source cleanup | 500k mixed path/inline-Newick rows with whitespace-prefixed comments/blanks, cleanup before tree parsing | 0.179441s | 0.108817s | 1.65x |
 | `vcv_utils.parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
 | `vcv_utils._gene_tree_has_missing_branch_lengths` unordered scan | balanced 131072-tip gene tree, complete branch lengths, optimized helper baseline | 0.023896s | 0.016475s | 1.45x |
 | `vcv_utils._get_tip_names_and_missing_branch_lengths` order-preserving scan | balanced 131072-tip gene tree, terminal names plus branch-length validation, optimized helper baseline | 0.037289s | 0.029137s | 1.28x |

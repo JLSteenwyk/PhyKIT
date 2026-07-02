@@ -344,7 +344,7 @@ class TestParseGeneTrees:
     def test_comments_blanks_and_whitespace_ignored(self, tmp_path):
         f = tmp_path / "with_comments_and_blanks.nwk"
         f.write_text(
-            "# header\n\n  (A:1.0,B:2.0,C:3.0);  \n# footer\n\n"
+            "   # header\n\n  (A:1.0,B:2.0,C:3.0);  \n\t# footer\n\n"
         )
         trees = parse_gene_trees(str(f))
         assert len(trees) == 1
