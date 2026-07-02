@@ -26,6 +26,17 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    first = lazy_np.frombuffer
+    second = lazy_np.frombuffer
+
+    assert first is second
+    assert lazy_np._module is not None
+    assert "frombuffer" in lazy_np.__dict__
+
+
 @pytest.fixture
 def args():
     return Namespace(fasta="query.fasta", reference="reference.fasta")

@@ -25,10 +25,18 @@ class _LazyMultiprocessing:
 
 
 class _LazyNumpy:
-    def __getattr__(self, name):
-        import numpy as _np
+    _module = None
 
-        return getattr(_np, name)
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = self._module = _np
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
 
 
 mp = _LazyMultiprocessing()

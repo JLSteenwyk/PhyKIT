@@ -240,6 +240,7 @@ Results:
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` sequential equal-length cache | 49 incomplete pair comparisons, 14 taxa x 50k sites, side-by-side previous per-pair array conversion | 0.001350s | 0.000487s | 2.77x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` sequential mixed-length path | 8 taxa x 50k reference sites x 49k query sites, 28 pairs | 0.141108s | 0.000271s | 520.8x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` unchanged incomplete pairs | 49 incomplete mixed-length pair comparisons, 14 taxa x ~50k sites, side-by-side previous sequential array path | 0.000806s | 0.000244s | 3.30x |
+| `SumOfPairsScore.determine_number_of_matches_and_total_pairs` cached lazy NumPy attributes | 49 incomplete mixed-length pair comparisons, 14 taxa x ~50k sites, sequential fallback path, side-by-side previous lazy proxy lookup path | 0.000323750s | 0.000294125s | 1.10x |
 | `SumOfPairsScore._read_fasta` | 50k FASTA records, mixed-case 120 bp each | 0.1076s | 0.0342s | 3.1x |
 | `SumOfPairsScore._read_fasta` shared unique first-token parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.037212s | 0.033738s | 1.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.1262s | 0.0548s | 2.3x |
