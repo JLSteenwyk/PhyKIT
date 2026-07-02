@@ -44,6 +44,17 @@ assert module._MINIMIZE_SCALAR is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = ps_module._LazyNumpy()
+
+    first_empty = lazy_np.empty
+    second_empty = lazy_np.empty
+
+    assert lazy_np._module is not None
+    assert first_empty is second_empty
+    assert lazy_np.__dict__["empty"] is first_empty
+
+
 def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
     module_name = "phykit.services.tree.phylogenetic_signal"
     previous = sys.modules.pop(module_name, None)
