@@ -389,9 +389,10 @@ class PhyloPath(Tree):
             with open(path) as f:
                 for line_num, line in enumerate(f, 1):
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
-                    if ":" not in stripped:
+                    name, sep, edge_str = stripped.partition(":")
+                    if not sep:
                         raise PhykitUserError(
                             [
                                 f"Line {line_num} in model file is malformed.",
@@ -399,14 +400,14 @@ class PhyloPath(Tree):
                             ],
                             code=2,
                         )
-                    name, edge_str = stripped.split(":", 1)
                     name = name.strip()
                     edges = []
                     for part in edge_str.split(","):
                         part = part.strip()
                         if not part:
                             continue
-                        if "->" not in part:
+                        src, sep, dst = part.partition("->")
+                        if not sep:
                             raise PhykitUserError(
                                 [
                                     f"Invalid edge '{part}' in model '{name}'.",
@@ -414,7 +415,6 @@ class PhyloPath(Tree):
                                 ],
                                 code=2,
                             )
-                        src, dst = part.split("->", 1)
                         edges.append((src.strip(), dst.strip()))
                     if not edges:
                         raise PhykitUserError(

@@ -249,7 +249,7 @@ class TestPhyloPath:
             def __iter__(self):
                 return iter(
                     [
-                        "# ignored\n",
+                        "   # ignored\n",
                         "\n",
                         "direct: body_mass->brain_size\n",
                         "indirect: body_mass->body_length, body_length->brain_size\n",

@@ -2126,6 +2126,7 @@ Results:
 | `PhyloPath._parse_trait_file` streaming valid-row parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.654959s | 0.457753s | 1.43x |
 | `PhyloPath._parse_trait_file` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.449593s | 0.311079s | 1.45x |
 | `PhyloPath._parse_models_file` streaming parser | 300k candidate path models, three edges per model, comments/blanks included | 1.162768s | 0.905995s | 1.28x |
+| `PhyloPath._parse_models_file` bounded model row parsing | 300k candidate path models, three edges per model, whitespace-prefixed comments/blanks included | 4.971978s | 4.427189s | 1.12x |
 | `PhyloPath._is_dag` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.095966s | 0.011607s | 8.27x |
 | `PhyloPath._topological_order` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.099320s | 0.014319s | 6.94x |
 | `PhyloPath._basis_set` precomputed parent sets | 350-variable sparse DAG, 60,782 d-separation basis statements | 1.211617s | 0.057178s | 21.19x |
