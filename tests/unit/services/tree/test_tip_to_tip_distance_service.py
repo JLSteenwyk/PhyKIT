@@ -12,6 +12,7 @@ from Bio.Phylo.BaseTree import TreeMixin
 from Bio.Phylo.Newick import Clade, Tree
 
 from phykit.services.tree.tip_to_tip_distance import TipToTipDistance
+import phykit.services.tree.tip_to_tip_distance as ttt_module
 
 
 @pytest.fixture
@@ -80,6 +81,16 @@ assert "Bio.Phylo" not in sys.modules
 assert "Bio.Phylo.BaseTree" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = ttt_module._LazyNumpy()
+
+    zeros_attr = lazy_np.zeros
+
+    assert lazy_np.__dict__["zeros"] is zeros_attr
+    assert lazy_np.zeros is zeros_attr
+    assert lazy_np._module is not None
 
 
 class TestTipToTipDistance:

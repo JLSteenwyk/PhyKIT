@@ -785,6 +785,7 @@ Results:
 | `TipToTipDistance._build_distance_matrix` sorted all-pairs heatmap fill | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous taxon-index dictionary fill | 6.848783s | 4.044856s | 1.69x |
 | `TipToTipDistance._build_distance_matrix` lower sorted-fill threshold | sorted upper-triangle all-pairs rows for 650 / 800 / 1200 / 1600 taxa, side-by-side previous dictionary fill path below the old 2M-row cutoff | 0.109926s / 0.649215s / 1.254830s / 2.677450s | 0.044824s / 0.067757s / 0.153729s / 1.186269s | 2.45x / 9.58x / 8.16x / 2.26x |
 | `TipToTipDistance._build_distance_matrix` inferred sorted taxa | 1800 taxa, 1,619,100 sorted upper-triangle all-pairs rows, side-by-side previous set-union taxa discovery | 0.944815s | 0.749121s | 1.26x |
+| `TipToTipDistance._build_distance_matrix` cached NumPy attribute proxy | 900 taxa, 404,550 sorted upper-triangle all-pairs rows, side-by-side previous uncached lazy NumPy proxy, identical matrix | 0.413196s | 0.300371s | 1.38x |
 | `TipToTipDistance._rows_are_sorted_upper_triangle` raw-label fast path | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous per-row string coercion | 0.635139s | 0.501365s | 1.27x |
 | `TipToTipDistance.run` all-pairs text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.082166s | 0.057857s | 1.42x |
 | `TipToTipDistance.run` all-pairs text fast-series output | balanced 900-tip tree, 404,550 all-pairs rows, captured stdout identical to previous row-dictionary path | 1.707568s | 1.242154s | 1.37x |
@@ -4314,7 +4315,10 @@ Profiling summary:
   path still used for smaller matrices below the new threshold. A follow-up
   pass infers the taxa for sorted
   upper-triangle rows from the row count and first row block, avoiding the
-  preliminary all-row set union before order validation.
+  preliminary all-row set union before order validation. Repeated heatmap matrix
+  builds now cache resolved NumPy attributes on the lazy proxy, preserving
+  import deferral while avoiding repeated import and attribute dispatch during
+  dense matrix construction.
   PatristicDistances verbose text output now batches pairwise rows into one
   newline-joined print while preserving empty-output behavior and stdout text.
   Verbose JSON row materialization now uses literal dictionaries instead of
