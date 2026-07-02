@@ -435,22 +435,29 @@ class OUShiftDetection(Tree):
 
         S = np.zeros((n, n))
         tip_heights = np.zeros(n)
+        row_lists = {}
+        branch_lengths = {}
 
-        for i in range(n):
-            path_i = lineage_info[ordered_names[i]]
-            tip_heights[i] = sum(bl for _, bl, _, _ in path_i)
-            S[i, i] = tip_heights[i]
-            for j in range(i + 1, n):
-                path_j = lineage_info[ordered_names[j]]
-                s = 0.0
-                for idx in range(min(len(path_i), len(path_j))):
-                    if path_i[idx][0] == path_j[idx][0]:
-                        s += path_i[idx][1]
-                    else:
-                        break
-                S[i, j] = s
-                S[j, i] = s
+        for row_idx, name in enumerate(ordered_names):
+            tip_height = 0.0
+            for clade_id, bl, *_ in lineage_info[name]:
+                tip_height += bl
+                row_lists.setdefault(clade_id, []).append(row_idx)
+                branch_lengths[clade_id] = bl
+            tip_heights[row_idx] = tip_height
 
+        rows_by_clade_id = {}
+        for clade_id, rows in row_lists.items():
+            row_idx = np.asarray(rows, dtype=np.intp)
+            rows_by_clade_id[clade_id] = row_idx
+            if len(row_idx) == n:
+                S += branch_lengths[clade_id]
+            elif len(row_idx) == 1:
+                S[row_idx[0], row_idx[0]] += branch_lengths[clade_id]
+            else:
+                S[np.ix_(row_idx, row_idx)] += branch_lengths[clade_id]
+
+        self._lineage_rows_by_clade_id = rows_by_clade_id
         return S, tip_heights
 
     def _build_ou_vcv_fast(self, alpha: float, sigma2: float = 1.0) -> np.ndarray:

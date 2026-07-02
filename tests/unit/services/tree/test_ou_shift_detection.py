@@ -845,6 +845,15 @@ class TestPrecomputeSharedPathLengths:
         S = svc._S
         np.testing.assert_allclose(S, S.T, atol=1e-12)
 
+    def test_precompute_populates_lineage_row_cache(self, precomputed):
+        svc = precomputed["svc"]
+        rows_by_clade_id = svc._get_lineage_rows_by_clade_id()
+
+        assert rows_by_clade_id is svc._lineage_rows_by_clade_id
+        for row_idx, name in enumerate(svc._ordered_names):
+            for clade_id, *_ in svc._lineage_info[name]:
+                assert row_idx in rows_by_clade_id[clade_id]
+
 
 class TestBuildOUVCVFast:
     def test_matches_slow_path(self, precomputed):
