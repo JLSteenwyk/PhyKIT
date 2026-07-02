@@ -1729,6 +1729,7 @@ Results:
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058916s / 0.004838s / 0.051696s | 0.033481s / 0.000000334s / 0.045077s | 1.76x / 14490.77x / 1.15x |
 | `Saturation` local identical helper iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `Saturation._constant_uncorrected_distance_for_identical_sequences` raw-identical normalization scan | 500k raw-identical requested tips with gappy DNA symbols, side-by-side previous eager uppercase tip dictionary and sequence list | 0.824100s | 0.671471s | 1.23x |
+| `Tree.calculate_pairwise_tip_distances_fast` distances-only upper-triangle mode | 2500-tip star tree, 3,123,750 requested upper-triangle pairwise distances, omitting duplicate cached pair tuples for `Saturation` standard-order callers | 5.901164s | 5.113895s | 1.15x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
 | `Saturation.print_res` verbose JSON row construction | 500k pairwise rows, identical row dictionaries | 1.126429s | 0.839930s | 1.34x |
@@ -6267,6 +6268,10 @@ Profiling summary:
   Raw-identical requested tips now compare raw sequence strings before falling
   back to uppercase comparisons, preserving case-insensitive matching while
   avoiding repeated uppercase allocations for already-normalized conserved rows.
+  Standard-order saturation callers now request cached tree distances without
+  materializing the duplicate `(tip_a, tip_b)` list inside the shared fast
+  pairwise-distance helper; callers that need pair labels keep the default
+  tuple-producing behavior.
   Cached read-only `Saturation.run` now uses the explicit unmodified tree read
   helper to avoid copying the cached parsed tree before tip-pair setup and
   pairwise distance calculation. Verbose text output now batches pairwise rows

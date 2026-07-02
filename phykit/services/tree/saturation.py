@@ -569,12 +569,16 @@ class Saturation(Tree):
         fast_pair_distances = None
         direct_pair_distances = None
         try:
-            fast_result = self.calculate_pairwise_tip_distances_fast(tree, combo_tips)
+            fast_result = self.calculate_pairwise_tip_distances_fast(
+                tree,
+                combo_tips,
+                include_combos=not standard_combo_order,
+            )
         except (AttributeError, TypeError, KeyError):
             fast_result = None
         if fast_result is not None:
             fast_combos, fast_distances = fast_result
-            if fast_combos == combos:
+            if fast_combos is None or fast_combos == combos:
                 direct_pair_distances = fast_distances
             else:
                 fast_pair_distances = {

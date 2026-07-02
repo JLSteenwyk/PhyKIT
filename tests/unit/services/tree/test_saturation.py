@@ -347,6 +347,43 @@ assert "phykit.helpers.plot_config" not in sys.modules
         self.assertEqual(pd_list, [0.1, 0.2, 0.3])
         self.assertEqual(ud_list, [0.25, 0.25, 0.5])
 
+    @patch('multiprocessing.Pool')
+    def test_loop_through_standard_combos_skips_cached_combo_pairs(
+        self, mock_pool_class
+    ):
+        """Standard-order callers should not request duplicate cached pairs."""
+        mock_tree = Mock()
+        mock_tree.distance.side_effect = AssertionError(
+            "cached distances should be used"
+        )
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("ATCG"), id="seq1", name="seq1"),
+            SeqRecord(Seq("ATGG"), id="seq2", name="seq2"),
+            SeqRecord(Seq("AACG"), id="seq3", name="seq3"),
+        ])
+        combos = [('seq1', 'seq2'), ('seq1', 'seq3'), ('seq2', 'seq3')]
+        self.saturation.calculate_pairwise_tip_distances_fast = Mock(
+            return_value=(None, [0.1, 0.2, 0.3])
+        )
+        self.saturation.MP_MIN_COMBOS = 1
+
+        pd_list, ud_list = self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+            combos,
+            alignment,
+            mock_tree,
+            False,
+            standard_combo_order=True,
+        )
+
+        mock_pool_class.assert_not_called()
+        self.saturation.calculate_pairwise_tip_distances_fast.assert_called_once_with(
+            mock_tree,
+            ["seq1", "seq2", "seq3"],
+            include_combos=False,
+        )
+        self.assertEqual(pd_list, [0.1, 0.2, 0.3])
+        self.assertEqual(ud_list, [0.25, 0.25, 0.5])
+
     def test_calculate_uncorrected_distances_matrix_with_gaps(self):
         seq_arrays = {
             "seq1": self.saturation._sequence_to_array("AT-G"),

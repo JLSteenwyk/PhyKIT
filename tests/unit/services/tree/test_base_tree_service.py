@@ -858,6 +858,15 @@ class TestTreeBase:
         assert combos == [("a", "b"), ("a", "c"), ("b", "c")]
         assert distances == pytest.approx([2.0, 2.0, 1.0])
 
+        combos, distances = service.calculate_pairwise_tip_distances_fast(
+            tree,
+            ["a", "b", "c"],
+            include_combos=False,
+        )
+
+        assert combos is None
+        assert distances == pytest.approx([2.0, 2.0, 1.0])
+
     def test_calculate_pairwise_tip_distances_fast_handles_mixed_child_counts(
         self, monkeypatch
     ):
@@ -941,6 +950,15 @@ class TestTreeBase:
         ]
 
         assert combos == expected_combos
+        assert distances == pytest.approx(expected_distances)
+
+        combos, distances = service.calculate_pairwise_tip_distances_fast(
+            tree,
+            tips,
+            include_combos=False,
+        )
+
+        assert combos is None
         assert distances == pytest.approx(expected_distances)
 
     def test_calculate_treeness_print_value(self, capsys):

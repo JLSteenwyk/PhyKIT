@@ -418,7 +418,8 @@ class Tree(BaseService):
         self,
         tree,
         tips: list[str],
-    ) -> tuple[list[tuple[str, str]], list[float]] | None:
+        include_combos: bool = True,
+    ) -> tuple[list[tuple[str, str]] | None, list[float]] | None:
         """Calculate all pairwise tip distances from cached root depths.
 
         Returns None for non-Biopython test doubles so callers can preserve
@@ -500,6 +501,7 @@ class Tree(BaseService):
                 levels,
                 depths,
                 max_tip_level,
+                include_combos=include_combos,
             )
 
         return self._pairwise_tip_distances_from_paths(
@@ -507,6 +509,7 @@ class Tree(BaseService):
             tip_indices,
             parent_indices,
             depths,
+            include_combos=include_combos,
         )
 
     @staticmethod
@@ -515,7 +518,8 @@ class Tree(BaseService):
         tip_indices,
         parent_indices,
         depths,
-    ) -> tuple[list[tuple[str, str]], list[float]]:
+        include_combos: bool = True,
+    ) -> tuple[list[tuple[str, str]] | None, list[float]]:
         tip_paths = []
         for tip_idx in tip_indices:
             path = [tip_idx]
@@ -526,7 +530,7 @@ class Tree(BaseService):
             path.reverse()
             tip_paths.append(tuple(path))
 
-        combos: list[tuple[str, str]] = []
+        combos: list[tuple[str, str]] | None = [] if include_combos else None
         distances: list[float] = []
         for i in range(len(tips) - 1):
             tip_a = tips[i]
@@ -538,7 +542,8 @@ class Tree(BaseService):
                     if clade_a != clade_b:
                         break
                     mrca = clade_a
-                combos.append((tip_a, tips[j]))
+                if combos is not None:
+                    combos.append((tip_a, tips[j]))
                 distances.append(depth_a + depths[tip_indices[j]] - 2 * depths[mrca])
 
         return combos, distances
@@ -551,7 +556,8 @@ class Tree(BaseService):
         levels,
         depths,
         max_tip_level,
-    ) -> tuple[list[tuple[str, str]], list[float]]:
+        include_combos: bool = True,
+    ) -> tuple[list[tuple[str, str]] | None, list[float]]:
         jump_count = max(1, max_tip_level.bit_length())
         ancestors = [parent_indices]
         for _ in range(1, jump_count):
@@ -585,7 +591,7 @@ class Tree(BaseService):
 
             return parent_indices[node_a]
 
-        combos: list[tuple[str, str]] = []
+        combos: list[tuple[str, str]] | None = [] if include_combos else None
         distances: list[float] = []
         for i in range(len(tips) - 1):
             tip_a = tips[i]
@@ -594,7 +600,8 @@ class Tree(BaseService):
             for j in range(i + 1, len(tips)):
                 tip_b_idx = tip_indices[j]
                 mrca = lca_index(tip_a_idx, tip_b_idx)
-                combos.append((tip_a, tips[j]))
+                if combos is not None:
+                    combos.append((tip_a, tips[j]))
                 distances.append(depth_a + depths[tip_b_idx] - 2 * depths[mrca])
 
         return combos, distances
