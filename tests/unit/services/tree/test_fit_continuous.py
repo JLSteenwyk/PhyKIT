@@ -74,6 +74,16 @@ def test_module_import_does_not_import_scipy_linalg_or_optimize(monkeypatch):
                 delattr(parent, child_name)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = fit_continuous_module._LazyNumpy()
+
+    array_attr = lazy_np.array
+
+    assert lazy_np.__dict__["array"] is array_attr
+    assert lazy_np.array is array_attr
+    assert lazy_np._module is not None
+
+
 @pytest.fixture
 def default_args():
     return Namespace(

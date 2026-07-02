@@ -1952,6 +1952,7 @@ Results:
 | `FitContinuous._build_parent_map` direct traversal | balanced 65536-tip tree, parent-id map setup | 0.277243s | 0.028661s | 9.67x |
 | `FitContinuous._build_parent_map` unordered child push | balanced 65536-tip tree, parent-id map setup, optimized helper baseline | 0.021944s | 0.018356s | 1.20x |
 | `FitContinuous.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, VCV/model fitting, and output mocked | 0.483131s | 0.000328s | 1473.15x |
+| `FitContinuous.run` cached lazy NumPy attributes | sample `tree_simple` all-model text run, side-by-side previous uncached lazy proxy, identical print count | 0.499734s | 0.417299s | 1.20x |
 | `FitContinuous._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.471328s | 0.458778s | 1.03x |
 | `FitContinuous._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.433228s | 0.238331s | 1.82x |
 | `FitContinuous._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.239696s | 0.223276s | 1.07x |
