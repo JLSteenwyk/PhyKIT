@@ -53,12 +53,13 @@ def _count_no_gap_sites_in_identical_sequence(sequence: str, is_protein: bool) -
 
 
 def _all_sequences_identical(sequences: list[str]) -> bool:
-    if not sequences:
+    empty = object()
+    iterator = iter(sequences)
+    first_sequence = next(iterator, empty)
+    if first_sequence is empty:
         return True
-
-    first_sequence = sequences[0]
-    for idx in range(1, len(sequences)):
-        if sequences[idx] != first_sequence:
+    for sequence in iterator:
+        if sequence != first_sequence:
             return False
     return True
 

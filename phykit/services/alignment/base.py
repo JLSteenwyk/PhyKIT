@@ -22,9 +22,10 @@ _PROTEIN_INVALID_LOOKUP = None
 
 
 def _all_sequences_identical(sequences) -> bool:
+    empty = object()
     iterator = iter(sequences)
-    first_sequence = next(iterator, None)
-    if first_sequence is None:
+    first_sequence = next(iterator, empty)
+    if first_sequence is empty:
         return True
     for sequence in iterator:
         if sequence != first_sequence:

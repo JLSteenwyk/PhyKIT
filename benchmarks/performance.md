@@ -135,6 +135,7 @@ Results:
 | `PairwiseIdentity.calculate_pairwise_identity_stats` single-record early return | 4.5M-site single-record DNA alignment, side-by-side previous full-result fallback before no-values stats | 0.004708167s | 0.000002458s | 1915.27x |
 | `PairwiseIdentity._identity_for_identical_sequence` gap count | 20 repeated 4.5M-site identical DNA sequences, `exclude_gaps=True`, side-by-side previous per-character membership loop | 9.847190s | 0.367208s | 26.82x |
 | `AlignmentLengthNoGaps`/`PairwiseIdentity` identical-row no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
+| `AlignmentLengthNoGaps`/`PairwiseIdentity` local identical helper iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `PairwiseIdentity.calculate_pairwise_identities` sequential fallback pair streaming | 500 mixed-length records, multiprocessing disabled, worker and stats helper held constant | 1.010443s | 0.595901s | 1.70x |
 | `PairwiseIdentity.calculate_pairwise_identities` multiprocessing fallback streaming chunks | 2500 fallback records, 3,123,750 index-pair chunk setup, side-by-side previous full pair-list slicing | 0.720987s | 0.338193s | 2.13x |
 | `PairwiseIdentity._process_pair_batch` local record reuse | 124,750 fallback pair comparisons over 500 records x 120 sites, side-by-side previous repeated `alignment_data` indexing | 0.862179s | 0.687560s | 1.25x |
@@ -295,7 +296,7 @@ Results:
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` no-gap byte membership precheck | 1200 taxa x 12000 non-identical no-gap DNA sites, side-by-side previous per-code one-byte allocation precheck | 0.006010s | 0.005257s | 1.14x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` identical-sequence shortcut | 2000 taxa x 12000 DNA sites, identical no-gap/gappy sequences; 1200 taxa x 12000 identical protein sites, side-by-side previous alignment-wide byte path | 0.032510s / 0.063387s / 0.008216s | 0.000157s / 0.000284s / 0.000088s | 207.13x / 223.03x / 93.32x |
 | `AlignmentLengthNoGaps` identical Unicode fallback counts | 100k-site mixed-case Unicode identical sequence helper, DNA / protein, side-by-side previous `upper()` plus uppercase gap counts | 0.000486s / 0.000401s | 0.000379s / 0.000251s | 1.28x / 1.60x |
-| `AlignmentLengthNoGaps` identical-row no-slice scan | see shared `PairwiseIdentity` row above for the common helper benchmark | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
+| `AlignmentLengthNoGaps` identical-row no-slice scan | see shared `PairwiseIdentity` rows above for common helper benchmarks | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
 | `alignment_length_no_gaps` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.116950s | 0.024571s | 4.76x |
 | `alignment_length_no_gaps` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007086s | 0.006015s | 1.18x |
 | `alignment_length_no_gaps` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.004736s | 0.002167s | 2.18x |
@@ -670,7 +671,7 @@ Results:
 | `Alignment.calculate_rcv` identical-sequence shortcut | 1200 taxa x 12000 sites, lowercase/uppercase identical DNA records, side-by-side previous matrix path | 0.046277s | 0.006825s | 6.78x |
 | `Alignment.calculate_rcv` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero RCV | 0.169686s | 0.036446s | 4.66x |
 | `Alignment.calculate_rcv` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.163491s / 0.008818s / 0.075810s | 0.050280s / 0.000004s / 0.031403s | 3.25x / 2377.98x / 2.41x |
-| shared alignment `_all_sequences_identical` iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.044995541s / 0.000000333s / 0.106867708s | 0.022748250s / 0.000000167s / 0.014627334s | 1.98x / 1.99x / 7.31x |
+| shared alignment `_all_sequences_identical` iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `Alignment.calculate_rcv` final RCV total | median per-call reduction of 260 / 1200 / 2000 per-taxon RCV values, side-by-side previous `np.sum` wrapper | 0.000003516s / 0.000005445s / 0.000004957s | 0.000002338s / 0.000002423s / 0.000003238s | 1.50x / 2.25x / 1.53x |
 | `Alignment.calculate_rcv` narrow deviation row sums | count-difference matrices shaped 260x4 / 500000x4, side-by-side previous top-level `np.sum(..., axis=1)` wrapper while preserving the wider-matrix path | 0.000018676s / 0.015092927s | 0.000004325s / 0.006486581s | 4.32x / 2.33x |
 | `Alignment.calculate_rcv` clean large-short ASCII count matrix | 10000 taxa x 128 sites / 50000 taxa x 64 sites / 200000 taxa x 32 sites, 20 valid symbols, side-by-side previous per-row `bincount` loop | 5.113480s / 5.967428s / 6.979634s | 1.557019s / 1.341158s / 1.625248s | 3.28x / 4.45x / 4.29x |
@@ -1652,6 +1653,7 @@ Results:
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence shortcut | balanced 300-tip tree x 1200 mixed-symbol sites, 44,850 requested pairs, `exclude_gaps=True`, side-by-side previous matrix distance path | 1.866907s | 0.140145s | 13.32x |
 | `Saturation` identical Unicode valid-site count | 100k-site uppercase Unicode identical-sequence helper, DNA / protein gap sets, side-by-side previous Python character-membership loop | 0.006550s / 0.007644s | 0.000488s / 0.000397s | 13.42x / 19.24x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058916s / 0.004838s / 0.051696s | 0.033481s / 0.000000334s / 0.045077s | 1.76x / 14490.77x / 1.15x |
+| `Saturation` local identical helper iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `Saturation._constant_uncorrected_distance_for_identical_sequences` raw-identical normalization scan | 500k raw-identical requested tips with gappy DNA symbols, side-by-side previous eager uppercase tip dictionary and sequence list | 0.824100s | 0.671471s | 1.23x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
@@ -3034,9 +3036,10 @@ Profiling summary:
   alignments now count gap-free sites from the first sequence alone, preserving
   DNA/protein gap and ambiguity semantics while avoiding alignment-wide byte
   joins and matrix construction for unchanged inputs. The identical-sequence
-  guard now uses the same index-based scan as `PairwiseIdentity`, avoiding
-  `sequences[1:]` allocation while retaining early mismatch exits. The
-  identical-sequence Unicode fallback now counts uppercase and lowercase gap
+  guard now uses the same iterator scan as `PairwiseIdentity`, avoiding
+  `sequences[1:]` allocation and repeated indexed list access while retaining
+  early mismatch exits. The identical-sequence Unicode fallback now counts
+  uppercase and lowercase gap
   codes directly instead of allocating an uppercased copy before counting.
   A subsequent startup pass builds those lookup tables lazily and defers the
   annotation-only Bio.Align import. The shared `alignment.base` RCV lookup
@@ -3288,9 +3291,9 @@ Profiling summary:
   first sequence before alignment matrix construction, covering conserved
   multi-symbol alignments while leaving all-invalid identical alignments on the
   existing normal path to preserve `None` no-overlap distance rows. That
-  identical-sequence guard now uses the shared index-based scanner instead of
-  allocating `sequences[1:]`, preserving early mismatch short-circuiting without
-  list-copy overhead. The identical-sequence Unicode valid-length fallback now
+  identical-sequence guard now uses the shared iterator scanner instead of
+  allocating `sequences[1:]` or repeatedly indexing the list, preserving early
+  mismatch short-circuiting without list-copy overhead. The identical-sequence Unicode valid-length fallback now
   counts invalid characters with `str.count` instead of looping over every
   character in Python. Single-record alignments now use the same constant-result
   formatter after computing the one sequence's valid length, skipping matrix
@@ -6007,9 +6010,9 @@ Profiling summary:
   requested taxon has the same normalized sequence, uncorrected distances now
   return as a constant vector before sequence-array and matrix construction;
   gap-excluding all-ambiguous identical sequences still return `NaN` distances.
-  That identical-sequence guard now uses a local index-based scanner instead of
-  allocating `sequences[1:]`, retaining early mismatch exits without list-copy
-  overhead. The identical-sequence Unicode valid-site fallback now counts gap
+  That identical-sequence guard now uses a local iterator scanner instead of
+  allocating `sequences[1:]` or repeatedly indexing the list, retaining early
+  mismatch exits without list-copy overhead. The identical-sequence Unicode valid-site fallback now counts gap
   characters with `str.count` instead of looping over every character in Python.
   Raw-identical requested tips now compare raw sequence strings before falling
   back to uppercase comparisons, preserving case-insensitive matching while
