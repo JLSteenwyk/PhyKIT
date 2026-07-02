@@ -366,6 +366,22 @@ class TestPhyloGwas:
             expected,
         )
 
+    def test_small_benjamini_hochberg_skips_vector_sort(self, monkeypatch):
+        def fail_argsort(*args, **kwargs):
+            raise AssertionError("small BH corrections should use scalar sorting")
+
+        monkeypatch.setattr(phylo_gwas_module.np, "argsort", fail_argsort)
+
+        adjusted = PhyloGwas._benjamini_hochberg(
+            [0.20, 0.01, 0.01, 0.50, 0.03, 0.80, 0.03]
+        )
+
+        assert isinstance(adjusted, np.ndarray)
+        np.testing.assert_allclose(
+            adjusted,
+            [0.28, 0.035, 0.035, 0.5833333333333334, 0.0525, 0.8, 0.0525],
+        )
+
     def test_benjamini_hochberg_populates_result_without_zero_fill(self, monkeypatch):
         def fail_zeros(*args, **kwargs):
             raise AssertionError("BH output should not be zero-filled before scatter")

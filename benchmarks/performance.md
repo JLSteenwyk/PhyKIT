@@ -671,6 +671,7 @@ Results:
 | `PhyloGwas._build_phylo_pattern_index` binary child union | balanced 65536-tip tree, descendant taxon-set index for monophyly classification, side-by-side previous generic child-set union | 0.189455s | 0.179548s | 1.06x |
 | `PhyloGwas._build_phylo_pattern_index` binary child preorder push | balanced 1024 / 8192 / 32768-tip trees, descendant taxon-set index for monophyly classification, side-by-side previous `extend(children)` preorder setup | 0.000948s / 0.025561s / 0.154470s | 0.000875s / 0.014170s / 0.071026s | 1.08x / 1.80x / 2.17x |
 | `PhyloGwas._benjamini_hochberg` in-place adjustment allocation | 1M synthetic p-values | 0.108093s | 0.106394s | 1.02x |
+| `PhyloGwas._benjamini_hochberg` tiny-list scalar branch | 4 / 7 / 8 / 16 p-values, identical ndarray output and BH-adjusted values, side-by-side previous vector-only helper | 0.000003458s / 0.000003500s / 0.000003500s / 0.000003708s | 0.000001667s / 0.000002542s / 0.000003583s / 0.000003791s | 2.07x / 1.38x / 0.98x / 0.98x |
 | `PhyloGwas._create_manhattan_plot` partition span rendering | 4096 partitions / 2048 alternating gray spans, real Matplotlib Agg render | 0.570093s | 0.089715s | 6.35x |
 | `PhyloGwas._create_manhattan_plot` point series preparation | 1M GWAS result rows with mixed FDR-significant phylogenetic patterns, identical positions, colors, transformed p-values, and FDR threshold | 0.155766s | 0.135860s | 1.15x |
 | `PhyloGwas._print_text_output` top-hit selection and batched report output | 50k categorical text reports with 1k shuffled significant sites, captured stdout and identical text | 5.129769s | 3.727684s | 1.38x |
@@ -3982,7 +3983,9 @@ Profiling summary:
 - `PhyloGwas._benjamini_hochberg` baseline time walked sorted p-values in a
   Python reverse loop to enforce monotonic adjusted values. The optimized path
   computes ranked p-values in NumPy and applies a vectorized reverse cumulative
-  minimum, preserving scalar BH results including ties.
+  minimum, preserving scalar BH results including ties. Tiny result sets now use
+  a scalar branch before returning an ndarray, avoiding vector sort setup for up
+  to seven tested sites while keeping the vector path for larger GWAS outputs.
 - `PhyloGwas` partition annotation baseline time scanned every partition for
   every tested site. The optimized path builds a binary-search lookup for
   sorted, non-overlapping partition files and keeps the original linear lookup

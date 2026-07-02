@@ -29,6 +29,7 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _P_VALUE_GETTER = itemgetter("p_value")
 _PARTITION_ROW_PATTERN = None
+_BH_SCALAR_MAX = 7
 
 
 def print_json(*args, **kwargs):
@@ -667,6 +668,18 @@ class PhyloGwas(Alignment):
         n = len(p_values)
         if n == 0:
             return np.array([])
+        if n <= _BH_SCALAR_MAX:
+            indexed = sorted(enumerate(p_values), key=lambda item: item[1])
+            corrected = [0.0] * n
+            previous = 1.0
+            for rank_minus_1 in range(n - 1, -1, -1):
+                original_idx, p_value = indexed[rank_minus_1]
+                rank = rank_minus_1 + 1
+                adjusted = min(p_value * n / rank, previous)
+                adjusted = min(adjusted, 1.0)
+                corrected[original_idx] = adjusted
+                previous = adjusted
+            return np.asarray(corrected, dtype=float)
         p_arr = np.array(p_values, dtype=float)
         sorted_indices = np.argsort(p_arr)
         adjusted = p_arr[sorted_indices]
