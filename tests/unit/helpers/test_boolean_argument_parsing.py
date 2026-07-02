@@ -18,6 +18,23 @@ assert "argparse" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+class LowerCountingStr(str):
+    def __new__(cls, value):
+        obj = str.__new__(cls, value)
+        obj.lower_calls = 0
+        return obj
+
+    def lower(self):
+        self.lower_calls += 1
+        return super().lower()
+
+
+def test_str2bool_normalizes_string_once():
+    v = LowerCountingStr("false")
+    assert str2bool(v) is False
+    assert v.lower_calls == 1
+
+
 class TestBooleanHandling(object):
     def test_str2bool_true_boolean(self):
         v = True
@@ -64,4 +81,3 @@ class TestBooleanHandling(object):
         with pytest.raises(argparse.ArgumentTypeError) as excinfo:
             v = str2bool(v)
         assert "Boolean value expected." in str(excinfo.value)
-        

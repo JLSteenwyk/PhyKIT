@@ -67,6 +67,7 @@ Results:
 | `phykit.phykit` CLI startup without eager logging setup | cold subprocess import after removing unused module logger/handler construction | 0.024059s | 0.020968s | 1.15x |
 | `phykit.phykit` CLI startup without eager `argparse` | cold subprocess import after deferring parser imports until `_new_parser()` and lazy-loading boolean parse errors | 0.020950s | 0.019993s | 1.05x |
 | `boolean_argument_parsing` import without eager `argparse` | cold subprocess import of `str2bool`; invalid values still raise `argparse.ArgumentTypeError` | 0.019988s | 0.018408s | 1.09x |
+| `boolean_argument_parsing.str2bool` single normalization | 600k mixed lowercase / false-only / true-only parser string values, side-by-side previous double-`lower()` false path | 0.133981s / 0.234423s / 0.100520s | 0.105720s / 0.152557s / 0.100748s | 1.27x / 1.54x / 1.00x |
 | `phykit.phykit` CLI startup without eager boolean parser helper | median cold subprocess import, eager-helper preload vs lazy `str2bool` wrapper | 0.044624s | 0.043154s | 1.03x |
 | `phykit.phykit.str2bool` cached lazy helper | 600k mixed lowercase / false-only / true-only parser values, side-by-side previous uncached lazy wrapper | 1.163679s / 1.460804s / 1.163590s | 0.412152s / 0.394453s / 0.217375s | 2.82x / 3.70x / 5.35x |
 | `geological_timescale.get_timescale_for_range` epoch intervals | 300k auto epoch-range calls, side-by-side previous overwritten epoch-list build | 1.001253s | 0.425282s | 2.35x |
@@ -2538,12 +2539,15 @@ Profiling summary:
   `phykit.phykit` import. Parser construction now also defers `argparse` until
   `_new_parser()` runs; the global `SUPPRESS` value is synchronized with
   `argparse.SUPPRESS` at that point, and `str2bool` imports `argparse` only for
-  the invalid-value error path. A later startup pass also keeps the boolean
-  parser helper behind a same-name wrapper in `phykit.phykit`, so plain CLI
-  module imports avoid the helper until a boolean parser option is built or
-  invoked. That wrapper now caches the resolved helper after its first call,
-  preserving lazy import behavior while avoiding repeated import dispatch for
-  boolean parser values. Parser-description dedenting now goes through a lazy
+  the invalid-value error path. The helper now lowercases non-bool parser values
+  once before checking accepted true and false spellings, avoiding a second
+  normalization for false values while preserving lazy `argparse` error
+  construction. A later startup pass also keeps the boolean parser helper behind
+  a same-name wrapper in `phykit.phykit`, so plain CLI module imports avoid the
+  helper until a boolean parser option is built or invoked. That wrapper now
+  caches the resolved helper after its first call, preserving lazy import
+  behavior while avoiding repeated import dispatch for boolean parser values.
+  Parser-description dedenting now goes through a lazy
   `_dedent()` helper, so import-only callers avoid `textwrap` until a help
   description or banner actually needs dedenting. The default version and
   invalid-alias banners now cache their dedented text after first use, preserving
