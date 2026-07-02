@@ -317,6 +317,9 @@ class PhyloImpute(Tree):
 
     @staticmethod
     def _subset_to_shared_taxa(ordered_names, Y, shared):
+        if shared == ordered_names:
+            return ordered_names, Y
+
         shared_set = set(shared)
         if shared_set == set(ordered_names):
             return ordered_names, Y

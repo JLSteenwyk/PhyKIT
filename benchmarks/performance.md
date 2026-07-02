@@ -2245,6 +2245,7 @@ Results:
 | `PhyloImpute._parse_trait_file_with_na` all-shared parser fast path | 200k-row multi-trait TSV, 8 numeric/NA trait columns, all taxa shared | 0.510872s | 0.385042s | 1.33x |
 | `PhyloImpute._parse_trait_file_with_na` off-tree numeric validation skip | 200k-row multi-trait TSV, 8 numeric/NA trait columns, 100k shared taxa and 100k off-tree taxa, side-by-side previous off-tree value-list allocation | 1.006604s | 0.912679s | 1.10x |
 | `PhyloImpute._subset_to_shared_taxa` cached membership set | 20k ordered taxa, 10k shared taxa, NumPy matrix row subset | 3.554433s | 0.002021s | 1758.5x |
+| `PhyloImpute._subset_to_shared_taxa` ordered all-shared fast path | 300k ordered taxa, all shared from discordance-VCV metadata, NumPy matrix returned unchanged | 0.069982s | 0.000209s | 334.5x |
 | `PhyloImpute._write_output_tsv` row-slice TSV formatting | 30k taxa x 80 imputed trait matrix, identical six-decimal TSV text | 0.762587s | 0.667688s | 1.14x |
 | `PhyloImpute._write_output_tsv` chunked `savetxt` formatting | 30k taxa x 80 imputed trait matrix, identical six-decimal TSV text | 0.644563s | 0.396832s | 1.62x |
 | `PhyloImpute._print_text` batched imputed rows | 100k imputed missing-value rows, captured stdout and identical text | 0.141269s | 0.128685s | 1.10x |
@@ -7490,9 +7491,11 @@ Profiling summary:
   missing-marker handling.
   Discordance-VCV shared-taxa subsetting now builds the shared-taxon
   membership set once before row filtering instead of rebuilding it for every
-  ordered taxon. The replacement trait-table writer now formats each NumPy row
-  directly, preserving taxon order and six-decimal TSV output while avoiding
-  repeated two-dimensional indexing. The run loop now reuses its initial
+  ordered taxon. When discordance-VCV metadata already matches PhyloImpute's
+  ordered taxon list, the subset helper now returns the original names and data
+  matrix before allocating membership sets. The replacement trait-table writer
+  now formats each NumPy row directly, preserving taxon order and six-decimal
+  TSV output while avoiding repeated two-dimensional indexing. The run loop now reuses its initial
   missing-value mask for complete-case detection and per-taxon trait index
   selection, iterating only taxa with missing values and passing NumPy index
   arrays through to imputation instead of rebuilding scans and lists per row.

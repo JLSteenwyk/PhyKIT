@@ -424,6 +424,28 @@ class TestPhyloImpute:
         assert subset_names == ["A", "C"]
         assert subset_Y.tolist() == [[0, 1], [4, 5]]
 
+    def test_subset_to_shared_taxa_returns_original_for_ordered_shared_taxa(self):
+        class CountingShared(list):
+            def __init__(self, values):
+                super().__init__(values)
+                self.iterations = 0
+
+            def __iter__(self):
+                self.iterations += 1
+                return super().__iter__()
+
+        ordered_names = ["A", "B", "C", "D"]
+        shared = CountingShared(["A", "B", "C", "D"])
+        Y = np.arange(8).reshape(4, 2)
+
+        subset_names, subset_Y = PhyloImpute._subset_to_shared_taxa(
+            ordered_names, Y, shared
+        )
+
+        assert shared.iterations == 0
+        assert subset_names is ordered_names
+        assert subset_Y is Y
+
     def test_imputed_values_finite(self, tmp_path):
         """All imputed values should be finite numbers."""
         out = str(tmp_path / "imputed.tsv")
