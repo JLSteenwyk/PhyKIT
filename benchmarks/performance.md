@@ -2563,6 +2563,7 @@ Results:
 | `OUwie._build_ou_H_matrices` single-tip diagonal updates | balanced 2048-tip synthetic lineage x 3 regimes, alpha=0.7 | 0.129839s | 0.092253s | 1.41x |
 | `OUwie._build_ou_vcv_multi_alpha` branch outer products | balanced 512-tip synthetic lineage x 3 regimes, regime-specific alpha/sigma2 | 0.434786s | 0.009932s | 43.8x |
 | `OUwie._build_ou_vcv_multi_alpha` single-tip diagonal updates | balanced 2048-tip synthetic lineage x 3 regimes, regime-specific alpha/sigma2 | 0.154475s | 0.098951s | 1.56x |
+| `OUwie.run` cached lazy NumPy attributes | sample `tree_simple` all-model JSON run, side-by-side previous lazy proxy lookup path, BM1 `r_squared` unchanged at `0.0` | 2.985246s | 2.937676s | 1.02x |
 
 Profiling summary:
 
