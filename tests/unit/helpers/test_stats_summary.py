@@ -204,6 +204,16 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(exact_stats['median'], 100)
         self.assertIs(type(exact_stats['median']), int)
 
+    def test_small_mixed_numeric_list_preserves_float_summary_path(self):
+        """Test non-integer endpoint values keep the mixed numeric behavior."""
+        stats = calculate_summary_statistics_from_arr([1, 2, 4.0])
+
+        self.assertEqual(stats['mean'], 7 / 3)
+        self.assertEqual(stats['median'], 2)
+        self.assertIs(type(stats['mean']), float)
+        self.assertEqual(stats['twenty_fifth'], 1.5)
+        self.assertEqual(stats['seventy_fifth'], 3.0)
+
     def test_negative_values(self):
         """Test statistics with negative values"""
         data = [-5, -3, -1, 0, 1, 3, 5]

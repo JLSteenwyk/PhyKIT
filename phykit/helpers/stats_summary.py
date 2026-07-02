@@ -123,7 +123,12 @@ def _calculate_small_sequence_statistics(values):
         sorted_values = sorted(values)
         first_value = sorted_values[0]
         last_value = sorted_values[-1]
-        all_integer = all(type(value) is int for value in sorted_values)
+        all_integer = type(first_value) is int and type(last_value) is int
+        if all_integer:
+            for index in range(1, count - 1):
+                if type(sorted_values[index]) is not int:
+                    all_integer = False
+                    break
         if first_value == last_value:
             if all_integer:
                 mean = first_value
