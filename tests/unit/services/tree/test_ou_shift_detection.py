@@ -904,6 +904,30 @@ class TestEndToEnd:
 
         assert spy.call_count == 1
 
+    def test_prepare_shared_trait_data_skips_prune_scan_when_all_shared(self):
+        tree_tips = ["A", "B", "C"]
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+
+        to_prune, ordered_names = OUShiftDetection._prepare_shared_trait_data(
+            tree_tips,
+            traits,
+        )
+
+        assert to_prune == []
+        assert ordered_names == ["A", "B", "C"]
+
+    def test_prepare_shared_trait_data_preserves_partial_prune_order(self):
+        tree_tips = ["A", "B", "C", "D"]
+        traits = {"A": 1.0, "C": 3.0, "B": 2.0}
+
+        to_prune, ordered_names = OUShiftDetection._prepare_shared_trait_data(
+            tree_tips,
+            traits,
+        )
+
+        assert to_prune == ["D"]
+        assert ordered_names == ["A", "B", "C"]
+
     def test_run_uses_unmodified_tree_read(self, default_args, mocker):
         svc = OUShiftDetection(default_args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")

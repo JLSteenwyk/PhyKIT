@@ -2312,6 +2312,7 @@ Results:
 | `OUShiftDetection.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.0675s | 0.0068s | 9.9x |
 | `OUShiftDetection.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, lineage setup, fitting, and output mocked; protective prune-copy retained | 1.376328s | 0.549209s | 2.51x |
 | `OUShiftDetection.run` all-shared read-only setup | balanced 32768-tip cached tree, trait parsing, lineage setup, fitting/output mocked | 0.310091s | 0.064237s | 4.83x |
+| `OUShiftDetection.run` all-shared trait setup | default prune/name setup over 32768 / 200k / 50k tree tips with every tip present in the trait mapping | 2.959527s / 1.665317s / 1.046265s | 0.903980s / 0.381757s / 0.168062s | 3.27x / 4.36x / 6.23x |
 | `OUShiftDetection._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.049777s | 0.036699s | 1.36x |
 | `OUShiftDetection._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.472496s | 0.460270s | 1.03x |
 | `OUShiftDetection._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.438335s | 0.237122s | 1.85x |
@@ -7578,6 +7579,9 @@ Profiling summary:
   before creating its protective working copy for pruning. A
   later all-shared run-setup pass skips that protective copy entirely when all
   tree tips have trait data, while still copying before pruning missing taxa.
+  The all-shared trait setup path now also avoids building a shared taxon set
+  before sorting trait names, while retaining the set-backed prune scan for
+  partial trait files.
   Trait parsing now streams directly over the file handle, validates
   two-column rows with a single tab partition, and builds the trait taxa set
   directly from the parsed dictionary. A later parser pass returns immediately

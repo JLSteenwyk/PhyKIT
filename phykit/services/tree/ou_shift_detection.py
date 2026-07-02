@@ -133,16 +133,17 @@ class OUShiftDetection(Tree):
         tree_tips = self.get_tip_names_from_tree(tree)
         traits = self._parse_trait_file(self.trait_data_path, tree_tips)
 
-        shared = set(traits.keys())
-
-        to_prune = [t for t in tree_tips if t not in shared]
+        to_prune, ordered_names = self._prepare_shared_trait_data(
+            tree_tips,
+            traits,
+        )
         tree_for_analysis = self._fast_copy(tree) if to_prune else tree
         if to_prune:
             for t in to_prune:
                 tree_for_analysis.prune(t)
 
         # Store working data as instance attributes for internal methods
-        self._ordered_names = sorted(shared)
+        self._ordered_names = ordered_names
         self._x = np.array([traits[name] for name in self._ordered_names])
         self._n = len(self._ordered_names)
         preorder_clades = list(self._iter_preorder(tree_for_analysis.root))
@@ -201,6 +202,16 @@ class OUShiftDetection(Tree):
         self._output(result)
 
     # ── Tree & data parsing (adapted from OUwie) ─────────────────────
+
+    @staticmethod
+    def _prepare_shared_trait_data(tree_tips, traits):
+        if len(traits) == len(tree_tips) and all(
+            name in traits for name in tree_tips
+        ):
+            return [], sorted(traits)
+
+        shared = set(traits.keys())
+        return [name for name in tree_tips if name not in shared], sorted(shared)
 
     def _parse_trait_file(
         self, path: str, tree_tips: list[str]
