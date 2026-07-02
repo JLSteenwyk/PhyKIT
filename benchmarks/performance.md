@@ -324,6 +324,7 @@ Results:
 | `MaskAlignment.calculate_keep_mask` all-pass threshold shortcut | DNA 2000 taxa x 12000 sites, alphabet `ACGT-?NX*` / protein 1200 taxa x 12000 sites, protein alphabet plus gaps/ambiguous symbols, `max_gap=1`, `min_occupancy=0`, no entropy | 0.065244s / 0.035698s | 0.013126s / 0.006714s | 4.97x / 5.32x |
 | `MaskAlignment.calculate_keep_mask` all-pass pre-materialization return | 2000 taxa x 12000 DNA sites, all-pass thresholds, side-by-side previous sequence materialization before all-true mask | 0.070370167s | 0.000251167s | 280.17x |
 | `MaskAlignment.calculate_keep_mask` clean no-entropy shortcut | 2000 taxa x 12000 clean DNA sites, `max_gap=0.2`, `min_occupancy=0.8`, no entropy threshold, side-by-side previous occupancy mask path | 0.060156s | 0.017106s | 3.52x |
+| `MaskAlignment.calculate_keep_mask` cached lazy NumPy attributes | gapped DNA gap/occupancy 2000 x 8000, gapped DNA entropy 1200 x 6000, and protein entropy 1000 x 5000 paths, side-by-side previous uncached lazy proxy, identical keep mask | 0.270103s / 0.366875s / 0.358368s | 0.252654s / 0.247110s / 0.322143s | 1.07x / 1.48x / 1.11x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with gaps/ambiguous symbols, entropy threshold enabled, lowercase/uppercase variants, side-by-side previous matrix path | 0.100434s | 0.005945s | 16.89x |
 | `MaskAlignment.calculate_keep_mask` raw-identical normalization scan | 300k raw-identical DNA rows x 32 sites, entropy threshold enabled, side-by-side previous eager uppercase sequence setup with identical valid-site mask | 0.118741s | 0.100796s | 1.18x |
 | `MaskAlignment.calculate_keep_mask` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.196770s / 0.006034s / 0.084992s | 0.040581s / 0.000003s / 0.042880s | 4.85x / 1765.72x / 1.98x |
@@ -3216,7 +3217,8 @@ Profiling summary:
   length matches all sequence lengths, it returns empty sequence strings
   directly while preserving the matrix path for mismatched masks. Text-mode `run` now emits the masked FASTA records as one
   newline-joined print while preserving record order, JSON output, and stdout
-  text. A later startup pass builds the lookup tables lazily and postpones
+  text. A follow-up pass caches resolved lazy NumPy attributes during repeated
+  mask calculations while preserving import deferral. A later startup pass builds the lookup tables lazily and postpones
   annotations so import-only callers do not load NumPy while fallback tests can
   still patch module-level `np.isin`. A follow-up startup pass keeps JSON output
   behind a module-level forwarding wrapper, preserving the patch point while

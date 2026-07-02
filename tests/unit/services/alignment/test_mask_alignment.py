@@ -36,6 +36,15 @@ assert "Bio.AlignIO" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_lazy_numpy_caches_resolved_attributes(self):
+        lazy_np = mask_alignment_module._LazyNumpy()
+
+        zeros_attr = lazy_np.zeros
+
+        assert lazy_np.__dict__["zeros"] is zeros_attr
+        assert lazy_np.zeros is zeros_attr
+        assert lazy_np._module is not None
+
     def test_init_sets_alignment_file_path(self, args):
         masker = MaskAlignment(args)
         assert masker.alignment_file_path == args.alignment
