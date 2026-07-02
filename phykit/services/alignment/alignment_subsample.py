@@ -160,12 +160,20 @@ class AlignmentSubsample(Alignment):
             else:
                 selected_indices = sorted(rng.sample(indices, k=n))
 
-            from operator import itemgetter
-            site_selector = itemgetter(*selected_indices)
-            new_sequences: dict[str, str] = {
-                taxon: self._select_sites(seq, site_selector)
-                for taxon, seq in sequences.items()
-            }
+            selected_ranges = self._selected_index_ranges(selected_indices)
+            if len(selected_ranges) * 4 < len(selected_indices):
+                new_sequences: dict[str, str] = {
+                    taxon: self._select_site_ranges(seq, selected_ranges)
+                    for taxon, seq in sequences.items()
+                }
+            else:
+                from operator import itemgetter
+
+                site_selector = itemgetter(*selected_indices)
+                new_sequences = {
+                    taxon: self._select_sites(seq, site_selector)
+                    for taxon, seq in sequences.items()
+                }
 
         out_aln = f"{self.output_prefix}.fa"
         self._write_fasta(out_aln, new_sequences)
@@ -291,6 +299,28 @@ class AlignmentSubsample(Alignment):
         if isinstance(selected, str):
             return selected
         return "".join(selected)
+
+    @staticmethod
+    def _selected_index_ranges(indices: list[int]) -> list[tuple[int, int]]:
+        if not indices:
+            return []
+
+        ranges: list[tuple[int, int]] = []
+        start = indices[0]
+        previous = start
+        for index in indices[1:]:
+            if index == previous + 1:
+                previous = index
+                continue
+            ranges.append((start, previous + 1))
+            start = index
+            previous = index
+        ranges.append((start, previous + 1))
+        return ranges
+
+    @staticmethod
+    def _select_site_ranges(seq: str, ranges: list[tuple[int, int]]) -> str:
+        return "".join(seq[start:stop] for start, stop in ranges)
 
     @staticmethod
     def _assemble_partition_subsample(

@@ -204,6 +204,17 @@ class TestSitesMode:
     def test_select_sites_preserves_repeated_indices(self):
         assert AlignmentSubsample._select_sites("ACGT", itemgetter(2, 2, 0)) == "GGA"
 
+    def test_selected_index_ranges_groups_contiguous_sites(self):
+        assert AlignmentSubsample._selected_index_ranges(
+            [0, 1, 2, 5, 7, 8]
+        ) == [(0, 3), (5, 6), (7, 9)]
+
+    def test_select_site_ranges_joins_sequence_slices(self):
+        assert AlignmentSubsample._select_site_ranges(
+            "ACGTACGT",
+            [(0, 2), (4, 8)],
+        ) == "ACACGT"
+
     def test_read_alignment_uses_first_header_token_and_last_duplicate(self, tmp_path):
         aln = os.path.join(str(tmp_path), "aln.fa")
         with open(aln, "w") as fh:
@@ -305,6 +316,48 @@ class TestSitesMode:
         service._run_sites(None)
 
         assert captured["sequences"] is sequences
+
+    def test_sites_mode_clustered_nonbootstrap_selection_uses_ranges(
+        self, tmp_path, monkeypatch
+    ):
+        class FakeRng:
+            def sample(self, _items, k):
+                assert k == 9
+                return [8, 7, 6, 5, 4, 3, 2, 1, 0]
+
+        captured = {}
+        args = Namespace(
+            mode="sites", alignment="aln.fa", list=None, partition=None,
+            number=9, fraction=None, seed=42, bootstrap=False,
+            output=os.path.join(str(tmp_path), "out"), json=False,
+        )
+        service = AlignmentSubsample(args)
+        monkeypatch.setattr(
+            service,
+            "_read_alignment",
+            lambda _path: {"t1": "ACGTACGTAA", "t2": "TTTTCCCCGG"},
+        )
+        monkeypatch.setattr(
+            AlignmentSubsample,
+            "_select_sites",
+            staticmethod(
+                lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    AssertionError("clustered site selection should use ranges")
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            service,
+            "_write_fasta",
+            lambda _path, written_sequences: captured.setdefault(
+                "sequences", written_sequences
+            ),
+        )
+        monkeypatch.setattr(service, "_print_summary", lambda *_args: None)
+
+        service._run_sites(FakeRng())
+
+        assert captured["sequences"] == {"t1": "ACGTACGTA", "t2": "TTTTCCCCG"}
 
     def test_sites_mode_stops_at_first_length_mismatch(
         self, tmp_path, monkeypatch
