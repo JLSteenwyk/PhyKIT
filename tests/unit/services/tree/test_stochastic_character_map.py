@@ -343,6 +343,51 @@ class TestTraversalHelpers:
         assert simulation_nodes == expected_simulation_nodes
         assert branch_nodes == expected_branch_nodes
 
+    def test_build_simulation_metadata_reuses_optimized_preorder(
+        self, default_args
+    ):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("metadata traversal should not call reversed")
+
+        svc = StochasticCharacterMap(default_args)
+        root = Clade(name="root")
+        left = Clade(branch_length=3.0, name="left")
+        right = Clade(branch_length=4.0, name="right")
+        left.clades = NoReversedList(
+            [
+                Clade(branch_length=1.0, name="A"),
+                Clade(branch_length=2.0, name="B"),
+            ]
+        )
+        root.clades = NoReversedList([left, right])
+        tree = type("Tree", (), {"root": root})()
+        parent_map = {
+            id(left): root,
+            id(right): root,
+            id(left.clades[0]): left,
+            id(left.clades[1]): left,
+        }
+
+        simulation_nodes, branch_nodes = svc._build_simulation_metadata(
+            tree,
+            {"A": "x", "B": "y", "right": "x"},
+            ["x", "y"],
+            parent_map,
+        )
+
+        expected_simulation_nodes = [
+            (id(left), id(root), 3.0, None),
+            (id(left.clades[0]), id(left), 1.0, 0),
+            (id(left.clades[1]), id(left), 2.0, 1),
+            (id(right), id(root), 4.0, 0),
+        ]
+        assert simulation_nodes == expected_simulation_nodes
+        assert branch_nodes == [
+            (clade_id, parent_id, branch_length)
+            for clade_id, parent_id, branch_length, _ in expected_simulation_nodes
+        ]
+
 
 class TestQMatrixFitting:
     """Validated against R 4.4.0 with phytools::fitMk on same tree and traits."""

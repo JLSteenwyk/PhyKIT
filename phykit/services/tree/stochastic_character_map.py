@@ -503,10 +503,8 @@ class StochasticCharacterMap(Tree):
             root = None
 
         if root is not None:
-            stack = [root]
             try:
-                while stack:
-                    clade = stack.pop()
+                for clade in self._iter_preorder(root):
                     children = clade.clades
                     if clade is not root:
                         parent = parent_map.get(id(clade))
@@ -534,8 +532,6 @@ class StochasticCharacterMap(Tree):
                             branch_nodes.append(
                                 (clade_id, parent_id, branch_length)
                             )
-                    if children:
-                        stack.extend(reversed(children))
                 return simulation_nodes, branch_nodes
             except AttributeError:
                 simulation_nodes = []

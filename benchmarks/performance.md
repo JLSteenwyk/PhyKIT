@@ -1817,6 +1817,7 @@ Results:
 | `StochasticCharacterMap._build_parent_map` direct traversal | balanced 32768-tip tree, id-to-parent map for SIMMAP setup | 0.1006s | 0.0110s | 9.1x |
 | `StochasticCharacterMap._build_parent_map` unordered child push | balanced 65536-tip tree, id-to-parent map for SIMMAP setup, optimized helper baseline | 0.024008s | 0.018110s | 1.33x |
 | `StochasticCharacterMap._build_simulation_metadata` direct traversal | balanced 32768-tip tree, SIMMAP simulation and branch-node metadata | 0.1226s | 0.0281s | 4.4x |
+| `StochasticCharacterMap._build_simulation_metadata` preorder helper reuse | balanced 32768-tip tree, SIMMAP simulation and branch-node metadata, side-by-side previous local `reversed(children)` traversal | 0.159786s | 0.050887s | 3.14x |
 | `StochasticCharacterMap._print_text_output` batched summary output | 400-state synthetic SIMMAP summary, dense Q/transition tables, captured stdout and identical text | 0.152400s | 0.134238s | 1.14x |
 | `StochasticCharacterMap._print_text_output` row-wise dense tables | 200-state synthetic SIMMAP summary, dense Q/transition tables, identical text | 0.035830s | 0.026349s | 1.36x |
 | `StochasticCharacterMap._print_text_output` percent Q-row formatting | 400-state synthetic SIMMAP summary, dense Q/transition tables, captured stdout and identical text, side-by-side previous f-string Q-row formatter comparison | 0.108428s | 0.078860s | 1.37x |
@@ -6442,7 +6443,10 @@ Profiling summary:
   Bio.Phylo's generic preorder traversal and per-node terminal checks. The
   optimized helper reuses the same direct stack traversal as the parent-map
   setup, preserving preorder metadata and retaining the generic traversal as a
-  fallback for nonstandard tree objects.
+  fallback for nonstandard tree objects. A follow-up pass now routes the direct
+  metadata traversal through the shared `_iter_preorder` helper, avoiding the
+  duplicated local `reversed(children)` traversal while preserving the same
+  fallback behavior.
 - `StochasticCharacterMap._run_single_simulation` now samples tiny categorical
   distributions with one uniform draw plus a cumulative-probability search
   instead of `Generator.choice(..., p=...)`. This matches NumPy's fixed-seed
