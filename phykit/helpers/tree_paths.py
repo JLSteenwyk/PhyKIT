@@ -48,18 +48,17 @@ def path_from_root(
     """Return the path from root to node, or None when parent links are incomplete."""
     path = [node]
     current = node
-    seen = {id(current)}
+    remaining = len(parent_map) + 1
 
     while current is not root:
+        if remaining <= 0:
+            return None
         parent = parent_map.get(current)
         if parent is None:
             return None
         current = parent
-        marker = id(current)
-        if marker in seen and current is not root:
-            return None
-        seen.add(marker)
         path.append(current)
+        remaining -= 1
 
     path.reverse()
     return path

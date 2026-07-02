@@ -1706,6 +1706,7 @@ Results:
 | `tree_paths.build_object_parent_map` | balanced 65536-tip tree, object parent map for VCV/path helpers | 0.1865s | 0.0177s | 10.6x |
 | `tree_paths.build_object_parent_map` unordered child push | balanced 131072-tip tree, object parent map for VCV/path helpers, optimized helper baseline | 0.042188s | 0.030392s | 1.39x |
 | `tree_paths.build_root_path_map` | balanced 32768-tip tree, root-to-node path lists for all clades | 0.146555s | 0.050841s | 2.9x |
+| `tree_paths.path_from_root` bounded cycle guard | 512 sampled terminal paths from balanced 65536-tip tree, side-by-side previous per-path `seen` set guard | 0.499046s | 0.249614s | 2.00x |
 | `LTT._compute_gamma` + `LTT._compute_ltt` | balanced tree with 500 tips | 0.3363s | 0.0077s | 43.8x |
 | `Chronogram._compute_root_to_tip` | balanced tree with 5000 tips | 9.8673s | 0.0041s | 2417.5x |
 | `Chronogram._compute_root_to_tip` binary child push | 8192 / 32768 / 131072-tip balanced trees, median of randomized old/new seed medians, side-by-side previous `reversed(children)` tuple-stack helper | 0.005745s / 0.026191s / 0.175226s | 0.005262s / 0.023514s / 0.158405s | 1.09x / 1.11x / 1.11x |
@@ -5441,7 +5442,10 @@ Profiling summary:
   Explicit alternate-root calls and nonstandard tree objects retain the legacy
   traversal behavior. The shared object-parent-map helper now localizes stack
   operations and pushes child lists directly because the result is a mapping,
-  not an ordered traversal.
+  not an ordered traversal. `path_from_root` now uses the parent-map size as a
+  bounded walk guard, avoiding a per-path `seen` set allocation while still
+  returning `None` for incomplete parent maps and cycles that never reach the
+  root.
 - `LTT` baseline time computed terminal lists and root-depth maps separately
   for the gamma statistic and lineage-through-time table. The optimized run path
   builds that setup context once and passes it into both helpers, while the

@@ -93,3 +93,19 @@ def test_build_root_path_map_uses_direct_traversal(monkeypatch):
     assert paths[tree.root] == [tree.root]
     assert paths[left] == [tree.root, left]
     assert paths[right.clades[1]] == [tree.root, right, right.clades[1]]
+
+
+def test_path_from_root_returns_none_for_incomplete_parent_map():
+    root = Clade(name="root")
+    parent = Clade(name="parent")
+    child = Clade(name="child")
+
+    assert path_from_root(child, root, {child: parent}) is None
+
+
+def test_path_from_root_returns_none_for_parent_cycle():
+    root = Clade(name="root")
+    parent = Clade(name="parent")
+    child = Clade(name="child")
+
+    assert path_from_root(child, root, {child: parent, parent: child}) is None
