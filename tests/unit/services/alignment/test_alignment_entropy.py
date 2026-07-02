@@ -283,6 +283,39 @@ assert "Bio.AlignIO" not in sys.modules
         assert einsum_calls == ["ij,ij->j"]
         np.testing.assert_allclose(observed, expected)
 
+    def test_entropy_count_totals_use_array_reduction_for_common_counts(
+        self, monkeypatch
+    ):
+        counts = np.arange(8 * 12, dtype=np.float64).reshape(8, 12)
+        expected = counts.sum(axis=0)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("common entropy count totals should use ndarray.sum")
+
+        monkeypatch.setattr(alignment_entropy_module.np, "sum", fail_sum)
+
+        observed = alignment_entropy_module._entropy_count_totals(counts)
+
+        np.testing.assert_allclose(observed, expected)
+
+    def test_entropy_count_totals_preserve_long_narrow_sum_path(
+        self, monkeypatch
+    ):
+        counts = np.ones((4, 20001), dtype=np.float64)
+        original_sum = alignment_entropy_module.np.sum
+        calls = []
+
+        def sum_spy(values, *args, **kwargs):
+            calls.append((values.shape, kwargs.get("axis")))
+            return original_sum(values, *args, **kwargs)
+
+        monkeypatch.setattr(alignment_entropy_module.np, "sum", sum_spy)
+
+        observed = alignment_entropy_module._entropy_count_totals(counts)
+
+        np.testing.assert_allclose(observed, np.full(20001, 4.0))
+        assert calls == [((4, 20001), 0)]
+
     def test_site_entropies_single_valid_symbol_returns_zeroes_directly(
         self, mocker
     ):

@@ -195,6 +195,7 @@ Results:
 | `AlignmentEntropy._entropy_from_ascii_codes` array-to-list conversion | 12 taxa x 800k clean DNA sites, full helper output conversion with identical Python float list | 0.750628s | 0.476712s | 1.57x |
 | `AlignmentEntropy._entropy_from_counts` masked log terms | 20 x 200k sparse protein count matrix, side-by-side previous `np.where(probs > 0, probs * log2(probs), 0)` terms | 0.040059s | 0.027744s | 1.44x |
 | `AlignmentEntropy`/`MaskAlignment` protein entropy column reductions | count matrices shaped 20x5000 / 64x20000, side-by-side previous in-place probability/log-probability product plus `np.sum(..., axis=0)` | 2.243765s / 3.478205s | 1.991224s / 2.424359s | 1.13x / 1.43x |
+| `AlignmentEntropy` count-total reductions | count matrices shaped 2x12000 / 4x12000 / 8x12000 / 20x5000 / 64x20000 / 4x100000 / 20x100000, side-by-side previous `np.sum(..., axis=0)` with long narrow path preserved | 0.000012505s / 0.000014556s / 0.000110707s / 0.000018286s / 0.000318842s / 0.000195316s / 0.000839713s | 0.000010676s / 0.000013451s / 0.000024514s / 0.000017256s / 0.000308731s / 0.000195316s / 0.000511917s | 1.17x / 1.08x / 4.52x / 1.06x / 1.03x / 1.00x / 1.64x |
 | Shared boolean mask `any`/`all` reductions | empty / 10 / 1000 / 1M / 1000x1000 boolean masks, side-by-side previous top-level `np.any`/`np.all` dispatch | `any`: 4.323206s / 3.550042s / 1.254590s / 0.002394s / 0.001399s; `all`: 3.013299s / 2.108792s / 1.183967s / 0.001637s / 0.001208s | `any`: 0.750272s / 0.762969s / 0.429710s / 0.000900s / 0.000662s; `all`: 0.505534s / 1.391566s / 0.265627s / 0.001174s / 0.000669s | `any`: 5.76x / 4.65x / 2.92x / 2.66x / 2.11x; `all`: 5.96x / 1.52x / 4.46x / 1.39x / 1.80x |
 | Alignment plotting/GWAS no-axis mask guards | sparse/dense boolean masks sized 100 / 1000 / 100k / 1M, side-by-side previous top-level `np.any(mask)` dispatch used before plotting or contingency tests | sparse: 2.580420s / 1.544515s / 0.016977s / 0.000714s; dense: 3.705966s / 1.403889s / 0.018599s / 0.001354s | sparse: 1.436175s / 0.655550s / 0.005228s / 0.000345s; dense: 1.056168s / 0.697029s / 0.026244s / 0.000341s | sparse: 1.80x / 2.36x / 3.25x / 2.07x; dense: 3.51x / 2.01x / 0.71x / 3.97x |
 | `AlignmentEntropy.calculate_site_entropies` ASCII DNA entropy counts | 3000 taxa x 8000 sites, four observed DNA symbols, side-by-side previous boolean `np.sum(..., axis=0)` counts | 0.306331s | 0.138240s | 2.22x |
@@ -2865,6 +2866,9 @@ Profiling summary:
   Entropy matrices now reduce probability/log-probability terms with an
   `einsum` column dot for both small DNA-sized and larger protein-sized
   alphabets, avoiding the previous in-place product plus `np.sum` path.
+  Count-total reductions now use the ndarray method for common entropy matrix
+  widths and wider alphabets while preserving `np.sum` for very long narrow
+  matrices where it remains faster.
   DNA-sized ASCII entropy counts now use `np.count_nonzero` instead of summing
   boolean equality masks while preserving the faster `np.sum` path for Unicode matrices.
   Conserved alignments with one valid observed symbol now return zero site

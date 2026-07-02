@@ -61,7 +61,7 @@ def _entropy_from_ascii_codes(
             count_index,
             minlength=width * 256,
         ).reshape(width, 256)[:, symbol_codes].T.astype(np.float64, copy=False)
-        totals = counts.sum(axis=0)
+        totals = _entropy_count_totals(counts)
 
         entropies[start:stop] = _entropy_from_counts(counts, totals)
 
@@ -70,6 +70,12 @@ def _entropy_from_ascii_codes(
 
 def _entropy_values_to_list(entropies):
     return entropies.tolist()
+
+
+def _entropy_count_totals(counts):
+    if counts.shape[1] <= 20000 or counts.shape[0] >= 8:
+        return counts.sum(axis=0)
+    return np.sum(counts, axis=0)
 
 
 def _entropy_columns_from_probabilities(probs, log_probs):
@@ -321,7 +327,7 @@ class AlignmentEntropy(Alignment):
                 for char in valid_chars
             ]
         ).astype(np.float64)
-        totals = np.sum(counts, axis=0)
+        totals = _entropy_count_totals(counts)
 
         entropies = _entropy_from_counts(counts, totals)
         return [float(entropy) for entropy in entropies]
