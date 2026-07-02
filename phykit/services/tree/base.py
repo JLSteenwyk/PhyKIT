@@ -179,6 +179,26 @@ class Tree(BaseService):
 
         return [tip for tip in tree_tips if tip not in values]
 
+    @staticmethod
+    def _tips_to_prune_for_ordered_names(
+        tree_tips,
+        ordered_names,
+        min_ordered_size=None,
+    ):
+        if min_ordered_size is None:
+            min_ordered_size = Tree._ORDERED_MAPPING_PRUNE_MIN_SIZE
+
+        n_names = len(ordered_names)
+        if n_names >= min_ordered_size and len(tree_tips) >= n_names:
+            for index, name in enumerate(ordered_names):
+                if tree_tips[index] != name:
+                    break
+            else:
+                return tree_tips[n_names:]
+
+        ordered_name_set = set(ordered_names)
+        return [tip for tip in tree_tips if tip not in ordered_name_set]
+
     def get_first_tip_name_from_tree(self, tree) -> str:
         name = self.calculate_first_terminal_name_fast(tree)
         if name is not None:

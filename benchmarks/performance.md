@@ -2006,6 +2006,7 @@ Results:
 | `Phylomorphospace._reconstruct_ancestral_scores` direct traversal and weighted sums | balanced tree with 4096 tips x 2 scores | 0.066720s | 0.034426s | 1.94x |
 | `Phylomorphospace._reconstruct_ancestral_scores` prune setup | balanced 8192-tip tree, all tips retained for 2D scores | 0.2648s | 0.0021s | 128.3x |
 | `Phylomorphospace._reconstruct_ancestral_scores` all-shared copy skip | balanced 32768-tip tree, all tips retained for 2D scores | 0.366612s | 0.107335s | 3.42x |
+| `Tree._tips_to_prune_for_ordered_names` shared ancestral-score prune setup | 300k ordered tree tips with all names retained / 75k tree-only tail tips / interleaved fallback, side-by-side previous set-and-scan path | 0.060572s / 0.054258s / 0.044472s | 0.010217s / 0.012814s / 0.042924s | 5.93x / 4.23x / 1.04x |
 | `Phylomorphospace._plot_phylomorphospace` direct branch traversal | balanced 32768-tip tree, branch segment/color setup with precomputed node estimates | 0.240922s | 0.153599s | 1.57x |
 | `Phylomorphospace._plot_phylomorphospace` root-distance max helper | 1M node-distance values, identical maximum-distance fallback behavior without temporary list | 0.028209s | 0.011876s | 2.38x |
 | `Phylomorphospace._preorder_clades_direct` order-preserving child push | balanced 131072-tip tree, plotting preorder helper with identical clade order, side-by-side previous `reversed(children)` helper | 0.051598s | 0.047193s | 1.09x |
@@ -6911,6 +6912,9 @@ Profiling summary:
   ancestral score reconstruction. Copied-tree pruning setup now also converts
   `ordered_names` to a set once and uses the shared terminal-name traversal,
   avoiding quadratic list membership checks and terminal clade materialization.
+  Shared ordered-name prune setup now skips the set-and-scan path when score
+  names are an ordered tree-tip prefix, while retaining the same set fallback
+  for interleaved tree/name order.
   A later phylomorphospace pass skips its protective reconstruction-tree copy
   entirely when all tree tips are present in the score matrix, while still
   copying before pruning missing taxa.

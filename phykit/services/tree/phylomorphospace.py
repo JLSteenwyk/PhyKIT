@@ -168,9 +168,11 @@ class Phylomorphospace(Tree):
     def _reconstruct_ancestral_scores(
         self, tree, scores: np.ndarray, ordered_names: list[str]
     ) -> tuple[dict, dict, object]:
-        ordered_name_set = set(ordered_names)
         tip_names_in_tree = self.get_tip_names_from_tree(tree)
-        tips_to_prune = [t for t in tip_names_in_tree if t not in ordered_name_set]
+        tips_to_prune = self._tips_to_prune_for_ordered_names(
+            tip_names_in_tree,
+            ordered_names,
+        )
         tree_for_analysis = self._fast_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
             tree_for_analysis = self.prune_tree_using_taxa_list(

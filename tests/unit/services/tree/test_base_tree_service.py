@@ -539,6 +539,38 @@ class TestTreeBase:
             values,
         ) == ["d"]
 
+    def test_tips_to_prune_for_ordered_names_uses_ordered_tail(self):
+        class OrderedNames(list):
+            def __contains__(self, key):
+                raise AssertionError("ordered path should not use membership")
+
+        values = OrderedNames(["a", "b", "c"])
+
+        assert Tree._tips_to_prune_for_ordered_names(
+            ["a", "b", "c", "d", "e"],
+            values,
+            min_ordered_size=0,
+        ) == ["d", "e"]
+
+    def test_tips_to_prune_for_ordered_names_falls_back_for_interleaved_tips(self):
+        assert Tree._tips_to_prune_for_ordered_names(
+            ["a", "d", "b", "c"],
+            ["a", "b", "c"],
+            min_ordered_size=0,
+        ) == ["d"]
+
+    def test_tips_to_prune_for_ordered_names_keeps_small_input_set_path(self):
+        class OrderedNames(list):
+            def __contains__(self, key):
+                raise AssertionError("small fallback should use a set")
+
+        values = OrderedNames(["a", "b", "c"])
+
+        assert Tree._tips_to_prune_for_ordered_names(
+            ["a", "b", "c", "d"],
+            values,
+        ) == ["d"]
+
     def test_get_first_tip_name_from_tree_uses_direct_leftmost_terminal(
         self, monkeypatch
     ):

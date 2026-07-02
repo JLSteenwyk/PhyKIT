@@ -360,7 +360,7 @@ class TestReconstructAncestralScores:
             "dog\t1.18\t1.87\n"
         )
 
-    def test_prune_setup_uses_fast_tip_names_and_set_membership(self, mocker):
+    def test_prune_setup_uses_fast_tip_names_and_shared_prune_helper(self, mocker):
         class ContainsFailList(list):
             def __contains__(self, item):
                 raise AssertionError("ordered_names should be converted to a set")
@@ -371,6 +371,7 @@ class TestReconstructAncestralScores:
         ordered_names = ContainsFailList(["A", "C", "D"])
         data = np.array([[0.0, 0.0], [2.0, 2.0], [4.0, 4.0]])
         spy = mocker.spy(svc, "get_tip_names_from_tree")
+        prune_helper = mocker.spy(svc, "_tips_to_prune_for_ordered_names")
         fast_copy = mocker.patch.object(svc, "_fast_copy", return_value=tree_copy)
         prune = mocker.spy(svc, "prune_tree_using_taxa_list")
 
@@ -379,6 +380,7 @@ class TestReconstructAncestralScores:
         )
 
         assert spy.call_count == 1
+        prune_helper.assert_called_once_with(["A", "B", "C", "D"], ordered_names)
         fast_copy.assert_called_once_with(tree)
         prune.assert_called_once_with(tree_copy, ["B"])
         assert {tip.name for tip in tree_pruned.get_terminals()} == {"A", "C", "D"}
