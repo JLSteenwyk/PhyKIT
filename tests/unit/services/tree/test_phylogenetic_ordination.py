@@ -81,6 +81,17 @@ assert "phykit.helpers.pgls_utils" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_attributes():
+    lazy_np = phylogenetic_ordination_module._LazyNumpy()
+
+    first_array = lazy_np.array
+    second_array = lazy_np.array
+
+    assert lazy_np._module is not None
+    assert first_array is second_array
+    assert lazy_np.__dict__["array"] is first_array
+
+
 @pytest.fixture
 def default_args():
     return Namespace(

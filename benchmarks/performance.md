@@ -2047,6 +2047,7 @@ Results:
 | `PhylogeneticOrdination._multi_trait_log_likelihood` | 420 taxa SPD VCV x 8 traits | 0.0084s | 0.0005s | 15.6x |
 | `PhylogeneticOrdination._multi_trait_log_likelihood_inverse` combined RHS multiply | 420 taxa SPD VCV x 700 traits, inverse fallback path | 0.074771s | 0.033401s | 2.2x |
 | `PhylogeneticOrdination._multi_trait_log_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV x 10-trait likelihood evaluations, SciPy already warm | 0.066843s | 0.053844s | 1.24x |
+| `PhylogeneticOrdination` cached lazy NumPy attributes | sample `tree_simple` lambda centering and likelihood calls, 1000 repeated calls, side-by-side previous lazy proxy lookup path, identical accumulated output | 0.236297s | 0.130745s | 1.81x |
 | `PhylogeneticOrdination._multi_trait_lambda` lambda-matrix diagonal restoration | 8 / 40 / 260 / 900 / 2000 taxa VCV transform with precomputed diagonal, side-by-side previous `np.fill_diagonal` restoration per lambda evaluation | 0.000008163s / 0.000009956s / 0.000119735s / 0.003229405s / 0.009533993s | 0.000004753s / 0.000001878s / 0.000031953s / 0.002818906s / 0.007760870s | 1.72x / 5.30x / 3.75x / 1.15x / 1.23x |
 | `PhylogeneticOrdination` PCA GLS centering/covariance setup | 420 taxa SPD VCV x 8 traits | 0.005137s | 0.000454s | 11.3x |
 | `PhylogeneticOrdination` PCA corr-mode diagonal scaling | 420 taxa x 700 traits, synthetic covariance and centered scores | 0.023722s | 0.001051s | 22.6x |
