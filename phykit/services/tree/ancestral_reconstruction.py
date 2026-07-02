@@ -256,7 +256,9 @@ class AncestralReconstruction(Tree):
         n = len(ordered_names)
         x = np.array([trait_values[name] for name in ordered_names])
 
-        tips_to_prune = [t for t in tree_tips if t not in trait_values]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            tree_tips, trait_values
+        )
         needs_working_copy = bool(tips_to_prune) or self.plot_config.ladderize
         tree_for_analysis = self._fast_copy(tree) if needs_working_copy else tree
         if tips_to_prune:
@@ -2055,7 +2057,9 @@ class AncestralReconstruction(Tree):
             )
             trait_name = "trait"
 
-        tips_to_prune = [t for t in tree_tips if t not in tip_states]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            tree_tips, tip_states
+        )
         needs_working_copy = bool(tips_to_prune) or self.plot_config.ladderize
         tree_for_analysis = self._fast_copy(tree) if needs_working_copy else tree
         if tips_to_prune:

@@ -1077,15 +1077,20 @@ class TestRun:
         assert fast_anc.call_args.args[0] is tree
 
     def test_continuous_run_copies_before_pruning_missing_tree_tips(
-        self, default_args, mocker
+        self, default_args, monkeypatch, mocker
     ):
+        class OrderedTraitValues(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         svc = AncestralReconstruction(default_args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
         tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
         pruned_tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
         tip_names = ["A", "B", "C", "D"]
-        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        traits = OrderedTraitValues({"A": 1.0, "B": 2.0, "C": 3.0})
 
+        monkeypatch.setattr(ancestral_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0)
         mocker.patch.object(svc, "_parse_single_trait_data", return_value=traits)
         fast_copy = mocker.patch.object(svc, "_fast_copy", return_value=tree_copy)
         prune = mocker.patch.object(
@@ -2244,15 +2249,20 @@ class TestDiscreteRun:
         assert fit_q.call_args.args[0] is tree
 
     def test_discrete_run_copies_before_pruning_missing_tree_tips(
-        self, discrete_args, mocker
+        self, discrete_args, monkeypatch, mocker
     ):
+        class OrderedTipStates(dict):
+            def __contains__(self, key):
+                raise AssertionError("ordered prune path should not scan membership")
+
         svc = AncestralReconstruction(discrete_args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
         tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
         pruned_tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
         tip_names = ["A", "B", "C", "D"]
-        states_by_tip = {"A": "x", "B": "x", "C": "y"}
+        states_by_tip = OrderedTipStates({"A": "x", "B": "x", "C": "y"})
 
+        monkeypatch.setattr(ancestral_module.Tree, "_ORDERED_MAPPING_PRUNE_MIN_SIZE", 0)
         mocker.patch.object(
             svc, "_parse_discrete_trait_data_multi", return_value=states_by_tip
         )

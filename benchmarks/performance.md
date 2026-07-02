@@ -2055,6 +2055,7 @@ Results:
 | `AncestralReconstruction.run` discrete copied-tree prune setup | balanced 32768-tip tree, all tips shared with state data | 0.0681s | 0.0081s | 8.4x |
 | `AncestralReconstruction.run` cached read-only tree setup | balanced 32768-tip cached tree, continuous trait parsing, reconstruction, formatting, and output mocked; protective prune-copy retained | 1.200916s | 0.450668s | 2.66x |
 | `AncestralReconstruction.run` continuous all-shared read-only setup | balanced 32768-tip cached tree, continuous trait parsing, reconstruction/formatting/output mocked, ladderize off | 0.273998s | 0.047376s | 5.78x |
+| `AncestralReconstruction.run` ordered trait prune setup | 300k ordered tree tips with all continuous/discrete traits / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.052770s / 0.041340s / 0.035645s / 0.052665s | 0.011676s / 0.011538s / 0.011984s / 0.013618s | 4.52x / 3.58x / 2.97x / 3.87x |
 | `AncestralReconstruction._label_internal_nodes` direct traversal | balanced 32768-tip tree, five internal-node labeling runs | 0.537023s | 0.071732s | 7.49x |
 | `AncestralReconstruction._build_parent_map` direct traversal | balanced 32768-tip tree, five parent-map builds | 0.529001s | 0.067176s | 7.87x |
 | `AncestralReconstruction._build_parent_map` unordered child push | balanced 65536-tip tree, parent-map setup, optimized helper baseline | 0.023996s | 0.017968s | 1.34x |
@@ -7003,7 +7004,10 @@ Profiling summary:
   which retain their own protective copies for pruning and optional ladderizing.
   A later run-setup pass skips those protective copies entirely for all-shared,
   non-ladderized continuous and discrete reconstructions while still copying
-  before pruning missing taxa or ladderizing the tree.
+  before pruning missing taxa or ladderizing the tree. Ordered continuous and
+  discrete trait mappings now reuse the shared large-input prune helper, avoiding
+  the dictionary membership scan when trait rows match tree-tip order or only
+  tree-only tail tips need pruning.
 - `AncestralReconstruction._fast_anc` keeps the same direct traversal path for
   standard trees but now builds the parent map from the already materialized
   preorder list. A later traversal-helper pass keeps preorder output identical
