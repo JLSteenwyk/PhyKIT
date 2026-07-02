@@ -911,7 +911,7 @@ class TestMultipleTestingCorrection:
         assert RelativeRateTest._fdr(p_values) == pytest.approx(expected)
 
     def test_medium_corrections_match_scalar_references(self):
-        p_values = [((idx * 37) % 101) / 1000 for idx in range(128)]
+        p_values = [((idx * 37) % 101) / 1000 for idx in range(32)]
 
         expected_bonf = [min(value * len(p_values), 1.0) for value in p_values]
         assert RelativeRateTest._bonferroni(p_values) == pytest.approx(expected_bonf)

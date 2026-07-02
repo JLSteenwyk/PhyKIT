@@ -44,7 +44,7 @@ class _LazyPhylo:
 
 np = _LazyNumpy()
 Phylo = _LazyPhylo()
-_FDR_VECTOR_MIN_LENGTH = 128
+_FDR_VECTOR_MIN_LENGTH = 32
 
 
 def _median(values: list[float]) -> float:

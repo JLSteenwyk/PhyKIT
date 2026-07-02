@@ -720,7 +720,7 @@ class TestFDRCorrection:
     def test_medium_fdr_matches_scalar_reference(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
 
-        p_values = [((idx * 37) % 101) / 1000 for idx in range(128)]
+        p_values = [((idx * 37) % 101) / 1000 for idx in range(32)]
         indexed = sorted(enumerate(p_values), key=lambda x: x[1])
         expected = [0.0] * len(p_values)
         previous = 1.0

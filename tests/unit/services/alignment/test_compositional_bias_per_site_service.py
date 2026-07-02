@@ -130,7 +130,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert corrected == pytest.approx([0.04, 0.0533333333, 0.0533333333, 0.2])
 
     def test_medium_false_discovery_control_matches_scalar_reference(self):
-        p_values = [((idx * 37) % 101) / 1000 for idx in range(128)]
+        p_values = [((idx * 37) % 101) / 1000 for idx in range(32)]
         indexed = sorted(enumerate(p_values), key=lambda x: x[1])
         expected = [0.0] * len(p_values)
         previous = 1.0

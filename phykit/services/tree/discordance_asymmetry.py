@@ -24,7 +24,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
-_FDR_VECTOR_MIN_LENGTH = 128
+_FDR_VECTOR_MIN_LENGTH = 32
 
 
 def _binomial_two_sided_p_value(successes: int, total: int) -> float:

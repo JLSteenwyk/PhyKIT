@@ -1149,7 +1149,7 @@ class TestFDR:
     def test_medium_fdr_matches_scalar_reference(self):
         from phykit.services.tree.hybridization import Hybridization
 
-        pvals = [((idx * 37) % 101) / 1000 for idx in range(128)]
+        pvals = [((idx * 37) % 101) / 1000 for idx in range(32)]
         indexed = sorted(enumerate(pvals), key=lambda x: x[1])
         expected = [0.0] * len(pvals)
         previous = 1.0
