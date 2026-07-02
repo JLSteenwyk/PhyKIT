@@ -563,6 +563,40 @@ class TestComputeMdi:
 
 
 class TestRun:
+    def test_tips_to_prune_for_traits_ordered_all_shared_skips_membership_scan(
+        self, monkeypatch
+    ):
+        tree_tips = ["a", "b", "c"]
+        traits = {"a": [1.0], "b": [2.0], "c": [3.0]}
+
+        def fail_iter(*_args, **_kwargs):
+            raise AssertionError(
+                "ordered all-shared traits should not build a set"
+            )
+
+        monkeypatch.setattr("builtins.set", fail_iter)
+
+        assert Dtt._tips_to_prune_for_traits(tree_tips, traits) == []
+
+    def test_tips_to_prune_for_traits_returns_ordered_tail_without_set(
+        self, monkeypatch
+    ):
+        tree_tips = ["a", "b", "c", "d"]
+        traits = {"a": [1.0], "b": [2.0], "c": [3.0]}
+
+        def fail_iter(*_args, **_kwargs):
+            raise AssertionError("ordered trait prefix should not build a set")
+
+        monkeypatch.setattr("builtins.set", fail_iter)
+
+        assert Dtt._tips_to_prune_for_traits(tree_tips, traits) == ["d"]
+
+    def test_tips_to_prune_for_traits_preserves_interleaved_pruning(self):
+        tree_tips = ["a", "d", "b", "c"]
+        traits = {"a": [1.0], "b": [2.0], "c": [3.0]}
+
+        assert Dtt._tips_to_prune_for_traits(tree_tips, traits) == ["d"]
+
     def test_run_all_tips_present_uses_read_only_tree_without_copy_or_prune(
         self, mocker
     ):

@@ -1992,6 +1992,7 @@ Results:
 | `Dtt._print_text` batched time-point output | 100k DTT time-point rows, captured stdout and identical text | 0.057375s | 0.046449s | 1.24x |
 | `Dtt.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected column / full matrix setup | 0.013424s / 0.134250s | 0.007369s / 0.037870s | 1.82x / 3.54x |
 | `Dtt.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with traits | 0.0671s | 0.0071s | 9.5x |
+| `Dtt.run` ordered trait prune-target setup | 300k ordered tree tips with all traits / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.037559s / 0.118754s | 0.012609s / 0.013949s | 2.98x / 8.51x |
 | `Dtt.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, DTT calculation, and output mocked; protective prune-copy retained | 1.087033s | 0.289034s | 3.76x |
 | `Dtt.run` all-shared read-only setup | balanced 32768-tip cached tree, two traits for every tip, DTT/output mocked | 0.361751s | 0.094806s | 3.82x |
 | `dtt` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.087831s | 0.031497s | 2.79x |
@@ -6852,8 +6853,10 @@ Profiling summary:
   unmodified tree reader before making its own protective copy for pruning,
   removing one cached tree copy while preserving isolation for the mutating prune
   step. A later run-setup pass skips that protective copy entirely when all tree
-  tips have trait data, copying only before pruning missing trait taxa. Trait
-  matrix setup now uses the shared selected-column vector helper for
+  tips have trait data, copying only before pruning missing trait taxa. Ordered
+  trait rows now also avoid the prune-target membership scan, returning either
+  no pruned tips or the ordered tree-only tail directly. Trait matrix setup now
+  uses the shared selected-column vector helper for
   `--trait` mode and the shared row-matrix helper for multivariate mode,
   preserving ordered taxa while avoiding nested Python row-copy loops. The
   batched simulation path now

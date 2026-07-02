@@ -159,8 +159,7 @@ class Dtt(Tree):
         else:
             data = trait_matrix_from_rows(traits, ordered_names)
 
-        # Prune tree to trait taxa
-        tips_to_prune = [t for t in tree_tips if t not in traits]
+        tips_to_prune = self._tips_to_prune_for_traits(tree_tips, traits)
         tree_for_analysis = tree
         if tips_to_prune:
             tree_for_analysis = self._fast_copy(tree)
@@ -197,6 +196,18 @@ class Dtt(Tree):
             self._print_json(times, dtt_values, mdi, mdi_p, sim_dtt)
         else:
             self._print_text(times, dtt_values, mdi, mdi_p)
+
+    @staticmethod
+    def _tips_to_prune_for_traits(tree_tips, traits):
+        n_traits = len(traits)
+        if len(tree_tips) >= n_traits:
+            for index, trait_name in enumerate(traits):
+                if tree_tips[index] != trait_name:
+                    break
+            else:
+                return tree_tips[n_traits:]
+
+        return [tip for tip in tree_tips if tip not in traits]
 
     def _compute_disparity(self, data: np.ndarray) -> float:
         """Compute disparity (average squared Euclidean distance among all pairs)."""
