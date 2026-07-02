@@ -70,6 +70,40 @@ def test_row_sums_use_array_reduction(monkeypatch):
     np.testing.assert_allclose(observed, expected)
 
 
+def test_rcvt_from_composition_matrix_uses_array_reductions(monkeypatch):
+    comp_matrix = np.array(
+        [
+            [0.5, 0.5],
+            [0.75, 0.25],
+            [0.25, 0.75],
+        ],
+        dtype=float,
+    )
+    valid_lengths = np.array([4.0, 4.0, 2.0])
+    average_counts = comp_matrix.sum(axis=0) / comp_matrix.shape[0]
+    expected = np.abs(comp_matrix - average_counts).sum(axis=1) / (
+        comp_matrix.shape[0] * valid_lengths
+    )
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("RCVT reductions should use ndarray.sum")
+
+    monkeypatch.setattr(
+        alignment_outlier_taxa_module.np,
+        "sum",
+        fail_sum,
+        raising=False,
+    )
+
+    observed = alignment_outlier_taxa_module._rcvt_from_composition_matrix(
+        comp_matrix,
+        valid_lengths,
+        comp_matrix.shape[0],
+    )
+
+    np.testing.assert_allclose(observed, expected)
+
+
 class TestAlignmentOutlierTaxa:
     def _service(self):
         args = Namespace(

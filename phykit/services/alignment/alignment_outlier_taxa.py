@@ -38,6 +38,22 @@ def _average_site_entropy(site_entropies, aln_len: int) -> float:
     return float(np.sum(site_entropies) / aln_len)
 
 
+def _rcvt_from_composition_matrix(comp_matrix, valid_lengths, n_taxa: int):
+    if comp_matrix.shape[1] == 0:
+        return np.zeros(comp_matrix.shape[0], dtype=np.float64)
+
+    average_counts = comp_matrix.sum(axis=0) / n_taxa
+    deviations = np.abs(comp_matrix - average_counts)
+    seq_sums = deviations.sum(axis=1)
+    denom = n_taxa * valid_lengths
+    return np.divide(
+        seq_sums,
+        denom,
+        out=np.zeros_like(seq_sums, dtype=np.float64),
+        where=denom > 0,
+    )
+
+
 class AlignmentOutlierTaxa(Alignment):
     _INVALID_LOOKUP_CACHE = {}
     _PAIRWISE_MATRIX_MAX_CELLS = 4_000_000
@@ -480,19 +496,11 @@ class AlignmentOutlierTaxa(Alignment):
         distance_threshold = self._high_outlier_threshold(
             long_branch_proxy, self.distance_z
         )
-        if comp_matrix.shape[1] > 0:
-            average_counts = np.sum(comp_matrix, axis=0) / n_taxa
-            deviations = np.abs(comp_matrix - average_counts)
-            seq_sums = np.sum(deviations, axis=1)
-            denom = n_taxa * valid_lengths
-            rcvt_values = np.divide(
-                seq_sums,
-                denom,
-                out=np.zeros_like(seq_sums, dtype=np.float64),
-                where=denom > 0,
-            )
-        else:
-            rcvt_values = np.zeros(n_taxa, dtype=np.float64)
+        rcvt_values = _rcvt_from_composition_matrix(
+            comp_matrix,
+            valid_lengths,
+            n_taxa,
+        )
         rcvt_threshold = self._high_outlier_threshold(rcvt_values, self.rcvt_z)
         occupancy_threshold = self._low_outlier_threshold(occupancies, self.occupancy_z)
 
