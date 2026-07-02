@@ -71,6 +71,14 @@ class ResultCache:
 
     def _get_cache_key(self, *args, **kwargs) -> str:
         """Generate a unique cache key from function arguments."""
+        if not kwargs:
+            if len(args) == 0:
+                return _md5(b"").hexdigest()
+            if len(args) == 1:
+                arg = args[0]
+                if isinstance(arg, (str, int, float, bool)):
+                    return _md5(str(arg).encode()).hexdigest()
+
         # Create a string representation of arguments
         key_parts = []
 

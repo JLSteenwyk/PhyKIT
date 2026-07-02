@@ -98,6 +98,29 @@ class TestResultCache(TestCase):
         # Objects with different attributes should produce different key
         self.assertNotEqual(key1, key3)
 
+    def test_get_cache_key_no_kwargs_paths_match_legacy_digest(self):
+        """No-kwargs key paths should preserve the previous cache key text."""
+        import json
+        from hashlib import md5
+
+        class TestObj:
+            def __init__(self, value):
+                self.value = value
+
+        obj = TestObj(10)
+        cases = [
+            ((), ""),
+            (("test",), "test"),
+            ((obj,), json.dumps(vars(obj), sort_keys=True, default=str)),
+            (("test", 123), "test_123"),
+        ]
+
+        for args, key_string in cases:
+            self.assertEqual(
+                self.cache._get_cache_key(*args),
+                md5(key_string.encode()).hexdigest(),
+            )
+
     def test_get_cache_key_with_kwargs(self):
         """Test cache key generation with keyword arguments"""
         key1 = self.cache._get_cache_key("test", foo="bar", baz=123)

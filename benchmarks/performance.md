@@ -45,6 +45,7 @@ Results:
 | `helpers.caching` module import without `typing` startup | median cold subprocess import after replacing annotation-only `Any`/`Callable` aliases with built-in annotations | 0.025169s | 0.023913s | 1.05x |
 | `helpers.caching` module import without eager `hashlib` | cold subprocess import of shared caching helper, cache-key generation still imports hashing on demand | 0.021160s | 0.018515s | 1.14x |
 | `ResultCache._get_cache_key` cached md5 helper | 200k repeated primitive-argument cache-key generations with kwargs, identical keys | 1.540026s | 1.143370s | 1.35x |
+| `ResultCache._get_cache_key` no-kwargs scalar fast path | 500k no-argument and one-primitive-argument cache-key generations, identical digests; object and kwarg fallback checked for compatibility | 0.758950s / 1.224144s | 0.461139s / 0.725904s | 1.65x / 1.69x |
 | `ResultCache.clear` scandir cleanup loop | 1M fake cache directory entries, half `.pkl`, identical removed paths while isolating Python loop overhead | 0.663190s | 0.444320s | 1.49x |
 | `trait_parsing` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in annotations | 0.022946s | 0.020371s | 1.13x |
 | `trait_parsing.parse_multi_trait_file` single-pass parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.727592s | 0.634490s | 1.15x |
@@ -2519,9 +2520,12 @@ Profiling summary:
   pass also defers `hashlib` until `_get_cache_key()` is called. Repeated
   cache-key generation now caches the resolved `hashlib.md5` function after the
   first key, avoiding repeated import dispatch while keeping import-only callers
-  free of `hashlib` startup. Cache clearing now scans directory entries with
-  `os.scandir()` and removes `entry.path` for `.pkl` files, avoiding a full
-  `listdir()` filename list and repeated path joins during cleanup.
+  free of `hashlib` startup. A later cache-key pass handles no-argument and
+  single primitive-argument keys directly, avoiding temporary list construction
+  for zero-argument cached computations while leaving object and keyword paths
+  on the generic compatibility code. Cache clearing now scans directory entries
+  with `os.scandir()` and removes `entry.path` for `.pkl` files, avoiding a
+  full `listdir()` filename list and repeated path joins during cleanup.
 - `Phykit.__init__` previously built the full top-level help parser and
   dedented the long command listing before dispatching normal commands. The
   optimized constructor dispatches ordinary commands and aliases directly, while
