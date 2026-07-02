@@ -718,6 +718,30 @@ class TestBuildDiscordanceVcv:
         assert {tip.name for tip in gt.get_terminals()} == {"A", "B"}
         assert {tip.name for tip in pruned.get_terminals()} == {"A"}
 
+    def test_copy_prune_gene_tree_target_scan_avoids_reversed(self, monkeypatch):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("target scan should use indexed child pushes")
+
+        gt = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        gt.root.clades = NoReversedList(gt.root.clades)
+
+        monkeypatch.setattr(
+            vcv_utils.pickle,
+            "dumps",
+            lambda tree, protocol=None: tree,
+        )
+        monkeypatch.setattr(vcv_utils.pickle, "loads", lambda tree: tree)
+        monkeypatch.setattr(
+            vcv_utils.Tree,
+            "_prune_terminal_objects_batch_standard_tree",
+            staticmethod(lambda tree, target_ids: True),
+        )
+
+        pruned = _copy_prune_gene_tree_to_shared_taxa(gt, {"A", "C"})
+
+        assert pruned is gt
+
     def test_too_few_shared_taxa(self):
         tree = _read_tree(TREE_SIMPLE)
         gt = _make_tree("(taxon_x:1.0,taxon_y:2.0);")

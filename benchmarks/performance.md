@@ -1564,6 +1564,7 @@ Results:
 | `build_discordance_vcv` all-shared gene-tree copy skip | 10 balanced 512-tip gene trees, all taxa shared before VCV averaging | 0.124170s | 0.096836s | 1.3x |
 | `vcv_utils._copy_prune_gene_tree_to_shared_taxa` all-shared copy skip | balanced 32768-tip gene tree, all taxa shared | 0.425988s | 0.008369s | 50.9x |
 | `vcv_utils`/`SpectralDiscordance` all-shared prune preflight scan | balanced 131072-tip standard tree, all taxa shared, optimized direct-scan baseline | 0.034115s | 0.021787s | 1.57x |
+| `vcv_utils._copy_prune_gene_tree_to_shared_taxa` copied-tree target scan child push | balanced 65536-tip / 262144-tip gene trees, collect half of terminals as prune targets, side-by-side previous `reversed(children)` scan | 0.136772s / 0.580184s | 0.110060s / 0.271670s | 1.24x / 2.14x |
 | `vcv_utils.parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.096195s | 0.072211s | 1.33x |
 | `vcv_utils.parse_gene_trees` stripped source cleanup | 500k mixed path/inline-Newick rows with whitespace-prefixed comments/blanks, cleanup before tree parsing | 0.179441s | 0.108817s | 1.65x |
 | `vcv_utils.parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
@@ -6198,6 +6199,9 @@ Profiling summary:
   parent-map route for duplicate or nonstandard trees. A later pass updates
   one-tip terminal branches with direct diagonal writes instead of constructing
   one-element index arrays and `np.ix_` tuples for every terminal branch.
+  Copied gene-tree pruning now collects terminal prune targets with localized
+  indexed child pushes instead of allocating a `reversed(children)` iterator at
+  each internal node.
 - `DVMC.determine_dvmc` baseline time was dominated by repeated terminal
   `tree.distance` calls. The optimized path computes depths once and reuses
   root-relative terminal depths for the same variance calculation.

@@ -403,16 +403,27 @@ def _copy_prune_gene_tree_to_shared_taxa(gene_tree, shared_taxa):
         terminal_count = 0
         stack = [root]
         try:
+            pop = stack.pop
+            append = stack.append
+            append_remove = tips_to_remove.append
+            add_target = target_ids.add
+            contains = shared_taxa.__contains__
             while stack:
-                clade = stack.pop()
+                clade = pop()
                 children = clade.clades
                 if children:
-                    stack.extend(reversed(children))
+                    child_count = len(children)
+                    if child_count == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for index in range(child_count - 1, -1, -1):
+                            append(children[index])
                 else:
                     terminal_count += 1
-                    if clade.name not in shared_taxa:
-                        tips_to_remove.append(clade)
-                        target_ids.add(id(clade))
+                    if not contains(clade.name):
+                        append_remove(clade)
+                        add_target(id(clade))
         except AttributeError:
             tips_to_remove = None
 
