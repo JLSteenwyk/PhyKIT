@@ -1533,6 +1533,7 @@ Results:
 | `discrete_models.fit_q_matrix` scalar two-state ER prepared pruning | balanced 512-tip tree, two-state ER model, full Q fit | 0.707479s | 0.324087s | 2.18x |
 | `discrete_models.fit_q_matrix` scalar two-state ER rate objective | balanced 512-tip tree, two-state ER model, full Q fit | 0.353477s | 0.321415s | 1.10x |
 | `discrete_models.fit_q_matrix` two-state ER scalar optimizer | balanced 512-tip tree, two-state ER model, full Q fit with equal log-likelihood | 0.296045s | 0.022109s | 13.39x |
+| `discrete_models.fit_q_matrix` multi-state ER rate objective | sample `tree_simple` three-state ER fit, side-by-side previous objective path that rebuilt `Q` and used prepared pruning, log-likelihood diff `8.9e-15` | 0.122838s | 0.037417s | 3.28x |
 | `discrete_models` two-state scalar exp/log primitives | one scalar transition decay and one scalar root log-likelihood operation, side-by-side previous NumPy ufunc dispatch | 0.000000403s | 0.000000145s | 2.79x |
 | `discrete_models` generic root likelihood total | 2 / 3 / 4 / 8 / 16 / 64-state prior-weighted likelihood vectors, side-by-side previous `np.sum(pi * root_lik)` | 0.000006310s / 0.000006381s / 0.000006961s / 0.000006135s / 0.000005135s / 0.000005092s | 0.000001144s / 0.000001084s / 0.000001175s / 0.000001519s / 0.000001047s / 0.000001155s | 5.52x / 5.89x / 5.93x / 4.04x / 4.90x / 4.41x |
 | `discrete_models.fit_q_matrix` small real-eigensystem transitions | sample `tree_simple` three-state SYM fit, side-by-side previous SciPy `expm` transition path, log-likelihood diff `1.8e-15` | 0.714704s | 0.580039s | 1.23x |
@@ -1540,6 +1541,7 @@ Results:
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
 | `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |
 | `FitDiscrete.run` small real-eigensystem transitions | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous SciPy `expm` transition path with identical stdout | 5.374444s | 3.653641s | 1.47x |
+| `FitDiscrete.run` multi-state ER rate objective | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous ER objective path, identical stdout | 3.350152s | 2.758701s | 1.21x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
 | `fit_discrete` module import without eager NumPy/discrete helper | cold subprocess import after lazy helper wrappers and local model constant | 0.090685s | 0.026126s | 3.47x |
 | `fit_discrete` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006547s | 0.005270s | 1.24x |
@@ -5812,7 +5814,11 @@ Profiling summary:
   fitted `Q` and log-likelihood. A later pass routes that one-parameter
   two-state ER fit through bounded scalar optimization instead of multi-start
   vector optimizers, preserving the fitted log-likelihood and leaving
-  multi-parameter SYM/ARD fits on the existing optimizer path. ER Q-matrix
+  multi-parameter SYM/ARD fits on the existing optimizer path. A later
+  multi-state ER pass uses the same equal-rate transition formula inside the
+  existing multi-start optimizer for ER models with more than two states,
+  avoiding per-objective `Q` construction and transition matrix exponentials
+  while preserving the optimizer sequence, returned `Q`, and log-likelihood. ER Q-matrix
   construction now fills an uninitialized matrix directly, and two- and
   three-state SYM and ARD matrices use direct layouts, preserving row sums and
   parameter order while avoiding generic zero-fill/diagonal passes. A follow-up

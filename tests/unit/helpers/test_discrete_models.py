@@ -17,6 +17,7 @@ import pytest
 
 from phykit.errors import PhykitUserError
 from phykit.helpers.discrete_models import (
+    _felsenstein_loglik_er_rate,
     _felsenstein_loglik_prepared,
     _postorder_clades_direct,
     _prepare_felsenstein_context,
@@ -797,6 +798,55 @@ class TestFelsensteinPruning:
             pi,
         ) == pytest.approx(expected)
 
+    def test_multi_state_er_rate_loglik_matches_prepared_q_likelihood(
+        self, monkeypatch
+    ):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        branch_length=1.0,
+                        clades=[
+                            Clade(branch_length=0.5, name="A"),
+                            Clade(branch_length=0.75, name="B"),
+                        ],
+                    ),
+                    Clade(branch_length=2.0, name="C"),
+                ],
+            )
+        )
+        context = _prepare_felsenstein_context(
+            tree, {"A": "0", "B": "1", "C": "2"}, ["0", "1", "2"]
+        )
+        rate = 0.17
+        pi = np.ones(3) / 3.0
+        Q = build_q_matrix(np.array([rate]), 3, "ER")
+        expected = _felsenstein_loglik_prepared(context, Q, pi)
+
+        def fail_matrix_exp(*_args, **_kwargs):
+            raise AssertionError(
+                "multi-state ER rate likelihood should use scalar transitions"
+            )
+
+        monkeypatch.setattr(discrete_models, "matrix_exp", fail_matrix_exp)
+        monkeypatch.setattr(
+            discrete_models.np,
+            "exp",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("multi-state ER rate likelihood should use math.exp")
+            ),
+            raising=False,
+        )
+
+        assert _felsenstein_loglik_er_rate(
+            context,
+            rate,
+            pi,
+        ) == pytest.approx(expected)
+
     def test_two_state_er_fit_avoids_objective_q_rebuilds(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
         import phykit.helpers.discrete_models as discrete_models
@@ -838,6 +888,49 @@ class TestFelsensteinPruning:
 
         assert calls == 1
         assert Q.shape == (2, 2)
+        assert np.isfinite(loglik)
+
+    def test_multi_state_er_fit_avoids_objective_q_rebuilds(self, monkeypatch):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        branch_length=1.0,
+                        clades=[
+                            Clade(branch_length=0.5, name="A"),
+                            Clade(branch_length=0.5, name="B"),
+                        ],
+                    ),
+                    Clade(branch_length=2.0, name="C"),
+                ],
+            )
+        )
+        calls = 0
+        original = discrete_models.build_q_matrix
+
+        def counting_build_q_matrix(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(
+            discrete_models,
+            "build_q_matrix",
+            counting_build_q_matrix,
+        )
+
+        Q, loglik = fit_q_matrix(
+            tree,
+            {"A": "0", "B": "1", "C": "2"},
+            ["0", "1", "2"],
+            "ER",
+        )
+
+        assert calls == 1
+        assert Q.shape == (3, 3)
         assert np.isfinite(loglik)
 
     def test_two_state_er_fit_uses_scalar_optimizer(self, monkeypatch):

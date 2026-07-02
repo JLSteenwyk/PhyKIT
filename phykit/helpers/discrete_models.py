@@ -459,6 +459,42 @@ def _felsenstein_loglik_two_state_er_rate(
     return math.log(total_lik)
 
 
+def _felsenstein_loglik_er_rate(context, rate: float, pi: np.ndarray) -> float:
+    k = context["n_states"]
+    if k == 2:
+        return _felsenstein_loglik_two_state_er_rate(context, rate, pi)
+
+    tip_liks = context.get("tip_liks")
+    internal_entries = context.get("internal_entries")
+    if tip_liks is None or internal_entries is None:
+        Q = build_q_matrix(np.array([rate]), k, "ER")
+        return _felsenstein_loglik_prepared(context, Q, pi)
+
+    cond_liks = tip_liks.copy()
+    transition_cache = {}
+    inv_k = 1.0 / k
+
+    for idx, children, lengths in internal_entries:
+        lik = np.ones(k)
+        for child_idx, t in zip(children, lengths):
+            transition = transition_cache.get(t)
+            if transition is None:
+                decay = math.exp(-k * rate * t)
+                different = inv_k * (1.0 - decay)
+                transition = (decay, different)
+                transition_cache[t] = transition
+            else:
+                decay, different = transition
+            child_lik = cond_liks[child_idx]
+            lik *= (different * float(child_lik.sum())) + (decay * child_lik)
+        cond_liks[idx] = lik
+
+    total_lik = float(np.dot(pi, cond_liks[context["root_index"]]))
+    if total_lik <= 0:
+        return -1e20
+    return math.log(total_lik)
+
+
 def _two_state_ctmc_rates(Q):
     try:
         if Q.shape[0] != 2 or Q.shape[1] != 2:
@@ -518,8 +554,15 @@ def fit_q_matrix(
         return _fit_two_state_er_rate(pruning_context, pi)
 
     def neg_loglik(params):
-        Q = build_q_matrix(np.abs(params), k, model)
-        ll = _felsenstein_loglik_prepared(pruning_context, Q, pi)
+        if model == "ER":
+            ll = _felsenstein_loglik_er_rate(
+                pruning_context,
+                float(abs(params[0])),
+                pi,
+            )
+        else:
+            Q = build_q_matrix(np.abs(params), k, model)
+            ll = _felsenstein_loglik_prepared(pruning_context, Q, pi)
         return -ll
 
     bounds = [(1e-8, 100.0)] * n_params
@@ -554,7 +597,14 @@ def fit_q_matrix(
         pass
 
     Q = build_q_matrix(best_params, k, model)
-    loglik = _felsenstein_loglik_prepared(pruning_context, Q, pi)
+    if model == "ER":
+        loglik = _felsenstein_loglik_er_rate(
+            pruning_context,
+            float(best_params[0]),
+            pi,
+        )
+    else:
+        loglik = _felsenstein_loglik_prepared(pruning_context, Q, pi)
 
     return Q, loglik
 
