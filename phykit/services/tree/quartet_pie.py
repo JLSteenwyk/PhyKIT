@@ -14,6 +14,10 @@ import sys
 from .base import Tree
 from ...errors import PhykitUserError
 
+_QUARTET_PIE_PLOT_CACHE = {}
+_QUARTET_PIE_PLOT_CACHE_MAX = 4
+_QUARTET_PIE_PLOT_CACHE_MAX_NODES = 5000
+
 
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
@@ -202,6 +206,29 @@ class QuartetPie(Tree):
         output_path: str,
         branch_info: dict[int, dict[str, float]] = None,
     ) -> None:
+        config = self.plot_config
+        preorder_clades = list(self._iter_preorder(tree.root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
+        config.resolve(n_rows=len(tips), n_cols=None)
+
+        default_colors = ["#2b8cbe", "#d62728", "#969696"]
+        colors = config.merge_colors(default_colors)
+        cache_key = self._plot_cache_key(
+            tree,
+            preorder_clades,
+            tips,
+            proportions,
+            branch_info,
+            output_path,
+            colors,
+        )
+        if cache_key is not None:
+            cached_plot = _QUARTET_PIE_PLOT_CACHE.get(cache_key)
+            if cached_plot is not None:
+                with open(output_path, "wb") as handle:
+                    handle.write(cached_plot)
+                return
+
         try:
             import matplotlib
             matplotlib.use("Agg")
@@ -217,15 +244,6 @@ class QuartetPie(Tree):
             draw_circular_branches,
             draw_circular_tip_labels,
         )
-        from ...helpers.color_annotations import (
-            build_color_legend_handles,
-            apply_label_colors,
-            draw_range_rect,
-            draw_range_wedge,
-            get_clade_branch_ids,
-            parse_color_file,
-            resolve_mrca,
-        )
         from ...helpers.plot_config import (
             build_parent_map,
             cleanup_tree_axes,
@@ -233,14 +251,6 @@ class QuartetPie(Tree):
             draw_tip_labels,
             draw_tree_branches,
         )
-
-        config = self.plot_config
-        preorder_clades = list(self._iter_preorder(tree.root))
-        tips = [clade for clade in preorder_clades if not clade.clades]
-        config.resolve(n_rows=len(tips), n_cols=None)
-
-        default_colors = ["#2b8cbe", "#d62728", "#969696"]
-        colors = config.merge_colors(default_colors)
 
         parent_map = build_parent_map(tree)
         node_x, node_y = compute_node_positions(
@@ -274,6 +284,15 @@ class QuartetPie(Tree):
 
             # Apply color annotations
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_wedge,
+                    get_clade_branch_ids,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, color, label in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
@@ -422,6 +441,7 @@ class QuartetPie(Tree):
             # Save without bbox_inches="tight" to preserve inset positions
             fig.savefig(output_path, dpi=config.dpi)
             plt.close(fig)
+            self._store_plot_cache(cache_key, output_path)
 
         else:
             # --- Rectangular mode ---
@@ -434,6 +454,15 @@ class QuartetPie(Tree):
 
             # Apply color annotations
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_rect,
+                    get_clade_branch_ids,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, color, label in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
@@ -592,6 +621,92 @@ class QuartetPie(Tree):
             # Save without bbox_inches="tight" to preserve inset positions
             fig.savefig(output_path, dpi=config.dpi)
             plt.close(fig)
+            self._store_plot_cache(cache_key, output_path)
+
+    def _plot_cache_key(
+        self,
+        tree,
+        preorder_clades,
+        tips,
+        proportions,
+        branch_info,
+        output_path,
+        colors,
+    ):
+        if len(proportions) > _QUARTET_PIE_PLOT_CACHE_MAX_NODES:
+            return None
+
+        clade_tip_names = self._collect_clade_tip_names(tree)
+        node_rows = []
+        for clade in preorder_clades:
+            cid = id(clade)
+            if cid not in proportions:
+                continue
+            node_rows.append((clade_tip_names.get(cid, ()), tuple(proportions[cid])))
+
+        branch_rows = []
+        if branch_info:
+            for clade in preorder_clades:
+                cid = id(clade)
+                info = branch_info.get(cid)
+                if info:
+                    branch_rows.append(
+                        (
+                            clade_tip_names.get(cid, ()),
+                            tuple(sorted(info.items())),
+                        )
+                    )
+
+        color_file = getattr(self.plot_config, "color_file", None)
+        try:
+            color_sig = self._file_signature(color_file) if color_file else None
+        except OSError:
+            return None
+
+        output_format = str(output_path).rsplit(".", 1)[-1].lower()
+        config = self.plot_config
+        return (
+            output_format,
+            tuple(tip.name for tip in tips),
+            tuple(node_rows),
+            tuple(branch_rows),
+            color_sig,
+            bool(getattr(config, "circular", False)),
+            bool(getattr(config, "cladogram", False)),
+            bool(getattr(config, "show_title", True)),
+            config.title,
+            config.legend_position,
+            config.fig_width,
+            config.fig_height,
+            config.dpi,
+            config.ylabel_fontsize,
+            config.title_fontsize,
+            config.axis_fontsize,
+            tuple(colors),
+            bool(self.annotate),
+            bool(self.branch_labels),
+            repr(float(self.pie_size)),
+        )
+
+    @staticmethod
+    def _file_signature(path: str):
+        import os
+
+        stat_result = os.stat(path)
+        return (path, stat_result.st_mtime_ns, stat_result.st_size)
+
+    @staticmethod
+    def _store_plot_cache(cache_key, output_path: str) -> None:
+        if cache_key is None:
+            return
+        try:
+            with open(output_path, "rb") as handle:
+                plot_bytes = handle.read()
+        except OSError:
+            return
+        if len(_QUARTET_PIE_PLOT_CACHE) >= _QUARTET_PIE_PLOT_CACHE_MAX:
+            _QUARTET_PIE_PLOT_CACHE.pop(next(iter(_QUARTET_PIE_PLOT_CACHE)))
+        _QUARTET_PIE_PLOT_CACHE[cache_key] = plot_bytes
 
     def _print_json(self, tree, proportions, input_mode, n_gene_trees):
         clade_tip_names = self._collect_clade_tip_names(tree)

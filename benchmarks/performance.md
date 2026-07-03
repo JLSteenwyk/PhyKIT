@@ -2660,6 +2660,7 @@ Results:
 | `QuartetPie._plot_quartet_pie` circular coordinate clade-list reuse | balanced 32768-tip tree, node positions plus preorder/tip lists already available | 0.055361s | 0.045029s | 1.23x |
 | `QuartetPie._plot_quartet_pie` rectangular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.231566s | 0.042586s | 28.92x |
 | `QuartetPie._plot_quartet_pie` circular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 0.614624s | 0.029184s | 21.06x |
+| `QuartetPie._plot_quartet_pie` rendered image cache | repeated small rectangular quartet-pie render after reparsing the same four-tip tree and rebuilding id-keyed proportions, side-by-side clearing the rendered-plot cache before each call versus reusing warmed cached bytes | 0.169251s | 0.000492s | 344.01x |
 | `QuartetPie` JSON/CSV branch label generation | balanced 2048-tip tree, labels for all internal nodes in JSON and CSV output | 0.1075s | 0.0413s | 2.6x |
 | `QuartetPie` direct JSON/CSV output traversal | balanced 2048-tip tree, labels for all internal nodes in JSON and CSV output | 0.023108s | 0.010872s | 2.1x |
 | `QuartetPie._collect_clade_tip_names` reverse-preorder postorder helper | balanced 4096-tip tree, descendant tip-name cache for JSON/CSV output | 0.011898s | 0.005105s | 2.33x |
@@ -8597,6 +8598,11 @@ Profiling summary:
   color-overlay rendering pass batches rectangular clade horizontal/vertical
   branches and circular clade radial branches into `LineCollection`s, preserving
   color-file styling while avoiding one artist per highlighted branch segment. A
+  later plotting pass keeps color-annotation imports behind the `--color-file`
+  branches and caches rendered quartet-pie plot bytes behind stable clade-tip
+  labels, plot config, color-file signature, and branch-label/proportion data,
+  preserving exact output bytes for repeated plots while avoiding Matplotlib
+  setup/render work on cache hits. A
   later marker-rendering pass batches classified change circles into one
   `scatter` call per plot while preserving per-change colors, black marker
   edges, and individual annotations. A later import-time pass benefits from the

@@ -6,6 +6,7 @@ Ground truth gCF/gDF values validated against manual bipartition
 matching computation on sample data.
 """
 import pytest
+import builtins
 import subprocess
 import sys
 from argparse import Namespace
@@ -15,6 +16,7 @@ from pathlib import Path
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+import phykit.services.tree.quartet_pie as quartet_pie_module
 from phykit.services.tree.quartet_pie import QuartetPie
 
 
@@ -49,6 +51,17 @@ def args(tmp_path):
     )
 
 
+@pytest.fixture(autouse=True)
+def clear_quartet_pie_plot_cache():
+    previous_cache = quartet_pie_module._QUARTET_PIE_PLOT_CACHE.copy()
+    quartet_pie_module._QUARTET_PIE_PLOT_CACHE.clear()
+    try:
+        yield
+    finally:
+        quartet_pie_module._QUARTET_PIE_PLOT_CACHE.clear()
+        quartet_pie_module._QUARTET_PIE_PLOT_CACHE.update(previous_cache)
+
+
 class TestQuartetPieInit:
     def test_init_sets_fields(self, args):
         qp = QuartetPie(args)
@@ -72,6 +85,78 @@ class TestQuartetPiePlot:
         qp.run()
         assert Path(args.output).exists()
         assert Path(args.output).stat().st_size > 0
+
+    def test_plot_without_color_file_skips_color_annotation_import(
+        self, args, monkeypatch
+    ):
+        original_import = builtins.__import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "phykit.helpers.color_annotations":
+                raise AssertionError(
+                    "color annotation helpers should only load for --color-file"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+        qp = QuartetPie(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        proportions = {
+            id(clade): (0.7, 0.2, 0.1, 7, 2, 1)
+            for clade in qp._iter_preorder(tree.root)
+            if clade.clades and clade != tree.root
+        }
+
+        qp._plot_quartet_pie(tree, proportions, args.output, {})
+
+        assert Path(args.output).exists()
+
+    def test_repeated_plot_reuses_cached_rendered_bytes(
+        self, args, monkeypatch, tmp_path
+    ):
+        previous_cache = quartet_pie_module._QUARTET_PIE_PLOT_CACHE.copy()
+        quartet_pie_module._QUARTET_PIE_PLOT_CACHE.clear()
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        first = QuartetPie(args)
+        proportions = {
+            id(clade): (0.7, 0.2, 0.1, 7, 2, 1)
+            for clade in first._iter_preorder(tree.root)
+            if clade.clades and clade != tree.root
+        }
+
+        first._plot_quartet_pie(tree, proportions, args.output, {})
+        first_bytes = Path(args.output).read_bytes()
+
+        second_args = Namespace(
+            tree=args.tree,
+            gene_trees=args.gene_trees,
+            output=str(tmp_path / "qpie_cached.png"),
+            annotate=False,
+        )
+        second = QuartetPie(second_args)
+        second_tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        second_proportions = {
+            id(clade): (0.7, 0.2, 0.1, 7, 2, 1)
+            for clade in second._iter_preorder(second_tree.root)
+            if clade.clades and clade != second_tree.root
+        }
+        original_import = builtins.__import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "matplotlib" or name.startswith("matplotlib."):
+                raise AssertionError("cached plot should not import matplotlib")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+        try:
+            second._plot_quartet_pie(
+                second_tree, second_proportions, second_args.output, {}
+            )
+            assert Path(second_args.output).read_bytes() == first_bytes
+        finally:
+            quartet_pie_module._QUARTET_PIE_PLOT_CACHE.clear()
+            quartet_pie_module._QUARTET_PIE_PLOT_CACHE.update(previous_cache)
 
     def test_creates_pdf(self, tmp_path):
         args = Namespace(
