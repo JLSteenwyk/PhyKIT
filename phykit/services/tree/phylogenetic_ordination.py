@@ -691,6 +691,65 @@ class PhylogeneticOrdination(Tree):
         trait_names, taxon_names, pc_labels,
         lambda_val, log_likelihood,
     ) -> dict:
+        def format_rows(names, values):
+            if len(pc_labels) == 2:
+                pc1, pc2 = pc_labels
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                return {
+                    name: {
+                        pc1: float(val1),
+                        pc2: float(val2),
+                    }
+                    for name, val1, val2 in zip(names, col1, col2)
+                }
+            if len(pc_labels) == 3:
+                pc1, pc2, pc3 = pc_labels
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                return {
+                    name: {
+                        pc1: float(val1),
+                        pc2: float(val2),
+                        pc3: float(val3),
+                    }
+                    for name, val1, val2, val3 in zip(
+                        names,
+                        col1,
+                        col2,
+                        col3,
+                    )
+                }
+            if len(pc_labels) == 4:
+                pc1, pc2, pc3, pc4 = pc_labels
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                col4 = values[:, 3].tolist()
+                return {
+                    name: {
+                        pc1: float(val1),
+                        pc2: float(val2),
+                        pc3: float(val3),
+                        pc4: float(val4),
+                    }
+                    for name, val1, val2, val3, val4 in zip(
+                        names,
+                        col1,
+                        col2,
+                        col3,
+                        col4,
+                    )
+                }
+            return {
+                name: {
+                    label: float(value)
+                    for label, value in zip(pc_labels, row_values)
+                }
+                for name, row_values in zip(names, values)
+            }
+
         result = {
             "eigenvalues": {
                 label: float(value)
@@ -700,20 +759,8 @@ class PhylogeneticOrdination(Tree):
                 label: float(value)
                 for label, value in zip(pc_labels, proportions)
             },
-            "loadings": {
-                trait: {
-                    label: float(value)
-                    for label, value in zip(pc_labels, loading_row)
-                }
-                for trait, loading_row in zip(trait_names, eigenvectors)
-            },
-            "scores": {
-                taxon: {
-                    label: float(value)
-                    for label, value in zip(pc_labels, score_row)
-                }
-                for taxon, score_row in zip(taxon_names, scores)
-            },
+            "loadings": format_rows(trait_names, eigenvectors),
+            "scores": format_rows(taxon_names, scores),
         }
         if lambda_val is not None:
             result["lambda"] = float(lambda_val)

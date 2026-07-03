@@ -1421,6 +1421,65 @@ class TestRun:
             "log_likelihood": -12.25,
         }
 
+    def test_format_pca_result_four_columns_skips_generic_iteration(
+        self, default_args
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class FourColumnRows:
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([1.2345678, 2.0, -3.5, 4.25][column:column + 1])
+
+            def __iter__(self):
+                raise AssertionError("4-PC output should not use row iteration")
+
+        svc = PhylogeneticOrdination(default_args)
+
+        result = svc._format_pca_result(
+            eigenvalues=np.array([4.0, 3.0, 2.0, 1.0]),
+            proportions=np.array([0.4, 0.3, 0.2, 0.1]),
+            eigenvectors=FourColumnRows(),
+            scores=FourColumnRows(),
+            trait_names=["trait_a"],
+            taxon_names=["taxon_a"],
+            pc_labels=["PC1", "PC2", "PC3", "PC4"],
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        assert result == {
+            "eigenvalues": {"PC1": 4.0, "PC2": 3.0, "PC3": 2.0, "PC4": 1.0},
+            "proportion_of_variance": {
+                "PC1": 0.4,
+                "PC2": 0.3,
+                "PC3": 0.2,
+                "PC4": 0.1,
+            },
+            "loadings": {
+                "trait_a": {
+                    "PC1": 1.2345678,
+                    "PC2": 2.0,
+                    "PC3": -3.5,
+                    "PC4": 4.25,
+                }
+            },
+            "scores": {
+                "taxon_a": {
+                    "PC1": 1.2345678,
+                    "PC2": 2.0,
+                    "PC3": -3.5,
+                    "PC4": 4.25,
+                }
+            },
+        }
+
     def test_pca_json_output(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,
