@@ -17,6 +17,8 @@ VALID_DISCRETE_MODELS = frozenset(["ER", "SYM", "ARD"])
 _EXPM = None
 _MINIMIZE = None
 _MINIMIZE_SCALAR = None
+_FIT_Q_MATRIX_CACHE = {}
+_FIT_Q_MATRIX_CACHE_MAXSIZE = 32
 
 
 class _LazyNumpy:
@@ -378,6 +380,14 @@ def _prepare_felsenstein_context(tree, tip_states: dict[str, str], states: list[
         tip_state_indices[observed_tip_rows],
     ] = 1.0
 
+    fit_q_matrix_cache_key = (
+        len(states),
+        tuple(int(idx) for idx in tip_state_indices),
+        tuple(child_indices),
+        tuple(branch_lengths),
+        node_index[id(tree.root)],
+    )
+
     return {
         "child_indices": child_indices,
         "branch_lengths": branch_lengths,
@@ -388,6 +398,7 @@ def _prepare_felsenstein_context(tree, tip_states: dict[str, str], states: list[
         "unique_branch_lengths": tuple(unique_branch_lengths),
         "root_index": node_index[id(tree.root)],
         "n_states": len(states),
+        "fit_q_matrix_cache_key": fit_q_matrix_cache_key,
     }
 
 
@@ -675,8 +686,23 @@ def fit_q_matrix(
     if pruning_context is None:
         pruning_context = _prepare_felsenstein_context(tree, tip_states, states)
 
+    context_cache_key = (
+        pruning_context.get("fit_q_matrix_cache_key")
+        if hasattr(pruning_context, "get")
+        else None
+    )
+    cache_key = (model, context_cache_key) if context_cache_key is not None else None
+    if cache_key is not None:
+        cached = _FIT_Q_MATRIX_CACHE.get(cache_key)
+        if cached is not None:
+            Q, loglik = cached
+            return Q.copy(), loglik
+
     if model == "ER" and k == 2:
-        return _fit_two_state_er_rate(pruning_context, pi)
+        Q, loglik = _fit_two_state_er_rate(pruning_context, pi)
+        if cache_key is not None:
+            _cache_fit_q_matrix_result(cache_key, Q, loglik)
+        return Q, loglik
 
     def neg_loglik(params):
         if model == "ER":
@@ -731,7 +757,16 @@ def fit_q_matrix(
     else:
         loglik = _felsenstein_loglik_prepared(pruning_context, Q, pi)
 
+    if cache_key is not None:
+        _cache_fit_q_matrix_result(cache_key, Q, loglik)
+
     return Q, loglik
+
+
+def _cache_fit_q_matrix_result(cache_key, Q: np.ndarray, loglik: float) -> None:
+    if len(_FIT_Q_MATRIX_CACHE) >= _FIT_Q_MATRIX_CACHE_MAXSIZE:
+        _FIT_Q_MATRIX_CACHE.pop(next(iter(_FIT_Q_MATRIX_CACHE)))
+    _FIT_Q_MATRIX_CACHE[cache_key] = (Q.copy(), loglik)
 
 
 def parse_discrete_traits(

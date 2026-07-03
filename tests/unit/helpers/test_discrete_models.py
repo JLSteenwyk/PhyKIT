@@ -1156,6 +1156,54 @@ class TestFelsensteinPruning:
         assert Q.shape == (2, 2)
         assert np.isfinite(loglik)
 
+    def test_fit_q_matrix_caches_equivalent_prepared_contexts(self, monkeypatch):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="A"),
+                    Clade(branch_length=1.0, name="B"),
+                    Clade(branch_length=1.0, name="C"),
+                ],
+            )
+        )
+        tip_states = {"A": "0", "B": "1", "C": "2"}
+        states = ["0", "1", "2"]
+        calls = 0
+
+        class Result:
+            def __init__(self, x, fun):
+                self.x = x
+                self.fun = fun
+
+        def recording_minimize(fun, x0, **kwargs):
+            nonlocal calls
+            calls += 1
+            return Result(x0, fun(x0))
+
+        monkeypatch.setattr(discrete_models, "minimize", recording_minimize)
+        discrete_models._FIT_Q_MATRIX_CACHE.clear()
+
+        context1 = _prepare_felsenstein_context(tree, tip_states, states)
+        Q1, loglik1 = fit_q_matrix(
+            tree, tip_states, states, "SYM", pruning_context=context1
+        )
+        first_call_count = calls
+        Q1[0, 1] = 999.0
+
+        context2 = _prepare_felsenstein_context(tree, tip_states, states)
+        Q2, loglik2 = fit_q_matrix(
+            tree, tip_states, states, "SYM", pruning_context=context2
+        )
+
+        assert first_call_count > 0
+        assert calls == first_call_count
+        assert Q2[0, 1] != 999.0
+        assert loglik2 == loglik1
+        discrete_models._FIT_Q_MATRIX_CACHE.clear()
+
 
 class TestParseDiscreteTraits:
     def test_parse_multi_column(self, tmp_path):

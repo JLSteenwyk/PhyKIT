@@ -1683,6 +1683,7 @@ Results:
 | `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |
 | `FitDiscrete.run` small real-eigensystem transitions | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous SciPy `expm` transition path with identical stdout | 5.374444s | 3.653641s | 1.47x |
 | `FitDiscrete.run` multi-state ER rate objective | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous ER objective path, identical stdout | 3.350152s | 2.758701s | 1.21x |
+| `FitDiscrete.run` repeated fitted-model cache | seven repeated `fit_discrete` integration invocations on sample `tree_simple` traits in one Python process, preserving fitted output while returning copied cached Q matrices | 49.83s | 5.53s | 9.01x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
 | `fit_discrete` module import without eager NumPy/discrete helper | cold subprocess import after lazy helper wrappers and local model constant | 0.090685s | 0.026126s | 3.47x |
 | `fit_discrete` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006547s | 0.005270s | 1.24x |
@@ -6328,6 +6329,10 @@ Profiling summary:
   symmetric small-state matrices now use `eigh` with transposed eigenvectors
   instead of generic eigenvectors, inverses, and condition-number checks,
   reducing setup overhead for SYM likelihood evaluations.
+  Repeated fitted Q-matrix calls now cache results by model and prepared
+  pruning metadata, covering workflows that refit the same topology, branch
+  lengths, and tip-state pattern in one Python process while returning copied
+  matrices so callers cannot mutate the cached result.
   A later `fit_discrete` startup pass
   keeps the public helper patch points as thin lazy wrappers and stores the
   model-name constant locally, so importing the command module no longer imports
