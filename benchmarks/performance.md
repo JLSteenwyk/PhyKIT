@@ -104,6 +104,7 @@ Results:
 | `IdentityMatrix._summarize_identity_matrix` condensed-vector reductions | 700 / 1200 / 2500 / 3500-taxon symmetric identity matrices, side-by-side previous generic `np.mean`/`np.min`/`np.max`/`np.argmin`/`np.argmax` reductions after `squareform` | 0.001703s / 0.006129s / 0.020625s / 0.048776s | 0.000981s / 0.005080s / 0.016065s / 0.036241s | 1.74x / 1.21x / 1.28x / 1.35x |
 | `IdentityMatrix._print_text_output` batched summary | 100k captured identity-matrix text summaries, identical stdout text | 0.267546s | 0.186169s | 1.44x |
 | `IdentityMatrix._print_text_output` template formatting | 100k captured identity-matrix text summaries, identical stdout text, side-by-side previous f-string join formatter | 0.186500s | 0.149763s | 1.25x |
+| `IdentityMatrix._compute_identity_matrix` cached lazy NumPy attributes | 700 taxa x 900 ambiguous-symbol sites, repeated identity-matrix calculations after warmup | 0.557054s | 0.496290s | 1.12x |
 | `identity_matrix` module import without eager SciPy clustering | cold process import for identity-matrix command module | 0.459178s | 0.249947s | 1.8x |
 | `IdentityMatrix` cached SciPy clustering wrappers | 2k repeated 16-taxon squareform/linkage/leaves-list cluster ordering calls, SciPy already warm, side-by-side previous import-on-call wrappers | 0.200257s | 0.169233s | 1.18x |
 | `helpers.files` module import without eager Bio.AlignIO | cold subprocess import of shared alignment file helper | 0.159080s | 0.060833s | 2.62x |
@@ -2774,7 +2775,10 @@ Profiling summary:
   `taxa_names[1:]`, preserving early mismatch exits without copying the taxon
   name tail. The non-ASCII pairwise fallback now counts valid and matching
   boolean masks with `np.count_nonzero` instead of summing booleans, preserving
-  Unicode fallback behavior while avoiding a general reduction.
+  Unicode fallback behavior while avoiding a general reduction. The lazy NumPy
+  proxy now caches resolved attributes, reducing repeated import/getattr
+  dispatch during identity-matrix calculations while preserving lazy import
+  behavior and module-level patch points.
 - `IdentityMatrix` clustered heatmap setup baseline time computed the same
   hierarchical linkage once for taxon ordering and again for dendrogram
   plotting. The optimized run path returns the linkage from ordering and passes

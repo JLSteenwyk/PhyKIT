@@ -109,6 +109,16 @@ assert module._SQUAREFORM is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_proxy_caches_resolved_attributes():
+    lazy_np = identity_matrix_module._LazyNumpy()
+
+    first = lazy_np.count_nonzero
+    second = lazy_np.count_nonzero
+
+    assert first is second
+    assert lazy_np.__dict__["count_nonzero"] is first
+
+
 def test_identical_sequence_identity_value_ascii_valid_and_invalid():
     assert _identical_sequence_identity_value("-?NX*nxA") == 1.0
     assert _identical_sequence_identity_value("-?NX*nx") == 0.0
