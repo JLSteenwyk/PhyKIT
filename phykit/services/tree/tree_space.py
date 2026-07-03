@@ -816,6 +816,10 @@ class TreeSpace(Tree):
             lines.append(f"Distance matrix: {self.distance_matrix_path}")
         print("\n".join(lines))
 
+    @staticmethod
+    def _json_coordinates(coords, n_gene_trees: int) -> list[list[float]]:
+        return np.round(coords[:n_gene_trees, :2], 6).tolist()
+
     # ------------------------------------------------------------------
     # Main run
     # ------------------------------------------------------------------
@@ -925,10 +929,7 @@ class TreeSpace(Tree):
                 "n_taxa": n_taxa,
                 "n_clusters": k,
                 "clusters": clusters_info,
-                "coordinates": [
-                    [round(float(coords[i, 0]), 6), round(float(coords[i, 1]), 6)]
-                    for i in range(n_gene_trees)
-                ],
+                "coordinates": self._json_coordinates(coords, n_gene_trees),
                 "output_file": self.output,
             }
             if species_tree_cluster is not None:

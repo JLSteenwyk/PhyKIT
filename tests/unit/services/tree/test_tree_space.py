@@ -818,3 +818,22 @@ class TestEndToEnd:
         assert "coordinates" in payload
         assert len(payload["coordinates"]) == 10
         assert payload["output_file"] == str(output)
+
+    def test_json_coordinates_vectorizes_rounding(self, monkeypatch):
+        def fail_round(*_args, **_kwargs):
+            raise AssertionError("coordinate JSON rounding should be vectorized")
+
+        monkeypatch.setattr("builtins.round", fail_round)
+
+        coords = np.array(
+            [
+                [0.1234567, 1.7654321],
+                [2.0, 3.3333333],
+                [9.0, 9.0],
+            ]
+        )
+
+        assert TreeSpace._json_coordinates(coords, 2) == [
+            [0.123457, 1.765432],
+            [2.0, 3.333333],
+        ]

@@ -913,6 +913,7 @@ Results:
 | `TreeSpace._auto_detect_k` normalized Laplacian row sums | 900 / 2500 / 5000-item synthetic affinity matrices, side-by-side previous `np.sum(..., axis=1)` degree-vector reduction | 0.000159105s / 0.003991750s / 0.015878400s | 0.000153917s / 0.001476250s / 0.008788600s | 1.03x / 2.70x / 1.81x |
 | `TreeSpace._spectral_cluster` condensed distance setup | 2500 x 2500 symmetric distance matrix, side-by-side previous triangular-index upper-distance gather for bandwidth median | 0.340237s | 0.207055s | 1.64x |
 | `TreeSpace._print_text_output` batched cluster rows | 100k cluster rows, captured stdout and identical text | 0.026882s | 0.016951s | 1.59x |
+| `TreeSpace` JSON coordinate payload rounding | 50k / 100k / 300k 2-D coordinate rows, identical rounded coordinate payload | 0.169128s / 0.370798s / 0.845591s | 0.047852s / 0.055171s / 0.127369s | 3.53x / 6.72x / 6.64x |
 | `TreeSpace._write_distance_matrix` row-slice CSV formatting | 800 x 800 NumPy distance matrix, identical six-decimal CSV text | 0.199160s | 0.169827s | 1.17x |
 | `TreeSpace._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.090451s | 0.067223s | 1.35x |
 | `TreeSpace._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
@@ -4605,7 +4606,10 @@ Profiling summary:
   clustering, or plotting runs. A
   follow-up startup pass keeps JSON output behind a forwarding wrapper and
   localizes `PlotConfig` to argument processing, avoiding those helpers during
-  import-only command discovery. A later startup pass defers pickle until a tree
+  import-only command discovery. JSON coordinate payloads now round the 2-D
+  coordinate block with NumPy before converting to Python lists, preserving
+  six-decimal coordinate rows while avoiding per-cell Python `round()` calls.
+  A later startup pass defers pickle until a tree
   copy is required for pruning. Text output now batches cluster summary rows
   into one newline-joined print while preserving exact stdout text. Tree-source
   cleanup now streams over the input file and strips/filters comments in one
