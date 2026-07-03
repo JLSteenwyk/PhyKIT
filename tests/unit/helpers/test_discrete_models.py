@@ -927,6 +927,64 @@ class TestFelsensteinPruning:
             pi,
         ) == pytest.approx(expected)
 
+    def test_four_state_er_rate_loglik_matches_prepared_q_likelihood(
+        self, monkeypatch
+    ):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        branch_length=1.0,
+                        clades=[
+                            Clade(branch_length=0.5, name="A"),
+                            Clade(branch_length=0.75, name="B"),
+                        ],
+                    ),
+                    Clade(
+                        branch_length=1.25,
+                        clades=[
+                            Clade(branch_length=0.3, name="C"),
+                            Clade(branch_length=0.6, name="D"),
+                        ],
+                    ),
+                ],
+            )
+        )
+        context = _prepare_felsenstein_context(
+            tree,
+            {"A": "0", "B": "1", "C": "2", "D": "3"},
+            ["0", "1", "2", "3"],
+        )
+        rate = 0.13
+        pi = np.ones(4) / 4.0
+        Q = build_q_matrix(np.array([rate]), 4, "ER")
+        expected = _felsenstein_loglik_prepared(context, Q, pi)
+        context["internal_entries"] = [(999, (), ())]
+
+        def fail_matrix_exp(*_args, **_kwargs):
+            raise AssertionError(
+                "four-state ER rate likelihood should use scalar transitions"
+            )
+
+        monkeypatch.setattr(discrete_models, "matrix_exp", fail_matrix_exp)
+        monkeypatch.setattr(
+            discrete_models.np,
+            "exp",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("four-state ER rate likelihood should use math.exp")
+            ),
+            raising=False,
+        )
+
+        assert _felsenstein_loglik_er_rate(
+            context,
+            rate,
+            pi,
+        ) == pytest.approx(expected)
+
     def test_two_state_er_fit_avoids_objective_q_rebuilds(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
         import phykit.helpers.discrete_models as discrete_models

@@ -591,7 +591,15 @@ def _felsenstein_loglik_er_rate(context, rate: float, pi: np.ndarray) -> float:
             else:
                 decay, different = transition
             child_lik = cond_liks[child_idx]
-            lik *= (different * float(child_lik.sum())) + (decay * child_lik)
+            if k == 3:
+                child_total = float(child_lik[0] + child_lik[1] + child_lik[2])
+            elif k == 4:
+                child_total = float(
+                    child_lik[0] + child_lik[1] + child_lik[2] + child_lik[3]
+                )
+            else:
+                child_total = float(child_lik.sum())
+            lik *= (different * child_total) + (decay * child_lik)
         cond_liks[idx] = lik
 
     total_lik = float(np.dot(pi, cond_liks[context["root_index"]]))
