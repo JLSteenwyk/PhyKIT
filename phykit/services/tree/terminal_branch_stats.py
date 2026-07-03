@@ -170,10 +170,12 @@ class TerminalBranchStats(Tree):
         except AttributeError:
             return None
 
-        def iter_lengths():
+        try:
+            lengths = []
             stack = [root]
             append = stack.append
             pop = stack.pop
+            append_length = lengths.append
             while stack:
                 clade = pop()
                 children = clade.clades
@@ -186,10 +188,8 @@ class TerminalBranchStats(Tree):
                         for idx in range(child_count - 1, -1, -1):
                             append(children[idx])
                 elif clade.branch_length is not None:
-                    yield clade.branch_length
-
-        try:
-            return np.fromiter(iter_lengths(), dtype=float)
+                    append_length(clade.branch_length)
+            return np.asarray(lengths, dtype=float)
         except AttributeError:
             return None
 

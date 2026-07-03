@@ -32,10 +32,10 @@ assert "numpy" not in sys.modules
 def test_lazy_numpy_caches_resolved_attributes():
     lazy_np = tbs_module._LazyNumpy()
 
-    fromiter_attr = lazy_np.fromiter
+    asarray_attr = lazy_np.asarray
 
-    assert lazy_np.__dict__["fromiter"] is fromiter_attr
-    assert lazy_np.fromiter is fromiter_attr
+    assert lazy_np.__dict__["asarray"] is asarray_attr
+    assert lazy_np.asarray is asarray_attr
     assert lazy_np._module is not None
 
 
