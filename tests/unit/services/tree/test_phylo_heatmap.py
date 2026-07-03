@@ -44,6 +44,17 @@ assert "phykit.helpers.color_annotations" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    first_asarray = lazy_np.asarray
+    second_asarray = lazy_np.asarray
+
+    assert first_asarray is second_asarray
+    assert lazy_np.__dict__["asarray"] is first_asarray
+    assert lazy_np._module is not None
+
+
 @pytest.fixture
 def args(tmp_path):
     return Namespace(
