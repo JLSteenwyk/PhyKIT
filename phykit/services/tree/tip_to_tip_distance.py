@@ -46,6 +46,7 @@ TreeMixin = _LazyTreeMixin()
 
 class TipToTipDistance(Tree):
     _MATRIX_FAST_FILL_MIN_ROWS = 200_000
+    _JSON_NO_COMBO_MIN_TIPS = 512
     _TEXT_NO_COMBO_MIN_TIPS = 1024
 
     def __init__(self, args) -> None:
@@ -268,6 +269,17 @@ class TipToTipDistance(Tree):
         tips = self.calculate_terminal_names_fast(tree_zero)
         if tips is None:
             tips = [tip.name for tip in tree_zero.get_terminals()]
+
+        if len(tips) >= self._JSON_NO_COMBO_MIN_TIPS:
+            fast_result = self.calculate_pairwise_tip_distances_fast(
+                tree_zero,
+                tips,
+                include_combos=False,
+            )
+            if fast_result is not None:
+                _, distances = fast_result
+                return self._format_pairwise_rows_without_combos(tips, distances)
+
         fast_result = self.calculate_pairwise_tip_distances_fast(tree_zero, tips)
         if fast_result is not None:
             combos, distances = fast_result
@@ -289,6 +301,43 @@ class TipToTipDistance(Tree):
                     "tip_to_tip_distance": round(float(TreeMixin.distance(tree_zero, taxon_a, taxon_b)), 4),
                 }
             )
+        return rows
+
+    def _format_pairwise_rows_without_combos(
+        self,
+        tips: list[str],
+        distances: list[float],
+    ) -> list[dict[str, object]]:
+        if len(tips) < self._TEXT_NO_COMBO_MIN_TIPS:
+            return [
+                {
+                    "taxon_a": taxon_a,
+                    "taxon_b": taxon_b,
+                    "tip_to_tip_distance": round(float(distance), 4),
+                }
+                for (taxon_a, taxon_b), distance in zip(
+                    itertools.combinations(tips, 2),
+                    distances,
+                )
+            ]
+
+        rows = []
+        append = rows.append
+        round_ = round
+        float_ = float
+        idx = 0
+        tip_count = len(tips)
+        for i in range(tip_count - 1):
+            taxon_a = tips[i]
+            for j in range(i + 1, tip_count):
+                append(
+                    {
+                        "taxon_a": taxon_a,
+                        "taxon_b": tips[j],
+                        "tip_to_tip_distance": round_(float_(distances[idx]), 4),
+                    }
+                )
+                idx += 1
         return rows
 
     def _format_all_pairwise_distances_fast(self, tree_zero: Newick.Tree) -> str | None:

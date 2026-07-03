@@ -182,6 +182,38 @@ class TestTipToTipDistance:
         assert [row["taxon_a"] for row in rows] == ["a", "a", "b"]
         assert [row["taxon_b"] for row in rows] == ["b", "c", "c"]
 
+    def test_calculate_all_pairwise_distances_can_skip_combo_allocation(
+        self, mocker, monkeypatch, args
+    ):
+        service = TipToTipDistance(args)
+        tree = object()
+        tips = ["a", "b", "c", "d"]
+        distances = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        monkeypatch.setattr(TipToTipDistance, "_JSON_NO_COMBO_MIN_TIPS", len(tips))
+        monkeypatch.setattr(TipToTipDistance, "_TEXT_NO_COMBO_MIN_TIPS", len(tips))
+        mocker.patch.object(service, "calculate_terminal_names_fast", return_value=tips)
+        fast_distances = mocker.patch.object(
+            service,
+            "calculate_pairwise_tip_distances_fast",
+            return_value=(None, distances),
+        )
+
+        rows = service.calculate_all_pairwise_distances(tree)
+
+        fast_distances.assert_called_once_with(
+            tree,
+            tips,
+            include_combos=False,
+        )
+        assert rows == [
+            {"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.0},
+            {"taxon_a": "a", "taxon_b": "c", "tip_to_tip_distance": 2.0},
+            {"taxon_a": "a", "taxon_b": "d", "tip_to_tip_distance": 3.0},
+            {"taxon_a": "b", "taxon_b": "c", "tip_to_tip_distance": 4.0},
+            {"taxon_a": "b", "taxon_b": "d", "tip_to_tip_distance": 5.0},
+            {"taxon_a": "c", "taxon_b": "d", "tip_to_tip_distance": 6.0},
+        ]
+
     def test_calculate_tip_to_tip_distance_fast_matches_biopython(self, args):
         service = TipToTipDistance(args)
         tree = Phylo.read(StringIO("(((A:1,B:2):3,C:4):5,D:6);"), "newick")
