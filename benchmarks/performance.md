@@ -1157,6 +1157,7 @@ Results:
 | `TransferAnnotations._extract_annotations` + `_transfer` direct postorder and lazy complement | 4096-tip balanced source/target trees, annotations on all internal source nodes | 0.295462s | 0.013271s | 22.26x |
 | `TransferAnnotations._collect_clade_taxa` unary child fast path | 65536-tip mixed unary/binary tree, identical clade-to-taxa map | 0.090294s | 0.073181s | 1.23x |
 | `TransferAnnotations._collect_clade_taxa` multifurcation child union | 5 descendant-taxa passes over 256x16 / 1024x8 / 8192x4 multifurcating groups, side-by-side previous temporary mutable set update path | 0.010979s / 0.071355s / 0.222452s | 0.009668s / 0.035570s / 0.181973s | 1.14x / 2.01x / 1.22x |
+| `TransferAnnotations._combine_child_taxa` multifurcation child union | 8192 four-child multifurcating groups plus root aggregation, side-by-side previous temporary mutable set update path | 0.080073s | 0.058076s | 1.38x |
 | `TransferAnnotations._print_text_output` batched summary | 100k captured transfer-annotation text summaries, identical stdout text | 0.065141s | 0.044902s | 1.45x |
 | `TransferAnnotations._write_annotated_tree` single output write | 8192-tip balanced annotated tree, identical normalized Newick output | 0.099131s | 0.031941s | 3.10x |
 | `transfer_annotations` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read`/`Phylo.write` proxy | 0.113289s | 0.025829s | 4.39x |
@@ -5141,8 +5142,11 @@ Profiling summary:
   nodes directly with localized dictionary lookups, preserving multifurcation
   behavior while avoiding the generic child-combine helper on common internal
   shapes. Multifurcating clade collection now unions cached child frozensets
-  directly, avoiding a temporary mutable set and repeated update calls. A later
-  startup pass replaces the eager Bio.Phylo import with a lazy
+  directly, avoiding a temporary mutable set and repeated update calls. The
+  source-extraction and target-transfer child combiner now uses the same direct
+  union path for multifurcations, avoiding temporary set construction in the
+  command's active annotation paths. A later startup pass replaces the eager
+  Bio.Phylo import with a lazy
   `Phylo.read`/`Phylo.write` proxy, preserving those module patch points while
   avoiding Biopython startup for import-only callers. The run path now reads the
   source tree through the shared cache without copying because it

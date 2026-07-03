@@ -149,6 +149,30 @@ class TestTransferAnnotations:
         assert transferred == 1
         assert unmatched == 1
 
+    def test_extract_and_transfer_multifurcation_avoids_temp_set(self, monkeypatch):
+        svc = TransferAnnotations(_make_args())
+        source = Phylo.read(
+            StringIO("((A:1,B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+        target = Phylo.read(
+            StringIO("((A:1,B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+        source.root.clades[0].comment = "q1=1"
+        all_taxa = frozenset(t.name for t in source.get_terminals())
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("multifurcation transfer should not build a temp set")
+
+        monkeypatch.setattr("builtins.set", fail_set)
+
+        annotations = svc._extract_annotations(source, all_taxa)
+        transferred, unmatched = svc._transfer(target, annotations, all_taxa)
+
+        assert transferred == 1
+        assert unmatched == 1
+
     def test_print_text_output_batches_summary(self, mocker):
         svc = TransferAnnotations.__new__(TransferAnnotations)
         printed = mocker.patch("builtins.print")

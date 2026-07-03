@@ -181,11 +181,9 @@ class TransferAnnotations(Tree):
     def _combine_child_taxa(children, clade_taxa: dict[int, frozenset]) -> frozenset:
         if len(children) == 2:
             return clade_taxa[id(children[0])] | clade_taxa[id(children[1])]
-
-        taxa = set()
-        for child in children:
-            taxa.update(clade_taxa.get(id(child), ()))
-        return frozenset(taxa)
+        return frozenset().union(
+            *(clade_taxa[id(child)] for child in children)
+        )
 
     @staticmethod
     def _get_bipartition(clade, all_taxa: frozenset, clade_taxa=None) -> frozenset:
