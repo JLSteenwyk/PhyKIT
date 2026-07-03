@@ -691,6 +691,7 @@ Results:
 | `PhyloGwas._print_text_output` cached p-value key | 50k categorical text reports with 1k shuffled significant sites, captured stdout and identical text | 3.838282s | 3.414573s | 1.12x |
 | `PhyloGwas` JSON result payload assembly | 200k categorical GWAS result rows, identical `json.dumps(sort_keys=True)` output | 0.575563s | 0.402213s | 1.43x |
 | `PhyloGwas` significant-result summary | 1M GWAS result rows, two-thirds FDR-significant with mixed phylogenetic patterns | 0.082049s | 0.066148s | 1.24x |
+| `PhyloGwas.run` FDR result annotation | 100k / 300k / 1M GWAS result rows, identical dictionaries after assigning adjusted p-values and significance flags | 0.009884s / 0.044893s / 0.230835s | 0.007994s / 0.034206s / 0.116363s | 1.24x / 1.31x / 1.98x |
 | `PhyloGwas._write_csv` tuple-row writer | 100k categorical GWAS rows with ignored extra fields and quoted gene names | 0.222516s | 0.170786s | 1.30x |
 | `PhyloGwas._write_csv` required-field fast path | 100k categorical GWAS rows with ignored extra fields and quoted gene names, side-by-side previous `get()` row writer with incomplete-row fallback preserved | 0.698594s | 0.646321s | 1.08x |
 | `PhyloGwas.run` ASCII biallelic column prefilter | 400 taxa x 50,000 sites, continuous phenotype scan, 90% invariant / 5% multiallelic / 5% biallelic ASCII columns | 0.352346s | 0.119668s | 2.94x |
@@ -4068,6 +4069,9 @@ Profiling summary:
   minimum, preserving scalar BH results including ties. Tiny result sets now use
   a scalar branch before returning an ndarray, avoiding vector sort setup for up
   to seven tested sites while keeping the vector path for larger GWAS outputs.
+  The run path now bulk-converts the adjusted p-value ndarray to Python floats
+  before annotating result dictionaries, avoiding one NumPy-scalar conversion
+  per tested site while preserving the same FDR values and significance flags.
 - `PhyloGwas` partition annotation baseline time scanned every partition for
   every tested site. The optimized path builds a binary-search lookup for
   sorted, non-overlapping partition files and keeps the original linear lookup

@@ -718,6 +718,23 @@ class TestPhyloGwas:
         assert n_polyphyletic == 1
         assert n_monophyletic == 1
 
+    def test_assign_fdr_values_converts_adjusted_values_in_bulk(self):
+        class ToListOnly:
+            def tolist(self):
+                return [0.01, 0.2]
+
+            def __iter__(self):
+                raise AssertionError("adjusted FDR values should be bulk-converted")
+
+        results = [{"position": 1}, {"position": 2}]
+
+        PhyloGwas._assign_fdr_values(results, ToListOnly(), 0.05)
+
+        assert results == [
+            {"position": 1, "fdr_p_value": 0.01, "fdr_significant": True},
+            {"position": 2, "fdr_p_value": 0.2, "fdr_significant": False},
+        ]
+
     def test_categorical_association_accepts_ascii_byte_column(self):
         args = Namespace(
             alignment="",

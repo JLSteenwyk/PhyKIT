@@ -1072,10 +1072,7 @@ class PhyloGwas(Alignment):
         # 3. Multiple testing correction
         if raw_p_values:
             adjusted = self._benjamini_hochberg(raw_p_values)
-            for r, fdr_p_value in zip(site_results, adjusted):
-                fdr_p_value = float(fdr_p_value)
-                r["fdr_p_value"] = fdr_p_value
-                r["fdr_significant"] = fdr_p_value < self.alpha
+            self._assign_fdr_values(site_results, adjusted, self.alpha)
         else:
             for r in site_results:
                 r["fdr_p_value"] = 1.0
@@ -1193,6 +1190,12 @@ class PhyloGwas(Alignment):
             payload["polyphyletic"] = n_polyphyletic
             payload["monophyletic"] = n_monophyletic
         return payload
+
+    @staticmethod
+    def _assign_fdr_values(site_results: List[dict], adjusted, alpha: float) -> None:
+        for result, fdr_p_value in zip(site_results, adjusted.tolist()):
+            result["fdr_p_value"] = fdr_p_value
+            result["fdr_significant"] = fdr_p_value < alpha
 
     @staticmethod
     def _summarize_significant_results(
