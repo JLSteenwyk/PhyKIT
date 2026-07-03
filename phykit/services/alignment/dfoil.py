@@ -37,6 +37,7 @@ PATTERNS = [
     'BAAAA', 'BAABA', 'BABAA', 'BABBA',
     'BBAAA', 'BBABA', 'BBBAA', 'BBBBA',
 ]
+_ZERO_PATTERN_COUNTS = dict.fromkeys(PATTERNS, 0)
 
 # Invariant / uninformative patterns (all ancestral or all derived).
 _UNINFORMATIVE = {'AAAAA', 'BBBBA'}
@@ -128,7 +129,7 @@ class Dfoil(Alignment):
             and seq_p3 == seq_outgroup
             and seq_p4 == seq_outgroup
         ):
-            return {pattern: 0 for pattern in PATTERNS}
+            return _ZERO_PATTERN_COUNTS.copy()
 
         try:
             p1_bytes = seq_p1.encode("ascii")

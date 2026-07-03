@@ -240,6 +240,15 @@ class TestDfoilPatternCounting:
         )
 
         assert counts == {pattern: 0 for pattern in PATTERNS}
+        counts["AAAAA"] = 1
+        fresh_counts = Dfoil._count_site_patterns(
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+            "ACGT" * 10,
+        )
+        assert fresh_counts["AAAAA"] == 0
 
     def test_pattern_counting(self, tmp_path):
         """Verify correct pattern counts for a known alignment."""

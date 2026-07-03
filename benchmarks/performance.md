@@ -762,6 +762,7 @@ Results:
 | `Dfoil._count_site_patterns` all-valid ASCII shortcut | 2M sites, clean ASCII DFOIL informative/uninformative synthetic alignment | 0.027733s | 0.021082s | 1.32x |
 | `Dfoil._count_site_patterns` small skip-code lookup mask | 1k / 5k / 10k / 100k ASCII sites with 2% skip codes, side-by-side previous six-code validity loop | 2.403774s / 1.269534s / 0.692042s / 0.224607s | 1.063043s / 0.773009s / 0.649486s / 0.209380s | 2.26x / 1.64x / 1.07x / 1.07x |
 | `Dfoil._count_site_patterns` all-invariant shortcut | 2M sites, P1/P2/P3/P4 identical to outgroup, identical all-zero pattern dictionary | 0.028345s | 0.000002s | 14172.5x |
+| `Dfoil._count_site_patterns` all-zero pattern template | 500k repeated 200-site / 200k repeated 10k-site all-identical DFOIL counts, fresh mutable result preserved | 2.190396s / 0.995680s | 0.287203s / 0.313775s | 7.63x / 3.17x |
 | `Dfoil._count_site_patterns_scalar` pattern-code fallback | 1M Unicode-containing scalar fallback sites, identical 16-pattern count dictionary | 2.091503s | 0.917063s | 2.28x |
 | `Dfoil._count_site_patterns_scalar` shared skip constants and zipped rows | 1M Unicode-containing scalar fallback sites with sparse skipped sites, identical 16-pattern count dictionary | 2.300239s | 1.765096s | 1.30x |
 | `Dstatistic._print_alignment_text_output` batched report output | 50k alignment-mode D-statistic text reports, captured stdout and identical text | 0.249669s | 0.141300s | 1.77x |
@@ -4285,7 +4286,10 @@ Profiling summary:
   `typing`. The scalar fallback for non-ASCII alignments now uses direct skip
   checks and computes block membership only for counted sites, preserving
   ABBA/BABA totals and jackknife block arrays while avoiding per-site list and
-  generator allocation. A later scalar fallback pass reuses a module-level
+  generator allocation. DFOIL's all-identical fast path now returns a copy of a
+  module-level all-zero pattern-count template, preserving a fresh mutable
+  result while avoiding a 16-key dictionary comprehension on every call.
+  A later scalar fallback pass reuses a module-level
   skip-character constant, scans rows with `zip`, and accumulates block counts
   in Python lists before one NumPy conversion at return. Gene-tree descendant
   collection now records
