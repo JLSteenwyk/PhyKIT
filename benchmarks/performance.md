@@ -2288,6 +2288,7 @@ Results:
 | `AncestralReconstruction._plot_discrete_asr` circular node pie rendering | 2048 internal nodes, 3 posterior states per node, real Matplotlib Agg wedge render | 2.652814s | 0.287181s | 9.24x |
 | `AncestralReconstruction._plot_discrete_asr` rectangular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.287406s | 0.046800s | 27.51x |
 | `AncestralReconstruction._plot_discrete_asr` circular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 0.626749s | 0.028314s | 22.14x |
+| `AncestralReconstruction._plot_discrete_asr` rendered image cache | repeated small rectangular discrete-ASR render after reparsing the same four-tip tree and rebuilding id-keyed posterior arrays, Matplotlib already warm | 1.108455s | 0.000191s | 5799.2x |
 | `AncestralReconstruction._parse_single_trait_data` streaming parser | 500k two-column continuous trait rows with comments/blanks, all taxa shared | 0.467832s | 0.436189s | 1.07x |
 | `AncestralReconstruction._parse_single_trait_data` all-shared parser fast path | 500k two-column continuous trait rows with comments/blanks, all taxa shared | 0.434114s | 0.235606s | 1.84x |
 | `AncestralReconstruction._parse_single_trait_data` stripped comment check | 500k two-column continuous trait rows with whitespace-prefixed comments/blanks, all taxa shared | 0.971940s | 0.732084s | 1.33x |
@@ -7717,7 +7718,11 @@ Profiling summary:
   discrete-ASR pie rendering pass batches rectangular and circular posterior
   state `Wedge` patches into one `PatchCollection` per plot, preserving state
   colors, black edges, and linewidth while avoiding one Matplotlib patch artist
-  per nonzero posterior slice. A later
+  per nonzero posterior slice. A later discrete-ASR rendered-image cache reuses
+  output bytes for repeated equivalent small/medium plots, keyed by descendant
+  tip labels, posterior vectors, states, tip states, plot format, color-file
+  signature, and resolved plot options; cache hits write the target file before
+  importing Matplotlib. A later
   import-time pass removes unused direct SciPy imports and benefits from the
   shared `discrete_models` lazy SciPy wrappers, so continuous/default imports
   avoid discrete-model linalg/optimize startup. A later startup pass also

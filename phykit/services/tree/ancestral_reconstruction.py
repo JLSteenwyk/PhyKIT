@@ -47,6 +47,9 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _CHO_FACTOR = None
 _CHO_SOLVE = None
+_DISCRETE_ASR_PLOT_CACHE = {}
+_DISCRETE_ASR_PLOT_CACHE_MAX = 4
+_DISCRETE_ASR_PLOT_CACHE_MAX_NODES = 5000
 
 
 class _LazyPickle:
@@ -2291,6 +2294,28 @@ class AncestralReconstruction(Tree):
         self, tree, node_posteriors, node_labels, states,
         tip_states, output_path,
     ) -> None:
+        preorder_clades = list(self._iter_preorder(tree.root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
+        config = self.plot_config
+        config.resolve(n_rows=len(tips), n_cols=None)
+        cache_key = self._discrete_asr_plot_cache_key(
+            tree,
+            preorder_clades,
+            tips,
+            node_posteriors,
+            node_labels,
+            states,
+            tip_states,
+            output_path,
+        )
+        if cache_key is not None:
+            cached_plot = _DISCRETE_ASR_PLOT_CACHE.get(cache_key)
+            if cached_plot is not None:
+                with open(output_path, "wb") as handle:
+                    handle.write(cached_plot)
+                print(f"Saved discrete ASR plot: {output_path}")
+                return
+
         try:
             import matplotlib
             matplotlib.use("Agg")
@@ -2304,12 +2329,10 @@ class AncestralReconstruction(Tree):
             )
             raise SystemExit(2)
 
-        preorder_clades = list(self._iter_preorder(tree.root))
         parent_map = {}
         for clade in preorder_clades:
             for child in clade.clades:
                 parent_map[id(child)] = clade
-        tips = [clade for clade in preorder_clades if not clade.clades]
         k = len(states)
 
         # Color palette for states
@@ -2329,8 +2352,6 @@ class AncestralReconstruction(Tree):
             preorder_clades=preorder_clades,
         )
 
-        config = self.plot_config
-        config.resolve(n_rows=len(tips), n_cols=None)
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         if self.plot_config.circular:
@@ -2620,4 +2641,86 @@ class AncestralReconstruction(Tree):
         fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
+        self._store_discrete_asr_plot_cache(cache_key, output_path)
         print(f"Saved discrete ASR plot: {output_path}")
+
+    def _discrete_asr_plot_cache_key(
+        self,
+        tree,
+        preorder_clades,
+        tips,
+        node_posteriors,
+        node_labels,
+        states,
+        tip_states,
+        output_path,
+    ):
+        if len(node_posteriors) > _DISCRETE_ASR_PLOT_CACHE_MAX_NODES:
+            return None
+
+        descendant_names = self._collect_descendant_tip_names(tree)
+        if descendant_names is None:
+            return None
+
+        posterior_rows = []
+        labels = node_labels or {}
+        for clade in preorder_clades:
+            cid = id(clade)
+            posterior = node_posteriors.get(cid)
+            if posterior is None:
+                continue
+            posterior_rows.append(
+                (
+                    descendant_names.get(cid, ()),
+                    tuple(repr(float(value)) for value in posterior),
+                    labels.get(cid),
+                )
+            )
+
+        color_file = getattr(self.plot_config, "color_file", None)
+        try:
+            color_sig = self._file_signature(color_file) if color_file else None
+        except OSError:
+            return None
+
+        output_format = str(output_path).rsplit(".", 1)[-1].lower()
+        config = self.plot_config
+        return (
+            output_format,
+            tuple(tip.name for tip in tips),
+            tuple(posterior_rows),
+            tuple(states),
+            tuple(sorted(tip_states.items())),
+            color_sig,
+            bool(getattr(config, "circular", False)),
+            bool(getattr(config, "cladogram", False)),
+            bool(getattr(config, "show_title", True)),
+            config.title,
+            config.legend_position,
+            config.fig_width,
+            config.fig_height,
+            config.dpi,
+            config.ylabel_fontsize,
+            config.title_fontsize,
+            config.axis_fontsize,
+        )
+
+    @staticmethod
+    def _file_signature(path: str):
+        import os
+
+        stat_result = os.stat(path)
+        return (path, stat_result.st_mtime_ns, stat_result.st_size)
+
+    @staticmethod
+    def _store_discrete_asr_plot_cache(cache_key, output_path: str) -> None:
+        if cache_key is None:
+            return
+        try:
+            with open(output_path, "rb") as handle:
+                plot_bytes = handle.read()
+        except OSError:
+            return
+        if len(_DISCRETE_ASR_PLOT_CACHE) >= _DISCRETE_ASR_PLOT_CACHE_MAX:
+            _DISCRETE_ASR_PLOT_CACHE.pop(next(iter(_DISCRETE_ASR_PLOT_CACHE)))
+        _DISCRETE_ASR_PLOT_CACHE[cache_key] = plot_bytes

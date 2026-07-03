@@ -1,3 +1,4 @@
+import builtins
 import json
 import os
 import subprocess
@@ -61,6 +62,17 @@ TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_traits.tsv")
 MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
 DISCRETE_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_discrete_traits.tsv")
+
+
+@pytest.fixture(autouse=True)
+def clear_discrete_asr_plot_cache():
+    previous_cache = ancestral_module._DISCRETE_ASR_PLOT_CACHE.copy()
+    ancestral_module._DISCRETE_ASR_PLOT_CACHE.clear()
+    try:
+        yield
+    finally:
+        ancestral_module._DISCRETE_ASR_PLOT_CACHE.clear()
+        ancestral_module._DISCRETE_ASR_PLOT_CACHE.update(previous_cache)
 
 
 @pytest.fixture
@@ -2569,6 +2581,51 @@ class TestDiscretePlot:
             for actual, expected in zip(layout_calls["circular_tips"], expected_tips)
         )
         assert output_path.exists()
+
+    def test_discrete_plot_reuses_cached_rendered_bytes(
+        self, discrete_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        discrete_args.circular = False
+        discrete_args.no_title = True
+        discrete_args.ylabel_fontsize = 0
+        states = ["x", "y"]
+        tip_states = {"A": "x", "B": "x", "C": "y", "D": "y"}
+        tree_text = "((A:1,B:1):1,(C:1,D:1):1);"
+
+        def make_plot_inputs():
+            svc = AncestralReconstruction(discrete_args)
+            tree = Phylo.read(StringIO(tree_text), "newick")
+            clades = list(svc._iter_preorder(tree.root))
+            posteriors = {
+                id(clade): np.array([0.4, 0.6])
+                for clade in clades
+                if clade.clades
+            }
+            return svc, tree, posteriors
+
+        svc, tree, node_posteriors = make_plot_inputs()
+        first_path = tmp_path / "asr_discrete_first.png"
+        svc._plot_discrete_asr(
+            tree, node_posteriors, {}, states, tip_states, str(first_path)
+        )
+        first_bytes = first_path.read_bytes()
+
+        original_import = builtins.__import__
+
+        def fail_matplotlib_import(name, *args, **kwargs):
+            if name == "matplotlib" or name.startswith("matplotlib."):
+                raise AssertionError("cached discrete ASR plot should skip matplotlib")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fail_matplotlib_import)
+        svc, tree, node_posteriors = make_plot_inputs()
+        second_path = tmp_path / "asr_discrete_second.png"
+        svc._plot_discrete_asr(
+            tree, node_posteriors, {}, states, tip_states, str(second_path)
+        )
+
+        assert second_path.read_bytes() == first_bytes
 
     @patch("builtins.print")
     def test_plot_created(self, mocked_print):
