@@ -952,6 +952,7 @@ Results:
 | `SpectralDiscordance._print_text` PC-score rows | 100k gene-tree score rows x 5 PCs, identical stdout text | 0.240505s | 0.197126s | 1.22x |
 | `SpectralDiscordance._format_json` row-slice score payload | 100k gene-tree score rows x 5 PCs, identical nested payload | 0.157021s | 0.103268s | 1.52x |
 | `SpectralDiscordance._format_json` fixed-column score payload | 100k gene-tree score rows x 2 / 4 / 5 PCs, identical nested payload, side-by-side previous row-slice score construction | 0.232692s / 0.425831s / 0.656708s | 0.092536s / 0.264908s / 0.169341s | 2.51x / 1.61x / 3.88x |
+| `SpectralDiscordance._format_json` 3-PC fixed-column score payload | 50k / 100k / 300k gene-tree score rows x 3 PCs, identical nested payload, side-by-side previous generic row iteration | 0.197470s / 0.552133s / 1.632283s | 0.103362s / 0.161002s / 0.827655s | 1.91x / 3.43x / 1.97x |
 | `SpectralDiscordance.run` cached read-only species tree setup | balanced 32768-tip cached species tree, gene-tree parsing, bipartition matrix, PCA, clustering, and output mocked | 0.100765s | 0.000038s | 2651.7x |
 | `QuartetNetwork._normalize_taxa` identical taxa setup | 80 balanced trees x 512 shared taxa | 0.0784s | 0.0095s | 8.3x |
 | consensus/quartet `_prune_to_taxa` direct terminal objects | balanced 8192-tip tree, prune to 4096 retained tips | 0.029969s | 0.013771s | 2.18x |
@@ -4667,7 +4668,9 @@ Profiling summary:
   collection annotations. JSON score payload construction now precomputes PC
   labels and iterates score rows directly, preserving nested `gene_tree_N`
   payloads and cluster assignments while avoiding repeated two-dimensional
-  indexing.
+  indexing. Follow-up fixed-column paths cover the common 2-, 3-, 4-, and
+  5-PC payloads by converting each score column once and zipping Python lists,
+  avoiding generic row iteration while preserving identical score dictionaries.
 - `QuartetNetwork._compute_quartet_cfs` baseline time represented quartet and
   split membership as Python sets and repeatedly intersected them while
   scanning every tree's bipartitions for every quartet. The optimized path

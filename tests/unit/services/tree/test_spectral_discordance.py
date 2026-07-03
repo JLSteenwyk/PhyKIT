@@ -937,6 +937,48 @@ class TestRun:
             }
         }
 
+    def test_format_json_three_pcs_skips_generic_row_iteration(self, default_args):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class ThreePcScores:
+            shape = (1, 3)
+
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([0.1, 0.2, 0.3][column:column + 1])
+
+            def __iter__(self):
+                raise AssertionError("3-PC output should not use row iteration")
+
+        svc = SpectralDiscordance(default_args)
+
+        payload = svc._format_json(
+            ThreePcScores(),
+            np.array([0.4, 0.3, 0.2]),
+            {},
+            np.array([2]),
+            3,
+            np.array([0.7]),
+            3,
+            {frozenset({"A", "B"}): 0},
+            {},
+        )
+
+        assert payload["scores"] == {
+            "gene_tree_1": {
+                "PC1": 0.1,
+                "PC2": 0.2,
+                "PC3": 0.3,
+                "cluster": 2,
+            }
+        }
+
     @patch("builtins.print")
     def test_no_species_tree(self, mocked_print, no_species_tree_args):
         svc = SpectralDiscordance(no_species_tree_args)

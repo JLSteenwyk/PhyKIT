@@ -250,6 +250,21 @@ class SpectralDiscordance(Tree):
                     gene_tree_indices, col1, col2, labels
                 )
             }
+        elif show_pcs == 3:
+            col1 = scores[:, 0].tolist()
+            col2 = scores[:, 1].tolist()
+            col3 = scores[:, 2].tolist()
+            score_dict = {
+                f"gene_tree_{g}": {
+                    "PC1": float(val1),
+                    "PC2": float(val2),
+                    "PC3": float(val3),
+                    "cluster": int(label),
+                }
+                for g, val1, val2, val3, label in zip(
+                    gene_tree_indices, col1, col2, col3, labels
+                )
+            }
         elif show_pcs == 4:
             col1 = scores[:, 0].tolist()
             col2 = scores[:, 1].tolist()
