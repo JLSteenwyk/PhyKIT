@@ -1311,6 +1311,7 @@ Results:
 | `RelativeRateTest._run_pairwise_tests_vectorized` df=1 vector p-values | 1M synthetic chi-square statistics, large informative-pair branch | 0.151878s | 0.010071s | 15.08x |
 | `RelativeRateTest._run_pairwise_tests_vectorized` zip-based result rows | 1,124,250 pairwise result rows from 1500 taxa, side-by-side previous index lookups | 0.698618s | 0.558125s | 1.25x |
 | `RelativeRateTest._run_pairwise_tests_vectorized` row-wise pairwise results | 1,124,250 pairwise result rows from 1500 taxa, side-by-side previous `np.triu_indices` gather path | 3.519097s | 2.335869s | 1.51x |
+| `RelativeRateTest._pairwise_results_large` single informative-mask scan | 1,124,250 pairwise result rows from 1500 taxa, sparse zero-total rows, identical sampled row output | 2.163468s | 1.974688s | 1.10x |
 | `RelativeRateTest._ingroup_ascii_matrix` joined byte-buffer setup | 1000 repeated 140-ingroup-taxon x 1500-site ASCII matrix builds, side-by-side previous per-taxon `np.frombuffer` plus `np.vstack` setup | 0.845237s | 0.296323s | 2.85x |
 | `RelativeRateTest._bonferroni` | 1M synthetic p-values | 0.096721s | 0.033725s | 2.9x |
 | `RelativeRateTest._fdr` | 1M synthetic p-values | 0.698518s | 0.164136s | 4.3x |
@@ -5297,7 +5298,10 @@ Profiling summary:
   floating-point precision. The same large-pairwise path now scans upper
   triangle rows directly while building result dictionaries, avoiding the
   large `np.triu_indices` arrays and preserving `itertools.combinations` pair
-  order. A later setup pass builds the ingroup byte matrix from one joined
+  order. Large row-wise result construction now reuses each row's
+  `informative.any()` result for both chi-square and p-value branches,
+  preserving zero-total all-ones p-value rows while avoiding a second mask scan.
+  A later setup pass builds the ingroup byte matrix from one joined
   uppercase buffer and reshape, avoiding one `np.frombuffer` array per ingroup
   taxon plus the `np.vstack` join while preserving the Unicode fallback through
   the existing `UnicodeEncodeError` path. Small pair counts retain the scalar

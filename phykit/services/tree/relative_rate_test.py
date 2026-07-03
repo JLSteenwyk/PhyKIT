@@ -429,14 +429,15 @@ class RelativeRateTest(Tree):
 
             chi2_values = np.zeros_like(totals, dtype=np.float64)
             informative = totals > 0
-            if informative.any():
+            has_informative = informative.any()
+            if has_informative:
                 diff_values = m1_values - m2_values
                 chi2_values[informative] = (
                     diff_values[informative] * diff_values[informative]
                 ) / totals[informative]
 
             p_values = np.ones_like(chi2_values, dtype=np.float64)
-            if informative.any():
+            if has_informative:
                 p_values[informative] = erfc(
                     np.sqrt(chi2_values[informative] * 0.5)
                 )

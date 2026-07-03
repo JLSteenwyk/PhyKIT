@@ -380,6 +380,51 @@ class TestPairwiseTajima:
         assert all(row["chi2"] == 0.0 for row in results)
         assert all(row["p_value"] == 1.0 for row in results)
 
+    def test_large_pairwise_results_preserve_no_informative_rows(self):
+        matrix = np.array(
+            [
+                [0, 0, 0, 0],
+                [0, 0, 2, 0],
+                [0, 1, 0, 3],
+                [0, 0, 4, 0],
+            ],
+            dtype=np.int32,
+        )
+        rows = RelativeRateTest._pairwise_results_large(
+            matrix,
+            ["A", "B", "C", "D"],
+        )
+
+        assert rows[:3] == [
+            {
+                "m1": 0,
+                "m2": 0,
+                "chi2": 0.0,
+                "p_value": 1.0,
+                "taxon1": "A",
+                "taxon2": "B",
+            },
+            {
+                "m1": 0,
+                "m2": 0,
+                "chi2": 0.0,
+                "p_value": 1.0,
+                "taxon1": "A",
+                "taxon2": "C",
+            },
+            {
+                "m1": 0,
+                "m2": 0,
+                "chi2": 0.0,
+                "p_value": 1.0,
+                "taxon1": "A",
+                "taxon2": "D",
+            },
+        ]
+        assert rows[3]["m1"] == 2
+        assert rows[3]["m2"] == 1
+        assert rows[3]["chi2"] == pytest.approx(1 / 3)
+
     def test_ingroup_ascii_matrix_matches_vstack_reference(self):
         seq_dict = {
             "A": "acgt",
