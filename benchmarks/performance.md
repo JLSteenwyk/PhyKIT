@@ -957,6 +957,7 @@ Results:
 | `QuartetNetwork._star_test` direct three-count chi-square | 420k mixed quartet count vectors, identical star-test p-values, side-by-side previous generic `sum` path | 1.559743s | 0.677730s | 2.30x |
 | `QuartetNetwork._tree_test` direct three-count G-test | 400k mixed quartet count vectors, identical conservative T3 p-values, side-by-side previous sorted-count path | 2.082686s | 0.767069s | 2.72x |
 | `QuartetNetwork.run` direct quartet concordance factors | 270k quartet count rows, identical CF triplets, side-by-side previous generic `sum` plus list-comprehension path | 0.391966s | 0.085454s | 4.59x |
+| `QuartetNetwork.run` JSON quartet row assembly | 1k / 100k quartet result rows, identical payload rows, side-by-side previous iterable unpack/list conversion path | 0.002633s / 2.514947s | 0.001911s / 2.322615s | 1.38x / 1.08x |
 | `QuartetNetwork._neighbor_joining_order` direct row totals | 40 / 80 / 120 taxa distance matrices, identical NJ ordering, side-by-side previous generator `sum` row totals | 0.018761s / 0.173474s / 0.292239s | 0.017317s / 0.150813s / 0.281683s | 1.08x / 1.15x / 1.04x |
 | `QuartetNetwork._compute_nanuq_distance` topology index helpers | 42 taxa, 111930 quartet classifications, mixed tree/hybrid/unresolved results | 0.111250s | 0.096283s | 1.16x |
 | `QuartetNetwork._extract_bipartitions` direct ordered traversal | balanced 4096-tip tree, public frozenset bipartition helper | 0.389116s | 0.366308s | 1.06x |

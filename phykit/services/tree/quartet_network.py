@@ -1114,7 +1114,10 @@ class QuartetNetwork(Tree):
 
     @staticmethod
     def _format_quartet(quartet: tuple[str, str, str, str], topo_idx: int) -> str:
-        a, b, c, d = quartet
+        a = quartet[0]
+        b = quartet[1]
+        c = quartet[2]
+        d = quartet[3]
         if topo_idx == 0:
             left = f"{{{a}, {b}}}"
             right = f"{{{c}, {d}}}"
@@ -1177,17 +1180,40 @@ class QuartetNetwork(Tree):
 
         if self.json_output:
             quartets_list = []
-            for quartet, result in quartet_results.items():
-                dominant_idx = self._dominant_topology_index(result["counts"])
-                quartets_list.append({
-                    "taxa": list(quartet),
-                    "counts": result["counts"],
-                    "cfs": [round(cf, 4) for cf in result["cfs"]],
-                    "classification": result["classification"],
-                    "p_star": round(result["p_star"], 6),
-                    "p_tree": round(result["p_tree"], 6),
-                    "dominant_topology": self._format_quartet(quartet, dominant_idx),
-                })
+            if total_quartets >= 10_000:
+                for quartet, result in quartet_results.items():
+                    counts = result["counts"]
+                    cfs = result["cfs"]
+                    dominant_idx = self._dominant_topology_index(counts)
+                    quartets_list.append({
+                        "taxa": [quartet[0], quartet[1], quartet[2], quartet[3]],
+                        "counts": counts,
+                        "cfs": [
+                            round(cfs[0], 4),
+                            round(cfs[1], 4),
+                            round(cfs[2], 4),
+                        ],
+                        "classification": result["classification"],
+                        "p_star": round(result["p_star"], 6),
+                        "p_tree": round(result["p_tree"], 6),
+                        "dominant_topology": self._format_quartet(
+                            quartet, dominant_idx
+                        ),
+                    })
+            else:
+                for quartet, result in quartet_results.items():
+                    dominant_idx = self._dominant_topology_index(result["counts"])
+                    quartets_list.append({
+                        "taxa": list(quartet),
+                        "counts": result["counts"],
+                        "cfs": [round(cf, 4) for cf in result["cfs"]],
+                        "classification": result["classification"],
+                        "p_star": round(result["p_star"], 6),
+                        "p_tree": round(result["p_tree"], 6),
+                        "dominant_topology": self._format_quartet(
+                            quartet, dominant_idx
+                        ),
+                    })
             print_json(
                 dict(
                     input_tree_count=n_trees,

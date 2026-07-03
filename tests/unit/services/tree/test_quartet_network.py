@@ -1218,10 +1218,79 @@ class TestQuartetNetworkRun:
         assert payload["input_tree_count"] == 6
         assert payload["total_quartets"] == 1
         assert len(payload["quartets"]) == 1
-        assert payload["quartets"][0]["classification"] in ("tree", "hybrid", "unresolved")
-        assert "p_star" in payload["quartets"][0]
-        assert "p_tree" in payload["quartets"][0]
+        assert payload["quartets"][0] == {
+            "taxa": ["A", "B", "C", "D"],
+            "counts": [5, 1, 0],
+            "cfs": [0.8333, 0.1667, 0.0],
+            "classification": "tree",
+            "p_star": 0.030197,
+            "p_tree": 0.239032,
+            "dominant_topology": "{A, B} | {C, D}",
+        }
         assert payload["beta"] == 0.95
+
+    def test_large_json_output_skips_generic_quartet_list_conversion(
+        self, tmp_path, monkeypatch, mocker
+    ):
+        class QuartetKey:
+            def __init__(self, idx):
+                self.values = (f"A{idx}", f"B{idx}", f"C{idx}", f"D{idx}")
+
+            def __getitem__(self, idx):
+                return self.values[idx]
+
+            def __hash__(self):
+                return hash(self.values)
+
+            def __eq__(self, other):
+                return isinstance(other, QuartetKey) and self.values == other.values
+
+            def __iter__(self):
+                raise AssertionError("large JSON output should not call list(quartet)")
+
+        tree_file = tmp_path / "trees.nwk"
+        _write(tree_file, "((A,B),(C,D));\n")
+        svc = QuartetNetwork(
+            Namespace(
+                trees=str(tree_file),
+                alpha=0.05,
+                beta=0.95,
+                missing_taxa="shared",
+                plot_output=None,
+                json=True,
+            )
+        )
+        quartet_cfs = {QuartetKey(i): [3, 0, 0] for i in range(10_000)}
+        captured = {}
+        mocker.patch.object(svc, "_parse_trees_from_source", return_value=["t1"])
+        mocker.patch.object(
+            svc,
+            "_normalize_taxa",
+            return_value=(["t1"], False, {"A", "B", "C", "D"}),
+        )
+        mocker.patch.object(svc, "_compute_quartet_cfs", return_value=quartet_cfs)
+        mocker.patch.object(
+            svc,
+            "_classify_quartet",
+            return_value={"classification": "tree", "p_star": 0.1, "p_tree": 0.2},
+        )
+        monkeypatch.setattr(
+            "phykit.services.tree.quartet_network.print_json",
+            lambda payload: captured.setdefault("payload", payload),
+        )
+
+        svc.run()
+
+        row = captured["payload"]["quartets"][0]
+        assert row == {
+            "taxa": ["A0", "B0", "C0", "D0"],
+            "counts": [3, 0, 0],
+            "cfs": [1.0, 0.0, 0.0],
+            "classification": "tree",
+            "p_star": 0.1,
+            "p_tree": 0.2,
+            "dominant_topology": "{A0, B0} | {C0, D0}",
+        }
 
     def test_fewer_than_four_taxa_raises(self, tmp_path):
         tree_file = tmp_path / "trees.nwk"
