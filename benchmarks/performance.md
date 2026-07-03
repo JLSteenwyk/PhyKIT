@@ -1080,6 +1080,7 @@ Results:
 | `EvoTempoMap._compute_treeness` batch | 40 balanced 4096-tip gene trees, helper-only treeness values | 0.9191s | 0.0330s | 27.8x |
 | `EvoTempoMap._test_branch` insufficient-data summaries | 10k singleton concordant vs singleton discordant length summaries, identical early-return stats | 0.676468s | 0.022739s | 29.75x |
 | `EvoTempoMap._test_branch` permutation median dispatch | 64 concordant and 64 discordant branch lengths, 1000 seeded permutations with Mann-Whitney stubbed, side-by-side previous repeated `np.median` and RNG `shuffle` lookup path, identical result | 0.156104s | 0.073971s | 2.11x |
+| `EvoTempoMap._test_branch` exact small-sample Mann-Whitney path | cold subprocess, 5 no-tie concordant and 4 no-tie discordant lengths through full branch test with 1000 seeded permutations, identical U and exact p-value | 3.187698s | 0.464889s | 6.86x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |
 | `EvoTempoMap._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.629815s | 0.495479s | 1.27x |
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |
@@ -5039,7 +5040,12 @@ Profiling summary:
   enough observations for Mann-Whitney and permutation tests. The optimized path
   computes early-return summary statistics directly from the lists and allocates
   arrays only after both groups are testable, preserving summary values while
-  avoiding NumPy and SciPy startup for insufficient-data branches.
+  avoiding NumPy and SciPy startup for insufficient-data branches. A later
+  Mann-Whitney pass handles no-tie samples where either group has at most eight
+  observations with the same exact two-sided U distribution used by SciPy's
+  automatic exact path, preserving U and p-values while avoiding `scipy.stats`
+  startup for those small branch tests and global treeness comparisons. Tied and
+  larger samples retain the SciPy fallback.
 - `EvoTempoMap._fdr` baseline time sorted p-values into Python tuples and walked
   them in a reverse Python loop. The optimized path keeps the same
   Benjamini-Hochberg adjustment semantics, including ties, while using NumPy

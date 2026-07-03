@@ -54,6 +54,8 @@ class _LazyPhylo:
 np = _LazyNumpy()
 Phylo = _LazyPhylo()
 _FDR_VECTOR_MIN_LENGTH = 32
+_MANN_WHITNEY_EXACT_MAX_MIN_N = 8
+_MANN_WHITNEY_EXACT_COUNTS = {}
 
 
 def _median(values: list[float]) -> float:
@@ -87,6 +89,69 @@ def _summarize_mean_median(
     if len(values) == 0:
         return None, None
     return float(sum(values) / len(values)), _median(values)
+
+
+def _mann_whitney_exact_counts(n_x: int, n_y: int) -> list[int]:
+    key = (n_x, n_y)
+    counts = _MANN_WHITNEY_EXACT_COUNTS.get(key)
+    if counts is not None:
+        return counts
+
+    dp = [[None] * (n_y + 1) for _ in range(n_x + 1)]
+    dp[0][0] = [1]
+    for i in range(n_x + 1):
+        for j in range(n_y + 1):
+            if i == 0 and j == 0:
+                continue
+            max_u = i * j
+            current = [0] * (max_u + 1)
+            if i:
+                previous = dp[i - 1][j]
+                shift = j
+                for u_value, count in enumerate(previous):
+                    current[u_value + shift] += count
+            if j:
+                previous = dp[i][j - 1]
+                for u_value, count in enumerate(previous):
+                    current[u_value] += count
+            dp[i][j] = current
+
+    counts = dp[n_x][n_y]
+    _MANN_WHITNEY_EXACT_COUNTS[key] = counts
+    return counts
+
+
+def _mannwhitneyu_exact_no_ties(
+    x: list[float], y: list[float]
+) -> tuple[float, float] | None:
+    n_x = len(x)
+    n_y = len(y)
+    if (
+        n_x == 0
+        or n_y == 0
+        or min(n_x, n_y) > _MANN_WHITNEY_EXACT_MAX_MIN_N
+    ):
+        return None
+
+    combined = [float(value) for value in x]
+    combined.extend(float(value) for value in y)
+    if any(not math.isfinite(value) for value in combined):
+        return None
+    if len(set(combined)) != len(combined):
+        return None
+
+    u_statistic = 0
+    for x_value in x:
+        for y_value in y:
+            if x_value > y_value:
+                u_statistic += 1
+
+    counts = _mann_whitney_exact_counts(n_x, n_y)
+    total = sum(counts)
+    lower = sum(counts[:u_statistic + 1])
+    upper = sum(counts[u_statistic:])
+    p_value = min(1.0, 2.0 * min(lower, upper) / total)
+    return float(u_statistic), float(p_value)
 
 
 class EvoTempoMap(Tree):
@@ -843,11 +908,16 @@ class EvoTempoMap(Tree):
         if len(concordant_lengths) < 2 or len(discordant_lengths) < 2:
             return result
 
+        # Mann-Whitney U test (two-sided)
+        exact_result = _mannwhitneyu_exact_no_ties(
+            concordant_lengths, discordant_lengths
+        )
         conc = np.array(concordant_lengths, dtype=float)
         disc = np.array(discordant_lengths, dtype=float)
-
-        # Mann-Whitney U test (two-sided)
-        U, mw_p = _mannwhitneyu(conc, disc, alternative="two-sided")
+        if exact_result is None:
+            U, mw_p = _mannwhitneyu(conc, disc, alternative="two-sided")
+        else:
+            U, mw_p = exact_result
         result["mann_whitney_U"] = float(U)
         result["mann_whitney_p"] = float(mw_p)
 
@@ -975,10 +1045,16 @@ class EvoTempoMap(Tree):
         )
 
         if len(concordant_treeness) >= 2 and len(discordant_treeness) >= 2:
-            _, p = _mannwhitneyu(
-                concordant_treeness, discordant_treeness,
-                alternative="two-sided",
+            exact_result = _mannwhitneyu_exact_no_ties(
+                concordant_treeness, discordant_treeness
             )
+            if exact_result is None:
+                _, p = _mannwhitneyu(
+                    concordant_treeness, discordant_treeness,
+                    alternative="two-sided",
+                )
+            else:
+                _, p = exact_result
             result["treeness_U_p"] = float(p)
         else:
             result["treeness_U_p"] = None

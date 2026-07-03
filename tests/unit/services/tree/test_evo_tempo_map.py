@@ -675,6 +675,29 @@ class TestStatisticalTests:
         assert "permutation_p" in result
         assert result["mann_whitney_p"] < 0.05
 
+    def test_small_no_tie_mann_whitney_uses_exact_distribution(self, svc):
+        conc = [10.0, 12.0, 11.0, 13.0, 10.5]
+        disc = [5.0, 6.0, 4.5, 5.5]
+        result = svc._test_branch(conc, disc)
+        assert result["mann_whitney_U"] == 20.0
+        assert result["mann_whitney_p"] == pytest.approx(0.015873015873015872)
+
+    def test_small_no_tie_mann_whitney_does_not_import_scipy_stats(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+svc = EvoTempoMap.__new__(EvoTempoMap)
+result = svc._test_branch(
+    [10.0, 12.0, 11.0, 13.0, 10.5],
+    [5.0, 6.0, 4.5, 5.5],
+)
+assert result["mann_whitney_U"] == 20.0
+assert round(result["mann_whitney_p"], 12) == round(0.015873015873015872, 12)
+assert "scipy.stats" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_permutation_p_between_0_and_1(self, svc):
         conc = [10.0, 12.0, 11.0, 13.0, 10.5]
         disc = [5.0, 6.0, 4.5, 5.5]
