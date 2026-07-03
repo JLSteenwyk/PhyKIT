@@ -536,6 +536,37 @@ class TestTipToTipDistance:
         captured = capsys.readouterr()
         assert captured.out == "A\tB\t3.0\nA\tC\t8.0\nB\tC\t9.0\n"
 
+    def test_fast_all_pairs_text_can_skip_combo_allocation(
+        self, mocker, monkeypatch, args
+    ):
+        service = TipToTipDistance(args)
+        tree = object()
+        tips = ["a", "b", "c", "d"]
+        distances = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        monkeypatch.setattr(TipToTipDistance, "_TEXT_NO_COMBO_MIN_TIPS", len(tips))
+        mocker.patch.object(service, "calculate_terminal_names_fast", return_value=tips)
+        fast_distances = mocker.patch.object(
+            service,
+            "calculate_pairwise_tip_distances_fast",
+            return_value=(None, distances),
+        )
+
+        output = service._format_all_pairwise_distances_fast(tree)
+
+        fast_distances.assert_called_once_with(
+            tree,
+            tips,
+            include_combos=False,
+        )
+        assert output == (
+            "a\tb\t1.0\n"
+            "a\tc\t2.0\n"
+            "a\td\t3.0\n"
+            "b\tc\t4.0\n"
+            "b\td\t5.0\n"
+            "c\td\t6.0"
+        )
+
     def test_run_exits_without_tips_when_not_all_pairs(self, mocker):
         args = Namespace(tree_zero="/some/path/to/file.tre", all_pairs=False, tip_1=None, tip_2=None, json=False)
         service = TipToTipDistance(args)

@@ -46,6 +46,7 @@ TreeMixin = _LazyTreeMixin()
 
 class TipToTipDistance(Tree):
     _MATRIX_FAST_FILL_MIN_ROWS = 200_000
+    _TEXT_NO_COMBO_MIN_TIPS = 1024
 
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -295,6 +296,18 @@ class TipToTipDistance(Tree):
         if tips is None:
             return None
 
+        if len(tips) >= self._TEXT_NO_COMBO_MIN_TIPS:
+            fast_result = self.calculate_pairwise_tip_distances_fast(
+                tree_zero,
+                tips,
+                include_combos=False,
+            )
+            if fast_result is None:
+                return None
+
+            _, distances = fast_result
+            return self._format_pairwise_distances_without_combos(tips, distances)
+
         fast_result = self.calculate_pairwise_tip_distances_fast(tree_zero, tips)
         if fast_result is None:
             return None
@@ -304,6 +317,26 @@ class TipToTipDistance(Tree):
             f"{taxon_a}\t{taxon_b}\t{round(float(distance), 4)}"
             for (taxon_a, taxon_b), distance in zip(combos, distances)
         )
+
+    @staticmethod
+    def _format_pairwise_distances_without_combos(
+        tips: list[str],
+        distances: list[float],
+    ) -> str:
+        lines = []
+        append = lines.append
+        round_ = round
+        float_ = float
+        idx = 0
+        tip_count = len(tips)
+        for i in range(tip_count - 1):
+            taxon_a = tips[i]
+            for j in range(i + 1, tip_count):
+                append(
+                    f"{taxon_a}\t{tips[j]}\t{round_(float_(distances[idx]), 4)}"
+                )
+                idx += 1
+        return "\n".join(lines)
 
     def _build_distance_matrix(
         self,

@@ -802,6 +802,7 @@ Results:
 | `TipToTipDistance._rows_are_sorted_upper_triangle` raw-label fast path | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous per-row string coercion | 0.635139s | 0.501365s | 1.27x |
 | `TipToTipDistance.run` all-pairs text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.082166s | 0.057857s | 1.42x |
 | `TipToTipDistance.run` all-pairs text fast-series output | balanced 900-tip tree, 404,550 all-pairs rows, captured stdout identical to previous row-dictionary path | 1.707568s | 1.242154s | 1.37x |
+| `TipToTipDistance._format_all_pairwise_distances_fast` no-combo text formatter | balanced 1024-tip tree, all-pairs text output, side-by-side previous combo tuple allocation path | 3.034467s | 2.115951s | 1.43x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` | balanced 32768-tip tree, opposite terminal tips | 0.1331s | 0.0189s | 7.1x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` child-list terminal check | balanced 65536-tip tree, opposite terminal tips, optimized helper baseline | 0.061879s | 0.052576s | 1.18x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` binary child push | balanced 32768-tip / 65536-tip opposite terminal tips and 65536-tip nearby terminal tips, side-by-side previous `reversed(children)` single-pair traversal | 0.044132s / 0.140251s / 0.000080s | 0.034980s / 0.070132s / 0.000076s | 1.26x / 2.00x / 1.05x |
