@@ -36,6 +36,16 @@ assert "numpy" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = ic_module._LazyNumpy()
+
+    asarray_attr = lazy_np.asarray
+
+    assert lazy_np.__dict__["asarray"] is asarray_attr
+    assert lazy_np.asarray is asarray_attr
+    assert lazy_np._module is not None
+
+
 @pytest.fixture
 def args():
     return Namespace(

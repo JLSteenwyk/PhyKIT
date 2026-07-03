@@ -1578,6 +1578,7 @@ Results:
 | `IndependentContrasts._resolve_polytomies` unordered no-op scan | balanced 131072-tip binary tree, no-op dichotomy setup scan, optimized helper baseline | 0.030895s | 0.015197s | 2.03x |
 | `IndependentContrasts._print_text` batched output | 200k contrast rows, identical stdout text | 0.160924s | 0.135159s | 1.19x |
 | `IndependentContrasts` contrast summary reductions | 100 / 1000 / 10000 / 100000 / 200000 contrast values, side-by-side previous list-based `np.mean(np.abs(...))` and `np.var(..., ddof=1)` wrappers | 0.000019139s / 0.000086641s / 0.000621055s / 0.006865s / 0.013458s | 0.000015530s / 0.000043070s / 0.000297021s / 0.002686s / 0.005619s | 1.23x / 2.01x / 2.09x / 2.56x / 2.39x |
+| `IndependentContrasts` cached lazy NumPy attributes | 100 / 1000 / 10000 / 50000 contrast-value summary reductions after NumPy warmup, side-by-side previous uncached lazy proxy | 0.000034392s / 0.000054689s / 0.000551557s / 0.007085049s | 0.000028374s / 0.000073438s / 0.000488129s / 0.003887292s | 1.21x / 0.74x / 1.13x / 1.82x |
 | `IndependentContrasts` text-output compact descendant summaries | pectinate 12000-tip tree, compute PIC and captured text output with identical displayed tip previews/counts | 0.520021s | 0.030507s | 17.05x |
 | `IndependentContrasts._postorder_clades_fast` reverse-preorder helper | balanced 32768-tip tree, direct PIC postorder traversal | 0.010762s | 0.003350s | 3.21x |
 | `IndependentContrasts.run` trait parsing/prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.030738s | 0.018286s | 1.68x |
@@ -6024,8 +6025,10 @@ Profiling summary:
   traversal list with reverse preorder instead of stack entries carrying
   visited flags, preserving left-to-right postorder while reducing helper
   overhead. A later startup pass defers NumPy behind a module-level proxy, so
-  import-only callers avoid numerical startup. A follow-up startup pass defers
-  stdlib JSON until JSON output is actually serialized. A later trait setup
+  import-only callers avoid numerical startup; a follow-up pass caches resolved
+  NumPy attributes after import to reduce repeated summary-helper proxy
+  lookups. A follow-up startup pass defers stdlib JSON until JSON output is
+  actually serialized. A later trait setup
   pass streams the trait file, selects shared traits in tree-tip order without
   a set intersection, and skips the prune-membership set when all tree tips
   have trait values. A text-output pass uses compact descendant-tip previews
