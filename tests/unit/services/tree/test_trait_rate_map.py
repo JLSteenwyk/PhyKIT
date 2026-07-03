@@ -162,6 +162,24 @@ class TestSingleTraitParsing:
 
 
 class TestTextOutput:
+    def test_summarize_branch_rate_stats_single_pass_preserves_ties(self):
+        first_min = {"rate": 1.0, "child": "first_min"}
+        second_min = {"rate": 1.0, "child": "second_min"}
+        first_max = {"rate": 5.0, "child": "first_max"}
+        second_max = {"rate": 5.0, "child": "second_max"}
+        branch_rates = [first_min, first_max, second_min, second_max]
+
+        mean_rate, min_entry, max_entry = (
+            TraitRateMap._summarize_branch_rate_stats(branch_rates)
+        )
+
+        assert mean_rate == pytest.approx(3.0)
+        assert min_entry is first_min
+        assert max_entry is first_max
+
+    def test_summarize_branch_rate_stats_empty(self):
+        assert TraitRateMap._summarize_branch_rate_stats([]) == (0.0, None, None)
+
     def test_print_text_output_batches_summary(self, mocker):
         svc = TraitRateMap.__new__(TraitRateMap)
         svc.output_path = "trait_rate.png"

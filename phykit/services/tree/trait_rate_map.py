@@ -101,11 +101,9 @@ class TraitRateMap(Tree):
         )
 
         # Compute summary statistics
-        all_rates = [entry["rate"] for entry in branch_rates]
-        mean_rate = sum(all_rates) / len(all_rates) if all_rates else 0.0
-
-        min_entry = min(branch_rates, key=lambda e: e["rate"]) if branch_rates else None
-        max_entry = max(branch_rates, key=lambda e: e["rate"]) if branch_rates else None
+        mean_rate, min_entry, max_entry = self._summarize_branch_rate_stats(
+            branch_rates
+        )
 
         # Text output
         self._print_text_output(n, trait_name, mean_rate, min_entry, max_entry)
@@ -136,6 +134,29 @@ class TraitRateMap(Tree):
                 "output_file": self.output_path,
             }
             print_json(result)
+
+    @staticmethod
+    def _summarize_branch_rate_stats(branch_rates):
+        total = 0.0
+        count = 0
+        min_entry = None
+        max_entry = None
+        min_rate = None
+        max_rate = None
+
+        for entry in branch_rates:
+            rate = entry["rate"]
+            total += rate
+            count += 1
+            if min_rate is None or rate < min_rate:
+                min_rate = rate
+                min_entry = entry
+            if max_rate is None or rate > max_rate:
+                max_rate = rate
+                max_entry = entry
+
+        mean_rate = total / count if count else 0.0
+        return mean_rate, min_entry, max_entry
 
     def _print_text_output(
         self,

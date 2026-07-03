@@ -2037,6 +2037,7 @@ Results:
 | `TraitRateMap._plot_rate_map` circular batched rate branches/arcs | balanced 2048-tip tree, varied branch rates, real Matplotlib Agg branch/arc/colorbar render | 1.606744s | 0.352826s | 4.55x |
 | `TraitRateMap._plot_rate_map` repeated branch-rate color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title disabled and repeated branch rate | 0.547496s | 0.427287s | 1.28x |
 | `TraitRateMap._prepare_rate_map_plot_data` single-pass setup | balanced 32768-tip tree, rate lookup, preorder, tips, and rate list | 0.017025s | 0.012340s | 1.38x |
+| `TraitRateMap.run` branch-rate summary stats | 100k branch-rate entries, identical mean plus first min/max tie behavior | 0.040878s | 0.026178s | 1.56x |
 | `TraitRateMap._print_text_output` batched summary | 100k captured trait-rate-map text summaries, identical stdout text | 0.174115s | 0.110930s | 1.57x |
 | `TraitRateMap._parse_multi_trait_data` selected-column streaming | 200k-row TSV, comments/blanks before header, one selected continuous trait | 0.163704s | 0.155640s | 1.05x |
 | `TraitRateMap._parse_multi_trait_data` bounded selected-column split | 300k-row TSV, 8 numeric trait columns, selected early continuous trait, all taxa shared | 0.343296s | 0.281438s | 1.22x |
@@ -7095,7 +7096,9 @@ Profiling summary:
   validation path and avoids `readlines()` plus temporary split lists on valid
   rows. The multi-trait parser now bounds row splitting to the selected column,
   preserving selected-column parsing and ignored trailing fields while avoiding
-  tokenizing unused tail columns in wide trait tables.
+  tokenizing unused tail columns in wide trait tables. Run-level branch-rate
+  summaries now compute the mean and first min/max entries in one pass, avoiding
+  a temporary rate list and two additional scans before text/JSON output.
 - `TraitRateMap._plot_rate_map` layout setup baseline time rebuilt tip order,
   x-coordinates, and internal y-coordinates with `get_terminals()` and separate
   preorder/postorder `find_clades()` scans. The optimized path uses the shared
