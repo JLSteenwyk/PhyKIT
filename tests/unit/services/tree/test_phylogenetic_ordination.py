@@ -1707,6 +1707,7 @@ class TestRun:
     def test_format_dimreduce_result_three_dimensions_skips_generic_list_conversion(
         self,
         tsne_args,
+        monkeypatch,
     ):
         class _Column:
             def __init__(self, values):
@@ -1726,6 +1727,12 @@ class TestRun:
 
         svc = PhylogeneticOrdination(tsne_args)
         svc.n_components = 3
+        monkeypatch.setattr(
+            "builtins.float",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("3-D column values should already be builtin floats")
+            ),
+        )
 
         result = svc._format_dimreduce_result(
             embedding=ThreeDimEmbedding(),

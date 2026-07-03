@@ -872,9 +872,9 @@ class PhylogeneticOrdination(Tree):
             dim3_values = embedding[:, 2].tolist()
             embedding_rows = {
                 taxon: {
-                    "Dim1": round(float(dim1), 6),
-                    "Dim2": round(float(dim2), 6),
-                    "Dim3": round(float(dim3), 6),
+                    "Dim1": round(dim1, 6),
+                    "Dim2": round(dim2, 6),
+                    "Dim3": round(dim3, 6),
                 }
                 for taxon, dim1, dim2, dim3 in zip(
                     taxon_names,

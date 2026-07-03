@@ -2154,6 +2154,7 @@ Results:
 | `PhylogeneticOrdination._format_dimreduce_result` 2-D embedding JSON columns | 100k / 300k / 600k taxa x 2 embedding dimensions, identical nested payload, side-by-side previous row iteration over NumPy views | 0.638281s / 2.125952s / 3.893188s | 0.272515s / 1.644864s / 1.795642s | 2.34x / 1.29x / 2.17x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` 2-D embedding text rows | 100k / 300k taxa x 2 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.264736s / 1.615675s | 0.104466s / 0.739086s | 2.53x / 2.19x |
 | `PhylogeneticOrdination._format_dimreduce_result` 3-D embedding JSON rows | 5k / 100k taxa x 3 embedding dimensions, identical nested payload, side-by-side previous generic `embedding.tolist()` row conversion | 1.855278s / 2.838996s | 1.498140s / 2.365359s | 1.24x / 1.20x |
+| `PhylogeneticOrdination._format_dimreduce_result` 3-D column value rounding | 100k / 300k taxa x 3 embedding dimensions, identical nested payload after removing redundant builtin-float conversion | 0.454717s / 1.148411s | 0.253950s / 0.988402s | 1.79x / 1.16x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` 3-D embedding text rows | 5k / 100k taxa x 3 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.850666s / 2.130799s | 0.644524s / 1.106308s | 1.32x / 1.93x |
 | `PhylogeneticOrdination._resolve_tree_color_trait` single-pass color file | 300k-row external tree-color TSV, all taxa covered, reconstruction stubbed to isolate parsing | 0.934379s | 0.522889s | 1.79x |
 | `phylogenetic_ordination` module import without eager SciPy linalg/optimize | cold process import for phylogenetic-ordination command module | 0.440223s | 0.168008s | 2.6x |
@@ -7345,7 +7346,9 @@ Profiling summary:
   path remains for embeddings with more than three dimensions. A follow-up JSON
   pass applies the column-wise path to 2-D embeddings too, removing the
   remaining per-row NumPy view iteration while preserving rounded `Dim1`/`Dim2`
-  payload values.
+  payload values. The 3-D JSON branch now rounds the builtin floats returned by
+  column-list conversion directly, avoiding one redundant scalar `float()`
+  conversion per output cell while preserving the same rounded payload values.
 - `AncestralReconstruction._anc_ml` baseline time was dominated by computing
   cross-covariances with repeated per-tip `tree.get_terminals()`,
   `tree.common_ancestor()`, and root-distance calls for every labeled internal
