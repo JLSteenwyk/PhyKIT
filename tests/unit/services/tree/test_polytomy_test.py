@@ -629,6 +629,26 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(clade_cache[id(tree.root.clades[0])], frozenset(("a", "b")))
         self.assertEqual(clade_cache[id(tree.root.clades[1])], frozenset(("c", "d")))
 
+    def test_build_tip_path_cache_uses_child_lists_directly(self):
+        tree = Phylo.read(StringIO("((a:1,b:1):1,c:1);"), "newick")
+
+        with patch.object(
+            type(tree.root),
+            "is_terminal",
+            side_effect=AssertionError("path cache should inspect child lists"),
+        ):
+            path_cache = self.polytomy._build_tip_path_cache(tree)
+
+        self.assertEqual(
+            path_cache["a"],
+            (tree.root, tree.root.clades[0], tree.root.clades[0].clades[0]),
+        )
+        self.assertEqual(
+            path_cache["b"],
+            (tree.root, tree.root.clades[0], tree.root.clades[0].clades[1]),
+        )
+        self.assertEqual(path_cache["c"], (tree.root, tree.root.clades[1]))
+
     def test_common_ancestor_from_path_cache_missing_tip_returns_none(self):
         self.assertIsNone(
             self.polytomy._common_ancestor_from_path_cache(

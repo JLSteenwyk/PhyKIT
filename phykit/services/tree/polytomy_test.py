@@ -336,16 +336,19 @@ class PolytomyTest(Tree):
     @staticmethod
     def _build_tip_path_cache(tree: Newick.Tree) -> dict[str, tuple]:
         cache: dict[str, tuple] = {}
+        path = []
 
-        def visit(clade, path: tuple) -> None:
-            current_path = path + (clade,)
-            if clade.is_terminal():
-                cache[clade.name] = current_path
-                return
-            for child in clade.clades:
-                visit(child, current_path)
+        def visit(clade) -> None:
+            path.append(clade)
+            children = clade.clades
+            if children:
+                for child in children:
+                    visit(child)
+            else:
+                cache[clade.name] = tuple(path)
+            path.pop()
 
-        visit(tree.root, tuple())
+        visit(tree.root)
         return cache
 
     @staticmethod

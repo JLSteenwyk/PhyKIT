@@ -1133,6 +1133,7 @@ Results:
 | `PolytomyTest._evaluate_tree_triplets_fast` triplet/group-set reuse | balanced 1024-tip tree, 8k group triplets, side-by-side previous per-triplet group conversion | 0.037052s | 0.025503s | 1.45x |
 | `PolytomyTest._common_ancestor_from_path_cache` triplet-node check | 2M zipped triplet path node rows, same / second-different / third-different cases, side-by-side previous `nodes[1:]` generator predicate | 2.809178s / 1.873774s / 1.963923s | 0.185879s / 0.076666s / 0.159605s | 15.11x / 24.44x / 12.30x |
 | `PolytomyTest._build_clade_terminal_cache` direct postorder and binary union | balanced 32768-tip tree, fast triplet-evaluator descendant terminal cache, side-by-side previous `find_clades()` plus temporary mutable set update path | 1.094959s | 0.406417s | 2.69x |
+| `PolytomyTest._build_tip_path_cache` terminal-only path tuples | balanced 32768-tip tree, fast triplet-evaluator root-to-tip path cache, side-by-side previous tuple concatenation at every node | 0.147076s | 0.106957s | 1.38x |
 | `PolytomyTest.chisquare_tests` p-value helper | cold process, two three-category equal-frequency chi-square tests | 0.487223s | 0.000007208s | 67594.8x |
 | `PolytomyTest.chisquare` direct three-count statistic | 1M mixed three-category observed-count vectors, identical statistic and p-value | 4.439998s | 3.126441s | 1.42x |
 | `PolytomyTest.determine_sisters_and_add_to_counter` polytomy check | 5000 resolved three-tip counter evaluations | 0.250329s | 0.201572s | 1.24x |
@@ -5104,7 +5105,9 @@ Profiling summary:
   clade-tip cache now uses a direct postorder traversal for standard trees and
   binary-node immutable set unions, keeping the generic `find_clades()` fallback
   while avoiding Biopython traversal overhead and temporary mutable set updates
-  on balanced trees. A
+  on balanced trees. The root-to-tip path cache now reuses one mutable path list
+  during traversal and materializes tuples only for terminal tips, preserving the
+  cached path shape while avoiding tuple concatenation at internal nodes. A
   later legacy-triplet pass replaces repeated
   `len(list(tree.get_terminals())) == 3` checks with a direct standard-tree
   terminal counter that exits after a fourth tip and retains the generic fallback
