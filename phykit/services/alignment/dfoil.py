@@ -219,6 +219,8 @@ class Dfoil(Alignment):
             | diff4.astype(np.uint8)
         )
         bincounts = np.bincount(pattern_codes[biallelic], minlength=len(PATTERNS))
+        if not has_skip_code:
+            return dict(zip(PATTERNS, map(int, bincounts)))
         return {pattern: int(bincounts[i]) for i, pattern in enumerate(PATTERNS)}
 
     @staticmethod

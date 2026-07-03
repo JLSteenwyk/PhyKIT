@@ -172,6 +172,7 @@ class TestDfoilPatternCounting:
         assert counts["BABAA"] == 1
         assert counts["BBBBA"] == 1
         assert counts["AAAAA"] == 0
+        assert list(counts) == PATTERNS
 
     def test_small_ascii_with_skips_uses_lookup_validity_mask(self, mocker):
         mocker.patch.object(
