@@ -2153,6 +2153,7 @@ Results:
 | `Phylomorphospace.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected x/y axes plus full color matrix | 0.194092s | 0.038694s | 5.02x |
 | `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` numeric file values | 200k numeric color values, side-by-side previous list comprehension plus `np.array` conversion | 0.029553s | 0.025725s | 1.15x |
 | `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` bounded color row parsing | 250k external color TSV rows with whitespace-prefixed comments and ignored trailing columns | 0.633684s | 0.548724s | 1.15x |
+| `Phylomorphospace._parse_color_by` cached lazy NumPy attributes | 200k numeric external color rows, side-by-side previous uncached lazy proxy with identical numeric vector sum and mode | 0.613215s | 0.355931s | 1.72x |
 | `Phylomorphospace.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, reconstruction, plotting, and output mocked | 0.277017s | 0.000037s | 7486.95x |
 | `phylomorphospace` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.089377s | 0.031532s | 2.83x |
 | `phylomorphospace` module import without eager pickle/JSON/plot/trait helpers | median cold subprocess import after localizing pickle/PlotConfig and lazy helper wrappers | 0.014470s | 0.005942s | 2.44x |
@@ -7395,11 +7396,14 @@ Profiling summary:
   preserving the same variance proportions.
   A later `phylomorphospace` startup pass defers NumPy behind a module-level
   proxy, leaving array startup until trait matrices, ancestral estimates, or
-  plotting color arrays are built. A follow-up startup pass localizes pickle to
-  ancestral-score reconstruction, imports `PlotConfig` only during argument
-  processing, and keeps JSON output and trait parsing behind local forwarding
-  wrappers so import-only callers avoid those helper modules. A later import pass
-  converts annotation-only `typing` aliases to built-in postponed annotations, so
+  plotting color arrays are built. The phylomorphospace proxy now also caches
+  resolved NumPy attributes after first use, reducing repeated lookup overhead
+  during numeric external color parsing. A follow-up startup pass localizes
+  pickle to ancestral-score reconstruction, imports `PlotConfig` only during
+  argument processing, and keeps JSON output and trait parsing behind local
+  forwarding wrappers so import-only callers avoid those helper modules. A later
+  import pass converts annotation-only `typing` aliases to built-in postponed
+  annotations, so
   command discovery no longer loads `typing`.
 - `PhylogeneticOrdination._multi_trait_log_likelihood` baseline time formed an
   explicit inverse of every candidate lambda VCV matrix. The optimized path

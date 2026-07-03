@@ -49,6 +49,15 @@ assert "matplotlib.pyplot" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_attributes():
+    proxy = phylomorphospace_module._LazyNumpy()
+
+    array = proxy.array
+    assert proxy.array is array
+    assert "array" in proxy.__dict__
+    assert proxy._module is not None
+
+
 @pytest.fixture
 def default_args():
     return Namespace(
