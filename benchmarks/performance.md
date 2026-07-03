@@ -293,6 +293,7 @@ Results:
 | `GCContent._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006159s / 0.000012970s / 0.000021196s | 0.000001571s / 0.000007444s / 0.000001744s | 3.92x / 1.74x / 12.16x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
 | `GCContent.run` verbose JSON row construction | 500k mocked per-sequence GC rows, identical payload dictionaries | 0.636805s | 0.571975s | 1.11x |
+| `GCContent.run` verbose JSON local round | 500k mocked per-sequence GC rows, identical payload dictionaries, side-by-side previous global `round` lookup | 0.608651s | 0.547883s | 1.11x |
 | `GCContent.calculate_gc_per_sequence_data` cached lazy NumPy attributes | 1200 variable DNA records x 3000 sites, repeated ASCII matrix counts after lookup-table warmup | 0.018320s | 0.011841s | 1.55x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
 | `gc_content` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006135s | 0.004972s | 1.23x |
@@ -3176,7 +3177,9 @@ Profiling summary:
   valid/GC bytes once, while retaining the existing uppercase string counting
   for non-ASCII rows. Verbose GC text output now batches per-sequence rows into
   one newline-joined print while preserving the same stdout text, summary
-  output, JSON payloads, and broken-pipe handling. Identical sequences now
+  output, JSON payloads, and broken-pipe handling. Verbose GC JSON rows now
+  localize the rounding helper during per-sequence row materialization while
+  preserving the same rounded payload dictionaries. Identical sequences now
   count valid and GC characters from the normalized first sequence and reuse
   that result for both verbose per-sequence rows and aggregate GC, avoiding
   full byte-matrix construction while preserving invalid-symbol handling. A

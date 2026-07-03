@@ -222,8 +222,9 @@ class GCContent(Alignment):
         if self.json_output:
             if self.verbose:
                 rows = self.calculate_gc_per_sequence_data(records, is_protein)
+                round_ = round
                 row_payload = [
-                    {"taxon": taxon, "gc_content": round(gc_content, 4)}
+                    {"taxon": taxon, "gc_content": round_(gc_content, 4)}
                     for taxon, gc_content in rows
                 ]
                 print_json(
