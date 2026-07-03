@@ -2405,6 +2405,7 @@ Results:
 | `PhyloImpute._write_output_tsv` chunked `savetxt` formatting | 30k taxa x 80 imputed trait matrix, identical six-decimal TSV text | 0.644563s | 0.396832s | 1.62x |
 | `PhyloImpute._print_text` batched imputed rows | 100k imputed missing-value rows, captured stdout and identical text | 0.141269s | 0.128685s | 1.10x |
 | `PhyloImpute._print_text` combined width scan | 100k imputed missing-value rows, captured stdout and identical text, side-by-side previous two-generator width scan | 0.135697s | 0.126773s | 1.07x |
+| `PhyloImpute` cached SciPy linalg helpers | repeated tiny positive-definite `cho_factor` / `cho_solve` calls after SciPy warmup, side-by-side previous import-on-call wrappers | 0.000006304s / 0.000004737s | 0.000005601s / 0.000004083s | 1.13x / 1.16x |
 | `phylo_impute` module import without eager SciPy linalg | cold process import for phylogenetic-imputation command module | 0.319911s | 0.148381s | 2.2x |
 | `phylo_impute` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.148381s | 0.025825s | 5.75x |
 | `phylo_impute` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006538s | 0.004955s | 1.32x |
@@ -7919,7 +7920,9 @@ Profiling summary:
   factor. A subsequent startup pass
   replaced eager `scipy.linalg` imports with same-name lazy wrappers, so
   import-only callers avoid linalg startup while imputation still calls the same
-  Cholesky implementations. A follow-up startup pass defers NumPy behind a
+  Cholesky implementations. The lazy Cholesky wrappers now cache the resolved
+  SciPy callables after first use, avoiding repeated import dispatch across
+  complete-case estimation and per-taxon imputation solves. A follow-up startup pass defers NumPy behind a
   module-level proxy and postpones annotations while preserving the module-level
   `np` access pattern used by tests. Cached read-only `PhyloImpute.run` now
   avoids copying the cached parsed tree because validation, tip matching, VCV

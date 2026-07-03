@@ -11,6 +11,10 @@ from .base import Tree
 from ...errors import PhykitUserError
 
 
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -36,15 +40,25 @@ np = _LazyNumpy()
 
 
 def cho_factor(*args, **kwargs):
-    from scipy.linalg import cho_factor as _cho_factor
+    global _CHO_FACTOR
 
-    return _cho_factor(*args, **kwargs)
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
 
 
 def cho_solve(*args, **kwargs):
-    from scipy.linalg import cho_solve as _cho_solve
+    global _CHO_SOLVE
 
-    return _cho_solve(*args, **kwargs)
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
 
 
 class PhyloImpute(Tree):

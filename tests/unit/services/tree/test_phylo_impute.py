@@ -76,6 +76,47 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_repeated_cholesky_helpers_cache_scipy_linalg_imports(monkeypatch):
+    previous_cho_factor = phylo_impute_module._CHO_FACTOR
+    previous_cho_solve = phylo_impute_module._CHO_SOLVE
+    phylo_impute_module._CHO_FACTOR = None
+    phylo_impute_module._CHO_SOLVE = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        matrix = np.eye(4)
+        rhs = np.ones((4, 2))
+
+        factor = phylo_impute_module.cho_factor(
+            matrix,
+            lower=True,
+            check_finite=False,
+        )
+        phylo_impute_module.cho_solve(factor, rhs, check_finite=False)
+        first_call_imports = scipy_linalg_imports
+
+        factor = phylo_impute_module.cho_factor(
+            matrix,
+            lower=True,
+            check_finite=False,
+        )
+        phylo_impute_module.cho_solve(factor, rhs, check_finite=False)
+    finally:
+        phylo_impute_module._CHO_FACTOR = previous_cho_factor
+        phylo_impute_module._CHO_SOLVE = previous_cho_solve
+
+    assert first_call_imports > 0
+    assert scipy_linalg_imports == first_call_imports
+
+
 def _make_args(output_path, **overrides):
     defaults = dict(
         tree=TREE_SIMPLE,
