@@ -36,10 +36,19 @@ class _LazyPickle:
 
 
 class _LazyNumpy:
-    def __getattr__(self, name):
-        import numpy as _np
+    _module = None
 
-        return getattr(_np, name)
+    def _load(self):
+        if self._module is None:
+            import numpy as _np
+
+            self._module = _np
+        return self._module
+
+    def __getattr__(self, name):
+        value = getattr(self._load(), name)
+        setattr(self, name, value)
+        return value
 
 
 pickle = _LazyPickle()

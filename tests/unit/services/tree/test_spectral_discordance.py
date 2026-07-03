@@ -41,6 +41,16 @@ assert "phykit.helpers.plot_config" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_proxy_caches_resolved_attributes():
+    lazy_np = spectral_discordance_module._LazyNumpy()
+
+    first_argmin = lazy_np.argmin
+    second_argmin = lazy_np.argmin
+
+    assert first_argmin is second_argmin
+    assert lazy_np.__dict__["argmin"] is first_argmin
+
+
 def test_shared_gene_tree_taxa_does_not_slice_gene_trees():
     class NoSliceList(list):
         def __getitem__(self, key):
