@@ -5,8 +5,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        # Temporarily omit Python 3.11 and 3.12 on this branch while
-        # performance work proceeds.
+        # Temporarily limit this branch while performance work proceeds.
         python-version: ["3.10", "3.13"]
     steps:
     - uses: actions/checkout@master
