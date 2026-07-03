@@ -776,6 +776,23 @@ class PhylogeneticOrdination(Tree):
                 }
                 for taxon, row in zip(taxon_names, embedding)
             }
+        elif self.n_components == 3:
+            dim1_values = embedding[:, 0].tolist()
+            dim2_values = embedding[:, 1].tolist()
+            dim3_values = embedding[:, 2].tolist()
+            embedding_rows = {
+                taxon: {
+                    "Dim1": round(float(dim1), 6),
+                    "Dim2": round(float(dim2), 6),
+                    "Dim3": round(float(dim3), 6),
+                }
+                for taxon, dim1, dim2, dim3 in zip(
+                    taxon_names,
+                    dim1_values,
+                    dim2_values,
+                    dim3_values,
+                )
+            }
         else:
             embedding_rows = {
                 taxon: {
@@ -835,6 +852,25 @@ class PhylogeneticOrdination(Tree):
             else:
                 for taxon, dim1, dim2 in zip(taxon_names, dim1_values, dim2_values):
                     append(f"{taxon}\t{dim1:.6f}\t{dim2:.6f}")
+        elif self.n_components == 3:
+            try:
+                dim1_values = embedding[:, 0].tolist()
+                dim2_values = embedding[:, 1].tolist()
+                dim3_values = embedding[:, 2].tolist()
+            except (AttributeError, IndexError, TypeError):
+                for taxon, values in zip(taxon_names, embedding):
+                    append(
+                        f"{taxon}\t{values[0]:.6f}\t"
+                        f"{values[1]:.6f}\t{values[2]:.6f}"
+                    )
+            else:
+                for taxon, dim1, dim2, dim3 in zip(
+                    taxon_names,
+                    dim1_values,
+                    dim2_values,
+                    dim3_values,
+                ):
+                    append(f"{taxon}\t{dim1:.6f}\t{dim2:.6f}\t{dim3:.6f}")
         else:
             for taxon, values in zip(taxon_names, embedding.tolist()):
                 row = "\t".join(fmt(value) for value in values)

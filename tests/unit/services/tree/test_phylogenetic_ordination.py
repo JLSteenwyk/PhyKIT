@@ -1503,6 +1503,49 @@ class TestRun:
             "taxon_a\t1.234568\t2.000000"
         )
 
+    def test_dimreduce_text_output_three_dimensions_skips_generic_list_conversion(
+        self, tsne_args, mocker
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class ThreeDimEmbedding:
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([1.2345678, 2.0, -3.5][column:column + 1])
+
+            def __iter__(self):
+                return iter([(1.2345678, 2.0, -3.5)])
+
+            def tolist(self):
+                raise AssertionError("3-D output should not call generic tolist")
+
+        svc = PhylogeneticOrdination(tsne_args)
+        svc.n_components = 3
+        printed = mocker.patch("builtins.print")
+
+        svc._print_dimreduce_text_output(
+            embedding=ThreeDimEmbedding(),
+            taxon_names=["taxon_a"],
+            params={},
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        printed.assert_called_once_with(
+            "Method: tsne\n"
+            "Correction: BM\n"
+            "\n"
+            "Embedding:\n"
+            "\tDim1\tDim2\tDim3\n"
+            "taxon_a\t1.234568\t2.000000\t-3.500000"
+        )
+
     def test_dimreduce_text_output_formats_converted_rows(self, tsne_args, mocker):
         svc = PhylogeneticOrdination(tsne_args)
         svc.n_components = 3
@@ -1551,6 +1594,45 @@ class TestRun:
             },
             "lambda": 0.5,
             "log_likelihood": -12.25,
+        }
+
+    def test_format_dimreduce_result_three_dimensions_skips_generic_list_conversion(
+        self,
+        tsne_args,
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class ThreeDimEmbedding:
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([1.2345678, 2.0, -3.5][column:column + 1])
+
+            def tolist(self):
+                raise AssertionError("3-D result should not call generic tolist")
+
+        svc = PhylogeneticOrdination(tsne_args)
+        svc.n_components = 3
+
+        result = svc._format_dimreduce_result(
+            embedding=ThreeDimEmbedding(),
+            taxon_names=["taxon_a"],
+            params={"perplexity": 3.5},
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        assert result["embedding"] == {
+            "taxon_a": {
+                "Dim1": 1.234568,
+                "Dim2": 2.0,
+                "Dim3": -3.5,
+            },
         }
 
     def test_format_dimreduce_result_two_dimensions_skips_generic_list_conversion(

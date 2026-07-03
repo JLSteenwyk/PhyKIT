@@ -2131,6 +2131,8 @@ Results:
 | `PhylogeneticOrdination._format_dimreduce_result` row-list JSON payload | 5k taxa x 2 embedding dimensions, identical nested payload | 0.290704s | 0.096889s | 3.00x |
 | `PhylogeneticOrdination._format_dimreduce_result` 2-D embedding JSON rows | 100k / 300k taxa x 2 embedding dimensions, identical nested payload, side-by-side previous generic `embedding.tolist()` row conversion | 0.645618s / 1.454592s | 0.256962s / 0.929379s | 2.51x / 1.57x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` 2-D embedding text rows | 100k / 300k taxa x 2 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.264736s / 1.615675s | 0.104466s / 0.739086s | 2.53x / 2.19x |
+| `PhylogeneticOrdination._format_dimreduce_result` 3-D embedding JSON rows | 5k / 100k taxa x 3 embedding dimensions, identical nested payload, side-by-side previous generic `embedding.tolist()` row conversion | 1.855278s / 2.838996s | 1.498140s / 2.365359s | 1.24x / 1.20x |
+| `PhylogeneticOrdination._print_dimreduce_text_output` 3-D embedding text rows | 5k / 100k taxa x 3 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.850666s / 2.130799s | 0.644524s / 1.106308s | 1.32x / 1.93x |
 | `PhylogeneticOrdination._resolve_tree_color_trait` single-pass color file | 300k-row external tree-color TSV, all taxa covered, reconstruction stubbed to isolate parsing | 0.934379s | 0.522889s | 1.79x |
 | `phylogenetic_ordination` module import without eager SciPy linalg/optimize | cold process import for phylogenetic-ordination command module | 0.440223s | 0.168008s | 2.6x |
 | `phylogenetic_ordination` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS import | 0.168008s | 0.032468s | 5.17x |
@@ -7291,7 +7293,8 @@ Profiling summary:
   formatters for the common t-SNE/UMAP case. JSON output iterates rows directly
   without materializing the full nested list, while text output formats
   column-wise Python float lists to avoid per-row NumPy view overhead. The
-  generic `tolist()` path remains for higher-dimensional embeddings.
+  same column-wise pattern now handles 3-D embeddings; the generic `tolist()`
+  path remains for embeddings with more than three dimensions.
 - `AncestralReconstruction._anc_ml` baseline time was dominated by computing
   cross-covariances with repeated per-tip `tree.get_terminals()`,
   `tree.common_ancestor()`, and root-distance calls for every labeled internal
