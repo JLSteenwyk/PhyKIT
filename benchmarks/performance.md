@@ -2010,6 +2010,7 @@ Results:
 | `ContMap._plot_contmap` node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, phylogram coordinate setup | 0.049826s | 0.042940s | 1.16x |
 | `ContMap._plot_contmap` circular coordinate clade-list reuse | balanced 32768-tip tree, node positions plus preorder/tip lists already available | 0.069976s | 0.052805s | 1.33x |
 | `ContMap._plot_contmap` estimate value range helper | 1M plotted node/tip estimate values, identical min/max range without temporary list | 0.036248s | 0.032907s | 1.10x |
+| `ContMap._contmap_colored_arcs` binary child-angle bounds | balanced 32768-tip synthetic coords and internal estimates, side-by-side previous child-angle list path | 0.266051s | 0.108700s | 2.45x |
 | `ContMap._plot_contmap` rectangular batched gradient branches | balanced 512-tip tree, 50 color segments per branch, real Matplotlib Agg branch/label/colorbar render | 11.957742s | 1.949793s | 6.13x |
 | `ContMap._print_text_output` batched summary | 100k captured contMap text summaries, identical stdout text | 0.089211s | 0.059444s | 1.50x |
 | `cont_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy plus lazy circular-layout arc cache | 0.085155s | 0.038423s | 2.22x |
@@ -7050,9 +7051,12 @@ Profiling summary:
   Matplotlib `Line2D` artist per tiny segment. Circular contMap rendering now
   uses the shared whole-tree radial gradient helper, avoiding one
   `LineCollection` per branch, and the shared colored-arc helper, avoiding one
-  `Line2D` artist per internal arc. Text summary output now batches the
-  four-line report into one newline-joined print while preserving exact stdout
-  text.
+  `Line2D` artist per internal arc. A later colored-arc setup pass reads the
+  two child angle bounds directly for binary internal nodes, preserving the
+  child-angle list fallback for polytomies while avoiding one short list
+  allocation per ordinary binary internal node. Text summary output now batches
+  the four-line report into one newline-joined print while preserving exact
+  stdout text.
 - `cont_map` module import baseline paid NumPy startup directly and through the
   shared circular-layout helper's module-level arc array. The optimized path
   defers NumPy behind lazy proxies and materializes the circular arc fractions

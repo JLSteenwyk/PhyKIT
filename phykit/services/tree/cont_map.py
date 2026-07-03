@@ -296,6 +296,52 @@ class ContMap(Tree):
 
         return parent_map, preorder_clades, all_estimates, tips
 
+    @staticmethod
+    def _contmap_colored_arcs(preorder_clades, coords, all_estimates, cmap, norm):
+        colored_arcs = []
+        coords_get = coords.get
+        estimates_get = all_estimates.get
+        append_colored_arc = colored_arcs.append
+        for clade in preorder_clades:
+            children = clade.clades
+            if not children:
+                continue
+            cid = id(clade)
+            coord = coords_get(cid)
+            if coord is None:
+                continue
+            node_val = estimates_get(cid)
+            if node_val is None:
+                continue
+            child_count = len(children)
+            if child_count == 2:
+                first_coord = coords_get(id(children[0]))
+                second_coord = coords_get(id(children[1]))
+                if first_coord is None or second_coord is None:
+                    continue
+                first_angle = first_coord["angle"]
+                second_angle = second_coord["angle"]
+                if first_angle <= second_angle:
+                    min_a = first_angle
+                    max_a = second_angle
+                else:
+                    min_a = second_angle
+                    max_a = first_angle
+            else:
+                child_angles = [
+                    coords[id(child)]["angle"]
+                    for child in children
+                    if id(child) in coords
+                ]
+                if len(child_angles) < 2:
+                    continue
+                min_a = min(child_angles)
+                max_a = max(child_angles)
+            append_colored_arc(
+                (0, 0, coord["radius"], min_a, max_a, cmap(norm(node_val)))
+            )
+        return colored_arcs
+
     def _fast_anc(
         self, tree, x: np.ndarray, ordered_names: list[str],
         node_labels: dict,
@@ -604,22 +650,13 @@ class ContMap(Tree):
             )
 
             # Arcs at internal nodes colored by trait value
-            colored_arcs = []
-            for clade in preorder_clades:
-                if clade.is_terminal() or not clade.clades:
-                    continue
-                cid = id(clade)
-                if cid not in coords or cid not in all_estimates:
-                    continue
-                child_angles = [coords[id(ch)]["angle"] for ch in clade.clades if id(ch) in coords]
-                if len(child_angles) < 2:
-                    continue
-                node_val = all_estimates[cid]
-                min_a = min(child_angles)
-                max_a = max(child_angles)
-                colored_arcs.append(
-                    (0, 0, coords[cid]["radius"], min_a, max_a, cmap(norm(node_val)))
-                )
+            colored_arcs = self._contmap_colored_arcs(
+                preorder_clades,
+                coords,
+                all_estimates,
+                cmap,
+                norm,
+            )
             draw_circular_colored_arcs(ax, colored_arcs, lw=3)
 
             # Tip labels
