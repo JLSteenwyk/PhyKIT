@@ -695,6 +695,45 @@ class TestTextOutput:
             "A\tC\t0\t1\t0.0\t0.5000"
         )
 
+    def test_output_batch_json_payload(self, mocker):
+        svc = RelativeRateTest(_make_args(json=True))
+        print_json = mocker.patch.object(relative_rate_test_module, "print_json")
+        all_results = {
+            ("A", "B"): [
+                {"p_value": 0.01, "chi2": 4.0},
+                {"p_value": 0.50, "chi2": 2.0},
+                {"p_value": 0.20, "chi2": 6.0},
+            ],
+            ("A", "C"): [
+                {"p_value": 0.80, "chi2": 0.5},
+            ],
+        }
+
+        svc._output_batch("O", 3, all_results)
+
+        print_json.assert_called_once_with({
+            "outgroup": "O",
+            "n_alignments": 3,
+            "pairs": [
+                {
+                    "taxon1": "A",
+                    "taxon2": "B",
+                    "n_reject": 1,
+                    "n_total": 3,
+                    "pct_reject": 33.3,
+                    "median_chi2": 4.0,
+                },
+                {
+                    "taxon1": "A",
+                    "taxon2": "C",
+                    "n_reject": 0,
+                    "n_total": 1,
+                    "pct_reject": 0.0,
+                    "median_chi2": 0.5,
+                },
+            ],
+        })
+
     def test_summarize_batch_gene_results_matches_output_summary(self):
         gene_results = [
             {"p_value": 0.01, "chi2": 6.0},

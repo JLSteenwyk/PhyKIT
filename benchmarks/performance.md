@@ -1374,6 +1374,7 @@ Results:
 | `RelativeRateTest._output_single` batched text output | 100k pairwise relative-rate rows, captured stdout and identical text | 0.124079s | 0.111355s | 1.11x |
 | `RelativeRateTest._output_batch` batched text output | 100k pair summary rows, captured stdout and identical text | 0.121325s | 0.109700s | 1.11x |
 | `RelativeRateTest._output_batch` gene-result summary | 100k taxon-pair result groups x 8 gene results, identical reject counts and median chi-square values | 0.116062s | 0.107860s | 1.08x |
+| `RelativeRateTest._output_batch` JSON row literals | 10k / 100k / 300k taxon-pair result groups x 8 gene results, side-by-side previous `dict(...)` row builder | 0.062690s / 2.368385s / 3.820434s | 0.044605s / 1.816282s / 3.865931s | 1.41x / 1.30x / 0.99x |
 | `RelativeRateTest.run` batch list cleanup | 500k alignment-list rows with comments/blanks, cleanup before per-alignment analysis | 0.088629s | 0.067571s | 1.31x |
 | `RelativeRateTest.run` stripped batch list cleanup | 800k alignment-list rows with whitespace-prefixed comments/blanks, cleanup before per-alignment analysis | 0.338586s | 0.212526s | 1.59x |
 | `RelativeRateTest.run` batch list path resolver | 100k relative alignment-list rows, alignment analysis mocked | 0.461438s | 0.029321s | 15.74x |
@@ -5517,7 +5518,10 @@ Profiling summary:
   and prints it once, preserving exact row formatting while avoiding one `print`
   call per result row. Batch output also summarizes each taxon-pair's gene
   results in one loop, collecting chi-square values and rejection counts together
-  before applying the unchanged median and percentage formatting.
+  before applying the unchanged median and percentage formatting. Batch JSON
+  output now uses literal row dictionaries with bound append/round helpers,
+  preserving payload shape while reducing per-pair construction overhead for
+  common 10k-100k pair result sets.
 - `RelativeRateTest._plot_heatmap` baseline setup filled the heatmap matrix,
   then scanned every pairwise result again for each populated cell to decide
   whether to draw a significance marker. The optimized setup fills a symmetric
