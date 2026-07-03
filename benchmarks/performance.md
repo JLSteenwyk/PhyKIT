@@ -863,6 +863,7 @@ Results:
 | `SpuriousSequence.get_branch_lengths_and_their_names` one-pass collection | balanced 131072-tip standard tree, terminal branch lengths and name map, side-by-side previous terminal-list materialization | 0.095943s | 0.075439s | 1.27x |
 | `SpuriousSequence.identify_spurious_sequence` large median | balanced 131072-tip tree, varied terminal branch lengths and identical threshold | 0.075865s | 0.057356s | 1.32x |
 | `SpuriousSequence._median_branch_length` partition threshold | 512 / 1024 / 2048 branch lengths, side-by-side sorted median path vs NumPy partition median with identical medians; threshold set at first winning size | 0.000038s / 0.000077s / 0.000157s | 0.000041s / 0.000051s / 0.000076s | 0.93x / 1.50x / 2.06x |
+| `SpuriousSequence._median_branch_length` cached lazy NumPy proxy | 1000 repeated medians over 2048 branch lengths, side-by-side previous uncached lazy NumPy proxy | 0.070326s | 0.055441s | 1.27x |
 | `SpuriousSequence.run` batched text output | 50k flagged terminal rows, mocked tree/read and identical stdout text | 0.087150s | 0.031513s | 2.77x |
 | `SpuriousSequence.run` JSON row construction | 500k mocked flagged terminal rows, identical row dictionaries | 0.748736s | 0.589699s | 1.27x |
 | `SpuriousSequence.run` cached read-only tree path | balanced 32768-tip cached tree with 1% long terminal branches, output mocked | 0.122502s | 0.005828s | 21.02x |
