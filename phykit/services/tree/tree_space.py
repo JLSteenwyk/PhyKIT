@@ -62,12 +62,22 @@ class _LazyPhylo:
 np = _LazyNumpy()
 Phylo = _LazyPhylo()
 pickle = _LazyPickle()
+_SQUAREFORM = None
+
+
+def _get_squareform():
+    global _SQUAREFORM
+    squareform = _SQUAREFORM
+    if squareform is None:
+        from scipy.spatial.distance import squareform as _squareform
+
+        squareform = _squareform
+        _SQUAREFORM = squareform
+    return squareform
 
 
 def _condensed_distance_vector(dist_matrix):
-    from scipy.spatial.distance import squareform
-
-    return squareform(dist_matrix, checks=False)
+    return _get_squareform()(dist_matrix, checks=False)
 
 
 def _shared_gene_tree_taxa(gene_trees, get_tips):

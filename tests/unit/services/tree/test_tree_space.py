@@ -1,4 +1,5 @@
 import json
+import builtins
 import os
 import subprocess
 import sys
@@ -45,6 +46,21 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np.__dict__["array"] is array_attr
     assert lazy_np.array is array_attr
     assert lazy_np._module is not None
+
+
+def test_squareform_helper_caches_resolved_function(monkeypatch):
+    monkeypatch.setattr(tree_space_module, "_SQUAREFORM", None)
+    squareform = tree_space_module._get_squareform()
+    original_import = builtins.__import__
+
+    def fail_scipy_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "scipy" or name.startswith("scipy."):
+            raise AssertionError("cached squareform should not import scipy again")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fail_scipy_import)
+
+    assert tree_space_module._get_squareform() is squareform
 
 
 def test_shared_gene_tree_taxa_does_not_slice_gene_trees():

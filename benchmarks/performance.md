@@ -943,6 +943,7 @@ Results:
 | `TreeSpace._parse_trees_from_source` stripped path-list row checks | 250k path-list rows with whitespace-prefixed comments/blanks, tree parsing mocked | 0.160735s | 0.146039s | 1.10x |
 | `TreeSpace._parse_trees_from_source` stripped inline-Newick row checks | 250k inline Newick rows with whitespace-prefixed comments/blanks, tree parsing mocked | 0.329209s | 0.252431s | 1.30x |
 | `TreeSpace._plot_heatmap` condensed distance vector setup | 4000 x 4000 symmetric distance matrix, identical upper-triangle condensed vector | 0.808634s | 0.005716s | 141.46x |
+| `TreeSpace._condensed_distance_vector` cached squareform wrapper | repeated 256 x 256 / 900 x 900 symmetric distance matrices, identical condensed vectors | 0.004960s / 0.020824s | 0.003015s / 0.016083s | 1.65x / 1.29x |
 | `tree_space` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.112687s | 0.031951s | 3.53x |
 | `tree_space` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.015061s | 0.007018s | 2.15x |
 | `tree_space` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006942s | 0.005695s | 1.22x |
@@ -6356,6 +6357,10 @@ Profiling summary:
   inline-Newick rows are buffered until the input type is known, preserving the
   previous mixed-input behavior while still avoiding pre-cleaning for path-list
   files.
+- `TreeSpace._condensed_distance_vector` now caches the resolved SciPy
+  `squareform` callable after the first use, preserving lazy SciPy startup while
+  avoiding repeated import dispatch in clustering and heatmap condensed-vector
+  setup.
 - `ConsensusNetwork._prune_to_taxa` baseline time collected terminal names,
   then pruned by name for missing-taxa shared mode. The optimized path prunes
   terminal clade objects from the initial terminal pass directly. It now uses
