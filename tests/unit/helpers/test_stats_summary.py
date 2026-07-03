@@ -11,6 +11,7 @@ import sys
 
 import numpy as np
 
+import phykit.helpers.stats_summary as stats_summary_module
 from phykit.helpers.stats_summary import (
     calculate_summary_statistics_from_arr,
     calculate_summary_statistics_from_dict,
@@ -30,6 +31,15 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         )
 
         subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_lazy_numpy_caches_resolved_attributes(self):
+        lazy_np = stats_summary_module._LazyNumpy()
+
+        asarray_attr = lazy_np.asarray
+
+        self.assertIs(lazy_np.__dict__["asarray"], asarray_attr)
+        self.assertIs(lazy_np.asarray, asarray_attr)
+        self.assertIsNotNone(lazy_np._module)
 
     def test_basic_statistics(self):
         """Test calculation of basic statistics from array"""

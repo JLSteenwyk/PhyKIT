@@ -12,7 +12,9 @@ class _LazyNumpy:
         return self._module
 
     def __getattr__(self, name):
-        return getattr(self._load(), name)
+        value = getattr(self._load(), name)
+        setattr(self, name, value)
+        return value
 
 
 np = _LazyNumpy()
