@@ -3,6 +3,7 @@ Unit tests for parallel processing utilities
 """
 
 import unittest
+import builtins
 from unittest.mock import patch, MagicMock
 import numpy as np
 import subprocess
@@ -29,6 +30,26 @@ assert callable(module.ProcessPoolExecutor)
 assert callable(module.ThreadPoolExecutor)
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_module_and_attributes():
+    proxy = parallel_module._LazyNumpy()
+    real_import = builtins.__import__
+    numpy_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal numpy_imports
+        if name == "numpy":
+            numpy_imports += 1
+        return real_import(name, globals, locals, fromlist, level)
+
+    with patch("builtins.__import__", side_effect=counting_import):
+        assert proxy.zeros is np.zeros
+        assert proxy.array is np.array
+        assert proxy.zeros is np.zeros
+        assert proxy.array is np.array
+
+    assert numpy_imports == 1
 
 
 class TestParallelProcessor(unittest.TestCase):

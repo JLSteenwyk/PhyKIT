@@ -526,6 +526,7 @@ Results:
 | `NumpyParallel.parallel_pairwise_operation` small default direct path | 5-item symmetric absolute-difference matrix / 4-item non-symmetric subtraction matrix, side-by-side previous pair-list setup before sequential `parallel_map` fallback | 0.000028341s / 0.000030722s | 0.000017988s / 0.000016394s | 1.58x / 1.87x |
 | `ParallelProcessor.parallel_reduce` no-initial iterator reduction | 1M-item sequential identity map plus additive reduce, side-by-side previous `results[1:]` slice | 0.209717s | 0.151342s | 1.39x |
 | `NumpyParallel.parallel_apply_along_axis` lazy index range | 1 x 1M array, column-wise sequential apply with identical output, side-by-side previous eager `list(range(...))` index stream | 1.033323s | 0.788665s | 1.31x |
+| `NumpyParallel.parallel_pairwise_operation` cached lazy NumPy proxy | 10-item non-symmetric direct pairwise matrix, `num_workers=1`, side-by-side previous proxy that re-imported/resolved NumPy on each attribute access | 0.000054096s | 0.000044272s | 1.22x |
 | `CreateConcatenationMatrix._process_alignment_file` | 2500-record FASTA, 2750 requested taxa, 120 sites | 0.0566s | 0.0017s | 33.3x |
 | `CreateConcatenationMatrix._process_alignment_file` all-present FASTA return | 8000-record FASTA, all requested taxa present, 120 sites | 0.008992s | 0.006960s | 1.29x |
 | `CreateConcatenationMatrix._process_alignment_file` lightweight FASTA parser | 8000-record FASTA, all requested taxa present, 20 sites split across two lines | 0.005270s | 0.004516s | 1.17x |
@@ -3808,7 +3809,9 @@ Profiling summary:
   ordered row/column application while avoiding large temporary index lists.
   Small pairwise matrices now use the same direct fill loop as explicit
   sequential calls, avoiding pair-list construction before `parallel_map` falls
-  back to sequential execution.
+  back to sequential execution. The shared lazy NumPy proxy now caches the
+  imported module and resolved attributes after first use, preserving import
+  laziness while reducing repeated direct matrix setup overhead.
 - `CreateConcatenationMatrix._compute_effective_occupancy` baseline time
   checked every concatenated character in Python when threshold filtering was
   enabled. The optimized path counts each fixed invalid symbol with C-level
