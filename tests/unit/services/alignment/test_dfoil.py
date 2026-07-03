@@ -28,6 +28,13 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_proxy_caches_resolved_attributes():
+    lazy_np = dfoil_module._LazyNumpy()
+
+    assert lazy_np.frombuffer is lazy_np.frombuffer
+    assert lazy_np._module is not None
+
+
 def _write_alignment(path, seqs):
     with open(path, "w") as f:
         for name, seq in seqs.items():

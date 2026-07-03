@@ -796,6 +796,7 @@ Results:
 | `dfoil` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.207642s | 0.119953s | 1.73x |
 | `dfoil` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.074428s | 0.025339s | 2.94x |
 | `dfoil` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.003288s | 0.001646s | 2.00x |
+| `Dfoil._count_site_patterns` cached NumPy attribute proxy | five 2M-site sequences, alphabet `ACGTN-`, side-by-side previous uncached lazy NumPy proxy | 0.090012s | 0.043431s | 2.07x |
 | `Dfoil._chi2_sf_df1` | cold process, four DFOIL chi-square p-values | 0.542926s | 0.000004833s | 112337.3x |
 | `Dfoil._print_text_output` batched report output | 50k DFOIL text reports, captured stdout and identical text | 0.439878s | 0.310966s | 1.41x |
 | `Dfoil._print_text_output` cached pattern groups and single report formatting | 50k DFOIL text reports, captured stdout and identical text, side-by-side previous pattern-list report comparison | 0.264166s | 0.232821s | 1.13x |
@@ -4412,6 +4413,9 @@ Profiling summary:
   follow-up pass caches the fixed informative-pattern groups and formats the
   same report directly, avoiding per-report pattern-list and line-list
   construction.
+  Repeated vectorized DFOIL pattern counting now caches resolved NumPy
+  attributes on the lazy proxy, preserving import deferral while avoiding
+  repeated proxy dispatch during byte-array setup and mask/count operations.
 - `Dstatistic._get_quartet_topology` baseline time called
   `clade.get_terminals()` for every internal clade while classifying each gene
   tree. The optimized path computes descendant taxon sets once in postorder and
