@@ -1061,6 +1061,7 @@ Results:
 | `EvoTempoMap._compute_treeness` batch | 40 balanced 4096-tip gene trees, helper-only treeness values | 0.9191s | 0.0330s | 27.8x |
 | `EvoTempoMap._test_branch` insufficient-data summaries | 10k singleton concordant vs singleton discordant length summaries, identical early-return stats | 0.676468s | 0.022739s | 29.75x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |
+| `EvoTempoMap._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.629815s | 0.495479s | 1.27x |
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |
 | `evo_tempo_map` module import without eager `scipy.stats` | cold process import for evo-tempo-map command module | 0.690765s | 0.209734s | 3.3x |
 | `evo_tempo_map` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.129755s | 0.031645s | 4.10x |
@@ -4946,8 +4947,10 @@ Profiling summary:
   vectorized path for large correction sets. The vectorization cutoff is now
   lower for medium-sized correction sets, so 32-and-larger p-value lists use
   the faster NumPy path while tiny direct helper calls still avoid NumPy
-  startup. A later pass deferred the
-  `scipy.stats.mannwhitneyu` import until a statistical test has enough
+  startup. The large-vector path now scales the sorted p-value buffer in place
+  and uses `out=` for the reverse cumulative minimum and cap, preserving
+  corrected values while reducing temporary allocation pressure. A later pass
+  deferred the `scipy.stats.mannwhitneyu` import until a statistical test has enough
   observations to run, preserving Mann-Whitney U behavior while avoiding
   `scipy.stats` on normal module import. A follow-up startup pass defers direct
   NumPy imports and Bio.Phylo loading behind lazy proxies, so command discovery

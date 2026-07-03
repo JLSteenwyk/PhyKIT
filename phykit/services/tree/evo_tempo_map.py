@@ -863,10 +863,13 @@ class EvoTempoMap(Tree):
             return corrected
         p_arr = np.asarray(p_values, dtype=float)
         order = np.argsort(p_arr)
-        sorted_p = p_arr[order]
         ranks = np.arange(1, n + 1, dtype=float)
-        adjusted = np.minimum.accumulate((sorted_p * n / ranks)[::-1])[::-1]
-        adjusted = np.minimum(adjusted, 1.0)
+        adjusted = p_arr[order].copy()
+        adjusted *= n
+        adjusted /= ranks
+        adjusted_reversed = adjusted[::-1]
+        np.minimum.accumulate(adjusted_reversed, out=adjusted_reversed)
+        np.minimum(adjusted, 1.0, out=adjusted)
         corrected = np.empty(n, dtype=float)
         corrected[order] = adjusted
         return corrected.tolist()
