@@ -853,12 +853,18 @@ class PhylogeneticOrdination(Tree):
     ) -> dict:
         dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
         if self.n_components == 2:
+            dim1_values = embedding[:, 0].tolist()
+            dim2_values = embedding[:, 1].tolist()
             embedding_rows = {
                 taxon: {
-                    "Dim1": round(float(row[0]), 6),
-                    "Dim2": round(float(row[1]), 6),
+                    "Dim1": round(dim1, 6),
+                    "Dim2": round(dim2, 6),
                 }
-                for taxon, row in zip(taxon_names, embedding)
+                for taxon, dim1, dim2 in zip(
+                    taxon_names,
+                    dim1_values,
+                    dim2_values,
+                )
             }
         elif self.n_components == 3:
             dim1_values = embedding[:, 0].tolist()

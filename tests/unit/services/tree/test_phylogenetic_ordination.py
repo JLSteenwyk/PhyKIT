@@ -1746,9 +1746,21 @@ class TestRun:
     def test_format_dimreduce_result_two_dimensions_skips_generic_list_conversion(
         self, tsne_args
     ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
         class TwoDimEmbedding:
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([1.2345678, 2.0][column:column + 1])
+
             def __iter__(self):
-                return iter([(1.2345678, 2.0)])
+                raise AssertionError("2-D result should not use row iteration")
 
             def tolist(self):
                 raise AssertionError("2-D output should not call tolist")

@@ -2145,6 +2145,7 @@ Results:
 | `PhylogeneticOrdination._print_dimreduce_text_output` embedding row conversion | 100k taxa x 2 embedding dimensions, identical captured text while avoiding per-cell NumPy indexing | 0.692168s | 0.517560s | 1.34x |
 | `PhylogeneticOrdination._format_dimreduce_result` row-list JSON payload | 5k taxa x 2 embedding dimensions, identical nested payload | 0.290704s | 0.096889s | 3.00x |
 | `PhylogeneticOrdination._format_dimreduce_result` 2-D embedding JSON rows | 100k / 300k taxa x 2 embedding dimensions, identical nested payload, side-by-side previous generic `embedding.tolist()` row conversion | 0.645618s / 1.454592s | 0.256962s / 0.929379s | 2.51x / 1.57x |
+| `PhylogeneticOrdination._format_dimreduce_result` 2-D embedding JSON columns | 100k / 300k / 600k taxa x 2 embedding dimensions, identical nested payload, side-by-side previous row iteration over NumPy views | 0.638281s / 2.125952s / 3.893188s | 0.272515s / 1.644864s / 1.795642s | 2.34x / 1.29x / 2.17x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` 2-D embedding text rows | 100k / 300k taxa x 2 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.264736s / 1.615675s | 0.104466s / 0.739086s | 2.53x / 2.19x |
 | `PhylogeneticOrdination._format_dimreduce_result` 3-D embedding JSON rows | 5k / 100k taxa x 3 embedding dimensions, identical nested payload, side-by-side previous generic `embedding.tolist()` row conversion | 1.855278s / 2.838996s | 1.498140s / 2.365359s | 1.24x / 1.20x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` 3-D embedding text rows | 5k / 100k taxa x 3 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.850666s / 2.130799s | 0.644524s / 1.106308s | 1.32x / 1.93x |
@@ -7317,7 +7318,10 @@ Profiling summary:
   without materializing the full nested list, while text output formats
   column-wise Python float lists to avoid per-row NumPy view overhead. The
   same column-wise pattern now handles 3-D embeddings; the generic `tolist()`
-  path remains for embeddings with more than three dimensions.
+  path remains for embeddings with more than three dimensions. A follow-up JSON
+  pass applies the column-wise path to 2-D embeddings too, removing the
+  remaining per-row NumPy view iteration while preserving rounded `Dim1`/`Dim2`
+  payload values.
 - `AncestralReconstruction._anc_ml` baseline time was dominated by computing
   cross-covariances with repeated per-tip `tree.get_terminals()`,
   `tree.common_ancestor()`, and root-distance calls for every labeled internal
