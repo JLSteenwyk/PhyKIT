@@ -414,6 +414,8 @@ class Dstatistic(Alignment):
             )
         ):
             n_blocks = len(seq_p1) // block_size
+            if n_blocks == 0:
+                return 0, 0, np.empty(0), np.empty(0)
             return 0, 0, np.zeros(n_blocks), np.zeros(n_blocks)
 
         try:
@@ -503,24 +505,30 @@ class Dstatistic(Alignment):
         )
 
         n_blocks = len(p1) // block_size
+        if n_blocks == 0:
+            return (
+                abba_count,
+                baba_count,
+                np.empty(0),
+                np.empty(0),
+            )
         block_abba = np.zeros(n_blocks)
         block_baba = np.zeros(n_blocks)
-        if n_blocks:
-            n_block_sites = n_blocks * block_size
-            if abba_mask is not None:
-                block_abba = (
-                    abba_mask[:n_block_sites]
-                    .reshape(n_blocks, block_size)
-                    .sum(axis=1)
-                    .astype(float)
-                )
-            if baba_mask is not None:
-                block_baba = (
-                    baba_mask[:n_block_sites]
-                    .reshape(n_blocks, block_size)
-                    .sum(axis=1)
-                    .astype(float)
-                )
+        n_block_sites = n_blocks * block_size
+        if abba_mask is not None:
+            block_abba = (
+                abba_mask[:n_block_sites]
+                .reshape(n_blocks, block_size)
+                .sum(axis=1)
+                .astype(float)
+            )
+        if baba_mask is not None:
+            block_baba = (
+                baba_mask[:n_block_sites]
+                .reshape(n_blocks, block_size)
+                .sum(axis=1)
+                .astype(float)
+            )
 
         return abba_count, baba_count, block_abba, block_baba
 

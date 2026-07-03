@@ -175,6 +175,23 @@ class TestDstatistic:
         assert block_abba.tolist() == [4.0, 0.0]
         assert block_baba.tolist() == [1.0, 1.0]
 
+    def test_count_site_patterns_short_alignment_returns_empty_block_arrays(self):
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "AAAACCAA",
+            "CCCCAAAA",
+            "CCCCCCAA",
+            "AAAAAAAA",
+            block_size=100,
+        )
+
+        assert abba == 4
+        assert baba == 2
+        assert block_abba.shape == (0,)
+        assert block_baba.shape == (0,)
+        assert block_abba.dtype == np.dtype(float)
+        assert block_baba.dtype == np.dtype(float)
+        assert block_abba is not block_baba
+
     def test_count_site_patterns_all_invariant_skips_numpy_byte_setup(self, mocker):
         mocker.patch.object(
             module.np,

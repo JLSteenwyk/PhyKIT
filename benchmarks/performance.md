@@ -747,6 +747,7 @@ Results:
 | `Dstatistic._count_site_patterns` identical-ingroup shortcut | 2M sites, P1/P2/P3 identical and outgroup fixed different, block size 1000, identical zero totals and block arrays | 0.008103s | 0.000002s | 4051.5x |
 | `Dstatistic._count_site_patterns` impossible sister-pair shortcut | 5M sites, P1/P2 identical with P3/outgroup different, block size 1000, side-by-side previous byte-array scan path | 0.013529s | 0.000002958s | 4573.80x |
 | `Dstatistic._count_site_patterns` single-pattern mask shortcut | 5M sites, P1/outgroup identical and P2/P3 identical, ABBA possible and BABA impossible, side-by-side previous two-mask vector path | 0.014601s | 0.009187s | 1.59x |
+| `Dstatistic._count_site_patterns` short-alignment empty blocks | 200k repeated all-invariant 8-site / 20k repeated informative 8-site clean ASCII counts with block size 100, identical totals and empty float block arrays | 0.433991s / 0.606033s | 0.197659s / 0.380871s | 2.20x / 1.59x |
 | `Dstatistic._count_site_patterns_scalar` direct skip checks | 1M Unicode-containing scalar fallback sites, block size 1000, identical ABBA/BABA totals and block arrays | 0.967857s | 0.443901s | 2.18x |
 | `Dstatistic._count_site_patterns_scalar` list-backed block counters | 500k Unicode-containing scalar fallback sites with sparse skipped sites, block size 1000, interleaved side-by-side timing, identical ABBA/BABA totals and block arrays | 0.413669s | 0.288322s | 1.43x |
 | `Dstatistic._normal_two_tailed_p_value` | cold process, alignment-mode jackknife z-score p-value | 0.556567s | 0.000003125s | 178101.4x |
@@ -4293,6 +4294,9 @@ Profiling summary:
   Clean ASCII DFOIL counts now build the final ordered pattern dictionary with
   `zip(PATTERNS, map(int, bincounts))`, while skip-code inputs retain the
   existing indexed construction that benchmarked better for those cases.
+  D-statistic clean ASCII counts now return empty float block arrays before
+  allocating zero-filled block arrays when the alignment is shorter than the
+  jackknife block size, preserving totals and empty block-array shapes.
   A later scalar fallback pass reuses a module-level
   skip-character constant, scans rows with `zip`, and accumulates block counts
   in Python lists before one NumPy conversion at return. Gene-tree descendant
