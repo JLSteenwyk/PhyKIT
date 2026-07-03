@@ -1437,6 +1437,58 @@ class TestPlot:
         assert len(line_collections) >= 2
         assert output_path.exists()
 
+    def test_rectangular_contmap_uses_collection_scalar_colormap(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        import matplotlib
+        import matplotlib.axes
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
+
+        default_args.circular = False
+        default_args.no_title = True
+        default_args.ylabel_fontsize = 0
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        node_labels = svc._label_internal_nodes(tree)
+        node_estimates = {
+            label: float(index)
+            for index, label in enumerate(node_labels.values(), start=1)
+        }
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        collection_arrays = []
+        original_add_collection = matplotlib.axes.Axes.add_collection
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                array = collection.get_array()
+                if array is not None:
+                    collection_arrays.append(array)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "add_collection", capture_collection)
+
+        output_path = tmp_path / "asr_contmap_scalar_colormap.png"
+        try:
+            svc._plot_contmap(
+                tree,
+                node_estimates,
+                node_labels,
+                trait_values,
+                "trait",
+                str(output_path),
+                node_cis=None,
+            )
+        finally:
+            plt.close("all")
+
+        array_lengths = {len(array) for array in collection_arrays}
+        assert 300 in array_lengths
+        assert 6 in array_lengths
+        assert output_path.exists()
+
     def test_circular_contmap_batches_gradient_branches(
         self, default_args, monkeypatch, tmp_path
     ):

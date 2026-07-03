@@ -2260,6 +2260,7 @@ Results:
 | `AncestralReconstruction._plot_contmap` circular coordinate clade-list reuse | balanced 32768-tip tree, node x positions, parent map, preorder list, and tips already available | 0.057251s | 0.044612s | 1.28x |
 | `AncestralReconstruction._plot_contmap` estimate value range helper | 1M plotted node/tip estimate values, identical min/max range without temporary list | 0.039032s | 0.030498s | 1.28x |
 | `AncestralReconstruction._plot_contmap` rectangular gradient branch rendering | balanced 512-tip tree, 50 color segments per branch, real Matplotlib Agg branch render | 10.877298s | 1.865517s | 5.83x |
+| `AncestralReconstruction._plot_contmap` scalar colormap rectangular branches | 512 synthetic rectangular branches x 50 gradient segments plus vertical connectors, side-by-side previous per-segment/per-connector `cmap(norm(value))` color materialization | 3.141559s | 0.331382s | 9.48x |
 | `AncestralReconstruction._plot_contmap` rectangular CI overlay rendering | 2048 CI nodes, real Matplotlib Agg CI bars and point estimates | 8.205795s | 0.036551s | 224.50x |
 | `AncestralReconstruction._plot_contmap` circular CI overlay rendering | 512 CI nodes, real Matplotlib Agg tangential CI bars and point estimates | 0.793536s | 0.008322s | 95.35x |
 | `AncestralReconstruction._plot_discrete_asr` rectangular setup | balanced 32768-tip tree, precomputed node posteriors and tip states | 0.8363s | 0.1233s | 6.8x |
@@ -7620,13 +7621,16 @@ Profiling summary:
   the 50 sampled gradient subsegments for every
   rectangular branch into one `LineCollection` and vertical connectors into a
   second `LineCollection`, preserving sampled trait-gradient colors while
-  avoiding one artist per subsegment. Circular contMap rendering now uses the
-  shared whole-tree radial gradient helper, avoiding one `LineCollection` per
-  branch, and the shared colored-arc helper, avoiding one `Line2D` artist per
-  internal arc. A later contMap CI overlay pass batches rectangular vertical
-  bars, rectangular caps, and circular tangential bars into `LineCollection`s and
-  draws point estimates with one `scatter` call per plot, preserving black CI
-  styling while avoiding several Matplotlib artists per CI node. A later
+  avoiding one artist per subsegment. A later rectangular contMap pass attaches
+  scalar trait arrays to those collections and lets Matplotlib apply the shared
+  colormap and norm, avoiding per-segment RGBA materialization. Circular contMap
+  rendering now uses the shared whole-tree radial gradient helper, avoiding one
+  `LineCollection` per branch, and the shared colored-arc helper, avoiding one
+  `Line2D` artist per internal arc. A later contMap CI overlay pass batches
+  rectangular vertical bars, rectangular caps, and circular tangential bars into
+  `LineCollection`s and draws point estimates with one `scatter` call per plot,
+  preserving black CI styling while avoiding several Matplotlib artists per CI
+  node. A later
   discrete-ASR rendering pass batches
   rectangular gray base branches into
   horizontal/vertical `LineCollection`s and batches rectangular clade
