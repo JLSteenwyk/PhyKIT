@@ -295,6 +295,16 @@ def _mean_child_y(children, node_y):
     return float(total / count) if count else 0.0
 
 
+def _assign_internal_y_from_children(clade, node_y):
+    children = clade.clades
+    if len(children) == 2:
+        first_y = node_y.get(id(children[0]))
+        second_y = node_y.get(id(children[1]))
+        if first_y is not None and second_y is not None:
+            return (first_y + second_y) * 0.5
+    return _mean_child_y(children, node_y)
+
+
 def compute_node_positions(tree, parent_map, cladogram=False, preorder_clades=None):
     """Compute (node_x, node_y) for a rectangular tree layout.
 
@@ -365,14 +375,7 @@ def compute_node_positions(tree, parent_map, cladogram=False, preorder_clades=No
         children = clade.clades
         cid = id(clade)
         if children and cid not in node_y:
-            child_total = 0.0
-            child_count = 0
-            for child in children:
-                child_id = id(child)
-                if child_id in node_y:
-                    child_total += node_y[child_id]
-                    child_count += 1
-            node_y[cid] = float(child_total / child_count) if child_count else 0.0
+            node_y[cid] = _assign_internal_y_from_children(clade, node_y)
 
     return node_x, node_y
 
@@ -429,14 +432,7 @@ def _compute_node_positions_from_preorder(
         children = clade.clades
         cid = id(clade)
         if children and cid not in node_y:
-            child_total = 0.0
-            child_count = 0
-            for child in children:
-                child_id = id(child)
-                if child_id in node_y:
-                    child_total += node_y[child_id]
-                    child_count += 1
-            node_y[cid] = float(child_total / child_count) if child_count else 0.0
+            node_y[cid] = _assign_internal_y_from_children(clade, node_y)
 
     return node_x, node_y
 

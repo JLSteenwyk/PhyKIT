@@ -1215,6 +1215,7 @@ Results:
 | `plot_config.compute_node_positions` cladogram reverse-preorder pass | balanced 32768-tip tree, rectangular coordinates for all nodes | 0.074095s | 0.065698s | 1.13x |
 | `plot_config.compute_node_positions` phylogram inline child-y mean | balanced 65536-tip tree, rectangular coordinates with identical internal midpoint y-coordinates | 0.200336s | 0.151505s | 1.32x |
 | `plot_config.compute_node_positions` cladogram inline child-y mean | balanced 65536-tip tree, rectangular coordinates with identical internal midpoint y-coordinates | 0.175507s | 0.137023s | 1.28x |
+| `plot_config.compute_node_positions` binary child-y midpoint | balanced 32768-tip tree with precomputed preorder list, identical node coordinates in phylogram / cladogram modes | 0.144306s / 0.173786s | 0.117720s / 0.160241s | 1.23x / 1.08x |
 | `plot_config._terminal_clades_direct` order-preserving child push | balanced 131072-tip tree, direct terminal helper, optimized helper baseline | 0.039957s | 0.035492s | 1.13x |
 | `plot_config._preorder_clades_direct` order-preserving child push | balanced 131072-tip tree, direct preorder helper, optimized helper baseline | 0.045027s | 0.040956s | 1.10x |
 | `plot_config.draw_tree_branches` | balanced 32768-tip tree, no-op axis with precomputed rectangular coordinates | 0.1674s | 0.0645s | 2.6x |
@@ -5289,7 +5290,9 @@ Profiling summary:
   preserving terminal y-order and cladogram depth scaling. The direct terminal
   and preorder helpers now preserve Biopython traversal order while pushing
   binary children right-then-left and indexing multifurcations backward, avoiding
-  `reversed(children)` iterator setup on standard clades.
+  `reversed(children)` iterator setup on standard clades. A later internal-y
+  pass reads the two child y-values directly for binary nodes and keeps the
+  generic mean helper for polytomies or incomplete child-coordinate data.
 - `BipartitionSupportStats.get_bipartition_support_vals` baseline time called
   `get_terminals()` for every supported internal node when preparing verbose
   bipartition output. The optimized path caches descendant terminal names in

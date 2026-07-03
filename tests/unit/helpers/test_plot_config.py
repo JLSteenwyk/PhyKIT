@@ -7,6 +7,7 @@ from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.helpers.plot_config import (
     PlotConfig,
+    _assign_internal_y_from_children,
     _mean_child_y,
     _preorder_clades_direct,
     _terminal_clades_direct,
@@ -29,6 +30,20 @@ assert hasattr(module, "PlotConfig")
 assert "typing" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_assign_internal_y_binary_children_use_indexed_path():
+    class IndexedOnlyList(list):
+        def __iter__(self):
+            raise AssertionError("binary child y setup should index children")
+
+    left = type("Clade", (), {})()
+    right = type("Clade", (), {})()
+    parent = type("Clade", (), {})()
+    parent.clades = IndexedOnlyList([left, right])
+    node_y = {id(left): 2.0, id(right): 6.0}
+
+    assert _assign_internal_y_from_children(parent, node_y) == pytest.approx(4.0)
 
 
 class TestPlotConfigDefaults:
