@@ -1869,6 +1869,7 @@ Results:
 | `PhyloHeatmap._parse_trait_matrix` all-shared parser fast path | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.359596s | 0.247998s | 1.45x |
 | `PhyloHeatmap._parse_trait_matrix` numeric hot-loop cleanup | 200k taxa x 8 numeric traits, comments/blanks, all taxa shared, side-by-side previous parser comparison | 0.285750s | 0.256122s | 1.12x |
 | `PhyloHeatmap._build_heatmap_matrix` typed matrix construction | 200k taxa x 8 numeric traits, ordered row lookup, side-by-side previous inline `np.array` construction | 0.173474s | 0.133871s | 1.30x |
+| `PhyloHeatmap._standardize_heatmap_matrix` finite matrix reductions | finite heatmap matrices shaped 1000x8 / 10000x8 / 100000x8 / 200000x8, side-by-side previous `np.nanmean`/`np.nanstd` standardization path with NaN fallback preserving output | 0.000121418s / 0.000963533s / 0.013178425s / 0.059526417s | 0.000055278s / 0.000566756s / 0.007522200s / 0.015802389s | 2.20x / 1.70x / 1.75x / 3.77x |
 | `PhyloHeatmap._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.057904s | 0.027449s | 2.11x |
 | `PhyloHeatmap._plot_phylo_heatmap` node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, phylogram tree-panel coordinate setup | 0.049305s | 0.040452s | 1.22x |
 | `PhyloHeatmap._plot_phylo_heatmap_circular` phylogram setup | balanced 32768-tip tree, precomputed heatmap matrix | 0.4398s | 0.1925s | 2.3x |
@@ -6818,7 +6819,9 @@ Profiling summary:
   discovery no longer imports `typing`. Heatmap matrix construction now builds
   the ordered row list through typed `np.asarray`, preserving float matrix
   output while avoiding the slower inline `np.array` conversion on large
-  parser-shaped inputs.
+  parser-shaped inputs. Standardized finite heatmap matrices now use ordinary
+  column mean/std reductions after a finite-value guard, keeping the existing
+  NaN-aware fallback for matrices containing non-finite values.
 - `Cophylo._rotate_tree` baseline time recomputed descendant terminal lists
   for every internal child while rotating nodes. The optimized path computes
   mapped descendant target positions once in postorder and reuses each clade's

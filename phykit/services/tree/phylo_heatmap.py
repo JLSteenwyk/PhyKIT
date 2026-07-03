@@ -324,6 +324,17 @@ class PhyloHeatmap(Tree):
     ) -> np.ndarray:
         return np.asarray([trait_data[taxon] for taxon in tip_order], dtype=float)
 
+    @staticmethod
+    def _standardize_heatmap_matrix(matrix: np.ndarray) -> np.ndarray:
+        if np.isfinite(matrix).all():
+            col_means = matrix.mean(axis=0)
+            col_stds = matrix.std(axis=0)
+        else:
+            col_means = np.nanmean(matrix, axis=0)
+            col_stds = np.nanstd(matrix, axis=0)
+        col_stds[col_stds == 0] = 1.0
+        return (matrix - col_means) / col_stds
+
     def _plot_phylo_heatmap(
         self,
         tree,
@@ -349,10 +360,7 @@ class PhyloHeatmap(Tree):
         # Build the data matrix in tip_order
         matrix = self._build_heatmap_matrix(tip_order, trait_data)
         if self.standardize:
-            col_means = np.nanmean(matrix, axis=0)
-            col_stds = np.nanstd(matrix, axis=0)
-            col_stds[col_stds == 0] = 1.0
-            matrix = (matrix - col_means) / col_stds
+            matrix = self._standardize_heatmap_matrix(matrix)
 
         if config.circular:
             self._plot_phylo_heatmap_circular(

@@ -206,6 +206,49 @@ class TestPhyloHeatmapPlot:
         assert str(matrix.dtype) == "float64"
         assert matrix.tolist() == [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]
 
+    def test_standardize_heatmap_matrix_finite_path_avoids_nan_reductions(
+        self, monkeypatch
+    ):
+        import numpy as np
+
+        matrix = np.array(
+            [
+                [1.0, 2.0],
+                [2.0, 4.0],
+                [3.0, 6.0],
+            ],
+        )
+
+        def fail_nan_reduction(*_args, **_kwargs):
+            raise AssertionError("finite heatmap matrix should use plain reductions")
+
+        monkeypatch.setattr(module.np, "nanmean", fail_nan_reduction)
+        monkeypatch.setattr(module.np, "nanstd", fail_nan_reduction)
+
+        standardized = PhyloHeatmap._standardize_heatmap_matrix(matrix)
+
+        expected = (matrix - matrix.mean(axis=0)) / matrix.std(axis=0)
+        np.testing.assert_allclose(standardized, expected)
+
+    def test_standardize_heatmap_matrix_preserves_nan_fallback(self):
+        import numpy as np
+
+        matrix = np.array(
+            [
+                [1.0, 2.0],
+                [np.nan, 4.0],
+                [3.0, 6.0],
+            ],
+        )
+
+        standardized = PhyloHeatmap._standardize_heatmap_matrix(matrix)
+        col_means = np.nanmean(matrix, axis=0)
+        col_stds = np.nanstd(matrix, axis=0)
+        col_stds[col_stds == 0] = 1.0
+        expected = (matrix - col_means) / col_stds
+
+        np.testing.assert_allclose(standardized, expected, equal_nan=True)
+
     def test_run_uses_fast_tip_name_helper_for_setup(self, mocker, args):
         args.json = True
         ph = PhyloHeatmap(args)
