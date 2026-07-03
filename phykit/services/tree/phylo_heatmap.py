@@ -386,16 +386,15 @@ class PhyloHeatmap(Tree):
         self, tree, tip_order, trait_names, trait_data, matrix,
         config, n_tips, n_traits, output_path, plt, gridspec,
     ) -> None:
-        from matplotlib.collections import LineCollection
-        from scipy.cluster.hierarchy import linkage, dendrogram, leaves_list
-        from scipy.spatial.distance import pdist
-
         fig = plt.figure(figsize=(config.fig_width, config.fig_height))
 
         # Cluster columns if requested
         col_order = list(range(n_traits))
         col_dendro_Z = None
         if self.cluster_columns and n_traits >= 2:
+            from scipy.cluster.hierarchy import dendrogram, leaves_list, linkage
+            from scipy.spatial.distance import pdist
+
             # Cluster traits by their column values (transpose, compute distance)
             col_dist = pdist(matrix.T, metric="euclidean")
             col_dendro_Z = linkage(col_dist, method="average")
@@ -451,6 +450,8 @@ class PhyloHeatmap(Tree):
             for taxa_list, clade_color, lbl in color_data["clades"]:
                 mrca = resolve_mrca(tree, taxa_list)
                 if mrca is not None:
+                    from matplotlib.collections import LineCollection
+
                     clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
                     horizontal_segments = []
                     vertical_segments = []

@@ -1904,6 +1904,7 @@ Results:
 | `PhyloHeatmap._plot_phylo_heatmap_circular` scalar colormap ring cells | 512 tips x 12 traits, side-by-side previous per-cell `cmap(norm(value))` color materialization for one `PatchCollection` | 1.525569s | 0.897316s | 1.70x |
 | `PhyloHeatmap` rectangular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.226909s | 0.041817s | 29.34x |
 | `PhyloHeatmap` circular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 0.609568s | 0.029928s | 20.37x |
+| `PhyloHeatmap._plot_phylo_heatmap_rect` optional no-cluster imports | cold subprocess rectangular no-cluster/no-color setup, side-by-side previous eager `LineCollection`, SciPy hierarchy, and SciPy distance imports before plotting | 1.444799s | 0.001358s | 1063.92x |
 | `phylo_heatmap` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.096110s | 0.032152s | 2.99x |
 | `phylo_heatmap` module import without eager JSON/plot/color helpers | median cold subprocess import after lazy wrappers/localized imports for JSON, plot config, plot helpers, and color annotations | 0.013094s | 0.005342s | 2.45x |
 | `phylo_heatmap` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006222s | 0.003853s | 1.62x |
@@ -6894,7 +6895,10 @@ Profiling summary:
   while avoiding one Matplotlib patch artist per tip-trait cell. A follow-up
   circular heatmap pass attaches scalar matrix values to that collection and
   lets Matplotlib apply the existing colormap and norm, avoiding per-cell RGBA
-  materialization. A startup pass defers NumPy behind a lazy proxy, so
+  materialization. Rectangular no-cluster plots now keep SciPy hierarchy/distance
+  imports behind the column-clustering branch and import `LineCollection` only
+  when color-file clade overlays are drawn, avoiding optional plotting startup
+  in ordinary heatmaps. A startup pass defers NumPy behind a lazy proxy, so
   import-only command discovery avoids array startup until matrix
   standardization, clustering, or heatmap plotting runs. A follow-up startup
   pass keeps JSON, plot-config, plotting, and

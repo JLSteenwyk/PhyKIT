@@ -449,6 +449,34 @@ class TestPhyloHeatmapPlot:
         assert Path(args.output).exists()
         assert Path(args.output).stat().st_size > 0
 
+    def test_nonclustered_rectangular_plot_does_not_import_scipy_cluster(
+        self, tmp_path
+    ):
+        code = f"""
+import sys
+from argparse import Namespace
+from phykit.services.tree.phylo_heatmap import PhyloHeatmap
+
+args = Namespace(
+    tree="tests/sample_files/tree_simple.tre",
+    data="tests/sample_files/tree_simple_multi_traits.tsv",
+    output={str(tmp_path / "heatmap_no_cluster.png")!r},
+    split=0.3,
+    standardize=False,
+    cmap="viridis",
+    cluster_columns=False,
+    circular=False,
+    json=False,
+    no_title=True,
+    ylabel_fontsize=0,
+)
+PhyloHeatmap(args).run()
+assert "scipy.cluster.hierarchy" not in sys.modules
+assert "scipy.spatial.distance" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+        assert (tmp_path / "heatmap_no_cluster.png").exists()
+
     def test_creates_pdf(self, tmp_path):
         args = Namespace(
             tree="tests/sample_files/tree_simple.tre",
