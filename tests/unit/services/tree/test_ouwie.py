@@ -294,13 +294,16 @@ class TestProcessArgs:
 
         assert OUwie._shared_trait_regime_taxa(traits, regimes) == {"B", "D"}
 
-    def test_shared_trait_regime_taxa_scans_traits_when_smaller(self):
-        class NoIterRegimes(dict):
+    def test_shared_trait_regime_taxa_uses_key_view_when_traits_are_not_larger(self):
+        class NoMembershipRegimes(dict):
             def __iter__(self):
                 raise AssertionError("large regime mapping should not be scanned")
 
+            def __contains__(self, key):
+                raise AssertionError("key-view intersection should avoid membership checks")
+
         traits = {"B": 2.0, "D": 4.0}
-        regimes = NoIterRegimes(
+        regimes = NoMembershipRegimes(
             {"A": "r1", "B": "r1", "C": "r2", "D": "r2", "E": "r3"}
         )
 

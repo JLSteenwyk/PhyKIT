@@ -209,7 +209,7 @@ class OUwie(Tree):
     ) -> set[str]:
         if len(regime_assignments) < len(traits):
             return {name for name in regime_assignments if name in traits}
-        return {name for name in traits if name in regime_assignments}
+        return traits.keys() & regime_assignments.keys()
 
     @staticmethod
     def _prepare_shared_trait_regime_data(
