@@ -1487,7 +1487,6 @@ class PhyloGwas(Alignment):
             ax.xaxis.label.set_fontsize(config.axis_fontsize)
             ax.yaxis.label.set_fontsize(config.axis_fontsize)
 
-        fig.tight_layout()
         fig.savefig(self.output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         self._store_manhattan_plot_cache(cache_key)

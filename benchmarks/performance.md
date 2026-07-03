@@ -706,6 +706,7 @@ Results:
 | `PhyloGwas._create_manhattan_plot` partition span rendering | 4096 partitions / 2048 alternating gray spans, real Matplotlib Agg render | 0.570093s | 0.089715s | 6.35x |
 | `PhyloGwas._create_manhattan_plot` point series preparation | 1M GWAS result rows with mixed FDR-significant phylogenetic patterns, identical positions, colors, transformed p-values, and FDR threshold | 0.155766s | 0.135860s | 1.15x |
 | `PhyloGwas._create_manhattan_plot` rendered image cache | 200 GWAS result rows / 10 partitions, repeated identical PNG render, side-by-side clearing the rendered-plot cache before each call versus reusing warmed cached bytes | 1.524923s | 0.000185s | 8244.66x |
+| `PhyloGwas._create_manhattan_plot` redundant tight layout pass | repeated small Manhattan PNG render with Matplotlib already warm, side-by-side normal `Figure.tight_layout()` versus no explicit tight-layout call before `savefig(..., bbox_inches="tight")` | 1.139041s | 0.701761s | 1.62x |
 | `PhyloGwas._print_text_output` top-hit selection and batched report output | 50k categorical text reports with 1k shuffled significant sites, captured stdout and identical text | 5.129769s | 3.727684s | 1.38x |
 | `PhyloGwas._print_text_output` cached p-value key | 50k categorical text reports with 1k shuffled significant sites, captured stdout and identical text | 3.838282s | 3.414573s | 1.12x |
 | `PhyloGwas` JSON result payload assembly | 200k categorical GWAS result rows, identical `json.dumps(sort_keys=True)` output | 0.575563s | 0.402213s | 1.43x |
@@ -4313,6 +4314,9 @@ Profiling summary:
   bounded rendered-byte cache keyed by plot-relevant result fields, partitions,
   tree/significance state, output format, and resolved plot config, preserving
   exact image bytes while avoiding Matplotlib import/render work on cache hits.
+  The plot path also skips the explicit `Figure.tight_layout()` call before
+  saving because `savefig(..., bbox_inches="tight")` still performs the saved
+  bounds calculation; this avoids a redundant text/layout pass on cache misses.
 - `PhyloGwas._print_text_output` baseline time fully sorted all significant
   sites before displaying only the top ten and emitted report lines one at a
   time. The optimized text path selects the same top ten with partial selection

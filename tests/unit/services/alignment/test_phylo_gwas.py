@@ -157,6 +157,17 @@ def _make_args(tmp_path, seqs=None, pheno=None, tree=None, partition=None, **kwa
     return args
 
 
+@pytest.fixture(autouse=True)
+def clear_manhattan_plot_cache():
+    previous_cache = phylo_gwas_module._MANHATTAN_PLOT_CACHE.copy()
+    phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
+    try:
+        yield
+    finally:
+        phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
+        phylo_gwas_module._MANHATTAN_PLOT_CACHE.update(previous_cache)
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -535,13 +546,40 @@ class TestPhyloGwas:
         assert len(patch_collections) == 1
         assert len(patch_collections[0].get_paths()) == 3
 
+    def test_manhattan_plot_skips_explicit_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        """Saving with bbox_inches='tight' should avoid an extra layout pass."""
+        pytest.importorskip("matplotlib")
+        import matplotlib.figure
+
+        args = _make_args(tmp_path)
+        service = PhyloGwas(args)
+        results = [
+            {
+                "position": 1,
+                "p_value": 0.5,
+                "fdr_significant": False,
+                "phylo_pattern": None,
+            }
+        ]
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("Manhattan plot should not call tight_layout")
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure, "tight_layout", fail_tight_layout
+        )
+
+        service._create_manhattan_plot(results, [], has_tree=False)
+
+        assert os.path.exists(args.output)
+
     def test_manhattan_plot_reuses_cached_rendered_bytes(
         self, tmp_path, monkeypatch
     ):
         """Repeated identical Manhattan plots should skip Matplotlib rendering."""
         pytest.importorskip("matplotlib")
-        previous_cache = phylo_gwas_module._MANHATTAN_PLOT_CACHE.copy()
-        phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
         results = [
             {
                 "position": 1,
@@ -574,12 +612,8 @@ class TestPhyloGwas:
             return original_import(name, globals, locals, fromlist, level)
 
         monkeypatch.setattr(builtins, "__import__", fail_matplotlib_import)
-        try:
-            second_service._create_manhattan_plot(results, [], has_tree=False)
-            assert Path(second_args.output).read_bytes() == first_bytes
-        finally:
-            phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
-            phylo_gwas_module._MANHATTAN_PLOT_CACHE.update(previous_cache)
+        second_service._create_manhattan_plot(results, [], has_tree=False)
+        assert Path(second_args.output).read_bytes() == first_bytes
 
     def test_csv_output(self, tmp_path):
         """CSV file should be created with correct columns."""
