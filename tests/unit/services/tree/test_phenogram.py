@@ -359,6 +359,20 @@ class TestRun:
 
 
 class TestFastAnc:
+    def test_iter_preorder_matches_biopython_order(self):
+        svc = Phenogram.__new__(Phenogram)
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        direct = list(svc._iter_preorder(tree.root))
+        reference = list(tree.find_clades(order="preorder"))
+
+        assert [id(clade) for clade in direct] == [
+            id(clade) for clade in reference
+        ]
+
     def test_iter_postorder_matches_biopython_order(self):
         svc = Phenogram.__new__(Phenogram)
         tree = Phylo.read(

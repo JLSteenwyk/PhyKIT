@@ -1918,6 +1918,7 @@ Results:
 | `stochastic_character_map` module import without eager JSON/plot/discrete helpers | median cold subprocess import after localizing output, plotting, color, circular, and discrete-model helpers | 0.014049s | 0.005457s | 2.57x |
 | `stochastic_character_map` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005457s | 0.003808s | 1.43x |
 | `Phenogram._fast_anc` plus node labeling | balanced tree with 4096 tips, one continuous trait per tip | 0.1058s | 0.0405s | 2.6x |
+| `Phenogram._label_internal_nodes` binary preorder child push | balanced 32768-tip tree, preorder node-label setup with identical label order | 0.378794s | 0.226850s | 1.67x |
 | `Phenogram._fast_anc` postorder weighted sums | balanced 32768-tip tree, helper-only postorder downpass | 0.065973s | 0.056026s | 1.18x |
 | `Phenogram._fast_anc` cached id lookups | balanced 32768-tip tree, full helper with exact node estimates and sigma2 | 0.212574s | 0.171936s | 1.24x |
 | `Phenogram._compute_sigma2_from_contrasts` streaming valid children | balanced 32768-tip tree, postorder contrast scan | 0.039013s | 0.025422s | 1.53x |
@@ -6789,8 +6790,10 @@ Profiling summary:
   Bio.Phylo `find_clades()` traversals for node labeling, parent-map
   construction, ML passes, sigma2 contrasts, and result construction. The
   optimized path uses direct stack traversals and reuses preorder/postorder
-  clade lists inside `_fast_anc`. A later pass keeps the same direct traversal
-  but caches clade ids within the hot loops, switches repeated membership
+  clade lists inside `_fast_anc`. Preorder node-label setup now pushes common
+  binary children directly, preserving Bio.Phylo preorder while avoiding a
+  `reversed()` iterator per internal node. A later pass keeps the same direct
+  traversal but caches clade ids within the hot loops, switches repeated membership
   checks to single `dict.get()` lookups, and builds internal-node output from
   child lists instead of calling `is_terminal()` for every clade. Later
   fallback passes build `Phenogram` and `ContMap` `_iter_postorder` helpers by

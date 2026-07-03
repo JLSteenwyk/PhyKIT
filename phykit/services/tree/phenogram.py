@@ -227,10 +227,19 @@ class Phenogram(Tree):
     @staticmethod
     def _iter_preorder(root):
         stack = [root]
+        append = stack.append
+        pop = stack.pop
         while stack:
-            clade = stack.pop()
+            clade = pop()
             yield clade
-            stack.extend(reversed(clade.clades))
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 2:
+                append(children[1])
+                append(children[0])
+            elif child_count:
+                for index in range(child_count - 1, -1, -1):
+                    append(children[index])
 
     @staticmethod
     def _iter_postorder(root):
