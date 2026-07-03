@@ -40,6 +40,15 @@ assert "phykit.helpers.plot_config" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_lazy_numpy_proxy_caches_resolved_attributes(self):
+        lazy_np = saturation_module._LazyNumpy()
+
+        first = lazy_np.count_nonzero
+        second = lazy_np.count_nonzero
+
+        self.assertIs(first, second)
+        self.assertIs(lazy_np.__dict__["count_nonzero"], first)
+
     def setUp(self):
         """Set up test fixtures"""
         self.args = Namespace(

@@ -1751,6 +1751,7 @@ Results:
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058916s / 0.004838s / 0.051696s | 0.033481s / 0.000000334s / 0.045077s | 1.76x / 14490.77x / 1.15x |
 | `Saturation` local identical helper iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `Saturation._constant_uncorrected_distance_for_identical_sequences` raw-identical normalization scan | 500k raw-identical requested tips with gappy DNA symbols, side-by-side previous eager uppercase tip dictionary and sequence list | 0.824100s | 0.671471s | 1.23x |
+| `Saturation._calculate_uncorrected_distances_matrix` cached lazy NumPy attributes | 600 taxa x 900 sites, 179700 ordered pairwise gappy matrix distances after warmup | 0.589004s | 0.494819s | 1.19x |
 | `Tree.calculate_pairwise_tip_distances_fast` distances-only upper-triangle mode | 2500-tip star tree, 3,123,750 requested upper-triangle pairwise distances, omitting duplicate cached pair tuples for `Saturation` standard-order callers | 5.901164s | 5.113895s | 1.15x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
@@ -6354,7 +6355,9 @@ Profiling summary:
   into one newline-joined print while preserving the same stdout text. The
   saturation scatter trendline extent now uses the ndarray maximum for small
   plotted distance vectors while preserving the generic NumPy path for larger
-  vectors.
+  vectors. The lazy NumPy proxy now caches resolved attributes, reducing
+  repeated import/getattr dispatch in the matrix-distance path while preserving
+  lazy import behavior and module-level patch points.
 - The `saturation` command now keeps the module-level `mp.cpu_count` and
   `mp.Pool` access points through a lazy proxy and imports `functools.partial`
   only when the large-workload multiprocessing branch is used, so command
