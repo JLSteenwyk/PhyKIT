@@ -36,6 +36,8 @@ def _find_parent_depth_lca(targets, parent_by_clade, depth_by_clade):
             lca = parent_by_clade[lca]
             current = parent_by_clade[current]
             lca_depth -= 1
+        if lca_depth == 0:
+            return lca
 
     return lca
 

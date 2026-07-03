@@ -1377,6 +1377,7 @@ Results:
 | `LastCommonAncestorSubtree._find_lca_subtree` single-taxon direct lookup | balanced 32768-tip tree, rightmost single terminal lookup, side-by-side previous parent-depth path | 1.893951s | 0.781276s | 2.42x |
 | `LastCommonAncestorSubtree.run` cached read-only tree setup | balanced 4096-tip cached tree, 1024-tip MRCA subtree lookup with output stubbed | 0.039566s | 0.008036s | 4.92x |
 | `LastCommonAncestorSubtree.run` no-copy large-tree LCA setup | balanced 32768-tip cached tree, opposite terminal MRCA lookup, side-by-side previous pickle-copy `common_ancestor` core | 0.182315s | 0.013709s | 13.30x |
+| `LastCommonAncestorSubtree._find_parent_depth_lca` root early return | balanced 65536-tip tree, 4096 dispersed target clades whose MRCA reaches root after the first pair | 0.045236s | 0.000006875s | 6579.81x |
 | `last_common_ancestor_subtree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006235s | 0.005155s | 1.21x |
 | `last_common_ancestor_subtree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006208s | 0.004222s | 1.47x |
 | `last_common_ancestor_subtree` module import without eager file helper | median cold subprocess import after lazy taxa-list reader wrapper | 0.044738s | 0.022908s | 1.95x |
@@ -5426,6 +5427,8 @@ Profiling summary:
   terminal clade from a direct traversal without building parent/depth maps,
   while missing taxa and nonstandard trees still fall back through
   `common_ancestor()`.
+  The parent-depth LCA merge now returns immediately once the running LCA reaches
+  depth zero, because no remaining target can move the MRCA below the root.
   JSON output now also counts subtree terminals with the shared direct terminal
   count helper before falling back to `count_terminals()`.
   The cached read-only setup follow-up switches `run()` to

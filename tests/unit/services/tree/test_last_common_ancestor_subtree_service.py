@@ -103,6 +103,32 @@ def test_find_parent_depth_lca_does_not_slice_targets():
     )
 
 
+def test_find_parent_depth_lca_returns_when_lca_reaches_root():
+    root = object()
+    left = object()
+    right = object()
+    unindexed_target = object()
+    parent_by_clade = {
+        root: None,
+        left: root,
+        right: root,
+    }
+    depth_by_clade = {
+        root: 0,
+        left: 1,
+        right: 1,
+    }
+
+    assert (
+        module._find_parent_depth_lca(
+            [left, right, unindexed_target],
+            parent_by_clade,
+            depth_by_clade,
+        )
+        is root
+    )
+
+
 class TestLastCommonAncestorSubtree:
     def test_init_sets_expected_attrs(self, args):
         service = LastCommonAncestorSubtree(args)
