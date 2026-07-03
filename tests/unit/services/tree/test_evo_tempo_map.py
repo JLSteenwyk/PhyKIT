@@ -11,6 +11,7 @@ from mock import patch
 from argparse import Namespace
 
 from phykit.errors import PhykitUserError
+import phykit.services.tree.evo_tempo_map as evo_tempo_map_module
 
 TREE_SIMPLE = "tests/sample_files/tree_simple.tre"
 GENE_TREES = "tests/sample_files/gene_trees_simple.nwk"
@@ -75,6 +76,17 @@ def test_module_import_does_not_import_scipy_stats(monkeypatch):
                 setattr(parent, child_name, previous)
             elif getattr(parent, child_name, None) is imported:
                 delattr(parent, child_name)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = evo_tempo_map_module._LazyNumpy()
+
+    first_median = lazy_np.median
+    second_median = lazy_np.median
+
+    assert first_median is second_median
+    assert lazy_np.__dict__["median"] is first_median
+    assert lazy_np._module is not None
 
 
 class TestProcessArgs:

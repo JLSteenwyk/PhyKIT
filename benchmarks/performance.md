@@ -1078,6 +1078,7 @@ Results:
 | `EvoTempoMap._get_four_groups` multifurcation child union | 500 cached branch decompositions over 16x16x32 / 64x64x16 / 128x128x8 wide node/sibling groups, side-by-side previous repeated immutable-set union path | 0.252065s / 0.745556s / 1.417403s | 0.187053s / 0.109707s / 0.459360s | 1.35x / 6.80x / 3.09x |
 | `EvoTempoMap._compute_treeness` batch | 40 balanced 4096-tip gene trees, helper-only treeness values | 0.9191s | 0.0330s | 27.8x |
 | `EvoTempoMap._test_branch` insufficient-data summaries | 10k singleton concordant vs singleton discordant length summaries, identical early-return stats | 0.676468s | 0.022739s | 29.75x |
+| `EvoTempoMap._test_branch` permutation median dispatch | 64 concordant and 64 discordant branch lengths, 1000 seeded permutations with Mann-Whitney stubbed, side-by-side previous repeated `np.median` and RNG `shuffle` lookup path, identical result | 0.156104s | 0.073971s | 2.11x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |
 | `EvoTempoMap._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.629815s | 0.495479s | 1.27x |
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |

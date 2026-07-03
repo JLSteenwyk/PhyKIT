@@ -29,10 +29,19 @@ def _mannwhitneyu(x, y, *, alternative):
 
 
 class _LazyNumpy:
-    def __getattr__(self, name):
-        import numpy as _np
+    _module = None
 
-        return getattr(_np, name)
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
 
 
 class _LazyPhylo:
@@ -843,17 +852,19 @@ class EvoTempoMap(Tree):
         result["mann_whitney_p"] = float(mw_p)
 
         # Permutation test on difference in medians
-        observed_diff = abs(float(np.median(conc)) - float(np.median(disc)))
+        median = np.median
+        observed_diff = abs(float(median(conc)) - float(median(disc)))
         combined = np.concatenate([conc, disc])
         n_conc = len(conc)
         rng = np.random.default_rng(42)
+        shuffle = rng.shuffle
 
         count = 0
         for _ in range(n_permutations):
-            rng.shuffle(combined)
+            shuffle(combined)
             perm_conc = combined[:n_conc]
             perm_disc = combined[n_conc:]
-            perm_diff = abs(float(np.median(perm_conc)) - float(np.median(perm_disc)))
+            perm_diff = abs(float(median(perm_conc)) - float(median(perm_disc)))
             if perm_diff >= observed_diff:
                 count += 1
 
