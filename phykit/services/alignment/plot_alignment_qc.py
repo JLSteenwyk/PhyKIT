@@ -122,6 +122,7 @@ class PlotAlignmentQC(Alignment):
             if has_flagged_taxa
             else np.zeros(n_rows, dtype=bool)
         )
+        nan = np.nan
 
         if has_flagged_taxa:
             for idx, row in enumerate(rows):
@@ -133,7 +134,7 @@ class PlotAlignmentQC(Alignment):
                 composition_distances[idx] = row["composition_distance"]
                 long_branch_proxy = row["long_branch_proxy"]
                 long_branch_proxies[idx] = (
-                    np.nan if long_branch_proxy is None else long_branch_proxy
+                    nan if long_branch_proxy is None else long_branch_proxy
                 )
                 rcvt[idx] = row["rcvt"]
                 entropy_burden[idx] = row["entropy_burden"]
@@ -145,7 +146,7 @@ class PlotAlignmentQC(Alignment):
                 composition_distances[idx] = row["composition_distance"]
                 long_branch_proxy = row["long_branch_proxy"]
                 long_branch_proxies[idx] = (
-                    np.nan if long_branch_proxy is None else long_branch_proxy
+                    nan if long_branch_proxy is None else long_branch_proxy
                 )
                 rcvt[idx] = row["rcvt"]
                 entropy_burden[idx] = row["entropy_burden"]

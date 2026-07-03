@@ -213,6 +213,45 @@ class TestPlotAlignmentQC:
             np.array([0.05, 0.07]),
         )
 
+    def test_prepare_plot_arrays_resolves_nan_once_per_call(self, monkeypatch):
+        class CountingNumpy:
+            def __init__(self, module):
+                self._module = module
+                self.nan_accesses = 0
+
+            def __getattr__(self, name):
+                if name == "nan":
+                    self.nan_accesses += 1
+                return getattr(self._module, name)
+
+        rows = [
+            {
+                "taxon": f"t{idx}",
+                "occupancy": 0.9,
+                "gap_rate": 0.1,
+                "composition_distance": 0.2,
+                "long_branch_proxy": None,
+                "rcvt": 0.04,
+                "entropy_burden": 0.05,
+            }
+            for idx in range(5)
+        ]
+        counting_np = CountingNumpy(np)
+        monkeypatch.setattr(plot_alignment_qc_module, "np", counting_np)
+
+        arrays = PlotAlignmentQC._prepare_plot_arrays(
+            rows,
+            [{"taxon": "t1"}],
+            ["long_branch_proxy"],
+        )
+
+        assert counting_np.nan_accesses == 1
+        np.testing.assert_allclose(
+            arrays["long_branch_proxies"],
+            np.full(5, np.nan),
+            equal_nan=True,
+        )
+
     def test_composition_distance_panel_batches_scatter_calls(self):
         class FakeAxes:
             def __init__(self):
