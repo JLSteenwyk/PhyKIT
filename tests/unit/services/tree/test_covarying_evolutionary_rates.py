@@ -1101,6 +1101,21 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         payload = mock_json.call_args.args[0]
         self.assertTrue(payload["verbose"])
         self.assertEqual(payload["rows"], payload["branches"])
+        self.assertEqual(
+            payload["rows"],
+            [
+                {
+                    "tree_zero_rate": -1.0,
+                    "tree_one_rate": -1.0,
+                    "branch": "a",
+                },
+                {
+                    "tree_zero_rate": 1.0,
+                    "tree_one_rate": 1.0,
+                    "branch": "b",
+                },
+            ],
+        )
         self.assertEqual(payload["plot_output"], "cover.png")
 
     @patch("phykit.services.tree.covarying_evolutionary_rates.print_json")

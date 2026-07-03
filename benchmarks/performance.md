@@ -1370,6 +1370,7 @@ Results:
 | `covarying_evolutionary_rates` module import without eager pickle/plot config | cold subprocess import after lazy pickle proxy and localized `PlotConfig` import | 0.035961s | 0.025588s | 1.41x |
 | `covarying_evolutionary_rates` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007304s | 0.005600s | 1.30x |
 | `CovaryingEvolutionaryRates.run` verbose text output | 100k verbose branch rows, captured stdout and identical text | 0.095201s | 0.082940s | 1.15x |
+| `CovaryingEvolutionaryRates.run` verbose JSON row assembly | 1k / 100k / 300k verbose branch rows, identical payload, side-by-side previous `dict(...)` row construction | 0.000624s / 0.161772s / 0.496943s | 0.000624s / 0.107678s / 0.354702s | 1.00x / 1.50x / 1.40x |
 | `LastCommonAncestorSubtree.run` | balanced 4096-tip tree, write 1024-tip MRCA subtree | 0.2959s | 0.2702s | 1.1x |
 | `LastCommonAncestorSubtree.run` LCA lookup | balanced 4096-tip tree, 1024-tip MRCA subtree lookup with output stubbed | 0.2210s | 0.0320s | 6.9x |
 | `LastCommonAncestorSubtree._find_lca_subtree` one-pass direct lookup | balanced 4096-tip tree, 1024-tip MRCA subtree lookup | 0.0207s | 0.0019s | 10.9x |

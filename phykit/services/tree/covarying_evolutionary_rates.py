@@ -201,27 +201,27 @@ class CovaryingEvolutionaryRates(Tree):
             if self.json_output:
                 if self.verbose:
                     rows = [
-                        dict(
-                            tree_zero_rate=round(float(val_zero), 4),
-                            tree_one_rate=round(float(val_one), 4),
-                            branch=";".join(tip_name),
-                        )
+                        {
+                            "tree_zero_rate": round(float(val_zero), 4),
+                            "tree_one_rate": round(float(val_one), 4),
+                            "branch": ";".join(tip_name),
+                        }
                         for val_zero, val_one, tip_name in zip(
                             tree_zero_corr_branch_lengths,
                             tree_one_corr_branch_lengths,
                             tip_names,
                         )
                     ]
-                    payload = dict(verbose=True, rows=rows, branches=rows)
+                    payload = {"verbose": True, "rows": rows, "branches": rows}
                     if self.plot:
                         payload["plot_output"] = self.plot_output
                     print_json(payload)
                 else:
-                    payload = dict(
-                        verbose=False,
-                        correlation=round(float(corr[0]), 4),
-                        p_value=round(float(corr[1]), 6),
-                    )
+                    payload = {
+                        "verbose": False,
+                        "correlation": round(float(corr[0]), 4),
+                        "p_value": round(float(corr[1]), 6),
+                    }
                     if self.plot:
                         payload["plot_output"] = self.plot_output
                     print_json(payload)
