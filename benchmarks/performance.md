@@ -802,6 +802,7 @@ Results:
 | `TipToTipDistance.calculate_all_pairwise_distances` | balanced tree with 220 tips | 4.3503s | 0.0269s | 161.7x |
 | `TipToTipDistance.calculate_all_pairwise_distances` tip-name setup | balanced 65536-tip tree, all-pairs terminal-name extraction | 0.129071s | 0.017473s | 7.39x |
 | `TipToTipDistance.calculate_all_pairwise_distances` row construction | 500k mocked fast pair/distance rows, identical row dictionaries | 0.908584s | 0.661274s | 1.37x |
+| `TipToTipDistance.calculate_all_pairwise_distances` fallback local bindings | 1000 fallback tips, 499500 mocked distance rows, identical row dictionaries, side-by-side previous repeated `TreeMixin.distance` lookup | 0.631457s | 0.555425s | 1.14x |
 | `Tree.calculate_pairwise_tip_distances_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 all-pairs combo/distance rows, copied old path baseline | 6.667369s | 0.862153s | 7.73x |
 | `TipToTipDistance._build_distance_matrix` sorted all-pairs heatmap fill | 2500 taxa, 3,123,750 sorted upper-triangle all-pairs rows, side-by-side previous taxon-index dictionary fill | 6.848783s | 4.044856s | 1.69x |
 | `TipToTipDistance._build_distance_matrix` lower sorted-fill threshold | sorted upper-triangle all-pairs rows for 650 / 800 / 1200 / 1600 taxa, side-by-side previous dictionary fill path below the old 2M-row cutoff | 0.109926s / 0.649215s / 1.254830s / 2.677450s | 0.044824s / 0.067757s / 0.153729s / 1.186269s | 2.45x / 9.58x / 8.16x / 2.26x |
@@ -4406,7 +4407,10 @@ Profiling summary:
   All-pairs tip-name setup now also uses the shared direct terminal-name
   traversal for parsed trees before entering the cached pairwise distance core.
   All-pairs row materialization now uses literal dictionaries instead of
-  repeated `dict(...)` calls for JSON and plotting rows.
+  repeated `dict(...)` calls for JSON and plotting rows. The all-pairs fallback
+  formatter now binds `TreeMixin.distance`, `round`, `float`, and row append
+  locally before the pair loop, reducing dispatch overhead when the cached fast
+  all-pairs helper cannot handle a tree.
   TipToTipDistance all-pairs text output now batches pairwise rows into one
   newline-joined print while preserving plot status output and stdout text.
   Text-only all-pairs output also formats the fast pair/distance series

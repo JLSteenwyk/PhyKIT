@@ -293,12 +293,16 @@ class TipToTipDistance(Tree):
             ]
 
         rows = []
+        append = rows.append
+        distance = TreeMixin.distance
+        round_ = round
+        float_ = float
         for taxon_a, taxon_b in itertools.combinations(tips, 2):
-            rows.append(
+            append(
                 {
                     "taxon_a": taxon_a,
                     "taxon_b": taxon_b,
-                    "tip_to_tip_distance": round(float(TreeMixin.distance(tree_zero, taxon_a, taxon_b)), 4),
+                    "tip_to_tip_distance": round_(float_(distance(tree_zero, taxon_a, taxon_b)), 4),
                 }
             )
         return rows
