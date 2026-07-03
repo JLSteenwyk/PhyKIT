@@ -929,6 +929,7 @@ Results:
 | `TreeSpace._auto_detect_k` normalized Laplacian scaling | 900-item synthetic affinity matrix, diagonal scaling step | 0.029895s | 0.002207s | 13.5x |
 | `TreeSpace._auto_detect_k` normalized Laplacian row sums | 900 / 2500 / 5000-item synthetic affinity matrices, side-by-side previous `np.sum(..., axis=1)` degree-vector reduction | 0.000159105s / 0.003991750s / 0.015878400s | 0.000153917s / 0.001476250s / 0.008788600s | 1.03x / 2.70x / 1.81x |
 | `TreeSpace._spectral_cluster` condensed distance setup | 2500 x 2500 symmetric distance matrix, side-by-side previous triangular-index upper-distance gather for bandwidth median | 0.340237s | 0.207055s | 1.64x |
+| `TreeSpace`/`SpectralDiscordance._spectral_cluster` zero-median bandwidth mean | nonzero condensed-distance vectors sized 10 / 100 / 1000 / 10k / 100k / 1M, side-by-side previous `np.mean(nonzero)` fallback | 0.000005222s / 0.000003561s / 0.000003346s / 0.000005616s / 0.000041043s / 0.000270817s | 0.000003885s / 0.000002596s / 0.000002997s / 0.000006159s / 0.000032244s / 0.000188908s | 1.34x / 1.37x / 1.12x / 0.91x / 1.27x / 1.43x |
 | `TreeSpace._print_text_output` batched cluster rows | 100k cluster rows, captured stdout and identical text | 0.026882s | 0.016951s | 1.59x |
 | `TreeSpace` JSON coordinate payload rounding | 50k / 100k / 300k 2-D coordinate rows, identical rounded coordinate payload | 0.169128s / 0.370798s / 0.845591s | 0.047852s / 0.055171s / 0.127369s | 3.53x / 6.72x / 6.64x |
 | `TreeSpace._write_distance_matrix` row-slice CSV formatting | 800 x 800 NumPy distance matrix, identical six-decimal CSV text | 0.199160s | 0.169827s | 1.17x |
@@ -4679,7 +4680,10 @@ Profiling summary:
   degree-vector setup now uses the matrix's own row-sum reduction, preserving
   the same normalized Laplacian while avoiding generic NumPy reduction dispatch.
   `einsum` was not used for the row sums because the largest 5000-row affinity
-  benchmark regressed. A startup pass defers direct NumPy imports and Bio.Phylo
+  benchmark regressed. The spectral-clustering zero-median bandwidth fallback
+  now reduces the already-materialized nonzero distance vector directly through
+  its ndarray method, avoiding generic `np.mean` dispatch while preserving the
+  same fallback bandwidth. A startup pass defers direct NumPy imports and Bio.Phylo
   loading behind lazy proxies, so command discovery avoids array and
   tree-format parser startup until tree parsing, distance-matrix construction,
   clustering, or plotting runs. A
@@ -4718,7 +4722,8 @@ Profiling summary:
   half instead of sorting both halves, preserving the documented sorted
   lexicographic tiebreak. Spectral clustering uses the same direct
   normalized-Laplacian scaling as TreeSpace, including ndarray row sums for the
-  degree vector. Eigenvector row normalization now computes row L2 norms with
+  degree vector. The zero-median bandwidth fallback also uses the same direct
+  ndarray mean on the nonzero condensed-distance vector. Eigenvector row normalization now computes row L2 norms with
   an `einsum` reduction before the square root, avoiding `np.linalg.norm`
   dispatch while preserving normalized rows. K-means++
   initialization now computes each new center's squared distances with one

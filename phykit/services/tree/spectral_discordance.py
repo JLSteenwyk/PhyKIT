@@ -914,7 +914,7 @@ class SpectralDiscordance(Tree):
         sigma = float(np.median(condensed_dists))
         if sigma == 0:
             nonzero = condensed_dists[condensed_dists > 0]
-            sigma = float(np.mean(nonzero)) if nonzero.size > 0 else 1.0
+            sigma = float(nonzero.mean()) if nonzero.size > 0 else 1.0
 
         W = np.exp(-dists ** 2 / (2 * sigma ** 2))
         np.fill_diagonal(W, W.diagonal() + 1e-10)

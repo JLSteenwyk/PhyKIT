@@ -622,7 +622,7 @@ class TreeSpace(Tree):
         med = float(np.median(upper_tri))
         if med == 0:
             nonzero = upper_tri[upper_tri > 0]
-            med = float(np.mean(nonzero)) if len(nonzero) > 0 else 1.0
+            med = float(nonzero.mean()) if len(nonzero) > 0 else 1.0
 
         affinity = np.exp(-(dist_matrix ** 2) / (2 * med ** 2))
         np.fill_diagonal(affinity, 1.0)

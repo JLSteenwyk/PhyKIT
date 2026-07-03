@@ -686,6 +686,35 @@ class TestSpectralClustering:
         assert K == 2
         assert eigengaps.size > 0
 
+    def test_spectral_cluster_zero_median_uses_direct_nonzero_mean(
+        self, default_args, monkeypatch
+    ):
+        svc = SpectralDiscordance(default_args)
+        X_centered = np.array(
+            [
+                [0.0, 0.0],
+                [0.0, 0.0],
+                [0.0, 0.0],
+                [4.0, 0.0],
+            ]
+        )
+
+        def fail_mean(*_args, **_kwargs):
+            raise AssertionError("zero-median fallback should use ndarray.mean")
+
+        monkeypatch.setattr(
+            spectral_discordance_module.np,
+            "mean",
+            fail_mean,
+            raising=False,
+        )
+
+        labels, K, eigengaps = svc._spectral_cluster(X_centered, n_clusters=2)
+
+        assert len(labels) == X_centered.shape[0]
+        assert K == 2
+        assert eigengaps.size > 0
+
     def test_spectral_cluster_row_normalization_avoids_linalg_norm(
         self, default_args, monkeypatch
     ):

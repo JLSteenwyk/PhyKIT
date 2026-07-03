@@ -661,6 +661,29 @@ class TestClustering:
         assert len(labels) == 4
         assert k == 2
 
+    def test_spectral_cluster_zero_median_uses_direct_nonzero_mean(
+        self, default_args, monkeypatch
+    ):
+        svc = TreeSpace(default_args)
+        dist = np.array(
+            [
+                [0.0, 0.0, 0.0, 4.0],
+                [0.0, 0.0, 0.0, 4.0],
+                [0.0, 0.0, 0.0, 4.0],
+                [4.0, 4.0, 4.0, 0.0],
+            ]
+        )
+
+        def fail_mean(*_args, **_kwargs):
+            raise AssertionError("zero-median fallback should use ndarray.mean")
+
+        monkeypatch.setattr(tree_space_module.np, "mean", fail_mean, raising=False)
+
+        labels, k = svc._spectral_cluster(dist, 2, 42)
+
+        assert len(labels) == 4
+        assert k == 2
+
     def test_auto_k_detection(self, default_args):
         svc = TreeSpace(default_args)
         trees = svc._parse_trees_from_source(GENE_TREES)
