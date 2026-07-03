@@ -1335,6 +1335,7 @@ Results:
 | `NeighborNet._compute_split_directions` one-pass split centers | 500 circular splits over 2000 taxa with cached gap positions, side-by-side previous two generator sums | 0.053674s | 0.044812s | 1.20x |
 | `NeighborNet` circular split filtering plus direction setup | 8192-taxon circular ordering, mixed 1490 circular/non-circular split checks with identical 745 accepted direction vectors | 0.631656s | 0.345524s | 1.83x |
 | `NeighborNet._compute_distance_matrix_from_equal_length_sequences` clean ASCII direct comparison | 260 taxa x 6000 sites, alphabet `ACGT`, p-distance matrix | 0.161045s | 0.120611s | 1.34x |
+| `NeighborNet._compute_distance_matrix_from_equal_length_sequences` clean direct validity-mask bypass | 120 x 3000 / 260 x 6000 clean ASCII DNA sites, p-distance matrix, side-by-side previous `np.isin` validity-mask guard | 0.059816s / 0.664739s | 0.042501s / 0.532415s | 1.41x / 1.25x |
 | `NeighborNet._compute_distance_matrix_from_equal_length_sequences` cached lazy NumPy attributes | 260 taxa x 6000 clean ASCII sites, repeated p-distance matrix builds after warmup | 1.368127s | 1.169955s | 1.17x |
 | `NeighborNet._read_distance_matrix` row-slice CSV fill | 800 x 800 labeled CSV distance matrix, identical taxa and matrix values | 0.124120s | 0.094420s | 1.31x |
 | `NeighborNet._read_distance_matrix` simple CSV `fromstring` parser | 1200 x 1200 labeled CSV distance matrix, identical taxa and matrix values, quoted-field fallback preserved | 0.215591s | 0.126250s | 1.71x |
@@ -5375,9 +5376,10 @@ Profiling summary:
   pairwise fallback. A later pass switched those dense count products from
   integer masks to float masks so NumPy can use the faster BLAS path while
   preserving the same count values. Clean, longer equal-length ASCII alignments
-  now use direct blockwise sequence comparisons after the existing validity mask
-  proves every cell is comparable; alignments with gaps or ambiguous symbols
-  stay on the per-symbol match-product path.
+  now use direct blockwise sequence comparisons after a byte scan proves there
+  are no skip symbols, avoiding the previous full validity-mask allocation;
+  alignments with gaps or ambiguous symbols stay on the per-symbol
+  match-product path.
 - `NeighborNet._read_alignment` baseline time materialized `SeqRecord` objects
   before immediately converting them into a taxon list and uppercase sequence
   dictionary. The optimized loader uses `SimpleFastaParser`, preserving taxa

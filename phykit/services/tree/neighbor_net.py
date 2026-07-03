@@ -148,18 +148,20 @@ class NeighborNet:
     ) -> np.ndarray:
         n_taxa = len(taxa)
         aln_len = len(seqs[taxa[0]]) if taxa else 0
+        alignment_bytes = "".join(seqs[taxon] for taxon in taxa).encode("ascii")
         seq_matrix = np.frombuffer(
-            "".join(seqs[taxon] for taxon in taxa).encode("ascii"),
+            alignment_bytes,
             dtype=np.uint8,
         ).reshape(n_taxa, aln_len)
-        skip = np.frombuffer(_DISTANCE_SKIP_BYTES, dtype=np.uint8)
-        valid = ~np.isin(seq_matrix, skip)
         if (
             aln_len >= _NO_SKIP_DIRECT_MIN_LENGTH
             and n_taxa <= _NO_SKIP_DIRECT_MAX_TAXA
-            and bool(valid.all())
+            and not any(code in alignment_bytes for code in _DISTANCE_SKIP_BYTES)
         ):
             return self._compute_distance_matrix_from_no_skip_matrix(seq_matrix)
+
+        skip = np.frombuffer(_DISTANCE_SKIP_BYTES, dtype=np.uint8)
+        valid = ~np.isin(seq_matrix, skip)
 
         valid_float = valid.astype(np.float64, copy=False)
         compared = valid_float @ valid_float.T

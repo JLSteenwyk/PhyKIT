@@ -262,6 +262,13 @@ class TestDistanceMatrixFromAlignment:
             service,
             "_compute_distance_matrix_from_no_skip_matrix",
         )
+        mocker.patch.object(
+            neighbor_net_module.np,
+            "isin",
+            side_effect=AssertionError(
+                "clean direct comparison should skip validity-mask setup"
+            ),
+        )
 
         observed = service._compute_distance_matrix_from_equal_length_sequences(
             ["A", "B", "C"],
