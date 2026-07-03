@@ -2208,6 +2208,7 @@ Results:
 | `AncestralReconstruction._get_descendant_tips` direct clade traversal | balanced 32768-tip tree, descendant-tip lists for every internal node | 0.935165s | 0.117913s | 7.93x |
 | `AncestralReconstruction._discrete_marginal_posteriors` transition cache | balanced 2048-tip tree, 3 states, repeated unit branch length | 0.310393s | 0.104882s | 2.96x |
 | `AncestralReconstruction._discrete_marginal_posteriors` ndarray normalization sums | 3-state posterior vectors, per-node upward/posterior normalization reductions | 0.000006715s | 0.000002635s | 2.55x |
+| `AncestralReconstruction._discrete_marginal_posteriors` cached lazy NumPy attributes | balanced 2048 / 8192-tip trees, 3 states, repeated posterior passes after proxy warmup | 0.106211s / 0.627389s | 0.065187s / 0.542192s | 1.63x / 1.16x |
 | `AncestralReconstruction._format_discrete_result` Q-matrix row iteration | 32-state synthetic Q matrix, nested JSON payload | 0.000128s | 0.000086s | 1.48x |
 | `AncestralReconstruction._print_text_output` batched continuous table output | synthetic tree with 100k internal-node estimate rows, captured stdout and identical text | 0.188848s | 0.175623s | 1.08x |
 | `AncestralReconstruction._print_discrete_text_output` descendant counts | balanced 32768-tip tree, precomputed posteriors, stdout stubbed | 0.323206s | 0.131654s | 2.45x |
@@ -7473,7 +7474,9 @@ Profiling summary:
   fallback while avoiding full inverse materialization in normal continuous ASR
   runs. A later parent-map helper pass localizes stack operations and pushes
   children directly because the result is an id-to-parent map rather than an
-  ordered traversal.
+  ordered traversal. The discrete marginal posterior path now uses cached lazy
+  NumPy attributes, avoiding repeated proxy imports for per-node `ones` fallback
+  vectors and other array helpers after NumPy is first resolved.
 - `AncestralReconstruction._print_text_output` now batches the continuous ASR
   report header and internal-node estimate rows into one newline-joined print
   while preserving exact stdout text. Discrete text output now precomputes
