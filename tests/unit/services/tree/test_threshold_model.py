@@ -79,6 +79,16 @@ assert module._CHO_SOLVE is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = threshold_model_module._LazyNumpy()
+
+    sort_attr = lazy_np.sort
+
+    assert lazy_np.__dict__["sort"] is sort_attr
+    assert lazy_np.sort is sort_attr
+    assert lazy_np._module is not None
+
+
 def test_vcv_inverse_and_logdet_cholesky_matches_inverse_and_slogdet():
     rng = np.random.default_rng(20260628)
     A = rng.normal(size=(8, 8))

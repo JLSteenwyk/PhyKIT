@@ -2627,6 +2627,7 @@ Results:
 | `ThresholdModel._initialize_liabilities` vectorized discrete liabilities | 20k binary discrete taxa, scalar SciPy stream preserved | 2.035507s | 0.005099s | 399.2x |
 | `ThresholdModel._summarize_posterior` single-sort median/HPD | five 500k-sample posterior traces, identical summary statistics | 0.317456s | 0.248927s | 1.28x |
 | `ThresholdModel._summarize_posterior` small-trace mean reductions | five 1k-sample posterior traces, side-by-side previous `np.mean` wrapper after single-sort summary setup | 0.337282s | 0.166087s | 2.03x |
+| `ThresholdModel._summarize_posterior` cached lazy NumPy proxy | five 100-sample / five 1k-sample posterior traces, side-by-side previous uncached lazy proxy, identical summary dictionaries | 0.000068036s / 0.000411293s | 0.000058205s / 0.000220975s | 1.17x / 1.86x |
 | `ThresholdModel._output_text` batched summary output | 100k captured threshold-model text summaries, identical stdout text | 0.414422s | 0.337860s | 1.23x |
 | `ThresholdModel._output_text` single-report formatting | 100k captured threshold-model text summaries, identical stdout text, side-by-side previous newline-joined list comparison | 0.301403s | 0.285244s | 1.06x |
 | `ThresholdModel._output_text` percent report template | 100k captured threshold-model text summaries, identical stdout text, side-by-side previous f-string report formatter comparison | 0.333694s | 0.258711s | 1.29x |
@@ -8608,7 +8609,10 @@ Profiling summary:
   preserving the same scalar while avoiding a copied diagonal array. Posterior
   summaries and plots now use each small NumPy trace's `mean()` method while
   keeping the generic `np.mean` path for larger traces, avoiding lazy proxy
-  dispatch on common sampled-chain summaries.
+  dispatch on common sampled-chain summaries. The threshold-model lazy NumPy
+  proxy now also caches the imported module and resolved attributes after first
+  use, preserving cold-import behavior while avoiding repeated proxy resolution
+  during posterior sorting and HPD calculations.
   `ThresholdModel.run` now
   reads the cached tree directly for validation and copies only when parsed
   trait taxa omit one or more tree tips before pruning, so all-shared trait
