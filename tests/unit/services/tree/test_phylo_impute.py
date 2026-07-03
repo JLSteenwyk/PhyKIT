@@ -66,6 +66,16 @@ assert "scipy.linalg" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = phylo_impute_module._LazyNumpy()
+
+    arange_attr = lazy_np.arange
+
+    assert lazy_np.__dict__["arange"] is arange_attr
+    assert lazy_np.arange is arange_attr
+    assert lazy_np._module is not None
+
+
 def _make_args(output_path, **overrides):
     defaults = dict(
         tree=TREE_SIMPLE,

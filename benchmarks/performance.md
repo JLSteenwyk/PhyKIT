@@ -2368,6 +2368,7 @@ Results:
 | `PhyloImpute._impute_taxon_cholesky` combined phylogenetic RHS solve | 120 repeated 260-taxon SPD VCV x 8 traits, 3 missing traits for one taxon, SciPy already warm | 0.150362s | 0.144876s | 1.04x |
 | `PhyloImpute._impute_taxon_inverse` cached trait context | 180 taxa x 80 traits, 60 missing traits for one taxon | 0.265825s | 0.187101s | 1.4x |
 | `PhyloImpute._other_taxon_indices` vectorized index construction | 140 repeated all-but-one index vectors over 40k taxa, side-by-side previous list comprehension plus `np.asarray` setup | 2.176238s | 0.010129s | 214.86x |
+| `PhyloImpute._other_taxon_indices` cached lazy NumPy proxy | repeated all-but-one index batches over 4000 taxa, side-by-side previous uncached lazy proxy, identical total index counts | 0.000041170s | 0.000021001s | 1.96x |
 | `PhyloImpute.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, VCV build, complete-case stats, and output mocked | 0.395725s | 0.000771s | 513.26x |
 | `PhyloImpute.run` missing-trait row scan | 80k taxa x 80 traits, 2% rows with 3 missing traits, side-by-side previous per-row `np.isnan` scans and list conversions | 0.124522s | 0.010385s | 11.99x |
 | `PhyloImpute.run` complete-case mask count | 80k-taxon complete-case boolean mask after missing-trait scan | 0.000053595s | 0.000005332s | 10.05x |
@@ -7876,7 +7877,10 @@ Profiling summary:
   ordered taxon list, the subset helper now returns the original names and data
   matrix before allocating membership sets. The replacement trait-table writer
   now formats each NumPy row directly, preserving taxon order and six-decimal
-  TSV output while avoiding repeated two-dimensional indexing. The run loop now reuses its initial
+  TSV output while avoiding repeated two-dimensional indexing. The lazy NumPy
+  proxy now caches the imported module and resolved attributes after first use,
+  preserving cold-import behavior while avoiding repeated proxy resolution in
+  per-taxon index construction and other imputation matrix setup. The run loop now reuses its initial
   missing-value mask for complete-case detection and per-taxon trait index
   selection, iterating only taxa with missing values and passing NumPy index
   arrays through to imputation instead of rebuilding scans and lists per row.
