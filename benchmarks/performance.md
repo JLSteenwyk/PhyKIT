@@ -884,6 +884,7 @@ Results:
 | `RobinsonFouldsDistance._get_all_bipartition_id_sets_direct` binary child union | balanced 32768-tip tree, compact rooted descendant split ids, side-by-side previous direct helper | 0.048783s | 0.039282s | 1.24x |
 | `RobinsonFouldsDistance._get_all_bipartitions_direct` reverse-preorder postorder | balanced 32768-tip tree, rooted descendant-set RF split extraction, side-by-side binary-union helper | 0.039855s | 0.034580s | 1.15x |
 | `RobinsonFouldsDistance._get_all_bipartition_id_sets_direct` reverse-preorder postorder | balanced 32768-tip tree, compact rooted descendant split ids, side-by-side binary-union helper | 0.037405s | 0.033784s | 1.11x |
+| `RobinsonFouldsDistance._get_all_bipartition_id_sets_direct` preorder child push | balanced 32768-tip synthetic tree, compact rooted descendant split ids, side-by-side previous `stack.extend(clade.clades)` preorder setup | 0.250958s | 0.214371s | 1.17x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` same-object shortcut | balanced 32768-tip tree compared to itself, side-by-side previous compact split-id path and unchanged RF normalization denominator | 1.189548s | 0.004597s | 258.79x |
 | `rf_distance` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.138859s | 0.043381s | 3.20x |
 | `rf_distance` module import without eager concurrent futures | cold subprocess import after lazy `ProcessPoolExecutor` proxy | 0.043023s | 0.025542s | 1.68x |
@@ -4604,7 +4605,9 @@ Profiling summary:
   directly for standard Bio.Phylo trees, with the original count method retained
   as fallback. Split extraction now also uses an iterative direct postorder walk
   for standard Bio.Phylo trees, retaining the previous `find_clades()` path for
-  nonstandard tree-like objects.
+  nonstandard tree-like objects. The compact split-id helper now pushes children
+  through localized stack operations instead of calling `stack.extend()` for
+  every internal node.
 - `KuhnerFelsensteinDistance.calculate_kf_distance` baseline time collected
   descendant terminal names with `clade.get_terminals()` for every non-root
   branch while building branch-score split maps. The optimized path reuses

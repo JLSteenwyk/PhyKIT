@@ -200,12 +200,22 @@ class RobinsonFouldsDistance(Tree):
         bipartitions: set[frozenset] = set()
         preorder = []
         stack = [root]
+        append_preorder = preorder.append
+        append_stack = stack.append
+        pop_stack = stack.pop
 
         try:
             while stack:
-                clade = stack.pop()
-                preorder.append(clade)
-                stack.extend(clade.clades)
+                clade = pop_stack()
+                append_preorder(clade)
+                children = clade.clades
+                child_count = len(children)
+                if child_count == 2:
+                    append_stack(children[0])
+                    append_stack(children[1])
+                elif child_count:
+                    for child in children:
+                        append_stack(child)
 
             for clade in reversed(preorder):
                 children = clade.clades
