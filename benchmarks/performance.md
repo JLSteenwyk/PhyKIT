@@ -2646,6 +2646,7 @@ Results:
 | `ouwie` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007878s | 0.006670s | 1.18x |
 | `ouwie` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006479s | 0.005000s | 1.30x |
 | `ouwie` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006873s | 0.004510s | 1.52x |
+| `OUwie` cached SciPy linalg wrappers | repeated tiny positive-definite `cho_factor` / `cho_solve` calls after SciPy warmup, side-by-side previous import-on-call wrappers | 0.000017747s / 0.000007729s | 0.000008398s / 0.000003955s | 2.11x / 1.95x |
 | `OUwie.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with trait/regime data | 0.0672s | 0.0077s | 8.7x |
 | `OUwie.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, regime parsing, model fitting, and output mocked; protective prune-copy retained | 1.174518s | 0.358352s | 3.28x |
 | `OUwie.run` all-shared read-only setup | balanced 32768-tip cached tree, trait/regime parsing, model fitting/output mocked | 0.292509s | 0.073640s | 3.97x |
@@ -8640,8 +8641,10 @@ Profiling summary:
   evaluation. A later repeated-likelihood pass solves `[1, x]` as one Cholesky
   right-hand side for BM1 and BMS likelihood helpers and derives the residual
   solve from those columns, avoiding two duplicate triangular solves per
-  positive-definite covariance evaluation. `OUwie.run` copied-tree pruning
-  setup now uses the shared
+  positive-definite covariance evaluation. The lazy SciPy linalg and optimizer
+  wrappers now cache resolved callables after first use, keeping module import
+  lazy while reducing wrapper overhead inside repeated Cholesky likelihood
+  evaluations. `OUwie.run` copied-tree pruning setup now uses the shared
   terminal-name traversal instead of materializing terminal clade objects.
   Cached read-only `OUwie.run` now avoids the extra cached tree copy before
   creating its protective copy for pruning. A later all-shared run-setup pass

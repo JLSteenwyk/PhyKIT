@@ -84,6 +84,67 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_repeated_scipy_wrapper_calls_cache_imported_callables(monkeypatch):
+    previous_cho_factor = ouwie_module._CHO_FACTOR
+    previous_cho_solve = ouwie_module._CHO_SOLVE
+    previous_minimize = ouwie_module._MINIMIZE
+    previous_minimize_scalar = ouwie_module._MINIMIZE_SCALAR
+    ouwie_module._CHO_FACTOR = None
+    ouwie_module._CHO_SOLVE = None
+    ouwie_module._MINIMIZE = None
+    ouwie_module._MINIMIZE_SCALAR = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+    scipy_optimize_imports = 0
+
+    class FakeScipyLinalg:
+        @staticmethod
+        def cho_factor(*args, **kwargs):
+            return "factor"
+
+        @staticmethod
+        def cho_solve(*args, **kwargs):
+            return "solve"
+
+    class FakeScipyOptimize:
+        @staticmethod
+        def minimize(*args, **kwargs):
+            return "minimize"
+
+        @staticmethod
+        def minimize_scalar(*args, **kwargs):
+            return "minimize_scalar"
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports, scipy_optimize_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+            return FakeScipyLinalg
+        if name == "scipy.optimize":
+            scipy_optimize_imports += 1
+            return FakeScipyOptimize
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        assert ouwie_module.cho_factor() == "factor"
+        assert ouwie_module.cho_factor() == "factor"
+        assert ouwie_module.cho_solve() == "solve"
+        assert ouwie_module.cho_solve() == "solve"
+        assert ouwie_module.minimize() == "minimize"
+        assert ouwie_module.minimize() == "minimize"
+        assert ouwie_module.minimize_scalar() == "minimize_scalar"
+        assert ouwie_module.minimize_scalar() == "minimize_scalar"
+    finally:
+        ouwie_module._CHO_FACTOR = previous_cho_factor
+        ouwie_module._CHO_SOLVE = previous_cho_solve
+        ouwie_module._MINIMIZE = previous_minimize
+        ouwie_module._MINIMIZE_SCALAR = previous_minimize_scalar
+
+    assert scipy_linalg_imports == 2
+    assert scipy_optimize_imports == 2
+
+
 def test_merge_nonempty_child_state_sets_does_not_slice_children():
     class NoSliceList(list):
         def __getitem__(self, key):

@@ -59,30 +59,42 @@ class _LazyNumpy:
 
 pickle = _LazyPickle()
 np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_MINIMIZE = None
+_MINIMIZE_SCALAR = None
 
 
 def cho_factor(*args, **kwargs):
-    from scipy.linalg import cho_factor as _cho_factor
+    global _CHO_FACTOR
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _CHO_FACTOR
 
-    return _cho_factor(*args, **kwargs)
+    return _CHO_FACTOR(*args, **kwargs)
 
 
 def cho_solve(*args, **kwargs):
-    from scipy.linalg import cho_solve as _cho_solve
+    global _CHO_SOLVE
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _CHO_SOLVE
 
-    return _cho_solve(*args, **kwargs)
+    return _CHO_SOLVE(*args, **kwargs)
 
 
 def minimize(*args, **kwargs):
-    from scipy.optimize import minimize as _minimize
+    global _MINIMIZE
+    if _MINIMIZE is None:
+        from scipy.optimize import minimize as _MINIMIZE
 
-    return _minimize(*args, **kwargs)
+    return _MINIMIZE(*args, **kwargs)
 
 
 def minimize_scalar(*args, **kwargs):
-    from scipy.optimize import minimize_scalar as _minimize_scalar
+    global _MINIMIZE_SCALAR
+    if _MINIMIZE_SCALAR is None:
+        from scipy.optimize import minimize_scalar as _MINIMIZE_SCALAR
 
-    return _minimize_scalar(*args, **kwargs)
+    return _MINIMIZE_SCALAR(*args, **kwargs)
 
 
 def _merge_nonempty_child_state_sets(state_sets, children):
