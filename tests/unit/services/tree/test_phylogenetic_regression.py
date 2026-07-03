@@ -74,6 +74,13 @@ assert "phykit.helpers.pgls_utils" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_proxy_caches_resolved_attributes():
+    lazy_np = phylogenetic_regression_module._LazyNumpy()
+
+    assert lazy_np.empty is lazy_np.empty
+    assert lazy_np._module is not None
+
+
 def test_repeated_fit_model_caches_scipy_linalg_imports(monkeypatch):
     previous_cho_factor = phylogenetic_regression_module._CHO_FACTOR
     previous_cho_solve = phylogenetic_regression_module._CHO_SOLVE
