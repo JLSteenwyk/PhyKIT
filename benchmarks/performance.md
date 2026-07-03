@@ -1460,6 +1460,7 @@ Results:
 | `HiddenParalogyCheck.print_results` inline JSON rows | 500k clade status rows with mixed unexpected-taxa lists, side-by-side previous per-row helper call | 0.304951s | 0.234537s | 1.30x |
 | `HiddenParalogyCheck.read_clades_file` bulk read split | 500k three-taxon clade rows with blank-line compatibility | 0.572789s | 0.435850s | 1.31x |
 | `HiddenParalogyCheck.read_clades_file` direct line iteration | 500k three-taxon clade rows with blank-line compatibility, side-by-side previous `read().splitlines()` parser | 0.094809s | 0.092886s | 1.02x |
+| `HiddenParalogyCheck` cached lazy Phylo reader | 100 / 1000 / 5000 repeated small-Newick reads through the lazy reader proxy | 0.003599s / 0.103888s / 0.778282s | 0.003226s / 0.077716s / 0.646351s | 1.12x / 1.34x / 1.20x |
 | `hidden_paralogy_check` module import without eager Bio.Phylo | cold subprocess import after lazy Phylo reader proxy | 0.135706s | 0.029766s | 4.56x |
 | `hidden_paralogy_check` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.012157s | 0.010456s | 1.16x |
 | `hidden_paralogy_check` module import without eager multiprocessing | median cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.030027s | 0.023741s | 1.26x |
@@ -5713,8 +5714,11 @@ Profiling summary:
   empty clades. A later startup
   pass wraps `Phylo.read` in a lazy module-level proxy, preserving existing
   patch points while avoiding Bio.Phylo parser startup until a tree read is
-  actually needed. A subsequent startup pass keeps `mp.cpu_count` and `mp.Pool` behind
-  a lazy proxy and imports `functools.partial` only when the large-clade
+  actually needed. The lazy reader now caches the resolved `Bio.Phylo` module
+  after the first read, reducing repeated import dispatch in non-exact
+  sequential and batch fallback paths that parse many small trees. A subsequent
+  startup pass keeps `mp.cpu_count` and `mp.Pool` behind a lazy proxy and
+  imports `functools.partial` only when the large-clade
 	  multiprocessing branch is used.
 	  A follow-up startup pass keeps JSON output behind a
 	  forwarding wrapper, avoiding JSON helper startup during command discovery.

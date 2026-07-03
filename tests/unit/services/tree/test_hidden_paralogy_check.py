@@ -13,6 +13,7 @@ import sys
 
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
+import phykit.services.tree.hidden_paralogy_check as module
 from phykit.services.tree.hidden_paralogy_check import HiddenParalogyCheck
 
 
@@ -31,6 +32,21 @@ assert "multiprocessing" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_phylo_caches_resolved_reader(tmp_path):
+    tree_path = tmp_path / "tree.tre"
+    tree_path.write_text("((A:1,B:1):1,C:2);\n")
+    lazy_phylo = module._LazyPhylo()
+
+    first = lazy_phylo.read(str(tree_path), "newick")
+    cached_module = lazy_phylo._module
+    second = lazy_phylo.read(str(tree_path), "newick")
+
+    assert cached_module is not None
+    assert lazy_phylo._module is cached_module
+    assert [tip.name for tip in first.get_terminals()] == ["A", "B", "C"]
+    assert [tip.name for tip in second.get_terminals()] == ["A", "B", "C"]
 
 
 def test_run_uses_unmodified_master_tree_read(mocker):

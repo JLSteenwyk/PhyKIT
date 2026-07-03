@@ -12,10 +12,19 @@ def print_json(*args, **kwargs):
 
 
 class _LazyPhylo:
-    def read(self, *args, **kwargs):
-        from Bio import Phylo as _Phylo
+    _module = None
 
-        return _Phylo.read(*args, **kwargs)
+    def _load(self):
+        module = self._module
+        if module is None:
+            from Bio import Phylo as _Phylo
+
+            module = _Phylo
+            self._module = module
+        return module
+
+    def read(self, *args, **kwargs):
+        return self._load().read(*args, **kwargs)
 
 
 Phylo = _LazyPhylo()
