@@ -14,6 +14,7 @@ from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
 from phykit.errors import PhykitUserError
+import phykit.services.tree.phenogram as module
 from phykit.services.tree.phenogram import Phenogram, _value_range
 
 here = Path(__file__)
@@ -37,6 +38,17 @@ assert "phykit.helpers.plot_config" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    first_array = lazy_np.array
+    second_array = lazy_np.array
+
+    assert first_array is second_array
+    assert lazy_np.__dict__["array"] is first_array
+    assert lazy_np._module is not None
 
 
 class TestProcessArgs:
