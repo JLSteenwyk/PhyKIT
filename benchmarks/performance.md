@@ -1059,6 +1059,8 @@ Results:
 | `EvoTempoMap._compute_global_treeness` direct split traversal | 40 balanced 512-tip gene trees plus species tree, global split concordance and treeness | 0.217001s | 0.127218s | 1.71x |
 | `EvoTempoMap._compute_global_treeness` treeness summaries | 10k mean/median summaries of 40 treeness values, identical summary values | 0.365470s | 0.016978s | 21.53x |
 | `EvoTempoMap._collect_clade_taxa` reverse-preorder postorder helper | balanced 8192-tip tree, descendant taxon sets for branch classification | 0.028838s | 0.019994s | 1.44x |
+| `EvoTempoMap._collect_clade_taxa` binary-node direct union | balanced 32768-tip tree, descendant taxon sets for branch classification, side-by-side previous temporary mutable set update path | 0.684513s | 0.470322s | 1.46x |
+| `EvoTempoMap._extract_bipartitions_with_lengths` binary-node direct union | balanced 32768-tip tree, no-cache branch-length split extraction, side-by-side previous temporary mutable set update path | 0.522358s | 0.414757s | 1.26x |
 | `EvoTempoMap._build_parent_map` direct map traversal | balanced 65536-tip tree, branch-classification parent map, optimized helper baseline | 0.026751s | 0.017737s | 1.51x |
 | `EvoTempoMap._iter_preorder_clades` binary-child fast path | balanced 131072-tip tree, branch-classification preorder helper, side-by-side previous `reversed(children)` helper | 0.039015s | 0.034670s | 1.13x |
 | `EvoTempoMap._get_four_groups` multifurcation child union | 500 cached branch decompositions over 16x16x32 / 64x64x16 / 128x128x8 wide node/sibling groups, side-by-side previous repeated immutable-set union path | 0.252065s / 0.745556s / 1.417403s | 0.187053s / 0.109707s / 0.459360s | 1.35x / 6.80x / 3.09x |
@@ -4923,6 +4925,9 @@ Profiling summary:
   postorder helper by reversing root-right-left preorder, preserving Biopython
   postorder while avoiding visited-flag stack tuples; split extraction remains
   dominated by canonical split construction rather than traversal overhead.
+  A follow-up descendant-cache pass handles binary nodes with direct immutable
+  set unions in both clade-taxa collection and no-cache branch-length split
+  extraction, avoiding the temporary mutable set update loop on balanced trees.
   The parent-map helper now builds the child-to-parent map directly instead of
   first materializing an ordered preorder list. A later direct-preorder helper
   pass avoids `reversed(children)` by pushing binary children right-then-left

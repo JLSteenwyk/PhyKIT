@@ -397,6 +397,23 @@ class TestClassifyGeneTrees:
         splits = svc._extract_bipartitions_with_lengths(tree, all_taxa, clade_taxa)
         assert frozenset({"A", "B"}) in splits
 
+    def test_collect_clade_taxa_binary_nodes_avoid_temp_set(self, svc, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("binary clade taxa should use direct unions")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        clade_taxa = svc._collect_clade_taxa(tree)
+
+        assert clade_taxa[id(tree.root)] == frozenset(("A", "B", "C", "D"))
+        assert clade_taxa[id(tree.root.clades[0])] == frozenset(("A", "B"))
+        assert clade_taxa[id(tree.root.clades[1])] == frozenset(("C", "D"))
+
     def test_get_four_groups_merges_multifurcation_extras(self, svc, monkeypatch):
         from Bio import Phylo
         from Bio.Phylo.BaseTree import TreeMixin
@@ -522,6 +539,24 @@ class TestClassifyGeneTrees:
         splits = svc._extract_bipartitions_with_lengths(tree, all_taxa)
 
         assert splits[frozenset({"A", "B"})] == 3
+
+    def test_extract_bipartitions_without_cache_binary_nodes_avoid_temp_set(
+        self, svc, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        all_taxa = frozenset(("A", "B", "C", "D"))
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("binary split extraction should use direct unions")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        splits = svc._extract_bipartitions_with_lengths(tree, all_taxa)
+
+        assert splits[frozenset(("A", "B"))] == 3
 
     def test_classify_shared_taxa_setup_uses_fast_tip_names(
         self, svc, monkeypatch

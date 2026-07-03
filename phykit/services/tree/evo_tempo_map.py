@@ -518,15 +518,23 @@ class EvoTempoMap(Tree):
         postorder_clades = EvoTempoMap._iter_postorder_clades(tree)
         if postorder_clades is None:
             postorder_clades = tree.find_clades(order="postorder")
+        empty = frozenset()
         for clade in postorder_clades:
-            if clade.is_terminal():
-                clade_taxa[id(clade)] = frozenset({clade.name})
+            children = clade.clades
+            if not children:
+                clade_taxa[id(clade)] = frozenset((clade.name,))
             else:
-                taxa = set()
-                for child in clade.clades:
-                    taxa.update(clade_taxa.get(id(child), ()))
-                taxa = frozenset(taxa)
-                clade_taxa[id(clade)] = taxa
+                child_count = len(children)
+                if child_count == 2:
+                    clade_taxa[id(clade)] = (
+                        clade_taxa.get(id(children[0]), empty)
+                        | clade_taxa.get(id(children[1]), empty)
+                    )
+                else:
+                    taxa = set()
+                    for child in children:
+                        taxa.update(clade_taxa.get(id(child), empty))
+                    clade_taxa[id(clade)] = frozenset(taxa)
         return clade_taxa
 
     @staticmethod
@@ -657,15 +665,24 @@ class EvoTempoMap(Tree):
             postorder_clades = self._iter_postorder_clades(tree)
             if postorder_clades is None:
                 postorder_clades = tree.find_clades(order="postorder")
+            empty = frozenset()
             for clade in postorder_clades:
-                if clade.is_terminal():
-                    clade_taxa[id(clade)] = frozenset({clade.name})
+                children = clade.clades
+                if not children:
+                    clade_taxa[id(clade)] = frozenset((clade.name,))
                     continue
 
-                taxa = set()
-                for child in clade.clades:
-                    taxa.update(clade_taxa.get(id(child), ()))
-                taxa = frozenset(taxa)
+                child_count = len(children)
+                if child_count == 2:
+                    taxa = (
+                        clade_taxa.get(id(children[0]), empty)
+                        | clade_taxa.get(id(children[1]), empty)
+                    )
+                else:
+                    taxa_set = set()
+                    for child in children:
+                        taxa_set.update(clade_taxa.get(id(child), empty))
+                    taxa = frozenset(taxa_set)
                 clade_taxa[id(clade)] = taxa
 
                 if len(taxa) <= 1 or taxa == all_taxa_fs:
