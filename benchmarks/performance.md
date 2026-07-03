@@ -2033,6 +2033,7 @@ Results:
 | `ContMap._contmap_colored_arcs` binary child-angle bounds | balanced 32768-tip synthetic coords and internal estimates, side-by-side previous child-angle list path | 0.266051s | 0.108700s | 2.45x |
 | `ContMap._plot_contmap` rectangular batched gradient branches | balanced 512-tip tree, 50 color segments per branch, real Matplotlib Agg branch/label/colorbar render | 11.957742s | 1.949793s | 6.13x |
 | `ContMap._print_text_output` batched summary | 100k captured contMap text summaries, identical stdout text | 0.089211s | 0.059444s | 1.50x |
+| `ContMap` cached lazy NumPy proxy | 1000 / 5000 hot-loop lookup groups across `array`, `linspace`, `column_stack`, `asarray`, and `clip`, side-by-side previous uncached lazy NumPy proxy | 0.00463698s / 0.02358048s | 0.00018264s / 0.00109534s | 25.39x / 21.53x |
 | `cont_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy plus lazy circular-layout arc cache | 0.085155s | 0.038423s | 2.22x |
 | `cont_map` module import without eager pickle/JSON/plot helpers | median cold subprocess import after localizing pickle, PlotConfig/layout helpers, circular/color helpers, and lazy JSON wrapper | 0.014370s | 0.005967s | 2.41x |
 | `cont_map` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.015563s | 0.004050s | 3.84x |

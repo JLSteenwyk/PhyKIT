@@ -14,6 +14,7 @@ from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
 from phykit.errors import PhykitUserError
+import phykit.services.tree.cont_map as module
 from phykit.services.tree.cont_map import ContMap, _value_range
 
 
@@ -33,6 +34,17 @@ assert "typing" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    first_array = lazy_np.array
+    second_array = lazy_np.array
+
+    assert first_array is second_array
+    assert lazy_np.__dict__["array"] is first_array
+    assert lazy_np._module is not None
 
 
 here = Path(__file__)
