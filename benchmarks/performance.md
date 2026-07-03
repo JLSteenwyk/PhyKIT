@@ -1672,6 +1672,7 @@ Results:
 | `discrete_models.fit_q_matrix` small real-eigensystem transitions | sample `tree_simple` three-state SYM fit, side-by-side previous SciPy `expm` transition path, log-likelihood diff `1.8e-15` | 0.714704s | 0.580039s | 1.23x |
 | `discrete_models.fit_q_matrix` symmetric eigensystem transitions | sample `tree_simple` three-state SYM fit, side-by-side previous generic `eig`/inverse/condition setup, log-likelihood diff `1.6e-14` | 0.410922s | 0.290375s | 1.42x |
 | `discrete_models.fit_q_matrix` cached lazy NumPy attributes | sample `tree_simple` three-state ARD fit, side-by-side previous lazy proxy lookup path, identical log-likelihood `-8.384537341535` | 2.343589s | 2.157279s | 1.09x |
+| `discrete_models.felsenstein_pruning` small real-eigensystem transitions | sample `tree_simple` three-state ARD pruning pass, side-by-side previous SciPy `expm` transition path, identical conditional likelihoods and log-likelihood | 0.000411s | 0.000165s | 2.49x |
 | `discrete_models._felsenstein_loglik_prepared` indexed transition cache | sample `tree_simple` three-state ARD likelihood, 2000 repeated prepared evaluations, side-by-side previous per-call branch-length dict cache, identical log-likelihood | 0.661269s | 0.481554s | 1.37x |
 | `discrete_models._matrix_exp_from_eigendecomp` generic transition without array cast | nonsymmetric real-eigensystem three-state ARD transition, 180k branch-length evaluations, side-by-side previous `np.asarray(..., dtype=float)` path, identical transition sum | 1.370367s | 1.152434s | 1.19x |
 | `discrete_models._matrix_exp_eigendecomp_context` cheap condition estimate | nonsymmetric real-eigensystem three-state ARD context setup, 30k repeated calls, side-by-side previous SVD-based `np.linalg.cond` guard, same accept/reject result | 2.697092s | 2.258407s | 1.19x |
@@ -6292,8 +6293,10 @@ Profiling summary:
   too-few-shared-taxa errors. Ordered all-shared trait rows now return before
   building the tree-tip set, preserving the existing unordered exact-match and
   partial-overlap validation paths.
-  overhead for both plain pruning and
-  prepared pruning contexts.
+  Plain pruning now also uses the small real-eigensystem transition path for
+  three- and four-state matrices when the eigensystem is valid, preserving the
+  existing SciPy `expm` fallback while speeding the downward pass used by
+  discrete marginal posteriors.
   Import-time NumPy startup is deferred behind a lazy proxy, so command modules
   that import the discrete helper do not pay NumPy cost until Q-matrix,
   pruning, or fitting code actually runs.

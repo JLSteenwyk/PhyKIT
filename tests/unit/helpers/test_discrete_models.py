@@ -450,6 +450,49 @@ class TestFelsensteinPruning:
         assert loglik < 0
         assert spy.call_count == 1
 
+    def test_three_state_pruning_uses_eigendecomp_transition_path(
+        self, monkeypatch
+    ):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        branch_length=0.25,
+                        clades=[
+                            Clade(branch_length=0.5, name="A"),
+                            Clade(branch_length=0.75, name="B"),
+                        ],
+                    ),
+                    Clade(branch_length=1.25, name="C"),
+                ],
+            )
+        )
+        tip_states = {"A": "0", "B": "1", "C": "2"}
+        states = ["0", "1", "2"]
+        Q = build_q_matrix(np.array([0.2, 0.3, 0.4]), 3, "SYM")
+        pi = np.ones(3) / 3.0
+        expected_liks, expected_loglik = felsenstein_pruning(
+            tree, tip_states, Q, pi, states
+        )
+
+        def fail_matrix_exp(*_args, **_kwargs):
+            raise AssertionError(
+                "small-state pruning should use eigendecomposition"
+            )
+
+        monkeypatch.setattr(discrete_models, "matrix_exp", fail_matrix_exp)
+
+        observed_liks, observed_loglik = felsenstein_pruning(
+            tree, tip_states, Q, pi, states
+        )
+
+        assert observed_loglik == pytest.approx(expected_loglik)
+        for node_id, expected_lik in expected_liks.items():
+            np.testing.assert_allclose(observed_liks[node_id], expected_lik)
+
     def test_pruning_root_likelihood_uses_dot_product(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
         import phykit.helpers.discrete_models as discrete_models

@@ -282,6 +282,11 @@ def felsenstein_pruning(
     state_idx = {s: i for i, s in enumerate(states)}
     cond_liks = {}
     transition_cache = {}
+    eigendecomp_context = (
+        _matrix_exp_eigendecomp_context(Q)
+        if 3 <= k <= 4
+        else None
+    )
 
     postorder = _postorder_clades_direct(tree)
     if postorder is None:
@@ -299,7 +304,14 @@ def felsenstein_pruning(
                 t = child.branch_length if child.branch_length else 1e-8
                 P = transition_cache.get(t)
                 if P is None:
-                    P = matrix_exp(Q, t)
+                    if eigendecomp_context is None:
+                        P = matrix_exp(Q, t)
+                    else:
+                        P = _matrix_exp_from_eigendecomp(
+                            eigendecomp_context, t
+                        )
+                        if P is None:
+                            P = matrix_exp(Q, t)
                     transition_cache[t] = P
                 child_lik = cond_liks[id(child)]
                 lik *= P @ child_lik
