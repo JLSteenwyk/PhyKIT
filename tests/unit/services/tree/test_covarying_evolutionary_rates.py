@@ -138,6 +138,19 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
 
         np.testing.assert_allclose(result, expected)
 
+    def test_zscore_threshold_vector_avoids_std_reduction(self):
+        values = np.arange(cer_module._ZSCORE_FAST_MAX_SIZE, dtype=float)
+        expected = (values - np.mean(values)) / np.std(values)
+
+        with patch.object(
+            cer_module.np,
+            "std",
+            side_effect=AssertionError("threshold z-score should use centered sums"),
+        ):
+            result = cer_module._zscore(values)
+
+        np.testing.assert_allclose(result, expected)
+
     def test_zscore_large_vector_keeps_numpy_std_path(self):
         values = np.arange(cer_module._ZSCORE_FAST_MAX_SIZE + 1, dtype=float)
 

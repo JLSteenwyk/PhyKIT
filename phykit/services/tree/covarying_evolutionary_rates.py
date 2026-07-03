@@ -57,7 +57,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
-_ZSCORE_FAST_MAX_SIZE = 50_000
+_ZSCORE_FAST_MAX_SIZE = 100_000
 _PLOT_DIRECT_EXTREMA_LIMIT = 1_000
 
 
