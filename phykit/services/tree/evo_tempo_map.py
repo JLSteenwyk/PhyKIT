@@ -121,36 +121,40 @@ def _mann_whitney_exact_counts(n_x: int, n_y: int) -> list[int]:
     return counts
 
 
-def _mannwhitneyu_exact_no_ties(
+def _mannwhitneyu_no_ties(
     x: list[float], y: list[float]
 ) -> tuple[float, float] | None:
     n_x = len(x)
     n_y = len(y)
-    if (
-        n_x == 0
-        or n_y == 0
-        or min(n_x, n_y) > _MANN_WHITNEY_EXACT_MAX_MIN_N
-    ):
+    if n_x == 0 or n_y == 0:
         return None
 
-    combined = [float(value) for value in x]
-    combined.extend(float(value) for value in y)
-    if any(not math.isfinite(value) for value in combined):
+    combined = [(float(value), 0) for value in x]
+    combined.extend((float(value), 1) for value in y)
+    if any(not math.isfinite(value) for value, _ in combined):
         return None
-    if len(set(combined)) != len(combined):
+    if len({value for value, _ in combined}) != len(combined):
         return None
 
-    u_statistic = 0
-    for x_value in x:
-        for y_value in y:
-            if x_value > y_value:
-                u_statistic += 1
+    rank_sum_x = 0.0
+    for rank, (_, group) in enumerate(sorted(combined), start=1):
+        if group == 0:
+            rank_sum_x += rank
+    u_statistic = rank_sum_x - (n_x * (n_x + 1) / 2.0)
 
-    counts = _mann_whitney_exact_counts(n_x, n_y)
-    total = sum(counts)
-    lower = sum(counts[:u_statistic + 1])
-    upper = sum(counts[u_statistic:])
-    p_value = min(1.0, 2.0 * min(lower, upper) / total)
+    if min(n_x, n_y) <= _MANN_WHITNEY_EXACT_MAX_MIN_N:
+        u_index = int(u_statistic)
+        counts = _mann_whitney_exact_counts(n_x, n_y)
+        total = sum(counts)
+        lower = sum(counts[:u_index + 1])
+        upper = sum(counts[u_index:])
+        p_value = min(1.0, 2.0 * min(lower, upper) / total)
+        return float(u_statistic), float(p_value)
+
+    mean = n_x * n_y / 2.0
+    variance = n_x * n_y * (n_x + n_y + 1) / 12.0
+    z_value = (abs(u_statistic - mean) - 0.5) / math.sqrt(variance)
+    p_value = math.erfc(z_value / math.sqrt(2.0))
     return float(u_statistic), float(p_value)
 
 
@@ -909,7 +913,7 @@ class EvoTempoMap(Tree):
             return result
 
         # Mann-Whitney U test (two-sided)
-        exact_result = _mannwhitneyu_exact_no_ties(
+        exact_result = _mannwhitneyu_no_ties(
             concordant_lengths, discordant_lengths
         )
         conc = np.array(concordant_lengths, dtype=float)
@@ -1045,7 +1049,7 @@ class EvoTempoMap(Tree):
         )
 
         if len(concordant_treeness) >= 2 and len(discordant_treeness) >= 2:
-            exact_result = _mannwhitneyu_exact_no_ties(
+            exact_result = _mannwhitneyu_no_ties(
                 concordant_treeness, discordant_treeness
             )
             if exact_result is None:

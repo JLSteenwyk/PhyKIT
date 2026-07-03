@@ -698,6 +698,29 @@ assert "scipy.stats" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_larger_no_tie_mann_whitney_uses_asymptotic_distribution(self, svc):
+        conc = [1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0]
+        disc = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        result = svc._test_branch(conc, disc)
+        assert result["mann_whitney_U"] == 45.0
+        assert result["mann_whitney_p"] == pytest.approx(0.7337299956962472)
+
+    def test_larger_no_tie_mann_whitney_does_not_import_scipy_stats(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+svc = EvoTempoMap.__new__(EvoTempoMap)
+result = svc._test_branch(
+    [1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0],
+    [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
+)
+assert result["mann_whitney_U"] == 45.0
+assert round(result["mann_whitney_p"], 12) == round(0.7337299956962472, 12)
+assert "scipy.stats" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_permutation_p_between_0_and_1(self, svc):
         conc = [10.0, 12.0, 11.0, 13.0, 10.5]
         disc = [5.0, 6.0, 4.5, 5.5]
