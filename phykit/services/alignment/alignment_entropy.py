@@ -347,4 +347,4 @@ class AlignmentEntropy(Alignment):
         totals = _entropy_count_totals(counts)
 
         entropies = _entropy_from_counts(counts, totals)
-        return [float(entropy) for entropy in entropies]
+        return _entropy_values_to_list(entropies)

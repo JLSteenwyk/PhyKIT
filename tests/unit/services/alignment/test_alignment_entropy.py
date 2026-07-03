@@ -346,6 +346,28 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert entropies == [0.0, 0.0, 0.0, 0.0]
 
+    def test_site_entropies_small_alphabet_uses_entropy_list_helper(
+        self, mocker
+    ):
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        entropy = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False))
+        alignment = [
+            SeqRecord(Seq("ABAB"), id="t1"),
+            SeqRecord(Seq("BABA"), id="t2"),
+            SeqRecord(Seq("ABBA"), id="t3"),
+        ]
+        helper_spy = mocker.spy(
+            alignment_entropy_module,
+            "_entropy_values_to_list",
+        )
+
+        entropies = entropy.calculate_site_entropies(alignment, is_protein=False)
+
+        assert len(entropies) == 4
+        assert helper_spy.call_count == 1
+
     def test_site_entropies_identical_sequences_return_zeroes_before_matrix(
         self, mocker
     ):

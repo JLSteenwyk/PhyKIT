@@ -214,6 +214,7 @@ Results:
 | `AlignmentEntropy.calculate_site_entropies` deferred Unicode gap-char set | 400 taxa x 2000 ASCII DNA sites, side-by-side previous unconditional `get_gap_chars` set construction | 0.389624s | 0.279371s | 1.39x |
 | `AlignmentEntropy.calculate_site_entropies` cached NumPy attribute proxy | 1000 taxa x 5000 protein sites, alphabet `ACDEFGHIKLMNPQRSTVWY-X?*`, side-by-side previous uncached lazy NumPy proxy | 0.378816s | 0.237009s | 1.60x |
 | `AlignmentEntropy.calculate_site_entropies` entropy column dot | 2 / 4 / 8 / 20 states by 12000 / 12000 / 12000 / 5000 sites, side-by-side previous small-alphabet multiply plus `np.sum(axis=0)` path | 0.000073515s / 0.000106187s / 0.000208391s / 0.000220500s | 0.000051922s / 0.000071867s / 0.000164666s / 0.000112586s | 1.42x / 1.48x / 1.27x / 1.96x |
+| `AlignmentEntropy.calculate_site_entropies` small-alphabet list conversion | entropy arrays sized 10 / 1000 / 100k / 1M, side-by-side previous Python `float(...)` loop | 1.981980s / 1.578155s / 0.674709s / 0.943287s | 0.543083s / 0.314824s / 0.158113s / 0.187878s | 3.65x / 5.01x / 4.27x / 5.02x |
 | `AlignmentEntropy.run` verbose batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.067358s | 0.055155s | 1.22x |
 | `AlignmentEntropy.run` verbose text direct rows | 100k site rows, mocked alignment/read/calculation, captured stdout and identical text, side-by-side previous row-dict formatter | 0.057309s | 0.047691s | 1.20x |
 | `AlignmentEntropy.run` verbose JSON row literals | 500k site entropy rows, side-by-side previous `dict(site=..., entropy=...)` formatter | 0.531990s | 0.493466s | 1.08x |
@@ -3003,7 +3004,9 @@ Profiling summary:
   very large arrays where it remains faster. Clean protein ASCII entropy blocks now bypass the per-block
   valid-mask boolean index, preserving the existing gappy path while reducing
   clean 1200 x 12000 protein helper time from 0.100458s to 0.090770s. A later
-  clean-protein entropy pass also skips constructing the full valid mask before
+  small-alphabet entropy pass reuses the existing ndarray `.tolist()` helper
+  instead of looping through `float(...)` for every site entropy.
+  The clean-protein entropy pass also skips constructing the full valid mask before
   calling that helper when no protein gap bytes are present, leaving the DNA and
   Unicode paths unchanged.
   Entropy term calculation now uses masked `np.log2` into a scratch array
