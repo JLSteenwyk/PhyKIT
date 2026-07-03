@@ -18,7 +18,7 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 
-_MEDIAN_NUMPY_THRESHOLD = 4096
+_MEDIAN_NUMPY_THRESHOLD = 1024
 
 
 class SpuriousSequence(Tree):

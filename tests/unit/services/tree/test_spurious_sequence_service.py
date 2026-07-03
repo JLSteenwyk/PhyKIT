@@ -164,6 +164,30 @@ class TestSpuriousSequence:
         assert SpuriousSequence._median_branch_length([4.0, 1.0, 3.0, 2.0]) == 2.5
         assert calls == [(1, 2)]
 
+    def test_median_branch_length_default_threshold_uses_partition(self, monkeypatch):
+        calls = []
+
+        class _FakeArray:
+            def __init__(self, values):
+                self.values = sorted(values)
+
+            def partition(self, kth):
+                calls.append(kth)
+
+            def __getitem__(self, index):
+                return self.values[index]
+
+        class _FakeNumpy:
+            def asarray(self, values, dtype=float):
+                assert dtype is float
+                return _FakeArray(values)
+
+        monkeypatch.setattr(spurious_sequence_module, "np", _FakeNumpy())
+
+        values = list(range(spurious_sequence_module._MEDIAN_NUMPY_THRESHOLD))
+        assert SpuriousSequence._median_branch_length(values) == 511.5
+        assert calls == [(511, 512)]
+
     def test_run_prints_none_when_no_spurious_sequences(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", factor=20, json=False)
         service = SpuriousSequence(args)
