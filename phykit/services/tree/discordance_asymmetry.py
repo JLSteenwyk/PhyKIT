@@ -317,10 +317,9 @@ class DiscordanceAsymmetry(Tree):
             ax.set_aspect("equal")
             ax.axis("off")
 
-            radial_segments = []
-            radial_colors = []
-            radial_linewidths = []
-            ratio_color_cache = {}
+            gray_radial_segments = []
+            ratio_radial_segments = []
+            ratio_radial_values = []
             for clade in preorder_clades:
                 if clade == root:
                     continue
@@ -331,18 +330,10 @@ class DiscordanceAsymmetry(Tree):
                 if id(parent) not in coords or cid not in coords:
                     continue
 
-                # Determine color
-                color = "gray"
-                lw = 2
+                ratio = None
                 if cid in node_to_result:
                     entry = node_to_result[cid]
                     ratio = entry["asymmetry_ratio"]
-                    if ratio is not None:
-                        color = ratio_color_cache.get(ratio)
-                        if color is None:
-                            color = cmap(norm(ratio))
-                            ratio_color_cache[ratio] = color
-                        lw = 3
 
                 parent_coords = coords[id(parent)]
                 child_coords = coords[cid]
@@ -351,28 +342,43 @@ class DiscordanceAsymmetry(Tree):
                 sin_angle = math.sin(angle)
                 r_parent = parent_coords["radius"]
                 r_child = child_coords["radius"]
-                radial_segments.append(
-                    [
-                        (r_parent * cos_angle, r_parent * sin_angle),
-                        (r_child * cos_angle, r_child * sin_angle),
-                    ]
-                )
-                radial_colors.append(color)
-                radial_linewidths.append(lw)
+                segment = [
+                    (r_parent * cos_angle, r_parent * sin_angle),
+                    (r_child * cos_angle, r_child * sin_angle),
+                ]
+                if ratio is None:
+                    gray_radial_segments.append(segment)
+                else:
+                    ratio_radial_segments.append(segment)
+                    ratio_radial_values.append(ratio)
 
-            if radial_segments:
+            if gray_radial_segments:
                 ax.add_collection(
                     LineCollection(
-                        radial_segments,
-                        colors=radial_colors,
-                        linewidths=radial_linewidths,
+                        gray_radial_segments,
+                        colors="gray",
+                        linewidths=2,
                         capstyle="round",
                         zorder=2,
                     )
                 )
+            if ratio_radial_segments:
+                ratio_radial_collection = LineCollection(
+                    ratio_radial_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=3,
+                    capstyle="round",
+                    zorder=2,
+                )
+                ratio_radial_collection.set_array(
+                    np.asarray(ratio_radial_values, dtype=float)
+                )
+                ax.add_collection(ratio_radial_collection)
 
-            arc_segments = []
-            arc_colors = []
+            gray_arc_segments = []
+            ratio_arc_segments = []
+            ratio_arc_values = []
             arc_fractions = [idx / 60 for idx in range(61)]
             for clade in preorder_clades:
                 if clade.is_terminal() or not clade.clades:
@@ -389,43 +395,58 @@ class DiscordanceAsymmetry(Tree):
                     start_a, end_a = end_a, start_a
 
                 # Color arc by the node's own asymmetry if available
-                arc_color = "gray"
+                ratio = None
                 if cid in node_to_result:
                     entry = node_to_result[cid]
                     ratio = entry["asymmetry_ratio"]
-                    if ratio is not None:
-                        arc_color = ratio_color_cache.get(ratio)
-                        if arc_color is None:
-                            arc_color = cmap(norm(ratio))
-                            ratio_color_cache[ratio] = arc_color
                 start = start_a % (2.0 * math.pi)
                 end = end_a % (2.0 * math.pi)
                 diff = (end - start) % (2.0 * math.pi)
                 if diff > math.pi:
                     diff -= 2.0 * math.pi
-                arc_segments.append(
-                    [
-                        (
-                            pc["radius"] * math.cos(start + diff * fraction),
-                            pc["radius"] * math.sin(start + diff * fraction),
-                        )
-                        for fraction in arc_fractions
-                    ]
-                )
-                arc_colors.append(arc_color)
+                arc_segment = [
+                    (
+                        pc["radius"] * math.cos(start + diff * fraction),
+                        pc["radius"] * math.sin(start + diff * fraction),
+                    )
+                    for fraction in arc_fractions
+                ]
+                if ratio is None:
+                    gray_arc_segments.append(arc_segment)
+                else:
+                    ratio_arc_segments.append(arc_segment)
+                    ratio_arc_values.append(ratio)
 
-            if arc_segments:
+            if gray_arc_segments:
                 ax.add_collection(
                     LineCollection(
-                        arc_segments,
-                        colors=arc_colors,
+                        gray_arc_segments,
+                        colors="gray",
                         linewidths=1.5,
                         capstyle="round",
                         zorder=1,
                     )
                 )
+            if ratio_arc_segments:
+                ratio_arc_collection = LineCollection(
+                    ratio_arc_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=1.5,
+                    capstyle="round",
+                    zorder=1,
+                )
+                ratio_arc_collection.set_array(
+                    np.asarray(ratio_arc_values, dtype=float)
+                )
+                ax.add_collection(ratio_arc_collection)
 
-            if radial_segments or arc_segments:
+            if (
+                gray_radial_segments
+                or ratio_radial_segments
+                or gray_arc_segments
+                or ratio_arc_segments
+            ):
                 ax.autoscale_view()
 
             # Tip labels
@@ -504,11 +525,10 @@ class DiscordanceAsymmetry(Tree):
 
         else:
             # --- Rectangular mode ---
-            horizontal_segments = []
-            horizontal_colors = []
-            horizontal_linewidths = []
+            gray_horizontal_segments = []
+            ratio_horizontal_segments = []
+            ratio_horizontal_values = []
             vertical_segments = []
-            ratio_color_cache = {}
             for clade in preorder_clades:
                 if clade == root:
                     continue
@@ -524,21 +544,17 @@ class DiscordanceAsymmetry(Tree):
                 y1 = node_y.get(id(clade), 0)
 
                 # Color the horizontal branch by asymmetry ratio if this is an internal node
-                color = "gray"
-                lw = 2
+                ratio = None
                 if id(clade) in node_to_result:
                     entry = node_to_result[id(clade)]
                     ratio = entry["asymmetry_ratio"]
-                    if ratio is not None:
-                        color = ratio_color_cache.get(ratio)
-                        if color is None:
-                            color = cmap(norm(ratio))
-                            ratio_color_cache[ratio] = color
-                        lw = 3
 
-                horizontal_segments.append([(x0, y1), (x1, y1)])
-                horizontal_colors.append(color)
-                horizontal_linewidths.append(lw)
+                horizontal_segment = [(x0, y1), (x1, y1)]
+                if ratio is None:
+                    gray_horizontal_segments.append(horizontal_segment)
+                else:
+                    ratio_horizontal_segments.append(horizontal_segment)
+                    ratio_horizontal_values.append(ratio)
                 vertical_segments.append([(x0, y0), (x0, y1)])
 
             if vertical_segments:
@@ -550,16 +566,28 @@ class DiscordanceAsymmetry(Tree):
                         zorder=1,
                     )
                 )
-            if horizontal_segments:
+            if gray_horizontal_segments:
                 ax.add_collection(
                     LineCollection(
-                        horizontal_segments,
-                        colors=horizontal_colors,
-                        linewidths=horizontal_linewidths,
+                        gray_horizontal_segments,
+                        colors="gray",
+                        linewidths=2,
                         zorder=2,
                     )
                 )
-            if vertical_segments or horizontal_segments:
+            if ratio_horizontal_segments:
+                ratio_horizontal_collection = LineCollection(
+                    ratio_horizontal_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=3,
+                    zorder=2,
+                )
+                ratio_horizontal_collection.set_array(
+                    np.asarray(ratio_horizontal_values, dtype=float)
+                )
+                ax.add_collection(ratio_horizontal_collection)
+            if vertical_segments or gray_horizontal_segments or ratio_horizontal_segments:
                 ax.autoscale_view()
 
             # Annotate internal nodes

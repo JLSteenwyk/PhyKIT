@@ -1143,6 +1143,7 @@ Results:
 | `DiscordanceAsymmetry._plot` circular batched branch rendering | balanced 2048-tip tree, per-internal-node asymmetry ratios, real Matplotlib Agg branch/arc render | 1.912087s | 0.724776s | 2.64x |
 | `DiscordanceAsymmetry._plot` significant star markers | 4096 significant branch markers, real Matplotlib Agg scatter render | 6.537405s | 0.013889s | 470.69x |
 | `DiscordanceAsymmetry._plot` repeated asymmetry-ratio color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title/legend disabled and repeated per-internal-node asymmetry ratio | 0.482074s | 0.427223s | 1.13x |
+| `DiscordanceAsymmetry._plot` scalar asymmetry-ratio branch collections | 4096 synthetic rectangular branches with mixed missing and unique numeric asymmetry ratios, side-by-side previous per-ratio `cmap(norm(ratio))` materialization before `LineCollection` construction | 0.923057s | 0.026015s | 35.48x |
 | `Hybridization`/`DiscordanceAsymmetry` plot setup | balanced 4096-tip species tree, rectangular branch-result lookup setup | 0.1725s | 0.0696s | 2.5x |
 | `Hybridization`/`DiscordanceAsymmetry` child-y coordinate mean | balanced 32768-tip species tree, postorder node-y coordinate setup with identical positions | 0.466845s | 0.046268s | 10.09x |
 | `PolytomyTest._evaluate_tree_triplets_fast` | balanced 1024-tip tree, 8k group triplets | 5.0266s | 0.0481s | 104.4x |
@@ -5149,11 +5150,15 @@ Profiling summary:
   score. A follow-up `Hybridization._plot` pass splits zero-score gray branches
   from positive-score branches and attaches scalar hybrid-score arrays to the
   scored `LineCollection`s, preserving gray fallback styling while avoiding
-  per-positive-branch RGBA materialization. `DiscordanceAsymmetry` uses the same marker batching for
-  FDR-significant branches with a favored alternative. A matching
-  `DiscordanceAsymmetry._plot` pass caches colormap results by asymmetry ratio
-  inside each rectangular/circular plot call, preserving colors while avoiding
-  repeated normalization and colormap calls when branches share the same ratio.
+  per-positive-branch RGBA materialization. `DiscordanceAsymmetry` uses the same
+  marker batching for FDR-significant branches with a favored alternative. A
+  matching `DiscordanceAsymmetry._plot` pass caches colormap results by
+  asymmetry ratio inside each rectangular/circular plot call, preserving colors
+  while avoiding repeated normalization and colormap calls when branches share
+  the same ratio. A follow-up `DiscordanceAsymmetry._plot` pass splits missing
+  gray branches from numeric-ratio branches and attaches scalar ratio arrays to
+  the scored `LineCollection`s, preserving gray fallback styling while avoiding
+  per-ratio RGBA materialization.
   Both plotters now compute tiny child-y coordinate means with Python arithmetic
   during postorder setup, preserving node positions while avoiding one NumPy
   dispatch per internal branch.

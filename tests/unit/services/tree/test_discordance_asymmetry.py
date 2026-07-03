@@ -1015,24 +1015,23 @@ class TestPlot:
         )
 
         assert len(line_collections) >= 2
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert scalar_arrays
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
-    def test_rectangular_plot_reuses_repeated_asymmetry_ratio_colors(
+    def test_rectangular_plot_uses_scalar_asymmetry_ratio_collection(
         self, tmp_path, monkeypatch
     ):
         from Bio import Phylo
         from io import StringIO
-        import matplotlib.pyplot as plt
+        from matplotlib.axes import Axes
+        from matplotlib.collections import LineCollection
         from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
-
-        class CountingCmap:
-            def __init__(self):
-                self.calls = 0
-
-            def __call__(self, value):
-                self.calls += 1
-                return (1.0, 0.0, 0.0, 1.0)
 
         output = str(tmp_path / "test_asym_repeated_colors.png")
         args = Namespace(
@@ -1072,8 +1071,15 @@ class TestPlot:
                 favored_alt=None,
             ),
         ]
-        cmap = CountingCmap()
-        monkeypatch.setattr(plt.cm, "RdYlBu_r", cmap)
+        original_add_collection = Axes.add_collection
+        line_collections = []
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(Axes, "add_collection", capture_collection)
 
         svc._plot(
             species_tree,
@@ -1082,7 +1088,13 @@ class TestPlot:
             shared_taxa=frozenset({"A", "B", "C", "D"}),
         )
 
-        assert cmap.calls == 1
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert len(scalar_arrays) == 1
+        assert list(scalar_arrays[0]) == [0.75, 0.75]
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
@@ -1174,6 +1186,12 @@ class TestPlotCircular:
         )
 
         assert len(line_collections) >= 2
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert scalar_arrays
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
