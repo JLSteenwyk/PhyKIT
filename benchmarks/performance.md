@@ -882,6 +882,7 @@ Results:
 | `DensityMap._compute_branch_posteriors` one-pass history scan | 5000 stochastic mappings, 80 posterior segments, 4 states, 8 transitions per branch history | 0.700506s | 0.221886s | 3.16x |
 | `DensityMap.run` all-tip-state read-only setup | balanced 32768-tip cached tree, trait data for every tip, fitting/simulation/plot/output mocked | 0.258584s | 0.048538s | 5.33x |
 | `DensityMap._print_text_output` batched summary | 100k captured density-map text summaries, identical stdout text | 0.104672s | 0.063514s | 1.65x |
+| `DensityMap` cached lazy NumPy proxy | 1000 / 5000 hot-loop lookup groups across `array`, `zeros`, `asarray`, `arange`, `clip`, and `column_stack`, side-by-side previous uncached lazy NumPy proxy | 0.00716357s / 0.03945279s | 0.00017509s / 0.00164549s | 40.91x / 23.98x |
 | `density_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.084363s | 0.032070s | 2.63x |
 | `density_map` module import without eager JSON/plot/color helpers | median cold subprocess import after localizing output, PlotConfig, circular-layout, and color-annotation helpers | 0.014782s | 0.005735s | 2.58x |
 | `density_map` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.007946s | 0.005545s | 1.43x |

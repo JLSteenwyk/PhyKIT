@@ -12,6 +12,7 @@ from pathlib import Path
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+import phykit.services.tree.density_map as module
 from phykit.services.tree.density_map import DensityMap
 from phykit.services.tree.stochastic_character_map import StochasticCharacterMap
 
@@ -41,6 +42,17 @@ assert "matplotlib" not in sys.modules
 assert "matplotlib.pyplot" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    first_array = lazy_np.array
+    second_array = lazy_np.array
+
+    assert first_array is second_array
+    assert lazy_np.__dict__["array"] is first_array
+    assert lazy_np._module is not None
 
 
 class TestProcessArgs:
