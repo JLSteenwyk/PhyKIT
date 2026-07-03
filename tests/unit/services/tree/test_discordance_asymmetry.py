@@ -35,6 +35,17 @@ assert "matplotlib.pyplot" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = discordance_asymmetry_module._LazyNumpy()
+
+    first_asarray = lazy_np.asarray
+    second_asarray = lazy_np.asarray
+
+    assert first_asarray is second_asarray
+    assert lazy_np.__dict__["asarray"] is first_asarray
+    assert lazy_np._module is not None
+
+
 def test_binomial_two_sided_p_value_matches_expected_values():
     assert discordance_asymmetry_module._binomial_two_sided_p_value(5, 10) == pytest.approx(1.0)
     assert discordance_asymmetry_module._binomial_two_sided_p_value(9, 10) == pytest.approx(0.021484375)

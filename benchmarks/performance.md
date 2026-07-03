@@ -1102,6 +1102,7 @@ Results:
 | `Hybridization._parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
 | `Hybridization._fdr` | 1M synthetic p-values | 0.738633s | 0.164136s | 4.5x |
 | `Hybridization._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.773546s | 0.668018s | 1.16x |
+| `Hybridization`/`DiscordanceAsymmetry._fdr` cached lazy NumPy proxy | 5000 repeated 64-value FDR calls, side-by-side previous uncached lazy NumPy proxy with identical corrected values | 0.149128s | 0.078486s | 1.90x |
 | `Hybridization._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.077783s | 0.023435s | 3.32x |
 | `hybridization` module import without `scipy.stats` | cold process import for reticulation command module | 0.629033s | 0.183021s | 3.4x |
 | `hybridization` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and localized gene-tree parser import | 0.147853s | 0.032011s | 4.62x |

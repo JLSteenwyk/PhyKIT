@@ -36,6 +36,17 @@ assert "matplotlib.pyplot" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = hybridization_module._LazyNumpy()
+
+    first_asarray = lazy_np.asarray
+    second_asarray = lazy_np.asarray
+
+    assert first_asarray is second_asarray
+    assert lazy_np.__dict__["asarray"] is first_asarray
+    assert lazy_np._module is not None
+
+
 def _make_args(**kwargs):
     defaults = dict(
         tree=TREE_SIMPLE,
