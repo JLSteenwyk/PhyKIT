@@ -1504,6 +1504,7 @@ Results:
 | `LTT._compute_gamma_and_ltt` internal-depth child push | balanced 131072-tip tree, shared terminal list and depth map, identical gamma/LTT output | 0.092145s | 0.078426s | 1.17x |
 | `LTT._compute_gamma_and_ltt` LTT row construction | 1M sorted internal depths, identical LTT rows, side-by-side previous `internal_depths[1:]` loop | 0.363777s | 0.274531s | 1.33x |
 | `LTT._output_json` LTT row construction | 1M mocked LTT rows, identical row dictionaries | 0.814529s | 0.449677s | 1.81x |
+| `LTT._output_json` bulk numeric series conversion | 100k / 300k / 1M branching-time and internode interval values plus matching LTT rows, identical payload | 0.032307s / 0.151819s / 0.466026s | 0.026169s / 0.060363s / 0.328299s | 1.23x / 2.52x / 1.42x |
 | `ltt` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.013677s | 0.006328s | 2.16x |
 | `ltt` module import without `typing` startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006019s | 0.004281s | 1.41x |
 | `TreenessOverRCV.run` read-only treeness setup | balanced 32768-tip cached tree, RCV calculation and output mocked, side-by-side previous copied tree read | 0.241418s | 0.008151s | 29.62x |
@@ -6523,7 +6524,9 @@ Profiling summary:
   root-relative depths while preserving fallback behavior for nonstandard tree
   objects. Tip-height normalization now streams the maximum terminal height from
   the shared terminal/depth context without rebuilding a generator expression at
-  each gamma/LTT call site.
+  each gamma/LTT call site. JSON output now converts the branching-time and
+  internode-interval numeric series with `list(map(float, ...))`, preserving the
+  same builtin-float payload while reducing large-series conversion overhead.
 - `Chronogram._compute_root_to_tip` baseline time called `tree.get_path()` for
   every node before summing branch lengths. The optimized path walks the tree
   once, carrying each parent's root-relative distance to its children. A later

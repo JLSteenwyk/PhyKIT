@@ -452,8 +452,8 @@ class LTT(Tree):
         result = dict(
             gamma=float(gamma),
             p_value=float(p_value),
-            branching_times=[float(t) for t in bt],
-            internode_intervals=[float(v) for v in g],
+            branching_times=list(map(float, bt)),
+            internode_intervals=list(map(float, g)),
             ltt=[
                 {"time_from_root": float(t), "n_lineages": int(n)}
                 for t, n in ltt_data

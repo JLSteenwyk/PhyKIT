@@ -559,6 +559,27 @@ class TestRun:
         assert "ltt" in data
         assert abs(data["gamma"] - (-1.414214)) < 1e-4
 
+    def test_output_json_converts_numeric_series(self, mocker):
+        args = Namespace(tree=BALANCED_TREE, verbose=False, json=True, plot_output=None)
+        svc = LTT(args)
+        mocked_json = mocker.patch("phykit.services.tree.ltt.print_json")
+
+        svc._output_json(
+            -1.25,
+            0.125,
+            [(0, "2"), (1.5, 3.0)],
+            [0, 0.75],
+            [1, 0.25],
+        )
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["branching_times"] == [0.0, 0.75]
+        assert payload["internode_intervals"] == [1.0, 0.25]
+        assert payload["ltt"] == [
+            {"time_from_root": 0.0, "n_lineages": 2},
+            {"time_from_root": 1.5, "n_lineages": 3},
+        ]
+
     def test_plot_output(self, tmp_path):
         plot_path = str(tmp_path / "test_ltt.png")
         args = Namespace(
