@@ -2197,6 +2197,7 @@ Results:
 | `FaithsPD.calculate_faiths_pd` binary selected-count aggregation | balanced 8192-tip tree, every third taxon selected, `include_root=False`, side-by-side previous generator-sum child count | 0.020002s | 0.015337s | 1.30x |
 | `FaithsPD.calculate_faiths_pd` single-tip exclude-root skip | balanced 32768-tip tree, one selected taxon, `include_root=False` | 0.047379s | 0.029310s | 1.62x |
 | `FaithsPD._load_taxa` order-preserving dedupe | 400k taxa rows plus blanks, 180k unique taxa, full file load path | 0.075677s | 0.066871s | 1.13x |
+| `FaithsPD._load_taxa` filtered dedupe values | 400k taxa rows plus blanks, 180k unique taxa, side-by-side previous list-comprehension blank filter | 0.050629s | 0.032650s | 1.55x |
 | `FaithsPD.run` cached read-only tree path | balanced 16384-tip cached tree, 2048-taxon community, taxa/output mocked | 0.138387s | 0.022596s | 6.12x |
 | `faiths_pd` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006675s | 0.005228s | 1.28x |
 | `faiths_pd` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.007869s | 0.003592s | 2.19x |
@@ -7383,7 +7384,10 @@ Profiling summary:
   skipping the selected-descendant count pass. Community taxa deduplication now uses
   order-preserving dictionary keys in both the file loader and calculation
   entry point, preserving blank filtering and first-occurrence order while
-  reducing large community-list setup time. The initial full-tree scan now
+  reducing large community-list setup time. A follow-up file-loader pass uses
+  `filter(None, dict.fromkeys(...))` for blank removal after deduplication,
+  preserving the same taxa order while moving that filter into a built-in loop.
+  The initial full-tree scan now
   pushes binary children right-then-left and indexes multifurcations backward,
   preserving clade order while reducing balanced 32768-tip sparse-community
   median time from 0.043449s to 0.032935s. The taxa-list reader now uses a

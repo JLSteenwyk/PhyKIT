@@ -65,7 +65,7 @@ class FaithsPD(Tree):
     @staticmethod
     def _load_taxa(taxa_file: str) -> list[str]:
         raw = read_single_column_file_to_list(taxa_file)
-        taxa = [name for name in dict.fromkeys(raw) if name]
+        taxa = list(filter(None, dict.fromkeys(raw)))
         if not taxa:
             raise PhykitUserError(
                 [f"No taxa found in {taxa_file}."], code=2,
