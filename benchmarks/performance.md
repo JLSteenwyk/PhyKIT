@@ -608,6 +608,7 @@ Results:
 | `rename_fasta_entries` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006248s | 0.005029s | 1.24x |
 | `rename_fasta_entries` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002786s | 0.000976s | 2.86x |
 | `Faidx.run` multi-entry text output | 50k indexed FASTA entries x 120 bp, in-memory text stream | 0.015406s | 0.009832s | 1.57x |
+| `Faidx.run` text block list comprehension | 100k requested FASTA entries x 120 bp, side-by-side previous append-loop block assembly with identical captured stdout | 0.083998s | 0.046744s | 1.80x |
 | `Faidx.run` streaming FASTA fetch | 50k FASTA records x 120 bp, three requested entries | 0.333717s | 0.145065s | 2.30x |
 | `Faidx._fetch_entries` selected-entry parser | 50k FASTA records x 120 bp, three requested entries, legacy `SimpleFastaParser` baseline | 0.043153s | 0.026709s | 1.62x |
 | `Faidx.run` direct sequence mapping | 100k requested FASTA entries x 120 bp, side-by-side previous `_FastaEntry` wrapper allocation/output path | 0.204819s | 0.068155s | 3.01x |
@@ -3960,7 +3961,9 @@ Profiling summary:
   FASTA parsing now skips `"".join(...)` for single-line sequence records while
   preserving whitespace cleanup and multiline record behavior, benefiting
   `Faidx`, `SumOfPairsScore`, taxon grouping, subsampling, and other direct
-  first-token FASTA readers.
+  first-token FASTA readers. A later text-output pass builds requested FASTA
+  blocks with a list comprehension instead of an append loop, preserving
+  requested-entry order and the same joined stdout.
 - `AlignmentSubsample._read_alignment` baseline time materialized
   `SeqRecord` objects before extracting IDs and sequence strings. The optimized
   path uses `SimpleFastaParser`, preserving first-token IDs and last duplicate

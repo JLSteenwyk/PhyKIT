@@ -40,6 +40,20 @@ assert "Bio.AlignIO" not in sys.modules
 
         mocked_print.assert_called_once_with(">1\nA-GTAT\n>2\nA-G-AT")
 
+    def test_run_text_output_preserves_requested_entry_order(self, mocker):
+        args = Namespace(fasta="/some/path/to/file.fa", entry="2,1")
+        mocker.patch.object(
+            Faidx,
+            "_fetch_entries",
+            return_value={"1": "AAAA", "2": "CCCC"},
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service = Faidx(args)
+        service.run()
+
+        mocked_print.assert_called_once_with(">2\nCCCC\n>1\nAAAA")
+
     def test_run_json_prints_structured_payload(self, mocker, tmp_path):
         path = tmp_path / "alignment.fa"
         path.write_text(">1 description\nA-GTAT\n>2 second\nA-G-AT\n")

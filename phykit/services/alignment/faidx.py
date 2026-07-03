@@ -33,9 +33,7 @@ class Faidx(Alignment):
             )
             return
 
-        blocks = []
-        for e in entries:
-            blocks.append(f">{e}\n{records[e]}")
+        blocks = [f">{entry}\n{records[entry]}" for entry in entries]
         if blocks:
             print("\n".join(blocks))
 
