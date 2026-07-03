@@ -634,6 +634,39 @@ class TestLogisticMPLE:
 
         np.testing.assert_allclose(distances, np.array([2.0, 2.0, 3.0]))
 
+    def test_large_root_tip_distances_avoid_reversed_iterator(
+        self, binomial_args, monkeypatch
+    ):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("large root-tip traversal should not call reversed")
+
+        left = Clade(
+            branch_length=1.0,
+            clades=NoReversedList([
+                Clade(name="A", branch_length=1.0),
+                Clade(name="B", branch_length=1.0),
+            ]),
+        )
+        root = Clade(
+            clades=NoReversedList([left, Clade(name="C", branch_length=3.0)]),
+        )
+        tree = Tree(root=root)
+        monkeypatch.setattr(
+            phylogenetic_glm_module,
+            "_ROOT_DISTANCE_BINARY_PUSH_MIN_TIPS",
+            0,
+        )
+
+        distances = PhylogeneticGLM(binomial_args)._root_tip_distances(
+            tree,
+            ["A", "B", "C"],
+        )
+
+        np.testing.assert_allclose(distances, np.array([2.0, 2.0, 3.0]))
+
     def test_make_ultrametric_fast_path_does_not_call_distance(
         self, binomial_args, monkeypatch
     ):

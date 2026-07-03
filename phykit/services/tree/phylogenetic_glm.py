@@ -59,6 +59,7 @@ _CHO_SOLVE = None
 _MINIMIZE = None
 _SPECIAL_ERFC = None
 _ROOT_DISTANCE_FROMITER_MAX_TIPS = 16_384
+_ROOT_DISTANCE_BINARY_PUSH_MIN_TIPS = 16_384
 _DIRECT_MEAN_MAX_SIZE = 10_000
 
 
@@ -390,6 +391,50 @@ class PhylogeneticGLM(Tree):
             try:
                 distance_by_name = {}
                 stack = [(root, 0.0)]
+                if len(ordered_names) >= _ROOT_DISTANCE_BINARY_PUSH_MIN_TIPS:
+                    pop = stack.pop
+                    push = stack.append
+                    while stack:
+                        clade, distance = pop()
+                        children = clade.clades
+                        if children:
+                            child_count = len(children)
+                            if child_count == 2:
+                                child = children[1]
+                                push(
+                                    (
+                                        child,
+                                        distance + (child.branch_length or 0.0),
+                                    )
+                                )
+                                child = children[0]
+                                push(
+                                    (
+                                        child,
+                                        distance + (child.branch_length or 0.0),
+                                    )
+                                )
+                            elif child_count == 1:
+                                child = children[0]
+                                push(
+                                    (
+                                        child,
+                                        distance + (child.branch_length or 0.0),
+                                    )
+                                )
+                            else:
+                                for idx in range(child_count - 1, -1, -1):
+                                    child = children[idx]
+                                    push(
+                                        (
+                                            child,
+                                            distance + (child.branch_length or 0.0),
+                                        )
+                                    )
+                        else:
+                            distance_by_name[clade.name] = distance
+                    return _ordered_distance_array(distance_by_name, ordered_names)
+
                 while stack:
                     clade, distance = stack.pop()
                     children = clade.clades

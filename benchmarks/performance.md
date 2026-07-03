@@ -2047,6 +2047,7 @@ Results:
 | `FitContinuous._concentrated_ll_cholesky` cached SciPy linalg wrappers | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.077998s | 0.057574s | 1.35x |
 | `PhylogeneticGLM._make_ultrametric` | balanced tree with 2500 tips | 2.2726s | 0.0068s | 336.2x |
 | `PhylogeneticGLM._root_tip_distances` | balanced 65536-tip tree, ordered ultrametric correction distances | 0.1598s | 0.0245s | 6.5x |
+| `PhylogeneticGLM._root_tip_distances` binary child push | balanced 32768 / 65536 / 131072-tip trees, ordered ultrametric correction distances, side-by-side previous `reversed(children)` traversal | 0.039216s / 0.107004s / 0.175858s | 0.028549s / 0.041600s / 0.132839s | 1.37x / 2.57x / 1.32x |
 | `PhylogeneticGLM._make_ultrametric` root-height max reduction | 120 / 1200 / 10000 / 65536 root-to-tip distances, side-by-side previous `np.max(heights)` wrapper | 0.000004475s / 0.000006131s / 0.000005739s / 0.000014409s | 0.000002587s / 0.000001470s / 0.000001774s / 0.000011340s | 1.73x / 4.17x / 3.23x / 1.27x |
 | `PhylogeneticGLM` one-dimensional mean reductions | 40 / 120 / 1200 / 10000 / 65536 / 100k already-materialized vectors through the lazy NumPy proxy, side-by-side previous `np.mean` wrapper with large-vector path preserved | 0.000006027s / 0.000005015s / 0.000023954s / 0.000026664s / 0.000040420s / 0.000040371s | 0.000003042s / 0.000003333s / 0.000008654s / 0.000008626s / 0.000040420s / 0.000040371s | 1.98x / 1.50x / 2.77x / 3.09x / 1.00x / 1.00x |
 | `PhylogeneticGLM._root_tip_distances` ordered distance array construction | 1024 / 16384 / 65536 / 200k ordered tip distances, side-by-side previous list comprehension plus `np.array` with large-array path preserved | 0.000253s / 0.001228s / 0.006045s / 0.027965s | 0.000069s / 0.001024s / 0.006045s / 0.027965s | 3.65x / 1.20x / 1.00x / 1.00x |
@@ -7620,7 +7621,9 @@ Profiling summary:
   explicitly inverting `X' C^-1 X`. JSON result formatting now converts the
   residual and fitted NumPy vectors to Python lists once before dictionary
   construction, avoiding per-item NumPy scalar conversion while preserving the
-  same JSON-compatible payload values.
+  same JSON-compatible payload values. Large standard-tree root-tip distance
+  setup now pushes binary children explicitly, preserving ordered distances while
+  avoiding per-node `reversed(children)` iterator setup in ultrametric correction.
 - `PhyloPath._fit_gls_from_vcv` replaces the post-lambda explicit VCV inverse
   used by d-separation tests and path coefficient fits with Cholesky
   factorization and triangular solves. End-to-end `_dsep_test` improves more
