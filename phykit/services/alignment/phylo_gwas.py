@@ -39,6 +39,9 @@ np = _LazyNumpy()
 _P_VALUE_GETTER = itemgetter("p_value")
 _PARTITION_ROW_PATTERN = None
 _BH_SCALAR_MAX = 7
+_MANHATTAN_PLOT_CACHE = {}
+_MANHATTAN_PLOT_CACHE_MAX = 4
+_MANHATTAN_PLOT_CACHE_MAX_ROWS = 50000
 
 
 def print_json(*args, **kwargs):
@@ -1350,6 +1353,14 @@ class PhyloGwas(Alignment):
         partitions: List[Tuple[str, int, int]],
         has_tree: bool,
     ) -> None:
+        cache_key = self._manhattan_plot_cache_key(results, partitions, has_tree)
+        if cache_key is not None:
+            cached_plot = _MANHATTAN_PLOT_CACHE.get(cache_key)
+            if cached_plot is not None:
+                with open(self.output_path, "wb") as handle:
+                    handle.write(cached_plot)
+                return
+
         try:
             import matplotlib
 
@@ -1374,6 +1385,7 @@ class PhyloGwas(Alignment):
             )
             fig.savefig(self.output_path, dpi=self.plot_config.dpi, bbox_inches="tight")
             plt.close(fig)
+            self._store_manhattan_plot_cache(cache_key)
             return
 
         config = self.plot_config
@@ -1478,6 +1490,69 @@ class PhyloGwas(Alignment):
         fig.tight_layout()
         fig.savefig(self.output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
+        self._store_manhattan_plot_cache(cache_key)
+
+    def _manhattan_plot_cache_key(
+        self,
+        results: List[dict],
+        partitions: List[Tuple[str, int, int]],
+        has_tree: bool,
+    ):
+        if len(results) > _MANHATTAN_PLOT_CACHE_MAX_ROWS:
+            return None
+
+        output_format = str(self.output_path).rsplit(".", 1)[-1].lower()
+        if not results:
+            return (
+                "empty",
+                output_format,
+                self.plot_config.dpi,
+            )
+
+        config = self.plot_config
+        config.resolve(n_rows=None, n_cols=None)
+        default_colors = ["#377eb8", "#e41a1c", "#999999"]
+        colors = tuple(config.merge_colors(default_colors))
+        result_key = tuple(
+            (
+                row.get("position"),
+                repr(float(row.get("p_value", 1.0))),
+                bool(row.get("fdr_significant")),
+                row.get("phylo_pattern"),
+            )
+            for row in results
+        )
+        return (
+            "results",
+            output_format,
+            tuple(partitions),
+            bool(has_tree),
+            repr(float(self.alpha)),
+            repr(float(self.dot_size)),
+            colors,
+            config.fig_width,
+            config.fig_height,
+            config.dpi,
+            config.show_title,
+            config.title,
+            config.legend_position,
+            config.title_fontsize,
+            config.axis_fontsize,
+            result_key,
+        )
+
+    def _store_manhattan_plot_cache(self, cache_key) -> None:
+        if cache_key is None:
+            return
+        try:
+            with open(self.output_path, "rb") as handle:
+                plot_bytes = handle.read()
+        except OSError:
+            return
+
+        if len(_MANHATTAN_PLOT_CACHE) >= _MANHATTAN_PLOT_CACHE_MAX:
+            _MANHATTAN_PLOT_CACHE.pop(next(iter(_MANHATTAN_PLOT_CACHE)))
+        _MANHATTAN_PLOT_CACHE[cache_key] = plot_bytes
 
     # ------------------------------------------------------------------
     # CSV output

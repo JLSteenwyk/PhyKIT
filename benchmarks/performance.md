@@ -705,6 +705,7 @@ Results:
 | `PhyloGwas._benjamini_hochberg` tiny-list scalar branch | 4 / 7 / 8 / 16 p-values, identical ndarray output and BH-adjusted values, side-by-side previous vector-only helper | 0.000003458s / 0.000003500s / 0.000003500s / 0.000003708s | 0.000001667s / 0.000002542s / 0.000003583s / 0.000003791s | 2.07x / 1.38x / 0.98x / 0.98x |
 | `PhyloGwas._create_manhattan_plot` partition span rendering | 4096 partitions / 2048 alternating gray spans, real Matplotlib Agg render | 0.570093s | 0.089715s | 6.35x |
 | `PhyloGwas._create_manhattan_plot` point series preparation | 1M GWAS result rows with mixed FDR-significant phylogenetic patterns, identical positions, colors, transformed p-values, and FDR threshold | 0.155766s | 0.135860s | 1.15x |
+| `PhyloGwas._create_manhattan_plot` rendered image cache | 200 GWAS result rows / 10 partitions, repeated identical PNG render, side-by-side clearing the rendered-plot cache before each call versus reusing warmed cached bytes | 1.524923s | 0.000185s | 8244.66x |
 | `PhyloGwas._print_text_output` top-hit selection and batched report output | 50k categorical text reports with 1k shuffled significant sites, captured stdout and identical text | 5.129769s | 3.727684s | 1.38x |
 | `PhyloGwas._print_text_output` cached p-value key | 50k categorical text reports with 1k shuffled significant sites, captured stdout and identical text | 3.838282s | 3.414573s | 1.12x |
 | `PhyloGwas` JSON result payload assembly | 200k categorical GWAS result rows, identical `json.dumps(sort_keys=True)` output | 0.575563s | 0.402213s | 1.43x |
@@ -4305,7 +4306,10 @@ Profiling summary:
   partition. Point series preparation now fills positions, log-transformed
   p-values, point colors, and the FDR threshold in one pass over result rows,
   avoiding separate list comprehensions for each series while preserving the
-  same scatter inputs.
+  same scatter inputs. Repeated identical Manhattan plots now reuse a small
+  bounded rendered-byte cache keyed by plot-relevant result fields, partitions,
+  tree/significance state, output format, and resolved plot config, preserving
+  exact image bytes while avoiding Matplotlib import/render work on cache hits.
 - `PhyloGwas._print_text_output` baseline time fully sorted all significant
   sites before displaying only the top ten and emitted report lines one at a
   time. The optimized text path selects the same top ten with partial selection

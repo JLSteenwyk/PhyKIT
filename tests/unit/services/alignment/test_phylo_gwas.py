@@ -535,6 +535,52 @@ class TestPhyloGwas:
         assert len(patch_collections) == 1
         assert len(patch_collections[0].get_paths()) == 3
 
+    def test_manhattan_plot_reuses_cached_rendered_bytes(
+        self, tmp_path, monkeypatch
+    ):
+        """Repeated identical Manhattan plots should skip Matplotlib rendering."""
+        pytest.importorskip("matplotlib")
+        previous_cache = phylo_gwas_module._MANHATTAN_PLOT_CACHE.copy()
+        phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
+        results = [
+            {
+                "position": 1,
+                "p_value": 0.5,
+                "fdr_significant": False,
+                "phylo_pattern": None,
+            },
+            {
+                "position": 2,
+                "p_value": 0.01,
+                "fdr_significant": True,
+                "phylo_pattern": "polyphyletic",
+            },
+        ]
+
+        first_args = _make_args(tmp_path)
+        first_service = PhyloGwas(first_args)
+        first_service._create_manhattan_plot(results, [], has_tree=False)
+        first_bytes = Path(first_args.output).read_bytes()
+
+        second_dir = tmp_path / "second"
+        second_dir.mkdir()
+        second_args = _make_args(second_dir)
+        second_service = PhyloGwas(second_args)
+        original_import = builtins.__import__
+
+        def fail_matplotlib_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "matplotlib" or name.startswith("matplotlib."):
+                raise AssertionError("cached plot should not import matplotlib")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fail_matplotlib_import)
+        try:
+            second_service._create_manhattan_plot(results, [], has_tree=False)
+            assert Path(second_args.output).read_bytes() == first_bytes
+        finally:
+            phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
+            phylo_gwas_module._MANHATTAN_PLOT_CACHE.update(previous_cache)
+
     def test_csv_output(self, tmp_path):
         """CSV file should be created with correct columns."""
         csv_path = str(tmp_path / "results.csv")
