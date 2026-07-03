@@ -356,6 +356,45 @@ class TestChronogram:
         assert len(line_collections) >= 2
         assert (tmp_path / "chrono_circular_batched.png").exists()
 
+    def test_circular_timescale_reuses_boundary_circle_points(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import numpy as np
+
+        out = str(tmp_path / "chrono_circular_timescale_points.png")
+        svc = Chronogram(_make_args(plot_output=out, circular=True, root_age=20.0))
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        parent_map = build_parent_map(tree)
+        root_to_tip = svc._compute_root_to_tip(tree)
+        guide_calls = 0
+        original_linspace = module.np.linspace
+
+        def fake_timescale(_root_age, _timescale):
+            return (
+                [
+                    ("ring1", 18.0, 15.0),
+                    ("ring2", 15.0, 10.0),
+                    ("ring3", 10.0, 5.0),
+                    ("ring4", 5.0, 0.0),
+                ],
+                {},
+            )
+
+        def count_linspace(start, stop, num, *args, **kwargs):
+            nonlocal guide_calls
+            if start == 0 and stop == 2 * np.pi and num == 200:
+                guide_calls += 1
+            return original_linspace(start, stop, num, *args, **kwargs)
+
+        monkeypatch.setattr(module, "get_timescale_for_range", fake_timescale)
+        monkeypatch.setattr(module.np, "linspace", count_linspace)
+
+        svc._plot_circular(tree, parent_map, 1.0, root_to_tip)
+
+        assert guide_calls == 1
+        assert (tmp_path / "chrono_circular_timescale_points.png").exists()
+
     def test_circular_plot_batches_hpd_intervals(self, monkeypatch, tmp_path):
         pytest.importorskip("matplotlib")
         import matplotlib.axes

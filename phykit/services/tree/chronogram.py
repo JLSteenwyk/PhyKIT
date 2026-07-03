@@ -619,6 +619,8 @@ class Chronogram(Tree):
         intervals, colors = get_timescale_for_range(
             self.root_age, self.timescale
         )
+        circle_cos = None
+        circle_sin = None
         for name, start_ma, end_ma in intervals:
             if start_ma <= 0:
                 continue
@@ -639,10 +641,13 @@ class Chronogram(Tree):
             ax.add_patch(ring)
 
             # Faint concentric boundary circle
-            circle_pts = np.linspace(0, 2 * np.pi, 200)
+            if circle_cos is None:
+                circle_pts = np.linspace(0, 2 * np.pi, 200)
+                circle_cos = np.cos(circle_pts)
+                circle_sin = np.sin(circle_pts)
             ax.plot(
-                r_inner * np.cos(circle_pts),
-                r_inner * np.sin(circle_pts),
+                r_inner * circle_cos,
+                r_inner * circle_sin,
                 color="#cccccc", lw=0.3, zorder=0,
             )
 
