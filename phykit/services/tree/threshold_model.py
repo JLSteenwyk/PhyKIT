@@ -1047,7 +1047,7 @@ class ThresholdModel(Tree):
 
     @staticmethod
     def _sample_mean(samples):
-        if hasattr(samples, "mean") and len(samples) < 10_000:
+        if hasattr(samples, "mean"):
             return float(samples.mean())
         return float(np.mean(samples))
 

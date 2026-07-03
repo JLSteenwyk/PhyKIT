@@ -2665,6 +2665,7 @@ Results:
 | `ThresholdModel._initialize_liabilities` vectorized discrete liabilities | 20k binary discrete taxa, scalar SciPy stream preserved | 2.035507s | 0.005099s | 399.2x |
 | `ThresholdModel._summarize_posterior` single-sort median/HPD | five 500k-sample posterior traces, identical summary statistics | 0.317456s | 0.248927s | 1.28x |
 | `ThresholdModel._summarize_posterior` small-trace mean reductions | five 1k-sample posterior traces, side-by-side previous `np.mean` wrapper after single-sort summary setup | 0.337282s | 0.166087s | 2.03x |
+| `ThresholdModel._sample_mean` large posterior trace reductions | posterior traces sized 10000 / 100000 / 500000 / 1000000, side-by-side previous large-trace `np.mean` fallback | 0.000018526s / 0.000021912s / 0.000094929s / 0.000273967s | 0.000003387s / 0.000020650s / 0.000093371s / 0.000188242s | 5.47x / 1.06x / 1.02x / 1.46x |
 | `ThresholdModel._summarize_posterior` cached lazy NumPy proxy | five 100-sample / five 1k-sample posterior traces, side-by-side previous uncached lazy proxy, identical summary dictionaries | 0.000068036s / 0.000411293s | 0.000058205s / 0.000220975s | 1.17x / 1.86x |
 | `ThresholdModel._output_text` batched summary output | 100k captured threshold-model text summaries, identical stdout text | 0.414422s | 0.337860s | 1.23x |
 | `ThresholdModel._output_text` single-report formatting | 100k captured threshold-model text summaries, identical stdout text, side-by-side previous newline-joined list comparison | 0.301403s | 0.285244s | 1.06x |
@@ -8744,12 +8745,12 @@ Profiling summary:
   vector's ndarray `var()` and `mean()` methods for initial continuous-trait
   scaling. The covariance diagonal mean now comes from `trace(C) / n`,
   preserving the same scalar while avoiding a copied diagonal array. Posterior
-  summaries and plots now use each small NumPy trace's `mean()` method while
-  keeping the generic `np.mean` path for larger traces, avoiding lazy proxy
-  dispatch on common sampled-chain summaries. The threshold-model lazy NumPy
-  proxy now also caches the imported module and resolved attributes after first
-  use, preserving cold-import behavior while avoiding repeated proxy resolution
-  during posterior sorting and HPD calculations.
+  summaries and plots now use each NumPy trace's `mean()` method across sampled
+  chain sizes, avoiding lazy proxy dispatch on both common small summaries and
+  larger posterior traces. The threshold-model lazy NumPy proxy now also caches
+  the imported module and resolved attributes after first use, preserving
+  cold-import behavior while avoiding repeated proxy resolution during posterior
+  sorting and HPD calculations.
   `ThresholdModel.run` now
   reads the cached tree directly for validation and copies only when parsed
   trait taxa omit one or more tree tips before pruning, so all-shared trait
