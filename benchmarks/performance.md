@@ -947,6 +947,7 @@ Results:
 | `spectral_discordance` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005708s | 0.003931s | 1.45x |
 | `SpectralDiscordance._print_text` PC-score rows | 100k gene-tree score rows x 5 PCs, identical stdout text | 0.240505s | 0.197126s | 1.22x |
 | `SpectralDiscordance._format_json` row-slice score payload | 100k gene-tree score rows x 5 PCs, identical nested payload | 0.157021s | 0.103268s | 1.52x |
+| `SpectralDiscordance._format_json` fixed-column score payload | 100k gene-tree score rows x 2 / 4 / 5 PCs, identical nested payload, side-by-side previous row-slice score construction | 0.232692s / 0.425831s / 0.656708s | 0.092536s / 0.264908s / 0.169341s | 2.51x / 1.61x / 3.88x |
 | `SpectralDiscordance.run` cached read-only species tree setup | balanced 32768-tip cached species tree, gene-tree parsing, bipartition matrix, PCA, clustering, and output mocked | 0.100765s | 0.000038s | 2651.7x |
 | `QuartetNetwork._normalize_taxa` identical taxa setup | 80 balanced trees x 512 shared taxa | 0.0784s | 0.0095s | 8.3x |
 | consensus/quartet `_prune_to_taxa` direct terminal objects | balanced 8192-tip tree, prune to 4096 retained tips | 0.029969s | 0.013771s | 2.18x |

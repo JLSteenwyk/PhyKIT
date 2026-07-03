@@ -235,14 +235,68 @@ class SpectralDiscordance(Tree):
             f"PC{pc + 1}"
             for pc in range(variance_pcs)
         ]
-        score_dict = {}
-        for g, (score_row, label) in enumerate(zip(scores, labels), 1):
-            row = {
-                pc_label: float(value)
-                for pc_label, value in zip(pc_labels, score_row[:show_pcs])
+
+        gene_tree_indices = range(1, G + 1)
+        if show_pcs == 2:
+            col1 = scores[:, 0].tolist()
+            col2 = scores[:, 1].tolist()
+            score_dict = {
+                f"gene_tree_{g}": {
+                    "PC1": float(val1),
+                    "PC2": float(val2),
+                    "cluster": int(label),
+                }
+                for g, val1, val2, label in zip(
+                    gene_tree_indices, col1, col2, labels
+                )
             }
-            row["cluster"] = int(label)
-            score_dict[f"gene_tree_{g}"] = row
+        elif show_pcs == 4:
+            col1 = scores[:, 0].tolist()
+            col2 = scores[:, 1].tolist()
+            col3 = scores[:, 2].tolist()
+            col4 = scores[:, 3].tolist()
+            score_dict = {
+                f"gene_tree_{g}": {
+                    "PC1": float(val1),
+                    "PC2": float(val2),
+                    "PC3": float(val3),
+                    "PC4": float(val4),
+                    "cluster": int(label),
+                }
+                for g, val1, val2, val3, val4, label in zip(
+                    gene_tree_indices, col1, col2, col3, col4, labels
+                )
+            }
+        elif show_pcs == 5:
+            col1 = scores[:, 0].tolist()
+            col2 = scores[:, 1].tolist()
+            col3 = scores[:, 2].tolist()
+            col4 = scores[:, 3].tolist()
+            col5 = scores[:, 4].tolist()
+            score_dict = {
+                f"gene_tree_{g}": {
+                    "PC1": float(val1),
+                    "PC2": float(val2),
+                    "PC3": float(val3),
+                    "PC4": float(val4),
+                    "PC5": float(val5),
+                    "cluster": int(label),
+                }
+                for g, val1, val2, val3, val4, val5, label in zip(
+                    gene_tree_indices, col1, col2, col3, col4, col5, labels
+                )
+            }
+        else:
+            score_dict = {}
+            for g, (score_row, label) in enumerate(zip(scores, labels), 1):
+                row = {
+                    pc_label: float(value)
+                    for pc_label, value in zip(
+                        pc_labels, score_row[:show_pcs]
+                    )
+                }
+                row["cluster"] = int(label)
+                score_dict[f"gene_tree_{g}"] = row
 
         return {
             "metric": self.metric,

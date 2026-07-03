@@ -893,6 +893,50 @@ class TestRun:
             "eigengap_values": [0.4, 0.2],
         }
 
+    def test_format_json_five_pcs_skips_generic_row_iteration(self, default_args):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class FivePcScores:
+            shape = (1, 5)
+
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([0.1, 0.2, 0.3, 0.4, 0.5][column:column + 1])
+
+            def __iter__(self):
+                raise AssertionError("5-PC output should not use row iteration")
+
+        svc = SpectralDiscordance(default_args)
+
+        payload = svc._format_json(
+            FivePcScores(),
+            np.array([0.4, 0.3, 0.2, 0.1, 0.05]),
+            {},
+            np.array([2]),
+            3,
+            np.array([0.7]),
+            5,
+            {frozenset({"A", "B"}): 0},
+            {},
+        )
+
+        assert payload["scores"] == {
+            "gene_tree_1": {
+                "PC1": 0.1,
+                "PC2": 0.2,
+                "PC3": 0.3,
+                "PC4": 0.4,
+                "PC5": 0.5,
+                "cluster": 2,
+            }
+        }
+
     @patch("builtins.print")
     def test_no_species_tree(self, mocked_print, no_species_tree_args):
         svc = SpectralDiscordance(no_species_tree_args)
