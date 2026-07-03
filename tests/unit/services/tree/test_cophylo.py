@@ -446,6 +446,63 @@ class TestRun:
                 for actual, expected in zip(terminal_clades, expected_terminals)
             )
 
+    def test_circular_plot_batches_association_lines(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.figure
+        import matplotlib.patches
+        from matplotlib.collections import LineCollection
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output=str(tmp_path / "cophylo.png"),
+            mapping=None,
+            json=False,
+            circular=True,
+            color_file=None,
+            no_title=True,
+            ylabel_fontsize=0,
+        )
+        svc = Cophylo(args)
+        tree1 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree2 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        mapping = {name: name for name in order}
+        output_path = tmp_path / "cophylo_associations_circular.png"
+        original_add_artist = matplotlib.figure.Figure.add_artist
+        line_collections = []
+
+        def fail_connection_patch(*_args, **_kwargs):
+            raise AssertionError("circular association lines should be batched")
+
+        def count_artist(self, artist, *args, **kwargs):
+            if isinstance(artist, LineCollection):
+                line_collections.append(artist)
+            return original_add_artist(self, artist, *args, **kwargs)
+
+        monkeypatch.setattr(
+            matplotlib.patches,
+            "ConnectionPatch",
+            fail_connection_patch,
+        )
+        monkeypatch.setattr(matplotlib.figure.Figure, "add_artist", count_artist)
+
+        try:
+            svc._plot_cophylo(tree1, tree2, mapping, order, order, str(output_path))
+        finally:
+            plt.close("all")
+
+        assert any(
+            len(collection.get_segments()) == len(mapping)
+            and collection.get_linewidths()[0] == pytest.approx(0.5)
+            for collection in line_collections
+        )
+        assert output_path.exists()
+
     @pytest.mark.parametrize("circular", [False, True])
     def test_plot_batches_color_clade_overlay(self, monkeypatch, tmp_path, circular):
         pytest.importorskip("matplotlib")

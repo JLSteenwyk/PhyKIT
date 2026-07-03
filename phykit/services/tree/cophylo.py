@@ -525,7 +525,7 @@ class Cophylo(Tree):
     def _plot_cophylo_circular(
         self, tree1, tree2, mapping, output_path, config, plt,
     ) -> None:
-        from matplotlib.patches import ConnectionPatch
+        from matplotlib.collections import LineCollection
 
         fig, (ax1, ax2) = plt.subplots(
             1, 2, figsize=(config.fig_width, config.fig_height),
@@ -634,7 +634,16 @@ class Cophylo(Tree):
         tip_name_to_id1 = {t.name: id(t) for t in terminals1}
         tip_name_to_id2 = {t.name: id(t) for t in terminals2}
 
-        # Draw connecting lines between matched taxa
+        if config.show_title:
+            ax1.set_title("Tree 1", fontsize=config.title_fontsize or 11, fontweight="bold")
+            ax2.set_title("Tree 2", fontsize=config.title_fontsize or 11, fontweight="bold")
+
+        fig.suptitle("Cophylogenetic Plot (Tanglegram)", fontsize=13)
+        fig.tight_layout()
+
+        # Draw connecting lines between matched taxa in one figure-level collection
+        figure_segments = []
+        to_figure = fig.transFigure.inverted().transform
         for t1_name, t2_name in mapping.items():
             tid1 = tip_name_to_id1.get(t1_name)
             tid2 = tip_name_to_id2.get(t2_name)
@@ -642,21 +651,25 @@ class Cophylo(Tree):
                 continue
             if tid1 not in coords1 or tid2 not in coords2:
                 continue
-            con = ConnectionPatch(
-                xyA=(coords1[tid1]["x"], coords1[tid1]["y"]),
-                xyB=(coords2[tid2]["x"], coords2[tid2]["y"]),
-                coordsA="data", coordsB="data",
-                axesA=ax1, axesB=ax2,
-                color="gray", alpha=0.5, lw=0.5,
+            point1 = to_figure(
+                ax1.transData.transform((coords1[tid1]["x"], coords1[tid1]["y"]))
             )
-            fig.add_artist(con)
-
-        if config.show_title:
-            ax1.set_title("Tree 1", fontsize=config.title_fontsize or 11, fontweight="bold")
-            ax2.set_title("Tree 2", fontsize=config.title_fontsize or 11, fontweight="bold")
-
-        fig.suptitle("Cophylogenetic Plot (Tanglegram)", fontsize=13)
-        fig.tight_layout()
+            point2 = to_figure(
+                ax2.transData.transform((coords2[tid2]["x"], coords2[tid2]["y"]))
+            )
+            figure_segments.append((point1, point2))
+        if figure_segments:
+            fig.add_artist(
+                LineCollection(
+                    figure_segments,
+                    colors="gray",
+                    alpha=0.5,
+                    linewidths=0.5,
+                    transform=fig.transFigure,
+                    clip_on=False,
+                    zorder=1,
+                )
+            )
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved cophylo plot: {output_path}")
