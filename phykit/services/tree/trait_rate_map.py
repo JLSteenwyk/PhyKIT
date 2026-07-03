@@ -611,10 +611,9 @@ class TraitRateMap(Tree):
             ax.set_aspect("equal")
             ax.axis("off")
 
-            radial_segments = []
-            radial_colors = []
-            radial_widths = []
-            rate_color_cache = {}
+            gray_radial_segments = []
+            rate_radial_segments = []
+            rate_radial_values = []
             for clade in preorder_clades:
                 if clade == root:
                     continue
@@ -626,16 +625,6 @@ class TraitRateMap(Tree):
                 if pid not in coords or cid not in coords:
                     continue
 
-                color = "gray"
-                lw = 2
-                if cid in rate_by_clade:
-                    rate = rate_by_clade[cid]
-                    color = rate_color_cache.get(rate)
-                    if color is None:
-                        color = cmap(norm(rate))
-                        rate_color_cache[rate] = color
-                    lw = 3
-
                 angle = coords[cid]["angle"]
                 r_p = coords[pid]["radius"]
                 r_c = coords[cid]["radius"]
@@ -643,19 +632,36 @@ class TraitRateMap(Tree):
                 y0 = r_p * math.sin(angle)
                 x1 = r_c * math.cos(angle)
                 y1 = r_c * math.sin(angle)
-                radial_segments.append(((x0, y0), (x1, y1)))
-                radial_colors.append(color)
-                radial_widths.append(lw)
+                segment = ((x0, y0), (x1, y1))
+                if cid in rate_by_clade:
+                    rate_radial_segments.append(segment)
+                    rate_radial_values.append(rate_by_clade[cid])
+                else:
+                    gray_radial_segments.append(segment)
 
-            if radial_segments:
+            if gray_radial_segments:
                 ax.add_collection(
                     LineCollection(
-                        radial_segments,
-                        colors=radial_colors,
-                        linewidths=radial_widths,
+                        gray_radial_segments,
+                        colors="gray",
+                        linewidths=2,
                         capstyle="round",
                         zorder=2,
                     ),
+                    autolim=True,
+                )
+            if rate_radial_segments:
+                rate_collection = LineCollection(
+                    rate_radial_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=3,
+                    capstyle="round",
+                    zorder=2,
+                )
+                rate_collection.set_array(rate_radial_values)
+                ax.add_collection(
+                    rate_collection,
                     autolim=True,
                 )
 
@@ -705,7 +711,7 @@ class TraitRateMap(Tree):
                     ),
                     autolim=True,
                 )
-            if radial_segments or arc_segments:
+            if gray_radial_segments or rate_radial_segments or arc_segments:
                 ax.autoscale_view()
 
             # Tip labels
@@ -756,10 +762,9 @@ class TraitRateMap(Tree):
             from matplotlib.collections import LineCollection
 
             vertical_segments = []
-            horizontal_segments = []
-            horizontal_colors = []
-            horizontal_widths = []
-            rate_color_cache = {}
+            gray_horizontal_segments = []
+            rate_horizontal_segments = []
+            rate_horizontal_values = []
             for clade in preorder_clades:
                 if clade == root:
                     continue
@@ -778,19 +783,11 @@ class TraitRateMap(Tree):
                 y1 = node_y.get(cid, 0)
 
                 # Horizontal branch colored by rate
-                color = "gray"
-                lw = 2
                 if cid in rate_by_clade:
-                    rate = rate_by_clade[cid]
-                    color = rate_color_cache.get(rate)
-                    if color is None:
-                        color = cmap(norm(rate))
-                        rate_color_cache[rate] = color
-                    lw = 3
-
-                horizontal_segments.append(((x0, y1), (x1, y1)))
-                horizontal_colors.append(color)
-                horizontal_widths.append(lw)
+                    rate_horizontal_segments.append(((x0, y1), (x1, y1)))
+                    rate_horizontal_values.append(rate_by_clade[cid])
+                else:
+                    gray_horizontal_segments.append(((x0, y1), (x1, y1)))
                 vertical_segments.append(((x0, y0), (x0, y1)))
 
             if vertical_segments:
@@ -802,16 +799,29 @@ class TraitRateMap(Tree):
                     ),
                     autolim=True,
                 )
-            if horizontal_segments:
+            if gray_horizontal_segments:
                 ax.add_collection(
                     LineCollection(
-                        horizontal_segments,
-                        colors=horizontal_colors,
-                        linewidths=horizontal_widths,
+                        gray_horizontal_segments,
+                        colors="gray",
+                        linewidths=2,
                     ),
                     autolim=True,
                 )
-            ax.autoscale_view()
+            if rate_horizontal_segments:
+                rate_collection = LineCollection(
+                    rate_horizontal_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=3,
+                )
+                rate_collection.set_array(rate_horizontal_values)
+                ax.add_collection(
+                    rate_collection,
+                    autolim=True,
+                )
+            if vertical_segments or gray_horizontal_segments or rate_horizontal_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 0

@@ -666,6 +666,7 @@ class TestPlotRateMap:
     def test_rectangular_plot_batches_rate_branches(self, monkeypatch, tmp_path):
         pytest.importorskip("matplotlib")
         import matplotlib.axes
+        from matplotlib.collections import LineCollection
 
         args = _make_args(output=str(tmp_path / "trait_rate_batched.png"))
         svc = TraitRateMap(args)
@@ -681,40 +682,43 @@ class TestPlotRateMap:
         branch_rates = svc._compute_branch_rates(
             tree, node_values, parent_map, node_labels, preorder_clades
         )
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        line_collections = []
 
         def fail_plot(*args, **kwargs):
             raise AssertionError("rectangular rate-map branches should be batched")
 
+        def count_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
         monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_plot)
+        monkeypatch.setattr(
+            matplotlib.axes.Axes, "add_collection", count_collection
+        )
 
         svc._plot_rate_map(
             tree, node_values, branch_rates, parent_map,
             node_labels, trait_values, "trait", args.output,
         )
 
+        rate_collections = [
+            collection
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert len(rate_collections) == 1
+        assert len(rate_collections[0].get_array()) == len(branch_rates)
         assert os.path.exists(args.output)
 
-    def test_rectangular_plot_reuses_repeated_rate_colors(self, monkeypatch, tmp_path):
+    def test_rectangular_plot_uses_scalar_rate_collection(self, monkeypatch, tmp_path):
         pytest.importorskip("matplotlib")
-        import matplotlib.colors as mcolors
-        import matplotlib.figure
-        import matplotlib.pyplot as plt
-
-        class CountingCmap(mcolors.ListedColormap):
-            def __init__(self):
-                super().__init__(["black", "red"], name="counting-rate-map")
-                self.calls = 0
-
-            def __call__(self, X, alpha=None, bytes=False):
-                self.calls += 1
-                return super().__call__(X, alpha=alpha, bytes=bytes)
-
-        class Colorbar:
-            def set_label(self, *args, **kwargs):
-                pass
+        import matplotlib.axes
+        from matplotlib.collections import LineCollection
 
         args = _make_args(
-            output=str(tmp_path / "trait_rate_repeated_colors.png"),
+            output=str(tmp_path / "trait_rate_scalar_collection.png"),
             ylabel_fontsize=0,
             no_title=True,
         )
@@ -725,6 +729,7 @@ class TestPlotRateMap:
         node_values = {id(clade): 1.0 for clade in preorder_clades}
         node_labels = {id(clade): clade.name or "internal" for clade in preorder_clades}
         trait_values = {"A": 1.0, "B": 1.0, "C": 1.0, "D": 1.0}
+        non_root_clades = [clade for clade in preorder_clades if clade is not tree.root]
         branch_rates = [
             {
                 "clade_id": id(clade),
@@ -734,15 +739,18 @@ class TestPlotRateMap:
                 "change": 0.75,
                 "branch_length": 1.0,
             }
-            for clade in preorder_clades
-            if clade is not tree.root
+            for clade in non_root_clades[1:]
         ]
-        cmap = CountingCmap()
-        monkeypatch.setattr(plt, "get_cmap", lambda name: cmap)
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        line_collections = []
+
+        def count_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
         monkeypatch.setattr(
-            matplotlib.figure.Figure,
-            "colorbar",
-            lambda self, *args, **kwargs: Colorbar(),
+            matplotlib.axes.Axes, "add_collection", count_collection
         )
 
         svc._plot_rate_map(
@@ -750,7 +758,17 @@ class TestPlotRateMap:
             node_labels, trait_values, "trait", args.output,
         )
 
-        assert cmap.calls == 1
+        rate_collections = [
+            collection
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert len(rate_collections) == 1
+        assert list(rate_collections[0].get_array()) == [0.75] * len(branch_rates)
+        assert any(
+            collection.get_array() is None and len(collection.get_segments()) == 1
+            for collection in line_collections
+        )
         assert os.path.exists(args.output)
 
     def test_circular_plot_batches_rate_branches(self, monkeypatch, tmp_path):
@@ -798,6 +816,13 @@ class TestPlotRateMap:
             node_labels, trait_values, "trait", args.output,
         )
 
+        rate_collections = [
+            collection
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert len(rate_collections) == 1
+        assert len(rate_collections[0].get_array()) == len(branch_rates)
         assert len(line_collections) >= 2
         assert os.path.exists(args.output)
 
