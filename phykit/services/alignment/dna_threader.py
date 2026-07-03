@@ -126,22 +126,21 @@ class DNAThreader(Alignment):
         return ''.join(c * 3 for c in p_seq)
 
     def normalize_n_seq(self, n_seq: "Seq", p_seq: "Seq") -> str:
-        # Pre-split codons for faster access
         n_seq_str = str(n_seq)
-        codons = [n_seq_str[i:i+3] for i in range(0, len(n_seq_str), 3)]
         normalized_n_seq = []
+        append = normalized_n_seq.append
         gap_chars = self.GAP_CHARS
 
-        codon_idx = 0
+        codon_offset = 0
+        n_seq_len = len(n_seq_str)
         for aa in p_seq:
             if aa in gap_chars:
-                normalized_n_seq.append("---")
+                append("---")
+            elif codon_offset < n_seq_len:
+                append(n_seq_str[codon_offset:codon_offset + 3])
+                codon_offset += 3
             else:
-                if codon_idx < len(codons):
-                    normalized_n_seq.append(codons[codon_idx])
-                    codon_idx += 1
-                else:
-                    normalized_n_seq.append("---")  # fallback in case of misalignment
+                append("---")  # fallback in case of misalignment
 
         return ''.join(normalized_n_seq)
 

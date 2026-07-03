@@ -145,6 +145,11 @@ assert "Bio.AlignIO" not in sys.modules
         service = DNAThreader(args)
         assert service.normalize_n_seq(Seq("AAACCC"), Seq("ABC")) == "AAACCC---"
 
+    def test_normalize_n_seq_preserves_partial_codons_and_gap_positions(self, args):
+        service = DNAThreader(args)
+
+        assert service.normalize_n_seq(Seq("AAAC"), Seq("A-B")) == "AAA---C"
+
     def test_thread_sequence_uses_string_mask_without_numpy_path(self, args):
         service = DNAThreader(args)
         keep_mask = [True, False, True, True, True, False, True, True, True]

@@ -474,6 +474,7 @@ Results:
 | `column_score` module import without eager NumPy/Bio.AlignIO | cold subprocess import after lazy NumPy, AlignIO, annotation, and JSON helpers | 0.124730s | 0.022308s | 5.59x |
 | `column_score` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002598s | 0.000871s | 2.98x |
 | `DNAThreader.normalize_n_seq` | 96k amino acids with gaps/stops/unknowns, 288k nucleotide output | 0.0467s | 0.0133s | 3.5x |
+| `DNAThreader.normalize_n_seq` direct codon offsets | 96k mixed amino acids / 140k gap-heavy amino acids with partial trailing codons, side-by-side previous pre-split codon list | 0.039377s / 0.033592s | 0.032828s / 0.022330s | 1.20x / 1.50x |
 | `DNAThreader._thread_sequence` | 5k protein/nucleotide pairs, 240 amino acids each with gaps/stops/unknowns | 2.0228s | 1.0611s | 1.9x |
 | `DNAThreader._thread_sequence` full-length mask iteration | 5k protein/nucleotide pairs, 240 amino acids each, full-length mixed mask | 0.4463s | 0.4073s | 1.10x |
 | `DNAThreader._thread_sequence` no-stop masked output | 5k protein/nucleotide pairs, 240 amino acids each, mixed mask without terminal stop restoration | 1.291884s | 1.173806s | 1.10x |
@@ -3632,6 +3633,9 @@ Profiling summary:
   for every codon, creating many temporary `Seq` instances. The optimized path
   converts the nucleotide sequence to a plain string once and slices that string
   for codon lookup, preserving the existing gap and missing-codon behavior.
+  A later fallback pass advances a direct nucleotide offset instead of
+  pre-splitting every codon, preserving gaps and partial trailing codons while
+  reducing allocation in non-triplet-aligned inputs.
 - `DNAThreader._thread_sequence` baseline time rebuilt Unicode NumPy arrays and
   boolean masks for every sequence. The optimized path applies the same masking
   and stop-codon restoration rules directly over strings and the existing keep
