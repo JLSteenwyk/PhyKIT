@@ -844,12 +844,20 @@ class TestPlotCreated:
         )
 
         assert len(line_collections) >= 2
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert scalar_arrays
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
-    def test_rectangular_plot_reuses_repeated_hybrid_score_colors(self):
+    def test_rectangular_plot_uses_scalar_hybrid_score_collection(self):
         from Bio import Phylo
         from io import StringIO
+        from matplotlib.colors import Normalize
+        import matplotlib.pyplot as plt
 
         class Spine:
             def set_visible(self, value):
@@ -894,14 +902,6 @@ class TestPlotCreated:
             def set_title(self, *args, **kwargs):
                 pass
 
-        class CountingCmap:
-            def __init__(self):
-                self.calls = 0
-
-            def __call__(self, value):
-                self.calls += 1
-                return "red"
-
         args = _make_args(plot_output="hybrid.png")
         from phykit.services.tree.hybridization import Hybridization
         svc = Hybridization(args)
@@ -935,7 +935,7 @@ class TestPlotCreated:
             for clade in preorder_clades
             if clade is not species_tree.root
         }
-        cmap = CountingCmap()
+        ax = FakeAxes()
         config = Namespace(
             ylabel_fontsize=0,
             legend_position="none",
@@ -944,7 +944,7 @@ class TestPlotCreated:
         )
 
         svc._plot_rectangular(
-            FakeAxes(),
+            ax,
             None,
             species_tree,
             species_tree.root,
@@ -953,13 +953,19 @@ class TestPlotCreated:
             node_x,
             node_y,
             node_to_result,
-            cmap,
-            lambda score: score,
+            plt.cm.OrRd,
+            Normalize(vmin=0.5, vmax=1.0),
             config,
             preorder_clades,
         )
 
-        assert cmap.calls == 1
+        scalar_arrays = [
+            collection.get_array()
+            for collection in ax.collections
+            if collection.get_array() is not None
+        ]
+        assert len(scalar_arrays) == 1
+        assert len(scalar_arrays[0]) == len(preorder_clades) - 1
 
 
 class TestCircularPlot:
@@ -1042,6 +1048,12 @@ class TestCircularPlot:
         )
 
         assert len(line_collections) >= 2
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert scalar_arrays
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 

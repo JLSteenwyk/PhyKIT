@@ -1123,6 +1123,7 @@ Results:
 | `Hybridization._plot` circular batched branch rendering | balanced 2048-tip tree, per-internal-node hybrid scores, real Matplotlib Agg branch/arc render | 1.927446s | 0.729285s | 2.64x |
 | `Hybridization._plot` significant star markers | 4096 significant branch markers, real Matplotlib Agg scatter render | 6.537405s | 0.013889s | 470.69x |
 | `Hybridization._plot` repeated hybrid-score color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title/legend disabled and repeated per-internal-node hybrid score | 0.485382s | 0.425973s | 1.14x |
+| `Hybridization._plot` scalar hybrid-score branch collections | 4096 synthetic rectangular branches with mixed zero and unique positive hybrid scores, side-by-side previous per-positive-score `cmap(norm(score))` materialization before `LineCollection` construction | 0.348723s | 0.044511s | 7.83x |
 | `DiscordanceAsymmetry._count_topologies` | 40 balanced 256-tip gene trees plus species tree, NNI topology counts | 0.0830s | 0.0789s | 1.1x |
 | `DiscordanceAsymmetry._count_topologies` species-taxon setup | balanced 32768-tip species tree | 0.0673s | 0.0070s | 9.6x |
 | `DiscordanceAsymmetry._parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.093972s | 0.070400s | 1.33x |
@@ -5145,7 +5146,10 @@ Profiling summary:
   A later `Hybridization._plot` pass caches colormap results by hybrid score
   inside each rectangular/circular plot call, preserving colors while avoiding
   repeated normalization and colormap calls when many branches share the same
-  score. `DiscordanceAsymmetry` uses the same marker batching for
+  score. A follow-up `Hybridization._plot` pass splits zero-score gray branches
+  from positive-score branches and attaches scalar hybrid-score arrays to the
+  scored `LineCollection`s, preserving gray fallback styling while avoiding
+  per-positive-branch RGBA materialization. `DiscordanceAsymmetry` uses the same marker batching for
   FDR-significant branches with a favored alternative. A matching
   `DiscordanceAsymmetry._plot` pass caches colormap results by asymmetry ratio
   inside each rectangular/circular plot call, preserving colors while avoiding

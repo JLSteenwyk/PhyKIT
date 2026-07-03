@@ -344,10 +344,9 @@ class Hybridization(Tree):
         ax.set_aspect("equal")
         ax.axis("off")
 
-        radial_segments = []
-        radial_colors = []
-        radial_linewidths = []
-        score_color_cache = {}
+        gray_radial_segments = []
+        score_radial_segments = []
+        score_radial_values = []
         if preorder_clades is None:
             preorder_clades = self._preorder_clades(species_tree)
 
@@ -361,17 +360,10 @@ class Hybridization(Tree):
             if id(parent) not in coords or cid not in coords:
                 continue
 
-            color = "gray"
-            lw = 2
+            score = 0.0
             if cid in node_to_result:
                 entry = node_to_result[cid]
                 score = entry["hybrid_score"]
-                if score > 0:
-                    color = score_color_cache.get(score)
-                    if color is None:
-                        color = cmap(norm(score))
-                        score_color_cache[score] = color
-                    lw = 3
 
             parent_coords = coords[id(parent)]
             child_coords = coords[cid]
@@ -380,28 +372,43 @@ class Hybridization(Tree):
             sin_angle = math.sin(angle)
             r_parent = parent_coords["radius"]
             r_child = child_coords["radius"]
-            radial_segments.append(
-                [
-                    (r_parent * cos_angle, r_parent * sin_angle),
-                    (r_child * cos_angle, r_child * sin_angle),
-                ]
-            )
-            radial_colors.append(color)
-            radial_linewidths.append(lw)
+            segment = [
+                (r_parent * cos_angle, r_parent * sin_angle),
+                (r_child * cos_angle, r_child * sin_angle),
+            ]
+            if score > 0:
+                score_radial_segments.append(segment)
+                score_radial_values.append(score)
+            else:
+                gray_radial_segments.append(segment)
 
-        if radial_segments:
+        if gray_radial_segments:
             ax.add_collection(
                 LineCollection(
-                    radial_segments,
-                    colors=radial_colors,
-                    linewidths=radial_linewidths,
+                    gray_radial_segments,
+                    colors="gray",
+                    linewidths=2,
                     capstyle="round",
                     zorder=2,
                 )
             )
+        if score_radial_segments:
+            score_radial_collection = LineCollection(
+                score_radial_segments,
+                cmap=cmap,
+                norm=norm,
+                linewidths=3,
+                capstyle="round",
+                zorder=2,
+            )
+            score_radial_collection.set_array(
+                np.asarray(score_radial_values, dtype=float)
+            )
+            ax.add_collection(score_radial_collection)
 
-        arc_segments = []
-        arc_colors = []
+        gray_arc_segments = []
+        score_arc_segments = []
+        score_arc_values = []
         arc_fractions = [idx / 60 for idx in range(61)]
         for clade in preorder_clades:
             if clade.is_terminal() or not clade.clades:
@@ -417,43 +424,58 @@ class Hybridization(Tree):
             if span > math.pi:
                 start_a, end_a = end_a, start_a
 
-            arc_color = "gray"
+            score = 0.0
             if cid in node_to_result:
                 entry = node_to_result[cid]
                 score = entry["hybrid_score"]
-                if score > 0:
-                    arc_color = score_color_cache.get(score)
-                    if arc_color is None:
-                        arc_color = cmap(norm(score))
-                        score_color_cache[score] = arc_color
             start = start_a % (2.0 * math.pi)
             end = end_a % (2.0 * math.pi)
             diff = (end - start) % (2.0 * math.pi)
             if diff > math.pi:
                 diff -= 2.0 * math.pi
-            arc_segments.append(
-                [
-                    (
-                        pc["radius"] * math.cos(start + diff * fraction),
-                        pc["radius"] * math.sin(start + diff * fraction),
-                    )
-                    for fraction in arc_fractions
-                ]
-            )
-            arc_colors.append(arc_color)
+            arc_segment = [
+                (
+                    pc["radius"] * math.cos(start + diff * fraction),
+                    pc["radius"] * math.sin(start + diff * fraction),
+                )
+                for fraction in arc_fractions
+            ]
+            if score > 0:
+                score_arc_segments.append(arc_segment)
+                score_arc_values.append(score)
+            else:
+                gray_arc_segments.append(arc_segment)
 
-        if arc_segments:
+        if gray_arc_segments:
             ax.add_collection(
                 LineCollection(
-                    arc_segments,
-                    colors=arc_colors,
+                    gray_arc_segments,
+                    colors="gray",
                     linewidths=1.5,
                     capstyle="round",
                     zorder=1,
                 )
             )
+        if score_arc_segments:
+            score_arc_collection = LineCollection(
+                score_arc_segments,
+                cmap=cmap,
+                norm=norm,
+                linewidths=1.5,
+                capstyle="round",
+                zorder=1,
+            )
+            score_arc_collection.set_array(
+                np.asarray(score_arc_values, dtype=float)
+            )
+            ax.add_collection(score_arc_collection)
 
-        if radial_segments or arc_segments:
+        if (
+            gray_radial_segments
+            or score_radial_segments
+            or gray_arc_segments
+            or score_arc_segments
+        ):
             ax.autoscale_view()
 
         # Tip labels
@@ -522,11 +544,10 @@ class Hybridization(Tree):
         import numpy as np
         from matplotlib.collections import LineCollection
 
-        horizontal_segments = []
-        horizontal_colors = []
-        horizontal_linewidths = []
+        gray_horizontal_segments = []
+        score_horizontal_segments = []
+        score_horizontal_values = []
         vertical_segments = []
-        score_color_cache = {}
         if preorder_clades is None:
             preorder_clades = self._preorder_clades(species_tree)
 
@@ -544,21 +565,17 @@ class Hybridization(Tree):
             y0 = node_y.get(id(parent), 0)
             y1 = node_y.get(id(clade), 0)
 
-            color = "gray"
-            lw = 2
+            score = 0.0
             if id(clade) in node_to_result:
                 entry = node_to_result[id(clade)]
                 score = entry["hybrid_score"]
-                if score > 0:
-                    color = score_color_cache.get(score)
-                    if color is None:
-                        color = cmap(norm(score))
-                        score_color_cache[score] = color
-                    lw = 3
 
-            horizontal_segments.append([(x0, y1), (x1, y1)])
-            horizontal_colors.append(color)
-            horizontal_linewidths.append(lw)
+            horizontal_segment = [(x0, y1), (x1, y1)]
+            if score > 0:
+                score_horizontal_segments.append(horizontal_segment)
+                score_horizontal_values.append(score)
+            else:
+                gray_horizontal_segments.append(horizontal_segment)
             vertical_segments.append([(x0, y0), (x0, y1)])
 
         if vertical_segments:
@@ -570,16 +587,28 @@ class Hybridization(Tree):
                     zorder=1,
                 )
             )
-        if horizontal_segments:
+        if gray_horizontal_segments:
             ax.add_collection(
                 LineCollection(
-                    horizontal_segments,
-                    colors=horizontal_colors,
-                    linewidths=horizontal_linewidths,
+                    gray_horizontal_segments,
+                    colors="gray",
+                    linewidths=2,
                     zorder=2,
                 )
             )
-        if vertical_segments or horizontal_segments:
+        if score_horizontal_segments:
+            score_horizontal_collection = LineCollection(
+                score_horizontal_segments,
+                cmap=cmap,
+                norm=norm,
+                linewidths=3,
+                zorder=2,
+            )
+            score_horizontal_collection.set_array(
+                np.asarray(score_horizontal_values, dtype=float)
+            )
+            ax.add_collection(score_horizontal_collection)
+        if vertical_segments or gray_horizontal_segments or score_horizontal_segments:
             ax.autoscale_view()
 
         # Mark significant branches with stars
