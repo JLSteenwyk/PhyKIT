@@ -290,6 +290,7 @@ Results:
 | `GCContent._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006159s / 0.000012970s / 0.000021196s | 0.000001571s / 0.000007444s / 0.000001744s | 3.92x / 1.74x / 12.16x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
 | `GCContent.run` verbose JSON row construction | 500k mocked per-sequence GC rows, identical payload dictionaries | 0.636805s | 0.571975s | 1.11x |
+| `GCContent.calculate_gc_per_sequence_data` cached lazy NumPy attributes | 1200 variable DNA records x 3000 sites, repeated ASCII matrix counts after lookup-table warmup | 0.018320s | 0.011841s | 1.55x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
 | `gc_content` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006135s | 0.004972s | 1.23x |
 | `gc_content` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002604s | 0.000947s | 2.75x |
@@ -3141,7 +3142,10 @@ Profiling summary:
   while preserving case-insensitive matching. A
   later variable-length fallback pass counts valid and GC bytes directly for
   ASCII per-sequence rows, avoiding per-record NumPy array setup while keeping
-  the Unicode string-count fallback unchanged. A
+  the Unicode string-count fallback unchanged. A later proxy pass caches
+  resolved NumPy attributes on the lazy module wrapper, avoiding repeated
+  import/getattr dispatch during GC matrix counting while preserving lazy import
+  behavior and test patch points. A
   later startup pass builds lookup tables lazily and
   defers the annotation-only Bio.Align import so import-only callers do not
   load NumPy. A follow-up startup pass keeps JSON output behind a module-level
