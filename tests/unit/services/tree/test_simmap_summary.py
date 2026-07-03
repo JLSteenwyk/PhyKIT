@@ -11,6 +11,7 @@ from io import StringIO
 from unittest.mock import patch
 
 from phykit.services.tree.simmap_summary import SimmapSummary
+import phykit.services.tree.simmap_summary as module
 
 
 def test_module_import_does_not_import_numpy():
@@ -29,6 +30,17 @@ assert "phykit.helpers.json_output" not in sys.modules
 assert "phykit.helpers.plot_config" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    first_zeros = lazy_np.zeros
+    second_zeros = lazy_np.zeros
+
+    assert first_zeros is second_zeros
+    assert lazy_np.__dict__["zeros"] is first_zeros
+    assert lazy_np._module is not None
 
 
 TREE = "tests/sample_files/tree_simple.tre"

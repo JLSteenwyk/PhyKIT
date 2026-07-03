@@ -1947,6 +1947,7 @@ Results:
 | `SimmapSummary._plot_posterior_pie` batched base branches | balanced 2048-tip tree, precomputed branch summaries, pie placement disabled, real Matplotlib Agg render | 3.526622s | 1.912688s | 1.84x |
 | `SimmapSummary.run` all-tip-state read-only setup | balanced 32768-tip cached tree, trait data for every tip, fitting/simulation/summary/output mocked | 0.264782s | 0.047127s | 5.62x |
 | `simmap_summary` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.083424s | 0.032221s | 2.59x |
+| `simmap_summary` cached lazy NumPy attributes | 1000 repeated hot-loop attribute groups (`float64`, `int64`, `zeros`) after NumPy warmup | 0.00422488s | 0.00016626s | 25.41x |
 | `simmap_summary` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig`/plot helper imports | 0.013608s | 0.007155s | 1.90x |
 | `simmap_summary` module import without inherited `typing` startup | median cold subprocess import after removing annotation-only typing aliases from SIMMAP summary and its stochastic-map parent | 0.005650s | 0.003692s | 1.53x |
 | `StochasticCharacterMap._summarize_simulations` direct accumulation | balanced 1024-tip tree, 80 stochastic mappings, 3 states | 0.3331s | 0.0943s | 3.5x |
@@ -6942,7 +6943,10 @@ Profiling summary:
   accumulation. A
   startup pass defers direct NumPy imports behind a lazy proxy, so command
   discovery avoids array startup until SIMMAP fitting, summarization, or plotting
-  runs. Text and JSON output now build branch and node payload rows from one
+  runs. The lazy proxy now also caches the imported module and resolved
+  attributes after first use, preserving startup laziness while avoiding repeated
+  proxy resolution in summary hot loops. Text and JSON output now build branch
+  and node payload rows from one
   direct preorder list instead of running separate generic preorder traversals for
   branch summaries and node posteriors. CSV output now uses the same direct
   preorder reuse, collecting node posterior rows while streaming branch rows so it
