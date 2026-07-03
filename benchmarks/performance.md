@@ -2280,6 +2280,7 @@ Results:
 | `AncestralReconstruction._plot_contmap` scalar colormap rectangular branches | 512 synthetic rectangular branches x 50 gradient segments plus vertical connectors, side-by-side previous per-segment/per-connector `cmap(norm(value))` color materialization | 3.141559s | 0.331382s | 9.48x |
 | `AncestralReconstruction._plot_contmap` rectangular CI overlay rendering | 2048 CI nodes, real Matplotlib Agg CI bars and point estimates | 8.205795s | 0.036551s | 224.50x |
 | `AncestralReconstruction._plot_contmap` circular CI overlay rendering | 512 CI nodes, real Matplotlib Agg tangential CI bars and point estimates | 0.793536s | 0.008322s | 95.35x |
+| `AncestralReconstruction._plot_contmap` redundant tight layout pass | repeated small rectangular contMap PNG render with Matplotlib already warm, side-by-side normal `Figure.tight_layout()` versus no explicit tight-layout call before `savefig(..., bbox_inches="tight")` | 1.151841s | 1.003589s | 1.15x |
 | `AncestralReconstruction._plot_discrete_asr` rectangular setup | balanced 32768-tip tree, precomputed node posteriors and tip states | 0.8363s | 0.1233s | 6.8x |
 | `AncestralReconstruction._plot_discrete_asr` circular setup | balanced 32768-tip tree, precomputed node posteriors and tip states | 0.7626s | 0.1767s | 4.3x |
 | `AncestralReconstruction._plot_discrete_asr` node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, phylogram coordinate setup | 0.047892s | 0.039938s | 1.20x |
@@ -2290,6 +2291,7 @@ Results:
 | `AncestralReconstruction._plot_discrete_asr` rectangular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.287406s | 0.046800s | 27.51x |
 | `AncestralReconstruction._plot_discrete_asr` circular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 0.626749s | 0.028314s | 22.14x |
 | `AncestralReconstruction._plot_discrete_asr` rendered image cache | repeated small rectangular discrete-ASR render after reparsing the same four-tip tree and rebuilding id-keyed posterior arrays, Matplotlib already warm | 1.108455s | 0.000191s | 5799.2x |
+| `AncestralReconstruction._plot_discrete_asr` redundant tight layout pass | repeated small rectangular discrete-ASR PNG render with Matplotlib already warm, side-by-side normal `Figure.tight_layout()` versus no explicit tight-layout call before `savefig(..., bbox_inches="tight")` | 0.618865s | 0.512363s | 1.21x |
 | `AncestralReconstruction._parse_single_trait_data` streaming parser | 500k two-column continuous trait rows with comments/blanks, all taxa shared | 0.467832s | 0.436189s | 1.07x |
 | `AncestralReconstruction._parse_single_trait_data` all-shared parser fast path | 500k two-column continuous trait rows with comments/blanks, all taxa shared | 0.434114s | 0.235606s | 1.84x |
 | `AncestralReconstruction._parse_single_trait_data` stripped comment check | 500k two-column continuous trait rows with whitespace-prefixed comments/blanks, all taxa shared | 0.971940s | 0.732084s | 1.33x |
@@ -7726,7 +7728,10 @@ Profiling summary:
   output bytes for repeated equivalent small/medium plots, keyed by descendant
   tip labels, posterior vectors, states, tip states, plot format, color-file
   signature, and resolved plot options; cache hits write the target file before
-  importing Matplotlib. A later
+  importing Matplotlib. The ASR contMap and discrete-ASR plot paths also skip
+  the explicit `Figure.tight_layout()` call before saving because
+  `savefig(..., bbox_inches="tight")` still performs the saved-bounds
+  calculation; this avoids a redundant text/layout pass on cache misses. A later
   import-time pass removes unused direct SciPy imports and benefits from the
   shared `discrete_models` lazy SciPy wrappers, so continuous/default imports
   avoid discrete-model linalg/optimize startup. A later startup pass also

@@ -1402,6 +1402,39 @@ class TestPlot:
         )
         assert output_path.exists()
 
+    def test_contmap_plot_skips_explicit_tight_layout(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.figure
+
+        default_args.circular = False
+        default_args.no_title = True
+        default_args.ylabel_fontsize = 0
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        node_labels = svc._label_internal_nodes(tree)
+        node_estimates = {
+            label: float(index)
+            for index, label in enumerate(node_labels.values(), start=1)
+        }
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("contMap plot should not call tight_layout")
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure, "tight_layout", fail_tight_layout
+        )
+
+        output_path = tmp_path / "asr_contmap_no_tight_layout.png"
+        svc._plot_contmap(
+            tree, node_estimates, node_labels, trait_values,
+            "trait", str(output_path), node_cis=None,
+        )
+
+        assert output_path.exists()
+
     def test_rectangular_contmap_batches_gradient_branches(
         self, default_args, monkeypatch, tmp_path
     ):
@@ -2626,6 +2659,40 @@ class TestDiscretePlot:
         )
 
         assert second_path.read_bytes() == first_bytes
+
+    def test_discrete_plot_skips_explicit_tight_layout(
+        self, discrete_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.figure
+
+        discrete_args.circular = False
+        discrete_args.no_title = True
+        discrete_args.ylabel_fontsize = 0
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        clades = list(svc._iter_preorder(tree.root))
+        states = ["x", "y"]
+        node_posteriors = {
+            id(clade): np.array([0.4, 0.6])
+            for clade in clades
+            if clade.clades
+        }
+        tip_states = {"A": "x", "B": "x", "C": "y", "D": "y"}
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("discrete ASR plot should not call tight_layout")
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure, "tight_layout", fail_tight_layout
+        )
+
+        output_path = tmp_path / "asr_discrete_no_tight_layout.png"
+        svc._plot_discrete_asr(
+            tree, node_posteriors, {}, states, tip_states, str(output_path)
+        )
+
+        assert output_path.exists()
 
     @patch("builtins.print")
     def test_plot_created(self, mocked_print):

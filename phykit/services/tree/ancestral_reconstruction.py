@@ -1762,7 +1762,6 @@ class AncestralReconstruction(Tree):
                 if ci_x:
                     ax.scatter(ci_x, ci_y, s=12 * ci_scale, c="black", zorder=9)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved contMap plot: {output_path}")
@@ -2638,7 +2637,6 @@ class AncestralReconstruction(Tree):
                 )
             ax.set_aspect("auto")
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         self._store_discrete_asr_plot_cache(cache_key, output_path)
