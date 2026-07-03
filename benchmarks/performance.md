@@ -1053,6 +1053,7 @@ Results:
 | `ConcordanceAsr._plot_uncertainty` mean markers | 2047 uncertainty rows x 20 estimates, identical marker x-coordinates | 0.035963s | 0.000745s | 48.26x |
 | `ConcordanceAsr._print_text_output` batched estimate output | 100k ancestral-estimate rows, mixed CI/non-CI rows, captured stdout and identical text | 0.167087s | 0.151078s | 1.11x |
 | `concordance_asr` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.146693s | 0.033499s | 4.38x |
+| `concordance_asr` cached lazy NumPy attributes | 1000 / 5000 repeated hot-loop attribute groups (`array`, `zeros`, `asarray`) after NumPy warmup | 0.00373743s / 0.01757531s | 0.00014236s / 0.00075925s | 26.25x / 23.15x |
 | `concordance_asr` module import without eager ASR/plot helpers | cold subprocess import after localizing ASR helper, pickle, and plotting-helper imports | 0.033717s | 0.026711s | 1.26x |
 | `concordance_asr` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006562s | 0.005254s | 1.25x |
 | `concordance_asr` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006545s | 0.004335s | 1.51x |
@@ -4957,7 +4958,10 @@ Profiling summary:
   A later startup pass
   defers direct NumPy imports and top-level Bio.Phylo loading behind lazy
   proxies, so command discovery avoids scientific-array and tree-format parser
-  startup until gene-tree parsing or ASR calculations run. A follow-up startup
+  startup until gene-tree parsing or ASR calculations run. The NumPy proxy now
+  caches the imported module and resolved attributes after first use, preserving
+  import laziness while avoiding repeated proxy resolution in numeric and
+  plotting hot paths. A follow-up startup
   pass also localizes the `AncestralReconstruction` helper import to `run()`,
   defers `pickle` behind a module-level proxy, and imports plot configuration,
 	  circular-layout, and color-annotation helpers only during argument processing

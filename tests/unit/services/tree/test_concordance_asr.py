@@ -41,6 +41,17 @@ assert "phykit.helpers.color_annotations" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = concordance_asr_module._LazyNumpy()
+
+    first_array = lazy_np.array
+    second_array = lazy_np.array
+
+    assert first_array is second_array
+    assert lazy_np.__dict__["array"] is first_array
+    assert lazy_np._module is not None
+
+
 here = Path(__file__).resolve().parent
 sample = here.parent.parent.parent / "sample_files"
 
