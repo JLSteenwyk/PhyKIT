@@ -327,12 +327,12 @@ class DensityMap(Tree):
                     radius_delta = r_c - r_p
                     r0s = r_p + radius_delta * frac_starts
                     r1s = r_p + radius_delta * frac_ends
-                    for seg, color in enumerate(color_values):
+                    for seg in range(len(color_values)):
                         branch_segments.append((
                             (r0s[seg] * cos_angle, r0s[seg] * sin_angle),
                             (r1s[seg] * cos_angle, r1s[seg] * sin_angle),
                         ))
-                        branch_colors.append(color)
+                    branch_colors.extend(color_values)
                 else:
                     branch_segments.append((
                         (r_p * cos_angle, r_p * sin_angle),
@@ -344,7 +344,7 @@ class DensityMap(Tree):
                 ax.add_collection(
                     LineCollection(
                         branch_segments,
-                        colors=branch_colors,
+                        colors=np.asarray(branch_colors, dtype=float),
                         linewidths=2.5,
                         capstyle="butt",
                         zorder=2,
@@ -478,12 +478,12 @@ class DensityMap(Tree):
                 if t > 0:
                     x0s = parent_x + frac_starts * t
                     x1s = parent_x + frac_ends * t
-                    for seg, color in enumerate(color_values):
+                    for seg in range(len(color_values)):
                         branch_segments.append((
                             (x0s[seg], child_y),
                             (x1s[seg], child_y),
                         ))
-                        branch_colors.append(color)
+                    branch_colors.extend(color_values)
                 else:
                     branch_segments.append(((parent_x, child_y), (child_x, child_y)))
                     branch_colors.append(color_values[0])
@@ -502,7 +502,7 @@ class DensityMap(Tree):
                 ax.add_collection(
                     LineCollection(
                         branch_segments,
-                        colors=branch_colors,
+                        colors=np.asarray(branch_colors, dtype=float),
                         linewidths=2.5,
                         capstyle="butt",
                         zorder=2,

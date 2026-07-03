@@ -594,5 +594,13 @@ class TestRun:
         )
 
         assert len(line_collections) >= 2
+        branch_collections = [
+            collection
+            for collection in line_collections
+            if collection.get_zorder() == 2
+        ]
+        assert branch_collections
+        for collection in branch_collections:
+            assert len(collection.get_colors()) == len(collection.get_segments())
         assert os.path.exists(args.output)
         assert os.path.getsize(args.output) > 0
