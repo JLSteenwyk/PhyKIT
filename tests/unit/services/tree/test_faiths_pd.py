@@ -190,6 +190,19 @@ class TestFaithsPD(object):
         assert n == 2
         assert pd_exc == pytest.approx(10.0)
 
+    def test_partial_community_with_duplicate_selected_label_not_all_tips(self, args):
+        svc = _service(args)
+        tree = Phylo.read(StringIO("(A:1,A:2,B:3,C:4);"), "newick")
+
+        pd_inc, n = svc.calculate_faiths_pd(
+            tree,
+            ["A", "B"],
+            include_root=True,
+        )
+
+        assert n == 2
+        assert pd_inc == pytest.approx(5.0)
+
     def test_calculate_faiths_pd_handles_mixed_child_counts_without_reversed(
         self, args
     ):

@@ -91,7 +91,8 @@ class FaithsPD(Tree):
         selected_names = set(taxa)
         clades = []
         parent_by_id = {}
-        tip_names = set()
+        missing_names = set(selected_names)
+        has_unselected_tip = False
         tip_by_name = {}
         total_branch_length = 0.0
         stack = [(tree.root, None)]
@@ -112,12 +113,14 @@ class FaithsPD(Tree):
                 for idx in range(child_count - 1, -1, -1):
                     append((children[idx], clade))
             else:
-                tip_names.add(clade.name)
                 if clade.name in selected_names:
                     tip_by_name[clade.name] = clade
+                    missing_names.discard(clade.name)
+                else:
+                    has_unselected_tip = True
 
-        missing = [name for name in taxa if name not in tip_names]
-        if missing:
+        if missing_names:
+            missing = [name for name in taxa if name in missing_names]
             sample = ", ".join(sorted(missing)[:5])
             suffix = f" ... ({len(missing)} total)" if len(missing) > 5 else ""
             raise PhykitUserError(
@@ -127,7 +130,7 @@ class FaithsPD(Tree):
                 ],
                 code=2,
             )
-        if len(selected_names) == len(tip_names):
+        if not has_unselected_tip:
             return total_branch_length, len(taxa)
         if include_root:
             selected_branch_ids = set()
