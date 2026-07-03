@@ -2011,6 +2011,7 @@ Results:
 | `Phenogram._plot_phenogram` layout and branch setup | balanced 32768-tip tree, precomputed ancestral estimates and parent map | 0.5104s | 0.0577s | 8.8x |
 | `Phenogram._plot_phenogram` estimate value range helper | 1M plotted node/tip estimate values, identical min/max range without temporary list | 0.024999s | 0.020917s | 1.20x |
 | `Phenogram._plot_phenogram` batched gradient branches | balanced 512-tip tree, 50 color segments per branch, real Matplotlib Agg branch/label render | 11.650694s | 1.956507s | 5.95x |
+| `Phenogram._plot_phenogram` scalar colormap branch collection | 512 synthetic branches x 50 gradient segments, side-by-side previous per-segment `cmap(norm(value))` color materialization | 4.063467s | 0.193042s | 21.05x |
 | `Phenogram._print_text_output` batched summary | 100k captured phenogram text summaries, identical stdout text | 0.087289s | 0.057836s | 1.51x |
 | `Phenogram` cached lazy NumPy proxy | 1000 / 5000 hot-loop lookup groups across `array`, `linspace`, `column_stack`, `asarray`, and `clip`, side-by-side previous uncached lazy NumPy proxy | 0.01194198s / 0.06130687s | 0.00026422s / 0.00109178s | 45.20x / 56.15x |
 | `phenogram` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.088925s | 0.031880s | 2.79x |

@@ -329,6 +329,47 @@ class TestRun:
 
         assert os.path.exists(args.output)
 
+    def test_plot_phenogram_uses_collection_scalar_colormap(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.axes
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            output=str(tmp_path / "phenogram_scalar_collection.png"),
+            json=False,
+        )
+        svc = Phenogram(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        x = np.array([trait_values[name] for name in ordered_names])
+        node_labels = svc._label_internal_nodes(tree)
+        node_estimates, _sigma2 = svc._fast_anc(
+            tree, x, ordered_names, node_labels
+        )
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        captured_arrays = []
+
+        def spy_add_collection(self, collection, *args, **kwargs):
+            array = collection.get_array()
+            if array is not None:
+                captured_arrays.append(array)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "add_collection", spy_add_collection)
+
+        svc._plot_phenogram(
+            tree, node_estimates, node_labels,
+            trait_values, "trait", args.output,
+        )
+
+        assert captured_arrays
+        assert len(captured_arrays[0]) == 6 * 50
+        assert os.path.exists(args.output)
+
     @patch("builtins.print")
     def test_json_output(self, mocked_print):
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:

@@ -551,11 +551,13 @@ class Phenogram(Tree):
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
 
         n_seg = 50
+        segment_start_fracs = [s / n_seg for s in range(n_seg)]
+        segment_end_fracs = [(s + 1) / n_seg for s in range(n_seg)]
 
         # Draw branches: for each parent->child pair, draw a line from
         # (parent_x, parent_trait) to (child_x, child_trait) with gradient color
         branch_segments = []
-        branch_colors = []
+        branch_values = []
         for clade in preorder_clades:
             if clade == root:
                 continue
@@ -576,27 +578,26 @@ class Phenogram(Tree):
             y1 = all_estimates[cid]
 
             # Draw gradient line from (x0, y0) to (x1, y1)
-            for s in range(n_seg):
-                frac_s = s / n_seg
-                frac_e = (s + 1) / n_seg
-                xs = x0 + frac_s * (x1 - x0)
-                xe = x0 + frac_e * (x1 - x0)
-                ys = y0 + frac_s * (y1 - y0)
-                ye = y0 + frac_e * (y1 - y0)
-                v = (ys + ye) / 2.0
+            dx = x1 - x0
+            dy = y1 - y0
+            for frac_s, frac_e in zip(segment_start_fracs, segment_end_fracs):
+                xs = x0 + frac_s * dx
+                xe = x0 + frac_e * dx
+                ys = y0 + frac_s * dy
+                ye = y0 + frac_e * dy
                 branch_segments.append(((xs, ys), (xe, ye)))
-                branch_colors.append(cmap(norm(v)))
+                branch_values.append((ys + ye) / 2.0)
 
         if branch_segments:
-            ax.add_collection(
-                LineCollection(
-                    branch_segments,
-                    colors=branch_colors,
-                    linewidths=2,
-                    capstyle="butt",
-                ),
-                autolim=True,
+            branch_collection = LineCollection(
+                branch_segments,
+                cmap=cmap,
+                norm=norm,
+                linewidths=2,
+                capstyle="butt",
             )
+            branch_collection.set_array(np.asarray(branch_values, dtype=float))
+            ax.add_collection(branch_collection, autolim=True)
             ax.autoscale_view()
 
         # Plot tip points as scatter dots
