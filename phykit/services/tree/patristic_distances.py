@@ -75,7 +75,28 @@ class PatristicDistances(Tree):
     def run(self):
         tree = self.read_tree_file_unmodified()
         if self.verbose:
-            patristic_distances, combos, stats = \
+            if self.json_output:
+                rows = self._format_verbose_json_rows_fast(tree)
+                if rows is not None:
+                    print_json(
+                        dict(
+                            verbose=True,
+                            rows=rows,
+                            pairs=rows,
+                        )
+                    )
+                    return
+            else:
+                output = self._format_verbose_text_fast(tree)
+                if output is not None:
+                    try:
+                        if output:
+                            print(output)
+                    except BrokenPipeError:
+                        pass
+                    return
+
+            patristic_distances, combos, _ = \
                 self.calculate_patristic_distances(tree)
         else:
             patristic_distances = []
@@ -117,6 +138,54 @@ class PatristicDistances(Tree):
                 pass
         else:
             print_summary_statistics(stats)
+
+    def _verbose_distances_without_combos(self, tree):
+        tips = self.calculate_terminal_names_fast(tree)
+        if tips is None:
+            return None
+
+        fast_result = self.calculate_pairwise_tip_distances_fast(
+            tree,
+            tips,
+            include_combos=False,
+        )
+        if fast_result is None:
+            return None
+
+        _, distances = fast_result
+        return tips, distances
+
+    def _format_verbose_text_fast(self, tree) -> str | None:
+        fast_result = self._verbose_distances_without_combos(tree)
+        if fast_result is None:
+            return None
+
+        tips, distances = fast_result
+        return "\n".join(
+            f"{taxon_a}\t{taxon_b}\t{round(distance, 4)}"
+            for (taxon_a, taxon_b), distance in zip(
+                itertools.combinations(tips, 2),
+                distances,
+            )
+        )
+
+    def _format_verbose_json_rows_fast(self, tree) -> list[dict[str, object]] | None:
+        fast_result = self._verbose_distances_without_combos(tree)
+        if fast_result is None:
+            return None
+
+        tips, distances = fast_result
+        return [
+            {
+                "taxon_a": taxon_a,
+                "taxon_b": taxon_b,
+                "patristic_distance": round(distance, 4),
+            }
+            for (taxon_a, taxon_b), distance in zip(
+                itertools.combinations(tips, 2),
+                distances,
+            )
+        ]
 
     def process_args(self, args) -> dict[str, str]:
         return dict(

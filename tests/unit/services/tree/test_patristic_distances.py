@@ -409,6 +409,37 @@ class TestPatristicDistances(object):
         assert payload["rows"] == payload["pairs"]
         assert payload["rows"][0]["patristic_distance"] == 1.2346
 
+    def test_run_json_verbose_uses_fast_rows(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", verbose=True, json=True)
+        t = PatristicDistances(args)
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="a"),
+                    Clade(branch_length=2.0, name="b"),
+                    Clade(branch_length=3.0, name="c"),
+                ],
+            )
+        )
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            t,
+            "calculate_patristic_distances",
+            side_effect=AssertionError("verbose JSON should use fast rows"),
+        )
+        mocked_json = mocker.patch("phykit.services.tree.patristic_distances.print_json")
+
+        t.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["verbose"] is True
+        assert payload["rows"] == [
+            {"taxon_a": "a", "taxon_b": "b", "patristic_distance": 3.0},
+            {"taxon_a": "a", "taxon_b": "c", "patristic_distance": 4.0},
+            {"taxon_a": "b", "taxon_b": "c", "patristic_distance": 5.0},
+        ]
+        assert payload["pairs"] == payload["rows"]
+
     def test_run_json_non_verbose(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", verbose=False, json=True)
         t = PatristicDistances(args)
@@ -457,6 +488,30 @@ class TestPatristicDistances(object):
 
         captured = capsys.readouterr()
         assert captured.out == "a\tb\t1.2346\na\tc\t2.0\n"
+
+    def test_run_verbose_text_uses_fast_rows(self, mocker, capsys):
+        args = Namespace(tree="/some/path/to/file.tre", verbose=True, json=False)
+        t = PatristicDistances(args)
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="a"),
+                    Clade(branch_length=2.0, name="b"),
+                    Clade(branch_length=3.0, name="c"),
+                ],
+            )
+        )
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            t,
+            "calculate_patristic_distances",
+            side_effect=AssertionError("verbose text should use fast rows"),
+        )
+
+        t.run()
+
+        captured = capsys.readouterr()
+        assert captured.out == "a\tb\t3.0\na\tc\t4.0\nb\tc\t5.0\n"
 
     def test_run_verbose_empty_pairs_prints_nothing(self, mocker, capsys):
         args = Namespace(tree="/some/path/to/file.tre", verbose=True, json=False)
