@@ -145,17 +145,19 @@ class AlignmentOutlierTaxa(Alignment):
     ) -> dict[str, object]:
         n_taxa = len(alignment)
         if aln_len > 0:
-            gap_rate = 1.0 - (valid_length / float(aln_len))
             occupancy = valid_length / float(aln_len)
+            gap_rate = 1.0 - occupancy
         else:
             gap_rate = 1.0
             occupancy = 0.0
+        rounded_gap_rate = round(float(gap_rate), 4)
+        rounded_occupancy = round(float(occupancy), 4)
         branch_proxy = 0.0 if n_taxa > 1 else None
         rows = [
             {
                 "taxon": record.id,
-                "gap_rate": round(float(gap_rate), 4),
-                "occupancy": round(float(occupancy), 4),
+                "gap_rate": rounded_gap_rate,
+                "occupancy": rounded_occupancy,
                 "composition_distance": 0.0,
                 "long_branch_proxy": branch_proxy,
                 "rcvt": 0.0,
