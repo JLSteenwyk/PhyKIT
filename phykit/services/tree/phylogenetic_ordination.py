@@ -739,16 +739,53 @@ class PhylogeneticOrdination(Tree):
             "\t" + "\t".join(pc_labels),
         ]
         append = lines.append
-        for trait, values in zip(trait_names, eigenvectors.tolist()):
-            row = "\t".join(fmt(value) for value in values)
-            append(f"{trait}\t{row}")
+
+        def append_rows(names, values):
+            if len(pc_labels) == 2:
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                for name, val1, val2 in zip(names, col1, col2):
+                    append(f"{name}\t{val1:.6f}\t{val2:.6f}")
+            elif len(pc_labels) == 3:
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                for name, val1, val2, val3 in zip(
+                    names,
+                    col1,
+                    col2,
+                    col3,
+                ):
+                    append(
+                        f"{name}\t{val1:.6f}\t{val2:.6f}\t{val3:.6f}"
+                    )
+            elif len(pc_labels) == 4:
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                col4 = values[:, 3].tolist()
+                for name, val1, val2, val3, val4 in zip(
+                    names,
+                    col1,
+                    col2,
+                    col3,
+                    col4,
+                ):
+                    append(
+                        f"{name}\t{val1:.6f}\t{val2:.6f}"
+                        f"\t{val3:.6f}\t{val4:.6f}"
+                    )
+            else:
+                for name, row_values in zip(names, values.tolist()):
+                    row = "\t".join(fmt(value) for value in row_values)
+                    append(f"{name}\t{row}")
+
+        append_rows(trait_names, eigenvectors)
 
         append("")
         append("Scores:")
         append("\t" + "\t".join(pc_labels))
-        for taxon, values in zip(taxon_names, scores.tolist()):
-            row = "\t".join(fmt(value) for value in values)
-            append(f"{taxon}\t{row}")
+        append_rows(taxon_names, scores)
 
         if lambda_val is not None:
             append("")

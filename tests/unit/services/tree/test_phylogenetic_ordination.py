@@ -1339,6 +1339,55 @@ class TestRun:
             "taxon_a\t1.234568\t2.000000\t-3.500000"
         )
 
+    def test_pca_text_output_four_columns_skips_generic_list_conversion(
+        self, default_args, mocker
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class FourColumnRows:
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column([1.2345678, 2.0, -3.5, 4.25][column:column + 1])
+
+            def tolist(self):
+                raise AssertionError("4-PC output should not call generic tolist")
+
+        svc = PhylogeneticOrdination(default_args)
+        printed = mocker.patch("builtins.print")
+
+        svc._print_pca_text_output(
+            eigenvalues=np.array([4.0, 3.0, 2.0, 1.0]),
+            proportions=np.array([0.4, 0.3, 0.2, 0.1]),
+            eigenvectors=FourColumnRows(),
+            scores=FourColumnRows(),
+            trait_names=["trait_a"],
+            taxon_names=["taxon_a"],
+            pc_labels=["PC1", "PC2", "PC3", "PC4"],
+            lambda_val=None,
+            log_likelihood=None,
+        )
+
+        printed.assert_called_once_with(
+            "Eigenvalues:\n"
+            "\tPC1\tPC2\tPC3\tPC4\n"
+            "eigenvalue\t4.000000\t3.000000\t2.000000\t1.000000\n"
+            "proportion\t0.400000\t0.300000\t0.200000\t0.100000\n"
+            "\n"
+            "Loadings:\n"
+            "\tPC1\tPC2\tPC3\tPC4\n"
+            "trait_a\t1.234568\t2.000000\t-3.500000\t4.250000\n"
+            "\n"
+            "Scores:\n"
+            "\tPC1\tPC2\tPC3\tPC4\n"
+            "taxon_a\t1.234568\t2.000000\t-3.500000\t4.250000"
+        )
+
     def test_format_pca_result_preserves_payload_shape(self, default_args):
         svc = PhylogeneticOrdination(default_args)
 
