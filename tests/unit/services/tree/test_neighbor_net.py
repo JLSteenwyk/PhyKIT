@@ -51,6 +51,16 @@ assert "phykit.helpers.plot_config" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_proxy_caches_resolved_attributes():
+    lazy_np = neighbor_net_module._LazyNumpy()
+
+    first_empty = lazy_np.empty
+    second_empty = lazy_np.empty
+
+    assert first_empty is second_empty
+    assert lazy_np.__dict__["empty"] is first_empty
+
+
 def _legacy_compute_split_directions(ordering, circular_splits):
     n = len(ordering)
     angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
