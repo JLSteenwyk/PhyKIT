@@ -557,6 +557,29 @@ class TestPGLSBM:
         assert sigma2 > 0
         assert var_beta.shape == (k + 1, k + 1)
 
+    def test_model_stats_from_sums_reuses_precomputed_residual_sum(self):
+        svc = PhylogeneticRegression.__new__(PhylogeneticRegression)
+
+        class FailsMatmul:
+            def __matmul__(self, other):
+                raise AssertionError(
+                    "model stats should reuse the precomputed residual sum"
+                )
+
+        stats = svc._compute_model_stats_from_sums(
+            ss_tot=12.0,
+            ss_res=3.0,
+            y=np.array([1.0, 2.0, 4.0, 8.0]),
+            residuals=FailsMatmul(),
+            C_inv_residuals=object(),
+            k=0,
+            n=4,
+        )
+
+        assert stats == pytest.approx(
+            (0.75, 0.75, 0.0, 1.0, 0.8956521739130435, 0.1456521739130435)
+        )
+
     def test_t_stats_and_pvalues(self, default_args):
         svc = PhylogeneticRegression(default_args)
         tree = svc.read_tree_file()

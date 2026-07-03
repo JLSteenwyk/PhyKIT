@@ -458,14 +458,15 @@ class PhylogeneticRegression(Tree):
         y_centered = y - y_bar_gls
 
         ss_tot = float(y_centered @ C_inv @ y_centered)
-        ss_res = float(residuals @ C_inv @ residuals)
+        C_inv_residuals = C_inv @ residuals
+        ss_res = float(residuals @ C_inv_residuals)
 
         return self._compute_model_stats_from_sums(
             ss_tot,
             ss_res,
             y,
             residuals,
-            C_inv @ residuals,
+            C_inv_residuals,
             k,
             n,
         )
@@ -503,8 +504,8 @@ class PhylogeneticRegression(Tree):
             f_p_value = _f_sf(f_stat, k, df_resid)
 
         # Three-way R² variance decomposition
-        sig2_gls_ml = float(residuals @ C_inv_residuals) / n
-        sig2_ols_ml = float(np.var(y))
+        sig2_gls_ml = ss_res / n
+        sig2_ols_ml = float(y.var())
         if sig2_ols_ml == 0:
             r2_total = 0.0
             r2_phylo = 0.0

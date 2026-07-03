@@ -2310,6 +2310,7 @@ Results:
 | `PhylogeneticRegression._fit_model` combined Cholesky RHS solve | 120 repeated 420-taxon SPD VCV x 3-predictor design matrix fits, SciPy already warm | 0.071721s | 0.048587s | 1.48x |
 | `PhylogeneticRegression._fit_model` combined normal-equation RHS | 420 taxa SPD VCV x 6-predictor design matrix, side-by-side previous explicit normal-matrix inverse | 0.000440s | 0.000406s | 1.08x |
 | `PhylogeneticRegression._fit_model` cached NumPy attribute proxy | 420 taxa SPD VCV x 3-predictor design matrix, side-by-side previous uncached lazy NumPy proxy | 0.000624s | 0.000476s | 1.31x |
+| `PhylogeneticRegression._compute_model_stats_from_sums` residual sum reuse | 1k / 5k / 10k / 20k model-stat vectors, side-by-side previous duplicate weighted-residual dot and generic `np.var` dispatch with identical statistics | 0.000007367s / 0.000021557s / 0.000017874s / 0.032594813s | 0.000006005s / 0.000012685s / 0.000018094s / 0.000025392s | 1.23x / 1.70x / 0.99x / 1283.69x |
 | `phylogenetic_regression` module import without `scipy.stats` | cold process import for PGLS command module | 0.642346s | 0.445118s | 1.4x |
 | `phylogenetic_regression` module import without eager SciPy linalg | cold process import for PGLS command module | 0.317047s | 0.173800s | 1.8x |
 | `phylogenetic_regression` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS imports | 0.085897s | 0.025865s | 3.32x |
@@ -7759,6 +7760,10 @@ Profiling summary:
   The lazy NumPy proxy now caches resolved attributes during repeated fit-model
   kernels, preserving import deferral while avoiding repeated proxy dispatch for
   array allocation, dtype resolution, linear algebra, and scalar reductions.
+  Model-stat calculation now reuses the already-computed weighted residual sum
+  for the GLS variance decomposition and uses the response vector's direct
+  variance method, avoiding a duplicate residual dot product while preserving
+  the same reported statistics.
 - `PhyloPath._fit_gls_from_vcv` replaces the post-lambda explicit VCV inverse
   used by d-separation tests and path coefficient fits with Cholesky
   factorization and triangular solves. End-to-end `_dsep_test` improves more
