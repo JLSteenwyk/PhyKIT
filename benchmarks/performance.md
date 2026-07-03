@@ -1894,6 +1894,7 @@ Results:
 | `PhyloHeatmap._plot_phylo_heatmap_circular` cladogram node-position preorder reuse | balanced 32768-tip tree, parent map and preorder list already available, cladogram coordinate setup | 0.058446s | 0.047804s | 1.22x |
 | `PhyloHeatmap._plot_phylo_heatmap_circular` cladogram circular coordinate clade-list reuse | balanced 32768-tip tree, cladogram node x positions, parent map, preorder list, and tips already available | 0.055849s | 0.044909s | 1.24x |
 | `PhyloHeatmap._plot_phylo_heatmap_circular` ring-cell rendering | 1024 tips x 12 traits, real Matplotlib Agg heatmap wedge render | 6.315404s | 1.000884s | 6.31x |
+| `PhyloHeatmap._plot_phylo_heatmap_circular` scalar colormap ring cells | 512 tips x 12 traits, side-by-side previous per-cell `cmap(norm(value))` color materialization for one `PatchCollection` | 1.525569s | 0.897316s | 1.70x |
 | `PhyloHeatmap` rectangular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.226909s | 0.041817s | 29.34x |
 | `PhyloHeatmap` circular clade-color overlay rendering | balanced 2048-tip tree, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 0.609568s | 0.029928s | 20.37x |
 | `phylo_heatmap` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.096110s | 0.032152s | 2.99x |
@@ -6861,10 +6862,13 @@ Profiling summary:
   while avoiding one `Line2D` artist per highlighted branch segment. A later
   circular heatmap rendering pass batches ring-cell `Wedge` patches into one
   `PatchCollection`, preserving per-cell colormap colors and no-edge styling
-  while avoiding one Matplotlib patch artist per tip-trait cell. A startup
-  pass defers NumPy behind a lazy proxy, so import-only command discovery avoids
-  array startup until matrix standardization, clustering, or heatmap plotting
-  runs. A follow-up startup pass keeps JSON, plot-config, plotting, and
+  while avoiding one Matplotlib patch artist per tip-trait cell. A follow-up
+  circular heatmap pass attaches scalar matrix values to that collection and
+  lets Matplotlib apply the existing colormap and norm, avoiding per-cell RGBA
+  materialization. A startup pass defers NumPy behind a lazy proxy, so
+  import-only command discovery avoids array startup until matrix
+  standardization, clustering, or heatmap plotting runs. A follow-up startup
+  pass keeps JSON, plot-config, plotting, and
   color-annotation helpers behind forwarding wrappers/local imports so plain
   imports avoid those helper modules. A later startup pass converts
   annotation-only `typing` aliases to built-in postponed annotations, so command

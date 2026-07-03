@@ -738,7 +738,9 @@ class TestPhyloHeatmapPlot:
         )
 
         assert len(patch_collections) == 1
-        assert len(patch_collections[0].get_paths()) == len(tip_order) * len(trait_names)
+        expected_cells = len(tip_order) * len(trait_names)
+        assert len(patch_collections[0].get_paths()) == expected_cells
+        assert len(patch_collections[0].get_array()) == expected_cells
         assert Path(tmp_path / "heatmap_wedges.png").exists()
 
 

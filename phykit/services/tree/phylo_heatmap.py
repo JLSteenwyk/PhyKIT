@@ -679,7 +679,7 @@ class PhyloHeatmap(Tree):
         # Draw heatmap rings
         wedge_half = (2.0 * math.pi / n_tips) / 2.0 * 0.9  # 90% of slot
         heatmap_wedges = []
-        heatmap_colors = []
+        heatmap_values = []
 
         for col_idx in range(n_traits):
             r_inner = max_radius + gap + col_idx * ring_width
@@ -692,22 +692,22 @@ class PhyloHeatmap(Tree):
                 theta1 = math.degrees(tip_angle - wedge_half)
                 theta2 = math.degrees(tip_angle + wedge_half)
                 value = matrix[row_idx, col_idx]
-                color = cmap(norm(value))
                 wedge = Wedge(
                     (0, 0), r_outer, theta1, theta2,
                     width=ring_width,
                 )
                 heatmap_wedges.append(wedge)
-                heatmap_colors.append(color)
+                heatmap_values.append(value)
         if heatmap_wedges:
-            ax.add_collection(
-                PatchCollection(
-                    heatmap_wedges,
-                    facecolors=heatmap_colors,
-                    edgecolors="none",
-                    match_original=False,
-                )
+            heatmap_collection = PatchCollection(
+                heatmap_wedges,
+                cmap=cmap,
+                norm=norm,
+                edgecolors="none",
+                match_original=False,
             )
+            heatmap_collection.set_array(np.asarray(heatmap_values, dtype=float))
+            ax.add_collection(heatmap_collection)
 
         # Trait name labels at outside of each ring
         label_fontsize = 6
