@@ -899,6 +899,31 @@ class TestGeneTreeMode:
         assert clade_taxa[id(right)] == frozenset({"C", "O"})
         assert clade_taxa[id(root)] == frozenset({"A", "B", "C", "O"})
 
+    def test_direct_clade_taxa_binary_preorder_avoids_reversed_iterator(self):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("binary preorder should not call reversed")
+
+        left = Clade(
+            name="left",
+            clades=NoReversedList([Clade(name="A"), Clade(name="B")]),
+        )
+        right = Clade(
+            name="right",
+            clades=NoReversedList([Clade(name="C"), Clade(name="O")]),
+        )
+        root = Clade(name="root", clades=NoReversedList([left, right]))
+        tree = Tree(root=root)
+
+        clade_taxa, nonterminals = (
+            Dstatistic._collect_clade_taxa_and_nonterminals_direct(tree)
+        )
+
+        assert nonterminals == [root, left, right]
+        assert clade_taxa[id(root)] == frozenset({"A", "B", "C", "O"})
+
     def test_direct_clade_taxa_multifurcating_children_use_single_union(
         self, monkeypatch
     ):

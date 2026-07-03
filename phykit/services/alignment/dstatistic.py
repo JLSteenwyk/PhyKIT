@@ -310,7 +310,7 @@ class Dstatistic(Alignment):
         append = preorder.append
         append_nonterminal = nonterminals.append
         pop = stack.pop
-        extend = stack.extend
+        push = stack.append
         try:
             while stack:
                 clade = pop()
@@ -318,7 +318,15 @@ class Dstatistic(Alignment):
                 children = clade.clades
                 if children:
                     append_nonterminal(clade)
-                    extend(reversed(children))
+                    child_count = len(children)
+                    if child_count == 2:
+                        push(children[1])
+                        push(children[0])
+                    elif child_count == 1:
+                        push(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            push(children[idx])
         except AttributeError:
             return None
 

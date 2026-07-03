@@ -776,6 +776,7 @@ Results:
 | `Dstatistic._collect_clade_taxa_and_nonterminals_direct` binary descendant aggregation | balanced 32768-tip gene tree, descendant taxon sets plus nonterminal preorder | 0.046967s | 0.037408s | 1.26x |
 | `Dstatistic._collect_clade_taxa_and_nonterminals_direct` multifurcation child union | 1 descendant-taxa pass over 2048x8 / 4096x4 / 8192x4 multifurcating groups, side-by-side previous repeated immutable-set union path | 1.016979s / 1.795487s / 8.126636s | 0.029958s / 0.029908s / 0.098486s | 33.95x / 60.03x / 82.52x |
 | `Dstatistic._collect_clade_taxa_and_nonterminals_direct` inline nonterminal collection | balanced 32768-tip gene tree, descendant taxon sets plus nonterminal preorder, side-by-side previous final preorder rescan | 0.098695s | 0.059861s | 1.65x |
+| `Dstatistic._collect_clade_taxa_and_nonterminals_direct` preorder child push | balanced 8192 / 32768 / 65536-tip gene trees, descendant taxon sets plus nonterminal preorder, side-by-side previous `reversed(children)` preorder setup | 0.020796s / 0.085950s / 0.267307s | 0.018952s / 0.078487s / 0.218127s | 1.10x / 1.10x / 1.23x |
 | `dstatistic` module import without eager Bio.Phylo/FASTA parser | cold subprocess import after lazy Biopython parser imports | 0.219520s | 0.114720s | 1.91x |
 | `dstatistic` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.078477s | 0.025417s | 3.09x |
 | `dstatistic` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.035487s | 0.031252s | 1.14x |
@@ -4362,6 +4363,9 @@ Profiling summary:
   only needs the two quartet taxa found on the current side of the split. A
   later pass checks the four quartet taxa with direct membership booleans,
   avoiding per-branch quartet intersection and pair-frozenset allocation.
+  The direct descendant-taxa helper now also pushes binary children explicitly
+  during preorder collection, avoiding `reversed(children)` iterator setup while
+  preserving nonterminal preorder and descendant taxon sets.
 - `TipToTipDistance` and `PatristicDistances` baseline time was dominated by
   repeated Biopython `tree.distance` calls, each of which searches paths and
   common ancestors. The optimized path caches root-to-tip depths and ancestor
