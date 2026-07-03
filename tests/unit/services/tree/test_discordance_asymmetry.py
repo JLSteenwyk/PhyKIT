@@ -608,6 +608,24 @@ class TestFDR:
 
         assert DiscordanceAsymmetry._fdr(pvals) == pytest.approx(expected)
 
+    def test_vector_fdr_caps_adjusted_values(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        pvals = [1.0 if idx % 5 else 0.001 * (idx + 1) for idx in range(64)]
+        indexed = sorted(enumerate(pvals), key=lambda x: x[1])
+        expected = [0.0] * len(pvals)
+        previous = 1.0
+        for rank_minus_1 in range(len(pvals) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(pvals) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert DiscordanceAsymmetry._fdr(pvals) == pytest.approx(expected)
+        assert max(expected) == 1.0
+
     def test_small_fdr_does_not_import_numpy(self):
         code = """
 import sys
