@@ -41,6 +41,16 @@ assert "phykit.helpers.color_annotations" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = module._LazyNumpy()
+
+    linspace_attr = lazy_np.linspace
+
+    assert lazy_np.__dict__["linspace"] is linspace_attr
+    assert lazy_np.linspace is linspace_attr
+    assert lazy_np._module is not None
+
+
 def _make_args(**overrides):
     defaults = dict(
         tree=TREE, root_age=70.0, plot_output=None, timescale="auto",

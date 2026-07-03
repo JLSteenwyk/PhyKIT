@@ -1854,6 +1854,7 @@ Results:
 | `Chronogram._plot_circular` binary internal arc ranges | balanced 32768-tip tree, synthetic circular coordinates, side-by-side previous child-angle list path with identical sampled arc segments | 1.121455s | 0.850478s | 1.32x |
 | `Chronogram._plot_circular` HPD interval rendering | 4096 circular HPD radial intervals, real Matplotlib Agg line render | 0.700745s | 0.044718s | 15.67x |
 | `Chronogram._plot_circular` timescale guide circle reuse | 3 / 10 / 40 synthetic valid timescale rings, fake axes collecting identical guide-circle coordinates, side-by-side previous per-ring `linspace`/trig setup | 0.000157866s / 0.000752495s / 0.001557456s | 0.000136533s / 0.000212155s / 0.000574059s | 1.16x / 3.55x / 2.71x |
+| `Chronogram` cached lazy NumPy proxy | synthetic circular arc segment builds for 128 / 2048 / 8192 arcs, randomized old/new timing order, side-by-side previous uncached lazy NumPy attribute lookup with identical sampled arc coordinates | 0.003095139s / 0.074550413s / 0.399288111s | 0.002229440s / 0.023978967s / 0.212492306s | 1.39x / 3.11x / 1.88x |
 | `Chronogram._parse_hpd_intervals` direct traversal and cached regexes | balanced 32768-tip tree with HPD comments on two-thirds of internal nodes | 0.121682s | 0.034318s | 3.55x |
 | `chronogram` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.079933s | 0.032269s | 2.48x |
 | `chronogram` module import without eager helper modules | median cold subprocess import after lazy wrappers/localized imports for JSON, plot, timescale, circular, and color helpers | 0.013520s | 0.005307s | 2.55x |
@@ -6705,7 +6706,10 @@ Profiling summary:
   sampled unit-circle cosine/sine pair instead of rebuilding the same `linspace`
   and trigonometric arrays for every valid interval. A later startup pass defers
   NumPy behind a lazy proxy, leaving array startup until
-  circular plotting first computes angle and radius guides. The run path now
+  circular plotting first computes angle and radius guides. The lazy NumPy proxy
+  now caches the imported module and resolved attributes, reducing repeated
+  `linspace`/trigonometric/stacking proxy overhead in circular plot setup while
+  preserving import deferral. The run path now
   reuses the cached parsed tree for read-only chronogram setup; optional ladderization copies before
   mutating branch order. A follow-up startup pass keeps JSON, plot, timescale,
   circular-layout, and color-annotation helpers behind forwarding wrappers or
