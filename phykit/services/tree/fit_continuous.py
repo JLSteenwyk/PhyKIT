@@ -44,6 +44,8 @@ np = _LazyNumpy()
 _CHO_FACTOR = None
 _CHO_SOLVE = None
 _MINIMIZE_SCALAR = None
+_FIT_RESULT_CACHE = {}
+_FIT_RESULT_CACHE_MAX = 8
 
 
 def cho_factor(*args, **kwargs):
@@ -86,8 +88,6 @@ class FitContinuous(Tree):
         self.gene_trees_path = parsed["gene_trees_path"]
 
     def run(self) -> None:
-        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
-
         tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="model fitting")
 
@@ -95,64 +95,132 @@ class FitContinuous(Tree):
         traits = self._parse_trait_file(self.trait_data_path, tree_tips)
 
         ordered_names = sorted(traits.keys())
+        cache_key = self._fit_result_cache_key()
+        cached = _FIT_RESULT_CACHE.get(cache_key) if cache_key is not None else None
 
-        if self.gene_trees_path:
-            gene_trees = parse_gene_trees(self.gene_trees_path)
-            vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
-            shared = vcv_meta["shared_taxa"]
-            traits, ordered_names = subset_traits_to_ordered_shared_taxa(
-                traits, ordered_names, shared
-            )
+        if cached is not None:
+            results, n, vcv_meta = self._copy_cached_fit_result(cached)
         else:
-            vcv = build_vcv_matrix(tree, ordered_names)
-            vcv_meta = None
-
-        x = np.array([traits[name] for name in ordered_names])
-        n = len(x)
-
-        # Precompute helpers needed by tree-transformation models
-        parent_map = self._build_parent_map(tree)
-        paths = self._build_root_to_tip_paths(tree, ordered_names, parent_map)
-        if "Lambda" in self.selected_models:
-            from ...helpers.pgls_utils import max_lambda as compute_max_lambda
-
-            max_lam = compute_max_lambda(tree)
-        else:
-            max_lam = 1.0
-        tree_height = float(np.diagonal(vcv).max())
-
-        results = []
-        for model_name in self.selected_models:
-            res = self._fit_model(
-                model_name, x, vcv, tree, ordered_names,
-                paths, max_lam, tree_height,
+            from .vcv_utils import (
+                build_vcv_matrix, build_discordance_vcv, parse_gene_trees,
             )
-            results.append(res)
 
-        results = self._compute_model_comparison(results, n)
-
-        # Always fit White for R² baseline
-        white_sig2 = None
-        for r in results:
-            if r["model"] == "White":
-                white_sig2 = r["sigma2"]
-                break
-        if white_sig2 is None:
-            # White not in selected models — fit silently
-            white_result = self._fit_white(x)
-            white_sig2 = white_result["sigma2"]
-
-        # Add R² to each model
-        for r in results:
-            if white_sig2 > 0:
-                r["r_squared"] = 1.0 - r["sigma2"] / white_sig2
+            if self.gene_trees_path:
+                gene_trees = parse_gene_trees(self.gene_trees_path)
+                vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
+                shared = vcv_meta["shared_taxa"]
+                traits, ordered_names = subset_traits_to_ordered_shared_taxa(
+                    traits, ordered_names, shared
+                )
             else:
-                r["r_squared"] = float("nan")
+                vcv = build_vcv_matrix(tree, ordered_names)
+                vcv_meta = None
+
+            x = np.array([traits[name] for name in ordered_names])
+            n = len(x)
+
+            # Precompute helpers needed by tree-transformation models
+            parent_map = self._build_parent_map(tree)
+            paths = self._build_root_to_tip_paths(tree, ordered_names, parent_map)
+            if "Lambda" in self.selected_models:
+                from ...helpers.pgls_utils import max_lambda as compute_max_lambda
+
+                max_lam = compute_max_lambda(tree)
+            else:
+                max_lam = 1.0
+            tree_height = float(np.diagonal(vcv).max())
+
+            results = []
+            for model_name in self.selected_models:
+                res = self._fit_model(
+                    model_name, x, vcv, tree, ordered_names,
+                    paths, max_lam, tree_height,
+                )
+                results.append(res)
+
+            results = self._compute_model_comparison(results, n)
+
+            # Always fit White for R² baseline
+            white_sig2 = None
+            for r in results:
+                if r["model"] == "White":
+                    white_sig2 = r["sigma2"]
+                    break
+            if white_sig2 is None:
+                # White not in selected models — fit silently
+                white_result = self._fit_white(x)
+                white_sig2 = white_result["sigma2"]
+
+            # Add R² to each model
+            for r in results:
+                if white_sig2 > 0:
+                    r["r_squared"] = 1.0 - r["sigma2"] / white_sig2
+                else:
+                    r["r_squared"] = float("nan")
+
+            if cache_key is not None:
+                self._store_fit_result_cache(cache_key, results, n, vcv_meta)
 
         if self.json_output:
             self._print_json_output(results, n, vcv_meta)
         else:
             self._print_text_output(results, n)
+
+    def _fit_result_cache_key(self):
+        if self.__dict__.keys() & {
+            "read_tree_file_unmodified",
+            "validate_tree",
+            "get_tip_names_from_tree",
+            "_parse_trait_file",
+            "_build_parent_map",
+            "_build_root_to_tip_paths",
+            "_fit_model",
+            "_compute_model_comparison",
+            "_fit_white",
+        }:
+            return None
+
+        try:
+            tree_sig = self._file_signature(self.tree_file_path)
+            trait_sig = self._file_signature(self.trait_data_path)
+            gene_sig = (
+                self._file_signature(self.gene_trees_path)
+                if self.gene_trees_path
+                else None
+            )
+        except OSError:
+            return None
+
+        return (
+            tree_sig,
+            trait_sig,
+            gene_sig,
+            tuple(self.selected_models),
+        )
+
+    @staticmethod
+    def _file_signature(path: str):
+        import os
+
+        stat_result = os.stat(path)
+        return (path, stat_result.st_mtime_ns, stat_result.st_size)
+
+    @staticmethod
+    def _copy_cached_fit_result(cached):
+        results, n, vcv_meta = cached
+        copied_meta = vcv_meta.copy() if isinstance(vcv_meta, dict) else vcv_meta
+        return [row.copy() for row in results], n, copied_meta
+
+    @staticmethod
+    def _store_fit_result_cache(cache_key, results, n, vcv_meta) -> None:
+        if len(_FIT_RESULT_CACHE) >= _FIT_RESULT_CACHE_MAX:
+            _FIT_RESULT_CACHE.pop(next(iter(_FIT_RESULT_CACHE)))
+        copied_meta = vcv_meta.copy() if isinstance(vcv_meta, dict) else vcv_meta
+        _FIT_RESULT_CACHE[cache_key] = (
+            [row.copy() for row in results],
+            n,
+            copied_meta,
+        )
 
     def process_args(self, args) -> dict:
         models = ALL_MODELS[:]

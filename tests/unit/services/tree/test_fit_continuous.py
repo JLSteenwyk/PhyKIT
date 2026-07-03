@@ -797,6 +797,54 @@ class TestRun:
         assert "BM" in all_output
         assert "Best model (AIC)" in all_output
 
+    def test_run_reuses_cached_fit_results_for_identical_inputs(
+        self, default_args, monkeypatch
+    ):
+        previous_cache = fit_continuous_module._FIT_RESULT_CACHE.copy()
+        fit_continuous_module._FIT_RESULT_CACHE.clear()
+        fit_calls = 0
+        printed_results = []
+
+        def fake_fit_model(
+            self, model_name, x, vcv, tree, ordered_names, paths, max_lam, tree_height
+        ):
+            nonlocal fit_calls
+            fit_calls += 1
+            return {
+                "model": model_name,
+                "param_name": None,
+                "param_value": None,
+                "sigma2": 1.0,
+                "z0": 0.0,
+                "log_likelihood": -1.0,
+                "k_params": 2,
+            }
+
+        def fake_print_text_output(self, results, n):
+            printed_results.append(results)
+
+        monkeypatch.setattr(FitContinuous, "_fit_model", fake_fit_model)
+        monkeypatch.setattr(
+            FitContinuous,
+            "_compute_model_comparison",
+            lambda self, results, n: results,
+        )
+        monkeypatch.setattr(FitContinuous, "_print_text_output", fake_print_text_output)
+
+        try:
+            FitContinuous(default_args).run()
+            first_call_count = fit_calls
+            FitContinuous(default_args).run()
+
+            assert first_call_count == len(ALL_MODELS)
+            assert fit_calls == first_call_count
+            assert printed_results[0] == printed_results[1]
+            assert printed_results[0] is not printed_results[1]
+            assert printed_results[0][0] is not printed_results[1][0]
+        finally:
+            fit_continuous_module._FIT_RESULT_CACHE.clear()
+            fit_continuous_module._FIT_RESULT_CACHE.update(previous_cache)
+
     @patch("builtins.print")
     def test_print_text_output_batches_model_table(self, mocked_print):
         svc = FitContinuous.__new__(FitContinuous)
