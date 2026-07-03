@@ -462,6 +462,7 @@ Results:
 | `PlotAlignmentQC._prepare_plot_arrays` local NaN binding | 10k / 100k / 300k synthetic taxa with one-third missing long-branch proxies, side-by-side previous per-row lazy `np.nan` lookup | 0.018861s / 0.478141s / 1.196281s | 0.019333s / 0.267003s / 0.789349s | 0.98x / 1.79x / 1.52x |
 | `PlotAlignmentQC._flag_colors` vectorized mask mapping | 1M ordered taxa flags, identical normal/flagged color sequence | 0.036504s | 0.014694s | 2.48x |
 | `PlotAlignmentQC` plot extent max reductions | plotted finite-value arrays sized 10 / 1000 / 100k / 1M, side-by-side previous `np.max(...)` with large-array path preserved | 0.000003432s / 0.000002161s / 0.000011253s / 0.000123167s | 0.000001027s / 0.000000811s / 0.000010299s / 0.000123167s | 3.34x / 2.66x / 1.09x / 1.00x |
+| `PlotAlignmentQC` cached lazy NumPy proxy | repeated large plot extent maxima over 100001 finite values, side-by-side previous uncached lazy NumPy attribute lookup, identical maximum | 0.000065925s | 0.000036815s | 1.79x |
 | `plot_alignment_qc` module import without eager NumPy/outlier/json/plot helpers | cold subprocess import after lazy NumPy proxy and forwarding helper wrappers | 0.075926s | 0.026252s | 2.89x |
 | `plot_alignment_qc` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.036055s | 0.034670s | 1.04x |
 | `ColumnScore.get_columns_from_alignments` + column matching | 260 taxa x 5000 sites query/reference alignments, alphabet `ACGT-?NX*` | 0.4111s | 0.0232s | 17.7x |
@@ -3628,9 +3629,11 @@ Profiling summary:
   preparation, avoiding repeated lazy proxy lookups in large row loops. A later
   startup pass defers NumPy, JSON output, plot config, and the alignment-outlier
   service behind lazy proxy/wrapper functions while preserving the existing
-  `AlignmentOutlierTaxa` monkeypatch point. A follow-up startup pass converts
-  annotation-only `typing` aliases to postponed built-in annotations, so command
-  discovery no longer loads `typing`.
+  `AlignmentOutlierTaxa` monkeypatch point. The lazy NumPy proxy now caches the
+  imported module and resolved attributes, reducing overhead in repeated
+  large-array extent reductions while preserving import deferral. A follow-up
+  startup pass converts annotation-only `typing` aliases to postponed built-in
+  annotations, so command discovery no longer loads `typing`.
 - `ColumnScore.get_columns_from_alignments` baseline time constructed Unicode
   character matrices for query and reference alignments, then joined each
   matrix column into a string. The optimized path uppercases sequence strings
