@@ -30,6 +30,16 @@ assert "numpy" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = internal_branch_stats_module._LazyNumpy()
+
+    fromiter_attr = lazy_np.fromiter
+
+    assert lazy_np.__dict__["fromiter"] is fromiter_attr
+    assert lazy_np.fromiter is fromiter_attr
+    assert lazy_np._module is not None
+
+
 @pytest.fixture
 def args():
     kwargs = dict(tree="/some/path/to/file.tre", verbose=None)

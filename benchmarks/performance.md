@@ -1213,6 +1213,7 @@ Results:
 | `InternalBranchStats.calculate_internal_branch_stats` non-verbose | 4096-tip balanced tree, branch length on every internal node | 0.0259s | 0.0103s | 2.5x |
 | `InternalBranchStats.calculate_internal_branch_stats` direct array non-verbose | 32768-tip balanced tree, branch length on every internal node | 0.010820s | 0.006748s | 1.60x |
 | `InternalBranchStats._get_internal_branch_lengths_array_direct` order-preserving child push | balanced 131072-tip tree, side-by-side previous `reversed(children)` array helper | 0.024481s | 0.020200s | 1.21x |
+| `InternalBranchStats._get_internal_branch_lengths_array_direct` cached NumPy attribute proxy | 40 repeated direct-array calls on a balanced 8192-tip tree, side-by-side previous uncached lazy NumPy proxy | 0.581703s | 0.236598s | 2.46x |
 | `InternalBranchStats.get_internal_branch_lengths` non-verbose order-preserving child push | balanced 131072-tip tree, `include_names=False`, side-by-side previous `reversed(children)` helper | 0.029400s | 0.024940s | 1.18x |
 | `InternalBranchStats.get_internal_branch_lengths` direct non-verbose traversal | balanced 65536-tip tree, branch length on every internal node | 0.1472s | 0.0180s | 8.2x |
 | `InternalBranchStats.get_internal_branch_lengths` direct verbose traversal | balanced 4096-tip tree, branch length and descendant tips for every internal node | 0.0258s | 0.0050s | 5.2x |
