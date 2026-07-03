@@ -811,6 +811,55 @@ class TestPlotContMap:
 
         assert os.path.exists(args.output)
 
+    def test_rectangular_plot_uses_collection_scalar_colormap(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.axes
+        from matplotlib.collections import LineCollection
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            output=str(tmp_path / "contmap_scalar_colormap.png"),
+            json=False,
+            circular=False,
+        )
+        svc = ContMap(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        x = np.array([trait_values[name] for name in ordered_names])
+        node_labels = svc._label_internal_nodes(tree)
+        node_estimates, _sigma2 = svc._fast_anc(
+            tree, x, ordered_names, node_labels
+        )
+        collection_arrays = []
+        original_add_collection = matplotlib.axes.Axes.add_collection
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                array = collection.get_array()
+                if array is not None:
+                    collection_arrays.append(array)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "add_collection", capture_collection)
+
+        svc._plot_contmap(
+            tree,
+            node_estimates,
+            node_labels,
+            trait_values,
+            "trait",
+            args.output,
+        )
+
+        array_lengths = {len(array) for array in collection_arrays}
+        assert 300 in array_lengths
+        assert 6 in array_lengths
+        assert os.path.exists(args.output)
+
     def test_circular_plot_batches_gradient_branches(self, monkeypatch, tmp_path):
         pytest.importorskip("matplotlib")
         import matplotlib.axes

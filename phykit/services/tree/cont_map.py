@@ -707,10 +707,12 @@ class ContMap(Tree):
             from matplotlib.collections import LineCollection
 
             n_seg = 50
+            segment_start_fracs = [s / n_seg for s in range(n_seg)]
+            segment_end_fracs = [(s + 1) / n_seg for s in range(n_seg)]
             horizontal_segments = []
-            horizontal_colors = []
+            horizontal_values = []
             vertical_segments = []
-            vertical_colors = []
+            vertical_values = []
 
             for clade in preorder_clades:
                 if clade == root:
@@ -734,39 +736,43 @@ class ContMap(Tree):
                 val1 = all_estimates[cid]
 
                 # Horizontal segment (at child's y): colored gradient
-                for s in range(n_seg):
-                    frac_s = s / n_seg
-                    frac_e = (s + 1) / n_seg
-                    xs = x0 + frac_s * (x1 - x0)
-                    xe = x0 + frac_e * (x1 - x0)
-                    v = val0 + ((frac_s + frac_e) / 2) * (val1 - val0)
+                dx = x1 - x0
+                dv = val1 - val0
+                for frac_s, frac_e in zip(segment_start_fracs, segment_end_fracs):
+                    xs = x0 + frac_s * dx
+                    xe = x0 + frac_e * dx
+                    v = val0 + ((frac_s + frac_e) / 2) * dv
                     horizontal_segments.append(((xs, y1), (xe, y1)))
-                    horizontal_colors.append(cmap(norm(v)))
+                    horizontal_values.append(v)
 
                 # Vertical connector (at parent's x): parent's trait color
                 vertical_segments.append(((x0, y0), (x0, y1)))
-                vertical_colors.append(cmap(norm(val0)))
+                vertical_values.append(val0)
 
             if horizontal_segments:
-                ax.add_collection(
-                    LineCollection(
-                        horizontal_segments,
-                        colors=horizontal_colors,
-                        linewidths=3,
-                        capstyle="butt",
-                    ),
-                    autolim=True,
+                horizontal_collection = LineCollection(
+                    horizontal_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=3,
+                    capstyle="butt",
                 )
+                horizontal_collection.set_array(
+                    np.asarray(horizontal_values, dtype=float)
+                )
+                ax.add_collection(horizontal_collection, autolim=True)
             if vertical_segments:
-                ax.add_collection(
-                    LineCollection(
-                        vertical_segments,
-                        colors=vertical_colors,
-                        linewidths=3,
-                        capstyle="butt",
-                    ),
-                    autolim=True,
+                vertical_collection = LineCollection(
+                    vertical_segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=3,
+                    capstyle="butt",
                 )
+                vertical_collection.set_array(
+                    np.asarray(vertical_values, dtype=float)
+                )
+                ax.add_collection(vertical_collection, autolim=True)
             ax.autoscale_view()
 
             # Tip labels

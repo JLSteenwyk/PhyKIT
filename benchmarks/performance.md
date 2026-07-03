@@ -2037,6 +2037,7 @@ Results:
 | `ContMap._plot_contmap` estimate value range helper | 1M plotted node/tip estimate values, identical min/max range without temporary list | 0.036248s | 0.032907s | 1.10x |
 | `ContMap._contmap_colored_arcs` binary child-angle bounds | balanced 32768-tip synthetic coords and internal estimates, side-by-side previous child-angle list path | 0.266051s | 0.108700s | 2.45x |
 | `ContMap._plot_contmap` rectangular batched gradient branches | balanced 512-tip tree, 50 color segments per branch, real Matplotlib Agg branch/label/colorbar render | 11.957742s | 1.949793s | 6.13x |
+| `ContMap._plot_contmap` scalar colormap rectangular branches | 512 synthetic rectangular branches x 50 gradient segments plus vertical connectors, side-by-side previous per-segment/per-connector `cmap(norm(value))` color materialization | 2.819461s | 0.092104s | 30.61x |
 | `ContMap._print_text_output` batched summary | 100k captured contMap text summaries, identical stdout text | 0.089211s | 0.059444s | 1.50x |
 | `ContMap` cached lazy NumPy proxy | 1000 / 5000 hot-loop lookup groups across `array`, `linspace`, `column_stack`, `asarray`, and `clip`, side-by-side previous uncached lazy NumPy proxy | 0.00463698s / 0.02358048s | 0.00018264s / 0.00109534s | 25.39x / 21.53x |
 | `cont_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy plus lazy circular-layout arc cache | 0.085155s | 0.038423s | 2.22x |
@@ -7121,15 +7122,17 @@ Profiling summary:
   batches the 50 per-branch gradient segments
   into one `LineCollection` and the vertical connectors into a second
   `LineCollection`, preserving the sampled gradient colors while avoiding one
-  Matplotlib `Line2D` artist per tiny segment. Circular contMap rendering now
-  uses the shared whole-tree radial gradient helper, avoiding one
-  `LineCollection` per branch, and the shared colored-arc helper, avoiding one
-  `Line2D` artist per internal arc. A later colored-arc setup pass reads the
-  two child angle bounds directly for binary internal nodes, preserving the
-  child-angle list fallback for polytomies while avoiding one short list
-  allocation per ordinary binary internal node. Text summary output now batches
-  the four-line report into one newline-joined print while preserving exact
-  stdout text.
+  Matplotlib `Line2D` artist per tiny segment. A later rectangular branch pass
+  lets those collections map scalar trait arrays through the shared colormap
+  and norm, avoiding per-segment RGBA materialization while preserving the same
+  sampled trait values. Circular contMap rendering now uses the shared
+  whole-tree radial gradient helper, avoiding one `LineCollection` per branch,
+  and the shared colored-arc helper, avoiding one `Line2D` artist per internal
+  arc. A later colored-arc setup pass reads the two child angle bounds directly
+  for binary internal nodes, preserving the child-angle list fallback for
+  polytomies while avoiding one short list allocation per ordinary binary
+  internal node. Text summary output now batches the four-line report into one
+  newline-joined print while preserving exact stdout text.
 - `cont_map` module import baseline paid NumPy startup directly and through the
   shared circular-layout helper's module-level arc array. The optimized path
   defers NumPy behind lazy proxies and materializes the circular arc fractions
