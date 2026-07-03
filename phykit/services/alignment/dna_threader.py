@@ -123,7 +123,11 @@ class DNAThreader(Alignment):
 
     def normalize_p_seq(self, p_seq: "Seq") -> str:
         # triplicate each amino acid
-        return ''.join(c * 3 for c in p_seq)
+        normalized_p_seq = []
+        append = normalized_p_seq.append
+        for c in p_seq:
+            append(c * 3)
+        return ''.join(normalized_p_seq)
 
     def normalize_n_seq(self, n_seq: "Seq", p_seq: "Seq") -> str:
         n_seq_str = str(n_seq)

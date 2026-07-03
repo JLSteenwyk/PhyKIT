@@ -473,6 +473,7 @@ Results:
 | `ColumnScore._calculate_matches_between_alignments_direct` cached lazy NumPy attributes | 20 repeated direct matches on 300 x 1000 reference/query ASCII alignments, side-by-side previous uncached lazy proxy, identical `(matches, total)` result | 0.163849s | 0.113724s | 1.44x |
 | `column_score` module import without eager NumPy/Bio.AlignIO | cold subprocess import after lazy NumPy, AlignIO, annotation, and JSON helpers | 0.124730s | 0.022308s | 5.59x |
 | `column_score` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002598s | 0.000871s | 2.98x |
+| `DNAThreader.normalize_p_seq` local append triplication | 240k amino-acid string with mixed amino acids, gaps, stop, and unknown symbols, side-by-side previous generator join | 0.049809s | 0.041313s | 1.21x |
 | `DNAThreader.normalize_n_seq` | 96k amino acids with gaps/stops/unknowns, 288k nucleotide output | 0.0467s | 0.0133s | 3.5x |
 | `DNAThreader.normalize_n_seq` direct codon offsets | 96k mixed amino acids / 140k gap-heavy amino acids with partial trailing codons, side-by-side previous pre-split codon list | 0.039377s / 0.033592s | 0.032828s / 0.022330s | 1.20x / 1.50x |
 | `DNAThreader._thread_sequence` | 5k protein/nucleotide pairs, 240 amino acids each with gaps/stops/unknowns | 2.0228s | 1.0611s | 1.9x |
@@ -3636,6 +3637,9 @@ Profiling summary:
   A later fallback pass advances a direct nucleotide offset instead of
   pre-splitting every codon, preserving gaps and partial trailing codons while
   reducing allocation in non-triplet-aligned inputs.
+- `DNAThreader.normalize_p_seq` now uses a local append loop for amino-acid
+  triplication, avoiding generator-frame overhead while preserving the same
+  normalized protein string.
 - `DNAThreader._thread_sequence` baseline time rebuilt Unicode NumPy arrays and
   boolean masks for every sequence. The optimized path applies the same masking
   and stop-codon restoration rules directly over strings and the existing keep
