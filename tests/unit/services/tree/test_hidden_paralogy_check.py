@@ -520,6 +520,30 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         mock_print.assert_called_once_with("monophyletic")
 
     @patch('builtins.print')
+    def test_run_sequential_nonexact_uses_direct_terminal_names(self, mock_print):
+        """Sequential non-exact clades avoid generic terminal materialization."""
+        master_tree = Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick")
+        work_tree = Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick")
+        self.checker.read_tree_file_unmodified = Mock(return_value=master_tree)
+        self.checker.read_clades_file = Mock(return_value=[["A", "B"]])
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("standard clades should use direct terminal names")
+
+        original_get_terminals = TreeMixin.get_terminals
+        TreeMixin.get_terminals = fail_get_terminals
+        try:
+            with patch(
+                "phykit.services.tree.hidden_paralogy_check.Phylo.read",
+                return_value=work_tree,
+            ):
+                self.checker.run()
+        finally:
+            TreeMixin.get_terminals = original_get_terminals
+
+        mock_print.assert_called_once_with("not_monophyletic")
+
+    @patch('builtins.print')
     @patch('multiprocessing.Pool')
     def test_run_parallel_processing(self, mock_pool_class, mock_print):
         """Test run method with parallel processing (large dataset)"""

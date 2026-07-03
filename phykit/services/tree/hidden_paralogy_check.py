@@ -124,7 +124,9 @@ class HiddenParalogyCheck(Tree):
                 tree.root_with_outgroup(list(diff_tips))
 
                 subtree = tree.common_ancestor(clade_of_interest)
-                common_ancestor_tips = set(self.get_tip_names_from_tree(subtree))
+                common_ancestor_tips = self._terminal_names_direct(subtree)
+                if common_ancestor_tips is None:
+                    common_ancestor_tips = set(self.get_tip_names_from_tree(subtree))
 
                 diff_tips_between_clade_and_curr_tree = \
                     clade_of_interest.symmetric_difference(common_ancestor_tips)

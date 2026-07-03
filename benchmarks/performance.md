@@ -1444,6 +1444,7 @@ Results:
 | `HiddenParalogyCheck._build_exact_clade_index` binary child-set union | balanced 32768-tip tree, exact descendant-taxon index for every clade | 0.131806s | 0.121338s | 1.09x |
 | `HiddenParalogyCheck._terminal_names_direct` | balanced 32768-tip clade, collect terminal names in batch fallback | 0.065931s | 0.008021s | 8.22x |
 | `HiddenParalogyCheck._terminal_names_direct` set traversal | balanced 65536-tip clade, collect identical terminal-name set | 0.019487s | 0.012567s | 1.55x |
+| `HiddenParalogyCheck.run` sequential non-exact terminal collection | balanced 4096 / 32768 / 65536-tip MRCA clades, side-by-side previous generic tip-name helper plus set conversion | 0.002064s / 0.009363s / 0.022338s | 0.001377s / 0.006641s / 0.015721s | 1.50x / 1.41x / 1.42x |
 | `HiddenParalogyCheck` requested-clade shared-taxa intersection | 500k three-taxon requested clades against 100k master tree tips, duplicate/off-tree semantics preserved | 0.247522s | 0.190846s | 1.30x |
 | `HiddenParalogyCheck.print_results` text output | 200k clade status rows, identical stdout text | 0.028718s | 0.004742s | 6.06x |
 | `HiddenParalogyCheck.print_results` JSON row construction | 500k clade status rows with mixed unexpected-taxa lists, identical row dictionaries | 2.142931s | 1.682672s | 1.27x |
@@ -5651,10 +5652,12 @@ Profiling summary:
   falling back to Bio.Phylo `get_terminals()` for nonstandard clade-like
   objects. A follow-up pass avoids order-preserving child reversal in that helper
   because it returns a set, preserving the same terminal-name result while
-  reducing stack traversal overhead. Text output now batches clade status rows
-  into one newline-joined print. JSON output now builds row dictionaries through
-  a list comprehension and row helper while preserving the `rows`/`clades`
-  alias payload. A later JSON-output pass builds rows in a local append loop,
+  reducing stack traversal overhead. Sequential non-exact processing now reuses
+  the same set-returning direct terminal traversal, avoiding an intermediate
+  ordered tip-name list before the symmetric-difference check. Text output now
+  batches clade status rows into one newline-joined print. JSON output now
+  builds row dictionaries through a list comprehension and row helper while
+  preserving the `rows`/`clades` alias payload. A later JSON-output pass builds rows in a local append loop,
   avoiding one helper call per clade while preserving unexpected-taxa sorting
   and the `rows`/`clades` alias payload. Clade-file parsing now bulk-reads rows before
   applying the same whitespace split, preserving empty clade rows while reducing
