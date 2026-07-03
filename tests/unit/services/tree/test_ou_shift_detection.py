@@ -48,6 +48,15 @@ assert module._MINIMIZE_SCALAR is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_module_and_resolved_attributes():
+    lazy_np = ou_shift_detection_module._LazyNumpy()
+
+    sqrt = lazy_np.sqrt
+
+    assert lazy_np._module is not None
+    assert lazy_np.sqrt is sqrt
+
+
 def test_module_import_does_not_import_heavy_optional_packages(monkeypatch):
     module_name = "phykit.services.tree.ou_shift_detection"
     previous = sys.modules.pop(module_name, None)

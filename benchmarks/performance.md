@@ -2510,6 +2510,7 @@ Results:
 | `OUShiftDetection._build_shift_weight_matrix` baseline weight total | per-row shifted-regime weight vector with 2 / 3 / 4 / 8 / 16 / 32 / 128 columns, side-by-side previous `np.sum` wrapper | 0.000005610s / 0.000005376s / 0.000005409s / 0.000005934s / 0.000005992s / 0.000005708s / 0.000005718s | 0.000003521s / 0.000003595s / 0.000002428s / 0.000003187s / 0.000002629s / 0.000003032s / 0.000002396s | 1.59x / 1.50x / 2.23x / 1.86x / 2.28x / 1.88x / 2.39x |
 | `OUShiftDetection._extract_lasso_configs` flat coefficient indices | 5000 shift coefficients x 1200 LASSO-path steps, sparse nonzero coefficients, side-by-side previous `np.where(...)[0]` extraction | 0.051099s | 0.034082s | 1.50x |
 | `OUShiftDetection._extract_lasso_configs` column L2 normalization | 50x200 / 200x1000 / 1000x3000 / 5000x1000 residualized shift-design matrices, side-by-side previous `np.linalg.norm(..., axis=0)` | 0.000007166s / 0.000145125s / 0.001731750s / 0.010120416s | 0.000004417s / 0.000133042s / 0.000690542s / 0.001168125s | 1.62x / 1.09x / 2.51x / 8.66x |
+| `OUShiftDetection` cached lazy NumPy attributes | 50x200 / 200x1000 residualized shift-design matrices, repeated `_column_l2_norms` calls, side-by-side previous import-on-attribute lazy proxy | 0.000021628s / 0.000268934s | 0.000009087s / 0.000080349s | 2.38x / 3.35x |
 | `OUShiftDetection._compute_pbic_from_vcv` Cholesky information matrix | 520 taxa SPD VCV x 7-column indicator design | 0.003160s | 0.000817s | 3.9x |
 | `OUShiftDetection._compute_pbic_from_info` determinant-only correction | 120-parameter SPD information matrix, side-by-side previous scaled inverse determinant | 0.001747838s | 0.000093647s | 18.66x |
 | `ou_shift_detection` module import without eager `sklearn` | cold process import for OU-shift command module | 1.241723s | 0.512947s | 2.4x |
@@ -8153,7 +8154,10 @@ Profiling summary:
   lineage clade id and fills selected shift columns from those rows, avoiding a
   full root-to-tip path scan for every LASSO candidate configuration. A later pass deferred scikit-learn's
   `lars_path` import until LASSO path extraction, preserving the fitting path
-  while avoiding `sklearn` on normal module import. A subsequent startup pass
+  while avoiding `sklearn` on normal module import. The lazy NumPy proxy now
+  caches the imported module and resolved attributes after first use, reducing
+  repeated helper dispatch in normalization-heavy numerical setup while keeping
+  module import lazy. A subsequent startup pass
   replaced eager `scipy.linalg` and `scipy.optimize` imports with same-name lazy
   wrappers, so import-only callers avoid linalg/optimize startup while fitting
   still calls the same Cholesky, triangular-solve, and optimizer
