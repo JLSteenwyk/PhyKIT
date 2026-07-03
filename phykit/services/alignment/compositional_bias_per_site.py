@@ -139,12 +139,14 @@ def _false_discovery_control(p_values: list[float]) -> list[float]:
     p_array = np.asarray(p_values, dtype=np.float64)
 
     order = np.argsort(p_array)
-    ordered = p_array[order]
-    ranks = np.arange(1, ordered.size + 1, dtype=np.float64)
-    adjusted_ordered = ordered * ordered.size / ranks
-    adjusted_ordered = np.minimum.accumulate(adjusted_ordered[::-1])[::-1]
+    adjusted_ordered = p_array[order].copy()
+    adjusted_ordered *= p_value_count
+    adjusted_ordered /= np.arange(1, p_value_count + 1, dtype=np.float64)
+    adjusted_reversed = adjusted_ordered[::-1]
+    np.minimum.accumulate(adjusted_reversed, out=adjusted_reversed)
+    np.minimum(adjusted_ordered, 1.0, out=adjusted_ordered)
     adjusted = np.empty_like(adjusted_ordered)
-    adjusted[order] = np.minimum(adjusted_ordered, 1.0)
+    adjusted[order] = adjusted_ordered
     return adjusted.tolist()
 
 

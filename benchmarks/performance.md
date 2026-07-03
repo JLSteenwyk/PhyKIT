@@ -394,6 +394,7 @@ Results:
 | `CompositionalBiasPerSite` all-valid p-value extraction | 3 repeated 1M-site p-value arrays with no NaN slots, side-by-side previous boolean-index extraction | 0.084985s | 0.077307s | 1.10x |
 | `CompositionalBiasPerSite` statistic result construction | 1M per-site statistic/p-value pairs converted to `Power_divergenceResult` rows | 2.121716s | 1.699578s | 1.25x |
 | `CompositionalBiasPerSite._false_discovery_control` small-list path without NumPy startup | cold subprocess, 4 p-values through Benjamini-Hochberg helper | 0.066106s | 0.024334s | 2.72x |
+| `CompositionalBiasPerSite._false_discovery_control` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.437446s | 0.333818s | 1.31x |
 | `CompositionalBiasPerSite._build_rows` literal row construction | 500k site rows with mixed valid and `"nan"` corrected p-values, identical row dictionaries | 2.175066s | 1.893878s | 1.15x |
 | `CompositionalBiasPerSite._build_rows` bound append | 500k site rows with mixed valid and `"nan"` corrected p-values, side-by-side previous unbound `rows.append` loop | 1.427984s | 1.333329s | 1.07x |
 | `CompositionalBiasPerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.072149s | 0.061021s | 1.18x |
@@ -3437,9 +3438,12 @@ Profiling summary:
   command discovery. Small p-value correction lists now use the same
   Benjamini-Hochberg ordering and reverse cumulative-minimum semantics in
   Python, avoiding NumPy startup for direct helper use while retaining the
-  vectorized NumPy path for large site-wide correction arrays. A later startup
-  pass converts remaining annotation-only `typing` names to built-in postponed
-  annotations, so command discovery no longer imports `typing` for this module.
+  vectorized NumPy path for large site-wide correction arrays. The large-vector
+  path now scales the sorted p-value buffer in place and uses `out=` for the
+  reverse cumulative minimum and cap, preserving corrected values while reducing
+  temporary allocation pressure. A later startup pass converts remaining
+  annotation-only `typing` names to built-in postponed annotations, so command
+  discovery no longer imports `typing` for this module.
   Protein ASCII count blocks now encode valid observations in site-major order,
   avoiding the tiled site-offset vector while preserving the same category
   counts, per-site totals, and sum-of-squares. The public per-column occurrence
