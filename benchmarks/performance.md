@@ -1893,6 +1893,7 @@ Results:
 | `StochasticCharacterMap._summarize_simulations` direct accumulation | balanced 1024-tip tree, 80 stochastic mappings, 3 states | 0.3331s | 0.0943s | 3.5x |
 | `StochasticCharacterMap._summarize_simulations` direct setup traversal | balanced 32768-tip tree, 3 stochastic mappings, 3 states | 0.2189s | 0.1238s | 1.8x |
 | `StochasticCharacterMap._summarize_simulations` single-segment history fast path | 100 mappings x 4094 branches, 90% single-segment histories, 4 states | 0.190871s | 0.103495s | 1.84x |
+| `StochasticCharacterMap._summarize_simulations` cached NumPy attribute proxy | 30 repeated summaries of 60 synthetic mappings on a balanced 128-tip tree, side-by-side previous uncached lazy NumPy proxy | 1.277924s | 0.944678s | 1.35x |
 | `StochasticCharacterMap._sample_ancestral_states` transition cache | balanced 512-tip tree, 80 ancestral-state samples, repeated branch lengths | 0.6845s | 0.4208s | 1.6x |
 | `StochasticCharacterMap._sample_ancestral_states` precomputed parent-state probabilities | balanced 512-tip tree, 80 ancestral-state samples, repeated branch lengths | 0.160799s | 0.092451s | 1.7x |
 | `StochasticCharacterMap._prepare_ancestral_sampling_nodes` vectorized large-state CDFs | 32768 sampling nodes, 8 states, repeated unit branch length | 0.520323s | 0.246565s | 2.11x |

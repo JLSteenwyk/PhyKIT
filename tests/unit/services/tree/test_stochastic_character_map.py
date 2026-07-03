@@ -36,6 +36,16 @@ assert "numpy" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = scm_module._LazyNumpy()
+
+    zeros_attr = lazy_np.zeros
+
+    assert lazy_np.__dict__["zeros"] is zeros_attr
+    assert lazy_np.zeros is zeros_attr
+    assert lazy_np._module is not None
+
+
 here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
