@@ -350,6 +350,33 @@ class TestDrawBranches:
         assert len(ax.collections) == 2
         plt.close(fig)
 
+    def test_draw_branches_collection_path_avoids_reversed_children(self):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("collection path should push children directly")
+
+        class Clade:
+            def __init__(self, name=None, clades=None):
+                self.name = name
+                self.clades = NoReversedList(clades or [])
+
+        left = Clade("A")
+        right = Clade("B")
+        root = Clade(clades=[left, right])
+        tree = type("Tree", (), {"root": root})()
+        parent_map = {id(left): root, id(right): root}
+        coords = {
+            id(root): {"x": 0.0, "y": 0.0, "angle": 0.0, "radius": 0.0},
+            id(left): {"x": 1.0, "y": 0.0, "angle": 0.0, "radius": 1.0},
+            id(right): {"x": 0.0, "y": 1.0, "angle": math.pi / 2, "radius": 1.0},
+        }
+        fig, ax = plt.subplots()
+
+        draw_circular_branches(ax, tree, coords, parent_map)
+
+        assert len(ax.collections) == 2
+        plt.close(fig)
+
     def test_draw_branches_uses_direct_traversal(self, monkeypatch):
         tree = _make_tree(NEWICK_6)
         parent_map = _build_parent_map(tree)

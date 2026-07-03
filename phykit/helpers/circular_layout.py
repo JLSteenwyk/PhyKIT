@@ -550,7 +550,13 @@ def _draw_circular_branches_collections(
         clade = stack.pop()
         children = clade.clades
         if children:
-            stack.extend(reversed(children))
+            child_count = len(children)
+            if child_count == 2:
+                stack.append(children[1])
+                stack.append(children[0])
+            else:
+                for index in range(child_count - 1, -1, -1):
+                    stack.append(children[index])
 
         cid = id_(clade)
         if clade is not root:
