@@ -92,10 +92,11 @@ class DNAThreader(Alignment):
             return
 
         if pal2nal:
-            print("\n".join(
-                f">{gene_id}\n{sequence}"
-                for gene_id, sequence in pal2nal.items()
-            ))
+            blocks = []
+            append = blocks.append
+            for gene_id, sequence in pal2nal.items():
+                append(f">{gene_id}\n{sequence}")
+            print("\n".join(blocks))
 
     def create_mask(self, length: int) -> list[bool]:
         return self._create_mask_and_all_true(length)[0]

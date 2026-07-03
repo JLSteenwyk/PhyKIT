@@ -510,6 +510,7 @@ Results:
 | `DNAThreader.create_mask` bounded byte status comparison | 200k all-keep ClipKIT rows expanded to nucleotide mask, identical single-space status parsing | 0.128046s | 0.104242s | 1.23x |
 | `DNAThreader.clipkit_log_data` streaming row split | 300k ClipKIT rows, identical parsed row lists | 0.058648s | 0.054238s | 1.08x |
 | `DNAThreader.run` batched FASTA text output | 100k threaded FASTA records, mocked parser/threading and identical stdout text | 0.030984s | 0.011490s | 2.70x |
+| `DNAThreader.run` text block append assembly | 50k / 200k / 500k threaded FASTA records, captured stdout and identical text, side-by-side previous generator passed to `join` | 0.029576s / 0.139428s / 0.521607s | 0.013732s / 0.121288s / 0.279560s | 2.15x / 1.15x / 1.87x |
 | `DNAThreader.run` JSON row construction | 500k threaded sequence rows, identical row dictionaries | 0.196943s | 0.168945s | 1.17x |
 | `dna_threader` module import without eager Bio.SeqIO/Seq | cold subprocess import after lazy Biopython sequence imports | 0.187897s | 0.084045s | 2.24x |
 | `dna_threader` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006269s | 0.004938s | 1.27x |
@@ -3754,6 +3755,9 @@ Profiling summary:
 - A terminal-stop `_thread_sequence` pass now emits the reachable codon-aligned
   chunks directly, avoiding normalized protein/nucleotide prefix strings and
   redundant kept-index tracking in the stop-restoration branch.
+- `DNAThreader.run` now assembles FASTA output blocks with a local append loop
+  before the single joined print call, avoiding generator-frame overhead for
+  large threaded alignments while preserving identical text output.
 - `DNAThreader.create_mask` baseline time read and split the ClipKIT log twice:
   once for the empty-log guard and again while expanding keep/remove rows. The
   optimized path stores the parsed rows locally and expands the same data once.

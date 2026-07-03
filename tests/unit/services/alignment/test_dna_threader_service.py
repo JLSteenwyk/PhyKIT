@@ -628,6 +628,20 @@ assert "Bio.AlignIO" not in sys.modules
         out, _ = capsys.readouterr()
         assert out == ">gene1\nAAACCC\n>gene2\nGGGTTT\n"
 
+    def test_run_text_output_uses_single_joined_print(self, mocker, args):
+        service = DNAThreader(args)
+        mocker.patch("phykit.services.alignment.dna_threader.SeqIO.parse", return_value=iter([]))
+        mocker.patch.object(
+            DNAThreader,
+            "thread",
+            return_value={"gene1": "AAACCC", "gene2": "GGGTTT"},
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        mocked_print.assert_called_once_with(">gene1\nAAACCC\n>gene2\nGGGTTT")
+
     def test_run_json_output(self, mocker):
         args = Namespace(
             stop=True,
