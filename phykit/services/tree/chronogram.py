@@ -723,19 +723,35 @@ class Chronogram(Tree):
         # Draw arcs at internal nodes
         arc_segments = []
         for clade in preorder_clades:
-            if not clade.clades:
+            children = clade.clades
+            child_count = len(children)
+            if child_count < 2:
                 continue
             cid = id(clade)
             if cid not in coords:
                 continue
-            child_angles = [
-                coords[id(ch)]["angle"] for ch in clade.clades
-                if id(ch) in coords
-            ]
-            if len(child_angles) < 2:
-                continue
-            min_a = min(child_angles)
-            max_a = max(child_angles)
+            if child_count == 2:
+                first_coord = coords.get(id(children[0]))
+                second_coord = coords.get(id(children[1]))
+                if first_coord is None or second_coord is None:
+                    continue
+                first_angle = first_coord["angle"]
+                second_angle = second_coord["angle"]
+                if first_angle <= second_angle:
+                    min_a = first_angle
+                    max_a = second_angle
+                else:
+                    min_a = second_angle
+                    max_a = first_angle
+            else:
+                child_angles = [
+                    coords[id(ch)]["angle"] for ch in children
+                    if id(ch) in coords
+                ]
+                if len(child_angles) < 2:
+                    continue
+                min_a = min(child_angles)
+                max_a = max(child_angles)
             r = coords[cid]["radius"]
             n_pts = max(20, int((max_a - min_a) * 50))
             angles = np.linspace(min_a, max_a, n_pts)

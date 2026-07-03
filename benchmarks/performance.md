@@ -1847,6 +1847,7 @@ Results:
 | `Chronogram._plot_circular` setup | balanced 32768-tip tree, precomputed parent map and root distances | 0.6870s | 0.1836s | 3.7x |
 | `Chronogram._plot_circular` circular coordinate clade-list reuse | balanced 32768-tip tree, root distances, parent map, preorder list, and tips already available | 0.059658s | 0.046128s | 1.29x |
 | `Chronogram._plot_circular` batched base branches/arcs | balanced 2048-tip tree, real Matplotlib Agg branch/arc/label/timescale render | 1.627218s | 0.569001s | 2.86x |
+| `Chronogram._plot_circular` binary internal arc ranges | balanced 32768-tip tree, synthetic circular coordinates, side-by-side previous child-angle list path with identical sampled arc segments | 1.121455s | 0.850478s | 1.32x |
 | `Chronogram._plot_circular` HPD interval rendering | 4096 circular HPD radial intervals, real Matplotlib Agg line render | 0.700745s | 0.044718s | 15.67x |
 | `Chronogram._plot_circular` timescale guide circle reuse | 3 / 10 / 40 synthetic valid timescale rings, fake axes collecting identical guide-circle coordinates, side-by-side previous per-ring `linspace`/trig setup | 0.000157866s / 0.000752495s / 0.001557456s | 0.000136533s / 0.000212155s / 0.000574059s | 1.16x / 3.55x / 2.71x |
 | `Chronogram._parse_hpd_intervals` direct traversal and cached regexes | balanced 32768-tip tree with HPD comments on two-thirds of internal nodes | 0.121682s | 0.034318s | 3.55x |
@@ -6683,9 +6684,12 @@ Profiling summary:
   into two `LineCollection`s while leaving timescale guide lines on their existing
   drawing path. A later HPD rendering pass batches circular radial confidence
   intervals into one translucent `LineCollection`, preserving the round-capped blue
-  styling while avoiding one line artist per HPD node. Circular timescale guide
-  rings now reuse one sampled unit-circle cosine/sine pair instead of rebuilding
-  the same `linspace` and trigonometric arrays for every valid interval. A later startup pass defers
+  styling while avoiding one line artist per HPD node. Circular internal-node
+  arcs now read binary child angle bounds directly and keep the existing
+  child-angle list fallback for polytomies, avoiding a short list allocation for
+  the common binary-tree case. Circular timescale guide rings now reuse one
+  sampled unit-circle cosine/sine pair instead of rebuilding the same `linspace`
+  and trigonometric arrays for every valid interval. A later startup pass defers
   NumPy behind a lazy proxy, leaving array startup until
   circular plotting first computes angle and radius guides. The run path now
   reuses the cached parsed tree for read-only chronogram setup; optional ladderization copies before

@@ -354,6 +354,11 @@ class TestChronogram:
         svc._plot_circular(tree, parent_map, 1.0, root_to_tip)
 
         assert len(line_collections) >= 2
+        assert any(
+            len(collection.get_segments()) == 3
+            and collection.get_linewidths()[0] == pytest.approx(0.8)
+            for collection in line_collections
+        )
         assert (tmp_path / "chrono_circular_batched.png").exists()
 
     def test_circular_timescale_reuses_boundary_circle_points(
