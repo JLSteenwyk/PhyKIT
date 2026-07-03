@@ -287,15 +287,51 @@ class PolytomyTest(Tree):
     @staticmethod
     def _build_clade_terminal_cache(tree: Newick.Tree) -> dict[int, frozenset]:
         cache: dict[int, frozenset] = {}
-        for clade in tree.find_clades(order="postorder"):
-            if clade.is_terminal():
-                cache[id(clade)] = frozenset([clade.name])
+        postorder_clades = PolytomyTest._iter_postorder_clades(tree)
+        if postorder_clades is None:
+            postorder_clades = tree.find_clades(order="postorder")
+        empty = frozenset()
+        for clade in postorder_clades:
+            children = clade.clades
+            if not children:
+                cache[id(clade)] = frozenset((clade.name,))
             else:
-                names = set()
-                for child in clade.clades:
-                    names.update(cache.get(id(child), frozenset()))
-                cache[id(clade)] = frozenset(names)
+                child_count = len(children)
+                if child_count == 2:
+                    cache[id(clade)] = (
+                        cache.get(id(children[0]), empty)
+                        | cache.get(id(children[1]), empty)
+                    )
+                else:
+                    names = set()
+                    for child in children:
+                        names.update(cache.get(id(child), empty))
+                    cache[id(clade)] = frozenset(names)
         return cache
+
+    @staticmethod
+    def _iter_postorder_clades(tree: Newick.Tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                children = clade.clades
+                if not isinstance(children, list):
+                    return None
+                if children:
+                    stack.extend(children)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
 
     @staticmethod
     def _build_tip_path_cache(tree: Newick.Tree) -> dict[str, tuple]:

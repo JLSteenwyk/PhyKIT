@@ -609,6 +609,26 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
 
         self.assertEqual(pair, ("a", "b"))
 
+    def test_build_clade_terminal_cache_uses_direct_binary_path(self):
+        tree = Phylo.read(StringIO("((a:1,b:1):1,(c:1,d:1):1);"), "newick")
+
+        with patch.object(
+            TreeMixin,
+            "find_clades",
+            side_effect=AssertionError("standard trees should use direct postorder"),
+        ), patch(
+            "builtins.set",
+            side_effect=AssertionError("binary clade cache should use direct unions"),
+        ):
+            clade_cache = self.polytomy._build_clade_terminal_cache(tree)
+
+        self.assertEqual(
+            clade_cache[id(tree.root)],
+            frozenset(("a", "b", "c", "d")),
+        )
+        self.assertEqual(clade_cache[id(tree.root.clades[0])], frozenset(("a", "b")))
+        self.assertEqual(clade_cache[id(tree.root.clades[1])], frozenset(("c", "d")))
+
     def test_common_ancestor_from_path_cache_missing_tip_returns_none(self):
         self.assertIsNone(
             self.polytomy._common_ancestor_from_path_cache(
