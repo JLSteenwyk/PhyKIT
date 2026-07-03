@@ -67,6 +67,13 @@ def test_shared_gene_tree_taxa_does_not_slice_gene_trees():
     ) == {"B", "C"}
 
 
+class NoReversedList(list):
+    def __reversed__(self):
+        raise AssertionError(
+            "binary copied-prune setup should push children directly"
+        )
+
+
 here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
@@ -545,6 +552,24 @@ class TestDistanceMatrix:
         assert set(Tree.calculate_terminal_names_fast(trees[0])) == {
             "A", "B", "C", "D", "E", "F"
         }
+
+    def test_build_distance_matrix_kf_prune_setup_avoids_reversed_binary_children(
+        self, kf_args
+    ):
+        svc = TreeSpace(kf_args)
+        trees = [
+            Phylo.read(StringIO("((A:1,E:1):1,(B:1,(C:1,D:1):1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,E:1):1,(B:1,(C:1,D:1):1):1);"), "newick"),
+        ]
+        for tree in trees:
+            for clade in tree.find_clades(order="preorder"):
+                if len(clade.clades) == 2:
+                    clade.clades = NoReversedList(clade.clades)
+
+        dist = svc._build_distance_matrix(trees, {"A", "B", "C", "D"}, "kf")
+
+        assert dist.shape == (2, 2)
+        np.testing.assert_array_equal(np.diag(dist), 0.0)
 
     def test_rf_distance_matrix_extracts_shared_splits_without_copying(
         self, monkeypatch, default_args

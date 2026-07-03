@@ -493,12 +493,19 @@ class TreeSpace(Tree):
 
                 if root is not None:
                     stack = [root]
+                    pop = stack.pop
+                    append = stack.append
                     try:
                         while stack:
-                            clade = stack.pop()
+                            clade = pop()
                             children = clade.clades
                             if children:
-                                stack.extend(reversed(children))
+                                if len(children) == 2:
+                                    append(children[1])
+                                    append(children[0])
+                                else:
+                                    for child in reversed(children):
+                                        append(child)
                             elif clade.name not in shared_taxa:
                                 remove.append(clade)
                                 target_ids.add(id(clade))

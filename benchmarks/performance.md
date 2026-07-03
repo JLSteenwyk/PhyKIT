@@ -888,6 +888,7 @@ Results:
 | `TreeSpace`/`SpectralDiscordance._get_shared_taxa` in-place intersection | 200k cached-tip gene-tree objects, identical 64 shared taxa, side-by-side previous temporary-set update | 0.819285s | 0.385707s | 2.12x |
 | `TreeSpace._build_distance_matrix` no-prune setup checks | 80 balanced trees x 512 shared taxa | 0.0771s | 0.0087s | 8.9x |
 | `TreeSpace._build_distance_matrix` copied-tree batch pruning setup | balanced 8192-tip tree, prune 4096 copied tips before split extraction | 3.2511s | 0.0324s | 100.5x |
+| `TreeSpace._build_distance_matrix` copied-tree binary prune setup | balanced 65536-tip tree, collect 32768 copied tips to prune before KF split extraction, side-by-side previous `stack.extend(reversed(children))` setup | 0.056940s | 0.043876s | 1.30x |
 | `TreeSpace._prune_to_taxa` batch standard-tree pruning | balanced 4096-tip tree, prune to 2048 retained tips during shared-taxa normalization | 6.366311s | 0.102619s | 62.04x |
 | `TreeSpace._build_distance_matrix` RF | 80 balanced trees x 128 shared taxa, rooted split matrix | 0.1168s | 0.0764s | 1.5x |
 | `TreeSpace._build_distance_matrix` KF | 80 balanced trees x 128 shared taxa, branch-score matrix | 0.2151s | 0.0737s | 2.9x |
@@ -6121,6 +6122,9 @@ Profiling summary:
   pruning entirely and extracts shared-taxa-filtered RF splits directly from
   each original tree; KF distance keeps the copied-prune path because pruning
   can collapse branch lengths that affect branch-score distances.
+  The copied-tree prune setup now pushes binary children directly while
+  collecting copied terminal objects, avoiding the per-node `reversed()`
+  iterator allocation before KF split extraction.
 - `TreeSpace._extract_splits` and `_extract_splits_with_lengths` now use a
   direct postorder traversal for standard Bio.Phylo trees, falling back to
   `find_clades(order="postorder")` for nonstandard tree objects. This preserves
