@@ -2082,6 +2082,7 @@ Results:
 | `Dtt._simulate_null` terminal-column masking | 200k simulated DTT rows x 80 time points, terminal observation grid final column | 0.138169s | 0.096509s | 1.43x |
 | `Dtt._simulate_null` vectorized MDI reductions | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.119121s | 0.097534s | 1.22x |
 | `Dtt._simulate_null` MDI p-value counts | 1M simulated MDI values, side-by-side previous `np.mean(abs(sim_mdis) >= abs(mdi))` reduction | 0.000991s | 0.000390s | 2.54x |
+| `Dtt` cached NumPy attribute proxy | 80 repeated DTT reduction-helper batches over simulated trait cubes and 200k permutation p-values, side-by-side previous uncached lazy NumPy proxy | 0.386519s | 0.163403s | 2.37x |
 | `Dtt._compute_disparity` observed avg-squared sum-of-squares | observed trait matrices shaped 32x2 / 300x2 / 512x8 / 2048x4, side-by-side previous `np.sum(data * data)` and `np.sum(sums * sums)` reductions | 7.283553s / 2.413355s / 1.135589s / 3.148002s | 1.361637s / 1.171414s / 0.707937s / 2.592290s | 5.35x / 2.06x / 1.60x / 1.21x |
 | `Dtt._compute_disparity` observed avg-Manhattan weighted sum | observed trait matrices shaped 50x1k / 100x10k / 100x50k / 1000x10k, side-by-side previous broadcast multiply plus `np.sum` reduction | 0.000028s / 0.001034s / 0.009492s / 0.019283s | 0.000006562s / 0.000119s / 0.000962s / 0.002053s | 4.28x / 8.66x / 9.87x / 9.39x |
 | `Dtt._batch_clade_disparities_avg_sq` postorder subtree aggregation | balanced 2048-tip tree x 2 traits, 50 simulated DTT curves | 0.039455s | 0.026875s | 1.47x |

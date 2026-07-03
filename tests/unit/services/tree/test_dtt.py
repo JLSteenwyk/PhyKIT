@@ -168,6 +168,16 @@ assert "numpy" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = dtt_module._LazyNumpy()
+
+    count_nonzero_attr = lazy_np.count_nonzero
+
+    assert lazy_np.__dict__["count_nonzero"] is count_nonzero_attr
+    assert lazy_np.count_nonzero is count_nonzero_attr
+    assert lazy_np._module is not None
+
+
 here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 ULTRAMETRIC_TREE = str(SAMPLE_FILES / "ultrametric_tree.tre")
