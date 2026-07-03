@@ -36,6 +36,16 @@ assert "Bio.AlignIO" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = phylo_gwas_module._LazyNumpy()
+
+    ndarray_attr = lazy_np.ndarray
+
+    assert lazy_np.__dict__["ndarray"] is ndarray_attr
+    assert lazy_np.ndarray is ndarray_attr
+    assert lazy_np._module is not None
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

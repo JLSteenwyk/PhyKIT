@@ -707,6 +707,7 @@ Results:
 | `PhyloGwas.run` exact shared-taxon setup | 500k alignment taxa x 500k phenotype taxa with identical taxon sets, side-by-side previous intersection-set construction | 0.570533s | 0.099172s | 5.75x |
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
+| `PhyloGwas._test_site_categorical` cached lazy NumPy attributes | 80k repeated byte-column categorical site tests with cached Fisher result, side-by-side previous uncached lazy proxy | 0.000032586s | 0.000018226s | 1.79x |
 | `PhyloGwas._binary_alleles_from_unicode_site` two-allele ordering | 21k non-ASCII biallelic sites with mixed major/minor and equal-count cases, identical allele ordering | 0.876059s | 0.761983s | 1.15x |
 | `PhyloGwas` categorical site-result row construction | 1M mocked categorical GWAS site results, identical row dictionaries | 2.008253s | 1.780623s | 1.13x |
 | `PhyloGwas` continuous site-result row construction | 1M mocked continuous GWAS site results, identical row dictionaries | 0.701279s | 0.440898s | 1.59x |
@@ -4139,7 +4140,10 @@ Profiling summary:
   histogram and generic frequency dictionary used by multi-group tests. Byte
   major/minor helpers now use ndarray `min()`/`max()` directly, avoiding lazy
   NumPy proxy dispatch in both categorical and continuous ASCII paths. The
-  Benjamini-Hochberg correction now scales and cumulative-mins the sorted
+  lazy NumPy proxy now also caches resolved attributes after first use,
+  preserving import deferral while reducing repeated type and reduction lookups
+  in the remaining per-site byte-column paths. The Benjamini-Hochberg
+  correction now scales and cumulative-mins the sorted
   p-value buffer in place, then scatters into an uninitialized result array,
   preserving adjusted p-values while reducing temporary allocation pressure.
   Obvious non-ASCII multiallelic sites now skip after seeing a third unique
