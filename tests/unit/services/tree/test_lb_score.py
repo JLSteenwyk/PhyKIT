@@ -596,6 +596,16 @@ class TestLBScore(object):
 
         assert result == pytest.approx([0.0, 100.0])
 
+    def test_calculate_lb_score_per_taxa_handles_fractional_values(self, args):
+        t = LBScore(args)
+
+        avg_pdis = [0.25, 0.5, 1.0]
+        avg_dist = 0.5
+
+        result = t.calculate_lb_score_per_taxa(avg_pdis, avg_dist)
+
+        assert result == pytest.approx([-50.0, 0.0, 100.0])
+
     def test_calculate_lb_score_per_taxa_does_not_import_numpy(self):
         code = """
 from argparse import Namespace

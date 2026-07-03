@@ -303,7 +303,8 @@ class LBScore(Tree):
                 pass
             return []
 
-        return [((avg_PDi / avg_dist) - 1) * 100 for avg_PDi in avg_PDis]
+        scale = 100.0 / avg_dist
+        return [(avg_PDi * scale) - 100.0 for avg_PDi in avg_PDis]
 
     @staticmethod
     def _historical_other_taxa_denominator(

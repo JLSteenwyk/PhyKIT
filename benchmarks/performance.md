@@ -1791,6 +1791,7 @@ Results:
 | `LBScore._calculate_lb_components_fast` postorder child push | balanced 32768-tip tree, linear component helper, side-by-side previous `reversed(children)` setup | 0.159546s | 0.132146s | 1.21x |
 | `LBScore._calculate_lb_components_fast` unique-tip setup | 200k unique tip names, side-by-side previous duplicate-check set plus calculation set | 0.074478458s | 0.023306067s | 3.20x |
 | `LBScore.calculate_lb_score_per_taxa` without NumPy startup | cold subprocess, 32768 average-distance values transformed to LB scores | 0.098413s | 0.029658s | 3.32x |
+| `LBScore.calculate_lb_score_per_taxa` scaled score transform | 10k / 100k / 1M average-distance values, side-by-side previous per-taxon division formula | 0.000999s / 0.019576s / 0.169268s | 0.000512s / 0.002843s / 0.053361s | 1.95x / 6.89x / 3.17x |
 | `LBScore.run` verbose text output | 200k taxon LB-score rows, mocked tree/read and identical stdout text | 0.119431s | 0.093329s | 1.28x |
 | `LBScore.run` verbose JSON row construction | 500k mocked taxon LB-score rows, identical row dictionaries | 0.577324s | 0.423637s | 1.36x |
 | `LBScore.run` cached read-only tree setup | balanced 32768-tip cached tree, LB calculation and output mocked | 0.381093s | 0.000095s | 4002.74x |
@@ -6557,7 +6558,10 @@ Profiling summary:
   indexes multifurcations backward, preserving traversal order while reducing
   balanced 32768-tip median helper time from 0.159546s to 0.132146s. The
   unique-tip fast-path setup now reuses the duplicate-check tip set, avoiding a
-  second full tip-set allocation before the linear tree traversal.
+  second full tip-set allocation before the linear tree traversal. Per-taxon
+  score transformation now precomputes `100.0 / avg_dist` and uses
+  multiplication/subtraction, avoiding one division per taxon while preserving
+  score values.
 - `Saturation.loop_through_combos_and_calculate_pds_and_pis` reuses the cached
   tree-distance helper for patristic distances while preserving combo order and
   the existing uncorrected-distance calculations. When cached pairwise
