@@ -1091,6 +1091,7 @@ Results:
 | `Hybridization._parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.093972s | 0.070400s | 1.33x |
 | `Hybridization._parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
 | `Hybridization._fdr` | 1M synthetic p-values | 0.738633s | 0.164136s | 4.5x |
+| `Hybridization._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.773546s | 0.668018s | 1.16x |
 | `Hybridization._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.077783s | 0.023435s | 3.32x |
 | `hybridization` module import without `scipy.stats` | cold process import for reticulation command module | 0.629033s | 0.183021s | 3.4x |
 | `hybridization` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and localized gene-tree parser import | 0.147853s | 0.032011s | 4.62x |
@@ -5042,11 +5043,12 @@ Profiling summary:
   as `EvoTempoMap._fdr`, preserving scalar results including tied p-values while
   avoiding NumPy startup for direct small correction sets. Their vectorization
   cutoff now matches the 32-value correction benchmark above. The
-  `DiscordanceAsymmetry._fdr` vector path now scales the sorted p-value buffer
-  in place and applies the reverse cumulative-minimum and cap with `out=`,
-  preserving corrected values while reducing temporary allocation pressure. A
-  later pass removed the eager `scipy.stats` import by evaluating the symmetric
-  two-sided binomial test with lazy `scipy.special.bdtr`. Follow-up startup
+  `Hybridization._fdr` and `DiscordanceAsymmetry._fdr` vector paths now scale
+  the sorted p-value buffer in place and apply the reverse cumulative-minimum
+  and cap with `out=`, preserving corrected values while reducing temporary
+  allocation pressure. A later pass removed the eager `scipy.stats` import by
+  evaluating the symmetric two-sided binomial test with lazy
+  `scipy.special.bdtr`. Follow-up startup
   passes for `hybridization` and `discordance_asymmetry` defer NumPy behind a
   proxy and import Bio.Phylo only inside gene-tree parsing, leaving command
   discovery free of array and tree-format parser startup. Later startup work

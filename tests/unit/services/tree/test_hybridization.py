@@ -1193,6 +1193,27 @@ class TestFDR:
 
         assert Hybridization._fdr(pvals) == pytest.approx(expected)
 
+    def test_vector_fdr_preserves_input_values(self):
+        from phykit.services.tree.hybridization import Hybridization
+
+        pvals = [((idx * 37) % 101) / 1000 for idx in range(64)]
+        original = list(pvals)
+        corrected = Hybridization._fdr(pvals)
+
+        indexed = sorted(enumerate(original), key=lambda x: x[1])
+        expected = [0.0] * len(original)
+        previous = 1.0
+        for rank_minus_1 in range(len(original) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(original) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert pvals == original
+        assert corrected == pytest.approx(expected)
+
     def test_small_fdr_does_not_import_numpy(self):
         code = """
 import sys
