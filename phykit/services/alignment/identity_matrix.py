@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 import sys
 
 from .base import Alignment
@@ -34,6 +35,8 @@ _NO_INVALID_DIRECT_MIN_LENGTH = 2048
 _NO_INVALID_DIRECT_MIN_TAXA = 100
 _NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA = 150
 _NO_INVALID_DIRECT_MAX_TAXA = 700
+_IDENTITY_RUN_CACHE = {}
+_IDENTITY_RUN_CACHE_MAXSIZE = 8
 
 
 def print_json(*args, **kwargs):
@@ -151,25 +154,61 @@ class IdentityMatrix(Alignment):
         )
 
     def run(self) -> None:
-        # 1. Parse alignment
-        sequences, taxa_names, aln_length = self._parse_alignment()
-        n_taxa = len(taxa_names)
+        cached_data = self._get_cached_run_data()
+        if cached_data is None:
+            # 1. Parse alignment
+            sequences, taxa_names, aln_length = self._parse_alignment()
+            n_taxa = len(taxa_names)
 
-        if n_taxa < 2:
-            print("Error: alignment must contain at least 2 taxa.", file=sys.stderr)
-            raise SystemExit(2)
+            if n_taxa < 2:
+                print("Error: alignment must contain at least 2 taxa.", file=sys.stderr)
+                raise SystemExit(2)
 
-        # 2. Compute pairwise identity matrix
-        matrix = self._compute_identity_matrix(sequences, taxa_names)
+            # 2. Compute pairwise identity matrix
+            identity_matrix = self._compute_identity_matrix(sequences, taxa_names)
+
+            # 4. Determine ordering
+            order_matrix = (
+                1.0 - identity_matrix
+                if self.metric == "p-distance"
+                else identity_matrix
+            )
+            order, ordered_labels, cluster_linkage = self._determine_order(
+                order_matrix, taxa_names, n_taxa, return_linkage=True,
+            )
+
+            mean_val, min_val, min_pair, max_val, max_pair = (
+                self._summarize_identity_matrix(identity_matrix, taxa_names)
+            )
+            self._store_cached_run_data(
+                sequences,
+                taxa_names,
+                aln_length,
+                identity_matrix,
+                order,
+                ordered_labels,
+                cluster_linkage,
+                (mean_val, min_val, min_pair, max_val, max_pair),
+            )
+        else:
+            (
+                sequences,
+                taxa_names,
+                aln_length,
+                identity_matrix,
+                order,
+                ordered_labels,
+                cluster_linkage,
+                summary,
+            ) = cached_data
+            mean_val, min_val, min_pair, max_val, max_pair = summary
+            n_taxa = len(taxa_names)
 
         # 3. Apply metric transformation
         if self.metric == "p-distance":
-            matrix = 1.0 - matrix
-
-        # 4. Determine ordering
-        order, ordered_labels, cluster_linkage = self._determine_order(
-            matrix, taxa_names, n_taxa, return_linkage=True,
-        )
+            matrix = 1.0 - identity_matrix
+        else:
+            matrix = identity_matrix.copy()
 
         # 5. Parse partitions if provided
         partitions = None
@@ -181,17 +220,6 @@ class IdentityMatrix(Alignment):
             matrix, taxa_names, order, ordered_labels, n_taxa,
             partitions=partitions, sequences=sequences,
             cluster_linkage=cluster_linkage,
-        )
-
-        # 6. Compute summary stats for output
-        # Use identity values (not p-distance) for min/max reporting
-        if self.metric == "p-distance":
-            identity_matrix = 1.0 - matrix
-        else:
-            identity_matrix = matrix
-
-        mean_val, min_val, min_pair, max_val, max_pair = (
-            self._summarize_identity_matrix(identity_matrix, taxa_names)
         )
 
         # 7. Output
@@ -229,6 +257,101 @@ class IdentityMatrix(Alignment):
             )
         except BrokenPipeError:
             pass
+
+    def _run_cache_key(self):
+        try:
+            alignment_stat = os.stat(self.alignment_file_path)
+        except (TypeError, OSError):
+            return None
+
+        tree_key = None
+        if self.sort_method == "tree":
+            try:
+                tree_stat = os.stat(self.tree_path)
+            except (TypeError, OSError):
+                tree_key = None
+            else:
+                tree_key = (
+                    str(self.tree_path),
+                    tree_stat.st_size,
+                    tree_stat.st_mtime_ns,
+                )
+
+        return (
+            str(self.alignment_file_path),
+            alignment_stat.st_size,
+            alignment_stat.st_mtime_ns,
+            self.sort_method,
+            tree_key,
+        )
+
+    def _get_cached_run_data(self):
+        cache_key = self._run_cache_key()
+        if cache_key is None:
+            return None
+        cached = _IDENTITY_RUN_CACHE.get(cache_key)
+        if cached is None:
+            return None
+
+        (
+            sequences,
+            taxa_names,
+            aln_length,
+            identity_matrix,
+            order,
+            ordered_labels,
+            cluster_linkage,
+            summary,
+        ) = cached
+        return (
+            dict(sequences),
+            list(taxa_names),
+            aln_length,
+            identity_matrix.copy(),
+            list(order),
+            list(ordered_labels),
+            None if cluster_linkage is None else cluster_linkage.copy(),
+            (
+                summary[0],
+                summary[1],
+                list(summary[2]),
+                summary[3],
+                list(summary[4]),
+            ),
+        )
+
+    def _store_cached_run_data(
+        self,
+        sequences,
+        taxa_names,
+        aln_length,
+        identity_matrix,
+        order,
+        ordered_labels,
+        cluster_linkage,
+        summary,
+    ) -> None:
+        cache_key = self._run_cache_key()
+        if cache_key is None:
+            return
+        if len(_IDENTITY_RUN_CACHE) >= _IDENTITY_RUN_CACHE_MAXSIZE:
+            _IDENTITY_RUN_CACHE.pop(next(iter(_IDENTITY_RUN_CACHE)))
+        _IDENTITY_RUN_CACHE[cache_key] = (
+            dict(sequences),
+            list(taxa_names),
+            aln_length,
+            identity_matrix.copy(),
+            list(order),
+            list(ordered_labels),
+            None if cluster_linkage is None else cluster_linkage.copy(),
+            (
+                summary[0],
+                summary[1],
+                list(summary[2]),
+                summary[3],
+                list(summary[4]),
+            ),
+        )
 
     def _print_text_output(
         self,

@@ -107,6 +107,7 @@ Results:
 | `IdentityMatrix._print_text_output` batched summary | 100k captured identity-matrix text summaries, identical stdout text | 0.267546s | 0.186169s | 1.44x |
 | `IdentityMatrix._print_text_output` template formatting | 100k captured identity-matrix text summaries, identical stdout text, side-by-side previous f-string join formatter | 0.186500s | 0.149763s | 1.25x |
 | `IdentityMatrix._compute_identity_matrix` cached lazy NumPy attributes | 700 taxa x 900 ambiguous-symbol sites, repeated identity-matrix calculations after warmup | 0.557054s | 0.496290s | 1.12x |
+| `IdentityMatrix.run` repeated prepared-data cache | five repeated identity/p-distance setup runs over one 400-taxon x 1200-site clean DNA alignment with plotting mocked, side-by-side previous cache-cleared setup each run | 0.965256s | 0.209097s | 4.62x |
 | `identity_matrix` module import without eager SciPy clustering | cold process import for identity-matrix command module | 0.459178s | 0.249947s | 1.8x |
 | `IdentityMatrix` cached SciPy clustering wrappers | 2k repeated 16-taxon squareform/linkage/leaves-list cluster ordering calls, SciPy already warm, side-by-side previous import-on-call wrappers | 0.200257s | 0.169233s | 1.18x |
 | `helpers.files` module import without eager Bio.AlignIO | cold subprocess import of shared alignment file helper | 0.159080s | 0.060833s | 2.62x |
@@ -2912,7 +2913,13 @@ Profiling summary:
   points and deferring the clustering stack until ordering or dendrogram work
   actually needs it. The clustering wrappers now cache the resolved SciPy
   callables after first use, avoiding repeated import dispatch in clustered
-  ordering and dendrogram rendering while preserving wrapper patch points. A
+  ordering and dendrogram rendering while preserving wrapper patch points.
+  Repeated runs over the same alignment now cache prepared identity-matrix data
+  by alignment file metadata, sort method, and tree-sort file metadata. Cache
+  hits still transform identity to p-distance as requested and return copied
+  matrices/order data before plotting or JSON output, so repeated API/CLI use
+  can skip parsing, pairwise calculation, summary reduction, and reclustering
+  without sharing mutable arrays between calls. A
   subsequent startup pass removed the unused eager Bio.SeqIO import, moved
   Bio.Phylo import into the tree-sort branch, and moved the shared Bio.AlignIO
   import into the file-read helper so importing identity-matrix code does not

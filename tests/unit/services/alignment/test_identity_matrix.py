@@ -871,6 +871,109 @@ class TestIdentityMatrixUnit:
             "Output: identity.png"
         )
 
+    def test_run_reuses_cached_alignment_matrix_and_order(self, tmp_path, monkeypatch):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        _write_alignment(aln_path, {
+            "taxon_A": "ACGT",
+            "taxon_B": "ACTT",
+            "taxon_C": "TTTT",
+        })
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+
+        first = IdentityMatrix(_make_args(aln_path, out_path, sort="alpha"))
+        monkeypatch.setattr(first, "_plot_heatmap", lambda *_args, **_kwargs: None)
+        first.run()
+
+        captured = {}
+        second = IdentityMatrix(
+            _make_args(
+                aln_path,
+                tmp_path / "out_pdistance.png",
+                sort="alpha",
+                metric="p-distance",
+            )
+        )
+
+        def fail_parse_alignment():
+            raise AssertionError("cached identity run should skip parsing")
+
+        def fail_compute_identity_matrix(*_args, **_kwargs):
+            raise AssertionError("cached identity run should skip matrix computation")
+
+        def fail_determine_order(*_args, **_kwargs):
+            raise AssertionError("cached identity run should skip ordering")
+
+        def capture_plot(matrix, taxa_names, order, ordered_labels, *_args, **_kwargs):
+            captured["matrix"] = matrix
+            captured["taxa_names"] = taxa_names
+            captured["order"] = order
+            captured["ordered_labels"] = ordered_labels
+
+        monkeypatch.setattr(second, "_parse_alignment", fail_parse_alignment)
+        monkeypatch.setattr(
+            second, "_compute_identity_matrix", fail_compute_identity_matrix
+        )
+        monkeypatch.setattr(second, "_determine_order", fail_determine_order)
+        monkeypatch.setattr(second, "_plot_heatmap", capture_plot)
+
+        second.run()
+
+        assert captured["taxa_names"] == ["taxon_A", "taxon_B", "taxon_C"]
+        assert captured["order"] == [0, 1, 2]
+        assert captured["ordered_labels"] == ["taxon_A", "taxon_B", "taxon_C"]
+        assert captured["matrix"][0, 1] == pytest.approx(0.25)
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+
+    def test_cached_run_data_returns_matrix_copies(self, tmp_path, monkeypatch):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        _write_alignment(aln_path, {
+            "taxon_A": "ACGT",
+            "taxon_B": "ACTT",
+            "taxon_C": "TTTT",
+        })
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+        service = IdentityMatrix(_make_args(aln_path, out_path, sort="alpha"))
+        monkeypatch.setattr(service, "_plot_heatmap", lambda *_args, **_kwargs: None)
+
+        service.run()
+        cached = service._get_cached_run_data()
+        cached[3][0, 1] = 999.0
+
+        fresh_cached = service._get_cached_run_data()
+
+        assert fresh_cached[3][0, 1] == pytest.approx(0.75)
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+
+    def test_p_distance_run_orders_with_distance_matrix(self, tmp_path, monkeypatch):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        _write_alignment(aln_path, {
+            "taxon_A": "ACGT",
+            "taxon_B": "ACTT",
+            "taxon_C": "TTTT",
+        })
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+        service = IdentityMatrix(
+            _make_args(aln_path, out_path, sort="cluster", metric="p-distance")
+        )
+        captured = {}
+
+        def capture_order(matrix, taxa_names, n_taxa, return_linkage=False):
+            captured["matrix"] = matrix
+            order = list(range(n_taxa))
+            labels = [taxa_names[idx] for idx in order]
+            return order, labels, None
+
+        monkeypatch.setattr(service, "_determine_order", capture_order)
+        monkeypatch.setattr(service, "_plot_heatmap", lambda *_args, **_kwargs: None)
+
+        service.run()
+
+        assert captured["matrix"][0, 1] == pytest.approx(0.25)
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+
     def test_creates_png(self, tmp_path):
         """The run method should create a non-empty output file."""
         aln_path = tmp_path / "aln.fa"
