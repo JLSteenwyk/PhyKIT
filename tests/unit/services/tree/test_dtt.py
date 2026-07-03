@@ -844,6 +844,33 @@ class TestRun:
         assert isinstance(data["mdi"], float)
         assert 0.0 <= data["mdi_p_value"] <= 1.0
 
+    def test_print_json_vectorizes_time_series_rounding(self, monkeypatch):
+        args = _make_args(json=True)
+        svc = Dtt(args)
+        captured = {}
+
+        monkeypatch.setattr(
+            dtt_module,
+            "print_json",
+            lambda payload, **_kwargs: captured.update(payload),
+        )
+
+        def fail_round(*_args, **_kwargs):
+            raise AssertionError("time-series JSON rounding should be vectorized")
+
+        monkeypatch.setattr("builtins.round", fail_round)
+
+        svc._print_json(
+            np.array([0.0, 0.1234567]),
+            np.array([1.0, 0.7654321]),
+            None,
+            None,
+            None,
+        )
+
+        assert captured["times"] == [0.0, 0.123457]
+        assert captured["dtt"] == [1.0, 0.765432]
+
     def test_plot_output(self, tmp_path):
         plot_path = str(tmp_path / "dtt_test.png")
         args = _make_args(trait="body_mass", plot_output=plot_path)

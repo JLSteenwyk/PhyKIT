@@ -846,8 +846,8 @@ class Dtt(Tree):
         payload = {
             "index": self.index,
             "n_time_points": len(times),
-            "times": [round(t, 6) for t in times],
-            "dtt": [round(d, 6) for d in dtt_values],
+            "times": np.round(times, 6).tolist(),
+            "dtt": np.round(dtt_values, 6).tolist(),
         }
         if mdi is not None:
             payload["mdi"] = round(mdi, 6)
