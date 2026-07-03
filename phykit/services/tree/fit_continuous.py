@@ -311,11 +311,18 @@ class FitContinuous(Tree):
         else:
             tip_map = {}
             stack = [root]
+            pop = stack.pop
+            append = stack.append
             while stack:
-                clade = stack.pop()
+                clade = pop()
                 children = clade.clades
                 if children:
-                    stack.extend(reversed(children))
+                    if len(children) == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for index in range(len(children) - 1, -1, -1):
+                            append(children[index])
                 elif clade.name in ordered_name_set:
                     tip_map[clade.name] = clade
 

@@ -664,6 +664,22 @@ class TestVCVTransformations:
         assert [branch_length for _, branch_length in paths["A"]] == [3.0, 1.0]
         assert [branch_length for _, branch_length in paths["C"]] == [4.0]
 
+    def test_root_to_tip_paths_avoids_reversed_for_binary_children(self, svc):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("binary tip scan should push children directly")
+
+        tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6);"), "newick")
+        for clade in tree.find_clades(order="preorder"):
+            if len(clade.clades) == 2:
+                clade.clades = NoReversedList(clade.clades)
+        parent_map = svc._build_parent_map(tree)
+
+        paths = svc._build_root_to_tip_paths(tree, ["A", "D"], parent_map)
+
+        assert [branch_length for _, branch_length in paths["A"]] == [3.0, 1.0]
+        assert [branch_length for _, branch_length in paths["D"]] == [6.0, 5.0]
+
     def test_ou_vcv_positive_definite(self, tree_vcv_data):
         d = tree_vcv_data
         V = d["svc"]._vcv_ou(d["vcv"], 0.5)

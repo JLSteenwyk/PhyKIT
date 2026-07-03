@@ -2226,6 +2226,7 @@ Results:
 | `FitContinuous._concentrated_ll_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm | 0.057255s | 0.042199s | 1.36x |
 | `FitContinuous._fit_lambda` lambda-matrix diagonal restoration | 8 / 40 / 260 / 900 / 2000 taxa VCV transform with precomputed diagonal, side-by-side previous `np.fill_diagonal` restoration per lambda evaluation | 0.000008163s / 0.000009956s / 0.000119735s / 0.003229405s / 0.009533993s | 0.000004753s / 0.000001878s / 0.000031953s / 0.002818906s / 0.007760870s | 1.72x / 5.30x / 3.75x / 1.15x / 1.23x |
 | `FitContinuous._build_root_to_tip_paths` | balanced 32768-tip tree, paths for 16384 modeled tips | 2.8907s | 0.0613s | 47.1x |
+| `FitContinuous._build_root_to_tip_paths` binary tip scan | balanced 32768-tip tree, paths for every other tip, side-by-side previous `stack.extend(reversed(children))` terminal scan | 0.160755s | 0.114818s | 1.40x |
 | `fit_continuous` module import without eager SciPy linalg/optimize | cold process import for continuous-model-fitting command module | 0.497876s | 0.214771s | 2.3x |
 | `fit_continuous` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS import | 0.081247s | 0.025834s | 3.15x |
 | `fit_continuous` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006266s | 0.005033s | 1.25x |
@@ -7012,6 +7013,9 @@ Profiling summary:
   avoid copying the cached parsed tree before VCV/path setup and model fitting.
   A later helper pass localizes stack operations and pushes children directly
   because the result is an id-to-parent map rather than an ordered traversal.
+  `_build_root_to_tip_paths` now uses indexed binary child pushes during the
+  standard-tree tip scan, preserving terminal order while avoiding per-node
+  `reversed(children)` iterator setup.
   `_print_text_output` now builds the model-comparison report as one
   newline-joined string and tracks the best BIC model while formatting rows,
   preserving exact stdout text while avoiding per-row `print` calls and a
