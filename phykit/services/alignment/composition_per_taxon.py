@@ -66,13 +66,13 @@ class CompositionPerTaxon(Alignment):
 
         if self.json_output:
             payload_rows = [
-                dict(
-                    taxon=taxon,
-                    composition={
+                {
+                    "taxon": taxon,
+                    "composition": {
                         symbol: round(float(value), 4)
                         for symbol, value in zip(symbols, comps)
                     },
-                )
+                }
                 for taxon, comps in rows
             ]
             print_json(dict(symbols=symbols, rows=payload_rows, taxa=payload_rows))

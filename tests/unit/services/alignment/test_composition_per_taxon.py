@@ -486,7 +486,10 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         payload = mocked_json.call_args.args[0]
         assert payload["symbols"] == ["A", "C"]
         assert payload["rows"] == payload["taxa"]
-        assert payload["rows"][0]["composition"] == {"A": 0.5, "C": 0.5}
+        assert payload["rows"][0] == {
+            "taxon": "t1",
+            "composition": {"A": 0.5, "C": 0.5},
+        }
 
     def test_run_text_output(self, mocker, capsys):
         svc = CompositionPerTaxon(Namespace(alignment="x.fa", json=False))

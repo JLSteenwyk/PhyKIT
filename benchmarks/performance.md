@@ -266,6 +266,7 @@ Results:
 | `CompositionPerTaxon.calculate_composition_per_taxon` cached NumPy attribute proxy | 800 taxa x 6000 sites, alphabet `ACGTN-`, side-by-side previous uncached lazy NumPy proxy | 0.187200s | 0.169343s | 1.11x |
 | `CompositionPerTaxon.run` text output formatting | 100k taxon rows x 4 composition symbols, mocked alignment/read and identical stdout text | 0.853874s | 0.194774s | 4.38x |
 | `CompositionPerTaxon.run` JSON payload formatting | 100k taxon rows x 4 composition symbols, mocked calculation rows, side-by-side previous index lookup loop | 0.147151s | 0.137843s | 1.07x |
+| `CompositionPerTaxon.run` JSON row literals | 300k taxon rows x 4 composition symbols, side-by-side previous outer `dict(...)` wrapper with identical nested payload rows | 2.735841s | 2.473427s | 1.11x |
 | `composition_per_taxon` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085520s | 0.023586s | 3.63x |
 | `composition_per_taxon` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006286s | 0.004998s | 1.26x |
 | `composition_per_taxon` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.002980s | 0.001067s | 2.79x |
@@ -3209,6 +3210,9 @@ Profiling summary:
   avoiding JSON helper startup during command discovery. A later composition
   startup pass converts its annotation-only `typing` aliases to built-in
   postponed annotations, so command discovery no longer loads `typing`.
+  Composition JSON payload rows now use literal outer dictionaries instead of
+  repeated `dict(...)` wrappers while preserving the same rounded nested
+  composition dictionaries.
 - `AlignmentLength.run` baseline time materialized the full Biopython
   alignment only to read its width. FASTA inputs now validate row lengths with
   `SimpleFastaParser` and return the shared alignment length directly, falling
