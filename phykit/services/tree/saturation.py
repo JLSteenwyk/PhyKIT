@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import math
 import os
 
 from .base import Tree
@@ -96,6 +97,37 @@ class Saturation(Tree):
         if os.environ.get("PHYKIT_FORCE_MP", "0") == "1":
             return True
         return n_combos >= self.MP_MIN_COMBOS
+
+    @staticmethod
+    def _combo_tips_from_pairs(
+        combos: list[tuple[str, str]],
+        standard_combo_order: bool = False,
+    ) -> list[str]:
+        if standard_combo_order:
+            combo_count = len(combos)
+            if combo_count == 0:
+                return []
+
+            discriminant = 1 + (8 * combo_count)
+            root = math.isqrt(discriminant)
+            if root * root == discriminant:
+                tip_count = (1 + root) // 2
+                if tip_count * (tip_count - 1) // 2 == combo_count:
+                    return [
+                        combos[0][0],
+                        *(tip_b for _, tip_b in combos[:tip_count - 1]),
+                    ]
+
+        combo_tips = []
+        seen_tips = set()
+        for tip_a, tip_b in combos:
+            if tip_a not in seen_tips:
+                combo_tips.append(tip_a)
+                seen_tips.add(tip_a)
+            if tip_b not in seen_tips:
+                combo_tips.append(tip_b)
+                seen_tips.add(tip_b)
+        return combo_tips
 
     def run(self) -> None:
         alignment, _, is_protein = get_alignment_and_format_helper(
@@ -566,15 +598,7 @@ class Saturation(Tree):
         their patristic distance and pairwise identity
         """
         gap_chars = self.get_gap_chars(is_protein)
-        combo_tips = []
-        seen_tips = set()
-        for tip_a, tip_b in combos:
-            if tip_a not in seen_tips:
-                combo_tips.append(tip_a)
-                seen_tips.add(tip_a)
-            if tip_b not in seen_tips:
-                combo_tips.append(tip_b)
-                seen_tips.add(tip_b)
+        combo_tips = self._combo_tips_from_pairs(combos, standard_combo_order)
         fast_pair_distances = None
         direct_pair_distances = None
         try:

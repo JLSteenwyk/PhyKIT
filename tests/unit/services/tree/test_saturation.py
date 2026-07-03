@@ -66,6 +66,38 @@ assert "phykit.helpers.plot_config" not in sys.modules
         self.assertFalse(self.saturation.exclude_gaps)
         self.assertFalse(self.saturation.verbose)
 
+    def test_standard_combo_tip_derivation_does_not_scan_all_pairs(self):
+        tips = [f"seq{i}" for i in range(6)]
+        pairs = [(tips[i], tips[j]) for i in range(6) for j in range(i + 1, 6)]
+
+        class StandardPairs:
+            def __len__(self):
+                return len(pairs)
+
+            def __getitem__(self, index):
+                if index == 0:
+                    return pairs[0]
+                if isinstance(index, slice):
+                    return pairs[index]
+                raise AssertionError("standard pair derivation should not scan pairs")
+
+            def __iter__(self):
+                raise AssertionError("standard pair derivation should not iterate")
+
+        observed = Saturation._combo_tips_from_pairs(
+            StandardPairs(),
+            standard_combo_order=True,
+        )
+
+        self.assertEqual(observed, tips)
+
+    def test_custom_combo_tip_derivation_preserves_first_seen_order(self):
+        combos = [("seq2", "seq3"), ("seq1", "seq2"), ("seq4", "seq1")]
+
+        observed = Saturation._combo_tips_from_pairs(combos)
+
+        self.assertEqual(observed, ["seq2", "seq3", "seq1", "seq4"])
+
     def test_process_args(self):
         """Test argument processing"""
         args = Namespace(

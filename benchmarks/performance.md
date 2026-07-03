@@ -1771,6 +1771,7 @@ Results:
 | `Saturation._constant_uncorrected_distance_for_identical_sequences` raw-identical normalization scan | 500k raw-identical requested tips with gappy DNA symbols, side-by-side previous eager uppercase tip dictionary and sequence list | 0.824100s | 0.671471s | 1.23x |
 | `Saturation._calculate_uncorrected_distances_matrix` cached lazy NumPy attributes | 600 taxa x 900 sites, 179700 ordered pairwise gappy matrix distances after warmup | 0.589004s | 0.494819s | 1.19x |
 | `Tree.calculate_pairwise_tip_distances_fast` distances-only upper-triangle mode | 2500-tip star tree, 3,123,750 requested upper-triangle pairwise distances, omitting duplicate cached pair tuples for `Saturation` standard-order callers | 5.901164s | 5.113895s | 1.15x |
+| `Saturation._combo_tips_from_pairs` standard-order tip derivation | standard upper-triangle pair lists for 100 / 1000 / 2500 taxa, side-by-side previous first-seen scan over every pair | 0.000301937s / 0.105971877s / 0.270086008s | 0.000003333s / 0.000027919s / 0.000069500s | 90.58x / 3795.72x / 3886.13x |
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
 | `Saturation.print_res` verbose JSON row construction | 500k pairwise rows, identical row dictionaries | 1.126429s | 0.839930s | 1.34x |
@@ -6406,7 +6407,10 @@ Profiling summary:
   Standard-order saturation callers now request cached tree distances without
   materializing the duplicate `(tip_a, tip_b)` list inside the shared fast
   pairwise-distance helper; callers that need pair labels keep the default
-  tuple-producing behavior.
+  tuple-producing behavior. Trusted standard-order pair lists now derive the
+  requested tip order from the triangular pair count and first row, avoiding a
+  full first-seen scan over every pair; custom and malformed pair lists keep the
+  original scan.
   Cached read-only `Saturation.run` now uses the explicit unmodified tree read
   helper to avoid copying the cached parsed tree before tip-pair setup and
   pairwise distance calculation. Verbose text output now batches pairwise rows
