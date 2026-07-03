@@ -1325,6 +1325,7 @@ Results:
 | `RelativeRateTest._run_pairwise_tests_vectorized` zip-based result rows | 1,124,250 pairwise result rows from 1500 taxa, side-by-side previous index lookups | 0.698618s | 0.558125s | 1.25x |
 | `RelativeRateTest._run_pairwise_tests_vectorized` row-wise pairwise results | 1,124,250 pairwise result rows from 1500 taxa, side-by-side previous `np.triu_indices` gather path | 3.519097s | 2.335869s | 1.51x |
 | `RelativeRateTest._pairwise_results_large` single informative-mask scan | 1,124,250 pairwise result rows from 1500 taxa, sparse zero-total rows, identical sampled row output | 2.163468s | 1.974688s | 1.10x |
+| `RelativeRateTest._pairwise_results_large` thresholded builtin row values | 768 / 1024 ingroup taxa, 294528 / 523776 pairwise result rows, side-by-side previous NumPy scalar conversion loop with identical dictionaries | 0.424964s / 0.921680s | 0.303561s / 0.393846s | 1.40x / 2.34x |
 | `RelativeRateTest._ingroup_ascii_matrix` joined byte-buffer setup | 1000 repeated 140-ingroup-taxon x 1500-site ASCII matrix builds, side-by-side previous per-taxon `np.frombuffer` plus `np.vstack` setup | 0.845237s | 0.296323s | 2.85x |
 | `RelativeRateTest._bonferroni` | 1M synthetic p-values | 0.096721s | 0.033725s | 2.9x |
 | `RelativeRateTest._fdr` | 1M synthetic p-values | 0.698518s | 0.164136s | 4.3x |
@@ -5343,6 +5344,11 @@ Profiling summary:
   order. Large row-wise result construction now reuses each row's
   `informative.any()` result for both chi-square and p-value branches,
   preserving zero-total all-ones p-value rows while avoiding a second mask scan.
+  Very large pairwise result construction now converts each row slice to
+  builtin Python lists before dictionary assembly, avoiding per-cell NumPy
+  scalar conversion overhead once the ingroup set reaches 768 taxa; smaller
+  result sets keep the scalar loop because the list-conversion setup can
+  dominate there.
   A later setup pass builds the ingroup byte matrix from one joined
   uppercase buffer and reshape, avoiding one `np.frombuffer` array per ingroup
   taxon plus the `np.vstack` join while preserving the Unicode fallback through

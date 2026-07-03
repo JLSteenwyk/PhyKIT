@@ -488,6 +488,44 @@ class TestPairwiseTajima:
         assert all("p_bonf" in row for row in results)
         assert all("p_fdr" in row for row in results)
 
+    def test_large_pairwise_builtin_rows_preserve_scalar_branch_results(
+        self, monkeypatch
+    ):
+        ingroup = ["A", "B", "C", "D"]
+        m1_matrix = np.array(
+            [
+                [0, 4, 2, 8],
+                [3, 0, 5, 1],
+                [7, 6, 0, 9],
+                [2, 4, 3, 0],
+            ],
+            dtype=np.int32,
+        )
+
+        monkeypatch.setattr(
+            relative_rate_test_module,
+            "_PAIRWISE_BUILTIN_ROW_MIN_TAXA",
+            999,
+        )
+        scalar_rows = RelativeRateTest._pairwise_results_large(m1_matrix, ingroup)
+
+        monkeypatch.setattr(
+            relative_rate_test_module,
+            "_PAIRWISE_BUILTIN_ROW_MIN_TAXA",
+            0,
+        )
+        builtin_rows = RelativeRateTest._pairwise_results_large(m1_matrix, ingroup)
+
+        assert builtin_rows == scalar_rows
+        assert [(row["taxon1"], row["taxon2"]) for row in builtin_rows] == [
+            ("A", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("B", "C"),
+            ("B", "D"),
+            ("C", "D"),
+        ]
+
     def test_multiple_testing_corrections_preserve_result_order(self, monkeypatch):
         svc = RelativeRateTest.__new__(RelativeRateTest)
         results = [

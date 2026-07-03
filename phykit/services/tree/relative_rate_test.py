@@ -38,6 +38,7 @@ _TAJIMA_VECTOR_MIN_LENGTH = 256
 _TAJIMA_SKIP_BYTES = b"-?NXnx"
 _TAJIMA_SKIP_SCAN_BYTES = 4096
 _CORRECTION_VECTOR_MIN_LENGTH = 32
+_PAIRWISE_BUILTIN_ROW_MIN_TAXA = 768
 _path_isabs = os.path.isabs
 
 
@@ -421,6 +422,7 @@ class RelativeRateTest(Tree):
         results = []
         append = results.append
         n_ingroup = len(ingroup)
+        use_builtin_rows = n_ingroup >= _PAIRWISE_BUILTIN_ROW_MIN_TAXA
         for i, taxon1 in enumerate(ingroup[:-1]):
             j_start = i + 1
             m1_values = m1_matrix[i, j_start:]
@@ -441,6 +443,26 @@ class RelativeRateTest(Tree):
                 p_values[informative] = erfc(
                     np.sqrt(chi2_values[informative] * 0.5)
                 )
+
+            if use_builtin_rows:
+                for taxon2, m1, m2, chi2, p_value in zip(
+                    ingroup[j_start:n_ingroup],
+                    m1_values.tolist(),
+                    m2_values.tolist(),
+                    chi2_values.tolist(),
+                    p_values.tolist(),
+                ):
+                    append(
+                        {
+                            "m1": m1,
+                            "m2": m2,
+                            "chi2": chi2,
+                            "p_value": p_value,
+                            "taxon1": taxon1,
+                            "taxon2": taxon2,
+                        }
+                    )
+                continue
 
             for taxon2, m1, m2, chi2, p_value in zip(
                 ingroup[j_start:n_ingroup],
