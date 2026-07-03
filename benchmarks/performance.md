@@ -417,6 +417,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` value row construction | 500k mocked RCVT value rows, identical row dictionaries | 0.545980s | 0.493787s | 1.11x |
 | `RelativeCompositionVariabilityTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.017426s | 0.011493s | 1.52x |
 | `RelativeCompositionVariabilityTaxon._plot_rcvt` plot series preparation | 300k taxon rows, repeated RCVT values, identical stable descending taxon order and plotted values | 0.068288s | 0.042674s | 1.60x |
+| `RelativeCompositionVariabilityTaxon.calculate_rows` cached lazy NumPy attributes | 1800 protein records x 1800 sites, repeated variable-row RCVT calculations after warmup | 0.060981s | 0.035996s | 1.69x |
 | `rcvt` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction | 0.079652s | 0.029906s | 2.66x |
 | `rcvt` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.011765s | 0.005049s | 2.33x |
 | `AlignmentOutlierTaxa.calculate_outliers` | 180 taxa x 1200 sites, alphabet `ACGT-?NX*` | 0.734118s | 0.008124s | 90.36x |
@@ -3430,9 +3431,13 @@ Profiling summary:
   before sequence materialization. Text-mode `run` now batches terminal
   rows into one print, and plot setup now sorts an index array over extracted
   RCVT values instead of sorting full row dictionaries while preserving stable
-  descending order for tied values.
+  descending order for tied values. A later row-construction pass builds
   per-taxon output rows into one newline-joined print while preserving the same
-  stdout text; JSON and plot reporting are unchanged. A subsequent startup pass
+  stdout text; JSON and plot reporting are unchanged.
+  The lazy NumPy proxy now caches resolved attributes, avoiding repeated
+  import/getattr dispatch during repeated RCVT count and reduction calls while
+  preserving lazy import behavior and module-level patch points.
+  A subsequent startup pass
   builds the lookup tables lazily while preserving the module-level `np.isin`
   patch point used by fallback-path tests. A follow-up startup pass keeps JSON
   output behind a module-level forwarding wrapper and localizes `PlotConfig` to

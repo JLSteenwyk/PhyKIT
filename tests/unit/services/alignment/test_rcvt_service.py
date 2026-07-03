@@ -44,6 +44,15 @@ assert "Bio.AlignIO" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_lazy_numpy_proxy_caches_resolved_attributes(self):
+        lazy_np = rcvt_module._LazyNumpy()
+
+        first = lazy_np.count_nonzero
+        second = lazy_np.count_nonzero
+
+        assert first is second
+        assert lazy_np.__dict__["count_nonzero"] is first
+
     def test_init_sets_expected_attrs(self, args):
         service = RelativeCompositionVariabilityTaxon(args)
         assert service.alignment_file_path == args.alignment
