@@ -599,7 +599,7 @@ class TestPlotContMap:
             node_estimates[node_labels[id(tree.root)]]
         )
 
-    def test_contmap_colored_arcs_binary_children_use_indexed_path(self):
+    def test_contmap_scalar_arcs_binary_children_use_indexed_path(self):
         class IndexedOnlyList(list):
             def __iter__(self):
                 raise AssertionError("binary arc setup should index children")
@@ -618,15 +618,13 @@ class TestPlotContMap:
         }
         all_estimates = {id(root): 3.0}
 
-        arcs = ContMap._contmap_colored_arcs(
+        arcs = ContMap._contmap_scalar_arcs(
             [root, left, right],
             coords,
             all_estimates,
-            cmap=lambda value: ("color", value),
-            norm=lambda value: value * 10.0,
         )
 
-        assert arcs == [(0, 0, 5.0, 1.0, 2.0, ("color", 30.0))]
+        assert arcs == [(0, 0, 5.0, 1.0, 2.0, 3.0)]
 
     def test_iter_preorder_preserves_order_without_reversed(self):
         class NoReversedList(list):

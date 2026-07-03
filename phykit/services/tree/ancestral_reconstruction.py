@@ -179,6 +179,14 @@ def draw_circular_colored_arcs(*args, **kwargs):
     return _draw_circular_colored_arcs(*args, **kwargs)
 
 
+def draw_circular_scalar_arcs(*args, **kwargs):
+    from ...helpers.circular_layout import (
+        draw_circular_scalar_arcs as _draw_circular_scalar_arcs,
+    )
+
+    return _draw_circular_scalar_arcs(*args, **kwargs)
+
+
 def parse_color_file(*args, **kwargs):
     from ...helpers.color_annotations import parse_color_file as _parse_color_file
 
@@ -1497,7 +1505,7 @@ class AncestralReconstruction(Tree):
             )
 
             # Arcs at internal nodes colored by trait value
-            colored_arcs = []
+            scalar_arcs = []
             for clade in preorder_clades:
                 if not clade.clades:
                     continue
@@ -1510,10 +1518,10 @@ class AncestralReconstruction(Tree):
                 node_val = all_estimates[cid]
                 min_a = min(child_angles)
                 max_a = max(child_angles)
-                colored_arcs.append(
-                    (0, 0, coords[cid]["radius"], min_a, max_a, cmap(norm(node_val)))
+                scalar_arcs.append(
+                    (0, 0, coords[cid]["radius"], min_a, max_a, node_val)
                 )
-            draw_circular_colored_arcs(ax, colored_arcs, lw=3)
+            draw_circular_scalar_arcs(ax, scalar_arcs, cmap, norm, lw=3)
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0

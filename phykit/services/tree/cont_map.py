@@ -306,11 +306,11 @@ class ContMap(Tree):
         return parent_map, preorder_clades, all_estimates, tips
 
     @staticmethod
-    def _contmap_colored_arcs(preorder_clades, coords, all_estimates, cmap, norm):
-        colored_arcs = []
+    def _contmap_scalar_arcs(preorder_clades, coords, all_estimates):
+        scalar_arcs = []
         coords_get = coords.get
         estimates_get = all_estimates.get
-        append_colored_arc = colored_arcs.append
+        append_scalar_arc = scalar_arcs.append
         for clade in preorder_clades:
             children = clade.clades
             if not children:
@@ -346,10 +346,8 @@ class ContMap(Tree):
                     continue
                 min_a = min(child_angles)
                 max_a = max(child_angles)
-            append_colored_arc(
-                (0, 0, coord["radius"], min_a, max_a, cmap(norm(node_val)))
-            )
-        return colored_arcs
+            append_scalar_arc((0, 0, coord["radius"], min_a, max_a, node_val))
+        return scalar_arcs
 
     def _fast_anc(
         self, tree, x: np.ndarray, ordered_names: list[str],
@@ -618,8 +616,8 @@ class ContMap(Tree):
         if self.plot_config.circular:
             from ...helpers.circular_layout import (
                 compute_circular_coords,
-                draw_circular_colored_arcs,
                 draw_circular_gradient_branches,
+                draw_circular_scalar_arcs,
                 draw_circular_tip_labels,
             )
 
@@ -659,14 +657,12 @@ class ContMap(Tree):
             )
 
             # Arcs at internal nodes colored by trait value
-            colored_arcs = self._contmap_colored_arcs(
+            scalar_arcs = self._contmap_scalar_arcs(
                 preorder_clades,
                 coords,
                 all_estimates,
-                cmap,
-                norm,
             )
-            draw_circular_colored_arcs(ax, colored_arcs, lw=3)
+            draw_circular_scalar_arcs(ax, scalar_arcs, cmap, norm, lw=3)
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0

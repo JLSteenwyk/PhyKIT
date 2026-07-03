@@ -26,6 +26,7 @@ from phykit.helpers.circular_layout import (
     draw_circular_gradient_branch,
     draw_circular_gradient_branches,
     draw_circular_multi_segment_branch,
+    draw_circular_scalar_arcs,
     draw_circular_tip_labels,
     radial_offset,
 )
@@ -554,6 +555,41 @@ class TestDrawBranches:
 
         assert len(line_collections) == 1
         assert len(line_collections[0].get_segments()) == 2
+        plt.close(fig)
+
+    def test_draw_scalar_arcs_batches_real_axes(self, monkeypatch):
+        import matplotlib.axes
+        from matplotlib.collections import LineCollection
+        from matplotlib.colors import Normalize
+
+        arcs = [
+            (0.0, 0.0, 1.0, 0.0, math.pi / 2, 0.25),
+            (0.0, 0.0, 2.0, math.pi / 2, math.pi, 0.75),
+        ]
+        fig, ax = plt.subplots()
+        original_add_collection = matplotlib.axes.Axes.add_collection
+        line_collections = []
+
+        def fail_plot(*args, **kwargs):
+            raise AssertionError("scalar arcs should be batched")
+
+        def count_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_plot)
+        monkeypatch.setattr(
+            matplotlib.axes.Axes, "add_collection", count_collection
+        )
+
+        draw_circular_scalar_arcs(
+            ax, arcs, plt.get_cmap("viridis"), Normalize(vmin=0.0, vmax=1.0)
+        )
+
+        assert len(line_collections) == 1
+        assert len(line_collections[0].get_segments()) == 2
+        assert list(line_collections[0].get_array()) == [0.25, 0.75]
         plt.close(fig)
 
     def test_draw_gradient_branch_no_error(self):

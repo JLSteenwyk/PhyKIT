@@ -1216,6 +1216,7 @@ Results:
 | `circular_layout.draw_circular_gradient_branches` whole-tree LineCollection | 1024 gradient radial branches x 30 color segments, real Matplotlib Agg render | 0.973249s | 0.373876s | 2.60x |
 | `circular_layout.draw_circular_colored_arcs` whole-tree LineCollection | 1024 colored internal arcs x 61 polyline points, real Matplotlib Agg render | 0.159383s | 0.029367s | 5.43x |
 | `circular_layout.draw_circular_colored_arcs` cached lazy NumPy attributes | 4096 colored arcs x 61 polyline points, fake axes collecting one LineCollection per draw, side-by-side previous lazy proxy lookup path | 4.037450s | 3.461256s | 1.17x |
+| `circular_layout.draw_circular_scalar_arcs` scalar colormap collection | 4096 circular arcs x 61 polyline points, side-by-side previous per-arc `cmap(norm(value))` color materialization before `LineCollection` construction | 0.374172s | 0.050275s | 7.44x |
 | `circular_layout.draw_circular_multi_segment_branch` batched LineCollections | 1024 radial branches x 4 discrete color segments, real Matplotlib Agg render | 0.680789s | 0.657507s | 1.04x |
 | `circular_layout.draw_circular_tip_labels` | balanced 32768-tip tree, no-op text axis for circular label placement | 0.0892s | 0.0253s | 3.5x |
 | `circular_layout.draw_circular_tip_labels` localized lookups | balanced 32768-tip tree, no-op text axis for circular label placement, identical text-call count | 0.023353s | 0.021039s | 1.11x |
@@ -5320,7 +5321,10 @@ Profiling summary:
   contMap rendering to avoid one collection per branch. Colored internal arcs now
   also have a whole-tree `LineCollection` helper, preserving the existing arc
   interpolation and sweep normalization while avoiding one `Line2D` artist per
-  arc. Tip-label placement uses the same direct terminal traversal before placing
+  arc. Continuous-valued internal arcs can now attach raw scalar values to that
+  collection, preserving Matplotlib colormap/norm behavior while avoiding
+  per-arc RGBA materialization in circular contMap renderers. Tip-label
+  placement uses the same direct terminal traversal before placing
   text and localizes repeated math, coordinate, id, and axis-text lookups inside
   the placement loop. The legacy fallbacks are retained for nonstandard tree
   objects. A startup pass replaces local annotation-only `typing` aliases with
@@ -7146,8 +7150,10 @@ Profiling summary:
   and norm, avoiding per-segment RGBA materialization while preserving the same
   sampled trait values. Circular contMap rendering now uses the shared
   whole-tree radial gradient helper, avoiding one `LineCollection` per branch,
-  and the shared colored-arc helper, avoiding one `Line2D` artist per internal
-  arc. A later colored-arc setup pass reads the two child angle bounds directly
+  and its internal arcs now pass scalar node estimates through the shared
+  circular scalar-arc collection instead of materializing one RGBA color per
+  arc.
+  A later colored-arc setup pass reads the two child angle bounds directly
   for binary internal nodes, preserving the child-angle list fallback for
   polytomies while avoiding one short list allocation per ordinary binary
   internal node. Text summary output now batches the four-line report into one
@@ -7648,7 +7654,9 @@ Profiling summary:
   colormap and norm, avoiding per-segment RGBA materialization. Circular contMap
   rendering now uses the shared whole-tree radial gradient helper, avoiding one
   `LineCollection` per branch, and the shared colored-arc helper, avoiding one
-  `Line2D` artist per internal arc. A later contMap CI overlay pass batches
+  `Line2D` artist per internal arc. Its internal arcs now pass scalar node
+  estimates through the shared circular scalar-arc collection, avoiding one
+  RGBA colormap materialization per arc. A later contMap CI overlay pass batches
   rectangular vertical bars, rectangular caps, and circular tangential bars into
   `LineCollection`s and draws point estimates with one `scatter` call per plot,
   preserving black CI styling while avoiding several Matplotlib artists per CI

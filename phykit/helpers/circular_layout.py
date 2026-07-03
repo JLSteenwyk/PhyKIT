@@ -736,6 +736,58 @@ def draw_circular_colored_arcs(ax, arcs, lw=1.5):
     ax.autoscale_view()
 
 
+def draw_circular_scalar_arcs(ax, arcs, cmap, norm, lw=1.5):
+    """Draw many circular arcs with scalar values mapped by Matplotlib.
+
+    ``arcs`` contains ``(cx, cy, radius, start_angle, end_angle, value)`` tuples.
+    """
+    if not arcs:
+        return
+
+    if not hasattr(ax, "add_collection"):
+        for cx, cy, radius, start_angle, end_angle, value in arcs:
+            draw_circular_colored_arc(
+                ax,
+                cx,
+                cy,
+                radius,
+                start_angle,
+                end_angle,
+                cmap(norm(value)),
+                lw=lw,
+            )
+        return
+
+    from matplotlib.collections import LineCollection
+
+    arc_fractions = _arc_fractions_array()
+    arc_segments = []
+    values = []
+    for cx, cy, radius, start_angle, end_angle, value in arcs:
+        start = start_angle % (2.0 * math.pi)
+        end = end_angle % (2.0 * math.pi)
+        diff = (end - start) % (2.0 * math.pi)
+        if diff > math.pi:
+            diff = diff - 2.0 * math.pi
+
+        angles = start + diff * arc_fractions
+        xs = cx + radius * np.cos(angles)
+        ys = cy + radius * np.sin(angles)
+        arc_segments.append(np.column_stack((xs, ys)))
+        values.append(value)
+
+    collection = LineCollection(
+        arc_segments,
+        cmap=cmap,
+        norm=norm,
+        linewidths=lw,
+        capstyle="round",
+    )
+    collection.set_array(np.asarray(values, dtype=float))
+    ax.add_collection(collection, autolim=True)
+    ax.autoscale_view()
+
+
 # ---------------------------------------------------------------------------
 # Utility helpers
 # ---------------------------------------------------------------------------
