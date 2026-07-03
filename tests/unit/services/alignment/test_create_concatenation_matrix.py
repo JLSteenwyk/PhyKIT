@@ -674,6 +674,35 @@ class TestCreateConcatenationMatrix:
         )
         assert gene_boundaries == [2, 4]
 
+    def test_build_occupancy_state_matrix_complete_genes_skip_row_scatter(
+        self, monkeypatch
+    ):
+        def fail_asarray(*_args, **_kwargs):
+            raise AssertionError("complete genes should use direct full-matrix slices")
+
+        monkeypatch.setattr(ccm_module.np, "asarray", fail_asarray)
+
+        state_matrix, gene_boundaries = (
+            CreateConcatenationMatrix._build_occupancy_state_matrix(
+                taxa=["A", "B"],
+                concatenated_seqs={"A": ["AC", "N?"], "B": ["--", "TT"]},
+                present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+                gene_lengths=[2, 2],
+            )
+        )
+
+        np.testing.assert_array_equal(
+            state_matrix,
+            np.array(
+                [
+                    [2, 2, 1, 1],
+                    [1, 1, 2, 2],
+                ],
+                dtype=np.uint8,
+            ),
+        )
+        assert gene_boundaries == [2, 4]
+
     def test_build_occupancy_state_matrix_ignores_unrequested_present_taxa(self):
         state_matrix, gene_boundaries = (
             CreateConcatenationMatrix._build_occupancy_state_matrix(

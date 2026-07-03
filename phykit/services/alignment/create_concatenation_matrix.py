@@ -174,9 +174,19 @@ class CreateConcatenationMatrix(Alignment):
         present_taxa_by_gene: list[set],
         gene_lengths: list[int],
     ) -> tuple[np.ndarray, list[int]]:
+        taxa_count = len(taxa)
+        if taxa_count and present_taxa_by_gene:
+            taxa_set = set(taxa)
+            if all(present_taxa == taxa_set for present_taxa in present_taxa_by_gene):
+                return cls._build_complete_occupancy_state_matrix(
+                    taxa,
+                    concatenated_seqs,
+                    gene_lengths,
+                )
+
         # State values: 0 absent block, 1 gap/ambiguous, 2 represented.
         total_len = int(sum(gene_lengths))
-        state_matrix = np.zeros((len(taxa), total_len), dtype=np.uint8)
+        state_matrix = np.zeros((taxa_count, total_len), dtype=np.uint8)
 
         gene_boundaries = []
         taxon_to_idx = {taxon: idx for idx, taxon in enumerate(taxa)}
@@ -218,6 +228,47 @@ class CreateConcatenationMatrix(Alignment):
                     continue
 
             for taxon_idx, sequence in zip(row_indices, sequences):
+                seq_states = cls._sequence_occupancy_states(sequence)
+                state_matrix[taxon_idx, start:start + len(seq_states)] = seq_states
+            cursor = end
+
+        return state_matrix, gene_boundaries
+
+    @classmethod
+    def _build_complete_occupancy_state_matrix(
+        cls,
+        taxa: list[str],
+        concatenated_seqs: dict[str, list[str]],
+        gene_lengths: list[int],
+    ) -> tuple[np.ndarray, list[int]]:
+        total_len = int(sum(gene_lengths))
+        state_matrix = np.zeros((len(taxa), total_len), dtype=np.uint8)
+        gene_boundaries = []
+        cursor = 0
+        lookup = _occupancy_state_lookup()
+        for gene_idx, gene_len in enumerate(gene_lengths):
+            start = cursor
+            end = cursor + gene_len
+            gene_boundaries.append(end)
+            sequences = [concatenated_seqs[taxon][gene_idx] for taxon in taxa]
+            if gene_len and all(len(sequence) == gene_len for sequence in sequences):
+                try:
+                    sequence_array = np.frombuffer(
+                        "".join(sequences).encode("ascii"),
+                        dtype=np.uint8,
+                    )
+                except UnicodeEncodeError:
+                    sequence_array = None
+
+                if sequence_array is not None:
+                    state_matrix[:, start:end] = lookup[sequence_array].reshape(
+                        len(sequences),
+                        gene_len,
+                    )
+                    cursor = end
+                    continue
+
+            for taxon_idx, sequence in enumerate(sequences):
                 seq_states = cls._sequence_occupancy_states(sequence)
                 state_matrix[taxon_idx, start:start + len(seq_states)] = seq_states
             cursor = end
