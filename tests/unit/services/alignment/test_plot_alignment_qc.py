@@ -345,6 +345,24 @@ class TestPlotAlignmentQC:
 
         assert colors.tolist() == ["#636363", "#ca0020", "#636363", "#ca0020"]
 
+    def test_flag_colors_returns_scalar_for_uniform_masks(self):
+        assert (
+            PlotAlignmentQC._flag_colors(
+                np.zeros(4, dtype=bool),
+                "#636363",
+                "#ca0020",
+            )
+            == "#636363"
+        )
+        assert (
+            PlotAlignmentQC._flag_colors(
+                np.ones(4, dtype=bool),
+                "#636363",
+                "#ca0020",
+            )
+            == "#ca0020"
+        )
+
     def test_init(self):
         args = Namespace(
             alignment="x.fa",

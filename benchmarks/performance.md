@@ -461,6 +461,7 @@ Results:
 | `PlotAlignmentQC._prepare_plot_arrays` empty-outlier mask shortcut | 500k synthetic taxa, six QC feature arrays, and no flagged taxa, side-by-side previous per-row set membership path | 1.277690s | 1.108565s | 1.15x |
 | `PlotAlignmentQC._prepare_plot_arrays` local NaN binding | 10k / 100k / 300k synthetic taxa with one-third missing long-branch proxies, side-by-side previous per-row lazy `np.nan` lookup | 0.018861s / 0.478141s / 1.196281s | 0.019333s / 0.267003s / 0.789349s | 0.98x / 1.79x / 1.52x |
 | `PlotAlignmentQC._flag_colors` vectorized mask mapping | 1M ordered taxa flags, identical normal/flagged color sequence | 0.036504s | 0.014694s | 2.48x |
+| `PlotAlignmentQC._flag_colors` uniform-mask scalar colors | 1M ordered taxa flags, none / all / sparse flagged masks, side-by-side previous always-vectorized `np.where` color array | 0.013073s / 0.013764s / 0.014300s | 0.000045s / 0.000048s / 0.014435s | 289.43x / 285.02x / 0.99x |
 | `PlotAlignmentQC` plot extent max reductions | plotted finite-value arrays sized 10 / 1000 / 100k / 1M, side-by-side previous `np.max(...)` with large-array path preserved | 0.000003432s / 0.000002161s / 0.000011253s / 0.000123167s | 0.000001027s / 0.000000811s / 0.000010299s / 0.000123167s | 3.34x / 2.66x / 1.09x / 1.00x |
 | `PlotAlignmentQC` cached lazy NumPy proxy | repeated large plot extent maxima over 100001 finite values, side-by-side previous uncached lazy NumPy attribute lookup, identical maximum | 0.000065925s | 0.000036815s | 1.79x |
 | `plot_alignment_qc` module import without eager NumPy/outlier/json/plot helpers | cold subprocess import after lazy NumPy proxy and forwarding helper wrappers | 0.075926s | 0.026252s | 2.89x |
@@ -3633,8 +3634,9 @@ Profiling summary:
   reuses them across occupancy/gap bars, the composition-distance panel, and
   heatmap z-score setup. The flagged mask is now filled during that row pass,
   removing the previous second `np.fromiter` pass over every taxon. Occupancy
-  and gap bar colors are now selected with vectorized mask mapping, and the two
-  bar panels reuse one x-position array. Plot extent maxima now reduce through
+  and gap bar colors are now selected with vectorized mask mapping, with scalar
+  color fast paths for all-normal and all-flagged masks, and the two bar panels
+  reuse one x-position array. Plot extent maxima now reduce through
   the ndarray method for ordinary plot arrays while preserving the generic
   `np.max` path for very large arrays where it remains faster. Missing
   long-branch proxy values now reuse a local NaN binding during plot-array

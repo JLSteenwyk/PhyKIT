@@ -260,6 +260,10 @@ class PlotAlignmentQC(Alignment):
 
     @staticmethod
     def _flag_colors(flagged_mask, normal_color, flagged_color):
+        if not flagged_mask.any():
+            return normal_color
+        if flagged_mask.all():
+            return flagged_color
         return np.where(flagged_mask, flagged_color, normal_color)
 
     def run(self) -> None:
