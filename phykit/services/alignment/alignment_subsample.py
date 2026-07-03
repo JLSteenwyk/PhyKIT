@@ -357,38 +357,39 @@ class AlignmentSubsample(Alignment):
 
     @staticmethod
     def _write_fasta(path: str, sequences: dict[str, str]) -> None:
+        from itertools import islice
+
         with open(path, "w") as fh:
-            rows: list[str] = []
-            append = rows.append
             write = fh.write
-            count = 0
-            for taxon, seq in sequences.items():
-                append(f">{taxon}\n{seq}\n")
-                count += 1
-                if count == _FASTA_WRITE_CHUNK_ROWS:
-                    write("".join(rows))
-                    rows.clear()
-                    count = 0
-            if rows:
+            iterator = iter(sequences.items())
+            while True:
+                rows = [
+                    f">{taxon}\n{seq}\n"
+                    for taxon, seq in islice(iterator, _FASTA_WRITE_CHUNK_ROWS)
+                ]
+                if not rows:
+                    break
                 write("".join(rows))
 
     @staticmethod
     def _write_partition_file(
         path: str, partitions: list[tuple[str, int, int]]
     ) -> None:
+        from itertools import islice
+
         with open(path, "w") as fh:
-            rows: list[str] = []
-            append = rows.append
             write = fh.write
-            count = 0
-            for name, start, end in partitions:
-                append(f"AUTO, {name}={start}-{end}\n")
-                count += 1
-                if count == _PARTITION_WRITE_CHUNK_ROWS:
-                    write("".join(rows))
-                    rows.clear()
-                    count = 0
-            if rows:
+            iterator = iter(partitions)
+            while True:
+                rows = [
+                    f"AUTO, {name}={start}-{end}\n"
+                    for name, start, end in islice(
+                        iterator,
+                        _PARTITION_WRITE_CHUNK_ROWS,
+                    )
+                ]
+                if not rows:
+                    break
                 write("".join(rows))
 
     def _print_summary(

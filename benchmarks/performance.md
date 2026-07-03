@@ -628,7 +628,9 @@ Results:
 | `AlignmentSubsample._assemble_partition_subsample` | 900 taxa x 800 partitions x 80 sites, 600 selected partitions with duplicates | 0.1243s | 0.0502s | 2.5x |
 | `AlignmentSubsample._print_summary` batched text output | seven captured summaries with 100k output-file rows each, identical stdout text | 0.118185s | 0.050466s | 2.34x |
 | `AlignmentSubsample._write_fasta` chunked output | 1M FASTA records x 40 bp, identical output file text, previous per-record write baseline | 0.273654s | 0.193250s | 1.42x |
+| `AlignmentSubsample._write_fasta` chunk-local comprehension | 200k FASTA records x 40 bp, same 8192-row chunks and identical output text, side-by-side previous append-loop chunk fill | 0.118811s | 0.035736s | 3.32x |
 | `AlignmentSubsample._write_partition_file` chunked output | 1M RAxML-style partition rows, identical output file text, previous per-row write baseline | 0.276847s | 0.200761s | 1.38x |
+| `AlignmentSubsample._write_partition_file` chunk-local comprehension | 200k RAxML-style partition rows, same 8192-row chunks and identical output text, side-by-side previous append-loop chunk fill | 0.337496s | 0.080858s | 4.17x |
 | `AlignmentSubsample._parse_partition_file` split parser | 100k RAxML-style partition rows, preserving comments/invalid-row skips and trailing text tolerance | 0.264859s | 0.155592s | 1.70x |
 | `AlignmentSubsample._parse_partition_file` stripped comment check | 250k RAxML-style partition rows with whitespace-prefixed comments/blanks and invalid rows | 0.782216s | 0.546225s | 1.43x |
 | `AlignmentSubsample._read_list_file` stripped comment check | 250k taxa/gene list rows with whitespace-prefixed comments/blanks | 0.222545s | 0.206451s | 1.08x |
@@ -4010,6 +4012,9 @@ Profiling summary:
   or partition row separately. The optimized paths batch bounded groups of
   rows into joined writes, preserving insertion order and exact output text
   while avoiding one file write per taxon or partition on large subsamples.
+  A later pass fills each bounded chunk with a list comprehension instead of an
+  append loop, retaining the 8192-row memory cap while reducing per-row Python
+  overhead.
 - `AlignmentRecoding.recode_alignment` baseline time performed a Python
   dictionary lookup and gap check for every character. The optimized path builds
   a `str.translate` table once per recoding operation, including lowercase
