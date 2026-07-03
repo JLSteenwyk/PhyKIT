@@ -476,17 +476,22 @@ class Cophylo(Tree):
             figsize=(config.fig_width, config.fig_height),
             gridspec_kw={"width_ratios": [4, 2, 4]},
         )
+        color_data = None
+        if self.plot_config.color_file:
+            from ...helpers.color_annotations import parse_color_file
+
+            color_data = parse_color_file(self.plot_config.color_file)
 
         # Draw tree1 (left, normal orientation: root on left, tips on right)
         self._draw_phylogram(
             ax1, tree1, tree1_order, direction="right",
-            color="#2171b5",
+            color="#2171b5", color_data=color_data,
         )
 
         # Draw tree2 (right, mirrored: root on right, tips on left)
         self._draw_phylogram(
             ax2, tree2, tree2_order, direction="left",
-            color="#cb181d",
+            color="#cb181d", color_data=color_data,
         )
 
         # Draw connecting lines in the middle panel
@@ -711,6 +716,7 @@ class Cophylo(Tree):
     def _draw_phylogram(
         self, ax, tree, tip_order: dict[str, int],
         direction: str = "right", color: str = "#333333",
+        color_data=None,
     ) -> None:
         """Draw a phylogram on the given axes.
 
@@ -855,7 +861,8 @@ class Cophylo(Tree):
                 build_color_legend_handles,
                 apply_label_colors,
             )
-            color_data = parse_color_file(self.plot_config.color_file)
+            if color_data is None:
+                color_data = parse_color_file(self.plot_config.color_file)
             for taxa_list, clr, lbl in color_data["ranges"]:
                 mrca = resolve_mrca(tree, taxa_list)
                 if mrca is not None:

@@ -508,6 +508,7 @@ class TestRun:
         pytest.importorskip("matplotlib")
         import matplotlib
         import matplotlib.axes
+        import phykit.helpers.color_annotations as color_annotations
 
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
@@ -534,7 +535,9 @@ class TestRun:
 
         original_plot = matplotlib.axes.Axes.plot
         original_add_collection = matplotlib.axes.Axes.add_collection
+        original_parse_color_file = color_annotations.parse_color_file
         line_collections = []
+        parse_calls = 0
 
         def fail_overlay_plot(self, *args, **kwargs):
             if kwargs.get("zorder") == 2:
@@ -546,14 +549,23 @@ class TestRun:
                 line_collections.append(collection)
             return original_add_collection(self, collection, *args, **kwargs)
 
+        def counting_parse_color_file(*args, **kwargs):
+            nonlocal parse_calls
+            parse_calls += 1
+            return original_parse_color_file(*args, **kwargs)
+
         monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_overlay_plot)
         monkeypatch.setattr(matplotlib.axes.Axes, "add_collection", capture_collection)
+        monkeypatch.setattr(
+            color_annotations, "parse_color_file", counting_parse_color_file
+        )
 
         output_path = tmp_path / f"cophylo_color_{circular}.png"
         try:
             svc._plot_cophylo(tree1, tree2, mapping, order, order, str(output_path))
             assert len(line_collections) >= 4
             assert output_path.exists()
+            assert parse_calls == 1
         finally:
             plt.close("all")
 
