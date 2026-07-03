@@ -255,11 +255,23 @@ def calculate_summary_statistics_from_dict(dat: dict):
     """
     calcuate summary statistics for a dictionary
     """
-    if len(dat) < 2:
+    count = len(dat)
+    if count < 2:
         return _no_values_result()
 
+    if count <= _SMALL_SEQUENCE_STATS_MAX:
+        values = list(dat.values())
+        small_stats = _calculate_small_sequence_statistics(values)
+        if small_stats is not _SMALL_STATS_FALLBACK:
+            return small_stats
+        try:
+            arr = np.fromiter(values, dtype=float, count=count)
+        except (TypeError, ValueError):
+            return _calculate_summary_statistics(values)
+        return _calculate_summary_statistics(arr)
+
     try:
-        arr = np.fromiter(dat.values(), dtype=float, count=len(dat))
+        arr = np.fromiter(dat.values(), dtype=float, count=count)
     except (TypeError, ValueError):
         return _calculate_summary_statistics(list(dat.values()))
     return _calculate_summary_statistics(arr)

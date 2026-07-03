@@ -31,6 +31,7 @@ Results:
 | `calculate_summary_statistics_from_dict` | 1M floating-point dictionary values | 1.1465s | 0.0539s | 21.3x |
 | `calculate_summary_statistics_from_dict` fromiter setup | 1M floating-point dictionary values, optimized helper baseline | 0.0395s | 0.0276s | 1.4x |
 | `calculate_summary_statistics_from_dict` combined percentiles | 1M floating-point dictionary values, optimized helper baseline | 0.0373s | 0.0356s | 1.05x |
+| `calculate_summary_statistics_from_dict` small numeric dictionaries | 3 / 5 / 10 / 32 / 128 floating-point dictionary values, side-by-side previous `np.fromiter` summary path with 1000-value path sanity-checked unchanged | 0.000161055s / 0.000150662s / 0.000261013s / 0.000258981s / 0.000141667s | 0.000001986s / 0.000002771s / 0.000003012s / 0.000005714s / 0.000009274s | 81.08x / 54.37x / 86.65x / 45.32x / 15.28x |
 | `stats_summary` module import without eager NumPy | cold subprocess import of shared summary-statistics helper | 0.118467s | 0.061148s | 1.94x |
 | `stats_summary` module import without `statistics` startup | median cold subprocess load of the shared summary-statistics helper after replacing internal `StatisticsError` control flow with direct no-value returns | 0.049733s | 0.036336s | 1.37x |
 | `print_summary_statistics` batched output | 100k captured summary reports, identical stdout text | 0.437117s | 0.342506s | 1.28x |
@@ -8619,7 +8620,10 @@ Profiling summary:
   retains the existing fewer-than-two-values message/`None` behavior. A later
   dictionary-specific pass builds numeric arrays directly from dictionary values
   with `np.fromiter()`, retaining the generic list conversion fallback when
-  one-pass numeric conversion is unavailable. The helper now also requests the
+  one-pass numeric conversion is unavailable. Small numeric dictionaries now
+  reuse the existing small-sequence summary path before NumPy conversion, so
+  short summary commands avoid NumPy import and array setup while larger
+  dictionaries stay on the `fromiter()` path. The helper now also requests the
   25th percentile, median, and 75th percentile in one NumPy call instead of
   making separate percentile and median passes over the same array. A later pass
   derives sample standard deviation from the already computed sample variance,

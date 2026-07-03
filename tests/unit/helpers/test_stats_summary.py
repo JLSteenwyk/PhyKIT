@@ -360,6 +360,21 @@ class TestCalculateSummaryStatisticsFromDict(unittest.TestCase):
 
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_small_numeric_dict_statistics_do_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary as stats_summary; "
+            "stats = stats_summary.calculate_summary_statistics_from_dict("
+            "{'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}); "
+            "assert stats['mean'] == 3; "
+            "assert stats['median'] == 3; "
+            "assert stats['twenty_fifth'] == 2.0; "
+            "assert stats['seventy_fifth'] == 4.0; "
+            "assert 'numpy' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_mixed_values(self):
         """Test dictionary with mixed positive and negative values"""
         data = {'pos1': 10, 'neg1': -5, 'zero': 0, 'pos2': 15, 'neg2': -10}
@@ -381,20 +396,22 @@ class TestCalculateSummaryStatisticsFromDict(unittest.TestCase):
         self.assertAlmostEqual(stats['maximum'], 5.5)
 
     def test_numeric_dict_uses_fromiter(self):
-        """Test numeric dictionary summaries use the one-pass NumPy conversion."""
-        data = {'a': 1.0, 'b': 2.0, 'c': 3.0}
+        """Test larger numeric dictionary summaries use one-pass NumPy conversion."""
+        data = {str(index): float(index) for index in range(129)}
         with patch('phykit.helpers.stats_summary.np.fromiter') as mock_fromiter:
-            mock_fromiter.return_value = np.array([1.0, 2.0, 3.0])
+            mock_fromiter.return_value = np.array(
+                [float(index) for index in range(129)]
+            )
             stats = calculate_summary_statistics_from_dict(data)
 
         mock_fromiter.assert_called_once()
-        self.assertEqual(stats['mean'], 2.0)
-        self.assertEqual(stats['minimum'], 1.0)
-        self.assertEqual(stats['maximum'], 3.0)
+        self.assertEqual(stats['mean'], 64.0)
+        self.assertEqual(stats['minimum'], 0.0)
+        self.assertEqual(stats['maximum'], 128.0)
 
     def test_dict_fromiter_fallback_preserves_generic_values(self):
         """Test fallback path when one-pass numeric conversion is unavailable."""
-        data = {'a': 1.0, 'b': 2.0, 'c': 3.0}
+        data = {str(index): float(index) for index in range(129)}
         with patch(
             'phykit.helpers.stats_summary.np.fromiter',
             side_effect=TypeError,
@@ -402,9 +419,9 @@ class TestCalculateSummaryStatisticsFromDict(unittest.TestCase):
             stats = calculate_summary_statistics_from_dict(data)
 
         mock_fromiter.assert_called_once()
-        self.assertEqual(stats['mean'], 2.0)
-        self.assertEqual(stats['minimum'], 1.0)
-        self.assertEqual(stats['maximum'], 3.0)
+        self.assertEqual(stats['mean'], 64.0)
+        self.assertEqual(stats['minimum'], 0.0)
+        self.assertEqual(stats['maximum'], 128.0)
 
 
 class TestPrintSummaryStatistics(unittest.TestCase):
