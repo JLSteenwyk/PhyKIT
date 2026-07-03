@@ -1022,6 +1022,14 @@ class TestMultipleTestingCorrection:
 
         assert RelativeRateTest._fdr(p_values) == pytest.approx(expected_fdr)
 
+    def test_vector_fdr_preserves_input_values(self):
+        p_values = [((idx * 37) % 101) / 101 for idx in range(64)]
+        original = list(p_values)
+
+        RelativeRateTest._fdr(p_values)
+
+        assert p_values == original
+
     def test_small_corrections_do_not_import_numpy(self):
         code = """
 import sys

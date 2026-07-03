@@ -1360,6 +1360,7 @@ Results:
 | `RelativeRateTest._ingroup_ascii_matrix` joined byte-buffer setup | 1000 repeated 140-ingroup-taxon x 1500-site ASCII matrix builds, side-by-side previous per-taxon `np.frombuffer` plus `np.vstack` setup | 0.845237s | 0.296323s | 2.85x |
 | `RelativeRateTest._bonferroni` | 1M synthetic p-values | 0.096721s | 0.033725s | 2.9x |
 | `RelativeRateTest._fdr` | 1M synthetic p-values | 0.698518s | 0.164136s | 4.3x |
+| `RelativeRateTest._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.570966s | 0.396816s | 1.44x |
 | `RelativeRateTest._add_multiple_testing_corrections` zip-based correction assignment | 1M result rows with Bonferroni/FDR arrays, side-by-side previous index lookups | 0.293454s | 0.222238s | 1.32x |
 | `RelativeRateTest` small multiple-testing corrections without NumPy startup | cold subprocess, 7 p-values through Bonferroni and FDR helpers | 0.087782s | 0.027210s | 3.23x |
 | Multiple-testing correction vector cutoff | 128 / 512 / 1024 p-values through Bonferroni and Benjamini-Hochberg helpers, side-by-side previous 2048-element vector cutoff | Bonferroni 0.000011792s / 0.000045750s / 0.000090500s; FDR 0.000034708s / 0.000142625s / 0.000300375s | Bonferroni 0.000004291s / 0.000013958s / 0.000026917s; FDR 0.000008208s / 0.000023667s / 0.000045208s | Bonferroni 2.75x / 3.28x / 3.36x; FDR 4.23x / 6.03x / 6.64x |
@@ -5439,11 +5440,14 @@ Profiling summary:
   large correction arrays: Bonferroni correction applies the cap in one
   vectorized operation, and FDR computes the same Benjamini-Hochberg adjustment
   with sorting and a reverse cumulative minimum instead of tuple sorting plus a
-  Python reverse loop. A later small-list path handles typical small correction
-  sets with Python arithmetic, avoiding NumPy startup while preserving the large
-  vectorized path. The correction vector cutoff now starts the NumPy path at
-  32-value correction lists, improving 32-127 and larger p-value workloads while
-  keeping the no-NumPy startup behavior for tiny lists. The standalone Tajima
+  Python reverse loop. The large-vector FDR path now also scales the sorted
+  p-values in place and uses in-place NumPy minima, avoiding temporary adjusted
+  arrays while preserving the input p-value list. A later small-list path handles
+  typical small correction sets with Python arithmetic, avoiding NumPy startup
+  while preserving the large vectorized path. The correction vector cutoff now
+  starts the NumPy path at 32-value correction lists, improving 32-127 and larger
+  p-value workloads while keeping the no-NumPy startup behavior for tiny lists.
+  The standalone Tajima
   helper now uses a thresholded ASCII
   byte-array path for long sequences, preserving the scalar path for short or
   Unicode inputs. The vector cutoff is now low enough for mid-sized 1.5kb
