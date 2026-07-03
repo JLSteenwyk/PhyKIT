@@ -578,6 +578,36 @@ class TestFitchAlgorithm:
         assert total == sum(per_site)
         assert total == 2
 
+    def test_vectorized_fitch_score_only_uses_count_nonzero(self, args, mocker):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        sequences = {
+            "A": "ACGT" * 5,
+            "B": "ACGT" * 5,
+            "C": "TCGA" * 5,
+            "D": "TCGA" * 5,
+        }
+        aln_length = len(next(iter(sequences.values())))
+
+        verbose_total, per_site = ps._fitch_parsimony(
+            tree,
+            sequences,
+            aln_length,
+            return_per_site=True,
+        )
+        count_nonzero = mocker.spy(module.np, "count_nonzero")
+
+        score_total, score_per_site = ps._fitch_parsimony(
+            tree,
+            sequences,
+            aln_length,
+            return_per_site=False,
+        )
+
+        assert score_total == verbose_total == sum(per_site)
+        assert score_per_site == []
+        assert count_nonzero.call_count >= 1
+
     def test_resolve_binary_tree_does_not_import_newick(self, args, monkeypatch):
         ps = ParsimonyScore(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")

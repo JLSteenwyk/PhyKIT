@@ -347,7 +347,7 @@ class ParsimonyScore(Tree):
                 if return_per_site:
                     site_scores += changed
                 else:
-                    total_score += int(changed.sum())
+                    total_score += int(np.count_nonzero(changed))
                 node_states[id(clade)] = np.where(
                     changed,
                     left_states | right_states,
