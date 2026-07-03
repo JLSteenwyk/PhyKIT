@@ -749,12 +749,23 @@ class DiscordanceAsymmetry(Tree):
         clades = []
         stack = [root]
         try:
+            pop = stack.pop
+            append = clades.append
+            push = stack.append
             while stack:
-                clade = stack.pop()
-                clades.append(clade)
+                clade = pop()
+                append(clade)
                 children = clade.clades
                 if children:
-                    stack.extend(reversed(children))
+                    child_count = len(children)
+                    if child_count == 2:
+                        push(children[1])
+                        push(children[0])
+                    elif child_count == 1:
+                        push(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            push(children[idx])
         except AttributeError:
             return None
         return clades

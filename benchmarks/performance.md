@@ -1077,6 +1077,7 @@ Results:
 | `Hybridization._output_text` single-pass row formatting | 100k significant branch rows, captured stdout and identical text, side-by-side previous list-filter/f-string row formatter comparison | 0.147229s | 0.134598s | 1.09x |
 | `Hybridization`/`DiscordanceAsymmetry._build_parent_map` unordered child push | balanced 65536-tip tree, mirrored object parent-map helper, optimized helper baseline | 0.024100s | 0.018367s | 1.31x |
 | `Hybridization`/`DiscordanceAsymmetry._get_terminal_clades` order-preserving binary push | balanced 131072-tip tree, mirrored terminal-clade helper with identical tip order, optimized helper baseline | 0.021994s | 0.017857s | 1.23x |
+| `Hybridization`/`DiscordanceAsymmetry._preorder_clades_direct` binary child push | balanced 8192 / 32768 / 131072-tip trees, mirrored preorder helpers with identical clade order, side-by-side previous `reversed(children)` setup | 0.002420s / 0.008441s / 0.065957s | 0.001695s / 0.007947s / 0.036792s | 1.43x / 1.06x / 1.79x |
 | `Hybridization._collect_clade_taxa` reverse-preorder binary merge | balanced 65536-tip tree, mirrored clade-taxon map helper, side-by-side previous visited-stack set-update helper | 0.150542s | 0.098837s | 1.52x |
 | `DiscordanceAsymmetry._collect_clade_taxa` reverse-preorder binary merge | balanced 65536-tip tree, mirrored clade-taxon map helper, side-by-side previous visited-stack set-update helper | 0.150542s | 0.083811s | 1.80x |
 | `Hybridization`/`DiscordanceAsymmetry._get_four_groups` multifurcation child union | 500 cached C1/C2/S/D decompositions over 16x16x32 / 64x64x16 / 128x128x8 wide node/sibling groups, side-by-side previous repeated immutable-set union path | 0.297126s / 1.327789s / 2.179419s | 0.137023s / 0.426982s / 0.492795s | 2.17x / 3.11x / 4.42x |
@@ -4969,7 +4970,9 @@ Profiling summary:
   per-branch colors and line widths. `Hybridization._plot` now builds direct
   preorder and postorder clade lists once and reuses them across coordinate
   setup, result matching, branch rendering, and star placement, retaining the
-  `find_clades()` fallback for nonstandard tree-like objects.
+  `find_clades()` fallback for nonstandard tree-like objects. Their mirrored
+  preorder helpers now also push binary children explicitly, preserving clade
+  order while avoiding `reversed(children)` iterator setup.
   `DiscordanceAsymmetry._plot` now reuses the same direct traversal-list pattern
   across its rectangular and circular setup. A later startup pass converts
   annotation-only `typing` aliases to built-in postponed annotations, so

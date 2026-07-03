@@ -63,6 +63,36 @@ def test_asymmetry_test_does_not_import_scipy_stats(monkeypatch):
     assert result["favored_alt"] == "alt1"
 
 
+def test_preorder_clades_direct_binary_children_avoid_reversed_iterator():
+    from Bio.Phylo.BaseTree import Clade, Tree
+    from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+    class NoReversedList(list):
+        def __reversed__(self):
+            raise AssertionError("binary preorder should not call reversed")
+
+    left = Clade(
+        name="left",
+        clades=NoReversedList([Clade(name="A"), Clade(name="B")]),
+    )
+    right = Clade(
+        name="right",
+        clades=NoReversedList([Clade(name="C"), Clade(name="D")]),
+    )
+    root = Clade(name="root", clades=NoReversedList([left, right]))
+    tree = Tree(root=root)
+
+    assert DiscordanceAsymmetry._preorder_clades_direct(tree) == [
+        root,
+        left,
+        left.clades[0],
+        left.clades[1],
+        right,
+        right.clades[0],
+        right.clades[1],
+    ]
+
+
 def test_count_split_matches_scans_gene_trees_once():
     from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
 
