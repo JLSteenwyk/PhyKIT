@@ -150,6 +150,7 @@ Results:
 | `PairwiseIdentity.run` summary-only taxa-list elision | 1M mocked records, scoring and summary output mocked, non-verbose/no-plot output | 0.116345s | 0.000001s | 90068.29x |
 | `PairwiseIdentity._print_json_output` verbose row construction | 500k mocked pairwise identity rows, identical row dictionaries | 0.524115s | 0.375570s | 1.40x |
 | `PairwiseIdentity._plot_pairwise_identity_heatmap` canonical matrix fill | 1200 taxa, 719400 canonical pair identities, identical symmetric heatmap matrix with arbitrary-order fallback retained | 0.119255s | 0.055930s | 2.13x |
+| `PairwiseIdentity._plot_pairwise_identity_heatmap` redundant tight layout pass | repeated 30-taxon pairwise-identity heatmap PNG render with clustering and colorbar, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 4.081514s | 2.828711s | 1.44x |
 | `PairwiseIdentity._pairwise_identity_matrix_from_pairs` squareform canonical fill | 2500 taxa, 3123750 canonical pair identities, identical symmetric float32 heatmap matrix | 0.404774s | 0.057102s | 7.09x |
 | `PairwiseIdentity._pairwise_identity_matrix_from_pairs` cached lazy NumPy attributes | 1500 taxa, 1,124,250 canonical pair identities, side-by-side previous lazy proxy lookup path, identical matrix sum | 1.083869s | 0.863953s | 1.25x |
 | `pairwise_identity` module import without eager SciPy clustering | cold process import for non-plot pairwise-identity command module | 0.423027s | 0.273540s | 1.5x |

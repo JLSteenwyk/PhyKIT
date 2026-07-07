@@ -950,6 +950,29 @@ class TestPairwiseIdentity:
         )
         assert output.exists()
 
+    def test_plot_pairwise_identity_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        output = tmp_path / "pairwise.png"
+        service = PairwiseIdentity(
+            Namespace(alignment="x.fa", verbose=False, exclude_gaps=False, plot=True, plot_output=str(output))
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        service._plot_pairwise_identity_heatmap(
+            taxa=["a", "b", "c"],
+            pair_ids=[["a", "b"], ["a", "c"], ["b", "c"]],
+            pairwise_identities={"a-b": 0.8, "a-c": 0.5, "b-c": 0.6},
+        )
+
+        assert output.exists()
+
     def test_plot_pairwise_identity_heatmap_importerror(self, monkeypatch, capsys):
         original_import = builtins.__import__
 
