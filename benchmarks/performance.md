@@ -2437,6 +2437,7 @@ Results:
 | `PhyloPath._print_text` row-template formatting | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text, side-by-side previous f-string row formatter comparison | 0.286284s | 0.260257s | 1.10x |
 | `PhyloPath._print_text` percent row formatting | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text, side-by-side previous `.format()` row formatter comparison | 0.267401s | 0.174840s | 1.53x |
 | `PhyloPath._plot_dag` node circle rendering | 4096 data-coordinate node circles, real Matplotlib Agg render | 3.024579s | 0.155128s | 19.50x |
+| `PhyloPath._plot_dag` redundant tight layout pass | repeated 12-node path DAG PNG render with coefficient arrows and labels, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.334388s | 0.255598s | 1.31x |
 | `PhyloPath._parse_trait_file` streaming valid-row parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.654959s | 0.457753s | 1.43x |
 | `PhyloPath._parse_trait_file` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.449593s | 0.311079s | 1.45x |
 | `PhyloPath._parse_trait_file` stripped comment check | 300k-row multi-trait TSV, 3 numeric trait columns, whitespace-prefixed comments/blanks, all taxa shared | 1.541952s | 1.337712s | 1.15x |
@@ -8096,7 +8097,9 @@ Profiling summary:
   dispatch in the model-weight loop. DAG node circles are
   now batched into one `PatchCollection`, preserving data-coordinate circle
   geometry and labels while avoiding one Matplotlib patch artist per variable
-  node. Text output now batches ranked model rows and path coefficient rows into
+  node. The DAG plot also skips the explicit `Figure.tight_layout()` pass before
+  saving, relying on `savefig(..., bbox_inches="tight")` for the saved bounds.
+  Text output now batches ranked model rows and path coefficient rows into
   one newline-joined print while preserving exact report formatting. A follow-up
   output pass caches the two fixed row formatters, preserving report text while
   avoiding repeated f-string formatter setup in large model/coefficient tables. A

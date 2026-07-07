@@ -972,6 +972,7 @@ class TestPhyloPath:
     def test_plot_dag_batches_node_circles(self, tmp_path, monkeypatch):
         pytest.importorskip("matplotlib")
         import matplotlib.axes
+        import matplotlib.figure
         from matplotlib.collections import PatchCollection
         from matplotlib.patches import Circle
 
@@ -991,6 +992,9 @@ class TestPhyloPath:
                 raise AssertionError("DAG node circles should be batched")
             return original_add_patch(self, patch, *args, **kwargs)
 
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("DAG plot should rely on tight savefig")
+
         monkeypatch.setattr(
             matplotlib.axes.Axes,
             "add_collection",
@@ -1000,6 +1004,11 @@ class TestPhyloPath:
             matplotlib.axes.Axes,
             "add_patch",
             fail_circle_add_patch,
+        )
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "tight_layout",
+            fail_tight_layout,
         )
 
         svc._plot_dag({}, ["a", "b", "c", "d"], plot_path)

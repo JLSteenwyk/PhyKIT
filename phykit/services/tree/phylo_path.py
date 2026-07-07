@@ -973,7 +973,6 @@ class PhyloPath(Tree):
                 fontsize=config.title_fontsize,
             )
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Plot saved: {output_path}")
