@@ -961,17 +961,36 @@ class TestGeneTreeMode:
 
         assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
 
-    def test_get_quartet_topology_avoids_full_complement_sets(self, monkeypatch):
-        from Bio.Phylo.BaseTree import Clade, Tree
+    def test_get_quartet_topology_direct_avoids_descendant_taxon_sets(
+        self, monkeypatch
+    ):
+        tree = Phylo.read(
+            StringIO("(((A:1,B:1):1,(x1:1,x2:1):1):1,((C:1,O:1):1,x3:1):1);"),
+            "newick",
+        )
+        svc = object.__new__(Dstatistic)
+        svc.support_threshold = None
 
+        def fail_descendant_taxa_collection(*_args, **_kwargs):
+            raise AssertionError("direct topology should not collect full taxon sets")
+
+        monkeypatch.setattr(
+            Dstatistic,
+            "_collect_clade_taxa_and_nonterminals",
+            staticmethod(fail_descendant_taxa_collection),
+        )
+
+        assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
+
+    def test_get_quartet_topology_avoids_full_complement_sets(self, monkeypatch):
         class NoSubtractFrozenSet(frozenset):
             def __sub__(self, other):
                 raise AssertionError("quartet topology should not build full complements")
 
-        root = Clade(name="root", clades=[Clade(name="left"), Clade(name="right")])
-        left = root.clades[0]
-        right = root.clades[1]
-        tree = Tree(root=root)
+        root = object()
+        left = object()
+        right = object()
+        tree = type("FallbackTree", (), {"root": root})()
         svc = object.__new__(Dstatistic)
         svc.support_threshold = None
 
@@ -990,8 +1009,6 @@ class TestGeneTreeMode:
         assert svc._get_quartet_topology(tree, ("A", "B", "C", "O")) == "concordant"
 
     def test_get_quartet_topology_uses_membership_checks(self, monkeypatch):
-        from Bio.Phylo.BaseTree import Clade, Tree
-
         class MembershipOnlyTips:
             def __init__(self, values):
                 self.values = frozenset(values)
@@ -1008,10 +1025,10 @@ class TestGeneTreeMode:
             def __rand__(self, other):
                 raise AssertionError("quartet topology should not allocate intersections")
 
-        root = Clade(name="root", clades=[Clade(name="left"), Clade(name="right")])
-        left = root.clades[0]
-        right = root.clades[1]
-        tree = Tree(root=root)
+        root = object()
+        left = object()
+        right = object()
+        tree = type("FallbackTree", (), {"root": root})()
         svc = object.__new__(Dstatistic)
         svc.support_threshold = None
 

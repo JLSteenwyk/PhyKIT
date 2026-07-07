@@ -357,6 +357,10 @@ class Dstatistic(Alignment):
 
         Returns 'concordant', 'abba', 'baba', or 'unresolved'.
         """
+        direct_topology = self._get_quartet_topology_direct(tree, quartet)
+        if direct_topology is not None:
+            return direct_topology
+
         p1, p2, p3, outgroup = quartet
 
         clade_taxa, nonterminals = self._collect_clade_taxa_and_nonterminals(tree)
@@ -396,6 +400,80 @@ class Dstatistic(Alignment):
                 return "abba"
             # BABA: P1+P3 on one side
             if (has_p1 and has_p3) or (has_p2 and has_outgroup):
+                return "baba"
+
+        return "unresolved"
+
+    def _get_quartet_topology_direct(self, tree, quartet):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        p1, p2, p3, outgroup = quartet
+        target_bits = {p1: 1, p2: 2, p3: 4, outgroup: 8}
+        preorder = []
+        nonterminals = []
+        stack = [root]
+        append = preorder.append
+        append_nonterminal = nonterminals.append
+        pop = stack.pop
+        push = stack.append
+        try:
+            while stack:
+                clade = pop()
+                append(clade)
+                children = clade.clades
+                if children:
+                    append_nonterminal(clade)
+                    child_count = len(children)
+                    if child_count == 2:
+                        push(children[1])
+                        push(children[0])
+                    elif child_count == 1:
+                        push(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            push(children[idx])
+        except AttributeError:
+            return None
+
+        clade_masks: dict[int, int] = {}
+        for clade in reversed(preorder):
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 0:
+                clade_masks[id(clade)] = target_bits.get(clade.name, 0)
+            elif child_count == 2:
+                clade_masks[id(clade)] = (
+                    clade_masks[id(children[0])] | clade_masks[id(children[1])]
+                )
+            else:
+                mask = 0
+                for child in children:
+                    mask |= clade_masks.get(id(child), 0)
+                clade_masks[id(clade)] = mask
+
+        if clade_masks.get(id(root), 0) != 15:
+            return "unresolved"
+
+        support_threshold = self.support_threshold
+        for clade in nonterminals:
+            if support_threshold is not None:
+                support = clade.confidence
+                if support is not None and support < support_threshold:
+                    continue
+
+            mask = clade_masks.get(id(clade), 0)
+            if mask.bit_count() != 2:
+                continue
+
+            if mask == 3 or mask == 12:
+                return "concordant"
+            if mask == 6 or mask == 9:
+                return "abba"
+            if mask == 5 or mask == 10:
                 return "baba"
 
         return "unresolved"

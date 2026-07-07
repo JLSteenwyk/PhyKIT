@@ -822,6 +822,7 @@ Results:
 | `Dstatistic._get_quartet_topology` combined direct traversal | 80 balanced gene trees x 128 taxa, quartet topology classification | 0.059130s | 0.014816s | 3.99x |
 | `Dstatistic._get_quartet_topology` quartet-only split check | balanced 32768-tip gene tree, side-by-side previous full complement set per internal bipartition | 0.174334s | 0.082270s | 2.12x |
 | `Dstatistic._get_quartet_topology` membership topology check | 200 scans over a balanced 8192-tip gene tree with precomputed descendant taxa, side-by-side previous quartet intersection and pair-frozenset allocation | 0.038446s | 0.025955s | 1.48x |
+| `Dstatistic._get_quartet_topology` quartet bitmask classifier | 80 balanced gene trees x 128 taxa / 1 balanced 8192-tip tree / 1 balanced 32768-tip tree, side-by-side previous descendant-taxon-set direct path | 0.017071s / 0.056941s / 0.354028s | 0.013005s / 0.013222s / 0.049022s | 1.31x / 4.31x / 7.22x |
 | `Dstatistic._chi2_sf_df1` | cold process, gene-tree mode chi-square p-value | 0.551261s | 0.000002458s | 224272.2x |
 | `TipToTipDistance.calculate_all_pairwise_distances` | balanced tree with 220 tips | 4.3503s | 0.0269s | 161.7x |
 | `TipToTipDistance.calculate_all_pairwise_distances` tip-name setup | balanced 65536-tip tree, all-pairs terminal-name extraction | 0.129071s | 0.017473s | 7.39x |
@@ -4560,7 +4561,11 @@ Profiling summary:
   avoiding per-branch quartet intersection and pair-frozenset allocation.
   The direct descendant-taxa helper now also pushes binary children explicitly
   during preorder collection, avoiding `reversed(children)` iterator setup while
-  preserving nonterminal preorder and descendant taxon sets.
+  preserving nonterminal preorder and descendant taxon sets. For standard
+  Biopython trees, quartet topology classification now propagates a compact
+  four-bit mask for the requested taxa instead of allocating full descendant
+  taxon sets for every clade; the original collector path remains as a fallback
+  for nonstandard tree-like objects.
 - `TipToTipDistance` and `PatristicDistances` baseline time was dominated by
   repeated Biopython `tree.distance` calls, each of which searches paths and
   common ancestors. The optimized path caches root-to-tip depths and ancestor
