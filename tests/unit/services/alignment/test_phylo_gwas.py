@@ -887,6 +887,25 @@ class TestPhyloGwas:
 
         assert observed_byte_columns > 0
 
+    def test_two_group_categorical_run_does_not_import_scipy_special(
+        self, tmp_path, monkeypatch
+    ):
+        args = _make_args(tmp_path, json_output=True)
+        service = PhyloGwas(args)
+        monkeypatch.setattr(service, "_create_manhattan_plot", lambda *_args: None)
+        original_import = builtins.__import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "scipy.special" or name.startswith("scipy.special."):
+                raise AssertionError(
+                    "two-group categorical GWAS should not import scipy.special"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+        service.run()
+
     def test_run_uses_ascii_byte_columns_for_continuous_sites(
         self, tmp_path, monkeypatch
     ):

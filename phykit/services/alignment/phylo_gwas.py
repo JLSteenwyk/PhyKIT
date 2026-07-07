@@ -981,9 +981,11 @@ class PhyloGwas(Alignment):
             pheno_centered = pheno_array - pheno_array.mean()
             pheno_ss = float(np.dot(pheno_centered, pheno_centered))
         else:
-            from scipy.special import chdtrc
-
             unique_groups = sorted(set(pheno_values))
+            chdtrc = None
+            if len(unique_groups) > 2:
+                from scipy.special import chdtrc
+
             group_counts = Counter(pheno_values)
             groups = [phenotypes[t] for t in shared_taxa]
             group_idx = {g: i for i, g in enumerate(unique_groups)}

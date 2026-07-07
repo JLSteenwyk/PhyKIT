@@ -685,6 +685,7 @@ Results:
 | `PhyloGwas._test_site_categorical` two-group byte offsets | 5k biallelic ASCII sites x 600 taxa x 2 phenotype groups, repeated row totals | 0.293545s | 0.273126s | 1.07x |
 | `PhyloGwas._test_site_categorical` cached Fisher log-combinations | 5k biallelic ASCII sites x 600 taxa x 2 phenotype groups, repeated row totals | 0.092839s | 0.082627s | 1.12x |
 | `PhyloGwas._test_site_categorical` prepared two-group byte counts | 5k biallelic ASCII sites x 600 taxa x 2 phenotype groups, repeated row totals | 0.095170s | 0.060784s | 1.57x |
+| `PhyloGwas.run` two-group categorical SciPy deferral | fresh subprocess two-group categorical GWAS run with plot creation stubbed, side-by-side previous eager `scipy.special.chdtrc` import versus deferring it until multi-group phenotypes | 1.298088s | 0.448735s | 2.89x |
 | `PhyloGwas` byte major/minor ndarray minmax | 20 / 100 / 600 / 5k / 10k / 100k byte alleles, shared categorical/continuous helper, side-by-side previous `np.min`/`np.max` wrappers | 5.198329s / 2.533913s / 1.377197s / 0.196970s / 0.126234s / 0.012328s | 2.893385s / 1.602335s / 0.941029s / 0.052535s / 0.054851s / 0.009868s | 1.80x / 1.58x / 1.46x / 3.75x / 2.30x / 1.25x |
 | `PhyloGwas._test_site_continuous` | 5k biallelic sites x 600 taxa, continuous phenotype | 1.1932s | 0.1200s | 9.9x |
 | `PhyloGwas._test_site_continuous` ASCII byte-column path | 5k biallelic ASCII sites x 600 taxa, continuous phenotype | 0.122781s | 0.094730s | 1.3x |
@@ -4247,7 +4248,11 @@ Profiling summary:
   two-sided summation while reducing repeated `lgamma` calls. A later prepared
   two-group byte path counts the minor allele in group 1 directly and derives
   group 0 from the known minor count, avoiding the per-site 512-bin grouped
-  histogram and generic frequency dictionary used by multi-group tests. Byte
+  histogram and generic frequency dictionary used by multi-group tests. The
+  two-group categorical run path now also defers `scipy.special.chdtrc` until a
+  multi-group phenotype actually needs the chi-square survival function,
+  preserving Fisher exact behavior while avoiding SciPy startup on common
+  binary-phenotype GWAS runs. Byte
   major/minor helpers now use ndarray `min()`/`max()` directly, avoiding lazy
   NumPy proxy dispatch in both categorical and continuous ASCII paths. The
   lazy NumPy proxy now also caches resolved attributes after first use,
