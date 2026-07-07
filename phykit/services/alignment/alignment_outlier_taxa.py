@@ -21,6 +21,9 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 _SITE_ENTROPY_DIRECT_SUM_MAX_SIZE = 100_000
+_SITE_COUNTS_DIRECT_MAX_SYMBOLS = 4
+_SITE_COUNTS_DIRECT_MIN_SITES = 1_000
+_SITE_COUNTS_DIRECT_MAX_TAXA = 1_000
 
 
 def print_json(*args, **kwargs):
@@ -232,7 +235,20 @@ class AlignmentOutlierTaxa(Alignment):
     @staticmethod
     def _symbol_counts_by_site(alignment_array, symbols):
         if alignment_array.dtype == np.uint8 and alignment_array.size <= 32_000_000:
-            n_sites = alignment_array.shape[1]
+            n_taxa, n_sites = alignment_array.shape
+            if (
+                symbols.size <= _SITE_COUNTS_DIRECT_MAX_SYMBOLS
+                and n_sites >= _SITE_COUNTS_DIRECT_MIN_SITES
+                and n_taxa <= _SITE_COUNTS_DIRECT_MAX_TAXA
+            ):
+                return np.array(
+                    [
+                        np.sum(alignment_array == symbol, axis=0)
+                        for symbol in symbols
+                    ],
+                    dtype=np.float64,
+                )
+
             max_code = int(symbols.max()) + 1
             encoded = alignment_array.astype(np.int64)
             encoded += np.arange(n_sites, dtype=np.int64) * max_code

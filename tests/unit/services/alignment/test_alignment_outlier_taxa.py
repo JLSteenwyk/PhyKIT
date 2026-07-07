@@ -642,6 +642,43 @@ class TestAlignmentOutlierTaxa:
             expected,
         )
 
+    def test_ascii_symbol_counts_by_site_wide_small_alphabet_skips_bincount(
+        self,
+        monkeypatch,
+    ):
+        row = alignment_outlier_taxa_module.np.frombuffer(
+            b"ACGT" * 300,
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        )
+        matrix = alignment_outlier_taxa_module.np.tile(row, (64, 1))
+        symbols = alignment_outlier_taxa_module.np.frombuffer(
+            b"ACGT",
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        )
+
+        def fail_bincount(*_args, **_kwargs):
+            raise AssertionError("wide small-alphabet site counts should avoid bincount")
+
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module.np,
+            "bincount",
+            fail_bincount,
+        )
+
+        observed = AlignmentOutlierTaxa._symbol_counts_by_site(matrix, symbols)
+        expected = alignment_outlier_taxa_module.np.array(
+            [
+                alignment_outlier_taxa_module.np.sum(matrix == symbol, axis=0)
+                for symbol in symbols
+            ],
+            dtype=alignment_outlier_taxa_module.np.float64,
+        )
+
+        alignment_outlier_taxa_module.np.testing.assert_array_equal(
+            observed,
+            expected,
+        )
+
     def test_variable_ascii_outliers_use_symbol_count_helpers(self, monkeypatch):
         service = self._service()
         alignment = MultipleSeqAlignment(
