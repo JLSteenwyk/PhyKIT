@@ -446,6 +446,26 @@ class TestLTTPlot:
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
+    def test_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"), "newick"
+        )
+        ltt_data = LTT._compute_ltt(tree)
+        plot_path = str(tmp_path / "ltt.png")
+        instance = LTT(Namespace(tree="dummy.tre"))
+
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        instance._plot_ltt(ltt_data, plot_path, gamma=-0.5, p_value=0.6)
+
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
 
 class TestProcessArgs:
     def test_defaults(self):

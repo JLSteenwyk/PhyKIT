@@ -1570,6 +1570,7 @@ Results:
 | `LTT._compute_gamma_and_ltt` LTT row construction | 1M sorted internal depths, identical LTT rows, side-by-side previous `internal_depths[1:]` loop | 0.363777s | 0.274531s | 1.33x |
 | `LTT._output_json` LTT row construction | 1M mocked LTT rows, identical row dictionaries | 0.814529s | 0.449677s | 1.81x |
 | `LTT._output_json` bulk numeric series conversion | 100k / 300k / 1M branching-time and internode interval values plus matching LTT rows, identical payload | 0.032307s / 0.151819s / 0.466026s | 0.026169s / 0.060363s / 0.328299s | 1.23x / 2.52x / 1.42x |
+| `LTT._plot_ltt` redundant tight layout pass | repeated 500-point lineage-through-time PNG render with gamma annotation, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 7.964006s | 4.682197s | 1.70x |
 | `ltt` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.013677s | 0.006328s | 2.16x |
 | `ltt` module import without `typing` startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006019s | 0.004281s | 1.41x |
 | `TreenessOverRCV.run` read-only treeness setup | balanced 32768-tip cached tree, RCV calculation and output mocked, side-by-side previous copied tree read | 0.241418s | 0.008151s | 29.62x |
