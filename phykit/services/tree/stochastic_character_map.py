@@ -1236,7 +1236,6 @@ class StochasticCharacterMap(Tree):
             if config.show_title:
                 ax.set_title(config.title or "Stochastic Character Map", fontsize=config.title_fontsize)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved stochastic character map plot: {output_path}")

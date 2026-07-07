@@ -1599,6 +1599,32 @@ class TestPlot:
             "right",
         ]
 
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_plot_stochastic_map_skips_redundant_tight_layout(
+        self, monkeypatch, default_args, tmp_path, circular
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        default_args.circular = circular
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        parent_map = svc._build_parent_map(tree)
+        mapping = {"branch_histories": {}, "node_states": {}}
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("savefig(bbox_inches='tight') handles plot bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        output = str(tmp_path / f"scm_no_tight_layout_{circular}.png")
+        svc._plot_stochastic_map(
+            tree, mapping, ["0", "1"], output, parent_map=parent_map
+        )
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
     def test_plot_stochastic_map_reuses_preorder_for_node_positions(
         self, monkeypatch, default_args, tmp_path
     ):

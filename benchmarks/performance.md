@@ -2035,6 +2035,7 @@ Results:
 | `StochasticCharacterMap._plot_stochastic_map` circular coordinate clade-list reuse | balanced 32768-tip tree, node positions plus preorder/tip lists already available | 0.063955s | 0.048064s | 1.33x |
 | `StochasticCharacterMap._plot_stochastic_map` rectangular batched history segments | balanced 512-tip tree, two mapped segments per branch, real Matplotlib Agg render | 1.831008s | 1.295113s | 1.41x |
 | `StochasticCharacterMap._plot_stochastic_map` circular batched history segments/arcs | balanced 512-tip tree, two mapped segments per branch plus internal arcs, real Matplotlib Agg render | 0.901516s | 0.428369s | 2.10x |
+| `StochasticCharacterMap._plot_stochastic_map` redundant tight layout pass | repeated 128-tip rectangular / circular stochastic-map PNG renders with two mapped segments per branch, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.545936s / 0.956218s | 1.104454s / 0.685417s | 1.40x / 1.40x |
 | `stochastic_character_map` module import via lazy discrete SciPy helpers | cold process import for stochastic-character-map command module | 0.482006s | 0.202569s | 2.4x |
 | `stochastic_character_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.086216s | 0.032006s | 2.69x |
 | `stochastic_character_map` module import without eager JSON/plot/discrete helpers | median cold subprocess import after localizing output, plotting, color, circular, and discrete-model helpers | 0.014049s | 0.005457s | 2.57x |
@@ -7203,7 +7204,10 @@ Profiling summary:
   rectangular vertical connectors and mapped history segments into
   `LineCollection`s, and batches circular radial history segments plus internal
   state-colored arcs into collections while preserving branch-history colors
-  and segment boundaries.
+  and segment boundaries. The plot path also skips the explicit
+  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`,
+  avoiding a duplicate Matplotlib layout traversal in both rectangular and
+  circular renders.
 	  A later import-time pass benefits from the shared `discrete_models` lazy SciPy
 	  wrappers, avoiding linalg/optimize startup until Q-matrix fitting or
 	  transition matrix evaluation actually runs. A follow-up startup pass converts
