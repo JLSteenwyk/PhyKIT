@@ -2237,6 +2237,7 @@ Results:
 | `PhylogeneticOrdination` PCA GLS centering/covariance setup | 420 taxa SPD VCV x 8 traits | 0.005137s | 0.000454s | 11.3x |
 | `PhylogeneticOrdination` PCA corr-mode diagonal scaling | 420 taxa x 700 traits, synthetic covariance and centered scores | 0.023722s | 0.001051s | 22.6x |
 | `PhylogeneticOrdination._run_pca` eigenvalue total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 eigenvalues, side-by-side previous `np.sum(eigenvalues)` | 0.000005367s / 0.000005370s / 0.000004776s / 0.000004082s / 0.000004451s / 0.000004098s / 0.000004246s / 0.000005265s | 0.000001938s / 0.000002333s / 0.000001965s / 0.000002455s / 0.000002093s / 0.000002365s / 0.000002326s / 0.000002696s | 2.77x / 2.30x / 2.43x / 1.66x / 2.13x / 1.73x / 1.83x / 1.95x |
+| `PhylogeneticOrdination._plot_pca` redundant tight layout pass | repeated 160-taxon PCA PNG render with taxon labels, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.058089s | 0.811931s | 1.30x |
 | `PhylogeneticOrdination._center_traits_by_vcv_inverse` combined RHS multiply | 420 taxa SPD VCV x 700 traits, weighted inverse fallback path | 0.043051s | 0.012594s | 3.4x |
 | `PhylogeneticOrdination._center_traits_by_vcv_cholesky` residual solve reuse | 120 repeated 420-taxon SPD VCV x 10-trait weighted centering calls, SciPy already warm | 0.056996s | 0.050926s | 1.12x |
 | `PhylogeneticOrdination` broadcast centering products | 420 taxa x 700 traits, centered traits plus weighted centered traits | 0.000867s | 0.000635s | 1.37x |
@@ -7635,9 +7636,13 @@ Profiling summary:
   formatting while avoiding one `print` call per trait or taxon row. PCA JSON
   payload construction now iterates eigenvector and score matrix rows directly,
   preserving nested labels and float conversion while avoiding repeated
-  two-dimensional indexing. Dimensionality-reduction JSON output now converts
-  embedding rows once and zips them with dimension labels, preserving rounded
-  nested payload values while avoiding repeated two-dimensional indexing.
+  two-dimensional indexing. The PCA plot path now skips the explicit
+  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`; the
+  dimensionality-reduction plot path keeps its layout call because the same
+  benchmark showed a weaker speedup. Dimensionality-reduction JSON output now
+  converts embedding rows once and zips them with dimension labels, preserving
+  rounded nested payload values while avoiding repeated two-dimensional
+  indexing.
   A follow-up startup pass localizes pickle to
   ancestral-score reconstruction, imports `PlotConfig` only while processing
   arguments, and keeps JSON output and trait parsing behind local forwarding

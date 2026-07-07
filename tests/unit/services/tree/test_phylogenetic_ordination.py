@@ -1885,6 +1885,39 @@ class TestPlot:
         out, _ = capsys.readouterr()
         assert "Saved PCA plot:" in out
 
+    def test_pca_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        plot_path = str(tmp_path / "test_pca_no_tight_layout.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="pca",
+            correction="BM",
+            mode="cov",
+            json=False,
+            plot=True,
+            plot_output=plot_path,
+            plot_tree=False,
+            color_by=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        scores = np.array([[0.0, 1.0], [1.0, 0.0], [0.5, 0.5]])
+        taxon_names = ["A", "B", "C"]
+        pc_labels = ["PC1", "PC2"]
+        proportions = np.array([0.75, 0.25])
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot_pca(scores, taxon_names, pc_labels, proportions)
+
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
     def test_pca_plot_json_includes_plot_output(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_pca.png")
         args = Namespace(

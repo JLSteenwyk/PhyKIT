@@ -1018,7 +1018,6 @@ class PhylogeneticOrdination(Tree):
         ax.set_ylabel(
             f"{pc_labels[1]} ({proportions[1]*100:.1f}% variance explained)"
         )
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
