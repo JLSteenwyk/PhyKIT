@@ -171,6 +171,27 @@ class TestHeatmapMatrices:
         assert scatter_sizes == [4]
         assert output_path.exists()
 
+    def test_plot_heatmap_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        svc = RelativeRateTest(_make_args())
+        output_path = tmp_path / "rrt_no_tight_layout.png"
+        results = [
+            {"taxon1": "A", "taxon2": "B", "p_fdr": 0.01},
+            {"taxon1": "A", "taxon2": "C", "p_fdr": 0.50},
+            {"taxon1": "B", "taxon2": "C", "p_fdr": 0.02},
+        ]
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot_heatmap(results, str(output_path))
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
 
 class TestRun:
     def test_run_uses_unmodified_tree_read(self, mocker):

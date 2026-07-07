@@ -1412,6 +1412,7 @@ Results:
 | `RelativeRateTest._plot_heatmap` significance marker rendering | 4096 significant heatmap cells, real Matplotlib Agg star render | 0.650818s | 0.022971s | 28.33x |
 | `RelativeRateTest._plot_heatmap` no-significance marker lookup | 2500 x 2500 FDR matrix with diagonal NaNs and no significant cells, side-by-side previous coordinate extraction | 0.021465s | 0.001585s | 13.54x |
 | `RelativeRateTest._significant_heatmap_cells` sparse marker coordinates | 2500 x 2500 FDR matrix with diagonal NaNs and sparse symmetric significant cells, side-by-side previous `np.where` coordinate extraction | 0.030663s | 0.008484s | 3.61x |
+| `RelativeRateTest._plot_heatmap` redundant tight layout pass | repeated 50-taxon relative-rate heatmap PNG render with significant markers, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.013599s | 0.803444s | 1.26x |
 | `relative_rate_test` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.088372s | 0.031916s | 2.77x |
 | `relative_rate_test` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.014537s | 0.005749s | 2.53x |
 | `relative_rate_test` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in annotations | 0.006280s | 0.004398s | 1.43x |
