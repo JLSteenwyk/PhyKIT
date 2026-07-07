@@ -892,6 +892,7 @@ Results:
 | `DensityMap._plot_density_map` rectangular batched posterior segments | balanced 256-tip tree, 50 posterior segments per branch, real Matplotlib Agg render | 6.629881s | 0.889630s | 7.45x |
 | `DensityMap._plot_density_map` circular batched posterior segments | balanced 256-tip tree, 50 posterior segments per branch plus internal arcs, real Matplotlib Agg render | 6.455050s | 0.687876s | 9.38x |
 | `DensityMap._plot_density_map` bulk posterior segment colors | 2048 synthetic branches x 50 posterior segments, side-by-side previous per-segment color-row appends before `LineCollection` construction | 3.440451s | 1.045209s | 3.29x |
+| `DensityMap._plot_density_map` redundant tight layout pass | repeated 96-tip rectangular density-map PNG render with 20 stochastic mappings and 50 posterior segments per branch, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.207768s | 2.488314s | 1.29x |
 | `DensityMap._compute_branch_posteriors` one-pass history scan | 5000 stochastic mappings, 80 posterior segments, 4 states, 8 transitions per branch history | 0.700506s | 0.221886s | 3.16x |
 | `DensityMap.run` all-tip-state read-only setup | balanced 32768-tip cached tree, trait data for every tip, fitting/simulation/plot/output mocked | 0.258584s | 0.048538s | 5.33x |
 | `DensityMap._print_text_output` batched summary | 100k captured density-map text summaries, identical stdout text | 0.104672s | 0.063514s | 1.65x |

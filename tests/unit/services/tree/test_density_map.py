@@ -604,3 +604,36 @@ class TestRun:
             assert len(collection.get_colors()) == len(collection.get_segments())
         assert os.path.exists(args.output)
         assert os.path.getsize(args.output) > 0
+
+    def test_plot_density_map_skips_redundant_tight_layout(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=DISCRETE_TRAITS_FILE,
+            trait="diet",
+            nsim=10,
+            seed=42,
+            output=str(tmp_path / "density_no_tight_layout.png"),
+            json=False,
+            circular=False,
+        )
+        svc = DensityMap(args)
+        tree = Phylo.read(StringIO("((a:1,b:1):1,(c:1,d:1):1);"), "newick")
+        scm = StochasticCharacterMap.__new__(StochasticCharacterMap)
+        parent_map = scm._build_parent_map(tree)
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot_density_map(
+            tree, [], ["0", "1", "2"], args.output,
+            parent_map=parent_map, scm=scm,
+        )
+
+        assert os.path.exists(args.output)
+        assert os.path.getsize(args.output) > 0
