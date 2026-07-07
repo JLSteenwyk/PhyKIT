@@ -522,7 +522,6 @@ class Cophylo(Tree):
             ax2.set_title("Tree 2", fontsize=config.title_fontsize or 11, fontweight="bold")
 
         fig.suptitle("Cophylogenetic Plot (Tanglegram)", fontsize=13)
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved cophylo plot: {output_path}")

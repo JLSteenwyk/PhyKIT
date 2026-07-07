@@ -382,6 +382,48 @@ class TestRun:
         finally:
             plt.close("all")
 
+    def test_plot_cophylo_rect_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.figure
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output=str(tmp_path / "cophylo.png"),
+            mapping=None,
+            json=False,
+            circular=False,
+            color_file=None,
+            no_title=True,
+            ylabel_fontsize=0,
+        )
+        svc = Cophylo(args)
+        tree1 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree2 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        mapping = {name: name for name in order}
+        output_path = tmp_path / "cophylo_no_tight_layout.png"
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("rectangular cophylo should rely on tight savefig")
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "tight_layout",
+            fail_tight_layout,
+        )
+
+        try:
+            svc._plot_cophylo(tree1, tree2, mapping, order, order, str(output_path))
+        finally:
+            plt.close("all")
+
+        assert output_path.exists()
+
     def test_circular_plot_reuses_clade_lists_for_layout_helpers(
         self, monkeypatch, tmp_path
     ):

@@ -1951,6 +1951,7 @@ Results:
 | `Cophylo._assign_internal_y_positions` binary child means | 10 y-position setup passes over balanced 8192-tip / 32768-tip trees, side-by-side previous child-list materialization and `sum` path | 0.133501s / 1.018189s | 0.079229s / 0.621230s | 1.68x / 1.64x |
 | `Cophylo._draw_phylogram` batched LineCollections | balanced 2048-tip tree, one side phylogram, real Matplotlib Agg branch/label render | 1.928144s | 0.522134s | 3.69x |
 | `Cophylo._plot_cophylo_rect` association connectors | 4096 mapped taxa, real Matplotlib Agg middle-panel connector render | 0.693452s | 0.098376s | 7.05x |
+| `Cophylo._plot_cophylo_rect` redundant tight layout pass | repeated 512-tip rectangular cophylo PNG render with mapped association lines, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.766355s | 3.643439s | 1.03x |
 | `Cophylo._plot_cophylo_circular` association connectors | 4096 mapped taxa, real Matplotlib Agg cross-panel connector render, side-by-side previous per-taxon `ConnectionPatch` artists | 6.559113s | 0.710027s | 9.24x |
 | `Cophylo` rectangular clade-color overlay rendering | two balanced 2048-tip trees, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 2.652615s | 0.090716s | 29.24x |
 | `Cophylo` circular clade-color overlay rendering | two balanced 2048-tip trees, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.287788s | 0.057825s | 22.27x |
@@ -7026,8 +7027,12 @@ Profiling summary:
   lightweight axes. A later rectangular plotting pass batches middle-panel
   association connectors into one `LineCollection`, preserving their gray alpha
   styling while avoiding one Matplotlib artist per mapped taxon. Rectangular
-  color-file plots now parse the annotation file once and share the parsed data
-  across both tree panels, matching circular mode and preserving standalone
+  cophylo rendering now relies on `savefig(..., bbox_inches="tight")` and skips
+  the redundant explicit `Figure.tight_layout()` pass; circular cophylo retains
+  its layout pass because figure-level connector coordinates are derived after
+  layout is applied. Rectangular color-file plots now parse the annotation file
+  once and share the parsed data across both tree panels, matching circular mode
+  and preserving standalone
   `_draw_phylogram` parsing behavior. Circular
   tanglegram association connectors now use one figure-level `LineCollection`
   in figure coordinates instead of one cross-axes `ConnectionPatch` per mapped
