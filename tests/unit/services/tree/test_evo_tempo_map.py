@@ -1075,6 +1075,42 @@ class TestPlot:
         assert len(star_calls[0][0]) == len(star_calls[0][1]) == 1
         assert (tmp_path / "tempo.png").exists()
 
+    def test_plot_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot  # noqa: F401
+        from matplotlib.figure import Figure
+
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=str(tmp_path / "tempo.png"),
+        )
+        svc = EvoTempoMap(args)
+        branch_results = [
+            {
+                "split": [f"T{i}", f"U{i}"],
+                "_concordant_lengths": [1.0 + i, 1.1 + i],
+                "_discordant_lengths": [1.3 + i],
+                "fdr_p": 0.01 if i == 0 else 0.5,
+            }
+            for i in range(4)
+        ]
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("savefig bbox should handle tight cropping")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot(branch_results, str(tmp_path / "tempo.png"))
+
+        assert (tmp_path / "tempo.png").exists()
+
     def test_plot_not_created_without_flag(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
 

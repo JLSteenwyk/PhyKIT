@@ -1112,6 +1112,7 @@ Results:
 | `EvoTempoMap._output_text` single-pass verbose formatting | 100k branch rows plus verbose concordant/discordant length details, captured stdout and identical text, side-by-side previous second verbose pass comparison | 0.217947s | 0.198972s | 1.10x |
 | `EvoTempoMap._plot` strip-point rendering | 1024 branch groups, 4 concordant and 4 discordant strip points per branch, real Matplotlib Agg scatter render | 3.675574s | 0.042251s | 86.99x |
 | `EvoTempoMap._plot` significant star rendering | 4096 significant branch markers, real Matplotlib Agg star render | 0.656416s | 0.018294s | 35.88x |
+| `EvoTempoMap._plot` redundant tight layout pass | repeated 96-branch tempo-map PNG render with boxplots, strip points, significance stars, and rotated branch labels, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 2.142567s | 1.780076s | 1.20x |
 | `Hybridization._count_topologies` | 40 balanced 256-tip gene trees plus species tree, NNI topology counts | 0.0838s | 0.0782s | 1.1x |
 | `Hybridization`/`DiscordanceAsymmetry._canonical_split` equal-size tiebreak | 3k equal-size 600-vs-600 bipartitions over 1200 taxa, identical sorted-lexicographic canonical side | 0.601252s | 0.234306s | 2.57x |
 | `Hybridization._canonical_split` size-first complement avoidance | 9k mixed 20-vs-1180, 1180-vs-20, and 600-vs-600 bipartitions over 1200 taxa | 0.260723s | 0.230776s | 1.13x |
@@ -5176,7 +5177,9 @@ Profiling summary:
   per-row `Path` joins. `EvoTempoMap._output_text`
   now prepares verbose length details during the table-row pass and uses a
   cached table-row formatter, preserving exact stdout text while avoiding a
-  second verbose traversal. Their FDR helpers now use the same small-list Python
+  second verbose traversal. The EvoTempoMap plot path also skips the explicit
+  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`.
+  Their FDR helpers now use the same small-list Python
   Benjamini-Hochberg path and large-array NumPy reverse cumulative-minimum path
   as `EvoTempoMap._fdr`, preserving scalar results including tied p-values while
   avoiding NumPy startup for direct small correction sets. Their vectorization
