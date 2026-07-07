@@ -1230,6 +1230,5 @@ class ThresholdModel(Tree):
             axes[0, 0].set_title(config.title or "Trace", fontsize=config.title_fontsize)
             axes[0, 1].set_title(config.title or "Posterior", fontsize=config.title_fontsize)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

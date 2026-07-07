@@ -1414,3 +1414,29 @@ class TestRun:
         assert "posterior_samples" in data
         assert data["metadata"]["trait1"] == "habitat"
         assert "r" in data["summary"]
+
+    def test_plot_trace_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot  # noqa: F401
+        from matplotlib.figure import Figure
+
+        svc = ThresholdModel(self._make_args())
+        mcmc_result = {
+            "r": np.array([-0.2, 0.0, 0.2, 0.4]),
+            "sigma2_1": np.array([1.0, 1.1, 0.9, 1.2]),
+            "sigma2_2": np.array([1.3, 1.2, 1.4, 1.5]),
+            "a1": np.zeros(4),
+            "a2": np.zeros(4),
+        }
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("savefig bbox should handle tight cropping")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        output_path = tmp_path / "trace.png"
+        svc._plot_trace(mcmc_result, str(output_path))
+
+        assert output_path.exists()

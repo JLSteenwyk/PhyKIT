@@ -2756,6 +2756,7 @@ Results:
 | `threshold_model` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006424s | 0.004589s | 1.40x |
 | `ThresholdModel.run` all-shared read-only setup | balanced 32768-tip cached tree, two traits for every tip, VCV/MCMC/summary/output mocked | 0.326072s | 0.102394s | 3.18x |
 | `ThresholdModel.run` ordered trait prune setup | 300k ordered tree tips with all traits / 75k tree-only tail tips / interleaved fallback, side-by-side previous set-and-scan prune target setup | 0.063443s / 0.065132s / 0.057556s | 0.013197s / 0.009719s / 0.040561s | 4.81x / 6.70x / 1.42x |
+| `ThresholdModel._plot_trace` redundant tight layout pass | repeated 5000-sample trace/posterior PNG render across three parameters, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.236509s | 0.894335s | 1.38x |
 | `ouwie` module import without eager SciPy linalg/optimize | cold process import for OUwie command module | 0.442738s | 0.169719s | 2.6x |
 | `ouwie` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.169719s | 0.025757s | 6.59x |
 | `ouwie` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007878s | 0.006670s | 1.18x |
@@ -8979,7 +8980,9 @@ Profiling summary:
   preserving the same scalar while avoiding a copied diagonal array. Posterior
   summaries and plots now use each NumPy trace's `mean()` method across sampled
   chain sizes, avoiding lazy proxy dispatch on both common small summaries and
-  larger posterior traces. The threshold-model lazy NumPy proxy now also caches
+  larger posterior traces. The trace plot also skips the explicit
+  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`.
+  The threshold-model lazy NumPy proxy now also caches
   the imported module and resolved attributes after first use, preserving
   cold-import behavior while avoiding repeated proxy resolution during posterior
   sorting and HPD calculations.
