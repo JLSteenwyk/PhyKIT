@@ -7,15 +7,33 @@ from .base import Tree
 
 
 class _LazyPickle:
-    def dumps(self, *args, **kwargs):
-        import pickle as _pickle
+    _module = None
 
-        return _pickle.dumps(*args, **kwargs)
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+        return module
+
+    def dumps(self, *args, **kwargs):
+        module = self._load()
+        dumps = module.dumps
+        self.dumps = dumps
+        if "loads" not in self.__dict__:
+            self.loads = module.loads
+
+        return dumps(*args, **kwargs)
 
     def loads(self, *args, **kwargs):
-        import pickle as _pickle
+        module = self._load()
+        loads = module.loads
+        self.loads = loads
+        if "dumps" not in self.__dict__:
+            self.dumps = module.dumps
 
-        return _pickle.loads(*args, **kwargs)
+        return loads(*args, **kwargs)
 
 
 pickle = _LazyPickle()

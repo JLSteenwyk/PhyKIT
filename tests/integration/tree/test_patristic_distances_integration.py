@@ -1,7 +1,7 @@
 import pytest
 import sys
 import json
-from mock import patch, call
+from mock import patch
 from pathlib import Path
 
 from phykit.phykit import Phykit
@@ -21,15 +21,15 @@ class TestPatristicDistances(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("mean: 76.1974"),
-            call("median: 49.5888"),
-            call("25th percentile: 40.5054"),
-            call("75th percentile: 108.1385"),
-            call("minimum: 24.0"),
-            call("maximum: 152.8813"),
-            call("standard deviation: 45.4698"),
-            call("variance: 2067.502")
+        assert mocked_print.call_args.args[0].splitlines() == [
+            "mean: 76.1974",
+            "median: 49.5888",
+            "25th percentile: 40.5054",
+            "75th percentile: 108.1385",
+            "minimum: 24.0",
+            "maximum: 152.8813",
+            "standard deviation: 45.4698",
+            "variance: 2067.502",
         ]
 
     @patch("builtins.print")
@@ -42,15 +42,15 @@ class TestPatristicDistances(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("mean: 76.1974"),
-            call("median: 49.5888"),
-            call("25th percentile: 40.5054"),
-            call("75th percentile: 108.1385"),
-            call("minimum: 24.0"),
-            call("maximum: 152.8813"),
-            call("standard deviation: 45.4698"),
-            call("variance: 2067.502")
+        assert mocked_print.call_args.args[0].splitlines() == [
+            "mean: 76.1974",
+            "median: 49.5888",
+            "25th percentile: 40.5054",
+            "75th percentile: 108.1385",
+            "minimum: 24.0",
+            "maximum: 152.8813",
+            "standard deviation: 45.4698",
+            "variance: 2067.502",
         ]
 
     @patch("builtins.print")

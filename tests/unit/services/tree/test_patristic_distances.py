@@ -7,6 +7,7 @@ from itertools import combinations
 from math import isclose
 from Bio.Phylo.Newick import Clade, Tree
 
+import phykit.services.tree.patristic_distances as patristic_distances_module
 from phykit.services.tree.patristic_distances import PatristicDistances
 
 
@@ -26,6 +27,17 @@ assert "phykit.helpers.json_output" not in sys.modules
 assert "Bio.Phylo" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_pickle_caches_resolved_attributes():
+    lazy_pickle = patristic_distances_module._LazyPickle()
+
+    blob = lazy_pickle.dumps({"value": 1})
+
+    assert lazy_pickle._module is not None
+    assert lazy_pickle.__dict__["dumps"] is lazy_pickle.dumps
+    assert lazy_pickle.__dict__["loads"] is lazy_pickle.loads
+    assert lazy_pickle.loads(blob) == {"value": 1}
 
 
 @pytest.fixture

@@ -31,6 +31,17 @@ def test_module_import_defers_optional_progress_import():
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_pickle_caches_resolved_attributes():
+    lazy_pickle = lb_score_module._LazyPickle()
+
+    blob = lazy_pickle.dumps({"value": 1})
+
+    assert lazy_pickle._module is not None
+    assert lazy_pickle.__dict__["dumps"] is lazy_pickle.dumps
+    assert lazy_pickle.__dict__["loads"] is lazy_pickle.loads
+    assert lazy_pickle.loads(blob) == {"value": 1}
+
+
 class _IndexedDummyTree:
     def _index(self, tip: str) -> int:
         digits = "".join(ch for ch in tip if ch.isdigit())
