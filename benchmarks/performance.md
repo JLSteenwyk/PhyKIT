@@ -2221,6 +2221,7 @@ Results:
 | `Tree._tips_to_prune_for_ordered_names` shared ancestral-score prune setup | 300k ordered tree tips with all names retained / 75k tree-only tail tips / interleaved fallback, side-by-side previous set-and-scan path | 0.060572s / 0.054258s / 0.044472s | 0.010217s / 0.012814s / 0.042924s | 5.93x / 4.23x / 1.04x |
 | `Phylomorphospace._plot_phylomorphospace` direct branch traversal | balanced 32768-tip tree, branch segment/color setup with precomputed node estimates | 0.240922s | 0.153599s | 1.57x |
 | `Phylomorphospace._plot_phylomorphospace` root-distance max helper | 1M node-distance values, identical maximum-distance fallback behavior without temporary list | 0.028209s | 0.011876s | 2.38x |
+| `Phylomorphospace._plot_phylomorphospace` redundant tight layout pass | repeated 256-tip phylomorphospace PNG render with branch segments, taxon labels, and colorbar, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.125616s | 1.702279s | 1.84x |
 | `Phylomorphospace._preorder_clades_direct` order-preserving child push | balanced 131072-tip tree, plotting preorder helper with identical clade order, side-by-side previous `reversed(children)` helper | 0.051598s | 0.047193s | 1.09x |
 | `Phylomorphospace.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected x/y axes plus full color matrix | 0.194092s | 0.038694s | 5.02x |
 | `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` numeric file values | 200k numeric color values, side-by-side previous list comprehension plus `np.array` conversion | 0.029553s | 0.025725s | 1.15x |
@@ -7614,6 +7615,8 @@ Profiling summary:
   ordination tree overlays now use the same direct preorder branch traversal for
   segment and edge-color setup, and the tree plot now computes the maximum root
   distance directly from the values view without materializing a temporary list.
+  Phylomorphospace plotting now skips the redundant explicit
+  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`.
   PCA proportion setup now totals eigenvalues with the ndarray reduction method,
   avoiding generic `np.sum` dispatch for the bounded component vector while
   preserving the same variance proportions.

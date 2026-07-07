@@ -471,7 +471,6 @@ class Phylomorphospace(Tree):
 
         ax.set_xlabel(trait_x_name)
         ax.set_ylabel(trait_y_name)
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 

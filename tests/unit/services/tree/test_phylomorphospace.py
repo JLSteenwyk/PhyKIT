@@ -621,3 +621,48 @@ class TestReconstructAncestralScores:
         )
 
         assert Path(svc.plot_output).exists()
+
+    def test_plot_phylomorphospace_skips_redundant_tight_layout(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.figure
+
+        svc = self._make_svc()
+        svc.plot_output = str(tmp_path / "phylomorphospace_no_tight_layout.png")
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        data = np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]])
+        node_estimates = {}
+        node_distances = {}
+        stack = [(tree.root, 0.0)]
+        while stack:
+            clade, distance = stack.pop()
+            node_estimates[id(clade)] = np.array([distance, distance * 0.5])
+            node_distances[id(clade)] = distance
+            for child in clade.clades:
+                stack.append((child, distance + (child.branch_length or 0.0)))
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("phylomorphospace should rely on tight savefig")
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "tight_layout",
+            fail_tight_layout,
+        )
+
+        svc._plot_phylomorphospace(
+            tree,
+            data,
+            ordered_names,
+            node_estimates,
+            node_distances,
+            "body_mass",
+            "brain_size",
+            ["body_mass", "brain_size"],
+            data,
+        )
+
+        assert Path(svc.plot_output).exists()
