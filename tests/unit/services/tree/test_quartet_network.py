@@ -800,6 +800,49 @@ class TestNetworkPlot:
         assert len(line_collections) >= 2
         assert output_path.exists()
 
+    def test_draw_quartet_network_skips_redundant_tight_layout(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib.pyplot as plt
+        from phykit.helpers.plot_config import PlotConfig
+
+        service = QuartetNetwork.__new__(QuartetNetwork)
+        service.plot_config = PlotConfig(show_title=False)
+        ordering = ["A", "B", "C", "D"]
+        all_taxa = frozenset(ordering)
+        taxa_idx = {taxon: idx for idx, taxon in enumerate(ordering)}
+
+        monkeypatch.setattr(
+            service,
+            "_compute_nanuq_distance",
+            lambda all_taxa, quartet_results: (ordering, [], taxa_idx),
+        )
+        monkeypatch.setattr(
+            service,
+            "_neighbor_joining_order",
+            lambda taxa_list, dist_matrix: ordering,
+        )
+        monkeypatch.setattr(
+            service,
+            "_compute_circular_split_weights",
+            lambda ordering_arg, dist_matrix, taxa_idx_arg: [
+                (frozenset({"A", "B"}), 1.0),
+                (frozenset({"B", "C"}), 0.5),
+            ],
+        )
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(plt, "tight_layout", fail_tight_layout)
+
+        output_path = tmp_path / "quartet_net_no_tight_layout.png"
+        service._draw_quartet_network(all_taxa, {}, str(output_path))
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
 
 class TestComputeQuartetCFs:
     def test_bitmask_topology_matches_public_bipartition_topology(self):

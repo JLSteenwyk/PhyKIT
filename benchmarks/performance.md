@@ -1017,6 +1017,7 @@ Results:
 | `QuartetNetwork._build_splits_graph` | 80 taxa, 20 circular splits, 33-node quartet graph | 6.1411s | 0.0016s | 3910.4x |
 | `QuartetNetwork._build_splits_graph` bitmask valid-node representation | 80 taxa, 16 balanced random splits, 65,536 valid nodes and 524,288 graph edges, identical public sign tuples | 4.357698s | 1.141341s | 3.82x |
 | `QuartetNetwork._draw_quartet_network` edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.027545s | 0.004864s | 5.66x |
+| `QuartetNetwork._draw_quartet_network` redundant tight layout pass | repeated 48-taxon quartet-network PNG render with 10 circular splits and labels, explicit `pyplot.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.512383s | 0.217711s | 2.35x |
 | `QuartetNetwork._format_quartet` selected-topology formatter | 300k quartet topology labels, identical strings and invalid-index `KeyError` behavior | 0.595635s | 0.186209s | 3.20x |
 | `QuartetNetwork.run` batched text quartet output | 100k quartet rows, captured stdout and identical text | 0.180601s | 0.166519s | 1.08x |
 | `QuartetNetwork._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.091090s | 0.067767s | 1.34x |
@@ -4930,7 +4931,9 @@ Profiling summary:
   pendant taxon edges into two `LineCollection`s, preserving the black
   linewidth styling while avoiding one Matplotlib artist per edge. Pendant-edge
   scaling now computes the split-graph x/y extent in one pass without temporary
-  coordinate lists.
+  coordinate lists. The plot path also skips the explicit
+  `pyplot.tight_layout()` pass before saving with `bbox_inches="tight"`,
+  avoiding a redundant layout calculation.
 - `QuartetNetwork.run` text output now batches the summary header and
   per-quartet rows into one newline-joined print while preserving exact stdout
   text.
