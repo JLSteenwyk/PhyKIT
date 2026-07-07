@@ -49,6 +49,7 @@ Results:
 | `helpers.caching` module import without eager serialization/cache setup | median cold subprocess import after lazy pickle/json and lazy global caches | 0.012563s | 0.004362s | 2.88x |
 | `helpers.caching` module import without `typing` startup | median cold subprocess import after replacing annotation-only `Any`/`Callable` aliases with built-in annotations | 0.025169s | 0.023913s | 1.05x |
 | `helpers.caching` module import without eager `hashlib` | cold subprocess import of shared caching helper, cache-key generation still imports hashing on demand | 0.021160s | 0.018515s | 1.14x |
+| `helpers.caching._LazyPickle` cached resolved pickle functions | 100k repeated small-object `loads` / `dumps` calls through the shared cache pickle proxy | 0.122999s / 0.196516s | 0.056691s / 0.098404s | 2.17x / 2.00x |
 | `ResultCache._get_cache_key` cached md5 helper | 200k repeated primitive-argument cache-key generations with kwargs, identical keys | 1.540026s | 1.143370s | 1.35x |
 | `ResultCache._get_cache_key` no-kwargs scalar fast path | 500k no-argument and one-primitive-argument cache-key generations, identical digests; object and kwarg fallback checked for compatibility | 0.758950s / 1.224144s | 0.461139s / 0.725904s | 1.65x / 1.69x |
 | `ResultCache.clear` scandir cleanup loop | 1M fake cache directory entries, half `.pkl`, identical removed paths while isolating Python loop overhead | 0.663190s | 0.444320s | 1.49x |
@@ -2842,6 +2843,10 @@ Profiling summary:
   on `get_result_cache()` or `get_alignment_cache()`, preserving singleton
   behavior and the module-level `pickle.loads` patch point. A later startup
   pass also defers `hashlib` until `_get_cache_key()` is called. Repeated
+  calls through the shared lazy pickle proxy now cache the resolved module
+  functions on first use, preserving lazy import and direct monkeypatch points
+  while avoiding repeated import dispatch in `ResultCache` and
+  `cached_tree_distance` hot paths. Repeated
   cache-key generation now caches the resolved `hashlib.md5` function after the
   first key, avoiding repeated import dispatch while keeping import-only callers
   free of `hashlib` startup. A later cache-key pass handles no-argument and

@@ -7,25 +7,36 @@ from functools import wraps, lru_cache
 
 
 class _LazyPickle:
-    def dump(self, *args, **kwargs):
-        import pickle as _pickle
+    _module = None
 
-        return _pickle.dump(*args, **kwargs)
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+
+        return module
+
+    def _resolve(self, name):
+        value = getattr(self._load(), name)
+        setattr(self, name, value)
+        return value
+
+    def dump(self, *args, **kwargs):
+        return self._resolve("dump")(*args, **kwargs)
+
+    def dumps(self, *args, **kwargs):
+        return self._resolve("dumps")(*args, **kwargs)
 
     def load(self, *args, **kwargs):
-        import pickle as _pickle
-
-        return _pickle.load(*args, **kwargs)
+        return self._resolve("load")(*args, **kwargs)
 
     def loads(self, *args, **kwargs):
-        import pickle as _pickle
-
-        return _pickle.loads(*args, **kwargs)
+        return self._resolve("loads")(*args, **kwargs)
 
     def __getattr__(self, name):
-        import pickle as _pickle
-
-        return getattr(_pickle, name)
+        return self._resolve(name)
 
 
 pickle = _LazyPickle()

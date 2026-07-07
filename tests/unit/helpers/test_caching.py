@@ -39,6 +39,19 @@ assert "tempfile" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_pickle_caches_resolved_attributes():
+    import phykit.helpers.caching as caching_module
+
+    lazy_pickle = caching_module._LazyPickle()
+    blob = lazy_pickle.dumps({"value": 1})
+    loaded = lazy_pickle.loads(blob)
+
+    assert lazy_pickle._module is not None
+    assert lazy_pickle.__dict__["dumps"] is lazy_pickle.dumps
+    assert lazy_pickle.__dict__["loads"] is lazy_pickle.loads
+    assert loaded == {"value": 1}
+
+
 class TestResultCache(TestCase):
     """Test ResultCache class"""
 
