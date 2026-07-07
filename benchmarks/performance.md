@@ -223,6 +223,7 @@ Results:
 | `AlignmentEntropy.run` verbose JSON row literals | 500k site entropy rows, side-by-side previous `dict(site=..., entropy=...)` formatter | 0.531990s | 0.493466s | 1.08x |
 | `AlignmentEntropy.run` nonverbose summary output | 100k site entropies, mocked alignment/read/calculation | 0.044581s | 0.000471s | 94.7x |
 | `AlignmentEntropy.run` nonverbose plot-only series preparation | 1M site entropies, identical rounded plotted site/value arrays without temporary row dictionaries | 0.404570s | 0.200756s | 2.02x |
+| `AlignmentEntropy._render_alignment_entropy_plot` redundant tight layout pass | repeated 100-site alignment-entropy PNG render, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.819350s | 3.091643s | 1.24x |
 | Alignment metric plot extent max reductions | plotted finite-value arrays sized 10 / 1000 / 100k / 1M used by AlignmentEntropy, EvolutionaryRatePerSite, and CompositionalBiasPerSite plot axes, side-by-side previous `np.max(...)` with large-array path preserved | 0.000003432s / 0.000002161s / 0.000011253s / 0.000123167s | 0.000001027s / 0.000000811s / 0.000010299s / 0.000123167s | 3.34x / 2.66x / 1.09x / 1.00x |
 | `AlignmentEntropy._prepare_entropy_row_plot_series` row array conversion | 500k verbose plot rows, identical site and entropy arrays | 0.162959s | 0.111404s | 1.46x |
 | `alignment_entropy` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction | 0.078578s | 0.029387s | 2.67x |

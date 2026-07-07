@@ -610,6 +610,27 @@ assert "Bio.AlignIO" not in sys.modules
         svc._plot_alignment_entropy([{"site": 1, "entropy": 0.2}, {"site": 2, "entropy": 0.8}])
         assert output.exists()
 
+    def test_plot_alignment_entropy_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        output = tmp_path / "entropy.png"
+        svc = AlignmentEntropy(
+            Namespace(alignment="x.fa", verbose=False, plot=True, plot_output=str(output))
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot_alignment_entropy(
+            [{"site": 1, "entropy": 0.2}, {"site": 2, "entropy": 0.8}]
+        )
+
+        assert output.exists()
+
     def test_plot_alignment_entropy_importerror_exits(self, monkeypatch, capsys):
         original_import = builtins.__import__
 
