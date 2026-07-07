@@ -1279,12 +1279,14 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         class DummyFig:
             def __init__(self):
                 self.saved = False
+                self.savefig_kwargs = None
 
             def tight_layout(self):
-                pass
+                raise AssertionError("scatter plot should rely on tight savefig")
 
             def savefig(self, *args, **kwargs):
                 self.saved = True
+                self.savefig_kwargs = kwargs
 
         dummy_ax = DummyAx()
         dummy_fig = DummyFig()
@@ -1313,6 +1315,7 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertTrue(dummy_ax.scatter_called)
         self.assertTrue(dummy_ax.plot_called)
         self.assertTrue(dummy_fig.saved)
+        self.assertEqual(dummy_fig.savefig_kwargs["bbox_inches"], "tight")
 
 
 if __name__ == '__main__':
