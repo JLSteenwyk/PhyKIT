@@ -553,6 +553,7 @@ Results:
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` complete-gene direct fill | 200 taxa x 200 genes x 100 sites / 1000 taxa x 100 genes x 80 sites, all taxa present in every gene | 0.068878s / 0.131284s | 0.023015s / 0.041990s | 2.99x / 3.13x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` gene-boundary rendering | 4096 gene boundary lines, real Matplotlib Agg render | 0.796482s | 0.055704s | 14.30x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` represented-row counts | 6000 taxa x 4000 concatenated-position state matrix, side-by-side previous boolean `np.sum(..., axis=1)` | 0.010258s | 0.007614s | 1.35x |
+| `CreateConcatenationMatrix._plot_concatenation_occupancy` redundant tight layout pass | repeated 40-taxon x 8-gene occupancy PNG render with legend and boundary lines, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.806079s | 2.924941s | 1.30x |
 | `CreateConcatenationMatrix.add_to_occupancy_info` cached taxa | 800 occupancy rows over 6000 taxa, sorted missing-taxa lists | 0.2575s | 0.1625s | 1.6x |
 | `CreateConcatenationMatrix.process_taxa_sequences` cached taxa set | 600 sequential alignments, 8000 taxa, 80% present per alignment | 0.7268s | 0.6294s | 1.2x |
 | `CreateConcatenationMatrix.process_taxa_sequences` combined present scan | 600 sequential alignments, 8000 taxa, 80% present per alignment | 0.7095s | 0.5664s | 1.3x |

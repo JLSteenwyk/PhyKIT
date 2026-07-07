@@ -733,6 +733,30 @@ class TestCreateConcatenationMatrix:
         )
         assert output_file.exists()
 
+    def test_plot_concatenation_occupancy_skips_redundant_tight_layout(
+        self, tmp_path, args, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        ccm = CreateConcatenationMatrix(args)
+        output_file = tmp_path / "occ.png"
+
+        def fail_tight_layout(self, *plot_args, **plot_kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        ccm._plot_concatenation_occupancy(
+            taxa=["A", "B"],
+            alignment_paths=["g1.fa", "g2.fa"],
+            concatenated_seqs={"A": ["AC", "GT"], "B": ["A-", "G?"]},
+            present_taxa_by_gene=[{"A", "B"}, {"A", "B"}],
+            gene_lengths=[2, 2],
+            output_file=str(output_file),
+        )
+
+        assert output_file.exists()
+
     def test_plot_concatenation_occupancy_batches_gene_boundaries(
         self, tmp_path, args, monkeypatch
     ):
