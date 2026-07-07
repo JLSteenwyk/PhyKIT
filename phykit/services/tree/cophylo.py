@@ -643,7 +643,6 @@ class Cophylo(Tree):
             ax2.set_title("Tree 2", fontsize=config.title_fontsize or 11, fontweight="bold")
 
         fig.suptitle("Cophylogenetic Plot (Tanglegram)", fontsize=13)
-        fig.tight_layout()
 
         # Draw connecting lines between matched taxa in one figure-level collection
         figure_segments = []
