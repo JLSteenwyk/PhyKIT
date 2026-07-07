@@ -1375,6 +1375,7 @@ Results:
 | `NeighborNet` / `ConsensusNetwork` / `QuartetNetwork` split-graph extent helper | 500k node positions, identical maximum x/y extent without temporary coordinate lists | 0.070550s | 0.029240s | 2.41x |
 | `NeighborNet` / `ConsensusNetwork` network edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.025885s | 0.012323s | 2.10x |
 | `NeighborNet` / `ConsensusNetwork` unlabeled fallback point rendering | 4096 taxa without accepted splits, real Matplotlib Agg point render | 0.756119s | 0.026598s | 28.43x |
+| `NeighborNet._draw_network` redundant tight layout pass | repeated 48-taxon NeighborNet PNG render with 10 circular splits and labels, explicit `pyplot.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.892012s | 0.646040s | 1.38x |
 | `NeighborNet.run` batched text split output | 100k positive split rows, captured stdout and identical text | 0.055873s | 0.043923s | 1.27x |
 | `ParsimonyScore._parse_alignment` | 50k FASTA records, mixed-case 120 bp each | 0.1198s | 0.0382s | 3.1x |
 | `ParsimonyScore._parse_alignment` shared first-token parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.051323s | 0.037320s | 1.38x |
@@ -5560,7 +5561,9 @@ Profiling summary:
   edge scaling now computes the split-graph x/y extent in one pass without
   temporary coordinate lists. A later
   fallback-rendering pass batches unlabeled no-split taxon points into one
-  `scatter` collection instead of one marker artist per taxon. Text output now
+  `scatter` collection instead of one marker artist per taxon. The network plot
+  path now skips the explicit `pyplot.tight_layout()` pass before saving with
+  `bbox_inches="tight"`, avoiding a redundant layout calculation. Text output now
   batches the analysis header, positive split rows, and output path into one
   newline-joined print while preserving exact stdout text.
 - `RelativeRateTest._run_single` baseline time called the scalar Tajima test

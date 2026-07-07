@@ -858,6 +858,31 @@ class TestNetworkPlot:
         assert len(line_collections) >= 2
         assert os.path.exists(service.output_path)
 
+    def test_draw_network_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib.pyplot as plt
+        from phykit.helpers.plot_config import PlotConfig
+
+        service = NeighborNet.__new__(NeighborNet)
+        service.output_path = str(tmp_path / "neighbor_net_no_tight_layout.png")
+        service.plot_config = PlotConfig(show_title=False)
+        ordering = ["A", "B", "C", "D"]
+        all_taxa = frozenset(ordering)
+        plot_splits = [
+            (frozenset({"A", "B"}), 1.0),
+            (frozenset({"B", "C"}), 0.5),
+        ]
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(plt, "tight_layout", fail_tight_layout)
+
+        service._draw_network(ordering, plot_splits, all_taxa)
+
+        assert os.path.exists(service.output_path)
+        assert os.path.getsize(service.output_path) > 0
+
     def test_draw_network_batches_unlabeled_fallback_points(self, monkeypatch, tmp_path):
         pytest.importorskip("matplotlib")
         import matplotlib.axes

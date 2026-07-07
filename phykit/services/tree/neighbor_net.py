@@ -838,7 +838,6 @@ class NeighborNet:
                 pad=20,
             )
 
-        plt.tight_layout()
         plt.savefig(self.output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close()
 
