@@ -853,6 +853,52 @@ class TestPlotCreated:
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
+    def test_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.figure import Figure
+
+        output = str(tmp_path / "test_hybrid_no_tight_layout.png")
+        args = _make_args(plot_output=output)
+        args.legend_position = "none"
+        args.ylabel_fontsize = 0
+        args.no_title = True
+        from phykit.services.tree.hybridization import Hybridization
+        svc = Hybridization(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                taxa=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                gcf=0.75,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                significant=False,
+                hybrid_score=0.75,
+                favored_alt=None,
+            ),
+        ]
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
     def test_rectangular_plot_uses_scalar_hybrid_score_collection(self):
         from Bio import Phylo
         from io import StringIO

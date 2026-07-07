@@ -1139,6 +1139,7 @@ Results:
 | `Hybridization._plot` significant star markers | 4096 significant branch markers, real Matplotlib Agg scatter render | 6.537405s | 0.013889s | 470.69x |
 | `Hybridization._plot` repeated hybrid-score color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title/legend disabled and repeated per-internal-node hybrid score | 0.485382s | 0.425973s | 1.14x |
 | `Hybridization._plot` scalar hybrid-score branch collections | 4096 synthetic rectangular branches with mixed zero and unique positive hybrid scores, side-by-side previous per-positive-score `cmap(norm(score))` materialization before `LineCollection` construction | 0.348723s | 0.044511s | 7.83x |
+| `Hybridization._plot` redundant tight layout pass | repeated 128-tip rectangular hybridization PNG render with per-internal-node branch results, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.977570s | 1.438242s | 1.37x |
 | `DiscordanceAsymmetry._count_topologies` | 40 balanced 256-tip gene trees plus species tree, NNI topology counts | 0.0830s | 0.0789s | 1.1x |
 | `DiscordanceAsymmetry._count_topologies` species-taxon setup | balanced 32768-tip species tree | 0.0673s | 0.0070s | 9.6x |
 | `DiscordanceAsymmetry._parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.093972s | 0.070400s | 1.33x |

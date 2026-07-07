@@ -323,7 +323,6 @@ class Hybridization(Tree):
                                    node_x, node_y, node_to_result, cmap, norm, config,
                                    preorder_clades)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         import matplotlib.pyplot as plt2
         plt.close(fig)
