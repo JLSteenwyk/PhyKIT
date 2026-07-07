@@ -649,6 +649,31 @@ class TestTipToTipDistance:
         )
         assert out.exists()
 
+    def test_plot_tip_distance_heatmap_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        out = tmp_path / "tip_heatmap.png"
+        service = TipToTipDistance(
+            Namespace(tree_zero="/some/path/to/file.tre", all_pairs=True, plot=True, plot_output=str(out))
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        service._plot_tip_distance_heatmap(
+            [
+                {"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.0},
+                {"taxon_a": "a", "taxon_b": "c", "tip_to_tip_distance": 2.0},
+                {"taxon_a": "b", "taxon_b": "c", "tip_to_tip_distance": 3.0},
+            ]
+        )
+
+        assert out.exists()
+
     def test_plot_tip_distance_heatmap_empty_rows(self):
         pytest.importorskip("matplotlib")
         service = TipToTipDistance(Namespace(tree_zero="/some/path/to/file.tre", all_pairs=True, plot=True))
