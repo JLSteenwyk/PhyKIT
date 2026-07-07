@@ -465,6 +465,25 @@ class TestChronogram:
         svc.run()
         assert (tmp_path / "chrono_circ.png").exists()
 
+    def test_circular_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot  # noqa: F401
+        from matplotlib.figure import Figure
+
+        out = str(tmp_path / "chrono_circ_no_tight_layout.png")
+        svc = Chronogram(_make_args(plot_output=out, circular=True))
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc.run()
+
+        assert (tmp_path / "chrono_circ_no_tight_layout.png").exists()
+
     def test_node_ages_flag(self, tmp_path):
         out = str(tmp_path / "chrono_ages.png")
         svc = Chronogram(_make_args(plot_output=out, node_ages=True))

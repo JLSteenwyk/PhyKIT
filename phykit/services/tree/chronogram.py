@@ -855,7 +855,6 @@ class Chronogram(Tree):
                 fontsize=config.title_fontsize,
             )
 
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         if not self.json_output:
