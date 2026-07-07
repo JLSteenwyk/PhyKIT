@@ -1071,6 +1071,7 @@ Results:
 | `ConcordanceAsr._plot_concordance_contmap` batched gCF markers | 4096 gCF markers with variable sizes/colors, real Matplotlib Agg scatter render | 9.035145s | 0.063602s | 142.06x |
 | `ConcordanceAsr._plot_concordance_contmap` redundant tight layout pass | repeated 160-tip rectangular concordance-ASR PNG render with varied gCF markers, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 5.903839s | 3.652768s | 1.62x |
 | `ConcordanceAsr._plot_uncertainty` mean markers | 2047 uncertainty rows x 20 estimates, identical marker x-coordinates | 0.035963s | 0.000745s | 48.26x |
+| `ConcordanceAsr._plot_uncertainty` redundant tight layout pass | repeated 127-node uncertainty PNG render with violin plots, boxplots, mean markers, and gCF legend, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.012796s | 2.455861s | 1.23x |
 | `ConcordanceAsr._print_text_output` batched estimate output | 100k ancestral-estimate rows, mixed CI/non-CI rows, captured stdout and identical text | 0.167087s | 0.151078s | 1.11x |
 | `concordance_asr` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.146693s | 0.033499s | 4.38x |
 | `concordance_asr` cached lazy NumPy attributes | 1000 / 5000 repeated hot-loop attribute groups (`array`, `zeros`, `asarray`) after NumPy warmup | 0.00373743s / 0.01757531s | 0.00014236s / 0.00075925s | 26.25x / 23.15x |
@@ -5048,7 +5049,8 @@ Profiling summary:
   into one `scatter` call per plot while preserving black marker edges, labels,
   and colorbars. Uncertainty plot mean markers now compute marker positions
   with Python arithmetic over each per-node estimate list instead of dispatching
-  to NumPy once per plotted row.
+  to NumPy once per plotted row. The uncertainty plot also skips the explicit
+  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`.
   A later startup pass
   defers direct NumPy imports and top-level Bio.Phylo loading behind lazy
   proxies, so command discovery avoids scientific-array and tree-format parser
