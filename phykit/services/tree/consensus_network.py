@@ -864,7 +864,6 @@ class ConsensusNetwork(Tree):
         if config.show_title:
             ax.set_title(config.title or "Consensus Splits Network", fontsize=config.title_fontsize or 14, pad=20)
 
-        plt.tight_layout()
         plt.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close()
 
