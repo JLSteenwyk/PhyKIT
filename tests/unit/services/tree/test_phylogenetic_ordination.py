@@ -2021,6 +2021,44 @@ class TestPlot:
         out, _ = capsys.readouterr()
         assert "Saved plot:" in out
 
+    def test_dimreduce_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot  # noqa: F401
+        from matplotlib.figure import Figure
+
+        plot_path = str(tmp_path / "test_dimreduce_no_tight_layout.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=MULTI_TRAITS_FILE,
+            method="tsne",
+            correction="BM",
+            n_components=2,
+            perplexity=None,
+            n_neighbors=None,
+            min_dist=0.1,
+            seed=42,
+            json=False,
+            plot=True,
+            plot_output=plot_path,
+            plot_tree=False,
+            color_by=None,
+        )
+        svc = PhylogeneticOrdination(args)
+        embedding = np.array([[0.0, 1.0], [1.0, 0.0], [0.5, 0.5]])
+        taxon_names = ["A", "B", "C"]
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot_dimreduce(embedding, taxon_names)
+
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
     def test_dimreduce_plot_tree_created(self, tmp_path, capsys):
         plot_path = str(tmp_path / "test_tree.png")
         args = Namespace(

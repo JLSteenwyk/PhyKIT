@@ -2250,6 +2250,7 @@ Results:
 | `PhylogeneticOrdination` PCA corr-mode diagonal scaling | 420 taxa x 700 traits, synthetic covariance and centered scores | 0.023722s | 0.001051s | 22.6x |
 | `PhylogeneticOrdination._run_pca` eigenvalue total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 eigenvalues, side-by-side previous `np.sum(eigenvalues)` | 0.000005367s / 0.000005370s / 0.000004776s / 0.000004082s / 0.000004451s / 0.000004098s / 0.000004246s / 0.000005265s | 0.000001938s / 0.000002333s / 0.000001965s / 0.000002455s / 0.000002093s / 0.000002365s / 0.000002326s / 0.000002696s | 2.77x / 2.30x / 2.43x / 1.66x / 2.13x / 1.73x / 1.83x / 1.95x |
 | `PhylogeneticOrdination._plot_pca` redundant tight layout pass | repeated 160-taxon PCA PNG render with taxon labels, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.058089s | 0.811931s | 1.30x |
+| `PhylogeneticOrdination._plot_dimreduce` redundant tight layout pass | repeated 160-taxon t-SNE PNG render with taxon labels, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.885955s | 0.475960s | 1.86x |
 | `PhylogeneticOrdination._center_traits_by_vcv_inverse` combined RHS multiply | 420 taxa SPD VCV x 700 traits, weighted inverse fallback path | 0.043051s | 0.012594s | 3.4x |
 | `PhylogeneticOrdination._center_traits_by_vcv_cholesky` residual solve reuse | 120 repeated 420-taxon SPD VCV x 10-trait weighted centering calls, SciPy already warm | 0.056996s | 0.050926s | 1.12x |
 | `PhylogeneticOrdination` broadcast centering products | 420 taxa x 700 traits, centered traits plus weighted centered traits | 0.000867s | 0.000635s | 1.37x |
@@ -7710,6 +7711,9 @@ Profiling summary:
   payload values. The 3-D JSON branch now rounds the builtin floats returned by
   column-list conversion directly, avoiding one redundant scalar `float()`
   conversion per output cell while preserving the same rounded payload values.
+  Dimensionality-reduction plots also skip the explicit `Figure.tight_layout()`
+  pass and rely on `savefig(..., bbox_inches="tight")`, matching the PCA plot
+  path while avoiding a second bounds computation.
 - `AncestralReconstruction._anc_ml` baseline time was dominated by computing
   cross-covariances with repeated per-tip `tree.get_terminals()`,
   `tree.common_ancestor()`, and root-distance calls for every labeled internal

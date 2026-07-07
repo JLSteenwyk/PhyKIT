@@ -1056,7 +1056,6 @@ class PhylogeneticOrdination(Tree):
             dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
             ax.set_xlabel(dim_labels[0])
             ax.set_ylabel(dim_labels[1])
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
