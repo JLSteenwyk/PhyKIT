@@ -106,6 +106,15 @@ class RelativeRateTest(Tree):
             x_bytes = seq_x[:n_sites].encode("ascii")
             y_bytes = seq_y[:n_sites].encode("ascii")
             out_bytes = seq_out[:n_sites].encode("ascii")
+            use_upper_bytes = (
+                RelativeRateTest._ascii_sample_has_lowercase(x_bytes)
+                or RelativeRateTest._ascii_sample_has_lowercase(y_bytes)
+                or RelativeRateTest._ascii_sample_has_lowercase(out_bytes)
+            )
+            if use_upper_bytes:
+                x_bytes = x_bytes.upper()
+                y_bytes = y_bytes.upper()
+                out_bytes = out_bytes.upper()
             x = np.frombuffer(x_bytes, dtype=np.uint8)
             y = np.frombuffer(y_bytes, dtype=np.uint8)
             out = np.frombuffer(out_bytes, dtype=np.uint8)
@@ -127,9 +136,14 @@ class RelativeRateTest(Tree):
                 for code in _TAJIMA_SKIP_BYTES
             )
 
-        x_upper = RelativeRateTest._ascii_upper_array(x)
-        y_upper = RelativeRateTest._ascii_upper_array(y)
-        out_upper = RelativeRateTest._ascii_upper_array(out)
+        if use_upper_bytes:
+            x_upper = x
+            y_upper = y
+            out_upper = out
+        else:
+            x_upper = RelativeRateTest._ascii_upper_array(x)
+            y_upper = RelativeRateTest._ascii_upper_array(y)
+            out_upper = RelativeRateTest._ascii_upper_array(out)
 
         x_diff = x_upper != out_upper
         y_diff = y_upper != out_upper
@@ -157,6 +171,14 @@ class RelativeRateTest(Tree):
             & (out_upper != 45) & (out_upper != 63)
             & (out_upper != 78) & (out_upper != 88)
         )
+
+    @staticmethod
+    def _ascii_sample_has_lowercase(values: bytes) -> bool:
+        head = values[:_TAJIMA_SKIP_SCAN_BYTES]
+        if head != head.upper():
+            return True
+        tail = values[-_TAJIMA_SKIP_SCAN_BYTES:]
+        return tail != tail.upper()
 
     @staticmethod
     def _ascii_upper_array(values):

@@ -1387,6 +1387,7 @@ Results:
 | `RelativeRateTest._run_single` | 140 ingroup taxa x 1500 sites plus outgroup, alphabet `ACGT-?NX` | 1.4043s | 0.0275s | 51.1x |
 | `RelativeRateTest._tajima_test` long ASCII helper | five 1M-site Tajima tests, alphabet `ACGTn` | 1.111929s | 0.012380s | 89.82x |
 | `RelativeRateTest._tajima_test` clean ASCII shortcut | 2M-site Tajima triplet, alphabet `ACGT`, side-by-side previous validity-mask vector path | 0.008916s | 0.007849s | 1.14x |
+| `RelativeRateTest._tajima_test` sampled lowercase byte normalization | 1M clean-uppercase sites / 1M lowercase plus `N`-skip sites, side-by-side previous NumPy lowercase-mask uppercase path | 0.006543s / 0.010762s | 0.004997s / 0.006683s | 1.31x / 1.61x |
 | `RelativeRateTest._tajima_test` mid-size ASCII vector threshold | 1500-site Tajima triplet with lowercase/skipped sites, side-by-side previous scalar cutoff | 0.000530863s | 0.000104474s | 5.08x |
 | `RelativeRateTest._tajima_test` cached lazy NumPy attributes | 12k-site clean ASCII Tajima triplet, repeated vector-path tests after warmup, side-by-side previous uncached lazy proxy | 0.000412396s | 0.000312907s | 1.32x |
 | `RelativeRateTest._identify_outgroup` singleton scan | rooted tree with 32768-tip ingroup plus singleton outgroup | 0.063596s | 0.000001s | 47668.9x |

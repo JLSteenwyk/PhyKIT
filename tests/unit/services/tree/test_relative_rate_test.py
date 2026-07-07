@@ -836,6 +836,32 @@ class TestTajimaTest:
             seq_out,
         ) == RelativeRateTest._tajima_test_scalar(seq_x, seq_y, seq_out)
 
+    def test_vectorized_tajima_uppercases_with_bytes_helper(self, monkeypatch):
+        seq_out = ("ACGT" * 750)
+        seq_x = list(seq_out.lower())
+        seq_y = list(seq_out)
+        for idx in range(0, len(seq_out), 29):
+            seq_x[idx] = "t" if seq_out[idx] != "T" else "a"
+        for idx in range(11, len(seq_out), 37):
+            seq_y[idx] = "c" if seq_out[idx] != "C" else "g"
+        for idx in range(17, len(seq_out), 113):
+            seq_x[idx] = "n"
+
+        seq_x = "".join(seq_x)
+        seq_y = "".join(seq_y)
+        expected = RelativeRateTest._tajima_test_scalar(seq_x, seq_y, seq_out)
+
+        def fail_numpy_upper(*_args, **_kwargs):
+            raise AssertionError("vectorized Tajima should uppercase bytes directly")
+
+        monkeypatch.setattr(
+            RelativeRateTest,
+            "_ascii_upper_array",
+            staticmethod(fail_numpy_upper),
+        )
+
+        assert RelativeRateTest._tajima_test(seq_x, seq_y, seq_out) == expected
+
     def test_clean_ascii_tajima_skips_validity_mask(self, monkeypatch):
         length = 3000
         seq_out = "A" * length
