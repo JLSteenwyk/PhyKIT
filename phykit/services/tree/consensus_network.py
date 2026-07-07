@@ -896,7 +896,6 @@ class ConsensusNetwork(Tree):
                 fontsize=config.title_fontsize or 14,
             )
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 

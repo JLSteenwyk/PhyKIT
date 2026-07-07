@@ -1819,6 +1819,7 @@ Results:
 | `NeighborNet` / `ConsensusNetwork` network edge rendering | 80 taxa, 20 circular splits, real Matplotlib Agg internal and pendant edge render | 0.025885s | 0.012323s | 2.10x |
 | `NeighborNet` / `ConsensusNetwork` unlabeled fallback point rendering | 4096 taxa without accepted splits, real Matplotlib Agg point render | 0.756119s | 0.026598s | 28.43x |
 | `ConsensusNetwork._draw_network` redundant tight layout pass | repeated 48-taxon consensus-network PNG render with 10 circular splits and labels, explicit `pyplot.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.739454s | 0.520225s | 1.42x |
+| `ConsensusNetwork._draw_histogram` redundant tight layout pass | repeated 1000-split frequency histogram PNG render, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.565574s | 0.422448s | 1.34x |
 | `ConsensusNetwork.run` batched text split output | 100k filtered split rows, captured stdout and identical text | 0.064258s | 0.050664s | 1.27x |
 | `ConsensusNetwork._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.091090s | 0.067767s | 1.34x |
 | `ConsensusNetwork._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
@@ -6672,9 +6673,9 @@ Profiling summary:
   A later fallback-rendering pass batches unlabeled no-split taxon points into
   one `scatter` collection instead of one marker artist per taxon. The network
   plot path also skips the explicit `pyplot.tight_layout()` pass before saving
-  with `bbox_inches="tight"`; the histogram path keeps its layout call because
-  the same benchmark was noisy and median-slower there. Text output now batches
-  the summary header and filtered split rows into one
+  with `bbox_inches="tight"`, and the split-frequency histogram skips its
+  explicit `Figure.tight_layout()` pass for the same redundant-layout reason.
+  Text output now batches the summary header and filtered split rows into one
   newline-joined print while preserving exact stdout text.
   Startup passes keep Bio.Phylo consensus helpers behind lazy proxies, keep
   JSON output behind a forwarding wrapper, and localize `PlotConfig` to argument
