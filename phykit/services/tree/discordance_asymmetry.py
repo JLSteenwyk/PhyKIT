@@ -672,7 +672,6 @@ class DiscordanceAsymmetry(Tree):
                 ax.set_title(config.title or "Discordance Asymmetry", fontsize=config.title_fontsize)
             if config.axis_fontsize:
                 ax.xaxis.label.set_fontsize(config.axis_fontsize)
-            fig.tight_layout()
             fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
             plt.close(fig)
 

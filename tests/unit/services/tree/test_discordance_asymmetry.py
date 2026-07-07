@@ -1098,6 +1098,58 @@ class TestPlot:
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
+    def test_rectangular_plot_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.figure import Figure
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_no_tight_layout.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            )
+        ]
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
 
 class TestPlotCircular:
     def _make_svc(self, plot_output):
