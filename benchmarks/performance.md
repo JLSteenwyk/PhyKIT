@@ -374,6 +374,7 @@ Results:
 | `EvolutionaryRatePerSite.run` JSON row index loop | 500k mocked site-rate rows, side-by-side previous `enumerate(...)` plus `idx + 1` formatter | 0.428625s | 0.356849s | 1.20x |
 | `EvolutionaryRatePerSite.run` direct terminal text output | 100k site values, mocked alignment/read and identical stdout text | 0.083225s | 0.064262s | 1.30x |
 | `EvolutionaryRatePerSite.run` plot-only series preparation | 1M site rates, identical rounded plotted site/value arrays without temporary row dictionaries | 0.376116s | 0.196265s | 1.92x |
+| `EvolutionaryRatePerSite._render_evolutionary_rate_plot` redundant tight layout pass | repeated 100-site evolutionary-rate PNG render, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.704573s | 2.785584s | 1.33x |
 | `evolutionary_rate_per_site` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.114353s | 0.029664s | 3.86x |
 | `evolutionary_rate_per_site` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.013219s | 0.005953s | 2.22x |
 | `evolutionary_rate_per_site` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002573s | 0.000905s | 2.84x |

@@ -596,6 +596,30 @@ assert "phykit.helpers.plot_config" not in sys.modules
         )
         assert out.exists()
 
+    def test_plot_evolutionary_rate_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        out = tmp_path / "erps.png"
+        service = EvolutionaryRatePerSite(
+            Namespace(alignment="x.fa", plot=True, plot_output=str(out))
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        service._plot_evolutionary_rate_per_site(
+            [
+                {"site": 1, "evolutionary_rate": 0.2},
+                {"site": 2, "evolutionary_rate": 0.4},
+            ]
+        )
+
+        assert out.exists()
+
     def test_plot_evolutionary_rate_per_site_empty_rows(self):
         pytest.importorskip("matplotlib")
         service = EvolutionaryRatePerSite(Namespace(alignment="x.fa", plot=True))
