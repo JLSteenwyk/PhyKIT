@@ -2064,6 +2064,7 @@ Results:
 | `ContMap._contmap_colored_arcs` binary child-angle bounds | balanced 32768-tip synthetic coords and internal estimates, side-by-side previous child-angle list path | 0.266051s | 0.108700s | 2.45x |
 | `ContMap._plot_contmap` rectangular batched gradient branches | balanced 512-tip tree, 50 color segments per branch, real Matplotlib Agg branch/label/colorbar render | 11.957742s | 1.949793s | 6.13x |
 | `ContMap._plot_contmap` scalar colormap rectangular branches | 512 synthetic rectangular branches x 50 gradient segments plus vertical connectors, side-by-side previous per-segment/per-connector `cmap(norm(value))` color materialization | 2.819461s | 0.092104s | 30.61x |
+| `ContMap._plot_contmap` redundant tight layout pass | repeated 160-tip rectangular contMap PNG render with gradient branch collections, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.457095s | 2.646253s | 1.31x |
 | `ContMap._print_text_output` batched summary | 100k captured contMap text summaries, identical stdout text | 0.089211s | 0.059444s | 1.50x |
 | `ContMap` cached lazy NumPy proxy | 1000 / 5000 hot-loop lookup groups across `array`, `linspace`, `column_stack`, `asarray`, and `clip`, side-by-side previous uncached lazy NumPy proxy | 0.00463698s / 0.02358048s | 0.00018264s / 0.00109534s | 25.39x / 21.53x |
 | `cont_map` module import without eager NumPy | cold subprocess import after lazy NumPy proxy plus lazy circular-layout arc cache | 0.085155s | 0.038423s | 2.22x |
