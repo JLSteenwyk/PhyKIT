@@ -6,6 +6,8 @@ import unittest
 import builtins
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch
 import numpy as np
 from argparse import Namespace
@@ -1017,6 +1019,32 @@ assert "phykit.helpers.plot_config" not in sys.modules
             with self.assertRaises(SystemExit) as exc:
                 self.saturation._plot_saturation_scatter(np.array([0.1]), np.array([0.2]), 0.5)
         self.assertEqual(exc.exception.code, 2)
+
+    def test_plot_saturation_scatter_skips_redundant_tight_layout(self):
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot  # noqa: F401
+            from matplotlib.figure import Figure
+        except ImportError:
+            self.skipTest("matplotlib is not installed")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_path = Path(tmp_dir) / "saturation.png"
+            self.saturation.plot_output = str(output_path)
+
+            with patch.object(
+                Figure,
+                "tight_layout",
+                side_effect=AssertionError("savefig bbox should handle tight cropping"),
+            ):
+                self.saturation._plot_saturation_scatter(
+                    np.array([0.1, 0.2, 0.3]),
+                    np.array([0.04, 0.08, 0.12]),
+                    0.4,
+                )
+
+            self.assertTrue(output_path.exists())
 
     @patch('phykit.services.tree.saturation.get_alignment_and_format_helper')
     def test_run_with_plot_calls_plotter(self, mock_get_alignment):

@@ -235,7 +235,6 @@ class Saturation(Tree):
         if config.axis_fontsize:
             ax.xaxis.label.set_fontsize(config.axis_fontsize)
             ax.yaxis.label.set_fontsize(config.axis_fontsize)
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 

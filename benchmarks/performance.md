@@ -1863,6 +1863,7 @@ Results:
 | `Saturation.run` cached read-only tree setup | balanced 32768-tip cached tree, alignment parsing, pairwise calculation, and output mocked | 0.346762s | 0.000101s | 3426.23x |
 | `Saturation.print_res` verbose text output | 200k pairwise rows, captured stdout and identical text | 0.205054s | 0.166528s | 1.23x |
 | `Saturation.print_res` verbose JSON row construction | 500k pairwise rows, identical row dictionaries | 1.126429s | 0.839930s | 1.34x |
+| `Saturation._plot_saturation_scatter` redundant tight layout pass | repeated 1000-point saturation PNG render with trendline, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.309373s | 0.233054s | 1.33x |
 | `saturation` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy and annotation-only Biopython imports | 0.144697s | 0.035127s | 4.12x |
 | `saturation` module import without eager multiprocessing | cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.035324s | 0.031814s | 1.11x |
 | `saturation` module import without eager plot config | cold subprocess import after localizing `PlotConfig` to argument processing | 0.029371s | 0.023684s | 1.24x |
@@ -6740,7 +6741,9 @@ Profiling summary:
   plotted distance vectors while preserving the generic NumPy path for larger
   vectors. The lazy NumPy proxy now caches resolved attributes, reducing
   repeated import/getattr dispatch in the matrix-distance path while preserving
-  lazy import behavior and module-level patch points.
+  lazy import behavior and module-level patch points. The saturation scatter
+  plot also skips the explicit `Figure.tight_layout()` pass before saving with
+  `bbox_inches="tight"`, avoiding a redundant layout traversal.
 - The `saturation` command now keeps the module-level `mp.cpu_count` and
   `mp.Pool` access points through a lazy proxy and imports `functools.partial`
   only when the large-workload multiprocessing branch is used, so command
