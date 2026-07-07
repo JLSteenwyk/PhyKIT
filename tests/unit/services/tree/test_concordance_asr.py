@@ -1345,6 +1345,42 @@ class TestCircularPlot:
         assert gcf_marker_counts == [len(estimates)]
         assert output_path.exists()
 
+    def test_concordance_plot_skips_redundant_tight_layout(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        default_args.circular = False
+        default_args.ylabel_fontsize = 0
+        default_args.no_title = True
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        estimates = {}
+        counter = 1
+        for clade in svc._iter_preorder(tree.root):
+            if not clade.clades:
+                continue
+            label = clade.name or f"N{counter}"
+            if not clade.name:
+                counter += 1
+            estimates[label] = {
+                "estimate": float(counter),
+                "gcf": 0.25 + 0.1 * counter,
+            }
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        output_path = tmp_path / "concordance_asr_no_tight_layout.png"
+        svc._plot_concordance_contmap(
+            tree, {"ancestral_estimates": estimates}, str(output_path)
+        )
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
     def test_uncertainty_plot_mean_markers_avoid_numpy(
         self, default_args, monkeypatch, tmp_path
     ):

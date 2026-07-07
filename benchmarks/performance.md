@@ -1065,6 +1065,7 @@ Results:
 | `ConcordanceAsr._plot_concordance_contmap` circular coordinate clade-list reuse | balanced 32768-tip tree, node positions plus preorder/tip lists already available | 0.055215s | 0.044103s | 1.25x |
 | `ConcordanceAsr._plot_concordance_contmap` rectangular batched base branches | balanced 512-tip tree, gCF markers present, real Matplotlib Agg render | 2.872509s | 1.955351s | 1.47x |
 | `ConcordanceAsr._plot_concordance_contmap` batched gCF markers | 4096 gCF markers with variable sizes/colors, real Matplotlib Agg scatter render | 9.035145s | 0.063602s | 142.06x |
+| `ConcordanceAsr._plot_concordance_contmap` redundant tight layout pass | repeated 160-tip rectangular concordance-ASR PNG render with varied gCF markers, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 5.903839s | 3.652768s | 1.62x |
 | `ConcordanceAsr._plot_uncertainty` mean markers | 2047 uncertainty rows x 20 estimates, identical marker x-coordinates | 0.035963s | 0.000745s | 48.26x |
 | `ConcordanceAsr._print_text_output` batched estimate output | 100k ancestral-estimate rows, mixed CI/non-CI rows, captured stdout and identical text | 0.167087s | 0.151078s | 1.11x |
 | `concordance_asr` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.146693s | 0.033499s | 4.38x |
