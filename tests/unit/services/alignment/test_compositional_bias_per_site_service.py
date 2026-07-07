@@ -687,6 +687,29 @@ assert "numpy" not in sys.modules
         service._plot_compositional_bias_manhattan(rows)
         assert output.exists()
 
+    def test_plot_compositional_bias_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        output = tmp_path / "cbps_plot.png"
+        service = CompositionalBiasPerSite(
+            Namespace(alignment="x.fa", plot=True, plot_output=str(output))
+        )
+        rows = [
+            {"site": 1, "chi_square": 1.0, "p_value_corrected": 0.01, "p_value": 0.01},
+            {"site": 2, "chi_square": 0.5, "p_value_corrected": 0.5, "p_value": 0.5},
+        ]
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        service._plot_compositional_bias_manhattan(rows)
+
+        assert output.exists()
+
     def test_plot_compositional_bias_manhattan_importerror(self, monkeypatch, capsys):
         original_import = builtins.__import__
 
