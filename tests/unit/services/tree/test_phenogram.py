@@ -283,6 +283,40 @@ class TestRun:
             if os.path.exists(tmppath):
                 os.unlink(tmppath)
 
+    def test_plot_phenogram_skips_redundant_tight_layout(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            output=str(tmp_path / "phenogram_no_tight_layout.png"),
+            json=False,
+        )
+        svc = Phenogram(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        x = np.array([trait_values[name] for name in ordered_names])
+        node_labels = svc._label_internal_nodes(tree)
+        node_estimates, _sigma2 = svc._fast_anc(
+            tree, x, ordered_names, node_labels
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot_phenogram(
+            tree, node_estimates, node_labels,
+            trait_values, "trait", args.output,
+        )
+
+        assert os.path.exists(args.output)
+        assert os.path.getsize(args.output) > 0
+
     def test_print_text_output_batches_summary(self, mocker):
         svc = Phenogram.__new__(Phenogram)
         svc.output_path = "phenogram.png"

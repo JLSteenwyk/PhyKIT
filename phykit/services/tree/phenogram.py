@@ -627,6 +627,5 @@ class Phenogram(Tree):
             ax.set_title(config.title or "Phenogram (Traitgram)", fontsize=config.title_fontsize)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
