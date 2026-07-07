@@ -427,6 +427,23 @@ assert "Bio.AlignIO" not in sys.modules
         service._plot_rcvt([{"taxon": "a", "rcvt": 0.1}, {"taxon": "b", "rcvt": 0.2}])
         assert out.exists()
 
+    def test_plot_rcvt_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        out = tmp_path / "rcvt.png"
+        service = RelativeCompositionVariabilityTaxon(
+            Namespace(alignment="x.fa", plot=True, plot_output=str(out))
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        service._plot_rcvt([{"taxon": "a", "rcvt": 0.1}, {"taxon": "b", "rcvt": 0.2}])
+
+        assert out.exists()
+
     def test_prepare_rcvt_plot_series_preserves_stable_descending_order(self):
         rows = [
             {"taxon": "a", "rcvt": 0.1},

@@ -425,6 +425,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` value row construction | 500k mocked RCVT value rows, identical row dictionaries | 0.545980s | 0.493787s | 1.11x |
 | `RelativeCompositionVariabilityTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.017426s | 0.011493s | 1.52x |
 | `RelativeCompositionVariabilityTaxon._plot_rcvt` plot series preparation | 300k taxon rows, repeated RCVT values, identical stable descending taxon order and plotted values | 0.068288s | 0.042674s | 1.60x |
+| `RelativeCompositionVariabilityTaxon._plot_rcvt` redundant tight layout pass | repeated 200-taxon RCVT PNG render, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 7.804717s | 6.236310s | 1.25x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` cached lazy NumPy attributes | 1800 protein records x 1800 sites, repeated variable-row RCVT calculations after warmup | 0.060981s | 0.035996s | 1.69x |
 | `rcvt` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction | 0.079652s | 0.029906s | 2.66x |
 | `rcvt` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.011765s | 0.005049s | 2.33x |
