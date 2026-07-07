@@ -826,6 +826,41 @@ class TestPlotRateMap:
         assert len(line_collections) >= 2
         assert os.path.exists(args.output)
 
+    def test_plot_rate_map_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        args = _make_args(
+            output=str(tmp_path / "trait_rate_no_tight_layout.png"),
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = TraitRateMap(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        preorder_clades = list(svc._iter_preorder(tree.root))
+        postorder_clades = list(reversed(preorder_clades))
+        node_labels = svc._label_internal_nodes(tree, preorder_clades)
+        node_values = svc._ancestral_reconstruction(
+            tree, trait_values, postorder_clades
+        )
+        parent_map = svc._build_parent_map(tree, preorder_clades)
+        branch_rates = svc._compute_branch_rates(
+            tree, node_values, parent_map, node_labels, preorder_clades
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot_rate_map(
+            tree, node_values, branch_rates, parent_map,
+            node_labels, trait_values, "trait", args.output,
+        )
+
+        assert os.path.exists(args.output)
+        assert os.path.getsize(args.output) > 0
+
 
 class TestRun:
     def test_creates_png(self):

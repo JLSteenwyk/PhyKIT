@@ -2089,6 +2089,7 @@ Results:
 | `TraitRateMap._plot_rate_map` circular batched rate branches/arcs | balanced 2048-tip tree, varied branch rates, real Matplotlib Agg branch/arc/colorbar render | 1.606744s | 0.352826s | 4.55x |
 | `TraitRateMap._plot_rate_map` repeated branch-rate color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title disabled and repeated branch rate | 0.547496s | 0.427287s | 1.28x |
 | `TraitRateMap._plot_rate_map` scalar rate branch collections | 4096 synthetic rectangular branches with mixed missing and unique numeric rates, side-by-side previous per-rate `cmap(norm(rate))` materialization before `LineCollection` construction | 1.060638s | 0.018039s | 58.80x |
+| `TraitRateMap._plot_rate_map` redundant tight layout pass | repeated 160-tip rectangular trait-rate-map PNG render with varied branch rates, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 4.530529s | 2.747871s | 1.65x |
 | `TraitRateMap._prepare_rate_map_plot_data` single-pass setup | balanced 32768-tip tree, rate lookup, preorder, tips, and rate list | 0.017025s | 0.012340s | 1.38x |
 | `TraitRateMap.run` branch-rate summary stats | 100k branch-rate entries, identical mean plus first min/max tie behavior | 0.040878s | 0.026178s | 1.56x |
 | `TraitRateMap._print_text_output` batched summary | 100k captured trait-rate-map text summaries, identical stdout text | 0.174115s | 0.110930s | 1.57x |
