@@ -814,7 +814,6 @@ class Dtt(Tree):
         if config.show_title:
             ax.set_title(title, fontsize=config.title_fontsize)
 
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"DTT plot saved: {self.plot_output}")

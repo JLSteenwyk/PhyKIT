@@ -879,6 +879,28 @@ class TestRun:
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
+    def test_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        from matplotlib.figure import Figure
+
+        plot_path = str(tmp_path / "dtt_no_tight_layout.png")
+        args = _make_args(trait="body_mass", plot_output=plot_path)
+        svc = Dtt(args)
+        times = np.linspace(0.0, 1.0, 20)
+        dtt_values = np.linspace(1.0, 0.0, 20)
+        sim_dtt = np.vstack([
+            np.linspace(1.0, 0.1, 20),
+            np.linspace(0.9, 0.0, 20),
+        ])
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        svc._plot_dtt(times, dtt_values, sim_dtt, mdi=0.1234)
+
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
     def test_plot_with_simulations(self, tmp_path):
         plot_path = str(tmp_path / "dtt_sim.png")
         args = _make_args(trait="body_mass", plot_output=plot_path, nsim=10, seed=42)

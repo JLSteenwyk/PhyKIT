@@ -2190,6 +2190,7 @@ Results:
 | `Dtt._simulate_null` observed-DTT reuse | balanced 512-tip tree x 2 traits, 50 simulated DTT curves | 0.071679s | 0.045011s | 1.59x |
 | `Dtt._print_text` batched time-point output | 100k DTT time-point rows, captured stdout and identical text | 0.057375s | 0.046449s | 1.24x |
 | `Dtt._print_json` vectorized time-series rounding | 1k / 10k / 100k DTT time points, identical rounded `times` and `dtt` payload arrays | 0.025779s / 0.181466s / 1.194443s | 0.000023s / 0.000190s / 0.003999s | 1131.11x / 953.20x / 298.71x |
+| `Dtt._plot_dtt` redundant tight layout pass | repeated 800-point DTT PNG render with 160 simulated null curves, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.085840s | 0.739152s | 1.47x |
 | `Dtt.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected column / full matrix setup | 0.013424s / 0.134250s | 0.007369s / 0.037870s | 1.82x / 3.54x |
 | `Dtt.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with traits | 0.0671s | 0.0071s | 9.5x |
 | `Dtt.run` ordered trait prune-target setup | 300k ordered tree tips with all traits / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.037559s / 0.118754s | 0.012609s / 0.013949s | 2.98x / 8.51x |
