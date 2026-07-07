@@ -985,6 +985,7 @@ Results:
 | `SpectralDiscordance._kmeans` k-means++ initialization distances | 80k rows x 8 dimensions, 12 seeded initial centers, identical centers and closest-distance vector | 0.047207s | 0.033778s | 1.40x |
 | `SpectralDiscordance._kmeans` cached lazy NumPy attributes | 20k rows x 8 dimensions, 8 clusters, fixed RandomState seed and identical labels | 1.675318s | 1.256851s | 1.33x |
 | `SpectralDiscordance._plot_scatter` cluster index reuse | 1k/10k/100k/500k score rows with 4/8/12/12 clusters, side-by-side previous boolean scatter mask plus separate annotation index lookup | 0.000383s / 0.002307s / 0.024657s / 0.218886s | 0.000227s / 0.001371s / 0.009554s / 0.079477s | 1.68x / 1.68x / 2.58x / 2.75x |
+| `SpectralDiscordance` plot redundant tight layout passes | repeated 200-point scatter plus 50-bar eigengap PNG renders, explicit `Figure.tight_layout()` calls removed while retaining `savefig(..., bbox_inches="tight")` | 2.975426s | 2.545816s | 1.17x |
 | `SpectralDiscordance._get_top_loadings` partial top-N selection | 20 PCs x 300k bipartitions, top 10 loadings per PC, identical reported entries | 0.442687s | 0.050885s | 8.70x |
 | `SpectralDiscordance._run_pca` singular-value total variance | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 singular values, side-by-side previous `np.sum(S ** 2)` | 0.000005887s / 0.000006054s / 0.000005545s / 0.000005994s / 0.000006021s / 0.000006877s / 0.000004525s / 0.000006631s | 0.000001281s / 0.000001132s / 0.000001423s / 0.000001156s / 0.000001312s / 0.000001259s / 0.000000879s / 0.000001432s | 4.60x / 5.35x / 3.90x / 5.19x / 4.59x / 5.46x / 5.15x / 4.63x |
 | `SpectralDiscordance._parse_gene_trees` path-list existence guard | 50k existing absolute tree paths, tree parsing mocked | 0.263681s | 0.121357s | 2.17x |
@@ -4864,6 +4865,8 @@ Profiling summary:
   Scatter plotting now derives each cluster's integer index array once and
   reuses it for both point coordinates and annotations, preserving labels and
   empty-cluster legend entries while avoiding duplicate score selection work.
+  The scatter and eigengap plot paths also skip redundant explicit
+  `Figure.tight_layout()` passes before saving with `bbox_inches="tight"`.
   Top-loading reporting now uses guarded partial selection for the common
   no-tie case and falls back to the previous full sort whenever tied loadings
   could affect exact reported membership or ordering.

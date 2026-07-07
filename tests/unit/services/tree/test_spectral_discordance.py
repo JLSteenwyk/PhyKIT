@@ -1081,6 +1081,37 @@ class TestPlot:
         with patch("builtins.print"):
             svc._plot_scatter(scores, labels, 3, tmp_path / "scatter.png")
 
+    def test_plots_skip_redundant_tight_layout(self, tmp_path, default_args):
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot  # noqa: F401
+            from matplotlib.figure import Figure
+        except ImportError:
+            pytest.skip("matplotlib not installed")
+
+        svc = SpectralDiscordance(default_args)
+        scores = np.asarray(
+            [
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [2.0, 0.5],
+                [3.0, 1.5],
+            ]
+        )
+        labels = np.asarray([0, 1, 0, 1])
+
+        with patch.object(
+            Figure,
+            "tight_layout",
+            side_effect=AssertionError("savefig bbox should handle tight cropping"),
+        ), patch("builtins.print"):
+            svc._plot_scatter(scores, labels, 2, tmp_path / "scatter.png")
+            svc._plot_eigengap(np.asarray([0.4, 0.2, 0.1]), 2, tmp_path / "eigengap.png")
+
+        assert (tmp_path / "scatter.png").exists()
+        assert (tmp_path / "eigengap.png").exists()
+
     @patch("builtins.print")
     def test_plots_created(self, mocked_print):
         try:
