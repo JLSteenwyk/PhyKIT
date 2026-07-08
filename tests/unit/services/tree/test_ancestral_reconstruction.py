@@ -249,6 +249,24 @@ class TestTraitParsing:
         assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
         assert capsys.readouterr().err == ""
 
+    def test_single_trait_ordered_all_shared_skips_sets(
+        self, default_args, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("raccoon\t1.04\nbear\t2.39\nweasel\t-0.30\n")
+        svc = AncestralReconstruction(default_args)
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_single_trait_data(
+            str(trait_file), ["raccoon", "bear", "weasel"]
+        )
+
+        assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
+        assert builtins.set is fail_set
+
     def test_single_trait_wrong_column_count(self, default_args, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
@@ -344,6 +362,29 @@ class TestTraitParsing:
 
         assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
         assert capsys.readouterr().err == ""
+
+    def test_multi_trait_ordered_all_shared_skips_sets(
+        self, default_args, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tbody_mass\tlength\n"
+            "raccoon\t1.04\t10\n"
+            "bear\t2.39\t20\n"
+            "weasel\t-0.30\t30\n"
+        )
+        svc = AncestralReconstruction(default_args)
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_multi_trait_data(
+            str(trait_file), ["raccoon", "bear", "weasel"], "body_mass"
+        )
+
+        assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
+        assert builtins.set is fail_set
 
     def test_file_not_found(self, default_args):
         svc = AncestralReconstruction(default_args)
@@ -2012,6 +2053,30 @@ class TestDiscreteTraitParsing:
         }
         assert capsys.readouterr().err == ""
 
+    def test_single_col_ordered_all_shared_skips_sets(
+        self, discrete_args, tmp_path, monkeypatch
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text(
+            "raccoon\tomnivore\nbear\tomnivore\nweasel\tcarnivore\n"
+        )
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_discrete_trait_data_single(
+            str(trait_file), ["raccoon", "bear", "weasel"]
+        )
+
+        assert traits == {
+            "raccoon": "omnivore",
+            "bear": "omnivore",
+            "weasel": "carnivore",
+        }
+        assert builtins.set is fail_set
+
     def test_single_col_wrong_column_count_error(self, discrete_args, tmp_path):
         svc = AncestralReconstruction(discrete_args)
         trait_file = tmp_path / "states.tsv"
@@ -2085,6 +2150,35 @@ class TestDiscreteTraitParsing:
             "weasel": "nocturnal",
         }
         assert capsys.readouterr().err == ""
+
+    def test_multi_col_ordered_all_shared_skips_sets(
+        self, discrete_args, tmp_path, monkeypatch
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text(
+            "taxon\tdiet\tactivity\n"
+            "raccoon\tomnivore\tnocturnal\n"
+            "bear\tomnivore\tdiurnal\n"
+            "weasel\tcarnivore\tnocturnal\n"
+        )
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_discrete_trait_data_multi(
+            str(trait_file),
+            ["raccoon", "bear", "weasel"],
+            "activity",
+        )
+
+        assert traits == {
+            "raccoon": "nocturnal",
+            "bear": "diurnal",
+            "weasel": "nocturnal",
+        }
+        assert builtins.set is fail_set
 
     def test_multi_col_wrong_column_count_error(self, discrete_args, tmp_path):
         svc = AncestralReconstruction(discrete_args)

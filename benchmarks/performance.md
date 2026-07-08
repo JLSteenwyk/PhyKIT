@@ -2403,6 +2403,7 @@ Results:
 | `AncestralReconstruction._parse_discrete_trait_data_multi` streaming parser | 300k-row categorical TSV, 5 state columns, all taxa shared | 0.263099s | 0.257110s | 1.02x |
 | `AncestralReconstruction._parse_discrete_trait_data_multi` all-shared parser fast path | 300k-row categorical TSV, 5 state columns, all taxa shared | 0.242633s | 0.132431s | 1.83x |
 | `AncestralReconstruction._parse_discrete_trait_data_multi` stripped comment check | 300k-row categorical TSV, 4 state columns, whitespace-prefixed comments/blanks, all taxa shared | 0.394656s | 0.370798s | 1.06x |
+| `AncestralReconstruction` ordered exact trait parser validation | 150k-row continuous single/multi and discrete single/multi trait files whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 0.805251s | 0.675865s | 1.19x |
 | `ancestral_reconstruction` module import via lazy discrete SciPy helpers | cold process import for ancestral-reconstruction command module | 0.475903s | 0.392662s | 1.2x |
 | `ancestral_reconstruction` module import without eager NumPy | cold subprocess import after lazy NumPy proxies in command and discrete helper | 0.081936s | 0.034135s | 2.40x |
 | `ancestral_reconstruction` module import without eager runtime helpers | cold subprocess import after lazy pickle, VCV, discrete-model, plot, circular-layout, and color-helper proxies | 0.036479s | 0.027797s | 1.31x |
@@ -8030,7 +8031,10 @@ Profiling summary:
   shared-taxon filtering. A later parser pass returns immediately for exact
   tree/trait taxon matches after all rows are validated and at least three taxa
   are shared, avoiding shared/warning set construction while preserving
-  too-few-shared-taxa errors.
+  too-few-shared-taxa errors. A follow-up ordered-exact parser pass recognizes
+  tree-tip-order matches before building taxon sets across continuous and
+  discrete single/multi trait parsers, preserving the set-backed fallback for
+  reordered and partial files.
 - `FaithsPD.calculate_faiths_pd` baseline time used Biopython
   `common_ancestor()` and searched each root-to-tip path to exclude branches at
   or above the community MRCA. The optimized path caches each community
