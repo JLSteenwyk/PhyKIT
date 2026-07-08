@@ -31,6 +31,28 @@ assert "phykit.helpers.json_output" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_phylo_caches_resolved_draw_ascii(monkeypatch):
+    calls = []
+
+    def cached_draw_ascii(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "cached"
+
+    def uncached_draw_ascii(*_args, **_kwargs):
+        return "uncached"
+
+    lazy_phylo = print_tree_module._LazyPhylo()
+    monkeypatch.setattr(Phylo, "draw_ascii", cached_draw_ascii)
+
+    assert lazy_phylo.draw_ascii("tree") == "cached"
+
+    monkeypatch.setattr(Phylo, "draw_ascii", uncached_draw_ascii)
+
+    assert lazy_phylo.draw_ascii("tree2") == "cached"
+    assert lazy_phylo.__dict__["draw_ascii"] is cached_draw_ascii
+    assert calls == [(("tree",), {}), (("tree2",), {})]
+
+
 class TestPrintTree(object):
     def test_init_sets_tree_file_path(self, args):
         t = PrintTree(args)

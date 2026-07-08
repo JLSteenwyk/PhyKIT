@@ -1817,6 +1817,7 @@ Results:
 | `PrintTree._remove_standard_tree_branch_lengths` one-pass traversal | balanced 65536-tip tree, clear every branch length | 0.014211s | 0.012182s | 1.17x |
 | `PrintTree._remove_standard_tree_branch_lengths` localized stack operations | balanced 131072-tip tree, clear every branch length, side-by-side previous direct helper median | 0.031891s | 0.026640s | 1.20x |
 | `print_tree` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.draw_ascii` proxy | 0.130837s | 0.025049s | 5.22x |
+| `PrintTree._LazyPhylo.draw_ascii` cached callable | 10k / 100k / 1M repeated no-op draw calls after first Bio.Phylo resolution | 0.018983625s / 0.099354541s / 1.307676458s | 0.001373937s / 0.041097083s / 0.169500750s | 13.82x / 2.42x / 7.71x |
 | `PrintTree.run` no-remove cached read-only tree setup | balanced 32768-tip cached tree, ASCII rendering mocked | 0.389771s | 0.000138s | 2824.43x |
 | `print_tree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006284s | 0.005009s | 1.25x |
 | `print_tree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only aliases to built-in annotations | 0.006847s | 0.004296s | 1.59x |

@@ -13,7 +13,8 @@ class _LazyPhylo:
     def draw_ascii(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
 
-        return _Phylo.draw_ascii(*args, **kwargs)
+        self.draw_ascii = _Phylo.draw_ascii
+        return self.draw_ascii(*args, **kwargs)
 
 
 Phylo = _LazyPhylo()
