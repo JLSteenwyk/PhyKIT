@@ -139,12 +139,9 @@ class LBScore(Tree):
 
         if self.verbose:
             try:
-                lines = [
-                    f"{tip}\t{round(LBi, 4)}"
-                    for tip, LBi in zip(tips, LBis)
-                ]
-                if lines:
-                    print("\n".join(lines))
+                output = self._format_verbose_text_rows(tips, LBis)
+                if output:
+                    print(output)
             except BrokenPipeError:
                 pass
         else:
@@ -157,6 +154,15 @@ class LBScore(Tree):
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
         )
+
+    @staticmethod
+    def _format_verbose_text_rows(tips: list[str], lb_scores: list[float]) -> str:
+        row_count = min(len(tips), len(lb_scores))
+        lines = [None] * row_count
+        round_ = round
+        for idx in range(row_count):
+            lines[idx] = f"{tips[idx]}\t{round_(lb_scores[idx], 4)}"
+        return "\n".join(lines)
 
     @staticmethod
     def _calculate_distances_batch(tree_pickle, tip_pairs):

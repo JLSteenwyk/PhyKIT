@@ -678,6 +678,14 @@ assert "numpy" not in sys.modules
         captured = capsys.readouterr()
         assert captured.out == "a\t1.2346\nb\t-2.0\n"
 
+    def test_format_verbose_text_rows_preserves_order_rounding_and_zip_length(self):
+        observed = LBScore._format_verbose_text_rows(
+            ["a", "b", "c"],
+            [1.23456, -2.0],
+        )
+
+        assert observed == "a\t1.2346\nb\t-2.0"
+
     def test_run_verbose_empty_rows_prints_nothing(self, mocker, args, capsys):
         args.verbose = True
         args.json = False
