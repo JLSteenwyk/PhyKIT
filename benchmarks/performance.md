@@ -886,6 +886,8 @@ Results:
 | `TipToTipDistance.run` all-pairs text fast-series output | balanced 900-tip tree, 404,550 all-pairs rows, captured stdout identical to previous row-dictionary path | 1.707568s | 1.242154s | 1.37x |
 | `TipToTipDistance._format_all_pairwise_distances_fast` no-combo text formatter | balanced 1024-tip tree, all-pairs text output, side-by-side previous combo tuple allocation path | 3.034467s | 2.115951s | 1.43x |
 | `TipToTipDistance.calculate_all_pairwise_distances` no-combo JSON rows | balanced 512-tip / 1024-tip trees, all-pairs row dictionaries, side-by-side previous combo tuple allocation path | 0.523878s / 1.465658s | 0.267913s / 1.136608s | 1.96x / 1.29x |
+| `TipToTipDistance` no-combo JSON row preallocation | 1000 taxa, 499,500 all-pairs row dictionaries, side-by-side previous append-based no-combo formatter | 0.689341s | 0.608401s | 1.13x |
+| `TipToTipDistance` no-combo text line preallocation | 1000 taxa, 499,500 all-pairs text rows, side-by-side previous append-based no-combo formatter | 0.670855s | 0.580677s | 1.16x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` | balanced 32768-tip tree, opposite terminal tips | 0.1331s | 0.0189s | 7.1x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` child-list terminal check | balanced 65536-tip tree, opposite terminal tips, optimized helper baseline | 0.061879s | 0.052576s | 1.18x |
 | `TipToTipDistance.calculate_tip_to_tip_distance` binary child push | balanced 32768-tip / 65536-tip opposite terminal tips and 65536-tip nearby terminal tips, side-by-side previous `reversed(children)` single-pair traversal | 0.044132s / 0.140251s / 0.000080s | 0.034980s / 0.070132s / 0.000076s | 1.26x / 2.00x / 1.05x |
@@ -4851,7 +4853,9 @@ Profiling summary:
   newline-joined print while preserving plot status output and stdout text.
   Text-only all-pairs output also formats the fast pair/distance series
   directly, avoiding per-pair row dictionaries when JSON and plot output are
-  not requested.
+  not requested. No-combo all-pairs JSON and text formatters now preallocate
+  their exact output length before walking the upper triangle, avoiding repeated
+  list growth while preserving row order and rounding.
   Large all-pairs heatmap matrix construction now detects rows already in sorted
   upper-triangle order and fills the symmetric matrix from a dense distance
   vector, retaining the taxon-index dictionary fill for smaller matrices or

@@ -242,6 +242,31 @@ class TestTipToTipDistance:
             {"taxon_a": "c", "taxon_b": "d", "tip_to_tip_distance": 6.0},
         ]
 
+    def test_format_pairwise_rows_without_combos_preserves_order_and_rounding(
+        self,
+        args,
+    ):
+        service = TipToTipDistance(args)
+
+        rows = service._format_pairwise_rows_without_combos(
+            ["a", "b", "c"],
+            [1.23456, 2.0, 3.33335],
+        )
+
+        assert rows == [
+            {"taxon_a": "a", "taxon_b": "b", "tip_to_tip_distance": 1.2346},
+            {"taxon_a": "a", "taxon_b": "c", "tip_to_tip_distance": 2.0},
+            {"taxon_a": "b", "taxon_b": "c", "tip_to_tip_distance": 3.3333},
+        ]
+
+    def test_format_pairwise_distances_without_combos_preserves_text_order(self):
+        text = TipToTipDistance._format_pairwise_distances_without_combos(
+            ["a", "b", "c"],
+            [1.23456, 2.0, 3.33335],
+        )
+
+        assert text == "a\tb\t1.2346\na\tc\t2.0\nb\tc\t3.3333"
+
     def test_calculate_tip_to_tip_distance_fast_matches_biopython(self, args):
         service = TipToTipDistance(args)
         tree = Phylo.read(StringIO("(((A:1,B:2):3,C:4):5,D:6);"), "newick")

@@ -329,8 +329,8 @@ class TipToTipDistance(Tree):
                 )
             ]
 
-        rows = []
-        append = rows.append
+        row_count = (len(tips) * (len(tips) - 1)) // 2
+        rows = [None] * row_count
         round_ = round
         float_ = float
         idx = 0
@@ -338,13 +338,11 @@ class TipToTipDistance(Tree):
         for i in range(tip_count - 1):
             taxon_a = tips[i]
             for j in range(i + 1, tip_count):
-                append(
-                    {
-                        "taxon_a": taxon_a,
-                        "taxon_b": tips[j],
-                        "tip_to_tip_distance": round_(float_(distances[idx]), 4),
-                    }
-                )
+                rows[idx] = {
+                    "taxon_a": taxon_a,
+                    "taxon_b": tips[j],
+                    "tip_to_tip_distance": round_(float_(distances[idx]), 4),
+                }
                 idx += 1
         return rows
 
@@ -380,8 +378,8 @@ class TipToTipDistance(Tree):
         tips: list[str],
         distances: list[float],
     ) -> str:
-        lines = []
-        append = lines.append
+        row_count = (len(tips) * (len(tips) - 1)) // 2
+        lines = [None] * row_count
         round_ = round
         float_ = float
         idx = 0
@@ -389,8 +387,9 @@ class TipToTipDistance(Tree):
         for i in range(tip_count - 1):
             taxon_a = tips[i]
             for j in range(i + 1, tip_count):
-                append(
-                    f"{taxon_a}\t{tips[j]}\t{round_(float_(distances[idx]), 4)}"
+                lines[idx] = (
+                    f"{taxon_a}\t{tips[j]}\t"
+                    f"{round_(float_(distances[idx]), 4)}"
                 )
                 idx += 1
         return "\n".join(lines)
