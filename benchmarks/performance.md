@@ -931,6 +931,7 @@ Results:
 | `rf_distance` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.138859s | 0.043381s | 3.20x |
 | `rf_distance` module import without eager concurrent futures | cold subprocess import after lazy `ProcessPoolExecutor` proxy | 0.043023s | 0.025542s | 1.68x |
 | `rf_distance` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007791s | 0.006287s | 1.24x |
+| `RobinsonFouldsDistance._LazyPickle` cached batch helpers | 10k / 100k / 1M repeated no-op `loads(dumps(batch))` calls after first pickle resolution | 0.017023875s / 0.070822167s / 1.270905396s | 0.003644374s / 0.023846937s / 0.403470750s | 4.67x / 2.97x / 3.15x |
 | `rf_distance` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006557s | 0.004961s | 1.32x |
 | `rf_distance` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005337s | 0.003524s | 1.51x |
 | `KuhnerFelsensteinDistance.run` rooting-tip setup | balanced 65536-tip tree, first terminal lookup before rooting | 0.1238s | 0.000004s | 27506.1x |

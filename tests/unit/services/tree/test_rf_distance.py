@@ -1,4 +1,5 @@
 import copy
+import pickle as stdlib_pickle
 import pytest
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from io import StringIO
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+import phykit.services.tree.rf_distance as rf_distance_module
 from phykit.services.tree.rf_distance import RobinsonFouldsDistance
 
 
@@ -24,6 +26,43 @@ assert "numpy" not in sys.modules
 assert "concurrent.futures" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_pickle_caches_resolved_batch_helpers(monkeypatch):
+    calls = []
+
+    def cached_dumps(*args, **kwargs):
+        calls.append(("dumps", args, kwargs))
+        return args[0]
+
+    def cached_loads(*args, **kwargs):
+        calls.append(("loads", args, kwargs))
+        return args[0]
+
+    def uncached_dumps(*_args, **_kwargs):
+        return "uncached-dumps"
+
+    def uncached_loads(*_args, **_kwargs):
+        return "uncached-loads"
+
+    lazy_pickle = rf_distance_module._LazyPickle()
+    monkeypatch.setattr(stdlib_pickle, "dumps", cached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", cached_loads)
+
+    assert lazy_pickle.loads(lazy_pickle.dumps("batch")) == "batch"
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", uncached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", uncached_loads)
+
+    assert lazy_pickle.loads(lazy_pickle.dumps("batch2")) == "batch2"
+    assert lazy_pickle.__dict__["dumps"] is cached_dumps
+    assert lazy_pickle.__dict__["loads"] is cached_loads
+    assert calls == [
+        ("dumps", ("batch",), {}),
+        ("loads", ("batch",), {}),
+        ("dumps", ("batch2",), {}),
+        ("loads", ("batch2",), {}),
+    ]
 
 
 @pytest.fixture
