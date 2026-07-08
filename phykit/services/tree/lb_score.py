@@ -108,6 +108,9 @@ def _as_completed_with_optional_progress(futures, num_combos):
 
 
 class LBScore(Tree):
+    MP_MIN_DISTANCE_PAIRS = 500_000
+    MAX_MP_WORKERS = 8
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"], verbose=parsed["verbose"])
@@ -192,8 +195,8 @@ class LBScore(Tree):
             _, distances = fast_result
             return sum(distances) / num_combos if num_combos else 0
 
-        # For small datasets, use sequential processing
-        if num_combos < 100:
+        # For small/medium fallback datasets, multiprocessing overhead dominates.
+        if num_combos < self.MP_MIN_DISTANCE_PAIRS:
             total_dist = sum(
                 tree.distance(tip1, tip2)
                 for tip1, tip2 in itertools.combinations(tips, 2)
@@ -204,7 +207,7 @@ class LBScore(Tree):
             cpu_count = mp.cpu_count()
             batch_size = max(50, num_combos // cpu_count)
 
-            with ProcessPoolExecutor(max_workers=min(cpu_count, 8)) as executor:
+            with ProcessPoolExecutor(max_workers=min(cpu_count, self.MAX_MP_WORKERS)) as executor:
                 futures = []
                 for batch in self._batched_tip_pairs(tips, batch_size):
                     futures.append(
@@ -296,7 +299,7 @@ class LBScore(Tree):
         batch_size = max(10, len(tips) // cpu_count)
         tree_pickle = pickle.dumps(tree)
 
-        with ProcessPoolExecutor(max_workers=min(cpu_count, 8)) as executor:
+        with ProcessPoolExecutor(max_workers=min(cpu_count, self.MAX_MP_WORKERS)) as executor:
             # Keep track of batch order
             future_to_index = {}
 

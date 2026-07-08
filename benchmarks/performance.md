@@ -1904,6 +1904,7 @@ Results:
 | `LBScore._historical_other_taxa_denominator` large-tip character scan | 10k / 200k ordinary multi-character taxon names, side-by-side previous per-tip `set(tip)` allocation with small-tip path preserved | 0.011693s / 0.256935s | 0.007688s / 0.196247s | 1.52x / 1.31x |
 | `LBScore.calculate_average_distance_of_taxon_to_other_taxa` fallback tip-set reuse | 1000 fallback taxon names, side-by-side previous per-tip `set(tips)` construction while preserving `set(tip)` behavior | 0.024459s | 0.009492s | 2.58x |
 | `LBScore.calculate_average_distance_between_tips` fallback streaming pair batches | 2000 fallback tips, 1,999,000 pair batch setup, side-by-side previous full pair-list slicing | 0.484847s | 0.317065s | 1.53x |
+| `LBScore.calculate_average_distance_between_tips` fallback multiprocessing threshold | 15-tip nonstandard fallback tree, 105 pair distances, side-by-side previous low process-pool cutoff | 0.030622s | 0.000210s | 145.93x |
 | `LBScore._calculate_lb_components_fast` postorder child push | balanced 32768-tip tree, linear component helper, side-by-side previous `reversed(children)` setup | 0.159546s | 0.132146s | 1.21x |
 | `LBScore._calculate_lb_components_fast` unique-tip setup | 200k unique tip names, side-by-side previous duplicate-check set plus calculation set | 0.074478458s | 0.023306067s | 3.20x |
 | `LBScore.calculate_lb_score_per_taxa` without NumPy startup | cold subprocess, 32768 average-distance values transformed to LB scores | 0.098413s | 0.029658s | 3.32x |
@@ -6928,7 +6929,10 @@ Profiling summary:
   score values. The fallback parallel setup now reads `mp.cpu_count()` once per
   call and reuses it for batch sizing and worker sizing. The lazy
   multiprocessing proxy now caches the imported module after first use while
-  preserving direct stdlib monkeypatch visibility.
+  preserving direct stdlib monkeypatch visibility. The fallback average
+  distance multiprocessing cutoff is now much higher, so medium nonstandard
+  tree workloads stay sequential instead of paying process startup and
+  tree-pickling overhead.
 - `Saturation.loop_through_combos_and_calculate_pds_and_pis` reuses the cached
   tree-distance helper for patristic distances while preserving combo order and
   the existing uncorrected-distance calculations. When cached pairwise

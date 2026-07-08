@@ -150,10 +150,27 @@ class TestLBScore(object):
         assert [len(batch) for batch in batches] == [3, 3, 3, 1]
         assert observed_pairs == list(combinations(tips, 2))
 
+    def test_calculate_average_distance_between_tips_medium_fallback_skips_executor(
+        self, mocker, args
+    ):
+        t = LBScore(args)
+        mocked_executor = mocker.patch("phykit.services.tree.lb_score.ProcessPoolExecutor")
+
+        tree = _IndexedDummyTree()
+        tips = [f"tip{i}" for i in range(15)]
+        pairs = list(combinations(tips, 2))
+        expected = sum(tree.distance(t1, t2) for t1, t2 in pairs) / len(pairs)
+
+        result = t.calculate_average_distance_between_tips(tips, tree)
+
+        assert result == pytest.approx(expected)
+        mocked_executor.assert_not_called()
+
     def test_calculate_average_distance_between_tips_parallel_path(
         self, mocker, args
     ):
         t = LBScore(args)
+        t.MP_MIN_DISTANCE_PAIRS = 100
 
         created_executors = []
 
