@@ -1,8 +1,10 @@
 from argparse import Namespace
 import importlib
+import multiprocessing
 import subprocess
 import sys
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -111,7 +113,8 @@ def test_module_import_does_not_import_biopython_align_or_tqdm():
 import sys
 import phykit.services.alignment.pairwise_identity as module
 assert hasattr(module.np, "__getattr__")
-assert hasattr(module.mp, "__getattr__")
+assert callable(module.mp.cpu_count)
+assert callable(module.mp.Pool)
 assert callable(module.print_json)
 assert callable(module.print_summary_statistics)
 assert "typing" not in sys.modules
@@ -126,6 +129,19 @@ assert "tqdm" not in sys.modules
 assert "Bio.AlignIO" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable():
+    lazy_mp = pairwise_identity_module._LazyMultiprocessing()
+
+    with patch.object(multiprocessing, "cpu_count", return_value=11):
+        assert lazy_mp.cpu_count() == 11
+        assert lazy_mp._module is multiprocessing
+
+    with patch.object(multiprocessing, "cpu_count", return_value=13) as cpu_count:
+        assert lazy_mp.cpu_count() == 13
+
+    cpu_count.assert_called_once_with()
 
 
 def test_lazy_numpy_caches_module_and_attributes():

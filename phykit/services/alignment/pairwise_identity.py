@@ -8,10 +8,21 @@ from .base import Alignment
 
 
 class _LazyMultiprocessing:
-    def __getattr__(self, name):
-        import multiprocessing as _mp
+    _module = None
 
-        return getattr(_mp, name)
+    def _load(self):
+        module = self._module
+        if module is None:
+            import multiprocessing as module
+
+            self._module = module
+        return module
+
+    def cpu_count(self):
+        return self._load().cpu_count()
+
+    def Pool(self, *args, **kwargs):
+        return self._load().Pool(*args, **kwargs)
 
 
 mp = _LazyMultiprocessing()
