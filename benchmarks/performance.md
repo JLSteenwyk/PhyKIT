@@ -1779,6 +1779,7 @@ Results:
 | `discrete_models._matrix_exp_eigendecomp_context` cheap condition estimate | nonsymmetric real-eigensystem three-state ARD context setup, 30k repeated calls, side-by-side previous SVD-based `np.linalg.cond` guard, same accept/reject result | 2.697092s | 2.258407s | 1.19x |
 | `discrete_models._felsenstein_loglik_er_rate` indexed transition cache | sample `tree_simple` three-state ER likelihood, 5000 repeated prepared evaluations, side-by-side previous per-call branch-length dict cache, identical log-likelihood | 0.576060s | 0.524644s | 1.10x |
 | `discrete_models._felsenstein_loglik_er_rate` small-state child likelihood sums | balanced 1024-tip ER likelihoods with 3 / 4 / 8 states, side-by-side previous ndarray `sum()` child-likelihood total, identical log-likelihoods | 0.038462s / 0.039004s / 0.038401s | 0.030876s / 0.032862s / 0.038367s | 1.25x / 1.19x / 1.00x |
+| `discrete_models._felsenstein_loglik_er_rate` small-state scalar rows | balanced 32768-tip ER likelihoods with 3 / 4 states, side-by-side previous per-node `np.ones` row update, identical underflow guard result | 3.621080s / 3.527726s | 1.669703s / 1.754470s | 2.17x / 2.01x |
 | `FitDiscrete.run` shared pruning context | balanced 8192-tip tree, ER/SYM/ARD setup context reuse | 0.045272s | 0.014442s | 3.13x |
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
 | `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |
@@ -6656,7 +6657,10 @@ Profiling summary:
   dispatch overhead in repeated binary pruning evaluations.
   The multi-state ER rate likelihood now computes the child likelihood total
   with direct scalar addition for three- and four-state models, retaining ndarray
-  `sum()` for wider state counts where it benchmarks better.
+  `sum()` for wider state counts where it benchmarks better. A follow-up
+  small-state pass updates three- and four-state ER likelihood rows with scalar
+  accumulators instead of allocating a tiny `np.ones` row at each internal node,
+  preserving the same root likelihood and underflow guard.
   A later small-state pass lets prepared pruning for three- and four-state
   matrices with real eigensystems reuse one eigendecomposition per likelihood
   evaluation and compute branch transition matrices from scalar exponentials.

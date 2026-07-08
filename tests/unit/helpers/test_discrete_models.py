@@ -963,6 +963,16 @@ class TestFelsensteinPruning:
             ),
             raising=False,
         )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "ones",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError(
+                    "three-state ER rate likelihood should use scalar rows"
+                )
+            ),
+            raising=False,
+        )
 
         assert _felsenstein_loglik_er_rate(
             context,
@@ -1018,6 +1028,14 @@ class TestFelsensteinPruning:
             "exp",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(
                 AssertionError("four-state ER rate likelihood should use math.exp")
+            ),
+            raising=False,
+        )
+        monkeypatch.setattr(
+            discrete_models.np,
+            "ones",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("four-state ER rate likelihood should use scalar rows")
             ),
             raising=False,
         )

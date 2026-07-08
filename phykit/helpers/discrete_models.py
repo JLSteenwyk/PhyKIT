@@ -597,6 +597,91 @@ def _felsenstein_loglik_er_rate(context, rate: float, pi: np.ndarray) -> float:
         entries = internal_entries
     inv_k = 1.0 / k
 
+    if k == 3:
+        for idx, children, lengths in entries:
+            lik0 = 1.0
+            lik1 = 1.0
+            lik2 = 1.0
+            for child_idx, t in zip(children, lengths):
+                if use_indexed_lengths:
+                    transition = transition_cache[t]
+                    length = unique_branch_lengths[t]
+                else:
+                    transition = transition_cache.get(t)
+                    length = t
+                if transition is None:
+                    decay = math.exp(-3.0 * rate * length)
+                    different = inv_k * (1.0 - decay)
+                    transition = (decay, different)
+                    transition_cache[t] = transition
+                else:
+                    decay, different = transition
+                child_lik = cond_liks[child_idx]
+                child0 = child_lik[0]
+                child1 = child_lik[1]
+                child2 = child_lik[2]
+                child_total = child0 + child1 + child2
+                lik0 *= (different * child_total) + (decay * child0)
+                lik1 *= (different * child_total) + (decay * child1)
+                lik2 *= (different * child_total) + (decay * child2)
+            cond_liks[idx, 0] = lik0
+            cond_liks[idx, 1] = lik1
+            cond_liks[idx, 2] = lik2
+
+        root_lik = cond_liks[context["root_index"]]
+        total_lik = (pi[0] * root_lik[0]) + (pi[1] * root_lik[1]) + (
+            pi[2] * root_lik[2]
+        )
+        if total_lik <= 0:
+            return -1e20
+        return math.log(total_lik)
+
+    if k == 4:
+        for idx, children, lengths in entries:
+            lik0 = 1.0
+            lik1 = 1.0
+            lik2 = 1.0
+            lik3 = 1.0
+            for child_idx, t in zip(children, lengths):
+                if use_indexed_lengths:
+                    transition = transition_cache[t]
+                    length = unique_branch_lengths[t]
+                else:
+                    transition = transition_cache.get(t)
+                    length = t
+                if transition is None:
+                    decay = math.exp(-4.0 * rate * length)
+                    different = inv_k * (1.0 - decay)
+                    transition = (decay, different)
+                    transition_cache[t] = transition
+                else:
+                    decay, different = transition
+                child_lik = cond_liks[child_idx]
+                child0 = child_lik[0]
+                child1 = child_lik[1]
+                child2 = child_lik[2]
+                child3 = child_lik[3]
+                child_total = child0 + child1 + child2 + child3
+                lik0 *= (different * child_total) + (decay * child0)
+                lik1 *= (different * child_total) + (decay * child1)
+                lik2 *= (different * child_total) + (decay * child2)
+                lik3 *= (different * child_total) + (decay * child3)
+            cond_liks[idx, 0] = lik0
+            cond_liks[idx, 1] = lik1
+            cond_liks[idx, 2] = lik2
+            cond_liks[idx, 3] = lik3
+
+        root_lik = cond_liks[context["root_index"]]
+        total_lik = (
+            (pi[0] * root_lik[0])
+            + (pi[1] * root_lik[1])
+            + (pi[2] * root_lik[2])
+            + (pi[3] * root_lik[3])
+        )
+        if total_lik <= 0:
+            return -1e20
+        return math.log(total_lik)
+
     for idx, children, lengths in entries:
         lik = np.ones(k)
         for child_idx, t in zip(children, lengths):
