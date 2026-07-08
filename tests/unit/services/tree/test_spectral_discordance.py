@@ -999,13 +999,20 @@ class TestRun:
             def __iter__(self):
                 raise AssertionError("5-PC output should not use row iteration")
 
+        class Labels:
+            def tolist(self):
+                return [2]
+
+            def __iter__(self):
+                raise AssertionError("fixed-column output should bulk-convert labels")
+
         svc = SpectralDiscordance(default_args)
 
         payload = svc._format_json(
             FivePcScores(),
             np.array([0.4, 0.3, 0.2, 0.1, 0.05]),
             {},
-            np.array([2]),
+            Labels(),
             3,
             np.array([0.7]),
             5,

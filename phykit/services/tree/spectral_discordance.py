@@ -258,17 +258,22 @@ class SpectralDiscordance(Tree):
         ]
 
         gene_tree_indices = range(1, G + 1)
+        label_values = (
+            labels.tolist()
+            if hasattr(labels, "tolist")
+            else [int(label) for label in labels]
+        )
         if show_pcs == 2:
             col1 = scores[:, 0].tolist()
             col2 = scores[:, 1].tolist()
             score_dict = {
                 f"gene_tree_{g}": {
-                    "PC1": float(val1),
-                    "PC2": float(val2),
-                    "cluster": int(label),
+                    "PC1": val1,
+                    "PC2": val2,
+                    "cluster": label,
                 }
                 for g, val1, val2, label in zip(
-                    gene_tree_indices, col1, col2, labels
+                    gene_tree_indices, col1, col2, label_values
                 )
             }
         elif show_pcs == 3:
@@ -277,13 +282,13 @@ class SpectralDiscordance(Tree):
             col3 = scores[:, 2].tolist()
             score_dict = {
                 f"gene_tree_{g}": {
-                    "PC1": float(val1),
-                    "PC2": float(val2),
-                    "PC3": float(val3),
-                    "cluster": int(label),
+                    "PC1": val1,
+                    "PC2": val2,
+                    "PC3": val3,
+                    "cluster": label,
                 }
                 for g, val1, val2, val3, label in zip(
-                    gene_tree_indices, col1, col2, col3, labels
+                    gene_tree_indices, col1, col2, col3, label_values
                 )
             }
         elif show_pcs == 4:
@@ -293,14 +298,14 @@ class SpectralDiscordance(Tree):
             col4 = scores[:, 3].tolist()
             score_dict = {
                 f"gene_tree_{g}": {
-                    "PC1": float(val1),
-                    "PC2": float(val2),
-                    "PC3": float(val3),
-                    "PC4": float(val4),
-                    "cluster": int(label),
+                    "PC1": val1,
+                    "PC2": val2,
+                    "PC3": val3,
+                    "PC4": val4,
+                    "cluster": label,
                 }
                 for g, val1, val2, val3, val4, label in zip(
-                    gene_tree_indices, col1, col2, col3, col4, labels
+                    gene_tree_indices, col1, col2, col3, col4, label_values
                 )
             }
         elif show_pcs == 5:
@@ -311,15 +316,15 @@ class SpectralDiscordance(Tree):
             col5 = scores[:, 4].tolist()
             score_dict = {
                 f"gene_tree_{g}": {
-                    "PC1": float(val1),
-                    "PC2": float(val2),
-                    "PC3": float(val3),
-                    "PC4": float(val4),
-                    "PC5": float(val5),
-                    "cluster": int(label),
+                    "PC1": val1,
+                    "PC2": val2,
+                    "PC3": val3,
+                    "PC4": val4,
+                    "PC5": val5,
+                    "cluster": label,
                 }
                 for g, val1, val2, val3, val4, val5, label in zip(
-                    gene_tree_indices, col1, col2, col3, col4, col5, labels
+                    gene_tree_indices, col1, col2, col3, col4, col5, label_values
                 )
             }
         else:
@@ -348,7 +353,7 @@ class SpectralDiscordance(Tree):
                 )
             },
             "top_loadings": top_loadings,
-            "cluster_assignments": [int(l) for l in labels],
+            "cluster_assignments": label_values,
             "eigengap_values": [float(g) for g in eigengaps],
         }
 
