@@ -10,6 +10,8 @@ from ...errors import PhykitUserError
 
 
 _STDTR = None
+_CHO_FACTOR = None
+_CHO_SOLVE = None
 
 
 class _LazyNumpy:
@@ -61,15 +63,25 @@ def subset_traits_to_ordered_shared_taxa(*args, **kwargs):
 
 
 def cho_factor(*args, **kwargs):
-    from scipy.linalg import cho_factor as _cho_factor
+    global _CHO_FACTOR
 
-    return _cho_factor(*args, **kwargs)
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
 
 
 def cho_solve(*args, **kwargs):
-    from scipy.linalg import cho_solve as _cho_solve
+    global _CHO_SOLVE
 
-    return _cho_solve(*args, **kwargs)
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
 
 
 def _t_two_tailed_p_values(t_stats: np.ndarray, df: int) -> np.ndarray:

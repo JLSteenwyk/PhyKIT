@@ -2636,6 +2636,7 @@ Results:
 | `trait_correlation` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005491s | 0.003498s | 1.57x |
 | `TraitCorrelation.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, VCV build, correlations, plotting, and output mocked | 0.231448s | 0.000038s | 6090.74x |
 | `TraitCorrelation._compute_correlation_matrices_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV x 10-trait correlation computations, SciPy already warm | 0.065236s | 0.051288s | 1.27x |
+| `TraitCorrelation._compute_correlation_matrices_cholesky` cached SciPy Cholesky wrappers | 350 repeated 64-taxon SPD VCV x 8-trait correlation computations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.102479s | 0.093648s | 1.09x |
 | `NetworkSignal._validate_tree` direct traversal | balanced 65536-tip tree, min-tip, branch-length, and polytomy checks | 0.5475s | 0.0253s | 21.6x |
 | `NetworkSignal._validate_tree` unordered validation scan | balanced 131072-tip tree, min-tip, branch-length, and polytomy checks, optimized helper baseline | 0.030270s | 0.020724s | 1.46x |
 | `NetworkSignal._compute_network_vcv` vectorized covariance assembly | balanced 2048-tip tree DAG with one hybrid edge | 2.500761s | 0.045117s | 55.4x |
@@ -8582,7 +8583,9 @@ Profiling summary:
   p-values through lazy `scipy.special.stdtr`. A subsequent startup pass
   replaced eager `scipy.linalg` imports with same-name lazy wrappers, so
   import-only callers avoid linalg startup while correlation computation still
-  uses the same Cholesky implementations. A later p-value pass evaluates only
+  uses the same Cholesky implementations. Those wrappers now cache the resolved
+  Cholesky functions after first use, avoiding import dispatch in repeated
+  correlation batches. A later p-value pass evaluates only
   upper-triangle trait pairs and mirrors the results into the lower triangle,
   halving the Student-t survival-probability work while preserving symmetric
   p-values. The lazy `stdtr` wrapper now caches the resolved SciPy special

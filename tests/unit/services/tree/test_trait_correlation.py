@@ -130,6 +130,50 @@ def test_t_two_tailed_p_values_cache_scipy_special(monkeypatch):
     assert first == pytest.approx(second)
 
 
+def test_cholesky_wrappers_cache_scipy_linalg(monkeypatch):
+    previous_cho_factor = trait_correlation_module._CHO_FACTOR
+    previous_cho_solve = trait_correlation_module._CHO_SOLVE
+    trait_correlation_module._CHO_FACTOR = None
+    trait_correlation_module._CHO_SOLVE = None
+
+    try:
+        factor = trait_correlation_module.cho_factor(
+            np.eye(2), lower=True, check_finite=False
+        )
+        first = trait_correlation_module.cho_solve(
+            factor, np.ones(2), check_finite=False
+        )
+        cached_cho_factor = trait_correlation_module._CHO_FACTOR
+        cached_cho_solve = trait_correlation_module._CHO_SOLVE
+        assert cached_cho_factor is not None
+        assert cached_cho_solve is not None
+
+        original_import = __import__
+
+        def fail_linalg_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "scipy.linalg" or name.startswith("scipy.linalg."):
+                raise AssertionError(
+                    "SciPy linalg functions should be reused after first resolution"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr("builtins.__import__", fail_linalg_import)
+
+        factor = trait_correlation_module.cho_factor(
+            np.eye(2), lower=True, check_finite=False
+        )
+        second = trait_correlation_module.cho_solve(
+            factor, np.ones(2), check_finite=False
+        )
+
+        assert trait_correlation_module._CHO_FACTOR is cached_cho_factor
+        assert trait_correlation_module._CHO_SOLVE is cached_cho_solve
+        assert second == pytest.approx(first)
+    finally:
+        trait_correlation_module._CHO_FACTOR = previous_cho_factor
+        trait_correlation_module._CHO_SOLVE = previous_cho_solve
+
+
 def _make_args(output_path, **overrides):
     defaults = dict(
         tree=TREE_SIMPLE,
