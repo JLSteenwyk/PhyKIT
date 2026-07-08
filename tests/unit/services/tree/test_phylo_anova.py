@@ -404,7 +404,14 @@ class TestPhyloAnova:
 
         monkeypatch.setattr(phylo_anova_module, "itemgetter", tracking_itemgetter)
         traits = {
-            f"t{idx}": [float(idx), f"g{idx % 2}", float(idx + 1)]
+            f"t{idx}": [
+                float(idx),
+                f"g{idx % 2}",
+                float(idx + 1),
+                float(idx + 2),
+                float(idx + 3),
+                float(idx + 4),
+            ]
             for idx in range(10)
         }
 
@@ -412,12 +419,12 @@ class TestPhyloAnova:
             traits,
             sorted(traits),
             group_idx=1,
-            n_cols=3,
+            n_cols=6,
         )
 
-        assert calls == [(0, 2)]
+        assert calls == [(0, 2, 3, 4, 5)]
         assert len(groups) == 10
-        assert Y.shape == (10, 2)
+        assert Y.shape == (10, 5)
 
     def test_build_design_matrix_uses_cached_group_lookup(self):
         class NoIndexList(list):

@@ -410,6 +410,43 @@ class TestRun:
         validate.assert_called_once_with(tree)
         assert tree_to_dag.call_args.args[0] is tree
 
+    def test_run_reuses_name_lookup_for_user_hybrid_edges(self, mocker):
+        args = Namespace(
+            tree="tree.tre",
+            trait_data="traits.tsv",
+            method="blombergs_k",
+            permutations=0,
+            hybrid=["B:D:0.3", "C:E:0.2"],
+            quartet_json=None,
+            json=False,
+        )
+        svc = NetworkSignal(args)
+        tree = _make_tree("(((A:1,B:1):0.5,C:1.5):0.5,(D:1,E:1):1);")
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0, "E": 5.0}
+        nodes, parents, tip_map = _build_five_taxon_dag()
+        original_add_hybrid_edge = NetworkSignal._add_hybrid_edge
+        lookup_ids = []
+
+        def tracking_add_hybrid_edge(*args, name_to_id=None):
+            assert name_to_id is not None
+            lookup_ids.append(id(name_to_id))
+            return original_add_hybrid_edge(*args, name_to_id=name_to_id)
+
+        mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(svc, "_validate_tree")
+        mocker.patch.object(svc, "get_tip_names_from_tree", return_value=list(traits))
+        mocker.patch.object(svc, "_parse_trait_file", return_value=traits)
+        mocker.patch.object(svc, "_tree_to_dag", return_value=(nodes, parents, tip_map))
+        mocker.patch.object(svc, "_add_hybrid_edge", side_effect=tracking_add_hybrid_edge)
+        mocker.patch.object(svc, "_compute_network_vcv", return_value=np.eye(5))
+        mocker.patch.object(svc, "_blombergs_k", return_value={"K": 1.0})
+        mocker.patch.object(svc, "_output")
+
+        svc.run()
+
+        assert len(lookup_ids) == 2
+        assert len(set(lookup_ids)) == 1
+
     def test_output_batches_hybrid_edges_with_indexed_donor_lookup(self, mocker):
         svc = NetworkSignal.__new__(NetworkSignal)
         svc.json_output = False
@@ -495,6 +532,23 @@ class TestAddHybridEdge:
         assert len(parents[recipient_id]) == 2
         gammas = sorted([entry[2] for entry in parents[recipient_id]])
         assert gammas == pytest.approx([0.3, 0.7])
+
+    def test_add_hybrid_edge_accepts_cached_name_lookup(self):
+        nodes, parents, tip_map = _build_simple_dag()
+        name_to_id = {v: k for k, v in tip_map.items()}
+        recipient_id = name_to_id["C"]
+
+        NetworkSignal._add_hybrid_edge(
+            nodes,
+            parents,
+            tip_map,
+            "B",
+            "C",
+            gamma=0.3,
+            name_to_id=name_to_id,
+        )
+
+        assert len(parents[recipient_id]) == 2
 
     def test_invalid_donor_raises(self):
         """Nonexistent donor raises PhykitUserError (SystemExit)."""

@@ -182,7 +182,15 @@ class NetworkSignal(Tree):
         return nodes, parents, tip_map
 
     @staticmethod
-    def _add_hybrid_edge(nodes, parents, tip_map, donor, recipient, gamma):
+    def _add_hybrid_edge(
+        nodes,
+        parents,
+        tip_map,
+        donor,
+        recipient,
+        gamma,
+        name_to_id=None,
+    ):
         """Make the recipient a hybrid node by adding a second parent edge
         from the donor's tree parent.
 
@@ -201,8 +209,10 @@ class NetworkSignal(Tree):
                 code=2,
             )
 
-        # Build name -> node_id map
-        name_to_id = {v: k for k, v in tip_map.items()}
+        # Build name -> node_id map only when the caller has not cached it
+        # across a batch of hybrid edges.
+        if name_to_id is None:
+            name_to_id = {v: k for k, v in tip_map.items()}
 
         if donor not in name_to_id:
             raise PhykitUserError(
@@ -805,6 +815,7 @@ class NetworkSignal(Tree):
         nodes, parents, tip_map = self._tree_to_dag(tree)
 
         # Add hybrid edges
+        name_to_id = None
         if self.quartet_json:
             try:
                 with open(self.quartet_json) as f:
@@ -818,16 +829,21 @@ class NetworkSignal(Tree):
                     code=2,
                 )
             edges = self._infer_hybrid_edges(quartet_data)
+            if edges:
+                name_to_id = {v: k for k, v in tip_map.items()}
             for edge in edges:
                 try:
                     self._add_hybrid_edge(
                         nodes, parents, tip_map,
                         edge["donor"], edge["recipient"], edge["gamma"],
+                        name_to_id=name_to_id,
                     )
                 except PhykitUserError as e:
                     print(f"Warning: skipping hybrid edge {edge['donor']} -> {edge['recipient']}: {e.messages[0]}", file=sys.stderr)
 
         if self.hybrid_edges:
+            if name_to_id is None:
+                name_to_id = {v: k for k, v in tip_map.items()}
             for edge_spec in self.hybrid_edges:
                 parts = edge_spec.split(":")
                 if len(parts) != 3:
@@ -846,7 +862,15 @@ class NetworkSignal(Tree):
                         [f"Invalid gamma value: '{gamma_str}'."],
                         code=2,
                     )
-                self._add_hybrid_edge(nodes, parents, tip_map, donor, recipient, gamma)
+                self._add_hybrid_edge(
+                    nodes,
+                    parents,
+                    tip_map,
+                    donor,
+                    recipient,
+                    gamma,
+                    name_to_id=name_to_id,
+                )
 
         # Compute VCV
         vcv = self._compute_network_vcv(nodes, parents, tip_map, ordered_names)

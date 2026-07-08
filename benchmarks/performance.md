@@ -2649,6 +2649,7 @@ Results:
 | `NetworkSignal._log_likelihood_cholesky` cached lazy NumPy attributes | 4500 repeated 64-taxon SPD VCV likelihood evaluations, SciPy already warm, side-by-side previous lazy proxy lookup path, identical likelihood and mean | 0.615552s | 0.426219s | 1.44x |
 | `NetworkSignal._pagels_lambda` | 260 taxa SPD VCV, single continuous trait, `max_lambda=1.0` | 0.7070s | 0.0638s | 11.1x |
 | `NetworkSignal.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, DAG construction, VCV, signal statistic, and output mocked | 0.497249s | 0.003029s | 164.16x |
+| `NetworkSignal.run` batched hybrid-edge name lookup | 20k-tip star DAG, 50 hybrid-edge additions, identical parent map | 0.075106s | 0.029542s | 2.54x |
 | `NetworkSignal._output` indexed hybrid donor lookup | 10k-tip network output with 2k hybrid recipients sharing a late donor parent, captured stdout | 1.392050s | 0.002664s | 522.62x |
 | `NetworkSignal._infer_hybrid_edges` topology index helper | 200k hybrid quartet JSON records, three alternating dominant topologies | 0.647379s | 0.552106s | 1.17x |
 | `NetworkSignal._infer_hybrid_edges` cached topology validation and gamma sums | 200k hybrid quartet JSON records, three alternating dominant topologies | 0.469039s | 0.190320s | 2.46x |
@@ -8655,6 +8656,9 @@ Profiling summary:
   dictionaries. Text output now also builds a parent-to-child index once for
   hybrid-edge donor reporting and emits the report in a single newline-joined
   print, avoiding a full tip-map scan for every reported hybrid recipient.
+  Batched user-provided and quartet-inferred hybrid edges now also share a
+  single taxon-name lookup, avoiding one full tip-map inversion per edge while
+  preserving `_add_hybrid_edge`'s standalone behavior.
   Quartet JSON hybrid-edge inference now uses a stable top-two topology-index
   helper, avoiding per-hybrid-quartet `max()+index()` and three-item `sorted()`
   calls while preserving first-index tie behavior. A follow-up inference pass
