@@ -668,6 +668,7 @@ Results:
 | `AlignmentSubsample._read_alignment` | 50k FASTA records, 12 bp each | 0.0508s | 0.0244s | 2.1x |
 | `AlignmentSubsample._read_alignment` shared case-preserving parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.047439s | 0.036622s | 1.30x |
 | `AlignmentSubsample._run_sites` site selection | 500 taxa x 10k sites, 5k sampled sites without replacement | 0.0911s | 0.0324s | 2.8x |
+| `AlignmentSubsample._sample_site_indices` range-backed sparse sampling | 1M sites, 10k without-replacement sampled indices / 100k bootstrap sampled indices, identical seeded index lists versus previous `list(range(...))` setup | 0.118131s / 0.313065s | 0.006998s / 0.057263s | 16.88x / 5.47x |
 | `AlignmentSubsample._select_site_ranges` list-backed slice join | 500 taxa x 100k sites, 10k sampled single-site ranges, identical selected sequences | 3.055759s | 1.235984s | 2.47x |
 | `AlignmentSubsample._run_sites` full-site non-bootstrap shortcut | 500 taxa x 10000 sites, selected site count equals alignment length, mocked FASTA write and summary output | 0.076459s | 0.000031s | 2459.84x |
 | `AlignmentSubsample._run_sites` full-site mapping reuse | 250k taxa x 120 sites, selected site count equals alignment length, mocked FASTA write and summary output, side-by-side previous dictionary copy | 0.012216s | 0.009435s | 1.29x |
@@ -4368,7 +4369,11 @@ Profiling summary:
   ranges while preserving the same selected sequence text. Length validation now
   compares each sequence to the first observed sequence length directly,
   avoiding a temporary length set and stopping at the first mismatch while
-  preserving the empty-alignment user error.
+  preserving the empty-alignment user error. Sparse million-site and bootstrap
+  sampling now pass `range(aln_len)` directly to `random`, avoiding a full
+  million-entry index list while preserving seeded selections; dense
+  without-replacement samples keep the list-backed path because it remains
+  faster in side-by-side cutoff checks.
 - `AlignmentSubsample._run_partitions` baseline time walked every selected
   partition and then every taxon, repeatedly looking up taxon sequences while
   collecting partition slices. The optimized path builds selected slice ranges

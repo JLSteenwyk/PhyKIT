@@ -15,6 +15,8 @@ def print_json(*args, **kwargs):
 
 _FASTA_WRITE_CHUNK_ROWS = 8192
 _PARTITION_WRITE_CHUNK_ROWS = 8192
+_RANGE_SITE_SAMPLE_MIN_LENGTH = 1_000_000
+_RANGE_SITE_SAMPLE_MAX_FRACTION = 0.1
 
 
 class AlignmentSubsample(Alignment):
@@ -154,12 +156,12 @@ class AlignmentSubsample(Alignment):
         if not self.bootstrap and n == aln_len:
             new_sequences = sequences
         else:
-            indices = list(range(aln_len))
-            if self.bootstrap:
-                selected_indices = rng.choices(indices, k=n)
-            else:
-                selected_indices = sorted(rng.sample(indices, k=n))
-
+            selected_indices = self._sample_site_indices(
+                rng,
+                aln_len,
+                n,
+                self.bootstrap,
+            )
             selected_ranges = self._selected_index_ranges(selected_indices)
             if len(selected_ranges) * 4 < len(selected_indices):
                 new_sequences: dict[str, str] = {
@@ -292,6 +294,24 @@ class AlignmentSubsample(Alignment):
             return rng.choices(items, k=n)
         else:
             return rng.sample(items, k=n)
+
+    @staticmethod
+    def _sample_site_indices(
+        rng,
+        aln_len: int,
+        n: int,
+        bootstrap: bool,
+    ) -> list[int]:
+        if bootstrap:
+            return rng.choices(range(aln_len), k=n)
+
+        if (
+            aln_len >= _RANGE_SITE_SAMPLE_MIN_LENGTH
+            and n <= aln_len * _RANGE_SITE_SAMPLE_MAX_FRACTION
+        ):
+            return sorted(rng.sample(range(aln_len), k=n))
+
+        return sorted(rng.sample(list(range(aln_len)), k=n))
 
     @staticmethod
     def _select_sites(seq: str, site_selector) -> str:

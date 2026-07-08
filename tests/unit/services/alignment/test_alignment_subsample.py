@@ -6,6 +6,7 @@ import tempfile
 from argparse import Namespace
 from operator import itemgetter
 
+import phykit.services.alignment.alignment_subsample as alignment_subsample_module
 from phykit.services.alignment.alignment_subsample import AlignmentSubsample
 from phykit.errors import PhykitUserError
 
@@ -275,6 +276,39 @@ class TestSitesMode:
             )
             AlignmentSubsample(args).run()
         assert _read_fasta(f"{prefix1}.fa") == _read_fasta(f"{prefix2}.fa")
+
+    def test_sample_site_indices_matches_list_backed_seeded_selection(
+        self, monkeypatch
+    ):
+        import random
+
+        monkeypatch.setattr(
+            alignment_subsample_module,
+            "_RANGE_SITE_SAMPLE_MIN_LENGTH",
+            100,
+        )
+        cases = [
+            (1000, 100, False),
+            (1000, 200, False),
+            (1000, 100, True),
+        ]
+        for aln_len, n, bootstrap in cases:
+            expected_rng = random.Random(20260708)
+            indices = list(range(aln_len))
+            if bootstrap:
+                expected = expected_rng.choices(indices, k=n)
+            else:
+                expected = sorted(expected_rng.sample(indices, k=n))
+
+            observed_rng = random.Random(20260708)
+            observed = AlignmentSubsample._sample_site_indices(
+                observed_rng,
+                aln_len,
+                n,
+                bootstrap,
+            )
+
+            assert observed == expected
 
     def test_sites_mode_full_nonbootstrap_reuses_parsed_sequences(
         self, tmp_path, monkeypatch
