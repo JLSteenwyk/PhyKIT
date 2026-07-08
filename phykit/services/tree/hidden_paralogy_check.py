@@ -53,6 +53,8 @@ class _LazyMultiprocessing:
 mp = _LazyMultiprocessing()
 
 class HiddenParalogyCheck(Tree):
+    MP_MIN_CLADES = 128
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"], clade=parsed["clade"])
@@ -121,8 +123,9 @@ class HiddenParalogyCheck(Tree):
         # Read clades
         clades = self.read_clades_file(self.clade)
 
-        # For small datasets, process sequentially
-        if len(clades) < 10:
+        # For small and medium clade lists, process startup and pickling overhead
+        # dominates the exact-clade and cached sequential paths.
+        if len(clades) < self.MP_MIN_CLADES:
             res_arr = []
             for clade in clades:
                 clade_of_interest = master_tree_tips.intersection(clade)

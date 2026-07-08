@@ -578,6 +578,7 @@ class TestHiddenParalogyCheck(unittest.TestCase):
     @patch('multiprocessing.Pool')
     def test_run_parallel_processing(self, mock_pool_class, mock_print):
         """Test run method with parallel processing (large dataset)"""
+        self.checker.MP_MIN_CLADES = 10
         # Setup mock tree
         mock_master_tree = Mock()
 
@@ -609,6 +610,27 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         mock_pool_class.assert_called_once()
         mock_pool.map.assert_called_once()
 
+        self.assertEqual(
+            mock_print.call_args.args[0].splitlines(),
+            ["monophyletic"] * 15,
+        )
+
+    @patch('builtins.print')
+    @patch('multiprocessing.Pool')
+    def test_run_medium_exact_clades_skip_pool(self, mock_pool_class, mock_print):
+        """Default processing keeps medium exact-clade lists sequential."""
+        tree = Phylo.read(StringIO("(((A,B),(C,D)),((E,F),(G,H)));"), "newick")
+        exact_clades = [["A", "B"], ["C", "D"], ["E", "F"]] * 5
+
+        self.checker.read_tree_file_unmodified = Mock(return_value=tree)
+        self.checker.get_tip_names_from_tree = Mock(
+            return_value=["A", "B", "C", "D", "E", "F", "G", "H"]
+        )
+        self.checker.read_clades_file = Mock(return_value=exact_clades)
+
+        self.checker.run()
+
+        mock_pool_class.assert_not_called()
         self.assertEqual(
             mock_print.call_args.args[0].splitlines(),
             ["monophyletic"] * 15,
@@ -673,6 +695,7 @@ class TestHiddenParalogyCheck(unittest.TestCase):
     @patch('multiprocessing.Pool')
     def test_run_parallel_with_cpu_count(self, mock_pool_class, mock_cpu_count):
         """Test parallel processing respects CPU count limit"""
+        self.checker.MP_MIN_CLADES = 10
         mock_cpu_count.return_value = 16  # Many CPUs
 
         mock_master_tree = Mock()

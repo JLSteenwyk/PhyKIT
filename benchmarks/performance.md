@@ -1538,6 +1538,7 @@ Results:
 | `monophyly_check` module import without eager file helper | median cold subprocess import after lazy taxa-list reader wrapper | 0.070020s | 0.061728s | 1.13x |
 | `HiddenParalogyCheck.run` sequential exact-clade path | balanced 4096-tip tree, eight 512-taxon exact clades, output stubbed | 24.3482s | 0.0442s | 551.0x |
 | `HiddenParalogyCheck.run` cached read-only master tree setup | balanced 4096-tip cached tree, eight 512-taxon exact clades, output stubbed | 0.043373s | 0.026190s | 1.66x |
+| `HiddenParalogyCheck.run` medium exact-clade multiprocessing threshold | balanced 1024-tip tree, 20 exact 32-taxon clades, side-by-side previous low multiprocessing cutoff | 0.132535s | 0.002472s | 53.62x |
 | `HiddenParalogyCheck._process_clade_batch` exact-clade path | balanced 2048-tip tree, four 256-taxon exact clades in one batch | 3.0635s | 0.0180s | 170.6x |
 | `HiddenParalogyCheck._process_clade_batch` shared exact-clade index | balanced 2048-tip tree, four 256-taxon exact clades in one batch | 0.0169s | 0.000055s | 307.3x |
 | `HiddenParalogyCheck._build_exact_clade_index` direct postorder | balanced 32768-tip tree, exact descendant-taxon index for every clade | 0.262937s | 0.131806s | 2.00x |
@@ -6006,7 +6007,9 @@ Profiling summary:
   path for polytomies. Requested clade filtering now intersects the existing
   master-tip set with each requested clade iterable directly, avoiding a
   temporary `set(clade)` allocation while preserving duplicate and off-tree taxon
-  semantics in both sequential and batch paths.
+  semantics in both sequential and batch paths. The multiprocessing cutoff is
+  now higher, so medium exact-clade lists stay on the cached sequential path
+  instead of paying pool startup and exact-index pickling overhead.
 - `HiddenParalogyCheck._process_clade_batch` exact-clade baseline time reread
   and rerooted the tree for each clade in a multiprocessing batch. The
   optimized batch path reads the tree once per batch to build the exact-clade
