@@ -1513,6 +1513,7 @@ Results:
 | `covarying_evolutionary_rates` module import without eager concurrent futures | cold subprocess import after lazy executor and completion proxies | 0.048199s | 0.031029s | 1.55x |
 | `covarying_evolutionary_rates` module import without eager pickle/plot config | cold subprocess import after lazy pickle proxy and localized `PlotConfig` import | 0.035961s | 0.025588s | 1.41x |
 | `covarying_evolutionary_rates` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007304s | 0.005600s | 1.30x |
+| `covarying_evolutionary_rates._LazyPickle` module cache | 200k repeated small-object `loads` / `dumps` calls through the command-local pickle proxy while preserving `pickle.loads`/`pickle.dumps` patch points | 0.422208s / 0.247762s | 0.310031s / 0.216143s | 1.36x / 1.15x |
 | `CovaryingEvolutionaryRates.run` verbose text output | 100k verbose branch rows, captured stdout and identical text | 0.095201s | 0.082940s | 1.15x |
 | `CovaryingEvolutionaryRates.run` verbose JSON row assembly | 1k / 100k / 300k verbose branch rows, identical payload, side-by-side previous `dict(...)` row construction | 0.000624s / 0.161772s / 0.496943s | 0.000624s / 0.107678s / 0.354702s | 1.00x / 1.50x / 1.40x |
 | `LastCommonAncestorSubtree.run` | balanced 4096-tip tree, write 1024-tip MRCA subtree | 0.2959s | 0.2702s | 1.1x |
@@ -5923,6 +5924,9 @@ Profiling summary:
   so import-only callers avoid concurrent-futures startup. A follow-up startup
   pass keeps module-level `pickle.dumps`/`pickle.loads` patch points behind a
   lazy proxy and imports `PlotConfig` only while processing command arguments.
+  The pickle proxy now caches the imported module but deliberately resolves
+  `dumps` and `loads` on each call, preserving the existing patch points while
+  reducing repeated import dispatch in batch-copy helpers.
   A later startup pass keeps JSON output behind a forwarding wrapper, removing
   the last eager helper import from command discovery. Verbose text output now
   batches branch rows into one newline-joined print while preserving exact row

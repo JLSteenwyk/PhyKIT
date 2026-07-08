@@ -49,6 +49,22 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_lazy_pickle_caches_module_but_preserves_patch_points():
+    lazy_pickle = cer_module._LazyPickle()
+
+    with patch("pickle.loads", return_value="patched-loads") as mock_loads:
+        assert lazy_pickle.loads(b"payload") == "patched-loads"
+
+    with patch("pickle.dumps", return_value=b"patched-dumps") as mock_dumps:
+        assert lazy_pickle.dumps({"payload": True}) == b"patched-dumps"
+
+    assert lazy_pickle._module is not None
+    assert "loads" not in lazy_pickle.__dict__
+    assert "dumps" not in lazy_pickle.__dict__
+    mock_loads.assert_called_once_with(b"payload")
+    mock_dumps.assert_called_once_with({"payload": True})
+
+
 def test_list_outlier_filter_does_not_import_numpy():
     code = """
 import sys

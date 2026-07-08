@@ -10,20 +10,25 @@ def print_json(*args, **kwargs):
 
 
 class _LazyPickle:
-    def __getattr__(self, name):
-        import pickle as _pickle
+    _module = None
 
-        return getattr(_pickle, name)
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as _pickle
+
+            module = _pickle
+            self._module = module
+        return module
+
+    def __getattr__(self, name):
+        return getattr(self._load(), name)
 
     def dumps(self, *args, **kwargs):
-        import pickle as _pickle
-
-        return _pickle.dumps(*args, **kwargs)
+        return self._load().dumps(*args, **kwargs)
 
     def loads(self, *args, **kwargs):
-        import pickle as _pickle
-
-        return _pickle.loads(*args, **kwargs)
+        return self._load().loads(*args, **kwargs)
 
 
 pickle = _LazyPickle()
