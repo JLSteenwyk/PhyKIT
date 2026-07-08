@@ -312,6 +312,24 @@ class TestParseTraitFile:
         assert traits == {"taxon1": 1.0, "taxon2": 2.0, "taxon3": 3.0}
         assert stderr == ""
 
+    def test_ordered_all_shared_trait_file_skips_sets(
+        self, default_args, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "good.tsv"
+        trait_file.write_text("taxon1\t1.0\ntaxon2\t2.0\ntaxon3\t3.0\n")
+        svc = PhylogeneticSignal(default_args)
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_trait_file(
+            str(trait_file), ["taxon1", "taxon2", "taxon3"]
+        )
+
+        assert traits == {"taxon1": 1.0, "taxon2": 2.0, "taxon3": 3.0}
+        assert builtins.set is fail_set
+
     def test_taxon_mismatch_warns(self, default_args, tmp_path, capsys):
         trait_file = tmp_path / "partial.tsv"
         trait_file.write_text("taxon1\t1.0\ntaxon2\t2.0\ntaxon3\t3.0\nextra\t4.0\n")

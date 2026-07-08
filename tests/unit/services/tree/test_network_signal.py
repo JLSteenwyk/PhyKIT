@@ -305,6 +305,22 @@ class TestParseTraitFile:
         assert traits == {"A": 1.5, "B": 2.5, "C": 3.5}
         assert stderr == ""
 
+    def test_parse_trait_file_ordered_all_shared_skips_sets(
+        self, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.5\nB\t2.5\nC\t3.5\n")
+        svc = NetworkSignal.__new__(NetworkSignal)
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert traits == {"A": 1.5, "B": 2.5, "C": 3.5}
+        assert builtins.set is fail_set
+
     def test_parse_trait_file_rejects_wrong_column_count(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text("A\t1.0\nB\t2.0\textra\nC\t3.0\n")

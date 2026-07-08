@@ -2619,6 +2619,7 @@ Results:
 | `NetworkSignal._parse_trait_file` streaming two-column parser | 500k two-column trait rows with comments/blanks, all taxa shared, randomized old/new measurement order | 0.457297s | 0.441136s | 1.04x |
 | `NetworkSignal._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.437650s | 0.239459s | 1.83x |
 | `NetworkSignal._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.235204s | 0.223874s | 1.05x |
+| `FitContinuous`/`PhylogeneticSignal`/`NetworkSignal` ordered exact trait parser validation | three 300k-row trait files whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 1.552691s | 1.103257s | 1.41x |
 | `network_signal` module import without `scipy.stats` | cold process import for Pagel-lambda-capable command module | 0.585185s | 0.411641s | 1.4x |
 | `network_signal` module import without eager SciPy linalg/optimize | cold process import for network-signal command module | 0.428415s | 0.170449s | 2.5x |
 | `network_signal` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.070375s | 0.026032s | 2.70x |
@@ -7630,7 +7631,10 @@ Profiling summary:
   materialization and temporary split lists on valid rows. A later parser pass
   returns immediately for exact tree/trait taxon matches after all rows are
   validated and at least three taxa are shared, avoiding shared/warning set
-  construction while preserving the minimum-shared-taxa error. A startup pass
+  construction while preserving the minimum-shared-taxa error. A later
+  ordered-exact parser pass recognizes tree-tip-order matches before building
+  taxon sets, preserving the set-backed fallback for reordered and partial
+  trait files. A startup pass
   converts annotation-only `typing` aliases to built-in postponed annotations,
   so command discovery no longer loads `typing`.
 - `PhylogeneticGLM._make_ultrametric` baseline time was dominated by repeated
@@ -8359,7 +8363,9 @@ Profiling summary:
   filtering, mismatch warnings, and detailed validation errors. A later parser
   pass returns immediately for exact tree/trait taxon matches after all rows are
   validated and at least three taxa are shared, preserving too-few-shared-taxa
-  errors while avoiding shared/warning set construction.
+  errors while avoiding shared/warning set construction. A later ordered-exact
+  parser pass recognizes tree-tip-order matches before building taxon sets,
+  preserving the set-backed fallback for reordered and partial trait files.
 - `PhyloImpute._estimate_complete_case_stats` baseline time formed an explicit
   inverse or pseudoinverse of the complete-case VCV matrix before estimating
   GLS trait means and residual trait covariance. The optimized path computes the
@@ -8560,7 +8566,10 @@ Profiling summary:
   warnings, and detailed validation errors. A later parser pass returns
   immediately for exact tree/trait taxon matches after all rows are validated
   and at least three taxa are shared, preserving too-few-shared-taxa errors
-  while avoiding shared/warning set construction. A follow-up strict-split
+  while avoiding shared/warning set construction. A follow-up ordered-exact
+  parser pass recognizes tree-tip-order matches before building taxon sets,
+  preserving the set-backed fallback for reordered and partial trait files.
+  A follow-up strict-split
   pass parses valid two-column rows with one bounded split instead of
   `partition` plus a separate tab scan, preserving missing/extra-column counts
   and nonnumeric error text. The regime parser now applies the same strict split
