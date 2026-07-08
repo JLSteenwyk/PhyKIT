@@ -1034,6 +1034,56 @@ class TestStochasticMapping:
 
         assert set(node_states) == {id(clade) for clade in tree.find_clades()}
 
+    @pytest.mark.parametrize("k", [2, 3, 4])
+    def test_prepare_ancestral_sampling_nodes_small_state_paths_match_formula(
+        self, default_args, k
+    ):
+        svc = StochasticCharacterMap(default_args)
+        rng = np.random.default_rng(456)
+        transition = rng.random((k, k))
+        cond_liks = {
+            1: rng.random(k),
+            2: np.zeros(k),
+            3: rng.random(k),
+        }
+        simulation_nodes = [
+            (1, 0, 1.0, None),
+            (2, 0, 1.0, None),
+            (3, 0, 1.0, 0),
+        ]
+
+        expected = []
+        uniform_cdf = np.cumsum(np.ones(k) / k)
+        for clade_id, parent_id, _branch_length, tip_state_idx in simulation_nodes:
+            if tip_state_idx is not None:
+                expected.append((clade_id, parent_id, tip_state_idx, None))
+                continue
+
+            cdfs_by_parent = np.empty((k, k), dtype=float)
+            for parent_state in range(k):
+                probs = transition[parent_state, :] * cond_liks[clade_id]
+                total = probs.sum()
+                if total > 0:
+                    cdfs_by_parent[parent_state, :] = np.cumsum(probs / total)
+                else:
+                    cdfs_by_parent[parent_state, :] = uniform_cdf
+            expected.append((clade_id, parent_id, tip_state_idx, cdfs_by_parent))
+
+        observed = svc._prepare_ancestral_sampling_nodes(
+            simulation_nodes,
+            np.eye(k),
+            cond_liks,
+            k,
+            {1.0: transition},
+        )
+
+        for observed_node, expected_node in zip(observed, expected):
+            assert observed_node[:3] == expected_node[:3]
+            if expected_node[3] is None:
+                assert observed_node[3] is None
+            else:
+                np.testing.assert_allclose(observed_node[3], expected_node[3])
+
     def test_prepare_ancestral_sampling_nodes_vector_path_matches_row_formula(
         self, default_args
     ):

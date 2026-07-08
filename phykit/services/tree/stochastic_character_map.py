@@ -346,6 +346,80 @@ class StochasticCharacterMap(Tree):
             idx -= 1
         return idx
 
+    @staticmethod
+    def _binary_ancestral_cdfs(P: np.ndarray, child_lik: np.ndarray) -> np.ndarray:
+        cdfs_by_parent = np.empty((2, 2), dtype=float)
+        child0 = child_lik[0]
+        child1 = child_lik[1]
+        for parent_state in range(2):
+            prow = P[parent_state]
+            v0 = prow[0] * child0
+            v1 = prow[1] * child1
+            total = v0 + v1
+            row = cdfs_by_parent[parent_state]
+            if total > 0.0:
+                row[0] = v0 / total
+                row[1] = 1.0
+            else:
+                row[0] = 0.5
+                row[1] = 1.0
+        return cdfs_by_parent
+
+    @staticmethod
+    def _ternary_ancestral_cdfs(P: np.ndarray, child_lik: np.ndarray) -> np.ndarray:
+        cdfs_by_parent = np.empty((3, 3), dtype=float)
+        child0 = child_lik[0]
+        child1 = child_lik[1]
+        child2 = child_lik[2]
+        for parent_state in range(3):
+            prow = P[parent_state]
+            v0 = prow[0] * child0
+            v1 = prow[1] * child1
+            v2 = prow[2] * child2
+            total = v0 + v1 + v2
+            row = cdfs_by_parent[parent_state]
+            if total > 0.0:
+                inv_total = 1.0 / total
+                c0 = v0 * inv_total
+                row[0] = c0
+                row[1] = c0 + v1 * inv_total
+                row[2] = 1.0
+            else:
+                row[0] = 1.0 / 3.0
+                row[1] = 2.0 / 3.0
+                row[2] = 1.0
+        return cdfs_by_parent
+
+    @staticmethod
+    def _quaternary_ancestral_cdfs(P: np.ndarray, child_lik: np.ndarray) -> np.ndarray:
+        cdfs_by_parent = np.empty((4, 4), dtype=float)
+        child0 = child_lik[0]
+        child1 = child_lik[1]
+        child2 = child_lik[2]
+        child3 = child_lik[3]
+        for parent_state in range(4):
+            prow = P[parent_state]
+            v0 = prow[0] * child0
+            v1 = prow[1] * child1
+            v2 = prow[2] * child2
+            v3 = prow[3] * child3
+            total = v0 + v1 + v2 + v3
+            row = cdfs_by_parent[parent_state]
+            if total > 0.0:
+                inv_total = 1.0 / total
+                c0 = v0 * inv_total
+                c1 = c0 + v1 * inv_total
+                row[0] = c0
+                row[1] = c1
+                row[2] = c1 + v2 * inv_total
+                row[3] = 1.0
+            else:
+                row[0] = 0.25
+                row[1] = 0.5
+                row[2] = 0.75
+                row[3] = 1.0
+        return cdfs_by_parent
+
     def _sample_ancestral_states(
         self, tree, tip_states: dict[str, str],
         Q: np.ndarray, pi: np.ndarray,
@@ -400,8 +474,17 @@ class StochasticCharacterMap(Tree):
         transition_cache: dict = None,
     ):
         sampling_nodes = []
-        uniform = np.ones(k) / k
-        uniform_cdf = np.cumsum(uniform)
+        if k == 2:
+            small_cdf_builder = self._binary_ancestral_cdfs
+        elif k == 3:
+            small_cdf_builder = self._ternary_ancestral_cdfs
+        elif k == 4:
+            small_cdf_builder = self._quaternary_ancestral_cdfs
+        else:
+            small_cdf_builder = None
+            uniform = np.ones(k) / k
+            uniform_cdf = np.cumsum(uniform)
+
         for clade_id, parent_id, branch_length, tip_state_idx in simulation_nodes:
             if tip_state_idx is not None:
                 sampling_nodes.append((clade_id, parent_id, tip_state_idx, None))
@@ -416,15 +499,8 @@ class StochasticCharacterMap(Tree):
                     transition_cache[branch_length] = P
 
             child_lik = cond_liks[clade_id]
-            if k < 5:
-                cdfs_by_parent = np.empty((k, k), dtype=float)
-                for parent_state in range(k):
-                    probs = P[parent_state, :] * child_lik
-                    total = probs.sum()
-                    if total > 0:
-                        cdfs_by_parent[parent_state, :] = np.cumsum(probs / total)
-                    else:
-                        cdfs_by_parent[parent_state, :] = uniform_cdf
+            if small_cdf_builder is not None:
+                cdfs_by_parent = small_cdf_builder(P, child_lik)
             else:
                 weighted = P * child_lik
                 totals = weighted.sum(axis=1)
