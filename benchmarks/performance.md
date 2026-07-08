@@ -1886,6 +1886,7 @@ Results:
 | `LBScore.run` verbose JSON row construction | 500k mocked taxon LB-score rows, identical row dictionaries | 0.577324s | 0.423637s | 1.36x |
 | `LBScore.run` cached read-only tree setup | balanced 32768-tip cached tree, LB calculation and output mocked | 0.381093s | 0.000095s | 4002.74x |
 | `LBScore` parallel setup CPU-count reuse | 10k / 100k / 1M repeated parallel batch/worker setup calculations through the lazy multiprocessing proxy | 0.033809625s / 0.536945916s / 4.925987792s | 0.015429042s / 0.377355917s / 2.955985875s | 2.19x / 1.42x / 1.67x |
+| `LBScore._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.007399000s / 0.166889208s / 1.547549083s | 0.007472167s / 0.142180875s / 1.086053833s | 0.99x / 1.17x / 1.42x |
 | `lb_score` module import without eager tqdm | cold subprocess import of `phykit.services.tree.lb_score` | 0.211205s | 0.182790s | 1.16x |
 | `lb_score` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.147666s | 0.046242s | 3.19x |
 | `lb_score` module import without eager multiprocessing/concurrent futures | cold subprocess import after lazy executor and cpu-count proxies | 0.045831s | 0.030564s | 1.50x |
@@ -6823,7 +6824,9 @@ Profiling summary:
   score transformation now precomputes `100.0 / avg_dist` and uses
   multiplication/subtraction, avoiding one division per taxon while preserving
   score values. The fallback parallel setup now reads `mp.cpu_count()` once per
-  call and reuses it for batch sizing and worker sizing.
+  call and reuses it for batch sizing and worker sizing. The lazy
+  multiprocessing proxy now caches the imported module after first use while
+  preserving direct stdlib monkeypatch visibility.
 - `Saturation.loop_through_combos_and_calculate_pds_and_pis` reuses the cached
   tree-distance helper for patristic distances while preserving combo order and
   the existing uncorrected-distance calculations. When cached pairwise

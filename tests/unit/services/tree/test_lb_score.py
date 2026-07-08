@@ -1,10 +1,12 @@
 import pytest
+import multiprocessing
 import subprocess
 import sys
 from argparse import Namespace
 from concurrent.futures import Future
 from itertools import combinations
 from math import isclose
+from unittest.mock import patch
 from Bio.Phylo.Newick import Clade, Tree
 
 import phykit.services.tree.lb_score as lb_score_module
@@ -40,6 +42,19 @@ def test_lazy_pickle_caches_resolved_attributes():
     assert lazy_pickle.__dict__["dumps"] is lazy_pickle.dumps
     assert lazy_pickle.__dict__["loads"] is lazy_pickle.loads
     assert lazy_pickle.loads(blob) == {"value": 1}
+
+
+def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable():
+    lazy_mp = lb_score_module._LazyMultiprocessing()
+
+    with patch.object(multiprocessing, "cpu_count", return_value=11):
+        assert lazy_mp.cpu_count() == 11
+        assert lazy_mp._module is multiprocessing
+
+    with patch.object(multiprocessing, "cpu_count", return_value=13) as cpu_count:
+        assert lazy_mp.cpu_count() == 13
+
+    cpu_count.assert_called_once_with()
 
 
 class _IndexedDummyTree:
