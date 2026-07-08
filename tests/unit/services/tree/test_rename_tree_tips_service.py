@@ -276,6 +276,31 @@ class TestRenameTreeTips:
         assert [term.name for term in tree.get_terminals()] == ["a", "b", "c"]
         assert [term.name for term in written_tree.get_terminals()] == ["A", "b", "c"]
 
+    def test_run_json_matching_tips_uses_boolean_precheck(self, mocker):
+        args = Namespace(
+            tree="/some/path/to/file.tre",
+            idmap="/some/path/to/idmap.txt",
+            output="/tmp/out.tre",
+            json=True,
+        )
+        service = RenameTreeTips(args)
+        tree = Phylo.read(StringIO("((a:1,b:1):1,c:1);"), "newick")
+        mocker.patch.object(service, "read_id_map", return_value={"a": "A", "c": "C"})
+        mocker.patch.object(service, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            service,
+            "count_matching_tip_names",
+            side_effect=AssertionError("JSON precheck only needs a boolean match"),
+        )
+        mocked_write = mocker.patch.object(RenameTreeTips, "write_tree_file")
+        mocked_json = mocker.patch("phykit.services.tree.rename_tree_tips.print_json")
+
+        service.run()
+
+        written_tree = mocked_write.call_args.args[0]
+        assert [term.name for term in written_tree.get_terminals()] == ["A", "b", "C"]
+        assert mocked_json.call_args.args[0]["renamed_tips"] == 2
+
     def test_run_writes_and_emits_json(self, mocker):
         args = Namespace(
             tree="/some/path/to/file.tre",

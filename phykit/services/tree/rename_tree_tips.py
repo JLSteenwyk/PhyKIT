@@ -25,10 +25,7 @@ class RenameTreeTips(Tree):
         idmap = self.read_id_map()
 
         tree = self.read_tree_file_unmodified()
-        if self.json_output:
-            should_rename = self.count_matching_tip_names(tree, idmap) > 0
-        else:
-            should_rename = self.has_matching_tip_name(tree, idmap)
+        should_rename = self.has_matching_tip_name(tree, idmap)
 
         renamed_count = 0
         if should_rename:
