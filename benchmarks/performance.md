@@ -667,6 +667,7 @@ Results:
 | `Faidx.run` JSON row construction | 500k requested FASTA entries, identical row dictionaries | 0.181053s | 0.148606s | 1.22x |
 | `Faidx.run` JSON row list comprehension | 500k requested FASTA entries, side-by-side previous append-loop row construction | 0.584529s | 0.477088s | 1.23x |
 | `Faidx._parse_entries` clean entry-list fast path | 500k requested entries, clean comma list / comma-space list, side-by-side previous `map(str.strip, ...)` parser | 0.056012667s / 0.097349250s | 0.045536708s / 0.077652458s | 1.23x / 1.25x |
+| `Faidx._parse_entries` direct clean split list | 500k requested entries, clean comma list / leading-trailing empty comma list / comma-space list, side-by-side previous clean fast path | 0.150394s / 0.079337s / 0.117075s | 0.077929s / 0.038597s / 0.114695s | 1.93x / 2.06x / 1.02x |
 | shared `_fasta._clean_sequence` single-line fast path | 80k FASTA records x 120 bp, single-line / wrapped two-line sequences, identical first-token parser output | 0.159723s / 0.209468s | 0.116201s / 0.163365s | 1.37x / 1.28x |
 | shared `_fasta.read_fasta_first_token_set` binary header scan | 50k FASTA records, headers with descriptions / no descriptions / 12 bp short-sequence records, identical first-token taxa sets | 0.058588s / 0.034541s / 0.032067s | 0.028406s / 0.026274s / 0.027007s | 2.06x / 1.31x / 1.19x |
 | `faidx` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.181946s | 0.079052s | 2.30x |
@@ -4358,7 +4359,10 @@ Profiling summary:
   `Faidx`, `SumOfPairsScore`, taxon grouping, subsampling, and other direct
   first-token FASTA readers. A later text-output pass builds requested FASTA
   blocks with a list comprehension instead of an append loop, preserving
-  requested-entry order and the same joined stdout.
+  requested-entry order and the same joined stdout. Clean comma-separated
+  `faidx` entry lists now return the split list directly when no empty entries
+  are present, while keeping the filtering path for empty entries and the
+  whitespace-stripping fallback for described arguments.
 - `AlignmentSubsample._read_alignment` baseline time materialized
   `SeqRecord` objects before extracting IDs and sequence strings. The optimized
   path uses `SimpleFastaParser`, preserving first-token IDs and last duplicate

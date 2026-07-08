@@ -71,6 +71,19 @@ assert "Bio.AlignIO" not in sys.modules
     def test_parse_entries_fast_path_preserves_clean_entries(self):
         assert Faidx._parse_entries("1,2,,3") == ["1", "2", "3"]
 
+    def test_parse_entries_clean_list_returns_split_result_directly(self):
+        class SplitList(list):
+            pass
+
+        class EntryArg(str):
+            def split(self, *args, **kwargs):
+                return SplitList(super().split(*args, **kwargs))
+
+        entries = Faidx._parse_entries(EntryArg("1,2,3"))
+
+        assert type(entries) is SplitList
+        assert entries == ["1", "2", "3"]
+
     def test_parse_entries_strips_whitespace_fallback(self):
         assert Faidx._parse_entries(" 1, 2\t,\n3,\r") == ["1", "2", "3"]
 

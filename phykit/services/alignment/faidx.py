@@ -56,5 +56,8 @@ class Faidx(Alignment):
             and "\n" not in entry_arg
             and "\r" not in entry_arg
         ):
-            return [entry for entry in entry_arg.split(",") if entry]
+            entries = entry_arg.split(",")
+            if entries and entries[0] and entries[-1] and "" not in entries:
+                return entries
+            return [entry for entry in entries if entry]
         return [entry for entry in map(str.strip, entry_arg.split(",")) if entry]
