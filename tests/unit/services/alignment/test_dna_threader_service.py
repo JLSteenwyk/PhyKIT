@@ -35,6 +35,49 @@ assert "Bio.AlignIO" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
 
+    def test_lazy_seqio_caches_resolved_callables(self):
+        lazy_seqio = dna_threader_module._LazySeqIO()
+
+        from Bio import SeqIO as real_seqio
+
+        original_parse = real_seqio.parse
+        original_to_dict = real_seqio.to_dict
+        calls = []
+
+        def fake_parse(*args, **kwargs):
+            calls.append(("parse", args, kwargs))
+            return ["record"]
+
+        def fake_to_dict(*args, **kwargs):
+            calls.append(("to_dict", args, kwargs))
+            return {"record": "record"}
+
+        try:
+            real_seqio.parse = fake_parse
+            real_seqio.to_dict = fake_to_dict
+
+            assert lazy_seqio.parse("protein.fa", "fasta") == ["record"]
+            assert lazy_seqio.to_dict(["record"]) == {"record": "record"}
+            cached_parse = lazy_seqio.__dict__["parse"]
+            cached_to_dict = lazy_seqio.__dict__["to_dict"]
+
+            real_seqio.parse = lambda *args, **kwargs: ["changed"]
+            real_seqio.to_dict = lambda *args, **kwargs: {"changed": "changed"}
+
+            assert lazy_seqio.parse("nucleotide.fa", "fasta") == ["record"]
+            assert lazy_seqio.to_dict(["record"]) == {"record": "record"}
+            assert lazy_seqio.__dict__["parse"] is cached_parse
+            assert lazy_seqio.__dict__["to_dict"] is cached_to_dict
+            assert calls == [
+                ("parse", ("protein.fa", "fasta"), {}),
+                ("to_dict", (["record"],), {}),
+                ("parse", ("nucleotide.fa", "fasta"), {}),
+                ("to_dict", (["record"],), {}),
+            ]
+        finally:
+            real_seqio.parse = original_parse
+            real_seqio.to_dict = original_to_dict
+
     def test_init_sets_expected_attrs(self, args):
         service = DNAThreader(args)
         assert service.remove_stop_codon is True

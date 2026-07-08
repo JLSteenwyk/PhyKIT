@@ -14,15 +14,27 @@ def print_json(*args, **kwargs):
 
 
 class _LazySeqIO:
-    def parse(self, *args, **kwargs):
-        from Bio import SeqIO as _SeqIO
+    _module = None
 
-        return _SeqIO.parse(*args, **kwargs)
+    def _resolve_module(self):
+        module = self._module
+        if module is None:
+            from Bio import SeqIO as _SeqIO
+
+            module = _SeqIO
+            self._module = module
+        return module
+
+    def parse(self, *args, **kwargs):
+        parse = self._resolve_module().parse
+        self.parse = parse
+        return parse(*args, **kwargs)
 
     def to_dict(self, *args, **kwargs):
-        from Bio import SeqIO as _SeqIO
+        to_dict = self._resolve_module().to_dict
+        self.to_dict = to_dict
 
-        return _SeqIO.to_dict(*args, **kwargs)
+        return to_dict(*args, **kwargs)
 
 
 SeqIO = _LazySeqIO()

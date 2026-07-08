@@ -526,6 +526,7 @@ Results:
 | `DNAThreader.run` batched FASTA text output | 100k threaded FASTA records, mocked parser/threading and identical stdout text | 0.030984s | 0.011490s | 2.70x |
 | `DNAThreader.run` text block append assembly | 50k / 200k / 500k threaded FASTA records, captured stdout and identical text, side-by-side previous generator passed to `join` | 0.029576s / 0.139428s / 0.521607s | 0.013732s / 0.121288s / 0.279560s | 2.15x / 1.15x / 1.87x |
 | `DNAThreader.run` JSON row construction | 500k threaded sequence rows, identical row dictionaries | 0.196943s | 0.168945s | 1.17x |
+| `DNAThreader._LazySeqIO` cached Bio.SeqIO proxy callables | 10k / 100k / 1M repeated no-op `parse` + `to_dict` pairs after warm Bio.SeqIO import, side-by-side previous import-on-each-call proxy | 0.009309833s / 0.119812959s / 2.272505084s | 0.001408125s / 0.015938125s / 0.220745875s | 6.61x / 7.52x / 10.29x |
 | `dna_threader` module import without eager Bio.SeqIO/Seq | cold subprocess import after lazy Biopython sequence imports | 0.187897s | 0.084045s | 2.24x |
 | `dna_threader` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006269s | 0.004938s | 1.27x |
 | `dna_threader` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.032400s | 0.031734s | 1.02x |
@@ -3902,7 +3903,10 @@ Profiling summary:
   pipe behavior while avoiding two print calls per record. A later startup pass
 	  defers Bio.SeqIO and annotation-only Bio.Seq imports behind a small module
 	  proxy, preserving `SeqIO.parse` and `SeqIO.to_dict` behavior for runtime calls
-	  and tests that patch those functions. A follow-up startup pass keeps JSON
+	  and tests that patch those functions. The lazy Bio.SeqIO proxy now caches
+	  resolved `parse` and `to_dict` callables after first use, removing repeated
+	  import/proxy overhead in repeated command setup. A follow-up startup pass
+	  keeps JSON
 	  output behind a module-level forwarding wrapper, preserving the patch point
 	  while avoiding JSON helper startup during command discovery. A later startup
 	  pass removes the runtime `TYPE_CHECKING` dependency and converts
