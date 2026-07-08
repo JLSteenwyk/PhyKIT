@@ -672,6 +672,36 @@ class TestDstatistic:
 
         assert "Standard error:" in capsys.readouterr().out
 
+    def test_block_jackknife_skips_no_informative_sites(
+        self, tmp_path, monkeypatch, mocker
+    ):
+        aln = tmp_path / "test.fa"
+        seqs = {
+            "P1": "A" * 20,
+            "P2": "A" * 20,
+            "P3": "A" * 20,
+            "Outgroup": "A" * 20,
+        }
+        _write_alignment(str(aln), seqs)
+
+        def fail_jackknife(*_args, **_kwargs):
+            raise AssertionError("zero-informative alignments do not need jackknife")
+
+        monkeypatch.setattr(
+            Dstatistic,
+            "_jackknife_d_values",
+            staticmethod(fail_jackknife),
+        )
+        mocked = mocker.patch("phykit.services.alignment.dstatistic.print_json")
+
+        Dstatistic(_make_args(str(aln), block_size=5, json_output=True)).run()
+
+        payload = mocked.call_args.args[0]
+        assert payload["informative_sites"] == 0
+        assert payload["standard_error"] == 0.0
+        assert payload["z_score"] == 0.0
+        assert payload["p_value"] == 1.0
+
     def test_json_output(self, tmp_path):
         """JSON output has correct structure."""
         import json

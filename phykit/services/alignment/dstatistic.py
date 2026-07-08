@@ -730,17 +730,22 @@ class Dstatistic(Alignment):
         p_value = None
 
         if n_blocks >= 2:
-            jackknife_d = self._jackknife_d_values(block_abba, block_baba)
-            mean_d = jackknife_d.mean()
-            sum_sq = _sum_squared_deviations(jackknife_d, mean_d)
-            se = float(np.sqrt((n_blocks - 1) / n_blocks * sum_sq))
-
-            if se > 0:
-                z_score = d_stat / se
-                p_value = _normal_two_tailed_p_value(z_score)
+            if informative_sites == 0:
+                se = 0.0
+                z_score = 0.0
+                p_value = 1.0
             else:
-                z_score = float('inf') if d_stat != 0 else 0.0
-                p_value = 0.0 if d_stat != 0 else 1.0
+                jackknife_d = self._jackknife_d_values(block_abba, block_baba)
+                mean_d = jackknife_d.mean()
+                sum_sq = _sum_squared_deviations(jackknife_d, mean_d)
+                se = float(np.sqrt((n_blocks - 1) / n_blocks * sum_sq))
+
+                if se > 0:
+                    z_score = d_stat / se
+                    p_value = _normal_two_tailed_p_value(z_score)
+                else:
+                    z_score = float('inf') if d_stat != 0 else 0.0
+                    p_value = 0.0 if d_stat != 0 else 1.0
 
         # Output
         if self.json_output:
