@@ -628,6 +628,19 @@ class TestTreeBase:
             min_ordered_size=0,
         ) == ["d", "e"]
 
+    def test_tips_to_prune_for_ordered_names_uses_equal_length_ordered_path(self):
+        class OrderedNames(list):
+            def __iter__(self):
+                raise AssertionError("equal ordered path should not build a set")
+
+        values = OrderedNames(["a", "b", "c"])
+
+        assert Tree._tips_to_prune_for_ordered_names(
+            ["a", "b", "c"],
+            values,
+            min_ordered_size=0,
+        ) == []
+
     def test_tips_to_prune_for_ordered_names_falls_back_for_interleaved_tips(self):
         assert Tree._tips_to_prune_for_ordered_names(
             ["a", "d", "b", "c"],

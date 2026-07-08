@@ -40,6 +40,7 @@ pickle = _LazyPickle()
 class Tree(BaseService):
     _PAIRWISE_LCA_DEPTH_THRESHOLD = 64
     _ORDERED_MAPPING_PRUNE_MIN_SIZE = 200_000
+    _ORDERED_NAMES_PRUNE_MIN_SIZE = 50_000
 
     def __init__(
         self,
@@ -214,15 +215,27 @@ class Tree(BaseService):
         min_ordered_size=None,
     ):
         if min_ordered_size is None:
-            min_ordered_size = Tree._ORDERED_MAPPING_PRUNE_MIN_SIZE
+            min_ordered_size = Tree._ORDERED_NAMES_PRUNE_MIN_SIZE
 
         n_names = len(ordered_names)
-        if n_names >= min_ordered_size and len(tree_tips) >= n_names:
-            for index, name in enumerate(ordered_names):
-                if tree_tips[index] != name:
-                    break
-            else:
-                return tree_tips[n_names:]
+        tree_tip_count = len(tree_tips)
+        if n_names >= min_ordered_size and tree_tip_count >= n_names:
+            if (
+                n_names == 0
+                or (
+                    tree_tips[0] == ordered_names[0]
+                    and tree_tips[n_names - 1] == ordered_names[-1]
+                )
+            ):
+                if tree_tip_count == n_names:
+                    if tree_tips == ordered_names:
+                        return []
+                else:
+                    for index, name in enumerate(ordered_names):
+                        if tree_tips[index] != name:
+                            break
+                    else:
+                        return tree_tips[n_names:]
 
         ordered_name_set = set(ordered_names)
         return [tip for tip in tree_tips if tip not in ordered_name_set]
