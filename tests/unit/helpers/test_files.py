@@ -7,6 +7,8 @@ from types import SimpleNamespace
 import pytest
 
 from phykit.helpers.files import (
+    _cached_alignment_read,
+    _cached_detect_format_by_content,
     _detect_format_by_content,
     _get_file_hash,
     get_alignment_and_format,
@@ -97,6 +99,32 @@ class TestAlignmentReadAndType:
         assert len(alignment) == 2
         assert alignment.get_alignment_length() == 4
         assert is_protein is True
+
+    def test_get_alignment_and_format_reuses_cached_format_detection(
+        self,
+        tmp_path: Path,
+        mocker,
+    ):
+        aln = tmp_path / "test.fa"
+        aln.write_text(">a\nACGT\n>b\nACGT\n")
+        _cached_alignment_read.cache_clear()
+        _cached_detect_format_by_content.cache_clear()
+        detect = mocker.spy(
+            sys.modules["phykit.helpers.files"],
+            "_detect_format_by_content",
+        )
+
+        first_alignment, first_format, first_is_protein = get_alignment_and_format(
+            str(aln)
+        )
+        second_alignment, second_format, second_is_protein = get_alignment_and_format(
+            str(aln)
+        )
+
+        assert first_alignment is second_alignment
+        assert first_format == second_format == "fasta"
+        assert first_is_protein is second_is_protein is False
+        detect.assert_called_once_with(str(aln))
 
     def test_get_alignment_and_format_unknown_format_exits(self, tmp_path: Path):
         bad = tmp_path / "bad.aln"

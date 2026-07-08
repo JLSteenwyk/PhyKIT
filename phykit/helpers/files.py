@@ -55,6 +55,13 @@ def _detect_format_by_content(file_path: str) -> str | None:
     return None
 
 @lru_cache(maxsize=32)
+def _cached_detect_format_by_content(
+    file_hash: str,
+    file_path: str,
+) -> str | None:
+    return _detect_format_by_content(file_path)
+
+@lru_cache(maxsize=32)
 def _cached_alignment_read(
     file_hash: str,
     file_path: str,
@@ -70,8 +77,9 @@ def _cached_alignment_read(
 def get_alignment_and_format(
     alignment_file_path: str
 ) -> tuple["MultipleSeqAlignment", str, bool]:
-    # Check if file exists first
-    if not os.path.exists(alignment_file_path):
+    try:
+        file_hash = _get_file_hash(alignment_file_path)
+    except FileNotFoundError:
         raise PhykitUserError(
             [
                 f"{alignment_file_path} corresponds to no such file.",
@@ -81,10 +89,10 @@ def get_alignment_and_format(
         )
 
     # Try to detect format by content first
-    detected_format = _detect_format_by_content(alignment_file_path)
-
-    # Get file hash for caching
-    file_hash = _get_file_hash(alignment_file_path)
+    detected_format = _cached_detect_format_by_content(
+        file_hash,
+        alignment_file_path,
+    )
 
     # If format was detected, try it first
     if detected_format:

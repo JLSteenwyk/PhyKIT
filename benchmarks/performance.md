@@ -119,6 +119,7 @@ Results:
 | `helpers.files.read_single_column_file_to_list` bulk splitlines trim | 1M single-column rows with leading/trailing spaces, identical stripped list | 0.072114s | 0.052382s | 1.38x |
 | `helpers.files.read_single_column_file_to_list` streaming trim | 2M single-column rows with leading/trailing spaces, identical stripped list from real file I/O | 0.577303s | 0.491627s | 1.17x |
 | `helpers.files._detect_format_by_content` PHYLIP header split | 1M mixed first-line headers, identical detected formats | 2.294802s | 1.625386s | 1.41x |
+| `helpers.files.get_alignment_and_format` cached format detection | 5k / 20k / 50k repeated cached reads of one small FASTA alignment, identical alignment object, format, and protein flag | 0.212114s / 0.770213s / 1.959285s | 0.069316s / 0.145590s / 0.358173s | 3.06x / 5.29x / 5.47x |
 | `alignment.base` module import without eager Bio.AlignIO | cold subprocess import after lazy shared alignment reader | 0.154313s | 0.113593s | 1.36x |
 | `alignment.base` module import without eager NumPy lookup tables | cold subprocess import after lazy RCV NumPy lookup construction | 0.076903s | 0.022717s | 3.39x |
 | `alignment.base` module import without eager file helper | median cold subprocess import after lazy shared alignment-reader wrapper | 0.042439s | 0.032811s | 1.29x |
@@ -3174,7 +3175,10 @@ Profiling summary:
   avoiding whole-file line-list allocation for large taxa/tree/alignment lists.
   Shared alignment format detection now splits a PHYLIP-like first line at most
   once, preserving the two-column numeric-header check while avoiding duplicate
-  `split()` calls on common alignment startup.
+  `split()` calls on common alignment startup. Repeated cached alignment reads
+  now cache the detected format under the same path/size/mtime key used for the
+  parsed alignment cache, avoiding a header re-read while preserving
+  modification invalidation.
   `AlignmentEntropy.run` now batches verbose per-site text rows into one
   newline-joined print while preserving summary,
   JSON, plot, and stdout text behavior. A later nonverbose summary pass defers
