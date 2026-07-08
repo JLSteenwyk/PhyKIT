@@ -1572,6 +1572,7 @@ Results:
 | `NearestNeighborInterchange._resolve_branch_specs` branch-field parser | 300k comma/tab/mixed-whitespace branch rows, identical label/taxon specs | 0.551512s | 0.399353s | 1.38x |
 | `nearest_neighbor_interchange` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.write` proxy and postponed annotations | 0.123042s | 0.025484s | 4.83x |
 | `NearestNeighborInterchange._LazyPhylo.write` cached callable | 10k / 100k / 1M repeated no-op writes after first Bio.Phylo resolution | 0.004565062s / 0.083034146s / 1.235565896s | 0.002162563s / 0.015112250s / 0.293798041s | 2.11x / 5.49x / 4.21x |
+| `NearestNeighborInterchange._LazyPickle` cached copy helpers | 10k / 100k / 1M repeated no-op `loads(dumps(tree, protocol=HIGHEST_PROTOCOL))` calls after first pickle resolution | 0.018293083s / 0.221405083s / 2.843467646s | 0.001657875s / 0.040247479s / 0.641708770s | 11.03x / 5.50x / 4.43x |
 | `nearest_neighbor_interchange` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007619s | 0.006372s | 1.20x |
 | `nearest_neighbor_interchange` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006408s | 0.005053s | 1.27x |
 | `nearest_neighbor_interchange` module import without `typing` startup | median cold subprocess import after converting the runtime branch-spec alias and annotations to built-in generics | 0.028164s | 0.023944s | 1.18x |
