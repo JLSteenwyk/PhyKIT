@@ -2457,6 +2457,7 @@ Results:
 | `ParsimonyScore._fitch_parsimony` non-verbose score-only path | 4-tip tree x 500k sites, vectorized Fitch path, identical total score with/without returned per-site scores | 0.445905s | 0.248677s | 1.79x |
 | `ParsimonyScore._fitch_parsimony` score-only change counts | boolean changed-site vectors sized 1000 / 100k / 500k, side-by-side previous ndarray boolean `sum()` per internal node | 0.000014925s / 0.000163767s / 0.001009674s | 0.000004864s / 0.000043619s / 0.000101862s | 3.07x / 3.75x / 9.91x |
 | `ParsimonyScore._fitch_parsimony` cached NumPy attribute proxy | balanced 2048-tip tree x 2000 sites with 16 repeated sequence patterns, side-by-side previous uncached lazy NumPy proxy | 0.513747s | 0.376211s | 1.37x |
+| `ParsimonyScore._fitch_parsimony` DNA state-symbol discovery | balanced 512 / 1024-tip trees x 2000 DNA/ambiguous sites, side-by-side previous Python per-character state scan with identical score-only output | 0.142622s / 0.217346s | 0.033235s / 0.032106s | 4.29x / 6.77x |
 | `IndependentContrasts._compute_pic` | balanced tree with 2500 tips, continuous trait | 0.0219s | 0.0039s | 5.7x |
 | `FitContinuous._concentrated_ll` | 420 taxa SPD VCV, single continuous trait | 0.0064s | 0.0005s | 12.7x |
 | `FitContinuous._concentrated_ll_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm | 0.057255s | 0.042199s | 1.36x |
@@ -8162,7 +8163,10 @@ Profiling summary:
   overhead. Repeated vectorized Fitch scoring now caches
   resolved NumPy attributes on the lazy proxy, preserving deferred import while
   avoiding repeated import and attribute dispatch during mask encoding and
-  downpass reductions.
+  downpass reductions. DNA and ambiguous-state alignments now discover the
+  four-state mask alphabet through byte filtering instead of a Python
+  per-character set scan, preserving lowercase, protein-like ASCII, and
+  Unicode fallback state behavior.
 - `ParsimonyScore._parse_alignment` baseline time materialized `SeqRecord`
   objects before immediately converting them into uppercase strings. The
   optimized loader streams titles and sequences with `SimpleFastaParser`,

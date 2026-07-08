@@ -37,6 +37,38 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_PARSIMONY_DNA_STATES = frozenset("ACGT")
+_PARSIMONY_DNA_STATE_SYMBOLS = ["A", "C", "G", "T"]
+_PARSIMONY_WILDCARD_CHARS = frozenset("-NX?nx")
+_PARSIMONY_DNA_OR_WILDCARD_BYTES = b"ACGT-?NXnx"
+
+
+def _parsimony_state_symbols(
+    sequences: dict[str, str],
+    wildcard_chars: frozenset[str] = _PARSIMONY_WILDCARD_CHARS,
+    all_states: frozenset[str] = _PARSIMONY_DNA_STATES,
+) -> list[str]:
+    extra_codes = set()
+    try:
+        for seq in sequences.values():
+            extra = seq.encode("ascii").translate(
+                None,
+                _PARSIMONY_DNA_OR_WILDCARD_BYTES,
+            )
+            if extra:
+                extra_codes.update(extra)
+    except UnicodeEncodeError:
+        observed_states = {
+            char
+            for seq in sequences.values()
+            for char in seq
+            if char not in wildcard_chars
+        }
+        return sorted(all_states | observed_states)
+
+    if not extra_codes:
+        return _PARSIMONY_DNA_STATE_SYMBOLS.copy()
+    return sorted(all_states | {chr(code) for code in extra_codes})
 
 
 class ParsimonyScore(Tree):
@@ -282,16 +314,9 @@ class ParsimonyScore(Tree):
                 return_per_site=return_per_site,
             )
 
-        wildcard_chars = {"-", "N", "X", "?", "n", "x"}
-        all_states = {"A", "C", "G", "T"}
-
-        observed_states = {
-            char
-            for seq in sequences.values()
-            for char in seq
-            if char not in wildcard_chars
-        }
-        state_symbols = sorted(all_states | observed_states)
+        wildcard_chars = _PARSIMONY_WILDCARD_CHARS
+        all_states = _PARSIMONY_DNA_STATES
+        state_symbols = _parsimony_state_symbols(sequences)
         if len(state_symbols) > 63:
             return self._fitch_parsimony_sets(
                 tree,
@@ -423,16 +448,9 @@ class ParsimonyScore(Tree):
         aln_length: int,
         return_per_site: bool = True,
     ) -> tuple:
-        wildcard_chars = {"-", "N", "X", "?", "n", "x"}
-        all_states = {"A", "C", "G", "T"}
-
-        observed_states = {
-            char
-            for seq in sequences.values()
-            for char in seq
-            if char not in wildcard_chars
-        }
-        state_symbols = sorted(all_states | observed_states)
+        wildcard_chars = _PARSIMONY_WILDCARD_CHARS
+        all_states = _PARSIMONY_DNA_STATES
+        state_symbols = _parsimony_state_symbols(sequences)
         if len(state_symbols) > 63:
             return self._fitch_parsimony_sets(
                 tree,
@@ -515,8 +533,8 @@ class ParsimonyScore(Tree):
         aln_length: int,
         return_per_site: bool = True,
     ) -> tuple:
-        wildcard_chars = {"-", "N", "X", "?", "n", "x"}
-        all_states = {"A", "C", "G", "T"}
+        wildcard_chars = _PARSIMONY_WILDCARD_CHARS
+        all_states = _PARSIMONY_DNA_STATES
         default_states = set(all_states)
         clades = self._postorder_clades_fast(tree)
         if clades is None:

@@ -26,6 +26,53 @@ import phykit.services.tree.parsimony_score as module
 from phykit.services.tree.parsimony_score import ParsimonyScore
 
 
+def test_parsimony_state_symbols_uses_dna_fast_path():
+    sequences = {
+        "A": "ACGT-?NXnx",
+        "B": "TGCA??????",
+    }
+
+    assert module._parsimony_state_symbols(sequences) == ["A", "C", "G", "T"]
+
+
+def test_parsimony_state_symbols_preserves_extra_ascii_states():
+    sequences = {
+        "A": "ACGTacgt-?NX",
+        "B": "EFGX",
+    }
+
+    assert module._parsimony_state_symbols(sequences) == [
+        "A",
+        "C",
+        "E",
+        "F",
+        "G",
+        "T",
+        "a",
+        "c",
+        "g",
+        "t",
+    ]
+
+
+def test_parsimony_state_symbols_preserves_unicode_fallback():
+    state_one = chr(256)
+    state_two = chr(257)
+    sequences = {
+        "A": state_one + "A",
+        "B": state_two + "C",
+    }
+
+    assert module._parsimony_state_symbols(sequences) == [
+        "A",
+        "C",
+        "G",
+        "T",
+        state_one,
+        state_two,
+    ]
+
+
 def test_module_import_does_not_import_numpy_or_biopython_fasta_parser():
     code = """
 import sys
