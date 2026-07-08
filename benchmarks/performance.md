@@ -1731,6 +1731,7 @@ Results:
 | `parsimony_utils.fitch_downpass` reverse-preorder postorder helper | balanced 32768-tip tree, eight binary discrete characters | 0.130832s | 0.110949s | 1.18x |
 | `parsimony_utils._postorder_clades_direct` localized stack operations | balanced 131072-tip tree, direct postorder helper materialized as a list, side-by-side previous reverse-preorder helper | 0.071677s | 0.052405s | 1.37x |
 | `parsimony_utils.fitch_downpass` repeated terminal mask cache | balanced 32768-tip tree, eight binary discrete characters with repeated terminal state vectors | 0.155554s | 0.124489s | 1.25x |
+| `parsimony_utils.fitch_downpass` repeated wide mask-set conversion cache | balanced 32768-tip tree, 32 binary/wildcard discrete characters with eight repeated terminal state vectors, side-by-side previous per-node mask-to-set conversion with identical root state sets and scores | 0.878144s | 0.523892s | 1.68x |
 | `parsimony_utils.fitch_uppass_acctran` direct preorder | balanced 32768-tip tree, eight-character state sets after downpass | 0.162745s | 0.077135s | 2.11x |
 | `parsimony_utils._preorder_clades_direct` binary-child fast path | balanced 32768-tip tree, direct preorder helper for parsimony uppass/change traversal | 0.013750s | 0.006956s | 1.98x |
 | `parsimony_utils.classify_changes` plain-dict transition counts | balanced 32768-tip tree, 24-character synthetic branch-change map with 1.26M changes, identical classifications | 1.033947s | 0.943712s | 1.10x |
@@ -6501,7 +6502,11 @@ Profiling summary:
   `fitch_downpass`, `resolve_polytomies`, and other direct-postorder callers.
   The direct postorder helper now also localizes stack and output-list methods
   inside that reverse-preorder loop, preserving identical clade order while
-  reducing per-node attribute lookups for all callers.
+  reducing per-node attribute lookups for all callers. The bitmask downpass now
+  caches repeated wide mask-vector conversions back to state-set lists when at
+  least 16 characters and repeated terminal state vectors make the cache
+  worthwhile, while keeping the previous per-node conversion path for smaller or
+  mostly unique matrices.
   `classify_changes` now counts `(character, new_state)` transitions with a
   plain dictionary instead of `Counter`, avoiding the subclass overhead while
   preserving the same lookups for transitions collected from the first pass.

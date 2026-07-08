@@ -361,6 +361,34 @@ class TestFitchDownpass:
         assert optimized_scores == generic_scores
         assert optimized_sets[id(tree.root)] == generic_sets[id(tree.root)]
 
+    def test_repeated_terminal_patterns_keep_node_state_lists_independent(self):
+        tree = _make_tree("(((A:1,B:1):1,(C:1,D:1):1):1,((E:1,F:1):1,(G:1,H:1):1):1);")
+        pattern_a = ["0", "1"] * 8
+        pattern_b = ["1", "0"] * 8
+        tip_states = {
+            "A": pattern_a,
+            "B": pattern_a,
+            "C": pattern_b,
+            "D": pattern_b,
+            "E": pattern_a,
+            "F": pattern_a,
+            "G": pattern_b,
+            "H": pattern_b,
+        }
+
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+        lists_by_value = {}
+        for char_sets in node_state_sets.values():
+            lists_by_value.setdefault(tuple(char_sets), []).append(char_sets)
+
+        repeated_lists = next(
+            group for group in lists_by_value.values() if len(group) > 1
+        )
+
+        assert scores == [2, 2] * 8
+        assert repeated_lists[0] == repeated_lists[1]
+        assert repeated_lists[0] is not repeated_lists[1]
+
     def test_root_state_set_correct(self):
         """Root state set should be intersection or union of children."""
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")

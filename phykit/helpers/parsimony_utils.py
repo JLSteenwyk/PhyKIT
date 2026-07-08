@@ -326,20 +326,50 @@ def _fitch_downpass_bitmask(
         node_masks[cid] = char_masks
 
     node_state_sets = {}
+    use_mask_tuple_cache = (
+        n_chars >= 16
+        and len(tip_mask_cache) * 4 <= len(tip_states)
+    )
+    if not use_mask_tuple_cache:
+        for cid, masks in node_masks.items():
+            char_sets = []
+            for i, mask in enumerate(masks):
+                cache = mask_set_caches[i]
+                state_set = cache.get(mask)
+                if state_set is None:
+                    states = states_by_char[i]
+                    state_set = frozenset(
+                        states[index]
+                        for index in range(len(states))
+                        if mask & (1 << index)
+                    )
+                    cache[mask] = state_set
+                char_sets.append(state_set)
+            node_state_sets[cid] = char_sets
+        return node_state_sets, scores
+
+    mask_tuple_cache = {}
     for cid, masks in node_masks.items():
-        char_sets = []
-        for i, mask in enumerate(masks):
-            cache = mask_set_caches[i]
-            state_set = cache.get(mask)
-            if state_set is None:
-                states = states_by_char[i]
-                state_set = frozenset(
-                    states[index]
-                    for index in range(len(states))
-                    if mask & (1 << index)
-                )
-                cache[mask] = state_set
-            char_sets.append(state_set)
+        cached_sets = None
+        key = tuple(masks)
+        cached_sets = mask_tuple_cache.get(key)
+        if cached_sets is None:
+            char_sets = []
+            for i, mask in enumerate(masks):
+                cache = mask_set_caches[i]
+                state_set = cache.get(mask)
+                if state_set is None:
+                    states = states_by_char[i]
+                    state_set = frozenset(
+                        states[index]
+                        for index in range(len(states))
+                        if mask & (1 << index)
+                    )
+                    cache[mask] = state_set
+                char_sets.append(state_set)
+            cached_sets = tuple(char_sets)
+            mask_tuple_cache[key] = cached_sets
+        char_sets = list(cached_sets)
         node_state_sets[cid] = char_sets
 
     return node_state_sets, scores
