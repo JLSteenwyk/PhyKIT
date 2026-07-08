@@ -36,6 +36,17 @@ _SKIP_CODES = (ord("-"), ord("N"), ord("?"), ord("X"), ord("n"), ord("x"))
 _SKIP_BYTES = b"-N?Xnx"
 _SCALAR_SKIP_CHARS = "-N?Xnx"
 _SKIP_SCAN_BYTES = 4096
+_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX = 1024
+_SKIP_LOOKUP = None
+
+
+def _get_skip_lookup():
+    global _SKIP_LOOKUP
+    if _SKIP_LOOKUP is None:
+        lookup = np.zeros(256, dtype=np.bool_)
+        lookup[np.frombuffer(_SKIP_BYTES, dtype=np.uint8)] = True
+        _SKIP_LOOKUP = lookup
+    return _SKIP_LOOKUP
 
 
 def _same_sequence(seq_a: str, seq_b: str) -> bool:
@@ -543,9 +554,23 @@ class Dstatistic(Alignment):
             )
 
         if has_skip_code:
-            valid = np.ones(len(p1), dtype=bool)
-            for code in _SKIP_CODES:
-                valid &= (p1 != code) & (p2 != code) & (p3 != code) & (out != code)
+            if len(p1) < _SKIP_LOOKUP_SMALL_ALIGNMENT_MAX:
+                skip_lookup = _get_skip_lookup()
+                valid = ~(
+                    skip_lookup[p1]
+                    | skip_lookup[p2]
+                    | skip_lookup[p3]
+                    | skip_lookup[out]
+                )
+            else:
+                valid = np.ones(len(p1), dtype=bool)
+                for code in _SKIP_CODES:
+                    valid &= (
+                        (p1 != code)
+                        & (p2 != code)
+                        & (p3 != code)
+                        & (out != code)
+                    )
 
             if _same_sequence(seq_p2, seq_p3) or _same_sequence(
                 seq_p1,

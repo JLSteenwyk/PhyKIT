@@ -175,6 +175,58 @@ class TestDstatistic:
         assert block_abba.tolist() == [4.0, 0.0]
         assert block_baba.tolist() == [1.0, 1.0]
 
+    def test_count_site_patterns_small_ascii_with_skips_uses_lookup_mask(
+        self, mocker, monkeypatch
+    ):
+        monkeypatch.setattr(module, "_SKIP_LOOKUP", None)
+        mocker.patch.object(
+            module.np,
+            "ones",
+            side_effect=AssertionError(
+                "small D-statistic alignments with skips should use lookup mask"
+            ),
+        )
+        lookup_spy = mocker.spy(module, "_get_skip_lookup")
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "ANXXC",
+            "CCCAA",
+            "CCGCC",
+            "AAAAA",
+            block_size=5,
+        )
+
+        assert abba == 1
+        assert baba == 1
+        assert block_abba.tolist() == [1.0]
+        assert block_baba.tolist() == [1.0]
+        assert lookup_spy.call_count == 1
+
+    def test_count_site_patterns_large_ascii_with_skips_keeps_loop_mask(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(module, "_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX", 1)
+        monkeypatch.setattr(
+            module,
+            "_get_skip_lookup",
+            lambda: (_ for _ in ()).throw(
+                AssertionError("large D-statistic alignments should use loop mask")
+            ),
+        )
+
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "ANXXC",
+            "CCCAA",
+            "CCGCC",
+            "AAAAA",
+            block_size=5,
+        )
+
+        assert abba == 1
+        assert baba == 1
+        assert block_abba.tolist() == [1.0]
+        assert block_baba.tolist() == [1.0]
+
     def test_count_site_patterns_short_alignment_returns_empty_block_arrays(self):
         abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
             "AAAACCAA",
