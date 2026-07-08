@@ -1644,6 +1644,7 @@ Results:
 | `IndependentContrasts.run` ordered trait prune setup | 300k ordered trait rows plus 75k tree-only tail tips, side-by-side previous shared-set construction and membership scan | 0.080876s | 0.008993s | 8.99x |
 | `IndependentContrasts._parse_trait_data` exact-order all-shared fast path | 500k two-column trait rows with comments/blanks, file order matching tree-tip order, identical dict order | 0.599368s | 0.372073s | 1.61x |
 | `IndependentContrasts._parse_trait_data` stripped comment check | 200k two-column trait rows with whitespace-prefixed comments/blanks, file order matching tree-tip order, identical parsed traits | 0.269181s | 0.161897s | 1.66x |
+| `IndependentContrasts._parse_trait_data` valid-row partition parser | 250k exact-order trait rows / 250k shared plus 25k extra trait rows, side-by-side previous `split("\t")` parser with identical parsed traits | 0.842557s / 0.983671s | 0.528763s / 0.652255s | 1.59x / 1.51x |
 | `IndependentContrasts.run` all-shared read-only setup | balanced 32768-tip cached binary tree, one trait value for every tip, PIC/output mocked | 0.281312s | 0.050213s | 5.60x |
 | `IndependentContrasts`/`FitDiscrete._needs_default_branch_lengths` unordered scan | balanced 131072-tip tree, complete branch lengths, optimized helper baseline | 0.023833s | 0.016582s | 1.44x |
 | `independent_contrasts` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.081544s | 0.025828s | 3.16x |
@@ -6267,7 +6268,9 @@ Profiling summary:
   condition exists and do not expose traversal order. Ordered filtered trait
   mappings now reuse the shared large-input prune helper, skipping shared-set
   construction and the membership scan when only tree-only tail tips need
-  pruning.
+  pruning. A follow-up parser pass uses a single tab partition for valid
+  two-column trait rows, preserving malformed-row skipping while avoiding a
+  temporary split list per parsed row.
 - `ParsimonyScore.run` baseline time made a second full-tree pickle/unpickle
   copy before validation, polytomy resolution, optional pruning, and Fitch
   traversal. The optimized path performs those mutations on the isolated tree

@@ -407,6 +407,36 @@ class TestPICComputation:
         assert list(tip_traits) == ["A", "B", "C"]
         assert tip_traits == {"A": 1.0, "B": 2.0, "C": 3.0}
 
+    def test_parse_trait_data_valid_rows_avoid_split(self, monkeypatch, args):
+        class NoSplitLine(str):
+            def strip(self):
+                return self
+
+            def split(self, *_args, **_kwargs):
+                raise AssertionError("valid trait rows should not allocate splits")
+
+        class NoSplitTraits:
+            def __enter__(self):
+                return iter(
+                    [
+                        NoSplitLine("A\t1\n"),
+                        NoSplitLine("bad\t2\textra\n"),
+                        NoSplitLine("B\t2\n"),
+                        NoSplitLine("C\t3\n"),
+                    ]
+                )
+
+            def __exit__(self, *_args):
+                return False
+
+        monkeypatch.setattr("builtins.open", lambda *_args, **_kwargs: NoSplitTraits())
+        ic = IndependentContrasts(args)
+
+        tip_traits = ic._parse_trait_data("traits.tsv", ["A", "B", "C"])
+
+        assert list(tip_traits) == ["A", "B", "C"]
+        assert tip_traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+
 
 class TestPICRun:
     @staticmethod

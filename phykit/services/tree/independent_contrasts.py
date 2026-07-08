@@ -166,11 +166,11 @@ class IndependentContrasts(Tree):
                     stripped = line.strip()
                     if not stripped or stripped[0] == "#":
                         continue
-                    parts = stripped.split("\t")
-                    if len(parts) != 2:
+                    taxon, sep, value = stripped.partition("\t")
+                    if not sep or "\t" in value:
                         continue
                     try:
-                        traits[parts[0]] = float(parts[1])
+                        traits[taxon] = float(value)
                     except ValueError:
                         continue
         except FileNotFoundError:
