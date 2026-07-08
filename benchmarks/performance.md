@@ -1221,6 +1221,8 @@ Results:
 | `TransferAnnotations._print_text_output` batched summary | 100k captured transfer-annotation text summaries, identical stdout text | 0.065141s | 0.044902s | 1.45x |
 | `TransferAnnotations._write_annotated_tree` single output write | 8192-tip balanced annotated tree, identical normalized Newick output | 0.099131s | 0.031941s | 3.10x |
 | `transfer_annotations` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read`/`Phylo.write` proxy | 0.113289s | 0.025829s | 4.39x |
+| `TransferAnnotations._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.011321167s / 0.061326125s / 1.309429480s | 0.001365167s / 0.015945375s / 0.277448979s | 8.29x / 3.85x / 4.72x |
+| `TransferAnnotations._LazyPhylo.write` cached callable | 10k / 100k / 1M repeated no-op writes after first Bio.Phylo resolution | 0.023563646s / 0.185857187s / 1.475374375s | 0.005476437s / 0.009040395s / 0.257272854s | 4.30x / 20.56x / 5.73x |
 | `transfer_annotations` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006235s | 0.004812s | 1.30x |
 | `transfer_annotations` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.011073s | 0.007502s | 1.48x |
 | `color_annotations.get_clade_tip_ids` | balanced 65536-tip clade, collect terminal object ids for highlighted ranges/clades | 0.1280s | 0.0200s | 6.4x |

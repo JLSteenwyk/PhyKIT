@@ -8,6 +8,7 @@ import pytest
 from Bio import Phylo
 
 from phykit.services.tree.transfer_annotations import TransferAnnotations
+import phykit.services.tree.transfer_annotations as transfer_annotations_module
 
 
 SOURCE = "tests/sample_files/wastral_annotated.tre"
@@ -37,6 +38,41 @@ assert "Bio.Phylo" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_phylo_caches_resolved_read_and_write(monkeypatch):
+    read_calls = []
+    write_calls = []
+
+    def cached_read(*args, **kwargs):
+        read_calls.append((args, kwargs))
+        return "cached-read"
+
+    def cached_write(*args, **kwargs):
+        write_calls.append((args, kwargs))
+        return "cached-write"
+
+    lazy = transfer_annotations_module._LazyPhylo()
+
+    monkeypatch.setattr(Phylo, "read", cached_read)
+    monkeypatch.setattr(Phylo, "write", cached_write)
+    assert lazy.read("tree", "newick") == "cached-read"
+    assert lazy.write("tree", "handle", "newick") == "cached-write"
+    monkeypatch.setattr(Phylo, "read", lambda *_args: "uncached-read")
+    monkeypatch.setattr(Phylo, "write", lambda *_args: "uncached-write")
+
+    assert lazy.read("tree2", "newick") == "cached-read"
+    assert lazy.write("tree2", "handle2", "newick") == "cached-write"
+    assert lazy.__dict__["read"] is cached_read
+    assert lazy.__dict__["write"] is cached_write
+    assert read_calls == [
+        (("tree", "newick"), {}),
+        (("tree2", "newick"), {}),
+    ]
+    assert write_calls == [
+        (("tree", "handle", "newick"), {}),
+        (("tree2", "handle2", "newick"), {}),
+    ]
 
 
 class TestTransferAnnotations:

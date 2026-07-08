@@ -27,12 +27,14 @@ class _LazyPhylo:
     def read(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
 
-        return _Phylo.read(*args, **kwargs)
+        self.read = _Phylo.read
+        return self.read(*args, **kwargs)
 
     def write(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
 
-        return _Phylo.write(*args, **kwargs)
+        self.write = _Phylo.write
+        return self.write(*args, **kwargs)
 
 
 Phylo = _LazyPhylo()
