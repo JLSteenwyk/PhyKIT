@@ -78,10 +78,13 @@ class MonophylyCheck(Tree):
         if clade is not None:
             return clade, taxa_of_interest
 
-        taxa_of_interest_list = list(taxa_of_interest)
-        shared_tree_tips = self.shared_tips(taxa_of_interest_list, list(tree_tips))
+        if taxa_of_interest.issubset(tree_tips):
+            shared_tree_tips = list(taxa_of_interest)
+            diff_tips = list(tree_tips.difference(taxa_of_interest))
+        else:
+            shared_tree_tips = self.shared_tips(list(taxa_of_interest), list(tree_tips))
+            diff_tips = list(tree_tips - frozenset(shared_tree_tips))
 
-        diff_tips = list(tree_tips - frozenset(shared_tree_tips))
         mutable_tree = self._fast_copy(tree)
         mutable_tree.root_with_outgroup(diff_tips)
         clade = mutable_tree.common_ancestor(shared_tree_tips)

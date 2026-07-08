@@ -218,7 +218,36 @@ class TestMonophylyCheck:
         copy_tree.assert_called_once_with(cached_tree)
         cached_tree.root_with_outgroup.assert_not_called()
         copied_tree.root_with_outgroup.assert_called_once_with(["c"])
-        copied_tree.common_ancestor.assert_called_once_with(["a", "b"])
+        assert sorted(copied_tree.common_ancestor.call_args.args[0]) == ["a", "b"]
+        assert resolved is clade
+        assert tips == frozenset({"a", "b"})
+
+    def test_resolve_interest_clade_skips_shared_tip_recalculation(
+        self, mocker, args
+    ):
+        service = MonophylyCheck(args)
+        cached_tree = mocker.Mock()
+        copied_tree = mocker.Mock()
+        clade = mocker.Mock()
+        copied_tree.common_ancestor.return_value = clade
+
+        mocker.patch.object(service, "_find_exact_clade_by_taxa", return_value=None)
+        mocker.patch.object(
+            service,
+            "shared_tips",
+            side_effect=AssertionError("taxa already intersect tree tips"),
+        )
+        mocker.patch.object(service, "_fast_copy", return_value=copied_tree)
+        mocker.patch.object(service, "get_tip_names_from_tree", return_value=["a", "b"])
+
+        resolved, tips = service._resolve_interest_clade(
+            cached_tree,
+            frozenset({"a", "b"}),
+            frozenset({"a", "b", "c"}),
+        )
+
+        copied_tree.root_with_outgroup.assert_called_once_with(["c"])
+        assert sorted(copied_tree.common_ancestor.call_args.args[0]) == ["a", "b"]
         assert resolved is clade
         assert tips == frozenset({"a", "b"})
 
