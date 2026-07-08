@@ -1869,6 +1869,39 @@ class TestPlot:
         assert len(line_collections) >= 2
         assert output_path.exists()
 
+    def test_circular_plot_skips_redundant_tight_layout(
+        self, default_args, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        default_args.circular = True
+        default_args.ylabel_fontsize = 0
+        default_args.no_title = True
+        svc = RateHeterogeneity(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        clades = list(svc._iter_preorder(tree.root))
+        parent_map = svc._build_parent_map(tree, clades)
+        regimes = ["aquatic", "terrestrial"]
+        branch_regimes = {
+            id(clade): regimes[index % 2]
+            for index, clade in enumerate(clades)
+            if clade != tree.root
+        }
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        output_path = tmp_path / "rate_heterogeneity_circular_no_tight_layout.png"
+        svc._plot_regime_tree(
+            tree, branch_regimes, regimes, parent_map, str(output_path)
+        )
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
     def test_plot_file_created(self, default_args):
         try:
             import matplotlib

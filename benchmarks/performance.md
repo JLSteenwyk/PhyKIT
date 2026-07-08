@@ -2595,6 +2595,7 @@ Results:
 | `RateHeterogeneity._plot_regime_tree` rectangular batched regime branches | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/label/legend render | 1.970551s | 0.531163s | 3.71x |
 | `RateHeterogeneity._plot_regime_tree` circular batched regime branches/arcs | balanced 2048-tip tree, 3 regimes, real Matplotlib Agg branch/arc/legend render | 1.475253s | 0.261012s | 5.65x |
 | `RateHeterogeneity._plot_regime_tree` rectangular redundant tight layout pass | repeated 128-tip rectangular regime-tree PNG render with 3 regimes and legend, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.859688s | 0.651671s | 1.32x |
+| `RateHeterogeneity._plot_regime_tree` circular redundant tight layout pass | repeated 128-tip circular regime-tree PNG render with 3 regimes, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.315818s | 0.757499s | 1.74x |
 | `RateHeterogeneity.run` ordered exact trait/regime setup | 300k trait/regime taxa in identical insertion order plus 75k tree-only tips, side-by-side previous shared-set construction | 0.251396s | 0.066233s | 3.80x |
 | `RateHeterogeneity`/`OUwie` ordered trait/regime prune targets | 300k ordered trait/regime taxa with all tree tips / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.052482s / 0.053780s | 0.011896s / 0.013496s | 4.41x / 3.98x |
 | `RateHeterogeneity._build_per_regime_vcv` branch accumulation | balanced 1024-tip synthetic root-to-tip paths x 3 regimes | 0.345525s | 0.019535s | 17.7x |
@@ -8748,10 +8749,9 @@ Profiling summary:
   existing branch colors and z-order while avoiding one Matplotlib `Line2D`
   artist per segment. A later circular plotting pass batches regime-colored
   radial branches and internal arcs into two `LineCollection`s while preserving
-  branch and arc colors. The rectangular path also skips the explicit
-  `Figure.tight_layout()` pass before saving with `bbox_inches="tight"`; the
-  circular path keeps it because the same benchmark was noisy and showed no
-  median speedup.
+  branch and arc colors. Both rectangular and circular paths now skip the
+  explicit `Figure.tight_layout()` pass before saving with
+  `bbox_inches="tight"`, avoiding duplicate Matplotlib layout work.
 - `StochasticCharacterMap._prune_tree_to_tip_states` baseline time collected tip
   names and pruned by name before SIMMAP setup. The optimized shared helper
   prunes terminal clade objects directly and is reused by stochastic character
