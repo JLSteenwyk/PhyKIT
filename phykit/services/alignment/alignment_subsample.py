@@ -370,7 +370,7 @@ class AlignmentSubsample(Alignment):
             current_pos += part_len
 
         new_sequences = {
-            taxon: "".join(seq[start:end] for start, end in selected_ranges)
+            taxon: "".join([seq[start:end] for start, end in selected_ranges])
             for taxon, seq in sequences.items()
         }
         return new_sequences, new_partitions

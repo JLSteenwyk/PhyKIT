@@ -675,6 +675,7 @@ Results:
 | `AlignmentSubsample._run_sites` full-site mapping reuse | 250k taxa x 120 sites, selected site count equals alignment length, mocked FASTA write and summary output, side-by-side previous dictionary copy | 0.012216s | 0.009435s | 1.29x |
 | `AlignmentSubsample._run_sites` direct length validation | 50k alignment sequences x 120 sites, equal lengths / late mismatch / early mismatch / empty alignment | 0.004171107s / 0.005440565s / 0.003542095s / 0.000001152s | 0.002701266s / 0.001679951s / 0.000000500s / 0.000001066s | 1.54x / 3.24x / 7084.19x / 1.08x |
 | `AlignmentSubsample._assemble_partition_subsample` | 900 taxa x 800 partitions x 80 sites, 600 selected partitions with duplicates | 0.1243s | 0.0502s | 2.5x |
+| `AlignmentSubsample._assemble_partition_subsample` range list comprehension | 2000 taxa x 1000 selected 10-site partition ranges, side-by-side previous generator slice join | 0.242025s | 0.172435s | 1.40x |
 | `AlignmentSubsample._print_summary` batched text output | seven captured summaries with 100k output-file rows each, identical stdout text | 0.118185s | 0.050466s | 2.34x |
 | `AlignmentSubsample._write_fasta` chunked output | 1M FASTA records x 40 bp, identical output file text, previous per-record write baseline | 0.273654s | 0.193250s | 1.42x |
 | `AlignmentSubsample._write_fasta` chunk-local comprehension | 200k FASTA records x 40 bp, same 8192-row chunks and identical output text, side-by-side previous append-loop chunk fill | 0.118811s | 0.035736s | 3.32x |

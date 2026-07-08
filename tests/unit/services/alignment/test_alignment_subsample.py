@@ -475,6 +475,33 @@ class TestPartitionsMode:
             ("gene3_dup1", 7, 9),
         ]
 
+    def test_assemble_partition_subsample_handles_many_short_ranges(self):
+        sequences = {
+            "t1": "AAACCCGGGTTT",
+            "t2": "TTTGGGCCCAAA",
+        }
+        selected = [
+            ("p1", 1, 2),
+            ("p2", 4, 5),
+            ("p3", 7, 8),
+            ("p4", 10, 11),
+            ("p1", 1, 2),
+        ]
+
+        new_sequences, new_partitions = AlignmentSubsample._assemble_partition_subsample(
+            sequences,
+            selected,
+        )
+
+        assert new_sequences == {"t1": "AACCGGTTAA", "t2": "TTGGCCAATT"}
+        assert new_partitions == [
+            ("p1", 1, 2),
+            ("p2", 3, 4),
+            ("p3", 5, 6),
+            ("p4", 7, 8),
+            ("p1_dup1", 9, 10),
+        ]
+
     def test_write_partition_file_batches_rows_preserving_exact_text(
         self, tmp_path, monkeypatch
     ):
