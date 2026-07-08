@@ -2734,6 +2734,7 @@ Results:
 | `PhyloAnova`/`PhyloHeatmap`/`PhyloPath._needs_default_branch_lengths` unordered scan | balanced 131072-tip tree, complete branch lengths, optimized helper baseline | 0.023242s | 0.016890s | 1.38x |
 | `PhyloAnova._parse_trait_file` single-pass parser | 200k-row mixed group/continuous TSV, comments/blanks before and within data, 100k shared taxa | 0.235966s | 0.220250s | 1.07x |
 | `PhyloAnova._parse_trait_file` precomputed column metadata | 100k all-shared mixed group/continuous TSV rows, non-default group column, side-by-side previous row formatter and shared-taxa filter | 0.144863s | 0.084070s | 1.72x |
+| `PhyloAnova._parse_trait_file` partial-overlap set differences | 200k-row mixed group/continuous TSV, 100k shared taxa plus 100k off-tree rows and 100k tree-only tips, identical filtered traits and warnings | 0.755547s | 0.459842s | 1.64x |
 | `phylo_anova` module import without eager SciPy linalg | cold process import for phylogenetic-ANOVA command module | 0.318135s | 0.183414s | 1.7x |
 | `phylo_anova` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.183414s | 0.031434s | 5.84x |
 | `phylo_anova` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.012744s | 0.005728s | 2.22x |
@@ -8781,6 +8782,9 @@ Profiling summary:
   Trait parsing now streams rows directly from the file handle instead of
   building both `readlines()` and a stripped `data_lines` list, preserving
   mixed categorical/numeric parsing and logical data-row error numbering.
+  Partial-overlap validation now computes the tree-only and trait-only taxon
+  differences once, reusing those sets for warning counts instead of rebuilding
+  both differences for `len(...)`.
   A follow-up parser pass precomputes the categorical group column and numeric
   columns once, binds `float`, and returns the validated trait dictionary
   directly when all parsed taxa are present on the tree, preserving mismatch

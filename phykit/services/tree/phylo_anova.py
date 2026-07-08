@@ -378,16 +378,18 @@ class PhyloAnova(Tree):
 
         trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
+        tree_only = tree_tip_set - trait_taxa_set
+        trait_only = trait_taxa_set - tree_tip_set
 
-        if tree_tip_set - trait_taxa_set:
+        if tree_only:
             print(
-                f"Warning: {len(tree_tip_set - trait_taxa_set)} taxa in tree "
+                f"Warning: {len(tree_only)} taxa in tree "
                 f"but not in trait file",
                 file=sys.stderr,
             )
-        if trait_taxa_set - tree_tip_set:
+        if trait_only:
             print(
-                f"Warning: {len(trait_taxa_set - tree_tip_set)} taxa in trait "
+                f"Warning: {len(trait_only)} taxa in trait "
                 f"file but not in tree",
                 file=sys.stderr,
             )

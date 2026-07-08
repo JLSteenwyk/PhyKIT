@@ -291,6 +291,35 @@ class TestPhyloAnovaParsing:
         }
         assert capsys.readouterr().err == ""
 
+    def test_parse_trait_file_warns_and_filters_partial_overlap(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tgroup\tbody_mass\n"
+            "A\tg1\t1.0\n"
+            "B\tg2\t2.0\n"
+            "C\tg1\t3.0\n"
+            "off_tree\tg2\t4.0\n"
+        )
+        svc = PhyloAnova.__new__(PhyloAnova)
+        svc.group_column = None
+
+        header, traits = svc._parse_trait_file(
+            str(trait_file),
+            ["A", "B", "C", "missing"],
+        )
+
+        assert header == ["group", "body_mass"]
+        assert traits == {
+            "A": ["g1", 1.0],
+            "B": ["g2", 2.0],
+            "C": ["g1", 3.0],
+        }
+        err = capsys.readouterr().err
+        assert "Warning: 1 taxa in tree but not in trait file" in err
+        assert "Warning: 1 taxa in trait file but not in tree" in err
+
 
 class TestPhyloAnova:
     def test_groups_and_response_matrix_preserves_nondefault_group_column(self):
