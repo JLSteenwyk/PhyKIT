@@ -585,6 +585,7 @@ Results:
 | `CreateConcatenationMatrix._get_taxa_from_alignment` header-only parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.060259s | 0.038296s | 1.57x |
 | `create_concatenation_matrix` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.206190s | 0.135351s | 1.52x |
 | `create_concatenation_matrix` module import without eager NumPy/concurrency helpers | cold subprocess import after lazy NumPy occupancy lookup, concurrency, JSON, and plot config helpers | 0.096497s | 0.025028s | 3.86x |
+| `CreateConcatenationMatrix._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.011837417s / 0.244913041s / 2.558543750s | 0.011071000s / 0.238948083s / 2.227261542s | 1.07x / 1.02x / 1.15x |
 | `create_concatenation_matrix` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.035103s | 0.033782s | 1.04x |
 | `create_concatenation_matrix` module import without eager file helper | median cold subprocess import, interleaved lazy import vs eager-equivalent `phykit.helpers.files` preload | 0.028115s | 0.028138s | 1.00x |
 | `create_concatenation_matrix` module import without eager `textwrap` | median cold subprocess import after lazy verbose-message dedent helper | 0.047605s | 0.041895s | 1.14x |
@@ -3968,6 +3969,9 @@ Profiling summary:
   startup for import-only callers. A later FASTA parser pass reuses the shared
   first-token parser helper and constructs the slots-backed records directly,
   preserving duplicate record order while avoiding `SimpleFastaParser` overhead.
+  The lazy multiprocessing proxy now caches the imported module after first
+  use while keeping `mp.cpu_count` and direct stdlib monkeypatches visible
+  through dynamic attribute reads.
 - `MemoryEfficientAlignmentProcessor.calculate_column_stats_streaming` baseline
   reparsed the FASTA stream once for dimensions and then once per alignment
   column. The optimized helper accumulates per-column unique characters and gap

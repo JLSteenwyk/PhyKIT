@@ -1,8 +1,10 @@
 from argparse import Namespace
 from collections import defaultdict
+import multiprocessing
 from pathlib import Path
 import subprocess
 import sys
+from unittest.mock import patch
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -47,6 +49,19 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np.__dict__["array"] is array_attr
     assert lazy_np.array is array_attr
     assert lazy_np._module is not None
+
+
+def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable():
+    lazy_mp = ccm_module._LazyMultiprocessing()
+
+    with patch.object(multiprocessing, "cpu_count", return_value=11):
+        assert lazy_mp.cpu_count() == 11
+        assert lazy_mp._module is multiprocessing
+
+    with patch.object(multiprocessing, "cpu_count", return_value=13) as cpu_count:
+        assert lazy_mp.cpu_count() == 13
+
+    cpu_count.assert_called_once_with()
 
 
 def _write_fasta(path: Path, records):

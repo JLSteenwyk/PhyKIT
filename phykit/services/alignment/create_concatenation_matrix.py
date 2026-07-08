@@ -72,10 +72,18 @@ def _missing_taxa_for_present(
 
 
 class _LazyMultiprocessing:
-    def cpu_count(self):
-        import multiprocessing as _mp
+    _module = None
 
-        return _mp.cpu_count()
+    def _load(self):
+        module = self._module
+        if module is None:
+            import multiprocessing as module
+
+            self._module = module
+        return module
+
+    def cpu_count(self):
+        return self._load().cpu_count()
 
 
 mp = _LazyMultiprocessing()
