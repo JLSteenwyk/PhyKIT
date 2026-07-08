@@ -1,3 +1,4 @@
+import builtins
 import subprocess
 import sys
 
@@ -67,6 +68,34 @@ def test_parse_multi_trait_file_all_shared_emits_no_warnings(tmp_path, capsys):
         )
         + "\n"
     )
+
+    trait_names, traits = parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
+
+    assert trait_names == ["body_mass", "length"]
+    assert traits == {"A": [1.0, 10.0], "B": [2.0, 20.0], "C": [3.0, 30.0]}
+    assert capsys.readouterr().err == ""
+
+
+def test_parse_multi_trait_file_ordered_all_shared_skips_set_validation(
+    tmp_path, monkeypatch, capsys
+):
+    trait_file = tmp_path / "traits.tsv"
+    trait_file.write_text(
+        "\n".join(
+            [
+                "taxon\tbody_mass\tlength",
+                "A\t1.0\t10.0",
+                "B\t2.0\t20.0",
+                "C\t3.0\t30.0",
+            ]
+        )
+        + "\n"
+    )
+
+    def fail_set(*_args, **_kwargs):
+        raise AssertionError("ordered all-shared traits should skip set validation")
+
+    monkeypatch.setattr(builtins, "set", fail_set)
 
     trait_names, traits = parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
 

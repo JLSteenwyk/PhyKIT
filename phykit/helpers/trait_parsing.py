@@ -141,15 +141,26 @@ def parse_multi_trait_file(
             code=2,
         )
 
+    trait_row_count = len(traits)
+    trait_names_in_order = None
+    if trait_row_count >= min_shared and len(tree_tips) == trait_row_count:
+        if tree_tips[0] == next(iter(traits)):
+            if tree_tips[-1] == next(reversed(traits)):
+                trait_names_in_order = list(traits)
+                if trait_names_in_order == tree_tips:
+                    return trait_names, traits
+
     tree_tip_set = set(tree_tips)
     if (
         len(tree_tip_set) >= min_shared
-        and len(tree_tip_set) == len(traits)
+        and len(tree_tip_set) == trait_row_count
         and tree_tip_set == traits.keys()
     ):
         return trait_names, traits
 
-    trait_taxa_set = set(traits)
+    trait_taxa_set = (
+        set(trait_names_in_order) if trait_names_in_order is not None else set(traits)
+    )
     shared = tree_tip_set & trait_taxa_set
 
     tree_only = tree_tip_set - trait_taxa_set
