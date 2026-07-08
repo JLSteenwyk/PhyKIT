@@ -306,6 +306,7 @@ Results:
 | `GCContent.calculate_gc_total_value` mixed Unicode batched ASCII fallback | 50k ASCII records x 120 bp plus one Unicode record, alphabet `ACGTN-?X*` | 0.133722s | 0.034256s | 3.90x |
 | `GCContent.calculate_gc_total_value` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites with ambiguous/gap symbols, lowercase/uppercase variants, side-by-side previous flat byte path | 0.059239s | 0.007356s | 8.05x |
 | `GCContent._gc_counts_from_upper_sequence` identical-row count helper | 4M clean uppercase DNA chars / 4M gappy uppercase DNA chars / 1.05M uppercase Unicode DNA chars, side-by-side previous helper re-uppercase and repeated `str.count` output | 0.105214s / 0.238117s / 0.052446s | 0.037932s / 0.051851s / 0.020863s | 2.77x / 4.59x / 2.51x |
+| `GCContent` Unicode mixed-case count helper | 30 repeated 250k-site Unicode DNA / protein sequences, side-by-side previous full uppercase copy plus valid/GC counts | 0.073486s / 0.074741s | 0.042227s / 0.045933s | 1.74x / 1.63x |
 | `GCContent._gc_total_from_ascii` raw-identical normalized shortcut | 500k identical DNA records with ambiguous/gap symbols, side-by-side previous per-row uppercase equality scan | 0.384826s | 0.095858s | 4.01x |
 | `GCContent._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006159s / 0.000012970s / 0.000021196s | 0.000001571s / 0.000007444s / 0.000001744s | 3.92x / 1.74x / 12.16x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
@@ -3514,8 +3515,9 @@ Profiling summary:
   each row, avoiding repeated uppercase allocations for already-identical rows
   while preserving case-insensitive matching. A
   later variable-length fallback pass counts valid and GC bytes directly for
-  ASCII per-sequence rows, avoiding per-record NumPy array setup while keeping
-  the Unicode string-count fallback unchanged. A later proxy pass caches
+  ASCII per-sequence rows, avoiding per-record NumPy array setup. Unicode
+  fallback rows now count mixed-case invalid and GC symbols directly instead of
+  uppercasing the whole sequence first. A later proxy pass caches
   resolved NumPy attributes on the lazy module wrapper, avoiding repeated
   import/getattr dispatch during GC matrix counting while preserving lazy import
   behavior and test patch points. A

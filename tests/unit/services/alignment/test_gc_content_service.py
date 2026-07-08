@@ -72,6 +72,24 @@ assert "phykit.helpers.files" not in sys.modules
             is_protein=False,
         ) == (2, 1)
 
+    def test_gc_counts_from_mixed_sequence_avoids_upper_copy(self):
+        class NoUpperString(str):
+            def upper(self):
+                raise AssertionError(
+                    "Unicode GC fallback should count mixed-case symbols directly"
+                )
+
+        sequence = NoUpperString("gC\u03a9nX-")
+
+        assert gc_content_module._gc_counts_from_mixed_sequence(
+            sequence,
+            is_protein=False,
+        ) == (3, 2)
+        assert gc_content_module._gc_counts_from_mixed_sequence(
+            sequence,
+            is_protein=True,
+        ) == (4, 2)
+
     def test_invalid_byte_scan_short_buffers_avoid_slice_checks(self):
         class NoSliceBytes(bytes):
             def __getitem__(self, key):

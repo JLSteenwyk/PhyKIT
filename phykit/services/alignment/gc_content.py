@@ -42,6 +42,8 @@ _DNA_INVALID_BYTES = b"-?*XNxn"
 _PROTEIN_INVALID_BYTES = b"-?*Xx"
 _DNA_INVALID_CHARS = "-?*XN"
 _PROTEIN_INVALID_CHARS = "-?*X"
+_DNA_INVALID_COUNT_CHARS = "-?*XNxn"
+_PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
 
 
@@ -103,6 +105,24 @@ def _gc_counts_from_upper_sequence(sequence: str, is_protein: bool) -> tuple[int
     else:
         valid_count = len(sequence_bytes)
     gc_count = sequence_bytes.count(b"G") + sequence_bytes.count(b"C")
+    return valid_count, gc_count
+
+
+def _gc_counts_from_mixed_sequence(sequence: str, is_protein: bool) -> tuple[int, int]:
+    invalid_chars = (
+        _PROTEIN_INVALID_COUNT_CHARS
+        if is_protein
+        else _DNA_INVALID_COUNT_CHARS
+    )
+    valid_count = len(sequence) - sum(
+        sequence.count(char) for char in invalid_chars
+    )
+    gc_count = (
+        sequence.count("G")
+        + sequence.count("C")
+        + sequence.count("g")
+        + sequence.count("c")
+    )
     return valid_count, gc_count
 
 
@@ -274,7 +294,6 @@ class GCContent(Alignment):
                 for (record_id, _), gc_content in zip(record_data, gc_contents)
             ]
 
-        gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
         output = []
         for record_id, seq in record_data:
             try:
@@ -283,9 +302,10 @@ class GCContent(Alignment):
                     is_protein,
                 )
             except UnicodeEncodeError:
-                seq = seq.upper()
-                valid_len = len(seq) - sum(seq.count(char) for char in gap_chars)
-                gc_count = seq.count("G") + seq.count("C")
+                valid_len, gc_count = _gc_counts_from_mixed_sequence(
+                    seq,
+                    is_protein,
+                )
             if valid_len > 0:
                 gc_content = gc_count / valid_len
             else:
@@ -324,7 +344,6 @@ class GCContent(Alignment):
             )
             sys.exit(2)
 
-        gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
         valid_lookup = _get_valid_lookup(is_protein)
         gc_lookup = _get_gc_lookup()
         valid_count = 0
@@ -335,9 +354,12 @@ class GCContent(Alignment):
             try:
                 ascii_chunks.append(seq.encode("ascii"))
             except UnicodeEncodeError:
-                seq = seq.upper()
-                valid_count += len(seq) - sum(seq.count(char) for char in gap_chars)
-                gc_count += seq.count("G") + seq.count("C")
+                valid_len, row_gc_count = _gc_counts_from_mixed_sequence(
+                    seq,
+                    is_protein,
+                )
+                valid_count += valid_len
+                gc_count += row_gc_count
         if ascii_chunks:
             seq_array = np.frombuffer(b"".join(ascii_chunks), dtype=np.uint8)
             valid_count += int(np.count_nonzero(valid_lookup[seq_array]))
