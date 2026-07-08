@@ -137,10 +137,11 @@ def read_unique_fasta_entries(
 
 def read_fasta_first_tokens(path: str) -> list[str]:
     taxa = []
-    with open(path) as handle:
+    append = taxa.append
+    with open(path, "rb") as handle:
         for line in handle:
-            if line[0] == ">":
-                taxa.append(line[1:].split(None, 1)[0])
+            if line[0] == 62:
+                append(line[1:].split(None, 1)[0].decode())
     return taxa
 
 
