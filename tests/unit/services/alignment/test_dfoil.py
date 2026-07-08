@@ -206,6 +206,30 @@ class TestDfoilPatternCounting:
         assert counts["AABAA"] == 1
         assert lookup_spy.call_count == 1
 
+    def test_skip_code_counts_build_result_without_indexing_bincounts(
+        self,
+        monkeypatch,
+    ):
+        class IterableCounts:
+            def __iter__(self):
+                return iter([0, 1, 2, 3] + [0] * (len(PATTERNS) - 4))
+
+            def __getitem__(self, _index):
+                raise AssertionError("skip-code result should iterate counts")
+
+        monkeypatch.setattr(
+            dfoil_module.np,
+            "bincount",
+            lambda *_args, **_kwargs: IterableCounts(),
+        )
+
+        counts = Dfoil._count_site_patterns("?AAA", "AAAA", "AAAA", "CAAA", "AAAA")
+
+        assert list(counts) == PATTERNS
+        assert counts["AAABA"] == 1
+        assert counts["AABAA"] == 2
+        assert counts["AABBA"] == 3
+
     def test_large_ascii_with_skips_keeps_loop_validity_mask(self, monkeypatch):
         monkeypatch.setattr(dfoil_module, "_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX", 1)
         monkeypatch.setattr(

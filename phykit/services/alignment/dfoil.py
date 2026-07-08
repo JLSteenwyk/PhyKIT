@@ -230,7 +230,7 @@ class Dfoil(Alignment):
         bincounts = np.bincount(pattern_codes[biallelic], minlength=len(PATTERNS))
         if not has_skip_code:
             return dict(zip(PATTERNS, map(int, bincounts)))
-        return {pattern: int(bincounts[i]) for i, pattern in enumerate(PATTERNS)}
+        return dict(zip(PATTERNS, map(int, bincounts)))
 
     @staticmethod
     def _count_site_patterns_scalar(seq_p1, seq_p2, seq_p3, seq_p4, seq_outgroup):
