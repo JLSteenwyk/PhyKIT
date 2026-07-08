@@ -2111,6 +2111,7 @@ Results:
 | `TraitRateMap.run` copied-tree prune setup | balanced 32768-tip tree, all tips shared with trait data | 0.0671s | 0.0071s | 9.5x |
 | `TraitRateMap.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, reconstruction, branch-rate calculation, plotting, and output mocked; protective prune-copy retained | 1.578476s | 0.628135s | 2.51x |
 | `TraitRateMap.run` all-shared read-only setup | balanced 32768-tip cached tree, one trait for every tip, ladderize off, reconstruction/rates/plot/output mocked | 0.283459s | 0.061932s | 4.58x |
+| `TraitRateMap.run` trait count without sorting | 10k / 100k / 500k / 1M trait keys, side-by-side previous `len(sorted(trait_values.keys()))` setup | 0.000100459s / 0.001626542s / 0.008810583s / 0.032654500s | 0.000000083s / 0.000000084s / 0.000000083s / 0.000000083s | 1211.99x / 19298.19x / 105701.58x / 393960.70x |
 | `Phenogram`/`ContMap`/`TraitRateMap` ordered trait prune setup | 300k ordered tree tips with all traits / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.031790s / 0.042057s | 0.011724s / 0.010134s | 2.71x / 4.15x |
 | `TraitRateMap._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.044759s | 0.035023s | 1.28x |
 | `TraitRateMap._parse_single_trait_data` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.467069s | 0.460840s | 1.01x |
@@ -7377,6 +7378,8 @@ Profiling summary:
   pruning or ladderizing would mutate the cached tree. A later startup pass
   postpones annotations and converts annotation-only `typing` aliases to
   built-in annotations, so command discovery no longer imports `typing`. Its
+  run setup now counts trait rows directly with `len(trait_values)` instead of
+  sorting every trait key only to take the sorted-list length.
   single-trait parser now uses the same streaming, `partition("\t")`-based
   validation path and avoids `readlines()` plus temporary split lists on valid
   rows. The multi-trait parser now bounds row splitting to the selected column,

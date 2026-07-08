@@ -48,8 +48,7 @@ class TraitRateMap(Tree):
             )
             trait_name = "trait"
 
-        ordered_names = sorted(trait_values.keys())
-        n = len(ordered_names)
+        n = len(trait_values)
 
         # Prune tree to shared taxa
         tips_to_prune = self._tips_to_prune_for_ordered_mapping(

@@ -1021,6 +1021,45 @@ class TestRun:
         validate.assert_called_once()
         assert plot_rate_map.call_args.args[0] is tree
 
+    def test_run_counts_traits_without_sorting_trait_keys(self, mocker):
+        class UnsortableName(str):
+            def __lt__(self, other):
+                raise AssertionError("trait keys should not be sorted for count")
+
+        args = _make_args()
+        svc = TraitRateMap(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        trait_values = {
+            UnsortableName("D"): 4.0,
+            UnsortableName("C"): 3.0,
+            UnsortableName("B"): 2.0,
+            UnsortableName("A"): 1.0,
+        }
+        branch_rates = [
+            {
+                "rate": 1.0,
+                "child": "A",
+                "parent": "N1",
+                "change": 1.0,
+                "branch_length": 1.0,
+            }
+        ]
+
+        mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(svc, "get_tip_names_from_tree", return_value=list("ABCD"))
+        mocker.patch.object(svc, "_parse_single_trait_data", return_value=trait_values)
+        mocker.patch.object(svc, "_label_internal_nodes", return_value={})
+        mocker.patch.object(svc, "_ancestral_reconstruction", return_value={})
+        mocker.patch.object(svc, "_build_parent_map", return_value={})
+        mocker.patch.object(svc, "_compute_branch_rates", return_value=branch_rates)
+        mocker.patch.object(svc, "_plot_rate_map")
+        print_text = mocker.patch.object(svc, "_print_text_output")
+
+        svc.run()
+
+        assert print_text.call_args.args[0] == 4
+
     def test_run_missing_trait_taxa_copies_before_pruning(self, monkeypatch):
         args = _make_args()
         svc = TraitRateMap(args)
