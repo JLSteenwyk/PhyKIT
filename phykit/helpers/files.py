@@ -47,7 +47,7 @@ def _detect_format_by_content(file_path: str) -> str | None:
                 return 'stockholm'
         elif first_line.isdigit():
             return 'phylip'
-        else:
+        elif first_line[:1] in "0123456789":
             parts = first_line.split(None, 2)
             if len(parts) == 2 and parts[0].isdigit():
                 return 'phylip'

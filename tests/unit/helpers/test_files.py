@@ -80,6 +80,28 @@ class TestFormatDetection:
         aln.write_text("hello world\n")
         assert _detect_format_by_content(str(aln)) is None
 
+    def test_detect_format_unknown_non_digit_header_avoids_split(self, mocker):
+        class NoSplitLine(str):
+            def strip(self):
+                return self
+
+            def split(self, *_args, **_kwargs):
+                raise AssertionError("non-digit unknown headers should not split")
+
+        class FakeFile:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def readline(self):
+                return NoSplitLine("hello world\n")
+
+        mocker.patch("builtins.open", return_value=FakeFile())
+
+        assert _detect_format_by_content("unknown.txt") is None
+
 
 class TestAlignmentReadAndType:
     def test_get_alignment_and_format_reads_fasta_nucleotide(self, tmp_path: Path):
