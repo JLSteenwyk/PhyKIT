@@ -57,6 +57,14 @@ class _Tree:
         return self._terminals
 
 
+class _NoSpuriousBranchMap:
+    def values(self):
+        return [1.0, 2.0]
+
+    def items(self):
+        raise AssertionError("no row scan needed when no branch meets threshold")
+
+
 class TestSpuriousSequence:
     def test_init_sets_expected_attrs(self, args):
         service = SpuriousSequence(args)
@@ -199,6 +207,16 @@ class TestSpuriousSequence:
         assert SpuriousSequence._median_branch_length(values) == 511.5
         assert calls == [(511, 512)]
 
+    def test_has_spurious_sequence_falls_back_for_nan_max(self):
+        assert SpuriousSequence._has_spurious_sequence(
+            {"nan": float("nan"), "hit": 100.0},
+            10.0,
+        )
+        assert not SpuriousSequence._has_spurious_sequence(
+            {"nan": float("nan"), "miss": 1.0},
+            10.0,
+        )
+
     def test_run_prints_none_when_no_spurious_sequences(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", factor=20, json=False)
         service = SpuriousSequence(args)
@@ -214,6 +232,25 @@ class TestSpuriousSequence:
         )
         mocked_print = mocker.patch("builtins.print")
         service.run()
+        mocked_print.assert_called_once_with("None")
+
+    def test_run_skips_text_row_scan_when_no_spurious_sequences(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", factor=20, json=False)
+        service = SpuriousSequence(args)
+        mocker.patch.object(
+            SpuriousSequence,
+            "read_tree_file_unmodified",
+            return_value=_Tree([]),
+        )
+        mocker.patch.object(
+            SpuriousSequence,
+            "identify_spurious_sequence",
+            return_value=(_NoSpuriousBranchMap(), 10.0, 1.5),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
         mocked_print.assert_called_once_with("None")
 
     def test_run_prints_spurious_sequences(self, mocker):
@@ -255,6 +292,28 @@ class TestSpuriousSequence:
             "branch_length": 10.1235,
             "threshold": 5.0,
             "median": 2.5,
+        }
+
+    def test_run_skips_json_row_scan_when_no_spurious_sequences(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", factor=20, json=True)
+        service = SpuriousSequence(args)
+        mocker.patch.object(
+            SpuriousSequence,
+            "read_tree_file_unmodified",
+            return_value=_Tree([]),
+        )
+        mocker.patch.object(
+            SpuriousSequence,
+            "identify_spurious_sequence",
+            return_value=(_NoSpuriousBranchMap(), 10.0, 1.5),
+        )
+        mocked_json = mocker.patch("phykit.services.tree.spurious_sequence.print_json")
+
+        service.run()
+
+        assert mocked_json.call_args.args[0] == {
+            "rows": [],
+            "spurious_sequences": [],
         }
 
     def test_run_uses_unmodified_tree_read(self, mocker):

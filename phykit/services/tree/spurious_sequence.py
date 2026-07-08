@@ -45,8 +45,16 @@ class SpuriousSequence(Tree):
 
         rounded_threshold = round(threshold, 4)
         rounded_median = round(median, 4)
+        has_spurious_sequence = self._has_spurious_sequence(
+            name_and_branch_len,
+            threshold,
+        )
 
         if self.json_output:
+            if not has_spurious_sequence:
+                print_json(dict(rows=[], spurious_sequences=[]))
+                return
+
             spurious_rows = [
                 {
                     "taxon": name,
@@ -60,16 +68,16 @@ class SpuriousSequence(Tree):
             print_json(dict(rows=spurious_rows, spurious_sequences=spurious_rows))
             return
 
+        if not has_spurious_sequence:
+            print("None")
+            return
+
         lines = []
         for name, length in name_and_branch_len.items():
             if length >= threshold:
                 lines.append(
                     f"{name}\t{round(length, 4)}\t{rounded_threshold}\t{rounded_median}"
                 )
-
-        if not lines:
-            print("None")
-            return
 
         try:
             print("\n".join(lines))
@@ -100,6 +108,22 @@ class SpuriousSequence(Tree):
         threshold = median * factor
 
         return name_and_branch_len, threshold, median
+
+    @staticmethod
+    def _has_spurious_sequence(name_and_branch_len, threshold) -> bool:
+        if not name_and_branch_len:
+            return False
+
+        longest_branch_length = max(name_and_branch_len.values())
+        if longest_branch_length >= threshold:
+            return True
+
+        if longest_branch_length != longest_branch_length:
+            for length in name_and_branch_len.values():
+                if length >= threshold:
+                    return True
+
+        return False
 
     @staticmethod
     def _median_branch_length(branch_lengths: list[float]) -> float:

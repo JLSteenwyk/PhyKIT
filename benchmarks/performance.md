@@ -896,6 +896,7 @@ Results:
 | `SpuriousSequence._median_branch_length` partition threshold | 512 / 1024 / 2048 branch lengths, side-by-side sorted median path vs NumPy partition median with identical medians; threshold set at first winning size | 0.000038s / 0.000077s / 0.000157s | 0.000041s / 0.000051s / 0.000076s | 0.93x / 1.50x / 2.06x |
 | `SpuriousSequence._median_branch_length` cached lazy NumPy proxy | 1000 repeated medians over 2048 branch lengths, side-by-side previous uncached lazy NumPy proxy | 0.070326s | 0.055441s | 1.27x |
 | `SpuriousSequence.run` batched text output | 50k flagged terminal rows, mocked tree/read and identical stdout text | 0.087150s | 0.031513s | 2.77x |
+| `SpuriousSequence.run` no-hit output fast path | 100k / 500k mocked terminal branch rows below threshold, side-by-side previous empty JSON and text row scans with identical output payload/text | JSON: 0.002749410s / 0.011800677s; text: 0.002857457s / 0.012784354s | JSON: 0.001388460s / 0.006522125s; text: 0.001165718s / 0.006966344s | JSON: 1.98x / 1.81x; text: 2.45x / 1.84x |
 | `SpuriousSequence.run` JSON row construction | 500k mocked flagged terminal rows, identical row dictionaries | 0.748736s | 0.589699s | 1.27x |
 | `SpuriousSequence.run` cached read-only tree path | balanced 32768-tip cached tree with 1% long terminal branches, output mocked | 0.122502s | 0.005828s | 21.02x |
 | `spurious_sequence` module import without eager Bio.Phylo | cold subprocess import of spurious-sequence command module | 0.157770s | 0.070032s | 2.25x |
@@ -4780,7 +4781,10 @@ Profiling summary:
   import behavior for command discovery. A follow-up threshold pass lowers the
   partition cutoff from 4096 to 1024 after side-by-side timings showed partition
   already wins at 1024 branch lengths while the sorted path remains faster at
-  512 branch lengths.
+  512 branch lengths. No-hit output now checks the longest branch length before
+  materializing empty text or JSON rows, preserving `length >= threshold`
+  semantics with a NaN fallback while avoiding row scans for common default
+  threshold cases with no spurious terminals.
 - `DensityMap._terminal_clades` applies the same direct terminal traversal to
   plot y-order setup and the final tip count, avoiding Bio.Phylo terminal-list
   materialization while preserving terminal order. The direct preorder and
