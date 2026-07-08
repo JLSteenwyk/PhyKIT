@@ -75,6 +75,37 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_solve_triangular_caches_imported_callable(monkeypatch):
+    previous_solve_triangular = phylo_anova_module._SOLVE_TRIANGULAR
+    phylo_anova_module._SOLVE_TRIANGULAR = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+
+    def fake_solve_triangular(*args, **kwargs):
+        return args, kwargs
+
+    class FakeScipyLinalg:
+        solve_triangular = staticmethod(fake_solve_triangular)
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+            return FakeScipyLinalg
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        first = phylo_anova_module.solve_triangular("L", "Y", lower=True)
+        second = phylo_anova_module.solve_triangular("L", "X", lower=True)
+    finally:
+        phylo_anova_module._SOLVE_TRIANGULAR = previous_solve_triangular
+
+    assert first == (("L", "Y"), {"lower": True})
+    assert second == (("L", "X"), {"lower": True})
+    assert scipy_linalg_imports == 1
+
+
 def test_permutation_p_value_and_z_matches_legacy_reductions():
     permutations = np.array([0.5, 1.5, 2.5, 3.5])
     observed = 2.0

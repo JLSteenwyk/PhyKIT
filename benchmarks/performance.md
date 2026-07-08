@@ -2684,6 +2684,7 @@ Results:
 | `PhyloAnova._run_anova` | 500 taxa, 4 groups, 1000 RRPP permutations | 0.0383s | 0.0118s | 3.2x |
 | `PhyloAnova._run_anova` projection residual SS | 500 taxa, 4 groups, 1000 RRPP permutations, side-by-side previous materialized full-model residuals | 0.016085s | 0.012779s | 1.26x |
 | `PhyloAnova._run_anova` cached NumPy attribute proxy | 250 taxa, 3 groups, 3000 seeded RRPP permutations, side-by-side previous uncached lazy NumPy proxy | 0.143246s | 0.127777s | 1.12x |
+| `PhyloAnova.solve_triangular` cached SciPy wrapper | 10k / 100k / 1M repeated no-op wrapper calls after first resolution, side-by-side previous import-on-call wrapper | 0.003120333s / 0.086425459s / 1.299483042s | 0.003425000s / 0.064901625s / 0.666762792s | 0.91x / 1.33x / 1.95x |
 | `PhyloAnova._run_manova` | 500 taxa x 6 responses, 4 groups, 1000 RRPP permutations | 0.0652s | 0.0386s | 1.7x |
 | `PhyloAnova._run_manova` projection residual SSCP | 500 taxa x 6 responses, 4 groups, 1000 RRPP permutations, side-by-side previous materialized full-model residual matrices | 0.054512s | 0.048688s | 1.12x |
 | `PhyloAnova` permutation summary reductions | 1M permutation statistics, side-by-side previous duplicate `std` reduction | 0.003426s | 0.002183s | 1.57x |

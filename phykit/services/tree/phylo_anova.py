@@ -35,6 +35,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_SOLVE_TRIANGULAR = None
 
 
 def print_json(*args, **kwargs):
@@ -44,9 +45,11 @@ def print_json(*args, **kwargs):
 
 
 def solve_triangular(*args, **kwargs):
-    from scipy.linalg import solve_triangular as _solve_triangular
+    global _SOLVE_TRIANGULAR
+    if _SOLVE_TRIANGULAR is None:
+        from scipy.linalg import solve_triangular as _SOLVE_TRIANGULAR
 
-    return _solve_triangular(*args, **kwargs)
+    return _SOLVE_TRIANGULAR(*args, **kwargs)
 
 
 def _permutation_p_value_and_z(observed: float, permutations: np.ndarray) -> tuple[float, float]:
