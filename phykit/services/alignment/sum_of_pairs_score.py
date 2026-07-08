@@ -59,7 +59,11 @@ class SumOfPairsScore(Alignment):
 
     def run(self):
         query_records = self._read_fasta(self.fasta)
-        reference_records = self._read_fasta(self.reference)
+        reference_records = (
+            query_records
+            if self.reference == self.fasta
+            else self._read_fasta(self.reference)
+        )
 
         fast_result = self._calculate_equal_length_complete_records(
             reference_records, query_records
@@ -180,15 +184,27 @@ class SumOfPairsScore(Alignment):
             SumOfPairsScore._record_seq(reference_records[seq_id])
             for seq_id in record_ids
         ]
-        query_seqs = [
-            SumOfPairsScore._record_seq(query_records[seq_id])
-            for seq_id in record_ids
-        ]
-        if not ref_seqs or not query_seqs:
+        if not ref_seqs:
             return None
 
         seq_len = len(ref_seqs[0])
         number_of_records = len(record_ids)
+        if reference_records is query_records:
+            for ref_seq in ref_seqs:
+                if len(ref_seq) != seq_len:
+                    return None
+            if seq_len == 0:
+                return 0, 0
+            total_pairs = (number_of_records * (number_of_records - 1) // 2) * seq_len
+            return total_pairs, total_pairs
+
+        query_seqs = [
+            SumOfPairsScore._record_seq(query_records[seq_id])
+            for seq_id in record_ids
+        ]
+        if not query_seqs:
+            return None
+
         sparse_change_limit = (number_of_records - 1) // 2
         changed_count = 0
         changed_ref_seqs = []

@@ -112,6 +112,27 @@ class TestSumOfPairsScore:
         assert capsys.readouterr().out == "1.0\n"
         mocked_determine.assert_not_called()
 
+    def test_run_same_reference_path_reuses_query_records(
+        self, mocker, capsys
+    ):
+        args = Namespace(fasta="same.fasta", reference="same.fasta", json=False)
+        sop = SumOfPairsScore(args)
+        records = _make_records({
+            "id1": "AAAA",
+            "id2": "AAAA",
+            "id3": "AAAA",
+        })
+        read_fasta = mocker.patch.object(
+            SumOfPairsScore,
+            "_read_fasta",
+            return_value=records,
+        )
+
+        sop.run()
+
+        read_fasta.assert_called_once_with("same.fasta")
+        assert capsys.readouterr().out == "1.0\n"
+
     def test_run_mixed_lengths_uses_pair_list_fallback(self, mocker, args, capsys):
         sop = SumOfPairsScore(args)
         reference_records = _make_records({
@@ -282,6 +303,39 @@ class TestSumOfPairsScore:
         assert matches == 6
         assert pairs == 12
         assert count_nonzero_axes == [0]
+
+    def test_complete_equal_lengths_same_mapping_reads_each_sequence_once(
+        self, mocker
+    ):
+        class CountingSeq:
+            def __init__(self, value):
+                self.value = value
+                self.str_calls = 0
+
+            def __str__(self):
+                self.str_calls += 1
+                return self.value
+
+        seqs = [CountingSeq("AAAA") for _ in range(6)]
+        records = {
+            f"id{idx}": SimpleNamespace(seq=seq)
+            for idx, seq in enumerate(seqs)
+        }
+        mocked_stack = mocker.patch.object(
+            SumOfPairsScore,
+            "_stack_equal_length_sequence_pairs",
+            side_effect=AssertionError("same mappings should not build matrices"),
+        )
+
+        matches, pairs = SumOfPairsScore._calculate_equal_length_complete_records(
+            records,
+            records,
+        )
+
+        assert matches == 60
+        assert pairs == 60
+        assert [seq.str_calls for seq in seqs] == [1] * len(seqs)
+        mocked_stack.assert_not_called()
 
     def test_complete_equal_lengths_stacks_only_changed_records(self, mocker):
         ids = [f"id{i}" for i in range(8)]
