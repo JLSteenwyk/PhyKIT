@@ -78,6 +78,47 @@ def test_lazy_numpy_caches_module_and_attributes():
     assert lazy_np.__dict__["empty"] is first_empty
 
 
+def test_scipy_linalg_wrappers_cache_imported_callables(monkeypatch):
+    previous_cho_factor = phylo_path_module._CHO_FACTOR
+    previous_cho_solve = phylo_path_module._CHO_SOLVE
+    phylo_path_module._CHO_FACTOR = None
+    phylo_path_module._CHO_SOLVE = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+
+    class FakeScipyLinalg:
+        @staticmethod
+        def cho_factor(*args, **kwargs):
+            return "factor", args, kwargs
+
+        @staticmethod
+        def cho_solve(*args, **kwargs):
+            return "solve", args, kwargs
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+            return FakeScipyLinalg
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        first_factor = phylo_path_module.cho_factor("C", lower=True)
+        second_factor = phylo_path_module.cho_factor("C2", lower=True)
+        first_solve = phylo_path_module.cho_solve("factor", "rhs")
+        second_solve = phylo_path_module.cho_solve("factor2", "rhs2")
+    finally:
+        phylo_path_module._CHO_FACTOR = previous_cho_factor
+        phylo_path_module._CHO_SOLVE = previous_cho_solve
+
+    assert first_factor == ("factor", ("C",), {"lower": True})
+    assert second_factor == ("factor", ("C2",), {"lower": True})
+    assert first_solve == ("solve", ("factor", "rhs"), {})
+    assert second_solve == ("solve", ("factor2", "rhs2"), {})
+    assert scipy_linalg_imports == 2
+
+
 def _make_args(**overrides):
     defaults = dict(
         tree=TREE, traits=TRAITS, models=MODELS,

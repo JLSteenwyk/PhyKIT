@@ -48,20 +48,26 @@ class _LazyNumpy:
 np = _LazyNumpy()
 
 
+_CHO_FACTOR = None
+_CHO_SOLVE = None
 _CHDTRC = None
 _STDTR = None
 
 
 def cho_factor(*args, **kwargs):
-    from scipy.linalg import cho_factor as _cho_factor
+    global _CHO_FACTOR
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _CHO_FACTOR
 
-    return _cho_factor(*args, **kwargs)
+    return _CHO_FACTOR(*args, **kwargs)
 
 
 def cho_solve(*args, **kwargs):
-    from scipy.linalg import cho_solve as _cho_solve
+    global _CHO_SOLVE
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _CHO_SOLVE
 
-    return _cho_solve(*args, **kwargs)
+    return _CHO_SOLVE(*args, **kwargs)
 
 
 def _chi2_sf(value: float, df: int) -> float:

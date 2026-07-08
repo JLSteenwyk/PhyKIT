@@ -2461,6 +2461,7 @@ Results:
 | `PhylogeneticRegression._format_result` bulk residual/fitted conversion | 250k taxon residual/fitted rows plus 4k coefficients, side-by-side previous per-item NumPy scalar conversion | 0.137516s | 0.109884s | 1.25x |
 | `PhyloPath._fit_gls_from_vcv` | 420 taxa SPD VCV x 3-predictor design matrix, post-lambda GLS step | 0.0078s | 0.0012s | 6.4x |
 | `PhyloPath._fit_gls_from_vcv` combined Cholesky RHS solve | 120 repeated 420-taxon SPD VCV x 3-predictor design matrix fits, SciPy already warm | 0.053644s | 0.043705s | 1.23x |
+| `PhyloPath._fit_gls_from_vcv` cached Cholesky wrappers | 1k / 5k / 20k repeated 2x2 Cholesky factor/solve calls after SciPy warmup, side-by-side previous import-on-call wrappers | 0.079033917s / 0.103675250s / 0.785388917s | 0.012320750s / 0.056421417s / 0.532478667s | 6.41x / 1.84x / 1.47x |
 | `PhyloPath._fit_gls_from_vcv` combined normal-equation RHS | 420 taxa SPD VCV x 6-predictor design matrix, side-by-side previous explicit normal-matrix inverse | 0.000462s | 0.000388s | 1.19x |
 | `PhyloPath._dsep_test` | 260 taxa SPD VCV x 3 conditioning/predictor columns, including lambda estimation | 0.0783s | 0.0446s | 1.8x |
 | `PhyloPath._design_matrix_from_z` preallocated PGLS design matrix | 10k repeated 260-taxon x 4-predictor design matrix builds, side-by-side previous `np.column_stack([ones] + predictors)` setup | 0.113720s | 0.021587s | 5.27x |
