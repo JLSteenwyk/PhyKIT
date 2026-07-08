@@ -41,6 +41,7 @@ _PARSIMONY_DNA_STATES = frozenset("ACGT")
 _PARSIMONY_DNA_STATE_SYMBOLS = ["A", "C", "G", "T"]
 _PARSIMONY_WILDCARD_CHARS = frozenset("-NX?nx")
 _PARSIMONY_DNA_OR_WILDCARD_BYTES = b"ACGT-?NXnx"
+_PARSIMONY_JOINED_STATE_SCAN_MIN_SEQUENCES = 64
 
 
 def _parsimony_state_symbols(
@@ -49,6 +50,25 @@ def _parsimony_state_symbols(
     all_states: frozenset[str] = _PARSIMONY_DNA_STATES,
 ) -> list[str]:
     extra_codes = set()
+    if len(sequences) >= _PARSIMONY_JOINED_STATE_SCAN_MIN_SEQUENCES:
+        try:
+            extra = "".join(sequences.values()).encode("ascii").translate(
+                None,
+                _PARSIMONY_DNA_OR_WILDCARD_BYTES,
+            )
+        except UnicodeEncodeError:
+            observed_states = {
+                char
+                for seq in sequences.values()
+                for char in seq
+                if char not in wildcard_chars
+            }
+            return sorted(all_states | observed_states)
+
+        if not extra:
+            return _PARSIMONY_DNA_STATE_SYMBOLS.copy()
+        return sorted(all_states | {chr(code) for code in set(extra)})
+
     try:
         for seq in sequences.values():
             extra = seq.encode("ascii").translate(

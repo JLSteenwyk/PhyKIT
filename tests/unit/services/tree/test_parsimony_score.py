@@ -35,6 +35,19 @@ def test_parsimony_state_symbols_uses_dna_fast_path():
     assert module._parsimony_state_symbols(sequences) == ["A", "C", "G", "T"]
 
 
+def test_parsimony_state_symbols_uses_joined_scan_for_many_dna_rows():
+    class NoEncodeStr(str):
+        def encode(self, *_args, **_kwargs):
+            raise AssertionError("many-row DNA scan should encode the joined string")
+
+    sequences = {
+        f"taxon_{idx}": NoEncodeStr("ACGT-?NXnx")
+        for idx in range(module._PARSIMONY_JOINED_STATE_SCAN_MIN_SEQUENCES)
+    }
+
+    assert module._parsimony_state_symbols(sequences) == ["A", "C", "G", "T"]
+
+
 def test_parsimony_state_symbols_preserves_extra_ascii_states():
     sequences = {
         "A": "ACGTacgt-?NX",
