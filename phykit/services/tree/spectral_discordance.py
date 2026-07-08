@@ -112,8 +112,11 @@ def _row_l2_norms(matrix: np.ndarray) -> np.ndarray:
 
 def _shared_gene_tree_taxa(gene_trees, get_tip_names):
     shared = set(get_tip_names(gene_trees[0]))
-    for idx in range(1, len(gene_trees)):
+    idx = 1
+    tree_count = len(gene_trees)
+    while idx < tree_count and shared:
         shared.intersection_update(get_tip_names(gene_trees[idx]))
+        idx += 1
     return shared
 
 

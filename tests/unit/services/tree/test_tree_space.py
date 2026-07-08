@@ -147,6 +147,24 @@ def test_shared_gene_tree_taxa_does_not_slice_gene_trees():
     ) == {"B", "C"}
 
 
+def test_shared_gene_tree_taxa_stops_when_empty():
+    calls = []
+    trees = ["t0", "t1", "t2"]
+    tip_sets = {
+        "t0": ("A", "B"),
+        "t1": ("C", "D"),
+    }
+
+    def get_tips(tree):
+        if tree == "t2":
+            raise AssertionError("empty shared taxa should stop the scan")
+        calls.append(tree)
+        return tip_sets[tree]
+
+    assert tree_space_module._shared_gene_tree_taxa(trees, get_tips) == set()
+    assert calls == ["t0", "t1"]
+
+
 class NoReversedList(list):
     def __reversed__(self):
         raise AssertionError(
