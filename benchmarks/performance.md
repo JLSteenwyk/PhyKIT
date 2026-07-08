@@ -1531,6 +1531,7 @@ Results:
 | `LastCommonAncestorSubtree.run` cached read-only tree setup | balanced 4096-tip cached tree, 1024-tip MRCA subtree lookup with output stubbed | 0.039566s | 0.008036s | 4.92x |
 | `LastCommonAncestorSubtree.run` no-copy large-tree LCA setup | balanced 32768-tip cached tree, opposite terminal MRCA lookup, side-by-side previous pickle-copy `common_ancestor` core | 0.182315s | 0.013709s | 13.30x |
 | `LastCommonAncestorSubtree._find_parent_depth_lca` root early return | balanced 65536-tip tree, 4096 dispersed target clades whose MRCA reaches root after the first pair | 0.045236s | 0.000006875s | 6579.81x |
+| `LastCommonAncestorSubtree._find_lca_subtree` unique target scan | balanced 32768-tip tree, 2048 unique taxa / same taxa repeated 40x, side-by-side previous raw-taxa target list | 0.696373s / 0.206490s | 0.533814s / 0.144736s | 1.30x / 1.43x |
 | `last_common_ancestor_subtree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006235s | 0.005155s | 1.21x |
 | `last_common_ancestor_subtree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006208s | 0.004222s | 1.47x |
 | `last_common_ancestor_subtree` module import without eager file helper | median cold subprocess import after lazy taxa-list reader wrapper | 0.044738s | 0.022908s | 1.95x |
@@ -5992,6 +5993,9 @@ Profiling summary:
   `common_ancestor()`.
   The parent-depth LCA merge now returns immediately once the running LCA reaches
   depth zero, because no remaining target can move the MRCA below the root.
+  Duplicate requested taxa are now collapsed for the final parent-depth target
+  scan, preserving the selected-name validation and MRCA while avoiding repeated
+  ancestor comparisons for duplicate-heavy taxa files.
   JSON output now also counts subtree terminals with the shared direct terminal
   count helper before falling back to `count_terminals()`.
   The cached read-only setup follow-up switches `run()` to

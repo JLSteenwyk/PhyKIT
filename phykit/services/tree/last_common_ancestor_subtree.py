@@ -147,7 +147,7 @@ class LastCommonAncestorSubtree(Tree):
                                 break
                     except TypeError:
                         pass
-            targets = [terminal_by_name[taxon] for taxon in taxa]
+            targets = [terminal_by_name[taxon] for taxon in selected_names]
         except (AttributeError, KeyError, TypeError):
             return tree.common_ancestor(taxa)
 

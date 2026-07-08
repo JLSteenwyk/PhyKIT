@@ -305,6 +305,28 @@ class TestLastCommonAncestorSubtree:
 
         assert sorted(t.name for t in subtree.clades) == ["A", "B"]
 
+    def test_find_lca_subtree_collapses_duplicate_taxa_before_lca_scan(
+        self, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        captured_target_count = None
+        original_lca = module._find_parent_depth_lca
+
+        def wrapped_lca(targets, parent_by_clade, depth_by_clade):
+            nonlocal captured_target_count
+            captured_target_count = len(targets)
+            return original_lca(targets, parent_by_clade, depth_by_clade)
+
+        monkeypatch.setattr(module, "_find_parent_depth_lca", wrapped_lca)
+
+        subtree = LastCommonAncestorSubtree._find_lca_subtree(
+            tree,
+            ["A", "B", "A", "B"],
+        )
+
+        assert captured_target_count == 2
+        assert sorted(t.name for t in subtree.clades) == ["A", "B"]
+
     def test_find_lca_subtree_stops_after_all_requested_taxa_are_found(self):
         left = _Clade(clades=[_Clade(name="A"), _Clade(name="B")])
         root = _Clade(clades=[left, _ExplodingClade()])
