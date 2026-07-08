@@ -144,6 +144,39 @@ def _mann_whitney_exact_cumulative(n_x: int, n_y: int) -> tuple[list[int], int]:
     return result
 
 
+def _small_sample_mann_whitney_u_no_tie(
+    x: list[float], y: list[float]
+) -> float | None:
+    n_x = len(x)
+    combined = []
+    append = combined.append
+    for value in x:
+        value = float(value)
+        if not math.isfinite(value):
+            return None
+        append((value, 0))
+    for value in y:
+        value = float(value)
+        if not math.isfinite(value):
+            return None
+        append((value, 1))
+
+    combined.sort()
+    rank_sum_x = 0.0
+    previous_value = None
+    first_value = True
+    for rank, (value, group) in enumerate(combined, start=1):
+        if first_value:
+            first_value = False
+        elif value == previous_value:
+            return None
+        previous_value = value
+        if group == 0:
+            rank_sum_x += rank
+
+    return rank_sum_x - (n_x * (n_x + 1) / 2.0)
+
+
 def _mannwhitneyu_no_ties(
     x: list[float], y: list[float]
 ) -> tuple[float, float] | None:
@@ -151,6 +184,17 @@ def _mannwhitneyu_no_ties(
     n_y = len(y)
     if n_x == 0 or n_y == 0:
         return None
+
+    if min(n_x, n_y) <= _MANN_WHITNEY_EXACT_MAX_MIN_N:
+        u_statistic = _small_sample_mann_whitney_u_no_tie(x, y)
+        if u_statistic is None:
+            return None
+        u_index = int(u_statistic)
+        cumulative, total = _mann_whitney_exact_cumulative(n_x, n_y)
+        lower = cumulative[u_index]
+        upper = total - (cumulative[u_index - 1] if u_index else 0)
+        p_value = min(1.0, 2.0 * min(lower, upper) / total)
+        return float(u_statistic), float(p_value)
 
     combined = [(float(value), 0) for value in x]
     combined.extend((float(value), 1) for value in y)
@@ -164,14 +208,6 @@ def _mannwhitneyu_no_ties(
         if group == 0:
             rank_sum_x += rank
     u_statistic = rank_sum_x - (n_x * (n_x + 1) / 2.0)
-
-    if min(n_x, n_y) <= _MANN_WHITNEY_EXACT_MAX_MIN_N:
-        u_index = int(u_statistic)
-        cumulative, total = _mann_whitney_exact_cumulative(n_x, n_y)
-        lower = cumulative[u_index]
-        upper = total - (cumulative[u_index - 1] if u_index else 0)
-        p_value = min(1.0, 2.0 * min(lower, upper) / total)
-        return float(u_statistic), float(p_value)
 
     mean = n_x * n_y / 2.0
     variance = n_x * n_y * (n_x + n_y + 1) / 12.0

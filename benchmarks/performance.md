@@ -1141,6 +1141,7 @@ Results:
 | `EvoTempoMap._test_branch` permutation median dispatch | 64 concordant and 64 discordant branch lengths, 1000 seeded permutations with Mann-Whitney stubbed, side-by-side previous repeated `np.median` and RNG `shuffle` lookup path, identical result | 0.156104s | 0.073971s | 2.11x |
 | `EvoTempoMap._test_branch` exact small-sample Mann-Whitney path | cold subprocess, 5 no-tie concordant and 4 no-tie discordant lengths through full branch test with 1000 seeded permutations, identical U and exact p-value | 3.187698s | 0.464889s | 6.86x |
 | `EvoTempoMap._mannwhitneyu_no_ties` cached exact cumulative counts | 100k repeated 5x4 no-tie exact Mann-Whitney tests with identical U and p-value total | 1.628238s | 0.599418s | 2.72x |
+| `EvoTempoMap._mannwhitneyu_no_ties` small exact rank scan | 100k repeated 5x4 no-tie exact Mann-Whitney tests, identical U and p-value total | 0.928583s | 0.486616s | 1.91x |
 | `EvoTempoMap._test_branch` asymptotic no-tie Mann-Whitney path | cold subprocess, 10 no-tie concordant and 10 no-tie discordant lengths through full branch test with 1000 seeded permutations, identical U and continuity-corrected asymptotic p-value | 1.729069s | 0.394762s | 4.38x |
 | `EvoTempoMap._test_branch` sample standard deviation loop | repeated concordant/discordant length summaries over 32 / 128 / 1000 values, side-by-side previous generator-sum variance path | 0.249108s / 0.282292s / 0.231646s | 0.225681s / 0.202241s / 0.152720s | 1.10x / 1.40x / 1.52x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |
@@ -5322,7 +5323,10 @@ Profiling summary:
   and p-values while avoiding `scipy.stats` startup for those branch tests and
   global treeness comparisons. Repeated small exact tests now cache cumulative
   U-distribution counts, avoiding repeated full-distribution and slice sums
-  while preserving exact two-sided p-values. Tied samples retain the SciPy fallback.
+  while preserving exact two-sided p-values. The small exact no-tie path now
+  detects finite values and ties during the sorted rank pass, avoiding a separate
+  setup pass while leaving larger asymptotic samples on the previous path. Tied
+  samples retain the SciPy fallback.
 - `EvoTempoMap._fdr` baseline time sorted p-values into Python tuples and walked
   them in a reverse Python loop. The optimized path keeps the same
   Benjamini-Hochberg adjustment semantics, including ties, while using NumPy

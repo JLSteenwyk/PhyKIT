@@ -740,6 +740,26 @@ class TestStatisticalTests:
             [5.0, 6.0, 4.5, 5.5],
         ) == expected
 
+    def test_small_exact_mann_whitney_uses_in_place_rank_scan(self, monkeypatch):
+        def fail_sorted(*_args, **_kwargs):
+            raise AssertionError(
+                "small exact Mann-Whitney should use the single rank scan"
+            )
+
+        monkeypatch.setattr(builtins, "sorted", fail_sorted)
+
+        result = evo_tempo_map_module._mannwhitneyu_no_ties(
+            [10.0, 12.0, 11.0, 13.0, 10.5],
+            [5.0, 6.0, 4.5, 5.5],
+        )
+        assert result is not None
+        assert result[0] == 20.0
+        assert result[1] == pytest.approx(0.015873015873015872)
+        assert (
+            evo_tempo_map_module._mannwhitneyu_no_ties([1.0, 1.0], [2.0, 3.0])
+            is None
+        )
+
     def test_small_no_tie_mann_whitney_does_not_import_scipy_stats(self):
         code = """
 import sys
