@@ -265,26 +265,23 @@ class MonophylyCheck(Tree):
 
     def print_results(self, res_arr: list[list[str | int | float]]) -> None:
         if self.json_output:
-            rows = []
-            append = rows.append
             round_ = round
             sorted_ = sorted
-            for res in res_arr:
-                if len(res) > 1:
-                    append(
-                        {
-                            "status": res[0],
-                            "mean_support": round_(res[1], 4),
-                            "max_support": round_(res[2], 4),
-                            "min_support": round_(res[3], 4),
-                            "stdev_support": round_(res[4], 4),
-                            "offending_taxa": (
-                                sorted_(res[5]) if len(res) > 5 and res[5] else []
-                            ),
-                        }
-                    )
-                else:
-                    append({"status": res[0]})
+            rows = [
+                {
+                    "status": res[0],
+                    "mean_support": round_(res[1], 4),
+                    "max_support": round_(res[2], 4),
+                    "min_support": round_(res[3], 4),
+                    "stdev_support": round_(res[4], 4),
+                    "offending_taxa": (
+                        sorted_(res[5]) if len(res) > 5 and res[5] else []
+                    ),
+                }
+                if len(res) > 1
+                else {"status": res[0]}
+                for res in res_arr
+            ]
             print_json(dict(rows=rows, results=rows))
             return
 

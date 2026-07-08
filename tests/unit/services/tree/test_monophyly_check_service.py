@@ -112,6 +112,8 @@ class TestMonophylyCheck:
         payload = mocked_json.call_args.args[0]
         assert payload["rows"] == payload["results"]
         assert payload["rows"][0]["status"] == "not_monophyletic"
+        assert payload["rows"][0]["mean_support"] == 95.0
+        assert payload["rows"][0]["stdev_support"] == 7.0
         assert payload["rows"][0]["offending_taxa"] == ["a", "z"]
         assert payload["rows"][1] == {"status": "insufficient_taxon_representation"}
 
