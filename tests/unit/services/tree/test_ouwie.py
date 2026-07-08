@@ -1,6 +1,7 @@
 import builtins
 import importlib
 import json
+import pickle as stdlib_pickle
 import subprocess
 import sys
 
@@ -82,6 +83,36 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np.__dict__["array"] is array_attr
     assert lazy_np.array is array_attr
     assert lazy_np._module is not None
+
+
+def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
+    lazy_pickle = ouwie_module._LazyPickle()
+
+    def cached_dumps(value, **_kwargs):
+        return f"cached:{value}".encode("ascii")
+
+    def cached_loads(value):
+        return value.decode("ascii").removeprefix("cached:")
+
+    def uncached_dumps(*_args, **_kwargs):
+        raise AssertionError("cached dumps should be reused")
+
+    def uncached_loads(*_args, **_kwargs):
+        raise AssertionError("cached loads should be reused")
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", cached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", cached_loads)
+
+    protocol = lazy_pickle.HIGHEST_PROTOCOL
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree", protocol=protocol)) == "tree"
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", uncached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", uncached_loads)
+
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree2", protocol=protocol)) == "tree2"
+    assert lazy_pickle.__dict__["dumps"] is cached_dumps
+    assert lazy_pickle.__dict__["loads"] is cached_loads
+    assert lazy_pickle.__dict__["HIGHEST_PROTOCOL"] == stdlib_pickle.HIGHEST_PROTOCOL
 
 
 def test_repeated_scipy_wrapper_calls_cache_imported_callables(monkeypatch):

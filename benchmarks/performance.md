@@ -2864,6 +2864,7 @@ Results:
 | `OUwie._build_weight_matrix_multi_alpha` root decay reuse | balanced 4096-tip synthetic lineage x 3 regimes, side-by-side previous second root-decay path scan, identical W matrix | 0.236037s | 0.189050s | 1.25x |
 | `OUwie._build_weight_matrix_multi_alpha` scalar decay buffer | balanced 2048-tip synthetic lineage x 3 regimes, side-by-side previous per-tip `np.ones` buffer and scalar `np.exp`, identical W matrix | 0.121188s | 0.049184s | 2.46x |
 | `OUwie._build_ou_vcv_multi_alpha` scalar decay buffer | balanced 2048-tip synthetic lineage x 3 regimes, side-by-side previous per-tip `np.ones` buffer and scalar `np.exp`, identical VCV matrix | 0.320867s | 0.297005s | 1.08x |
+| `AncestralReconstruction`/`OUShiftDetection`/`OUwie` cached lazy pickle proxies | 10k / 100k / 1M repeated no-op `loads(dumps("tree"))` calls after first pickle resolution, side-by-side previous uncached proxy | 0.004407791s / 0.089979625s / 1.380152500s | 0.001652333s / 0.054422083s / 0.376575333s | 2.67x / 1.65x / 3.67x |
 
 Profiling summary:
 
