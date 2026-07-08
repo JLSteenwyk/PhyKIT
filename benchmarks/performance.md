@@ -977,6 +977,7 @@ Results:
 | `TreeSpace._plot_heatmap` condensed distance vector setup | 4000 x 4000 symmetric distance matrix, identical upper-triangle condensed vector | 0.808634s | 0.005716s | 141.46x |
 | `TreeSpace._condensed_distance_vector` cached squareform wrapper | repeated 256 x 256 / 900 x 900 symmetric distance matrices, identical condensed vectors | 0.004960s / 0.020824s | 0.003015s / 0.016083s | 1.65x / 1.29x |
 | `tree_space` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.112687s | 0.031951s | 3.53x |
+| `TreeSpace._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.011652166s / 0.124695875s / 1.265663375s | 0.003935459s / 0.023266250s / 0.259842500s | 2.96x / 5.36x / 4.87x |
 | `tree_space` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.015061s | 0.007018s | 2.15x |
 | `tree_space` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006942s | 0.005695s | 1.22x |
 | `tree_space` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.008027s | 0.003640s | 2.21x |
