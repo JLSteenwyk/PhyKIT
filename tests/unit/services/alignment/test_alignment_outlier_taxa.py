@@ -239,6 +239,19 @@ class TestAlignmentOutlierTaxa:
             ("occupancy", "low"),
         ]
 
+    def test_constant_outlier_thresholds_skip_median_and_unique(self, monkeypatch):
+        service = self._service()
+        values = np.ones(16, dtype=float)
+
+        def fail_reduction(*_args, **_kwargs):
+            raise AssertionError("constant feature vectors should shortcut")
+
+        monkeypatch.setattr(alignment_outlier_taxa_module.np, "median", fail_reduction)
+        monkeypatch.setattr(alignment_outlier_taxa_module.np, "unique", fail_reduction)
+
+        assert service._high_outlier_threshold(values, 3.0) == float("inf")
+        assert service._low_outlier_threshold(values, 3.0) == float("-inf")
+
     def test_has_outlier_features_detects_any_threshold_crossing(self):
         clean = np.array([0.0, 0.1], dtype=float)
         high = np.array([0.0, 2.0], dtype=float)

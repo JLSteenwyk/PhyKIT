@@ -67,6 +67,13 @@ def _rcvt_from_composition_matrix(comp_matrix, valid_lengths, n_taxa: int):
     )
 
 
+def _all_finite_values_equal(finite_values) -> bool:
+    first_value = finite_values[0]
+    if first_value != finite_values[-1]:
+        return False
+    return bool(finite_values.min() == finite_values.max())
+
+
 class AlignmentOutlierTaxa(Alignment):
     _INVALID_LOOKUP_CACHE = {}
     _PAIRWISE_MATRIX_MAX_CELLS = 4_000_000
@@ -99,6 +106,8 @@ class AlignmentOutlierTaxa(Alignment):
         finite_values = values[np.isfinite(values)]
         if finite_values.size < 2:
             return float("inf")
+        if _all_finite_values_equal(finite_values):
+            return float("inf")
 
         median = float(np.median(finite_values))
         mad = float(np.median(np.abs(finite_values - median)))
@@ -115,6 +124,8 @@ class AlignmentOutlierTaxa(Alignment):
     def _low_outlier_threshold(self, values: np.ndarray, z: float) -> float:
         finite_values = values[np.isfinite(values)]
         if finite_values.size < 2:
+            return float("-inf")
+        if _all_finite_values_equal(finite_values):
             return float("-inf")
 
         median = float(np.median(finite_values))
