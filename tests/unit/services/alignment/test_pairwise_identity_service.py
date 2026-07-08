@@ -1060,3 +1060,30 @@ class TestPairwiseIdentity:
         assert len(pair_ids) == 3
         assert "a-b" in identities
         assert "mean" in stats
+
+    def test_calculate_pairwise_identities_medium_fallback_skips_pool(
+        self, mocker, args
+    ):
+        service = PairwiseIdentity(args)
+        alignment = [
+            SimpleNamespace(
+                id=f"id{idx}",
+                seq=("AΩAA" if idx % 7 else "CΩAA"),
+            )
+            for idx in range(65)
+        ]
+        mocked_pool = mocker.patch(
+            "phykit.services.alignment.pairwise_identity.mp.Pool",
+            side_effect=AssertionError("medium fallback should skip pool"),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert len(pair_ids) == 2080
+        assert len(identities) == 2080
+        assert 0.0 <= stats["mean"] <= 1.0
+        mocked_pool.assert_not_called()

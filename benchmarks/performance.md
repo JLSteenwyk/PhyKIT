@@ -151,6 +151,7 @@ Results:
 | `AlignmentLengthNoGaps`/`PairwiseIdentity` local identical helper iterator scan | 1M sequence strings, identical / early-different / late-different cases, side-by-side previous indexed helper | 0.025730375s / 0.000000333s / 0.026254375s | 0.012546709s / 0.000000208s / 0.013041333s | 2.05x / 1.60x / 2.01x |
 | `PairwiseIdentity.calculate_pairwise_identities` sequential fallback pair streaming | 500 mixed-length records, multiprocessing disabled, worker and stats helper held constant | 1.010443s | 0.595901s | 1.70x |
 | `PairwiseIdentity.calculate_pairwise_identities` multiprocessing fallback streaming chunks | 2500 fallback records, 3,123,750 index-pair chunk setup, side-by-side previous full pair-list slicing | 0.720987s | 0.338193s | 2.13x |
+| `PairwiseIdentity.calculate_pairwise_identities` fallback multiprocessing threshold | 4005 non-ASCII equal-length pair comparisons, side-by-side previous low multiprocessing cutoff | 0.845229s | 0.025384s | 33.30x |
 | `PairwiseIdentity._process_pair_batch` local record reuse | 124,750 fallback pair comparisons over 500 records x 120 sites, side-by-side previous repeated `alignment_data` indexing | 0.862179s | 0.687560s | 1.25x |
 | `PairwiseIdentity.run` verbose batched text output | 100k pair rows, mocked alignment/read and identical stdout text | 0.054454s | 0.040773s | 1.34x |
 | `PairwiseIdentity.run` summary-only taxa-list elision | 1M mocked records, scoring and summary output mocked, non-verbose/no-plot output | 0.116345s | 0.000001s | 90068.29x |
@@ -3165,6 +3166,9 @@ Profiling summary:
   Mixed-length or non-ASCII sequential fallback runs now compute the pair count
   arithmetically and stream `itertools.combinations` into the batch worker,
   reserving full pair-list materialization for the multiprocessing chunking path.
+  The fallback multiprocessing cutoff is now much higher, so medium fallback
+  inputs stay on the faster in-process worker instead of paying pool startup
+  and pickling overhead.
   Summary-only runs no longer materialize taxa IDs before scoring, because the
   taxa label list is only needed for heatmap plotting.
 - `VariableSites`, `ParsimonyInformative`, and `AlignmentEntropy` baseline time

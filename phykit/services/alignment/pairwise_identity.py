@@ -203,7 +203,7 @@ def _all_sequences_identical(sequences: list[str]) -> bool:
 
 
 class PairwiseIdentity(Alignment):
-    MP_MIN_PAIRS = 2000
+    MP_MIN_PAIRS = 500_000
     MAX_MP_WORKERS = 8
     _DNA_GAP_LOOKUP = None
     _PROTEIN_GAP_LOOKUP = None
