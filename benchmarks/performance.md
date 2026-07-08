@@ -1038,6 +1038,7 @@ Results:
 | `QuartetNetwork._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.091090s | 0.067767s | 1.34x |
 | `QuartetNetwork._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
 | `quartet_network` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read` proxy | 0.134003s | 0.032005s | 4.19x |
+| `QuartetNetwork._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.010175313s / 0.130497375s / 1.084046708s | 0.000816333s / 0.036962438s / 0.118325771s | 12.46x / 3.53x / 9.16x |
 | `quartet_network` module import without eager JSON/plot helpers | median cold subprocess import after localizing `PlotConfig` and lazy JSON wrapper | 0.017726s | 0.006822s | 2.60x |
 | `quartet_network` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in annotations | 0.006016s | 0.004340s | 1.39x |
 | `quartet_utils.compute_gcf_per_node` | 80 balanced gene trees x 128 taxa plus species tree, gCF/gDF counts | 0.2140s | 0.1058s | 2.0x |
