@@ -19,7 +19,8 @@ class _LazyBaseTreeTree:
     def root_with_outgroup(self, *args, **kwargs):
         from Bio.Phylo.BaseTree import Tree as _Tree
 
-        return _Tree.root_with_outgroup(*args, **kwargs)
+        self.root_with_outgroup = _Tree.root_with_outgroup
+        return self.root_with_outgroup(*args, **kwargs)
 
 
 class _LazyBaseTree:

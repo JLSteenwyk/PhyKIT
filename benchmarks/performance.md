@@ -1552,6 +1552,7 @@ Results:
 | `rename_tree_tips` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006052s | 0.004723s | 1.28x |
 | `RootTree.run` | balanced 32768-tip tree, root with one-tip outgroup | 0.3064s | 0.1872s | 1.6x |
 | `root_tree` module import without eager Bio.Phylo | cold subprocess import after lazy root-with-outgroup proxy | 0.120389s | 0.025771s | 4.67x |
+| `RootTree._LazyBaseTreeTree.root_with_outgroup` cached callable | 10k / 100k / 1M repeated no-op root calls after first Bio.Phylo.BaseTree resolution | 0.040444604s / 0.158066208s / 2.086568396s | 0.001365250s / 0.013778437s / 0.269806708s | 29.62x / 11.47x / 7.73x |
 | `root_tree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006306s | 0.005138s | 1.23x |
 | `root_tree` module import without eager file helper | median cold subprocess import after lazy outgroup-list reader wrapper | 0.040920s | 0.038210s | 1.07x |
 | `PruneTree.run` | balanced 32768-tip tree, prune one tip | 0.3089s | 0.1792s | 1.7x |
