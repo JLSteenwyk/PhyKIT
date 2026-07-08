@@ -57,6 +57,7 @@ Phylo = _LazyPhylo()
 _FDR_VECTOR_MIN_LENGTH = 32
 _MANN_WHITNEY_EXACT_MAX_MIN_N = 8
 _MANN_WHITNEY_EXACT_COUNTS = {}
+_MANN_WHITNEY_EXACT_CUMULATIVE = {}
 
 
 def _median(values: list[float]) -> float:
@@ -126,6 +127,23 @@ def _mann_whitney_exact_counts(n_x: int, n_y: int) -> list[int]:
     return counts
 
 
+def _mann_whitney_exact_cumulative(n_x: int, n_y: int) -> tuple[list[int], int]:
+    key = (n_x, n_y)
+    cached = _MANN_WHITNEY_EXACT_CUMULATIVE.get(key)
+    if cached is not None:
+        return cached
+
+    cumulative = []
+    running_total = 0
+    for count in _mann_whitney_exact_counts(n_x, n_y):
+        running_total += count
+        cumulative.append(running_total)
+
+    result = (cumulative, running_total)
+    _MANN_WHITNEY_EXACT_CUMULATIVE[key] = result
+    return result
+
+
 def _mannwhitneyu_no_ties(
     x: list[float], y: list[float]
 ) -> tuple[float, float] | None:
@@ -149,10 +167,9 @@ def _mannwhitneyu_no_ties(
 
     if min(n_x, n_y) <= _MANN_WHITNEY_EXACT_MAX_MIN_N:
         u_index = int(u_statistic)
-        counts = _mann_whitney_exact_counts(n_x, n_y)
-        total = sum(counts)
-        lower = sum(counts[:u_index + 1])
-        upper = sum(counts[u_index:])
+        cumulative, total = _mann_whitney_exact_cumulative(n_x, n_y)
+        lower = cumulative[u_index]
+        upper = total - (cumulative[u_index - 1] if u_index else 0)
         p_value = min(1.0, 2.0 * min(lower, upper) / total)
         return float(u_statistic), float(p_value)
 

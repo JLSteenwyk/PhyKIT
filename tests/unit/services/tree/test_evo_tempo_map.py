@@ -719,6 +719,27 @@ class TestStatisticalTests:
         assert result["mann_whitney_U"] == 20.0
         assert result["mann_whitney_p"] == pytest.approx(0.015873015873015872)
 
+    def test_exact_mann_whitney_reuses_cumulative_distribution(self, monkeypatch):
+        evo_tempo_map_module._MANN_WHITNEY_EXACT_CUMULATIVE.clear()
+        expected = evo_tempo_map_module._mannwhitneyu_no_ties(
+            [10.0, 12.0, 11.0, 13.0, 10.5],
+            [5.0, 6.0, 4.5, 5.5],
+        )
+
+        def fail_counts(*_args, **_kwargs):
+            raise AssertionError("repeated exact Mann-Whitney tests should use cache")
+
+        monkeypatch.setattr(
+            evo_tempo_map_module,
+            "_mann_whitney_exact_counts",
+            fail_counts,
+        )
+
+        assert evo_tempo_map_module._mannwhitneyu_no_ties(
+            [10.0, 12.0, 11.0, 13.0, 10.5],
+            [5.0, 6.0, 4.5, 5.5],
+        ) == expected
+
     def test_small_no_tie_mann_whitney_does_not_import_scipy_stats(self):
         code = """
 import sys
