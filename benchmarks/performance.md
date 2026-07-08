@@ -1809,6 +1809,7 @@ Results:
 | `vcv_utils` module import without eager SciPy linalg | cold process import for shared VCV helpers | 0.323420s | 0.183398s | 1.8x |
 | `vcv_utils` module import without eager Bio.Phylo | cold subprocess import with lazy `Phylo.read` proxy | 0.174747s | 0.112800s | 1.55x |
 | `vcv_utils._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.008195354s / 0.106113229s / 1.103036625s | 0.001327771s / 0.016058667s / 0.278373291s | 6.17x / 6.61x / 3.96x |
+| `vcv_utils._LazyPickle` cached copy helpers | 10k / 100k / 1M repeated no-op `loads(dumps(tree, protocol=HIGHEST_PROTOCOL))` calls after first pickle resolution | 0.017312167s / 0.207601104s / 3.043338521s | 0.002707251s / 0.028859166s / 0.584079958s | 6.39x / 7.19x / 5.21x |
 | `vcv_utils` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.112800s | 0.024335s | 4.64x |
 | `vcv_utils` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006726s | 0.005047s | 1.33x |
 | `vcv_utils` module import without typing/path parser startup | median cold subprocess import after converting annotation-only typing names and localizing `Path`/`StringIO` to gene-tree parsing | 0.013944s | 0.004052s | 3.44x |
