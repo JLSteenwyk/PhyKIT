@@ -433,6 +433,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` many-short protein count table | 50k taxa x 50 no-gap protein sites, side-by-side previous one `np.bincount` per taxon row | 1.300922s | 0.921645s | 1.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` count-matrix column totals | count matrices shaped 260x4 / 1200x20 / 2000x20 / 50000x20, side-by-side previous `np.sum(..., axis=0)` wrapper | 3.497999s / 3.163409s / 4.144007s / 4.768939s | 1.929073s / 2.924800s / 3.469921s / 3.756192s | 1.81x / 1.08x / 1.19x / 1.27x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` narrow deviation row sums | count-deviation matrices shaped 260x4 / 500000x4, side-by-side previous top-level `np.sum(..., axis=1)` wrapper while preserving the wider-matrix path | 0.000017249s / 0.015699746s | 0.000004323s / 0.011800400s | 3.99x / 1.33x |
+| `RelativeCompositionVariabilityTaxon._ascii_count_matrix` gappy short-row global bincount | gappy DNA byte matrices sized 1000x80 / 5000x120 / 20000x120 / 50000x80, side-by-side previous per-row `np.bincount` valid-mask path | 0.006808s / 0.039980s / 0.168962s / 0.466416s | 0.000727s / 0.005182s / 0.052468s / 0.097346s | 9.36x / 7.72x / 3.22x / 4.79x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence shortcut | 1200 taxa x 12000 identical DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.069846s | 0.010896s | 6.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with identical zero rows | 0.298070s | 0.116078s | 2.57x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.058848s / 0.007070s / 0.211013s | 0.042901s / 0.000004s / 0.037338s | 1.37x / 1844.67x / 5.65x |
@@ -3797,6 +3798,9 @@ Profiling summary:
   descending order for tied values. A later row-construction pass builds
   per-taxon output rows into one newline-joined print while preserving the same
   stdout text; JSON and plot reporting are unchanged.
+  Short ASCII count matrices now use the global row-offset `bincount` path even
+  when invalid symbols are present; `unique_chars` already excludes those
+  invalid byte values, so selecting valid columns preserves the per-row counts.
   The lazy NumPy proxy now caches resolved attributes, avoiding repeated
   import/getattr dispatch during repeated RCVT count and reduction calls while
   preserving lazy import behavior and module-level patch points.

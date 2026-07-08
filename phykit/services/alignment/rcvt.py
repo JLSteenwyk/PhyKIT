@@ -214,8 +214,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
     def _ascii_count_matrix(alignment_array, unique_chars, valid_mask):
         num_records, aln_len = alignment_array.shape
         if (
-            valid_mask is None
-            and num_records >= _ASCII_GLOBAL_BINCOUNT_MIN_RECORDS
+            num_records >= _ASCII_GLOBAL_BINCOUNT_MIN_RECORDS
             and aln_len <= _ASCII_GLOBAL_BINCOUNT_MAX_LENGTH
         ):
             encoded = alignment_array.astype(np.int64)

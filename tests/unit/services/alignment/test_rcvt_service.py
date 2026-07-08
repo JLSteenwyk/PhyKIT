@@ -361,6 +361,48 @@ assert "Bio.AlignIO" not in sys.modules
         assert bincount_calls == 1
         assert observed.shape == (matrix.shape[0], len(unique_chars))
 
+    def test_ascii_count_matrix_short_gappy_rows_use_global_bincount(
+        self, monkeypatch
+    ):
+        alphabet = b"ACGTN-?X*"
+        matrix = rcvt_module.np.tile(
+            rcvt_module.np.frombuffer(alphabet, dtype=rcvt_module.np.uint8),
+            (8, 4),
+        )
+        invalid_lookup = rcvt_module._get_invalid_lookup(is_protein=False)
+        observed_chars = rcvt_module.np.unique(matrix)
+        unique_chars = observed_chars[~invalid_lookup[observed_chars]]
+        valid_mask = ~invalid_lookup[matrix]
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MIN_RECORDS", 8)
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MAX_LENGTH", 80)
+        bincount_calls = 0
+        original_bincount = rcvt_module.np.bincount
+
+        def count_bincount(*args, **kwargs):
+            nonlocal bincount_calls
+            bincount_calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(rcvt_module.np, "bincount", count_bincount)
+
+        observed = RelativeCompositionVariabilityTaxon._ascii_count_matrix(
+            matrix,
+            unique_chars,
+            valid_mask,
+        )
+        expected = rcvt_module.np.zeros(
+            (matrix.shape[0], len(unique_chars)),
+            dtype=rcvt_module.np.float32,
+        )
+        for row_idx, row in enumerate(matrix):
+            expected[row_idx] = original_bincount(
+                row[valid_mask[row_idx]],
+                minlength=256,
+            )[unique_chars]
+
+        assert bincount_calls == 1
+        rcvt_module.np.testing.assert_array_equal(observed, expected)
+
     def test_calculate_rows_identical_sequences_skip_matrix_path(self, mocker, args):
         service = RelativeCompositionVariabilityTaxon(args)
         alignment = MultipleSeqAlignment(
