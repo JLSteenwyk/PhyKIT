@@ -45,6 +45,7 @@ def test_lazy_phylo_caches_resolved_reader(tmp_path):
 
     assert cached_module is not None
     assert lazy_phylo._module is cached_module
+    assert lazy_phylo.__dict__["read"] is cached_module.read
     assert [tip.name for tip in first.get_terminals()] == ["A", "B", "C"]
     assert [tip.name for tip in second.get_terminals()] == ["A", "B", "C"]
 

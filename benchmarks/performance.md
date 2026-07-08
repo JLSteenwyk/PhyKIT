@@ -1529,6 +1529,7 @@ Results:
 | `HiddenParalogyCheck.read_clades_file` bulk read split | 500k three-taxon clade rows with blank-line compatibility | 0.572789s | 0.435850s | 1.31x |
 | `HiddenParalogyCheck.read_clades_file` direct line iteration | 500k three-taxon clade rows with blank-line compatibility, side-by-side previous `read().splitlines()` parser | 0.094809s | 0.092886s | 1.02x |
 | `HiddenParalogyCheck` cached lazy Phylo reader | 100 / 1000 / 5000 repeated small-Newick reads through the lazy reader proxy | 0.003599s / 0.103888s / 0.778282s | 0.003226s / 0.077716s / 0.646351s | 1.12x / 1.34x / 1.20x |
+| `HiddenParalogyCheck._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.001686167s / 0.025225625s / 0.351426709s | 0.000781334s / 0.008135333s / 0.104089292s | 2.16x / 3.10x / 3.38x |
 | `hidden_paralogy_check` module import without eager Bio.Phylo | cold subprocess import after lazy Phylo reader proxy | 0.135706s | 0.029766s | 4.56x |
 | `hidden_paralogy_check` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.012157s | 0.010456s | 1.16x |
 | `hidden_paralogy_check` module import without eager multiprocessing | median cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.030027s | 0.023741s | 1.26x |

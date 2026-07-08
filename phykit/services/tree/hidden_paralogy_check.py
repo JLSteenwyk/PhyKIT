@@ -24,7 +24,9 @@ class _LazyPhylo:
         return module
 
     def read(self, *args, **kwargs):
-        return self._load().read(*args, **kwargs)
+        read = self._load().read
+        self.read = read
+        return read(*args, **kwargs)
 
 
 Phylo = _LazyPhylo()
