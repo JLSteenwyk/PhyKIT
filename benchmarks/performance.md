@@ -1351,6 +1351,7 @@ Results:
 | `Tree.calculate_terminal_count_fast` clade root | balanced 32768-tip clade, terminal count only | 0.065122s | 0.003916s | 16.63x |
 | `Tree.calculate_terminal_count_fast` localized stack operations | balanced 262144-tip tree, terminal count only, optimized helper baseline | 0.060390s | 0.055346s | 1.09x |
 | `Tree.calculate_terminal_root_distances_fast` binary child push | balanced 262144-tip tree, root-to-terminal distances, side-by-side previous `reversed(children)` helper | 0.061517s | 0.056853s | 1.08x |
+| `Tree._fast_copy` cached lazy pickle helpers | 10k / 100k / 1M repeated small tree-like pickle copies after first pickle resolution | 0.015687625s / 0.207941541s / 3.267695333s | 0.010218708s / 0.160096708s / 2.435338375s | 1.54x / 1.30x / 1.34x |
 | `Tree.calculate_treeness` | balanced 65536-tip tree, internal branch length / total branch length | 0.3920s | 0.0127s | 31.0x |
 | `Tree.calculate_treeness` localized internal/total traversal | balanced 4096 / 32768 / 65536-tip trees, repeated side-by-side previous one-pass helper | 1.029432s / 1.631991s / 1.732370s | 0.919112s / 1.132051s / 1.293093s | 1.12x / 1.44x / 1.34x |
 | `Treeness.run` cached read-only tree path | balanced 32768-tip cached tree with varied branch lengths, output mocked | 0.122251s | 0.004065s | 30.08x |

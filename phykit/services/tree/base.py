@@ -7,6 +7,36 @@ from ..base import BaseService
 from ...errors import PhykitUserError
 
 
+class _LazyPickle:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+        return module
+
+    def dumps(self, *args, **kwargs):
+        dumps = self._load().dumps
+        self.dumps = dumps
+        return dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        loads = self._load().loads
+        self.loads = loads
+        return loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        attr = getattr(self._load(), name)
+        setattr(self, name, attr)
+        return attr
+
+
+pickle = _LazyPickle()
+
+
 class Tree(BaseService):
     _PAIRWISE_LCA_DEPTH_THRESHOLD = 64
     _ORDERED_MAPPING_PRUNE_MIN_SIZE = 200_000
@@ -112,8 +142,6 @@ class Tree(BaseService):
         Falls back to deepcopy for objects that can't be pickled (e.g.,
         mocks in unit tests).
         """
-        import pickle
-
         try:
             return pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
         except (pickle.PicklingError, TypeError, AttributeError):
