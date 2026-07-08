@@ -1092,6 +1092,27 @@ class TestRetentionIndex:
         assert ri_per_char == [1.0, 0.0]
         assert ri_overall == pytest.approx(0.5)
 
+    def test_small_ascii_retention_index_uses_counter_fallback(self, monkeypatch):
+        def fail_symbol_counts(*_args, **_kwargs):
+            raise AssertionError("small RI matrices should avoid NumPy counting")
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_ascii_symbol_counts_by_character",
+            fail_symbol_counts,
+        )
+
+        ri_per_char, ri_overall = retention_index(
+            tip_states_per_char=[
+                ["0", "0", "1", "1", "?"],
+                ["0", "1", "0", "1", "-"],
+            ],
+            observed_per_char=[1, 2],
+        )
+
+        assert ri_per_char == [1.0, 0.0]
+        assert ri_overall == pytest.approx(0.5)
+
     def test_retention_index_fallback_handles_multicharacter_states(self):
         ri_per_char, ri_overall = retention_index(
             tip_states_per_char=[

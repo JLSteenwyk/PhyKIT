@@ -8,6 +8,9 @@ and consistency/retention index computation.
 from collections import Counter
 
 
+_RETENTION_INDEX_NUMPY_MIN_CELLS = 4096
+
+
 def build_parent_map(tree) -> dict[int, object]:
     """Build dict mapping node id -> parent clade."""
     direct_result = _build_parent_map_direct(tree)
@@ -639,8 +642,6 @@ def _retention_index_ascii_single_char(
     tip_states_per_char: list[list[str]],
     observed_per_char: list[int],
 ) -> tuple[list[float | None], float | None] | None:
-    import numpy as np
-
     n_chars = min(len(tip_states_per_char), len(observed_per_char))
     if n_chars == 0:
         return [], None
@@ -649,6 +650,8 @@ def _retention_index_ascii_single_char(
     n_taxa = len(columns[0])
     if any(len(column) != n_taxa for column in columns):
         return None
+    if n_chars * n_taxa < _RETENTION_INDEX_NUMPY_MIN_CELLS:
+        return None
 
     try:
         data = "".join("".join(column) for column in columns).encode("ascii")
@@ -656,6 +659,8 @@ def _retention_index_ascii_single_char(
         return None
     if len(data) != n_chars * n_taxa:
         return None
+
+    import numpy as np
 
     matrix = np.frombuffer(data, dtype=np.uint8).reshape(n_chars, n_taxa)
     symbols = np.unique(matrix)
