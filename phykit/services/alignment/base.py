@@ -60,7 +60,7 @@ def _get_invalid_lookup(is_protein: bool):
 
 def _ascii_rcv_count_matrix(alignment_array, unique_chars, valid_mask):
     num_records, aln_len = alignment_array.shape
-    if valid_mask is None and num_records >= 10_000 and aln_len <= 256:
+    if num_records >= 10_000 and aln_len <= 256:
         encoded = alignment_array.astype(np.int64)
         encoded += (np.arange(num_records, dtype=np.int64) * 256)[:, None]
         counts = np.bincount(

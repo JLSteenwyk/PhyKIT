@@ -780,6 +780,7 @@ Results:
 | `Alignment.calculate_rcv` count-matrix column totals | count matrices shaped 260x4 / 1200x20 / 2000x20 / 10000x20 / 50000x20 / 500000x4, side-by-side previous `np.sum(..., axis=0)` with large-matrix path preserved | 0.000007130s / 0.000019668s / 0.000020609s / 0.000095322s / 0.000472392s / 0.005389200s | 0.000004007s / 0.000012013s / 0.000020609s / 0.000095322s / 0.000472392s / 0.005389200s | 1.78x / 1.64x / 1.00x / 1.00x / 1.00x / 1.00x |
 | `Alignment.calculate_rcv` narrow deviation row sums | count-difference matrices shaped 260x4 / 500000x4, side-by-side previous top-level `np.sum(..., axis=1)` wrapper while preserving the wider-matrix path | 0.000018676s / 0.015092927s | 0.000004325s / 0.006486581s | 4.32x / 2.33x |
 | `Alignment.calculate_rcv` clean large-short ASCII count matrix | 10000 taxa x 128 sites / 50000 taxa x 64 sites / 200000 taxa x 32 sites, 20 valid symbols, side-by-side previous per-row `bincount` loop | 5.113480s / 5.967428s / 6.979634s | 1.557019s / 1.341158s / 1.625248s | 3.28x / 4.45x / 4.29x |
+| `Alignment.calculate_rcv` gappy large-short ASCII count matrix | gappy DNA byte matrices sized 10000x80 / 20000x120 / 50000x80 / 100000x50, side-by-side previous per-row `bincount` valid-mask path | 0.113055s / 0.259663s / 0.508456s / 0.775806s | 0.010403s / 0.050741s / 0.107748s / 0.169821s | 10.87x / 5.12x / 4.72x / 4.57x |
 | `Alignment.calculate_rcv` single-record early return | 5 repeated 4.5M-site single-record RCV calls, side-by-side previous sequence materialization before zero return | 0.014365s | 0.000000417s | 34428.75x |
 | `Alignment.calculate_rcv` cached lazy NumPy attributes | 1200 taxa x 4000 gappy DNA sites, side-by-side previous uncached lazy proxy, identical RCV | 0.750559s | 0.487720s | 1.54x |
 | `rcv` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006077s | 0.004840s | 1.26x |
@@ -4627,9 +4628,12 @@ Profiling summary:
   avoiding the generic `np.sum` dispatch on the realistic taxon-vector sizes
   covered by the RCV benchmarks. Count-matrix column totals now use the same
   direct reduction for common matrix heights while preserving the generic
-  `np.sum` path for larger matrices where it remains faster. Clean large-short ASCII matrices now use a
-  single encoded `bincount` count matrix pass, matching the existing row-wise
-  count output while avoiding one Python loop iteration per taxon. Single-record
+  `np.sum` path for larger matrices where it remains faster. Clean large-short
+  ASCII matrices now use a single encoded `bincount` count matrix pass, matching
+  the existing row-wise count output while avoiding one Python loop iteration
+  per taxon. The same row-offset count path now handles gappy large-short
+  matrices because invalid bytes are excluded from `unique_chars` before count
+  columns are selected. Single-record
   alignments now return zero RCV before sequence materialization, preserving the
   existing zero result while avoiding unnecessary uppercase copies. The shared
   alignment-base lazy NumPy proxy now caches resolved attributes after first
