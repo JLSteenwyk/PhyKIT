@@ -71,7 +71,11 @@ def _sample_std(values: list[float], mean: float) -> float | None:
     n = len(values)
     if n < 2:
         return None
-    variance = sum((value - mean) * (value - mean) for value in values) / (n - 1)
+    sum_squared_deviations = 0.0
+    for value in values:
+        delta = value - mean
+        sum_squared_deviations += delta * delta
+    variance = sum_squared_deviations / (n - 1)
     return math.sqrt(variance)
 
 

@@ -1131,6 +1131,7 @@ Results:
 | `EvoTempoMap._test_branch` permutation median dispatch | 64 concordant and 64 discordant branch lengths, 1000 seeded permutations with Mann-Whitney stubbed, side-by-side previous repeated `np.median` and RNG `shuffle` lookup path, identical result | 0.156104s | 0.073971s | 2.11x |
 | `EvoTempoMap._test_branch` exact small-sample Mann-Whitney path | cold subprocess, 5 no-tie concordant and 4 no-tie discordant lengths through full branch test with 1000 seeded permutations, identical U and exact p-value | 3.187698s | 0.464889s | 6.86x |
 | `EvoTempoMap._test_branch` asymptotic no-tie Mann-Whitney path | cold subprocess, 10 no-tie concordant and 10 no-tie discordant lengths through full branch test with 1000 seeded permutations, identical U and continuity-corrected asymptotic p-value | 1.729069s | 0.394762s | 4.38x |
+| `EvoTempoMap._test_branch` sample standard deviation loop | repeated concordant/discordant length summaries over 32 / 128 / 1000 values, side-by-side previous generator-sum variance path | 0.249108s / 0.282292s / 0.231646s | 0.225681s / 0.202241s / 0.152720s | 1.10x / 1.40x / 1.52x |
 | `EvoTempoMap._fdr` | 1M synthetic p-values | 0.647786s | 0.122101s | 5.3x |
 | `EvoTempoMap._fdr` in-place vector adjustment | 1M synthetic p-values, side-by-side previous temporary adjusted-expression path with identical corrected values | 0.629815s | 0.495479s | 1.27x |
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |

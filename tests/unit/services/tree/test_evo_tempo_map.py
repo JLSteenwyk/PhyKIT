@@ -113,6 +113,19 @@ def test_lazy_phylo_caches_resolved_read(monkeypatch):
     assert calls == [(("tree", "newick"), {}), (("tree2", "newick"), {})]
 
 
+def test_sample_std_uses_explicit_variance_loop(monkeypatch):
+    values = [1.0, 2.0, 4.0, 8.0]
+    mean = sum(values) / len(values)
+    expected = float(np.std(values, ddof=1))
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("sample standard deviation should avoid generator sum")
+
+    monkeypatch.setattr(builtins, "sum", fail_sum)
+
+    assert evo_tempo_map_module._sample_std(values, mean) == pytest.approx(expected)
+
+
 class TestProcessArgs:
     def test_default_args(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
