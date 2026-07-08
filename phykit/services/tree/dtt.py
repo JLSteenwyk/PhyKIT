@@ -79,7 +79,7 @@ def _batch_row_sum_squares(values: np.ndarray) -> np.ndarray:
 
 
 def _batch_trait_sums(values: np.ndarray) -> np.ndarray:
-    if 1 < values.shape[2] <= 4:
+    if values.shape[2] <= 8:
         return values.sum(axis=1)
     return np.sum(values, axis=1)
 

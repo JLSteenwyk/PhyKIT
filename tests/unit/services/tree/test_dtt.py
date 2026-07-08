@@ -113,26 +113,38 @@ def test_batch_trait_sums_use_array_method_for_multi_trait_cubes(monkeypatch):
     )
 
 
-def test_batch_trait_sums_keep_numpy_path_for_single_trait_cubes(monkeypatch):
+def test_batch_trait_sums_use_array_method_for_single_trait_cubes(monkeypatch):
     values = np.arange(2 * 3, dtype=float).reshape(2, 3, 1)
-    calls = []
-    original_sum = dtt_module.np.sum
 
-    def tracking_sum(*args, **kwargs):
-        calls.append((args, kwargs))
-        return original_sum(*args, **kwargs)
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("single-trait batch sums should use ndarray.sum")
 
-    monkeypatch.setattr(dtt_module.np, "sum", tracking_sum)
+    monkeypatch.setattr(dtt_module.np, "sum", fail_sum)
 
     np.testing.assert_allclose(
         dtt_module._batch_trait_sums(values),
         np.sum(values, axis=1),
     )
-    assert len(calls) == 1
+
+
+def test_batch_trait_sums_use_array_method_for_moderately_wide_trait_cubes(
+    monkeypatch
+):
+    values = np.arange(2 * 3 * 8, dtype=float).reshape(2, 3, 8)
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("moderately wide batch sums should use ndarray.sum")
+
+    monkeypatch.setattr(dtt_module.np, "sum", fail_sum)
+
+    np.testing.assert_allclose(
+        dtt_module._batch_trait_sums(values),
+        np.sum(values, axis=1),
+    )
 
 
 def test_batch_trait_sums_keep_numpy_path_for_wide_trait_cubes(monkeypatch):
-    values = np.arange(2 * 3 * 8, dtype=float).reshape(2, 3, 8)
+    values = np.arange(2 * 3 * 16, dtype=float).reshape(2, 3, 16)
     calls = []
     original_sum = dtt_module.np.sum
 
