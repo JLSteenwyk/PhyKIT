@@ -381,6 +381,15 @@ class PhyloPath(Tree):
                 code=2,
             )
 
+        if (
+            len(tree_tips) >= 4
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return trait_names, traits
+
         tree_tip_set = set(tree_tips)
         if (
             len(tree_tip_set) >= 4

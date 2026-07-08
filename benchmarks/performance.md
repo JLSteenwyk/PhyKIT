@@ -2506,6 +2506,7 @@ Results:
 | `PhyloPath._parse_trait_file` streaming valid-row parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.654959s | 0.457753s | 1.43x |
 | `PhyloPath._parse_trait_file` all-shared parser fast path | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared | 0.449593s | 0.311079s | 1.45x |
 | `PhyloPath._parse_trait_file` stripped comment check | 300k-row multi-trait TSV, 3 numeric trait columns, whitespace-prefixed comments/blanks, all taxa shared | 1.541952s | 1.337712s | 1.15x |
+| `PhyloPath`/`PhyloAnova` ordered exact multi-trait parser validation | 200k-row path TSV plus 200k-row phylogenetic-ANOVA TSV whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 2.103161s | 1.765766s | 1.19x |
 | `PhyloPath._parse_models_file` streaming parser | 300k candidate path models, three edges per model, comments/blanks included | 1.162768s | 0.905995s | 1.28x |
 | `PhyloPath._parse_models_file` bounded model row parsing | 300k candidate path models, three edges per model, whitespace-prefixed comments/blanks included | 4.971978s | 4.427189s | 1.12x |
 | `PhyloPath._is_dag` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.095966s | 0.011607s | 8.27x |
@@ -8291,7 +8292,10 @@ Profiling summary:
   falls back to the detailed nonnumeric-value loop only when conversion fails,
   preserving existing filtered taxa and error messages. Exact all-shared trait
   files now return the parsed trait mapping after the same row validation,
-  avoiding the shared-taxa intersection and filtered dictionary copy.
+  avoiding the shared-taxa intersection and filtered dictionary copy. A later
+  ordered-exact parser pass recognizes tree-tip-order matches before building
+  taxon sets, preserving the set-backed fallback for reordered and partial
+  trait files.
   Candidate model-file parsing now streams rows directly from the file handle
   instead of materializing `readlines()`, preserving malformed-line and edge
   validation while reducing large model-set parse time and peak memory.
@@ -8816,7 +8820,9 @@ Profiling summary:
   A follow-up parser pass precomputes the categorical group column and numeric
   columns once, binds `float`, and returns the validated trait dictionary
   directly when all parsed taxa are present on the tree, preserving mismatch
-  warnings for partial-overlap inputs.
+  warnings for partial-overlap inputs. A later ordered-exact parser pass
+  recognizes tree-tip-order matches before building taxon sets, preserving the
+  set-backed fallback for reordered and partial trait files.
 - `CharacterMap.run` taxon-set setup baseline time materialized terminal clade
   objects while only terminal names were needed for matching the character
   matrix. The optimized path uses the shared direct terminal-name traversal.

@@ -271,6 +271,36 @@ class TestPhyloPath:
             "D": [4.0, 40.0],
         }
 
+    def test_parse_trait_file_ordered_all_shared_skips_sets(
+        self, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tbody_mass\tbrain_size\n"
+            "A\t1.0\t10.0\n"
+            "B\t2.0\t20.0\n"
+            "C\t3.0\t30.0\n"
+            "D\t4.0\t40.0\n"
+        )
+        svc = PhyloPath(_make_args())
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        trait_names, traits = svc._parse_trait_file(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        assert trait_names == ["body_mass", "brain_size"]
+        assert traits == {
+            "A": [1.0, 10.0],
+            "B": [2.0, 20.0],
+            "C": [3.0, 30.0],
+            "D": [4.0, 40.0],
+        }
+        assert builtins.set is fail_set
+
     def test_parse_trait_file_non_numeric_error(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(

@@ -368,6 +368,15 @@ class PhyloAnova(Tree):
                 code=2,
             )
 
+        if (
+            len(tree_tips) >= 3
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return header, traits
+
         tree_tip_set = set(tree_tips)
         if (
             len(tree_tip_set) >= 3

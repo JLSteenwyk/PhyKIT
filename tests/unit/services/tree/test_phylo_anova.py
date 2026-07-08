@@ -291,6 +291,33 @@ class TestPhyloAnovaParsing:
         }
         assert capsys.readouterr().err == ""
 
+    def test_parse_trait_file_ordered_all_shared_skips_sets(
+        self, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tbody_mass\tgroup\tlength\n"
+            "A\t1.0\tg1\t10.0\n"
+            "B\t2.0\tg2\t20.0\n"
+            "C\t3.0\tg1\t30.0\n"
+        )
+        svc = PhyloAnova.__new__(PhyloAnova)
+        svc.group_column = "group"
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        header, traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert header == ["body_mass", "group", "length"]
+        assert traits == {
+            "A": [1.0, "g1", 10.0],
+            "B": [2.0, "g2", 20.0],
+            "C": [3.0, "g1", 30.0],
+        }
+        assert builtins.set is fail_set
+
     def test_parse_trait_file_warns_and_filters_partial_overlap(
         self, tmp_path, capsys
     ):
