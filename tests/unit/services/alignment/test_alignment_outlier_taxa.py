@@ -994,6 +994,36 @@ class TestAlignmentOutlierTaxa:
             alignment_outlier_taxa_module.np.array(expected),
         )
 
+    def test_blocked_long_branch_proxy_uses_array_row_sum(self, monkeypatch):
+        service = self._service()
+        matrix = alignment_outlier_taxa_module.np.frombuffer(
+            b"ACGT"
+            b"AG-T"
+            b"A--T",
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        ).reshape(3, 4)
+        invalid_lookup = service._invalid_lookup_for_chars(["-", "?", "*", "X", "N"])
+        valid_mask = ~invalid_lookup[matrix]
+        symbols = alignment_outlier_taxa_module.np.unique(matrix[valid_mask])
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("blocked mismatch row totals should use ndarray.sum")
+
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module.np,
+            "sum",
+            fail_sum,
+            raising=False,
+        )
+
+        observed = AlignmentOutlierTaxa._blocked_long_branch_proxy(
+            matrix,
+            valid_mask,
+            symbols,
+        )
+
+        assert observed.shape == (3,)
+
     def test_large_ambiguous_long_branch_uses_blocked_helper(
         self,
         monkeypatch,

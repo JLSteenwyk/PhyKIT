@@ -453,7 +453,7 @@ class AlignmentOutlierTaxa(Alignment):
                 where=comparable,
             )
             long_branch_proxy[start:stop] = np.divide(
-                np.sum(mismatch_counts, axis=1),
+                mismatch_counts.sum(axis=1),
                 comparable_counts,
                 out=np.full(stop - start, np.nan, dtype=np.float64),
                 where=comparable_counts > 0,
