@@ -61,6 +61,16 @@ def _has_occupancy_invalid_bytes(sequence_bytes: bytes) -> bool:
     return any(code in sequence_bytes for code in _OCCUPANCY_INVALID_BYTES)
 
 
+def _missing_taxa_for_present(
+    sorted_taxa: list[str],
+    present_taxa: set,
+    total_taxa_count: int,
+) -> list[str]:
+    if len(present_taxa) == total_taxa_count:
+        return []
+    return [taxon for taxon in sorted_taxa if taxon not in present_taxa]
+
+
 class _LazyMultiprocessing:
     def cpu_count(self):
         import multiprocessing as _mp
@@ -528,7 +538,11 @@ class CreateConcatenationMatrix(Alignment):
         if missing_taxa is None:
             if sorted_taxa is None:
                 sorted_taxa = sorted(set(taxa))
-            missing_taxa = [taxon for taxon in sorted_taxa if taxon not in present_taxa]
+            missing_taxa = _missing_taxa_for_present(
+                sorted_taxa,
+                present_taxa,
+                total_taxa_count,
+            )
 
         num_present = len(present_taxa)
         num_missing = len(missing_taxa)
@@ -712,9 +726,11 @@ class CreateConcatenationMatrix(Alignment):
                     # Process results in original order
                     for alignment_path in alignment_paths:
                         _, seq_dict, present_taxa, og_len = results[alignment_path]
-                        missing_taxa = [
-                            taxon for taxon in sorted_taxa if taxon not in present_taxa
-                        ]
+                        missing_taxa = _missing_taxa_for_present(
+                            sorted_taxa,
+                            present_taxa,
+                            total_taxa_count,
+                        )
                         present_taxa_by_gene.append(present_taxa)
                         gene_lengths.append(og_len)
 
@@ -744,9 +760,11 @@ class CreateConcatenationMatrix(Alignment):
                         alignment_path,
                         taxa,
                     )
-                    missing_taxa = [
-                        taxon for taxon in sorted_taxa if taxon not in present_taxa
-                    ]
+                    missing_taxa = _missing_taxa_for_present(
+                        sorted_taxa,
+                        present_taxa,
+                        total_taxa_count,
+                    )
                     present_taxa_by_gene.append(present_taxa)
                     gene_lengths.append(og_len)
                     self._append_ordered_sequences(
@@ -771,9 +789,11 @@ class CreateConcatenationMatrix(Alignment):
             for alignment_path in alignment_paths:
                 present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
                 missing_seq, og_len = self.create_missing_seq_str(records)
-                missing_taxa = [
-                    taxon for taxon in sorted_taxa if taxon not in present_taxa
-                ]
+                missing_taxa = _missing_taxa_for_present(
+                    sorted_taxa,
+                    present_taxa,
+                    total_taxa_count,
+                )
                 present_taxa_by_gene.append(present_taxa)
                 gene_lengths.append(og_len)
 
@@ -826,9 +846,11 @@ class CreateConcatenationMatrix(Alignment):
                     present_taxa = present_taxa_by_gene[gene_idx]
                     # Only consider taxa that survived filtering
                     filtered_present = present_taxa - excluded
-                    missing_taxa = [
-                        taxon for taxon in taxa if taxon not in filtered_present
-                    ]
+                    missing_taxa = _missing_taxa_for_present(
+                        taxa,
+                        filtered_present,
+                        len(taxa),
+                    )
                     occupancy_info = self.add_to_occupancy_info(
                         occupancy_info,
                         filtered_present,

@@ -407,6 +407,24 @@ class TestCreateConcatenationMatrix:
 
         assert occ == ["g1.fa\t2\t2\t0.5000\tB;D\n"]
 
+    def test_add_to_occupancy_info_all_present_skips_missing_scan(self, args):
+        class NoIterTaxa(list):
+            def __iter__(self):
+                raise AssertionError("all-present genes should skip missing scan")
+
+        ccm = CreateConcatenationMatrix(args)
+
+        occ = ccm.add_to_occupancy_info(
+            [],
+            {"A", "B"},
+            ["A", "B"],
+            "g1.fa",
+            sorted_taxa=NoIterTaxa(["A", "B"]),
+            total_taxa_count=2,
+        )
+
+        assert occ == ["g1.fa\t2\t0\t1.0000\t\n"]
+
     def test_add_to_occupancy_info_uses_precomputed_missing_taxa(self, args):
         class NoIterTaxa(list):
             def __iter__(self):
