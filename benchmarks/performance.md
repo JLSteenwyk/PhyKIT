@@ -244,6 +244,7 @@ Results:
 | `sum_of_pairs_score` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.212225s | 0.119312s | 1.78x |
 | `sum_of_pairs_score` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.085850s | 0.029637s | 2.90x |
 | `sum_of_pairs_score` module import without eager multiprocessing | cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.011085s | 0.006683s | 1.66x |
+| `SumOfPairsScore._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.020984250s / 0.336919042s / 2.791215584s | 0.012623417s / 0.168803958s / 2.581930166s | 1.66x / 2.00x / 1.08x |
 | `sum_of_pairs_score` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006175s | 0.005132s | 1.20x |
 | `sum_of_pairs_score` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.003356s | 0.001074s | 3.12x |
 | `SumOfPairsScore._process_pair_batch` | 3570 mixed-length incomplete pair-set comparisons, 120 taxa x ~1600 sites | 0.5732s | 0.0141s | 40.7x |
@@ -3300,6 +3301,9 @@ Profiling summary:
   comparisons, retaining a Unicode fallback for non-ASCII strings. The small
   sequential mixed-length path now uses the same cached array slicing instead
   of a Python character loop.
+- The lazy multiprocessing proxy now caches the imported module after first
+  use while leaving `mp.cpu_count`, `mp.Pool`, and direct stdlib monkeypatches
+  visible through dynamic attribute reads.
 - `SumOfPairsScore._read_fasta` baseline time materialized `SeqRecord`
   objects through `SeqIO.to_dict(SeqIO.parse(...))`. The optimized loader uses
   `SimpleFastaParser` to keep plain sequence strings while preserving

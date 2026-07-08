@@ -13,15 +13,21 @@ def print_json(*args, **kwargs):
 
 
 class _LazyMultiprocessing:
-    def cpu_count(self):
-        import multiprocessing as _mp
+    _module = None
 
-        return _mp.cpu_count()
+    def _load(self):
+        module = self._module
+        if module is None:
+            import multiprocessing as module
+
+            self._module = module
+        return module
+
+    def cpu_count(self):
+        return self._load().cpu_count()
 
     def Pool(self, *args, **kwargs):
-        import multiprocessing as _mp
-
-        return _mp.Pool(*args, **kwargs)
+        return self._load().Pool(*args, **kwargs)
 
 
 class _LazyNumpy:

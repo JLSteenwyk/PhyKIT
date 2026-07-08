@@ -1,9 +1,11 @@
 import itertools
+import multiprocessing
 import subprocess
 import sys
 import pytest
 from argparse import Namespace
 from types import SimpleNamespace
+from unittest.mock import patch
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -35,6 +37,19 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert first is second
     assert lazy_np._module is not None
     assert "frombuffer" in lazy_np.__dict__
+
+
+def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable():
+    lazy_mp = module._LazyMultiprocessing()
+
+    with patch.object(multiprocessing, "cpu_count", return_value=11) as cpu_count:
+        assert lazy_mp.cpu_count() == 11
+        assert lazy_mp._module is multiprocessing
+
+    with patch.object(multiprocessing, "cpu_count", return_value=13) as cpu_count:
+        assert lazy_mp.cpu_count() == 13
+
+    cpu_count.assert_called_once_with()
 
 
 @pytest.fixture
