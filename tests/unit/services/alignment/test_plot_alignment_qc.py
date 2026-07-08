@@ -364,6 +364,40 @@ class TestPlotAlignmentQC:
             == "#ca0020"
         )
 
+    def test_ordered_heatmap_data_reuses_data_when_no_taxa_are_flagged(self, monkeypatch):
+        z_data = np.arange(12, dtype=float).reshape(4, 3)
+        taxa = ["t1", "t2", "t3", "t4"]
+        flagged_mask = np.zeros(4, dtype=bool)
+
+        def fail_argsort(*_args, **_kwargs):
+            raise AssertionError("clean heatmaps should not sort the flag mask")
+
+        monkeypatch.setattr(plot_alignment_qc_module.np, "argsort", fail_argsort)
+
+        z_plot, taxa_heat = PlotAlignmentQC._ordered_heatmap_data(
+            z_data,
+            taxa,
+            flagged_mask,
+        )
+
+        assert z_plot is z_data
+        assert taxa_heat is taxa
+
+    def test_ordered_heatmap_data_preserves_flagged_first_ordering(self):
+        z_data = np.arange(12, dtype=float).reshape(4, 3)
+        taxa = ["t1", "t2", "t3", "t4"]
+        flagged_mask = np.array([False, True, False, True])
+        heat_order = np.argsort(~flagged_mask)
+
+        z_plot, taxa_heat = PlotAlignmentQC._ordered_heatmap_data(
+            z_data,
+            taxa,
+            flagged_mask,
+        )
+
+        np.testing.assert_array_equal(z_plot, z_data[heat_order, :])
+        assert taxa_heat == [taxa[i] for i in heat_order]
+
     def test_init(self):
         args = Namespace(
             alignment="x.fa",

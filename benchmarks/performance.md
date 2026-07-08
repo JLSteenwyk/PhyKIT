@@ -488,6 +488,7 @@ Results:
 | `PlotAlignmentQC._prepare_plot_arrays` local NaN binding | 10k / 100k / 300k synthetic taxa with one-third missing long-branch proxies, side-by-side previous per-row lazy `np.nan` lookup | 0.018861s / 0.478141s / 1.196281s | 0.019333s / 0.267003s / 0.789349s | 0.98x / 1.79x / 1.52x |
 | `PlotAlignmentQC._flag_colors` vectorized mask mapping | 1M ordered taxa flags, identical normal/flagged color sequence | 0.036504s | 0.014694s | 2.48x |
 | `PlotAlignmentQC._flag_colors` uniform-mask scalar colors | 1M ordered taxa flags, none / all / sparse flagged masks, side-by-side previous always-vectorized `np.where` color array | 0.013073s / 0.013764s / 0.014300s | 0.000045s / 0.000048s / 0.014435s | 289.43x / 285.02x / 0.99x |
+| `PlotAlignmentQC.run` clean heatmap ordering shortcut | 500k synthetic taxa x 6 heatmap features, no flagged taxa, side-by-side previous `np.argsort(~flagged_mask)` plus matrix/list reorder | 0.116517s | 0.000008s | 14796.22x |
 | `PlotAlignmentQC` plot extent max reductions | plotted finite-value arrays sized 10 / 1000 / 100k / 1M, side-by-side previous `np.max(...)` with large-array path preserved | 0.000003432s / 0.000002161s / 0.000011253s / 0.000123167s | 0.000001027s / 0.000000811s / 0.000010299s / 0.000123167s | 3.34x / 2.66x / 1.09x / 1.00x |
 | `PlotAlignmentQC` cached lazy NumPy proxy | repeated large plot extent maxima over 100001 finite values, side-by-side previous uncached lazy NumPy attribute lookup, identical maximum | 0.000065925s | 0.000036815s | 1.79x |
 | `PlotAlignmentQC.run` manual subplot spacing | repeated 200-taxon QC PNG render, side-by-side previous `Figure.tight_layout(rect=...)` with the same four plotted panels | 5.603241s | 4.358724s | 1.29x |
@@ -3915,6 +3916,8 @@ Profiling summary:
   `np.max` path for very large arrays where it remains faster. Missing
   long-branch proxy values now reuse a local NaN binding during plot-array
   preparation, avoiding repeated lazy proxy lookups in large row loops. The
+  heatmap panel now skips the flagged-first sort and data copy when no taxa are
+  flagged, while retaining the existing ordering path for flagged plots. The
   final plot layout now uses fixed subplot spacing and tight save bounds instead
   of running Matplotlib's automatic `tight_layout` solver for the dense 2x2 QC
   panel. A later startup pass defers NumPy, JSON output, plot config, and the

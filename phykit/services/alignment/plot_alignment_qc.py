@@ -267,6 +267,14 @@ class PlotAlignmentQC(Alignment):
             return flagged_color
         return np.where(flagged_mask, flagged_color, normal_color)
 
+    @staticmethod
+    def _ordered_heatmap_data(z_data, taxa, flagged_mask):
+        if not flagged_mask.any():
+            return z_data, taxa
+
+        heat_order = np.argsort(~flagged_mask)
+        return z_data[heat_order, :], [taxa[i] for i in heat_order]
+
     def run(self) -> None:
         try:
             import matplotlib
@@ -362,9 +370,7 @@ class PlotAlignmentQC(Alignment):
             else:
                 z_data[:, col_idx] = (values - median) / sigma
 
-        heat_order = np.argsort(~flagged_mask)
-        z_plot = z_data[heat_order, :]
-        taxa_heat = [taxa[i] for i in heat_order]
+        z_plot, taxa_heat = self._ordered_heatmap_data(z_data, taxa, flagged_mask)
         im = ax.imshow(z_plot, aspect="auto", cmap="RdBu_r", vmin=-3, vmax=3)
         ax.set_title("Per-Taxon Feature Robust Z-Scores")
         ax.set_yticks(np.arange(len(taxa_heat)))
