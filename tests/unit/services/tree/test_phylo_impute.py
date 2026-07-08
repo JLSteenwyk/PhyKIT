@@ -403,6 +403,39 @@ class TestPhyloImpute:
         ]
         assert capsys.readouterr().err == ""
 
+    def test_ordered_exact_trait_file_skips_set_validation(self, tmp_path, monkeypatch):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "\n".join(
+                [
+                    "taxon\tbody_mass\tbrain_size",
+                    "C\t5.0\t6.0",
+                    "A\t1.0\t2.0",
+                    "B\t3.0\tNA",
+                ]
+            )
+            + "\n"
+        )
+        svc = _build_service(str(tmp_path / "imputed.tsv"))
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("exact ordered trait files should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        trait_names, traits, missing_info = svc._parse_trait_file_with_na(
+            str(trait_file), ["C", "A", "B"]
+        )
+
+        assert trait_names == ["body_mass", "brain_size"]
+        assert traits["C"] == [5.0, 6.0]
+        assert traits["A"] == [1.0, 2.0]
+        assert traits["B"][0] == 3.0
+        assert np.isnan(traits["B"][1])
+        assert missing_info == [
+            {"taxon": "B", "trait": "brain_size", "line": 4},
+        ]
+
     def test_parse_trait_file_still_validates_off_tree_non_numeric_values(
         self, tmp_path
     ):

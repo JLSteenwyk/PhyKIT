@@ -189,7 +189,11 @@ class PhyloImpute(Tree):
     ) -> tuple[list[str], dict[str, list[float]], list[dict]]:
         """Parse multi-trait TSV allowing NA/? for missing values."""
         missing_markers = {"NA", "na", "Na", "?", ""}
-        tree_tip_set = set(tree_tips)
+        tree_tip_set = None
+        trait_taxa_set = None
+        tree_tip_count = len(tree_tips)
+        ordered_tree_tip_match = tree_tip_count >= 3
+        ordered_tree_tip_idx = 0
 
         try:
             with open(path) as f:
@@ -220,7 +224,6 @@ class PhyloImpute(Tree):
                 trait_names = header_parts[1:]
 
                 traits = {}
-                trait_taxa_set = set()
                 missing_info = []
                 saw_data = False
                 data_line_idx = 2
@@ -238,8 +241,26 @@ class PhyloImpute(Tree):
                             code=2,
                         )
                     taxon = parts[0]
-                    trait_taxa_set.add(taxon)
-                    keep_taxon = taxon in tree_tip_set
+                    if ordered_tree_tip_match:
+                        if (
+                            ordered_tree_tip_idx < tree_tip_count
+                            and taxon == tree_tips[ordered_tree_tip_idx]
+                        ):
+                            keep_taxon = True
+                            ordered_tree_tip_idx += 1
+                        else:
+                            ordered_tree_tip_match = False
+                            tree_tip_set = set(tree_tips)
+                            trait_taxa_set = set(traits)
+                            trait_taxa_set.add(taxon)
+                            keep_taxon = taxon in tree_tip_set
+                    else:
+                        if tree_tip_set is None:
+                            tree_tip_set = set(tree_tips)
+                        if trait_taxa_set is None:
+                            trait_taxa_set = set(traits)
+                        trait_taxa_set.add(taxon)
+                        keep_taxon = taxon in tree_tip_set
                     value_parts = parts[1:]
                     if not keep_taxon:
                         for i, val_str in enumerate(value_parts):
@@ -299,6 +320,18 @@ class PhyloImpute(Tree):
                 ],
                 code=2,
             )
+
+        if (
+            ordered_tree_tip_match
+            and ordered_tree_tip_idx == tree_tip_count
+            and len(traits) == tree_tip_count
+        ):
+            return trait_names, traits, missing_info
+
+        if tree_tip_set is None:
+            tree_tip_set = set(tree_tips)
+        if trait_taxa_set is None:
+            trait_taxa_set = set(traits)
 
         if (
             len(tree_tip_set) >= 3

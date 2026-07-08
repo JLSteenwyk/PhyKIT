@@ -2562,6 +2562,7 @@ Results:
 | `PhyloImpute._parse_trait_file_with_na` numeric-row fast path | 200k-row multi-trait TSV, 8 numeric/NA trait columns, 100k shared taxa and 100k off-tree taxa | 0.605037s | 0.458054s | 1.32x |
 | `PhyloImpute._parse_trait_file_with_na` all-shared parser fast path | 200k-row multi-trait TSV, 8 numeric/NA trait columns, all taxa shared | 0.510872s | 0.385042s | 1.33x |
 | `PhyloImpute._parse_trait_file_with_na` off-tree numeric validation skip | 200k-row multi-trait TSV, 8 numeric/NA trait columns, 100k shared taxa and 100k off-tree taxa, side-by-side previous off-tree value-list allocation | 1.006604s | 0.912679s | 1.10x |
+| `PhyloImpute._parse_trait_file_with_na` ordered exact parser validation | 200k-row multi-trait TSV, 8 numeric trait columns whose row order exactly matches tree tips, side-by-side previous eager set validation | 0.880388s | 0.693284s | 1.27x |
 | `PhyloImpute._subset_to_shared_taxa` cached membership set | 20k ordered taxa, 10k shared taxa, NumPy matrix row subset | 3.554433s | 0.002021s | 1758.5x |
 | `PhyloImpute._subset_to_shared_taxa` ordered all-shared fast path | 300k ordered taxa, all shared from discordance-VCV metadata, NumPy matrix returned unchanged | 0.069982s | 0.000209s | 334.5x |
 | `PhyloImpute._write_output_tsv` row-slice TSV formatting | 30k taxa x 80 imputed trait matrix, identical six-decimal TSV text | 0.762587s | 0.667688s | 1.14x |
@@ -8430,7 +8431,9 @@ Profiling summary:
   mismatch set differences and the filtered dictionary copy when no warnings can
   be emitted. Off-tree rows now validate numeric values without allocating
   discarded trait-value lists, preserving off-tree nonnumeric errors and
-  missing-marker handling.
+  missing-marker handling. A later ordered-exact parser pass keeps tree-tip and
+  trait-taxon sets lazy while rows match tree-tip order, then initializes the
+  same set-backed fallback on the first mismatch.
   Discordance-VCV shared-taxa subsetting now builds the shared-taxon
   membership set once before row filtering instead of rebuilding it for every
   ordered taxon. When discordance-VCV metadata already matches PhyloImpute's
