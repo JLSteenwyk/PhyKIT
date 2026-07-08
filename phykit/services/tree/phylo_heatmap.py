@@ -253,6 +253,9 @@ class PhyloHeatmap(Tree):
 
                 trait_data = {}
                 data_line_idx = 2
+                tree_tip_count = len(tree_tips)
+                ordered_tree_tip_match = tree_tip_count >= 3
+                ordered_tree_tip_idx = 0
                 for line in f:
                     stripped = line.strip()
                     if not stripped or stripped[0] == "#":
@@ -266,6 +269,13 @@ class PhyloHeatmap(Tree):
                             code=2,
                         )
                     taxon = parts[0]
+                    if ordered_tree_tip_match:
+                        if (
+                            ordered_tree_tip_idx >= tree_tip_count
+                            or taxon != tree_tips[ordered_tree_tip_idx]
+                        ):
+                            ordered_tree_tip_match = False
+                        ordered_tree_tip_idx += 1
                     try:
                         values = list(map(float, parts[1:]))
                     except ValueError:
@@ -287,6 +297,13 @@ class PhyloHeatmap(Tree):
                 ["Data file must have a header row and at least one data row."],
                 code=2,
             )
+
+        if (
+            ordered_tree_tip_match
+            and ordered_tree_tip_idx == tree_tip_count
+            and len(trait_data) == tree_tip_count
+        ):
+            return trait_names, trait_data
 
         # Validate shared taxa
         tree_tip_set = set(tree_tips)

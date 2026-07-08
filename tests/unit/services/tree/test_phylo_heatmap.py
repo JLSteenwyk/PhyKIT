@@ -4,6 +4,7 @@ Unit tests for phylo_heatmap (phylogenetic heatmap visualization).
 Tests initialization, trait matrix parsing, plot creation, and
 standardization. Analogous to R's phytools::phylo.heatmap().
 """
+import builtins
 import subprocess
 import sys
 
@@ -189,6 +190,32 @@ class TestTraitParsing:
             "C": [5.0, 6.0],
         }
         assert capsys.readouterr().err == ""
+
+    def test_ordered_exact_trait_matrix_skips_set_validation(
+        self, args, tmp_path, monkeypatch
+    ):
+        ph = PhyloHeatmap(args)
+        f = tmp_path / "traits.tsv"
+        f.write_text(
+            "taxon\ttrait1\ttrait2\n"
+            "A\t1.0\t2.0\n"
+            "B\t3.0\t4.0\n"
+            "C\t5.0\t6.0\n"
+        )
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("exact ordered matrices should not build taxon sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        trait_names, trait_data = ph._parse_trait_matrix(str(f), ["A", "B", "C"])
+
+        assert trait_names == ["trait1", "trait2"]
+        assert trait_data == {
+            "A": [1.0, 2.0],
+            "B": [3.0, 4.0],
+            "C": [5.0, 6.0],
+        }
 
     def test_wrong_column_count_exits(self, args, tmp_path):
         ph = PhyloHeatmap(args)

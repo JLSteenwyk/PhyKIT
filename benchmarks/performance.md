@@ -1982,6 +1982,7 @@ Results:
 | `PhyloHeatmap._parse_trait_matrix` streaming parser | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.729967s | 0.701524s | 1.04x |
 | `PhyloHeatmap._parse_trait_matrix` all-shared parser fast path | 200k taxa x 8 numeric traits, comments/blanks before header, all taxa shared | 0.359596s | 0.247998s | 1.45x |
 | `PhyloHeatmap._parse_trait_matrix` numeric hot-loop cleanup | 200k taxa x 8 numeric traits, comments/blanks, all taxa shared, side-by-side previous parser comparison | 0.285750s | 0.256122s | 1.12x |
+| `PhyloHeatmap._parse_trait_matrix` ordered exact parser validation | 200k taxa x 8 numeric traits whose row order exactly matches tree tips, side-by-side previous set-equality validation | 0.746808s | 0.654347s | 1.14x |
 | `PhyloHeatmap._build_heatmap_matrix` typed matrix construction | 200k taxa x 8 numeric traits, ordered row lookup, side-by-side previous inline `np.array` construction | 0.173474s | 0.133871s | 1.30x |
 | `PhyloHeatmap._standardize_heatmap_matrix` finite matrix reductions | finite heatmap matrices shaped 1000x8 / 10000x8 / 100000x8 / 200000x8, side-by-side previous `np.nanmean`/`np.nanstd` standardization path with NaN fallback preserving output | 0.000121418s / 0.000963533s / 0.013178425s / 0.059526417s | 0.000055278s / 0.000566756s / 0.007522200s / 0.015802389s | 2.20x / 1.70x / 1.75x / 3.77x |
 | `PhyloHeatmap` cached lazy NumPy proxy | 1000 / 5000 hot-loop lookup groups across `asarray`, `isfinite`, `nanmean`, `nanstd`, `arange`, `nanmin`, and `nanmax`, side-by-side previous uncached lazy NumPy proxy | 0.01973844s / 0.08097259s | 0.00032573s / 0.00185536s | 60.60x / 43.64x |
@@ -7143,7 +7144,9 @@ Profiling summary:
   branch length is missing. Ordered trait-matrix rows now reuse the shared
   large-input prune helper, skipping both shared-set construction and the
   membership scan when the data rows match tree-tip order or leave only
-  tree-only tail tips to prune.
+  tree-only tail tips to prune. A later parser pass tracks exact tree-tip row
+  order while reading the matrix, so exact full matrices can return before
+  building the all-shared taxon set.
 - `PhyloHeatmap._plot_phylo_heatmap_circular` baseline setup materialized
   terminal clades to map names to node ids and used extra preorder scans for
   clade-color overlays. The optimized path reuses a direct preorder list for
