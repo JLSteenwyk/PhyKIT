@@ -66,7 +66,9 @@ class StreamingFastaReader:
                     saw_data = True
                     if chunk[:1] == b'>':
                         count = 1
-                count += (previous + chunk).count(b"\n>")
+                elif previous == b"\n" and chunk[:1] == b">":
+                    count += 1
+                count += chunk.count(b"\n>")
                 previous = chunk[-1:]
 
         if not saw_data:

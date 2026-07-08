@@ -127,6 +127,14 @@ class TestStreamingFastaReader(unittest.TestCase):
 
         self.assertEqual(count, 3)
 
+    def test_get_sequence_count_when_chunk_starts_with_header(self):
+        """Test sequence counting when a chunk begins with a header."""
+        with patch("phykit.helpers.streaming._COUNT_CHUNK_SIZE", 15):
+            reader = StreamingFastaReader(self.temp_file.name)
+            count = reader.get_sequence_count()
+
+        self.assertEqual(count, 3)
+
     def test_get_sequence_at_position(self):
         """Test getting specific sequence by position"""
         # Get first sequence

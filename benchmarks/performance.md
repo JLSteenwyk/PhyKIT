@@ -546,6 +546,7 @@ Results:
 | `MemoryEfficientAlignmentProcessor.process_large_alignment_in_batches` direct chunk iteration | 500k mocked batches, side-by-side previous unused `enumerate` loop | 0.141655s | 0.075837s | 1.87x |
 | `StreamingFastaReader.get_sequence_count` mmap header scan | 300k FASTA records, 20 bp each, identical sequence count | 0.123812s | 0.066868s | 1.85x |
 | `StreamingFastaReader.get_sequence_count` chunked header count | 300k FASTA records, 20 bp each, identical sequence count | 0.084697s | 0.007856s | 10.78x |
+| `StreamingFastaReader.get_sequence_count` chunk-boundary header count | 300k FASTA records, 20 bp each, side-by-side previous `previous + chunk` boundary scan | 0.097949s | 0.071854s | 1.36x |
 | `streaming` module import without eager Bio.SeqIO | cold subprocess import after localizing FASTA parser imports | 0.099270s | 0.002314s | 42.90x |
 | `streaming` module import without `typing` startup | median cold subprocess import after replacing annotation-only typing aliases with built-in annotations | 0.022866s | 0.021220s | 1.08x |
 | `parallel` module import without eager multiprocessing/NumPy/executors | cold subprocess import after lazy worker, array, and executor proxies | 0.070840s | 0.001929s | 36.72x |
@@ -4066,7 +4067,10 @@ Profiling summary:
   avoiding per-line iteration. A follow-up pass replaces the repeated
   `mmap.find()` loop with bounded chunk reads and C-level `bytes.count()` calls,
   preserving start-of-file and `\n>` header-marker semantics while avoiding
-  both full-file materialization and repeated Python search loops.
+  both full-file materialization and repeated Python search loops. A later
+  boundary-count pass avoids concatenating the previous byte with each chunk,
+  counting same-chunk markers directly and handling split `\n`/`>` markers with
+  a one-byte boundary check.
 - `StreamingFastaReader.stream_chunks` now pulls bounded batches from the
   sequence iterator with `itertools.islice`, preserving yielded chunk contents
   while avoiding a Python `len(chunk)` check for every record. The large
