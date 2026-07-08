@@ -193,9 +193,10 @@ class LBScore(Tree):
         else:
             # Use multiprocessing for large datasets
             tree_pickle = pickle.dumps(tree)
-            batch_size = max(50, num_combos // mp.cpu_count())
+            cpu_count = mp.cpu_count()
+            batch_size = max(50, num_combos // cpu_count)
 
-            with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
+            with ProcessPoolExecutor(max_workers=min(cpu_count, 8)) as executor:
                 futures = []
                 for batch in self._batched_tip_pairs(tips, batch_size):
                     futures.append(
@@ -283,10 +284,11 @@ class LBScore(Tree):
             tips_data.append((tip, tips_minus_i))
 
         # Process in batches
-        batch_size = max(10, len(tips) // mp.cpu_count())
+        cpu_count = mp.cpu_count()
+        batch_size = max(10, len(tips) // cpu_count)
         tree_pickle = pickle.dumps(tree)
 
-        with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
+        with ProcessPoolExecutor(max_workers=min(cpu_count, 8)) as executor:
             # Keep track of batch order
             future_to_index = {}
 

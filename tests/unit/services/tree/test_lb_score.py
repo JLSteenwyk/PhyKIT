@@ -158,7 +158,7 @@ class TestLBScore(object):
                 future.set_result(fn(*args, **kwargs))
                 return future
 
-        mocker.patch("phykit.services.tree.lb_score.mp.cpu_count", return_value=4)
+        cpu_count = mocker.patch("phykit.services.tree.lb_score.mp.cpu_count", return_value=4)
         mocker.patch("phykit.services.tree.lb_score.pickle.dumps", side_effect=lambda obj: obj)
         mocker.patch("phykit.services.tree.lb_score.pickle.loads", side_effect=lambda obj: obj)
         mocker.patch(
@@ -174,6 +174,7 @@ class TestLBScore(object):
         result = t.calculate_average_distance_between_tips(tips, tree)
 
         assert created_executors
+        cpu_count.assert_called_once_with()
         assert result == pytest.approx(expected)
 
     def test_calculate_average_distance_between_tips_fast_path(self, mocker, args):
@@ -263,7 +264,7 @@ class TestLBScore(object):
                 future.set_result(fn(*args, **kwargs))
                 return future
 
-        mocker.patch("phykit.services.tree.lb_score.mp.cpu_count", return_value=4)
+        cpu_count = mocker.patch("phykit.services.tree.lb_score.mp.cpu_count", return_value=4)
         mocker.patch("phykit.services.tree.lb_score.pickle.dumps", side_effect=lambda obj: obj)
         mocker.patch("phykit.services.tree.lb_score.pickle.loads", side_effect=lambda obj: obj)
         mocker.patch(
@@ -284,6 +285,7 @@ class TestLBScore(object):
         result = t.calculate_average_distance_of_taxon_to_other_taxa(tips, tree)
 
         assert created_executors
+        cpu_count.assert_called_once_with()
         assert result == pytest.approx(expected)
 
     def test_calculate_average_distance_of_taxon_to_other_taxa_fast_path_preserves_bug(
