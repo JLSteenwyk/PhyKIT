@@ -15,12 +15,16 @@ class _LazyTreeMixin:
     def find_any(self, *args, **kwargs):
         from Bio.Phylo.BaseTree import TreeMixin as _TreeMixin
 
-        return _TreeMixin.find_any(*args, **kwargs)
+        find_any = _TreeMixin.find_any
+        self.find_any = find_any
+        return find_any(*args, **kwargs)
 
     def trace(self, *args, **kwargs):
         from Bio.Phylo.BaseTree import TreeMixin as _TreeMixin
 
-        return _TreeMixin.trace(*args, **kwargs)
+        trace = _TreeMixin.trace
+        self.trace = trace
+        return trace(*args, **kwargs)
 
 
 TreeMixin = _LazyTreeMixin()

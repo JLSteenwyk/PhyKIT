@@ -32,12 +32,16 @@ class _LazyTreeMixin:
     def find_any(self, *args, **kwargs):
         from Bio.Phylo.BaseTree import TreeMixin as _TreeMixin
 
-        return _TreeMixin.find_any(*args, **kwargs)
+        find_any = _TreeMixin.find_any
+        self.find_any = find_any
+        return find_any(*args, **kwargs)
 
     def distance(self, *args, **kwargs):
         from Bio.Phylo.BaseTree import TreeMixin as _TreeMixin
 
-        return _TreeMixin.distance(*args, **kwargs)
+        distance = _TreeMixin.distance
+        self.distance = distance
+        return distance(*args, **kwargs)
 
 
 np = _LazyNumpy()

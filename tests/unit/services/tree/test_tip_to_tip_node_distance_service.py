@@ -8,6 +8,7 @@ from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.tip_to_tip_node_distance import TipToTipNodeDistance
+import phykit.services.tree.tip_to_tip_node_distance as node_distance_module
 
 
 def test_module_import_does_not_import_biophylo_or_numpy():
@@ -24,6 +25,34 @@ assert "Bio.Phylo" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_tree_mixin_caches_resolved_find_any_and_trace(monkeypatch):
+    lazy_tree_mixin = node_distance_module._LazyTreeMixin()
+
+    monkeypatch.setattr(TreeMixin, "find_any", lambda *args, **kwargs: "found")
+    monkeypatch.setattr(TreeMixin, "trace", lambda *args, **kwargs: [1, 2, 3])
+
+    assert lazy_tree_mixin.find_any("tree", "A") == "found"
+    assert lazy_tree_mixin.trace("tree", "A", "B") == [1, 2, 3]
+    cached_find_any = lazy_tree_mixin.__dict__["find_any"]
+    cached_trace = lazy_tree_mixin.__dict__["trace"]
+
+    monkeypatch.setattr(
+        TreeMixin,
+        "find_any",
+        lambda *args, **kwargs: pytest.fail("cached find_any should be reused"),
+    )
+    monkeypatch.setattr(
+        TreeMixin,
+        "trace",
+        lambda *args, **kwargs: pytest.fail("cached trace should be reused"),
+    )
+
+    assert lazy_tree_mixin.find_any("tree", "A") == "found"
+    assert lazy_tree_mixin.trace("tree", "A", "B") == [1, 2, 3]
+    assert lazy_tree_mixin.__dict__["find_any"] is cached_find_any
+    assert lazy_tree_mixin.__dict__["trace"] is cached_trace
 
 
 @pytest.fixture

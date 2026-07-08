@@ -93,6 +93,34 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_lazy_tree_mixin_caches_resolved_find_any_and_distance(monkeypatch):
+    lazy_tree_mixin = ttt_module._LazyTreeMixin()
+
+    monkeypatch.setattr(TreeMixin, "find_any", lambda *args, **kwargs: "found")
+    monkeypatch.setattr(TreeMixin, "distance", lambda *args, **kwargs: 1.25)
+
+    assert lazy_tree_mixin.find_any("tree", "A") == "found"
+    assert lazy_tree_mixin.distance("tree", "A", "B") == 1.25
+    cached_find_any = lazy_tree_mixin.__dict__["find_any"]
+    cached_distance = lazy_tree_mixin.__dict__["distance"]
+
+    monkeypatch.setattr(
+        TreeMixin,
+        "find_any",
+        lambda *args, **kwargs: pytest.fail("cached find_any should be reused"),
+    )
+    monkeypatch.setattr(
+        TreeMixin,
+        "distance",
+        lambda *args, **kwargs: pytest.fail("cached distance should be reused"),
+    )
+
+    assert lazy_tree_mixin.find_any("tree", "A") == "found"
+    assert lazy_tree_mixin.distance("tree", "A", "B") == 1.25
+    assert lazy_tree_mixin.__dict__["find_any"] is cached_find_any
+    assert lazy_tree_mixin.__dict__["distance"] is cached_distance
+
+
 class TestTipToTipDistance:
     def test_init_sets_expected_attrs(self, args):
         service = TipToTipDistance(args)
