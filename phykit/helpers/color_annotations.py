@@ -133,21 +133,22 @@ def _terminal_clades(clade):
     pop = stack.pop
     append = stack.append
     append_terminal = terminals.append
-    while stack:
-        node = pop()
-        children = getattr(node, "clades", None)
-        if not isinstance(children, list):
-            return list(clade.get_terminals())
-        if children:
-            child_count = len(children)
-            if child_count == 2:
-                append(children[1])
-                append(children[0])
+    try:
+        while stack:
+            node = pop()
+            children = node.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append(children[index])
             else:
-                for index in range(child_count - 1, -1, -1):
-                    append(children[index])
-        else:
-            append_terminal(node)
+                append_terminal(node)
+    except AttributeError:
+        return list(clade.get_terminals())
     return terminals
 
 

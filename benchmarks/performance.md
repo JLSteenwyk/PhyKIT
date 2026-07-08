@@ -1270,6 +1270,7 @@ Results:
 | `color_annotations.get_clade_branch_ids` unordered child push | balanced 32768-tip clade, descendant id set for highlighted clades, optimized helper baseline | 0.009671s | 0.007221s | 1.34x |
 | `color_annotations.resolve_mrca` early-stop taxa validation | balanced 32768-tip tree, MRCA lookup for first two tips | 0.014703s | 0.0000155s | 946.92x |
 | `color_annotations._terminal_clades` order-preserving child push | balanced 131072-tip clade, terminal list for highlighted ranges/clades, optimized helper baseline | 0.038837s | 0.034347s | 1.13x |
+| `color_annotations._terminal_clades` direct standard-clade attribute access | balanced 1024 / 4096 / 32768 / 131072-tip clades, side-by-side previous per-node `getattr`/type-check traversal | 0.001021s / 0.001940s / 0.013842s / 0.052693s | 0.000636s / 0.001067s / 0.013635s / 0.041805s | 1.61x / 1.82x / 1.02x / 1.26x |
 | `color_annotations._valid_mrca_taxa` order-preserving child push | balanced 131072-tip tree, validate first and last requested taxa, optimized helper baseline | 0.040392s | 0.037106s | 1.09x |
 | `color_annotations._range_wedge_angle_bounds` | 100 repeated 100k-tip circular range angle-bound calculations | 1.148038s | 0.468314s | 2.45x |
 | `color_annotations._range_wedge_angle_bounds` local two-pi reuse | 100 repeated 100k-tip circular range angle-bound calculations, side-by-side previous repeated `2 * pi` expression | 1.681404s | 1.388825s | 1.21x |
