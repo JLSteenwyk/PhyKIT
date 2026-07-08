@@ -313,6 +313,27 @@ class TestPatristicDistances(object):
 
         assert np.allclose(patristic_distances, expected_distances)
 
+    def test_path_distance_values_preserve_upper_triangle_pair_order(self):
+        tip_indices = [2, 3, 5, 6]
+        parent_indices = [-1, 0, 1, 1, 0, 4, 4]
+        depths = [0.0, 1.0, 3.0, 4.0, 1.5, 2.5, 5.5]
+
+        observed = PatristicDistances._pairwise_tip_distance_values_from_paths(
+            tip_indices,
+            parent_indices,
+            depths,
+        )
+
+        expected = [
+            5.0,
+            5.5,
+            8.5,
+            6.5,
+            9.5,
+            5.0,
+        ]
+        assert observed == expected
+
     def test_deep_tree_distance_values_use_lca_index_path(self, monkeypatch, args):
         t = PatristicDistances(args)
         root = Clade()

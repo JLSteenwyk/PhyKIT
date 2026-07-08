@@ -441,17 +441,20 @@ class PatristicDistances(Tree):
             path.reverse()
             tip_paths.append(tuple(path))
 
-        distances = []
-        for i in range(len(tip_indices) - 1):
+        tip_count = len(tip_indices)
+        distances = [0.0] * (tip_count * (tip_count - 1) // 2)
+        out_idx = 0
+        for i in range(tip_count - 1):
             path_a = tip_paths[i]
             depth_a = depths[tip_indices[i]]
-            for j in range(i + 1, len(tip_indices)):
+            for j in range(i + 1, tip_count):
                 mrca = 0
                 for clade_a, clade_b in zip(path_a, tip_paths[j]):
                     if clade_a != clade_b:
                         break
                     mrca = clade_a
-                distances.append(depth_a + depths[tip_indices[j]] - 2 * depths[mrca])
+                distances[out_idx] = depth_a + depths[tip_indices[j]] - 2 * depths[mrca]
+                out_idx += 1
 
         return distances
 

@@ -909,6 +909,7 @@ Results:
 | `tip_to_tip_node_distance` module import without `typing` startup | median cold subprocess import after converting the annotation-only typing alias to a built-in postponed annotation | 0.008182s | 0.004153s | 1.97x |
 | `PatristicDistances.calculate_distance_between_pairs` | balanced tree with 220 tips | 4.3503s | 0.0211s | 206.2x |
 | `PatristicDistances.calculate_patristic_distance_stats` stats-only path | balanced tree with 768 tips | 0.095535s | 0.078120s | 1.22x |
+| `PatristicDistances._pairwise_tip_distance_values_from_paths` preallocated output | synthetic balanced path arrays for 512 / 1024 tips, side-by-side previous append loop with identical distance order | 0.129725s / 0.559428s | 0.109558s / 0.419605s | 1.18x / 1.33x |
 | `PatristicDistances.calculate_pairwise_tip_distance_values_fast` child push | balanced 768-tip tree, stats-only pair distances, side-by-side previous `reversed(children)` setup | 0.505635s | 0.377701s | 1.34x |
 | `PatristicDistances.calculate_pairwise_tip_distance_values_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 stats-only pair distances, copied old path baseline | 6.610513s | 0.820027s | 8.06x |
 | `PatristicDistances.calculate_distance_values_between_pairs` stats-only fallback streaming pairs | 2000 nonstandard-tree tips, 1,999,000 pair values, side-by-side previous returned-combo path setup | 1.020654s | 0.610121s | 1.67x |
