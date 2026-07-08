@@ -22,19 +22,22 @@ class _LazyPhylo:
     def read(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
 
-        return _Phylo.read(*args, **kwargs)
+        self.read = _Phylo.read
+        return self.read(*args, **kwargs)
 
 
 class _LazyConsensus:
     def strict_consensus(self, *args, **kwargs):
         from Bio.Phylo import Consensus as _Consensus
 
-        return _Consensus.strict_consensus(*args, **kwargs)
+        self.strict_consensus = _Consensus.strict_consensus
+        return self.strict_consensus(*args, **kwargs)
 
     def majority_consensus(self, *args, **kwargs):
         from Bio.Phylo import Consensus as _Consensus
 
-        return _Consensus.majority_consensus(*args, **kwargs)
+        self.majority_consensus = _Consensus.majority_consensus
+        return self.majority_consensus(*args, **kwargs)
 
 
 Phylo = _LazyPhylo()

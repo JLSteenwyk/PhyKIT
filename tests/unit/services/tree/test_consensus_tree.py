@@ -5,6 +5,7 @@ import sys
 
 import pytest
 from Bio import Phylo
+from Bio.Phylo import Consensus as BioConsensus
 from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.errors import PhykitUserError
@@ -33,6 +34,62 @@ assert "Bio.Phylo" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_phylo_caches_resolved_read(monkeypatch):
+    calls = []
+
+    def cached_read(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "cached"
+
+    def uncached_read(*_args, **_kwargs):
+        return "uncached"
+
+    lazy = consensus_tree_module._LazyPhylo()
+
+    monkeypatch.setattr(Phylo, "read", cached_read)
+    assert lazy.read("tree", "newick") == "cached"
+    monkeypatch.setattr(Phylo, "read", uncached_read)
+
+    assert lazy.read("tree2", "newick") == "cached"
+    assert lazy.__dict__["read"] is cached_read
+    assert calls == [
+        (("tree", "newick"), {}),
+        (("tree2", "newick"), {}),
+    ]
+
+
+def test_lazy_consensus_caches_resolved_callables(monkeypatch):
+    strict_calls = []
+    majority_calls = []
+
+    def cached_strict(*args, **kwargs):
+        strict_calls.append((args, kwargs))
+        return "strict"
+
+    def cached_majority(*args, **kwargs):
+        majority_calls.append((args, kwargs))
+        return "majority"
+
+    lazy = consensus_tree_module._LazyConsensus()
+
+    monkeypatch.setattr(BioConsensus, "strict_consensus", cached_strict)
+    monkeypatch.setattr(BioConsensus, "majority_consensus", cached_majority)
+    assert lazy.strict_consensus(["a"]) == "strict"
+    assert lazy.majority_consensus(["b"], cutoff=0.5) == "majority"
+    monkeypatch.setattr(BioConsensus, "strict_consensus", lambda *_args: "uncached")
+    monkeypatch.setattr(BioConsensus, "majority_consensus", lambda *_args: "uncached")
+
+    assert lazy.strict_consensus(["c"]) == "strict"
+    assert lazy.majority_consensus(["d"], cutoff=0.25) == "majority"
+    assert lazy.__dict__["strict_consensus"] is cached_strict
+    assert lazy.__dict__["majority_consensus"] is cached_majority
+    assert strict_calls == [((["a"],), {}), ((["c"],), {})]
+    assert majority_calls == [
+        ((["b"],), {"cutoff": 0.5}),
+        ((["d"],), {"cutoff": 0.25}),
+    ]
 
 
 class TestConsensusTree:

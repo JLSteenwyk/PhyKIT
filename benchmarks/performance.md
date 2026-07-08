@@ -1817,6 +1817,9 @@ Results:
 | `ConsensusTree`/`ConsensusNetwork`/`QuartetNetwork._parse_trees_from_source` stripped comment cleanup | 600k path-like rows with whitespace-prefixed comments/blanks, source cleanup before tree parsing | 0.267016s | 0.239204s | 1.12x |
 | `ConsensusTree._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
 | `consensus_tree` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read` and `Consensus` proxies | 0.129701s | 0.025590s | 5.07x |
+| `ConsensusTree` / `ConsensusNetwork` `_LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.007665437s / 0.194012500s / 1.318629583s | 0.001247562s / 0.009654270s / 0.157051374s | 6.14x / 20.10x / 8.40x |
+| `ConsensusTree._LazyConsensus.strict_consensus` cached callable | 10k / 100k / 1M repeated no-op strict consensus calls after first Bio.Phylo.Consensus resolution | 0.006058562s / 0.069141687s / 1.354513917s | 0.003850270s / 0.009579896s / 0.118187479s | 1.57x / 7.22x / 11.46x |
+| `ConsensusTree` / `ConsensusNetwork` `_LazyConsensus.majority_consensus` cached callable | 10k / 100k / 1M repeated no-op majority consensus calls after first Bio.Phylo.Consensus resolution | 0.008850145s / 0.210238709s / 1.700835417s | 0.002770583s / 0.015961479s / 0.380369188s | 3.19x / 13.17x / 4.47x |
 | `consensus_tree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006000s | 0.004952s | 1.21x |
 | `consensus_tree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only aliases to built-in annotations | 0.005166s | 0.003532s | 1.46x |
 | `ConsensusNetwork._count_splits` | 120 balanced trees x 256 taxa, rooted split counting | 0.5522s | 0.1808s | 3.1x |
