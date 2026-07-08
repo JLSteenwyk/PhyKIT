@@ -14,6 +14,10 @@ from ...errors import PhykitUserError
 
 
 VALID_DISCRETE_MODELS = frozenset(["ER", "SYM", "ARD"])
+_PREPARE_FELSENSTEIN_CONTEXT = None
+_COUNT_PARAMS = None
+_FIT_Q_MATRIX = None
+_PARSE_DISCRETE_TRAITS = None
 
 
 def print_json(*args, **kwargs):
@@ -23,29 +27,49 @@ def print_json(*args, **kwargs):
 
 
 def _prepare_felsenstein_context(*args, **kwargs):
-    from ...helpers.discrete_models import (
-        _prepare_felsenstein_context as _prepare_context,
-    )
+    global _PREPARE_FELSENSTEIN_CONTEXT
 
-    return _prepare_context(*args, **kwargs)
+    if _PREPARE_FELSENSTEIN_CONTEXT is None:
+        from ...helpers.discrete_models import (
+            _prepare_felsenstein_context as _prepare_context,
+        )
+
+        _PREPARE_FELSENSTEIN_CONTEXT = _prepare_context
+
+    return _PREPARE_FELSENSTEIN_CONTEXT(*args, **kwargs)
 
 
 def count_params(*args, **kwargs):
-    from ...helpers.discrete_models import count_params as _count_params
+    global _COUNT_PARAMS
 
-    return _count_params(*args, **kwargs)
+    if _COUNT_PARAMS is None:
+        from ...helpers.discrete_models import count_params as _count_params
+
+        _COUNT_PARAMS = _count_params
+
+    return _COUNT_PARAMS(*args, **kwargs)
 
 
 def fit_q_matrix(*args, **kwargs):
-    from ...helpers.discrete_models import fit_q_matrix as _fit_q_matrix
+    global _FIT_Q_MATRIX
 
-    return _fit_q_matrix(*args, **kwargs)
+    if _FIT_Q_MATRIX is None:
+        from ...helpers.discrete_models import fit_q_matrix as _fit_q_matrix
+
+        _FIT_Q_MATRIX = _fit_q_matrix
+
+    return _FIT_Q_MATRIX(*args, **kwargs)
 
 
 def parse_discrete_traits(*args, **kwargs):
-    from ...helpers.discrete_models import parse_discrete_traits as _parse_traits
+    global _PARSE_DISCRETE_TRAITS
 
-    return _parse_traits(*args, **kwargs)
+    if _PARSE_DISCRETE_TRAITS is None:
+        from ...helpers.discrete_models import parse_discrete_traits as _parse_traits
+
+        _PARSE_DISCRETE_TRAITS = _parse_traits
+
+    return _PARSE_DISCRETE_TRAITS(*args, **kwargs)
 
 
 class FitDiscrete(Tree):

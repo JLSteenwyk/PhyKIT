@@ -20,6 +20,7 @@ from argparse import Namespace
 from Bio import Phylo
 
 from phykit.services.tree.fit_discrete import FitDiscrete
+import phykit.services.tree.fit_discrete as fit_discrete_module
 from phykit.helpers.discrete_models import (
     build_q_matrix,
     count_params,
@@ -47,6 +48,32 @@ assert "scipy.optimize" not in sys.modules
 assert "phykit.helpers.discrete_models" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_discrete_helper_wrappers_cache_after_first_resolution(monkeypatch):
+    previous_count_params = fit_discrete_module._COUNT_PARAMS
+    fit_discrete_module._COUNT_PARAMS = None
+
+    try:
+        assert fit_discrete_module.count_params(3, "SYM") == 3
+        cached_count_params = fit_discrete_module._COUNT_PARAMS
+        assert cached_count_params is not None
+
+        original_import = __import__
+
+        def fail_discrete_models_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "phykit.helpers.discrete_models":
+                raise AssertionError(
+                    "discrete helper should be reused after first resolution"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr("builtins.__import__", fail_discrete_models_import)
+
+        assert fit_discrete_module.count_params(3, "SYM") == 3
+        assert fit_discrete_module._COUNT_PARAMS is cached_count_params
+    finally:
+        fit_discrete_module._COUNT_PARAMS = previous_count_params
 
 
 @pytest.fixture

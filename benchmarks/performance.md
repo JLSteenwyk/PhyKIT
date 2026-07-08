@@ -1791,6 +1791,7 @@ Results:
 | `FitDiscrete.run` multi-state ER rate objective | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous ER objective path, identical stdout | 3.350152s | 2.758701s | 1.21x |
 | `FitDiscrete.run` repeated fitted-model cache | seven repeated `fit_discrete` integration invocations on sample `tree_simple` traits in one Python process, preserving fitted output while returning copied cached Q matrices | 49.83s | 5.53s | 9.01x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
+| `FitDiscrete` cached discrete-model helper wrappers | 100k repeated three-state SYM Q-matrix helper calls after helper warmup, side-by-side previous import-on-call wrapper | 0.592543s | 0.375110s | 1.58x |
 | `fit_discrete` module import without eager NumPy/discrete helper | cold subprocess import after lazy helper wrappers and local model constant | 0.090685s | 0.026126s | 3.47x |
 | `fit_discrete` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006547s | 0.005270s | 1.24x |
 | `fit_discrete` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only aliases to built-in annotations | 0.006143s | 0.003948s | 1.56x |
@@ -6693,7 +6694,9 @@ Profiling summary:
   keeps the public helper patch points as thin lazy wrappers and stores the
   model-name constant locally, so importing the command module no longer imports
   NumPy or the shared discrete-model helper until traits are parsed or a model is
-  fitted. A follow-up startup pass keeps JSON output behind the same lazy-wrapper
+  fitted. Those public wrappers now cache resolved helper functions after first
+  use, preserving lazy command discovery while avoiding repeated import dispatch
+  in repeated Q-matrix and model-fitting helper calls. A follow-up startup pass keeps JSON output behind the same lazy-wrapper
   pattern, avoiding the JSON helper during import-only command discovery.
   A later startup pass postpones annotations and removes the annotation-only
   `typing` import, so command discovery no longer loads `typing`.
