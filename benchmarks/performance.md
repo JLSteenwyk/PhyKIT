@@ -1537,6 +1537,7 @@ Results:
 | `hidden_paralogy_check` module import without eager Bio.Phylo | cold subprocess import after lazy Phylo reader proxy | 0.135706s | 0.029766s | 4.56x |
 | `hidden_paralogy_check` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.012157s | 0.010456s | 1.16x |
 | `hidden_paralogy_check` module import without eager multiprocessing | median cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.030027s | 0.023741s | 1.26x |
+| `HiddenParalogyCheck._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.012489750s / 0.328728166s / 2.633721208s | 0.011545875s / 0.256327292s / 2.485030708s | 1.08x / 1.28x / 1.06x |
 | `hidden_paralogy_check` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.035490s | 0.032260s | 1.10x |
 | `BranchLengthMultiplier.run` | balanced 8192-tip tree, multiply every branch by 2 | 0.1126s | 0.1015s | 1.1x |
 | `BranchLengthMultiplier.multiply_branch_lengths_by_factor` traversal | balanced 65536-tip tree, multiply every branch by 2 | 0.1801s | 0.0117s | 15.4x |
@@ -5966,11 +5967,12 @@ Profiling summary:
   sequential and batch fallback paths that parse many small trees. A subsequent
   startup pass keeps `mp.cpu_count` and `mp.Pool` behind a lazy proxy and
   imports `functools.partial` only when the large-clade
-	  multiprocessing branch is used.
-	  A follow-up startup pass keeps JSON output behind a
-	  forwarding wrapper, avoiding JSON helper startup during command discovery.
-	  A later startup pass converts annotation-only `typing` aliases to postponed
-	  built-in annotations, so command discovery no longer loads `typing`.
+  multiprocessing branch is used. The lazy multiprocessing proxy now caches
+  the imported module while preserving direct stdlib monkeypatch visibility.
+  A follow-up startup pass keeps JSON output behind a forwarding wrapper,
+  avoiding JSON helper startup during command discovery. A later startup pass
+  converts annotation-only `typing` aliases to postponed built-in annotations,
+  so command discovery no longer loads `typing`.
 - `BranchLengthMultiplier.run` baseline time also made a second full-tree
   pickle/unpickle copy before mutating branch lengths. The optimized path uses
   the isolated tree returned by `read_tree_file()` directly, then writes that

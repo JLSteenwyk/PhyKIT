@@ -2,6 +2,7 @@
 Unit tests for HiddenParalogyCheck class
 """
 
+import multiprocessing
 import unittest
 from unittest.mock import Mock, MagicMock, patch, mock_open
 from argparse import Namespace
@@ -48,6 +49,19 @@ def test_lazy_phylo_caches_resolved_reader(tmp_path):
     assert lazy_phylo.__dict__["read"] is cached_module.read
     assert [tip.name for tip in first.get_terminals()] == ["A", "B", "C"]
     assert [tip.name for tip in second.get_terminals()] == ["A", "B", "C"]
+
+
+def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable():
+    lazy_mp = module._LazyMultiprocessing()
+
+    with patch.object(multiprocessing, "cpu_count", return_value=11):
+        assert lazy_mp.cpu_count() == 11
+        assert lazy_mp._module is multiprocessing
+
+    with patch.object(multiprocessing, "cpu_count", return_value=13) as cpu_count:
+        assert lazy_mp.cpu_count() == 13
+
+    cpu_count.assert_called_once_with()
 
 
 def test_run_uses_unmodified_master_tree_read(mocker):
