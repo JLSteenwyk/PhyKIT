@@ -133,6 +133,31 @@ class TestAlignmentRecoding:
 
         mocked_print.assert_called_once_with(">t1\nRY")
 
+    def test_run_text_output_batches_records_in_order(self, mocker):
+        args = Namespace(alignment="/some/path/to/file.fa", code="RY-nucleotide")
+        service = AlignmentRecoding(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AC"), id="t1"),
+                SeqRecord(Seq("CA"), id="t2"),
+            ]
+        )
+        mocker.patch.object(
+            AlignmentRecoding,
+            "get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
+        )
+        mocker.patch.object(
+            AlignmentRecoding,
+            "read_recoding_table",
+            return_value={"A": "R", "C": "Y"},
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        mocked_print.assert_called_once_with(">t1\nRY\n>t2\nYR")
+
     def test_run_uses_string_recoding_path(self, mocker):
         args = Namespace(alignment="/some/path/to/file.fa", code="RY-nucleotide")
         service = AlignmentRecoding(args)

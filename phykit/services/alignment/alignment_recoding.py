@@ -43,10 +43,11 @@ class AlignmentRecoding(Alignment):
             return
 
         if recoded_alignment:
-            print("\n".join(
-                f">{taxon}\n{sequence}"
-                for taxon, sequence in recoded_alignment.items()
-            ))
+            blocks = []
+            append = blocks.append
+            for taxon, sequence in recoded_alignment.items():
+                append(f">{taxon}\n{sequence}")
+            print("\n".join(blocks))
 
     def recode_alignment(
         self,
