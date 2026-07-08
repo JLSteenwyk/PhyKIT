@@ -138,7 +138,7 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
 
-    def test_get_sites_no_gaps_count_ascii_path_uses_gap_code_reduction(
+    def test_get_sites_no_gaps_count_ascii_path_uses_gap_byte_positions(
         self, mocker, args
     ):
         alignment = MultipleSeqAlignment(
@@ -149,10 +149,26 @@ assert "Bio.AlignIO" not in sys.modules
             ]
         )
         aln = AlignmentLengthNoGaps(args)
-        gap_codes_spy = mocker.spy(alg_module, "_get_gap_codes")
+        gap_column_spy = mocker.spy(alg_module, "_count_columns_without_gap_bytes")
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps.np.frombuffer",
+            side_effect=AssertionError("ASCII gap path should scan gap byte positions"),
+        )
 
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
-        gap_codes_spy.assert_called_once_with(False)
+        gap_column_spy.assert_called_once()
+
+    def test_count_columns_without_gap_bytes_short_circuits_full_gap_coverage(self):
+        alignment_bytes = b"-N-N-"
+
+        assert (
+            alg_module._count_columns_without_gap_bytes(
+                alignment_bytes,
+                aln_len=5,
+                gap_bytes=b"-N",
+            )
+            == 0
+        )
 
     def test_get_sites_no_gaps_count_ascii_path_skips_gap_char_set(
         self, mocker, args
@@ -189,8 +205,9 @@ assert "Bio.AlignIO" not in sys.modules
             side_effect=AssertionError("no-gap ASCII path should not reduce columns"),
         )
         mocker.patch(
-            "phykit.services.alignment.alignment_length_no_gaps._get_gap_codes",
-            side_effect=AssertionError("no-gap ASCII path should not load gap codes"),
+            "phykit.services.alignment.alignment_length_no_gaps."
+            "_count_columns_without_gap_bytes",
+            side_effect=AssertionError("no-gap ASCII path should not scan gap columns"),
         )
 
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 5

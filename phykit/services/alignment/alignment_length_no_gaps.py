@@ -25,26 +25,12 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
-_DNA_GAP_CODES = None
-_PROTEIN_GAP_CODES = None
 _DNA_GAP_BYTES = b"-?*XNxn"
 _PROTEIN_GAP_BYTES = b"-?*Xx"
 _DNA_GAP_CHARS = {"-", "?", "*", "X", "N"}
 _PROTEIN_GAP_CHARS = {"-", "?", "*", "X"}
 _DNA_GAP_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_GAP_COUNT_CHARS = "-?*Xx"
-
-
-def _get_gap_codes(is_protein: bool):
-    global _DNA_GAP_CODES, _PROTEIN_GAP_CODES
-    if is_protein:
-        if _PROTEIN_GAP_CODES is None:
-            _PROTEIN_GAP_CODES = np.frombuffer(b"-?*Xx", dtype=np.uint8)
-        return _PROTEIN_GAP_CODES
-
-    if _DNA_GAP_CODES is None:
-        _DNA_GAP_CODES = np.frombuffer(b"-?*XNxn", dtype=np.uint8)
-    return _DNA_GAP_CODES
 
 
 def _count_no_gap_sites_in_identical_sequence(sequence: str, is_protein: bool) -> int:
@@ -69,6 +55,26 @@ def _all_sequences_identical(sequences: list[str]) -> bool:
         if sequence != first_sequence:
             return False
     return True
+
+
+def _count_columns_without_gap_bytes(
+    alignment_bytes: bytes,
+    aln_len: int,
+    gap_bytes: bytes,
+) -> int:
+    columns_with_gaps = bytearray(aln_len)
+    gap_column_count = 0
+    for gap_byte in gap_bytes:
+        gap_position = alignment_bytes.find(gap_byte)
+        while gap_position != -1:
+            column = gap_position % aln_len
+            if not columns_with_gaps[column]:
+                columns_with_gaps[column] = 1
+                gap_column_count += 1
+                if gap_column_count == aln_len:
+                    return 0
+            gap_position = alignment_bytes.find(gap_byte, gap_position + 1)
+    return aln_len - gap_column_count
 
 
 class AlignmentLengthNoGaps(Alignment):
@@ -146,14 +152,11 @@ class AlignmentLengthNoGaps(Alignment):
             gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
             if not any(gap_code in alignment_bytes for gap_code in gap_bytes):
                 return aln_len
-            gap_codes = _get_gap_codes(is_protein)
-            alignment_array = np.frombuffer(
+            return _count_columns_without_gap_bytes(
                 alignment_bytes,
-                dtype=np.uint8,
-            ).reshape(len(sequences), aln_len)
-            columns_with_gaps = np.zeros(aln_len, dtype=np.bool_)
-            for gap_code in gap_codes:
-                columns_with_gaps |= np.any(alignment_array == gap_code, axis=0)
+                aln_len,
+                gap_bytes,
+            )
         except UnicodeEncodeError:
             gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
             sequences = [seq.upper() for seq in sequences]
