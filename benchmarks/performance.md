@@ -1360,6 +1360,7 @@ Results:
 | `BipartitionSupportStats._to_builtin` builtin scalar fast path | 300k already-builtin verbose JSON rows, side-by-side previous scalar NumPy provenance check | 0.284150s | 0.251574s | 1.13x |
 | `BipartitionSupportStats.build_json_output` verbose row construction | 300k bipartition JSON rows, side-by-side previous index-based `dict(...)` builder | 0.033431s | 0.028094s | 1.19x |
 | `BipartitionSupportStats.run` verbose text output | 200k bipartition rows, mocked tree/read and identical stdout text | 0.065119s | 0.038501s | 1.69x |
+| `BipartitionSupportStats._format_verbose_text` preallocated rows | 200k bipartition rows, randomized side-by-side formatter runs with identical text | 0.149440s | 0.101164s | 1.48x |
 | `BipartitionSupportStats._print_threshold_stats` batched threshold output | 100k threshold summary rows, captured stdout and identical text | 0.108712s | 0.098320s | 1.11x |
 | `BipartitionSupportStats.run` cached read-only tree path | balanced 32768-tip cached tree with support on every internal node and two thresholds, non-verbose output mocked | 0.118359s | 0.004085s | 28.97x |
 | `bipartition_support_stats` module import without eager Bio.Phylo/NumPy | cold subprocess import of bipartition-support-stats command module | 0.171310s | 0.069630s | 2.46x |

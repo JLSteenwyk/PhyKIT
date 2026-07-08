@@ -72,12 +72,9 @@ class BipartitionSupportStats(Tree):
 
         if self.verbose:
             try:
-                lines = [
-                    f"{bs_vals[i]} {';'.join(term_names[i])}"
-                    for i in range(len(bs_vals))
-                ]
-                if lines:
-                    print("\n".join(lines))
+                output = self._format_verbose_text(bs_vals, term_names)
+                if output:
+                    print(output)
             except BrokenPipeError:
                 pass
         else:
@@ -114,6 +111,17 @@ class BipartitionSupportStats(Tree):
             sys.exit(2)
 
         return thresholds
+
+    @staticmethod
+    def _format_verbose_text(
+        bs_vals: list[float],
+        term_names: list[list[str]],
+    ) -> str:
+        row_count = len(bs_vals)
+        lines = [None] * row_count
+        for idx in range(row_count):
+            lines[idx] = f"{bs_vals[idx]} {';'.join(term_names[idx])}"
+        return "\n".join(lines)
 
     @staticmethod
     def _print_threshold_stats(threshold_stats: list[dict[str, float]]) -> None:

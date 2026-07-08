@@ -515,6 +515,14 @@ assert "Bio.Phylo" not in sys.modules
         captured = capsys.readouterr()
         assert captured.out == "85.0 a;b\n100 c;d\n"
 
+    def test_format_verbose_text_preserves_order_and_terminal_join(self):
+        observed = BipartitionSupportStats._format_verbose_text(
+            [85.0, 100],
+            [["a", "b"], ["c", "d", "e"]],
+        )
+
+        assert observed == "85.0 a;b\n100 c;d;e"
+
     def test_run_verbose_empty_bipartitions_prints_nothing(self, mocker, args, capsys):
         args.verbose = True
         args.json = False
