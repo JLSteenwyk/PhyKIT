@@ -89,6 +89,8 @@ def _with_optional_progress(iterable, **kwargs):
 
 
 class PatristicDistances(Tree):
+    MP_MIN_PAIRS = 500_000
+    MAX_MP_WORKERS = 8
     _PAIRWISE_LCA_DEPTH_THRESHOLD = 64
 
     def __init__(self, args) -> None:
@@ -249,8 +251,8 @@ class PatristicDistances(Tree):
 
         combos = list(itertools.combinations(tips, 2))
 
-        # For small datasets, use the original single-threaded approach
-        if len(combos) < 100:
+        # For small/medium fallback datasets, multiprocessing overhead dominates.
+        if len(combos) < self.MP_MIN_PAIRS:
             patristic_distances = [
                 tree.distance(tip_a, tip_b)
                 for tip_a, tip_b in combos
@@ -263,7 +265,7 @@ class PatristicDistances(Tree):
             tree_pickle = pickle.dumps(tree)
 
             # Determine optimal number of workers
-            num_workers = min(mp.cpu_count(), 8)
+            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
 
             # Split combos into chunks for parallel processing
             chunk_size = max(1, len(combos) // (num_workers * 4))
@@ -307,7 +309,7 @@ class PatristicDistances(Tree):
         tree,
     ) -> list[float]:
         num_pairs = len(tips) * (len(tips) - 1) // 2
-        if num_pairs < 100:
+        if num_pairs < self.MP_MIN_PAIRS:
             return [
                 tree.distance(tip_a, tip_b)
                 for tip_a, tip_b in itertools.combinations(tips, 2)
@@ -316,7 +318,7 @@ class PatristicDistances(Tree):
         from functools import partial
 
         tree_pickle = pickle.dumps(tree)
-        num_workers = min(mp.cpu_count(), 8)
+        num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
         chunk_size = max(1, num_pairs // (num_workers * 4))
         pair_chunks = self._batched_tip_pairs(tips, chunk_size)
         total_chunks = (num_pairs + chunk_size - 1) // chunk_size

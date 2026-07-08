@@ -357,8 +357,38 @@ class TestPatristicDistances(object):
 
         assert stats_only == full_stats
 
+    def test_calculate_distance_between_pairs_medium_fallback_skips_pool(self, mocker, args):
+        t = PatristicDistances(args)
+        tips = [f"tip{i}" for i in range(20)]
+        tree = _IndexedDummyTree()
+        mocked_pool = mocker.patch("phykit.services.tree.patristic_distances.mp.Pool")
+
+        combos, patristic_distances = t.calculate_distance_between_pairs(tips, tree)
+
+        expected_combos = list(combinations(tips, 2))
+        expected_distances = [tree.distance(*combo) for combo in expected_combos]
+        assert combos == expected_combos
+        assert patristic_distances == expected_distances
+        mocked_pool.assert_not_called()
+
+    def test_distance_values_medium_fallback_skips_pool(self, mocker, args):
+        t = PatristicDistances(args)
+        tips = [f"tip{i}" for i in range(20)]
+        tree = _IndexedDummyTree()
+        mocked_pool = mocker.patch("phykit.services.tree.patristic_distances.mp.Pool")
+
+        patristic_distances = t.calculate_distance_values_between_pairs(tips, tree)
+
+        expected_distances = [
+            tree.distance(*combo)
+            for combo in combinations(tips, 2)
+        ]
+        assert patristic_distances == expected_distances
+        mocked_pool.assert_not_called()
+
     def test_calculate_distance_between_pairs_parallel_path(self, mocker, args):
         t = PatristicDistances(args)
+        t.MP_MIN_PAIRS = 100
         tips = [f"tip{i}" for i in range(15)]  # generates >100 combinations
         tree = _IndexedDummyTree()
 
@@ -404,6 +434,7 @@ class TestPatristicDistances(object):
 
     def test_calculate_distance_between_pairs_parallel_tty_path(self, mocker, args):
         t = PatristicDistances(args)
+        t.MP_MIN_PAIRS = 100
         tips = [f"tip{i}" for i in range(15)]
         tree = _IndexedDummyTree()
 
