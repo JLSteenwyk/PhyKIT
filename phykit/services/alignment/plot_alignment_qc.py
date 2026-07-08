@@ -379,7 +379,14 @@ class PlotAlignmentQC(Alignment):
             f"Alignment QC: taxa={n_taxa}, sites={aln_len}, outliers={len(result['outliers'])}",
             fontsize=12,
         )
-        fig.tight_layout(rect=[0, 0, 1, 0.97])
+        fig.subplots_adjust(
+            left=0.08,
+            right=0.96,
+            top=0.90,
+            bottom=0.18,
+            hspace=0.65,
+            wspace=0.33,
+        )
         fig.savefig(self.output, dpi=self.dpi, bbox_inches="tight")
         plt.close(fig)
 

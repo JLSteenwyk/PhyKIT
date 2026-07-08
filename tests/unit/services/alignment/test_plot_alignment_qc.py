@@ -642,3 +642,97 @@ class TestPlotAlignmentQC:
         out, _ = capsys.readouterr()
         assert output_path.exists()
         assert "Saved alignment QC plot:" in out
+
+    def test_run_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        output_path = tmp_path / "qc_no_tight_layout.png"
+
+        class FakeAlignment:
+            def __len__(self):
+                return 3
+
+            def get_alignment_length(self):
+                return 12
+
+        svc = PlotAlignmentQC(
+            Namespace(
+                alignment="x.fa",
+                output=str(output_path),
+                width=8.0,
+                height=6.0,
+                dpi=100,
+                gap_z=3.0,
+                composition_z=3.0,
+                distance_z=3.0,
+                rcvt_z=3.0,
+                occupancy_z=3.0,
+                entropy_z=3.0,
+                json=False,
+            )
+        )
+        monkeypatch.setattr(
+            svc,
+            "get_alignment_and_format",
+            lambda: (FakeAlignment(), None, True),
+        )
+        monkeypatch.setattr(
+            svc,
+            "_get_outlier_result",
+            lambda _alignment, _is_protein: {
+                "rows": [
+                    {
+                        "taxon": "t1",
+                        "occupancy": 1.0,
+                        "gap_rate": 0.0,
+                        "composition_distance": 0.1,
+                        "long_branch_proxy": 0.2,
+                        "rcvt": 0.01,
+                        "entropy_burden": 0.02,
+                    },
+                    {
+                        "taxon": "t2",
+                        "occupancy": 0.7,
+                        "gap_rate": 0.3,
+                        "composition_distance": 0.6,
+                        "long_branch_proxy": None,
+                        "rcvt": 0.1,
+                        "entropy_burden": 0.2,
+                    },
+                    {
+                        "taxon": "t3",
+                        "occupancy": 0.8,
+                        "gap_rate": 0.2,
+                        "composition_distance": 0.5,
+                        "long_branch_proxy": 0.4,
+                        "rcvt": 0.05,
+                        "entropy_burden": 0.1,
+                    },
+                ],
+                "outliers": [{"taxon": "t2"}],
+                "thresholds": {
+                    "occupancy": 0.75,
+                    "gap_rate": 0.25,
+                    "composition_distance": 0.4,
+                    "long_branch_proxy": 0.3,
+                },
+                "features": [
+                    "gap_rate",
+                    "occupancy",
+                    "composition_distance",
+                    "long_branch_proxy",
+                    "rcvt",
+                    "entropy_burden",
+                ],
+            },
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("manual subplot spacing avoids tight_layout")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc.run()
+
+        assert output_path.exists()
