@@ -538,6 +538,7 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
     @patch('phykit.services.tree.covarying_evolutionary_rates.ProcessPoolExecutor')
     def test_correct_branch_lengths_parallel(self, mock_executor_class, mock_pickle_dumps):
         """Test correct_branch_lengths with parallel processing (large dataset)"""
+        self.cov_rates.MP_MIN_REFERENCE_CLADES = 50
         # Create mock trees
         mock_t0 = Mock()
         mock_t1 = Mock()
@@ -596,6 +597,47 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertEqual(l0, [1.0, 1.5, 2.0])
         self.assertEqual(l1, [2.0, 2.5, 3.0])
         self.assertEqual(tip_names, [['tip1'], ['tip2'], ['tip3']])
+
+    def test_correct_branch_lengths_medium_fallback_skips_executor(self):
+        mock_t0 = Mock()
+        mock_t1 = Mock()
+        mock_sp = Mock()
+
+        terminals = []
+        for i in range(30):
+            term = Mock()
+            term.name = f"terminal{i}"
+            term.branch_length = 1.0
+            terminals.append(term)
+
+        nonterminals = []
+        for _ in range(25):
+            nonterm = Mock()
+            nonterm.branch_length = 1.0
+            nonterminals.append(nonterm)
+
+        mock_sp.get_terminals.return_value = terminals
+        mock_sp.get_nonterminals.return_value = nonterminals
+        self.cov_rates.get_tip_names_from_tree = Mock(
+            side_effect=lambda node: [getattr(node, "name", "internal")]
+        )
+
+        node0 = Mock()
+        node0.branch_length = 2.0
+        node1 = Mock()
+        node1.branch_length = 4.0
+        mock_t0.common_ancestor.return_value = node0
+        mock_t1.common_ancestor.return_value = node1
+
+        with patch("phykit.services.tree.covarying_evolutionary_rates.ProcessPoolExecutor") as mock_executor:
+            l0, l1, tip_names = self.cov_rates.correct_branch_lengths(
+                mock_t0, mock_t1, mock_sp
+            )
+
+        mock_executor.assert_not_called()
+        self.assertEqual(len(l0), 55)
+        self.assertEqual(len(l1), 55)
+        self.assertEqual(len(tip_names), 55)
 
     def test_correct_branch_lengths_sequential(self):
         """Test correct_branch_lengths with sequential processing (small dataset)"""
@@ -1199,6 +1241,7 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
             )
 
     def test_correct_branch_lengths_parallel_fallback(self):
+        self.cov_rates.MP_MIN_REFERENCE_CLADES = 50
         mock_t0 = Mock()
         mock_t1 = Mock()
         mock_sp = Mock()

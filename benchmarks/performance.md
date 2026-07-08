@@ -1482,6 +1482,7 @@ Results:
 | `CovaryingEvolutionaryRates.correct_branch_lengths` | exact-matching balanced 256-tip gene trees plus reference | 0.3197s | 0.0044s | 72.4x |
 | `CovaryingEvolutionaryRates.correct_branch_lengths` same-tree branch-length reuse | balanced 8192-tip tree passed as both gene trees and reference, side-by-side previous duplicate branch-length extraction | 4.022530s | 2.395759s | 1.68x |
 | `CovaryingEvolutionaryRates.correct_branch_lengths` same-tree/reference shortcut | balanced 32768-tip tree passed as both gene trees and reference, side-by-side previous same-gene branch-map reuse path | 4.946255s | 2.663574s | 1.86x |
+| `CovaryingEvolutionaryRates.correct_branch_lengths` fallback multiprocessing threshold | 30 terminal and 25 nonterminal fallback reference clades, side-by-side previous low process-pool cutoff | 0.021041s | 0.000086s | 244.19x |
 | `CovaryingEvolutionaryRates._correct_branch_lengths_from_exact_splits` direct order traversal | exact-matching balanced 4096-tip gene trees plus reference | 0.105679s | 0.090155s | 1.17x |
 | `CovaryingEvolutionaryRates._branch_lengths_by_tipset` direct postorder | balanced 65536-tip tree, descendant-tip branch-length map | 0.276784s | 0.140246s | 1.97x |
 | `CovaryingEvolutionaryRates._branch_lengths_by_tipset` reverse-preorder helper | balanced 65536-tip tree, descendant-tip branch-length map | 0.405383s | 0.360719s | 1.12x |
@@ -5922,7 +5923,9 @@ Profiling summary:
   `Figure.tight_layout()` pass and lets `savefig(..., bbox_inches="tight")`
   handle saved bounds. The z-score centered-sum path now covers corrected
   branch-length vectors through 100k values, while larger vectors keep the
-  previous NumPy mean/std fallback.
+  previous NumPy mean/std fallback. The MRCA fallback multiprocessing cutoff is
+  now higher, so medium reference-clade sets stay sequential instead of paying
+  process startup and tree-pickling overhead.
 - `LastCommonAncestorSubtree.run` baseline time performed an extra
   pickle/unpickle copy after `read_tree_file()` had already returned a copied
   tree from the cache. The optimized path calls `common_ancestor()` directly on

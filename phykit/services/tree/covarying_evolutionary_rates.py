@@ -110,6 +110,9 @@ def _pearsonr(x_values, y_values):
 
 
 class CovaryingEvolutionaryRates(Tree):
+    MP_MIN_REFERENCE_CLADES = 256
+    MAX_MP_WORKERS = 4
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(
@@ -723,8 +726,9 @@ class CovaryingEvolutionaryRates(Tree):
         terminals = sp.get_terminals()
         nonterminals = sp.get_nonterminals()
 
-        # Process sequentially if small dataset or use parallel processing
-        if len(terminals) + len(nonterminals) < 50:
+        # Process sequentially if small/medium fallback work would be dominated
+        # by process startup and tree-pickling overhead.
+        if len(terminals) + len(nonterminals) < self.MP_MIN_REFERENCE_CLADES:
             # Original sequential processing for small datasets
             self._process_terminals_sequential(terminals, t0, t1, l0, l1, tip_names)
             self._process_nonterminals_sequential(nonterminals, t0, t1, l0, l1, tip_names)
@@ -751,7 +755,7 @@ class CovaryingEvolutionaryRates(Tree):
             batch_size = max(10, (len(terminals_data) + len(nonterminals_data)) // 4)
 
             try:
-                with ProcessPoolExecutor(max_workers=min(4, len(terminals_data) + len(nonterminals_data) // 10)) as executor:
+                with ProcessPoolExecutor(max_workers=min(self.MAX_MP_WORKERS, len(terminals_data) + len(nonterminals_data) // 10)) as executor:
                     futures = []
 
                     # Submit terminal batches
