@@ -92,6 +92,72 @@ def test_lazy_numpy_caches_module_and_attributes():
     assert lazy_np.__dict__["array"] is first_array
 
 
+def test_scipy_wrappers_cache_imported_callables(monkeypatch):
+    previous_cho_factor = phylogenetic_ordination_module._CHO_FACTOR
+    previous_cho_solve = phylogenetic_ordination_module._CHO_SOLVE
+    previous_minimize_scalar = phylogenetic_ordination_module._MINIMIZE_SCALAR
+    phylogenetic_ordination_module._CHO_FACTOR = None
+    phylogenetic_ordination_module._CHO_SOLVE = None
+    phylogenetic_ordination_module._MINIMIZE_SCALAR = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+    scipy_optimize_imports = 0
+
+    class FakeScipyLinalg:
+        @staticmethod
+        def cho_factor(*args, **kwargs):
+            return "factor", args, kwargs
+
+        @staticmethod
+        def cho_solve(*args, **kwargs):
+            return "solve", args, kwargs
+
+    class FakeScipyOptimize:
+        @staticmethod
+        def minimize_scalar(*args, **kwargs):
+            return "minimize_scalar", args, kwargs
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports, scipy_optimize_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+            return FakeScipyLinalg
+        if name == "scipy.optimize":
+            scipy_optimize_imports += 1
+            return FakeScipyOptimize
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        first_factor = phylogenetic_ordination_module.cho_factor("C", lower=True)
+        second_factor = phylogenetic_ordination_module.cho_factor("C2", lower=True)
+        first_solve = phylogenetic_ordination_module.cho_solve("factor", "rhs")
+        second_solve = phylogenetic_ordination_module.cho_solve("factor2", "rhs2")
+        first_minimize = phylogenetic_ordination_module.minimize_scalar(
+            "fn", bounds=(0.0, 1.0), method="bounded"
+        )
+        second_minimize = phylogenetic_ordination_module.minimize_scalar(
+            "fn2", bounds=(0.0, 1.0), method="bounded"
+        )
+    finally:
+        phylogenetic_ordination_module._CHO_FACTOR = previous_cho_factor
+        phylogenetic_ordination_module._CHO_SOLVE = previous_cho_solve
+        phylogenetic_ordination_module._MINIMIZE_SCALAR = previous_minimize_scalar
+
+    assert first_factor == ("factor", ("C",), {"lower": True})
+    assert second_factor == ("factor", ("C2",), {"lower": True})
+    assert first_solve == ("solve", ("factor", "rhs"), {})
+    assert second_solve == ("solve", ("factor2", "rhs2"), {})
+    assert first_minimize == (
+        "minimize_scalar", ("fn",), {"bounds": (0.0, 1.0), "method": "bounded"}
+    )
+    assert second_minimize == (
+        "minimize_scalar", ("fn2",), {"bounds": (0.0, 1.0), "method": "bounded"}
+    )
+    assert scipy_linalg_imports == 2
+    assert scipy_optimize_imports == 1
+
+
 @pytest.fixture
 def default_args():
     return Namespace(
