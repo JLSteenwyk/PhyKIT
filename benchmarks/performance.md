@@ -667,6 +667,7 @@ Results:
 | `Faidx.run` JSON row list comprehension | 500k requested FASTA entries, side-by-side previous append-loop row construction | 0.584529s | 0.477088s | 1.23x |
 | `Faidx._parse_entries` clean entry-list fast path | 500k requested entries, clean comma list / comma-space list, side-by-side previous `map(str.strip, ...)` parser | 0.056012667s / 0.097349250s | 0.045536708s / 0.077652458s | 1.23x / 1.25x |
 | shared `_fasta._clean_sequence` single-line fast path | 80k FASTA records x 120 bp, single-line / wrapped two-line sequences, identical first-token parser output | 0.159723s / 0.209468s | 0.116201s / 0.163365s | 1.37x / 1.28x |
+| shared `_fasta.read_fasta_first_token_set` binary header scan | 50k FASTA records, headers with descriptions / no descriptions / 12 bp short-sequence records, identical first-token taxa sets | 0.058588s / 0.034541s / 0.032067s | 0.028406s / 0.026274s / 0.027007s | 2.06x / 1.31x / 1.19x |
 | `faidx` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.181946s | 0.079052s | 2.30x |
 | `faidx` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006110s | 0.004992s | 1.22x |
 | `faidx` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.002548s | 0.000926s | 2.75x |

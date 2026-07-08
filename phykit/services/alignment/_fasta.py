@@ -146,10 +146,10 @@ def read_fasta_first_tokens(path: str) -> list[str]:
 
 def read_fasta_first_token_set(path: str) -> set[str]:
     taxa = set()
-    with open(path) as handle:
+    with open(path, "rb") as handle:
         for line in handle:
-            if line[0] == ">":
-                taxa.add(line[1:].split(None, 1)[0])
+            if line and line[0] == 62:
+                taxa.add(line[1:].split(None, 1)[0].decode())
     return taxa
 
 

@@ -1,4 +1,7 @@
-from phykit.services.alignment._fasta import _clean_sequence
+from phykit.services.alignment._fasta import (
+    _clean_sequence,
+    read_fasta_first_token_set,
+)
 
 
 def test_clean_sequence_single_line_preserves_clean_sequence():
@@ -9,3 +12,16 @@ def test_clean_sequence_single_line_preserves_clean_sequence():
 
 def test_clean_sequence_removes_spaces_and_carriage_returns():
     assert _clean_sequence(["AC GT\r", "TA"]) == "ACGTTA"
+
+
+def test_read_fasta_first_token_set_uses_first_header_tokens(tmp_path):
+    fasta = tmp_path / "aln.fa"
+    fasta.write_text(
+        "\n"
+        ">taxon_a description words\n"
+        "ACGT\n"
+        ">taxon_b\tother words\n"
+        "TGCA\n"
+    )
+
+    assert read_fasta_first_token_set(str(fasta)) == {"taxon_a", "taxon_b"}
