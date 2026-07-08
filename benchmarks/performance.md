@@ -1337,6 +1337,7 @@ Results:
 | `terminal_branch_stats` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006072s | 0.003834s | 1.58x |
 | `Tree.calculate_total_branch_length_fast` | balanced 65536-tip tree, total branch length | 0.2511s | 0.0106s | 23.7x |
 | `Tree.calculate_total_branch_length_fast` localized stack operations | balanced 65536-tip tree, total branch length, optimized helper baseline | 0.014608s | 0.012725s | 1.15x |
+| `Tree.calculate_total_branch_length_fast` skip empty child extension | balanced 4096 / 32768 / 131072-tip trees, randomized side-by-side previous unconditional `extend(clade.clades)` helper | 0.000728312s / 0.023521167s / 0.028470083s | 0.000779708s / 0.019677396s / 0.024786750s | 0.93x / 1.20x / 1.15x |
 | `Tree.calculate_total_branch_length_and_terminal_count_fast` | balanced 65536-tip tree, total branch length plus terminal count | 0.3955s | 0.0119s | 33.2x |
 | `Tree.calculate_total_branch_length_and_terminal_count_fast` localized count traversal | balanced 131072-tip tree, total branch length plus terminal count, optimized helper baseline | 0.041796s | 0.036840s | 1.13x |
 | `Tree.calculate_terminal_count_fast` | balanced 65536-tip tree, terminal count only | 0.136221s | 0.010934s | 12.46x |

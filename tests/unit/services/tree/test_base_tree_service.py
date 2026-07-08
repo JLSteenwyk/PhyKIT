@@ -139,6 +139,32 @@ class TestTreeBase:
 
         assert Tree.calculate_total_branch_length_fast(tree) == 4.0
 
+    def test_calculate_total_branch_length_fast_skips_empty_child_extension(self):
+        class NoIterEmptyList(list):
+            def __iter__(self):
+                raise AssertionError("terminal child list should not be extended")
+
+        class MinimalClade:
+            def __init__(self, branch_length=None, clades=None):
+                self.branch_length = branch_length
+                self.clades = clades if clades is not None else NoIterEmptyList()
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": MinimalClade(
+                    branch_length=1.0,
+                    clades=[
+                        MinimalClade(branch_length=2.0),
+                        MinimalClade(branch_length=3.0),
+                    ],
+                )
+            },
+        )()
+
+        assert Tree.calculate_total_branch_length_fast(tree) == 6.0
+
     def test_calculate_total_branch_length_and_terminal_count_fast(self, monkeypatch):
         tree = NewickTree(
             root=Clade(

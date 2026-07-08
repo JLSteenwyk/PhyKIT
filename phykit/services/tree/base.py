@@ -321,7 +321,9 @@ class Tree(BaseService):
             branch_length = clade.branch_length
             if branch_length:
                 total_len += branch_length
-            extend(clade.clades)
+            children = clade.clades
+            if children:
+                extend(children)
         return total_len
 
     @staticmethod
