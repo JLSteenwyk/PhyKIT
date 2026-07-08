@@ -9,7 +9,7 @@ R validation: tests/r_validation/validate_parsimony.R
 R gives: parsimony(multi2di(tree), aln, method="fitch") = 4
 PhyKIT gives: 4 (exact match)
 """
-import pytest
+import builtins
 import json
 import subprocess
 import sys
@@ -17,6 +17,7 @@ from argparse import Namespace
 from io import StringIO
 from pathlib import Path
 
+import pytest
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
@@ -110,6 +111,41 @@ class TestFitchAlgorithm:
         assert exc_info.value.messages == [
             "Sequences have different lengths. Provide an aligned FASTA file."
         ]
+
+    def test_ordered_all_shared_setup_returns_original_sequences_without_sets(
+        self, monkeypatch
+    ):
+        sequences = {"A": "AC", "B": "AC", "C": "GT"}
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("ordered all-shared alignment should skip sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        shared_count, tips_to_prune, filtered = (
+            ParsimonyScore._shared_alignment_taxa_setup(
+                ["A", "B", "C"],
+                sequences,
+            )
+        )
+
+        assert shared_count == 3
+        assert tips_to_prune == []
+        assert filtered is sequences
+
+    def test_partial_overlap_setup_filters_sequences(self):
+        sequences = {"A": "AC", "C": "GT", "D": "GA", "off_tree": "TT"}
+
+        shared_count, tips_to_prune, filtered = (
+            ParsimonyScore._shared_alignment_taxa_setup(
+                ["A", "B", "C", "D", "E"],
+                sequences,
+            )
+        )
+
+        assert shared_count == 3
+        assert set(tips_to_prune) == {"B", "E"}
+        assert filtered == {"A": "AC", "C": "GT", "D": "GA"}
 
     def test_score_matches_r(self, args, capsys):
         """Fitch parsimony score should match R's phangorn::parsimony() = 4."""

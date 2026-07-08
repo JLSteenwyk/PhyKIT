@@ -1695,6 +1695,7 @@ Results:
 | `independent_contrasts` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only aliases to built-in annotations | 0.006418s | 0.004098s | 1.57x |
 | `ParsimonyScore.run` | balanced 32768-tip tree with 4-site FASTA, JSON output captured | 0.7835s | 0.5557s | 1.4x |
 | `ParsimonyScore.run` taxon-set setup | balanced 32768-tip tree, all tips shared with alignment | 0.0695s | 0.0091s | 7.6x |
+| `ParsimonyScore._shared_alignment_taxa_setup` ordered all-shared fast path | 300k ordered tree tips and alignment rows, exact order / tree-only tail tips / extra alignment rows, side-by-side previous set/filter setup | 0.213073s / 0.182170s / 0.304676s | 0.002124s / 0.161997s / 0.231555s | 100.31x / 1.12x / 1.32x |
 | `ParsimonyScore.run` verbose JSON serialization | 200k per-site scores, stdout captured | 0.054060s | 0.008258s | 6.5x |
 | `ParsimonyScore.run` verbose text output | 200k per-site scores, mocked tree/alignment and identical stdout text | 0.050216s | 0.027030s | 1.86x |
 | `ParsimonyScore._resolve_polytomies` | balanced 65536-tip binary tree, no-op dichotomy setup scan | 0.1759s | 0.0219s | 8.0x |
@@ -6400,8 +6401,12 @@ Profiling summary:
   JSON output, and stdout text. A follow-up startup pass defers stdlib JSON
   until JSON output is actually serialized. A subsequent run-setup pass reads
   the cached tree directly for binary all-shared inputs and copies only before
-  polytomy resolution or pruning would mutate the tree. The Fitch scorer now
-  returns zero total and per-site scores immediately for identical shared
+  polytomy resolution or pruning would mutate the tree. Ordered all-shared
+  tree tips and alignment rows now return the original sequence mapping before
+  building shared taxon sets and the filtered sequence dictionary, while
+  partial-overlap and extra-alignment-taxon cases keep the set-backed fallback.
+  The Fitch scorer now returns zero total and per-site scores immediately for
+  identical shared
   sequences after confirming every terminal has sequence data, preserving the
   previous missing-terminal `KeyError` path while avoiding the internal-node
   pass on conserved alignments.

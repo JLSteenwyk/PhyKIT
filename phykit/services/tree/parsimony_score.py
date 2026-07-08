@@ -59,20 +59,19 @@ class ParsimonyScore(Tree):
 
         sequences = self._parse_alignment(self.alignment_path)
 
-        # Prune to shared taxa
-        tree_tips = set(self.get_tip_names_from_tree(tree))
-        seq_taxa = set(sequences.keys())
-        shared = tree_tips & seq_taxa
-        if len(shared) < 3:
+        shared_count, tips_to_prune, sequences = self._shared_alignment_taxa_setup(
+            self.get_tip_names_from_tree(tree),
+            sequences,
+        )
+        if shared_count < 3:
             raise PhykitUserError(
                 [
-                    f"Only {len(shared)} shared taxa between tree and alignment.",
+                    f"Only {shared_count} shared taxa between tree and alignment.",
                     "At least 3 shared taxa are required.",
                 ],
                 code=2,
             )
 
-        tips_to_prune = list(tree_tips - shared)
         if tips_to_prune:
             if not copied_tree:
                 tree = self._fast_copy(tree)
@@ -80,7 +79,6 @@ class ParsimonyScore(Tree):
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
             self._resolve_polytomies(tree)
 
-        sequences = {t: sequences[t] for t in shared}
         aln_length = len(next(iter(sequences.values())))
 
         total_score, per_site = self._fitch_parsimony(
@@ -94,7 +92,7 @@ class ParsimonyScore(Tree):
             payload = {
                 "parsimony_score": total_score,
                 "alignment_length": aln_length,
-                "n_taxa": len(shared),
+                "n_taxa": shared_count,
             }
             if self.verbose:
                 payload["per_site_scores"] = per_site
@@ -112,6 +110,25 @@ class ParsimonyScore(Tree):
                 print("\n".join(lines))
             else:
                 print(total_score)
+
+    @staticmethod
+    def _shared_alignment_taxa_setup(tree_tip_names: list[str], sequences: dict):
+        seq_count = len(sequences)
+        if seq_count >= 3 and len(tree_tip_names) == seq_count:
+            if tree_tip_names[0] == next(iter(sequences)):
+                if tree_tip_names[-1] == next(reversed(sequences)):
+                    seq_names = list(sequences)
+                    if seq_names == tree_tip_names:
+                        return seq_count, [], sequences
+
+        tree_tips = set(tree_tip_names)
+        seq_taxa = set(sequences.keys())
+        shared = tree_tips & seq_taxa
+        if len(shared) < 3:
+            return len(shared), [], sequences
+        tips_to_prune = list(tree_tips - shared)
+        filtered_sequences = {taxon: sequences[taxon] for taxon in shared}
+        return len(shared), tips_to_prune, filtered_sequences
 
     @staticmethod
     def _has_polytomies(tree):
