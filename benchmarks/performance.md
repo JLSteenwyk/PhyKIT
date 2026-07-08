@@ -2853,6 +2853,7 @@ Results:
 | `OUwie._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.241349s | 0.224103s | 1.08x |
 | `OUwie._parse_regime_file` streaming valid-row parser | 500k two-column regime rows with comments/blanks, all taxa shared | 0.408915s | 0.397772s | 1.03x |
 | `OUwie._parse_regime_file` all-shared parser fast path | 500k two-column regime rows with comments/blanks, all taxa shared, side-by-side previous mismatch-set/filtering comparison | 0.979687s | 0.489047s | 2.00x |
+| `OUwie` ordered exact trait/regime parser validation | 300k trait rows plus 300k regime rows whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 1.266841s | 0.707580s | 1.79x |
 | `OUwie._build_parent_map` direct traversal | balanced 65536-tip tree, object parent map for regime setup | 0.208800s | 0.022670s | 9.21x |
 | `OUwie._build_parent_map` unordered child push | balanced 65536-tip tree, object parent map for regime setup, optimized helper baseline | 0.021098s | 0.017901s | 1.18x |
 | `OUwie._assign_branch_regimes_and_root` combined setup | balanced 32768-tip tree, three alternating regimes, copied two-pass branch/root helpers baseline | 0.510217s | 0.084746s | 6.02x |
@@ -9230,6 +9231,9 @@ Profiling summary:
   large filtering comprehensions on all-shared inputs. Ordered exact
   trait/regime mappings now bypass the shared-set construction entirely and
   use the shared large-input prune helper while preserving tree-only pruning.
+  Trait and regime parsers now recognize exact tree-tip-order matches before
+  building taxon sets, preserving warning/filtering behavior for reordered or
+  partial files.
   A follow-up regime
   setup pass builds the object parent map with a direct stack traversal and
   computes branch regime assignments and the root regime from one direct
