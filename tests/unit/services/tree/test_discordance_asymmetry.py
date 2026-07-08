@@ -52,12 +52,20 @@ def test_binomial_two_sided_p_value_matches_expected_values():
     assert discordance_asymmetry_module._binomial_two_sided_p_value(1, 1) == pytest.approx(1.0)
 
 
-def test_asymmetry_test_does_not_import_scipy_stats(monkeypatch):
+def test_large_binomial_two_sided_p_value_matches_scipy_fallback():
+    from scipy.special import bdtr
+
+    expected = min(1.0, 2.0 * float(bdtr(2, 65, 0.5)))
+
+    assert discordance_asymmetry_module._binomial_two_sided_p_value(63, 65) == pytest.approx(expected)
+
+
+def test_small_asymmetry_test_does_not_import_scipy(monkeypatch):
     original_import = __import__
 
     def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
-        if name == "scipy.stats" or name.startswith("scipy.stats."):
-            raise AssertionError("discordance asymmetry binomial p-values should not import scipy.stats")
+        if name == "scipy.stats" or name.startswith(("scipy.stats.", "scipy.special")):
+            raise AssertionError("small discordance asymmetry binomial p-values should not import SciPy")
         return original_import(name, globals, locals, fromlist, level)
 
     monkeypatch.setattr("builtins.__import__", fake_import)
