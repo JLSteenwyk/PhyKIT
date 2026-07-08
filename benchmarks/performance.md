@@ -610,6 +610,7 @@ Results:
 | `TaxonGroups._extract_taxa` existence guard | 50k existing small file paths, taxa parser mocked | 0.257713s | 0.115714s | 2.23x |
 | `taxon_groups` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006413s | 0.004990s | 1.29x |
 | `taxon_groups` module import without tree-base startup | median cold subprocess import after localizing tree-only helpers to tree extraction | 0.004458s | 0.000601s | 7.42x |
+| `taxon_groups` module import without eager pathlib | median cold subprocess import after preserving the module-level `Path` patch point with a lazy wrapper | 0.048093s | 0.044687s | 1.08x |
 | `OccupancyFilter._extract_taxa` FASTA mode | 50k FASTA records, 12 bp each | 0.0744s | 0.0195s | 3.8x |
 | `OccupancyFilter._extract_taxa` FASTA header-only parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.039226s | 0.027756s | 1.41x |
 | `OccupancyFilter._extract_taxa` tree terminal-name extraction | parsed balanced 65536-tip Newick tree, collect terminal names | 0.1349s | 0.0128s | 10.5x |
@@ -4167,7 +4168,9 @@ Profiling summary:
   FASTA-mode command discovery avoids tree caching/hash helpers. `_extract_taxa`
   now checks input existence with `os.path.exists()` instead of allocating a
   `Path` object per file, preserving the same missing-file error while reducing
-  overhead when grouping many small files.
+  overhead when grouping many small files. The module-level `Path` patch point
+  is now a lazy wrapper, so importing the command no longer imports `pathlib`
+  until path conversion is actually needed.
 - `OccupancyFilter._extract_taxa` FASTA mode baseline time also materialized
   full `SeqRecord` objects before counting only taxon IDs. The optimized path
   uses `SimpleFastaParser` for extraction. A later pass uses the shared

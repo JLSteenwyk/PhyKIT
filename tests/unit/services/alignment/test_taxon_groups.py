@@ -14,13 +14,30 @@ from phykit.errors import PhykitUserError
 
 def test_module_import_does_not_import_tree_or_biopython_helpers():
     code = """
+import builtins
 import sys
-import phykit.services.alignment.taxon_groups
+module_name = "phykit.services.alignment.taxon_groups"
+sys.modules.pop(module_name, None)
+sys.modules.pop("pathlib", None)
+original_import = builtins.__import__
+
+def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == "pathlib" or name.startswith("pathlib."):
+        raise AssertionError("taxon_groups import should not import pathlib")
+    return original_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = guarded_import
+try:
+    import phykit.services.alignment.taxon_groups as module
+finally:
+    builtins.__import__ = original_import
+assert callable(module.Path)
 assert "hashlib" not in sys.modules
 assert "phykit.services.tree.base" not in sys.modules
 assert "Bio.SeqIO.FastaIO" not in sys.modules
 assert "Bio.AlignIO" not in sys.modules
 assert "Bio.Phylo" not in sys.modules
+assert "pathlib" not in sys.modules
 assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 """

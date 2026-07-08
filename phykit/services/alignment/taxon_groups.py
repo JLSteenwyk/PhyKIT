@@ -1,6 +1,5 @@
 from collections import defaultdict
 import os
-from pathlib import Path
 
 from ._fasta import read_fasta_first_tokens
 from ...errors import PhykitUserError
@@ -13,6 +12,12 @@ def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
     return _print_json(*args, **kwargs)
+
+
+def Path(*args, **kwargs):
+    from pathlib import Path as _Path
+
+    return _Path(*args, **kwargs)
 
 
 def _normalize_list_path(path: str) -> str:
