@@ -239,6 +239,78 @@ class TestAlignmentOutlierTaxa:
             ("occupancy", "low"),
         ]
 
+    def test_has_outlier_features_detects_any_threshold_crossing(self):
+        clean = np.array([0.0, 0.1], dtype=float)
+        high = np.array([0.0, 2.0], dtype=float)
+
+        assert not AlignmentOutlierTaxa._has_outlier_features(
+            clean,
+            np.array([0.9, 1.0], dtype=float),
+            clean,
+            clean,
+            clean,
+            clean,
+            1.0,
+            0.5,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+        )
+        assert AlignmentOutlierTaxa._has_outlier_features(
+            high,
+            np.array([0.9, 1.0], dtype=float),
+            clean,
+            clean,
+            clean,
+            clean,
+            1.0,
+            0.5,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+        )
+
+    def test_calculate_outliers_large_no_outlier_uses_fast_row_builder(
+        self, monkeypatch
+    ):
+        service = self._service()
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("ACGA"), id="b"),
+            ]
+        )
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module,
+            "_NO_OUTLIER_FAST_PATH_MIN_TAXA",
+            2,
+        )
+
+        def no_outlier_features(*_args, **_kwargs):
+            return False
+
+        def fake_rows_without_outliers(taxa, *_args):
+            assert taxa == ["a", "b"]
+            return [{"taxon": "fast_path"}]
+
+        monkeypatch.setattr(
+            AlignmentOutlierTaxa,
+            "_has_outlier_features",
+            staticmethod(no_outlier_features),
+        )
+        monkeypatch.setattr(
+            AlignmentOutlierTaxa,
+            "_rows_without_outliers",
+            staticmethod(fake_rows_without_outliers),
+        )
+
+        result = service.calculate_outliers(alignment, is_protein=False)
+
+        assert result["rows"] == [{"taxon": "fast_path"}]
+        assert result["outliers"] == []
+
     def test_calculate_outliers_single_symbol_equal_lengths_shortcut(self, mocker):
         service = self._service()
         alignment = MultipleSeqAlignment(

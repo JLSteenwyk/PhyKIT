@@ -465,6 +465,7 @@ Results:
 | `AlignmentOutlierTaxa.calculate_outliers` cached lazy NumPy attributes | all-valid 250 x 2000 / all-valid 700 x 3000 / ambiguous 250 x 2000 / ambiguous 450 x 2500 DNA alignments, side-by-side previous uncached lazy proxy, identical public rows | 0.018227s / 0.158061s / 0.601998s / 0.975537s | 0.012957s / 0.097908s / 0.563451s / 0.928458s | 1.41x / 1.61x / 1.07x / 1.05x |
 | `AlignmentOutlierTaxa.calculate_outliers` zipped row assembly | 100k synthetic taxa with six feature arrays and nested reason rows | 0.437748s | 0.370843s | 1.18x |
 | `AlignmentOutlierTaxa.calculate_outliers` literal nested row assembly | 100k synthetic taxa with six feature arrays and nested reason rows | 1.943047s | 1.677475s | 1.16x |
+| `AlignmentOutlierTaxa.calculate_outliers` large no-outlier row assembly | 100k / 300k synthetic clean taxa with six feature arrays, side-by-side previous per-row threshold/reason checks and identical clean row payloads | 1.200918s / 3.270750s | 0.396223s / 1.071023s | 3.03x / 3.05x |
 | `AlignmentOutlierTaxa.run` batched text output | 100k outlier rows, mocked alignment/read and identical stdout text | 0.103591s | 0.090365s | 1.15x |
 | `alignment_outlier_taxa` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy and JSON helper wrapper | 0.069810s | 0.022303s | 3.13x |
 | `PlotAlignmentQC` composition-distance scatter panel | 5000 taxa, 250 flagged taxa, Matplotlib Agg setup only | 9.036485s | 0.015365s | 588.14x |
@@ -3734,7 +3735,10 @@ Profiling summary:
   reason payloads, avoiding repeated NumPy indexing while preserving reason
   order and `None` no-overlap distances. Text-mode `run` now batches the header,
   thresholds, and outlier rows into one newline-joined print while preserving
-  the same stdout text and JSON output. A later startup pass defers NumPy and
+  the same stdout text and JSON output. Large no-outlier results now use a
+  vectorized threshold precheck and a clean-row builder, preserving the same
+  rounded public rows while avoiding per-row reason-list and threshold checks.
+  A later startup pass defers NumPy and
   JSON helper imports behind module-level proxy/wrapper objects while
   preserving existing test patch points. A follow-up startup pass converts
   annotation-only `typing` aliases to built-in postponed annotations, so command

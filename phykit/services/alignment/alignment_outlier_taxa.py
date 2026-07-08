@@ -24,6 +24,7 @@ _SITE_ENTROPY_DIRECT_SUM_MAX_SIZE = 100_000
 _SITE_COUNTS_DIRECT_MAX_SYMBOLS = 4
 _SITE_COUNTS_DIRECT_MIN_SITES = 1_000
 _SITE_COUNTS_DIRECT_MAX_TAXA = 1_000
+_NO_OUTLIER_FAST_PATH_MIN_TAXA = 1_024
 
 
 def print_json(*args, **kwargs):
@@ -190,6 +191,122 @@ class AlignmentOutlierTaxa(Alignment):
             rows=rows,
             outliers=[],
         )
+
+    @staticmethod
+    def _has_outlier_features(
+        gap_rates,
+        occupancies,
+        composition_distances,
+        long_branch_proxy,
+        rcvt_values,
+        entropy_burden,
+        gap_threshold: float,
+        occupancy_threshold: float,
+        composition_threshold: float,
+        distance_threshold: float,
+        rcvt_threshold: float,
+        entropy_threshold: float,
+    ) -> bool:
+        return bool(
+            np.any(np.isfinite(gap_rates) & (gap_rates > gap_threshold))
+            or np.any(np.isfinite(occupancies) & (occupancies < occupancy_threshold))
+            or np.any(
+                np.isfinite(composition_distances)
+                & (composition_distances > composition_threshold)
+            )
+            or np.any(
+                np.isfinite(long_branch_proxy)
+                & (long_branch_proxy > distance_threshold)
+            )
+            or np.any(np.isfinite(rcvt_values) & (rcvt_values > rcvt_threshold))
+            or np.any(np.isfinite(entropy_burden) & (entropy_burden > entropy_threshold))
+        )
+
+    @staticmethod
+    def _rows_without_outliers(
+        taxa,
+        gap_rates,
+        occupancies,
+        composition_distances,
+        long_branch_proxy,
+        rcvt_values,
+        entropy_burden,
+    ) -> list[dict[str, object]]:
+        rows = []
+        append_row = rows.append
+        branch_proxy_finite = np.isfinite(long_branch_proxy)
+        if bool(np.all(branch_proxy_finite)):
+            for (
+                taxon,
+                gap_rate,
+                occupancy,
+                composition_distance,
+                branch_proxy,
+                rcvt,
+                entropy,
+            ) in zip(
+                taxa,
+                gap_rates,
+                occupancies,
+                composition_distances,
+                long_branch_proxy,
+                rcvt_values,
+                entropy_burden,
+            ):
+                append_row(
+                    {
+                        "taxon": taxon,
+                        "gap_rate": round(float(gap_rate), 4),
+                        "occupancy": round(float(occupancy), 4),
+                        "composition_distance": round(
+                            float(composition_distance), 4
+                        ),
+                        "long_branch_proxy": round(float(branch_proxy), 4),
+                        "rcvt": round(float(rcvt), 4),
+                        "entropy_burden": round(float(entropy), 4),
+                        "flagged": False,
+                        "reasons": [],
+                    }
+                )
+            return rows
+
+        for (
+            taxon,
+            gap_rate,
+            occupancy,
+            composition_distance,
+            branch_proxy,
+            branch_proxy_is_finite,
+            rcvt,
+            entropy,
+        ) in zip(
+            taxa,
+            gap_rates,
+            occupancies,
+            composition_distances,
+            long_branch_proxy,
+            branch_proxy_finite,
+            rcvt_values,
+            entropy_burden,
+        ):
+            append_row(
+                {
+                    "taxon": taxon,
+                    "gap_rate": round(float(gap_rate), 4),
+                    "occupancy": round(float(occupancy), 4),
+                    "composition_distance": round(float(composition_distance), 4),
+                    "long_branch_proxy": (
+                        None
+                        if not branch_proxy_is_finite
+                        else round(float(branch_proxy), 4)
+                    ),
+                    "rcvt": round(float(rcvt), 4),
+                    "entropy_burden": round(float(entropy), 4),
+                    "flagged": False,
+                    "reasons": [],
+                }
+            )
+        return rows
 
     @staticmethod
     def _valid_length_for_identical_sequence(
@@ -572,6 +689,65 @@ class AlignmentOutlierTaxa(Alignment):
         else:
             entropy_burden = np.zeros(n_taxa, dtype=np.float64)
         entropy_threshold = self._high_outlier_threshold(entropy_burden, self.entropy_z)
+
+        if (
+            n_taxa >= _NO_OUTLIER_FAST_PATH_MIN_TAXA
+            and not self._has_outlier_features(
+                gap_rates,
+                occupancies,
+                composition_distances,
+                long_branch_proxy,
+                rcvt_values,
+                entropy_burden,
+                gap_threshold,
+                occupancy_threshold,
+                composition_threshold,
+                distance_threshold,
+                rcvt_threshold,
+                entropy_threshold,
+            )
+        ):
+            rows = self._rows_without_outliers(
+                taxa,
+                gap_rates,
+                occupancies,
+                composition_distances,
+                long_branch_proxy,
+                rcvt_values,
+                entropy_burden,
+            )
+            return dict(
+                features=[
+                    "gap_rate",
+                    "occupancy",
+                    "composition_distance",
+                    "long_branch_proxy",
+                    "rcvt",
+                    "entropy_burden",
+                ],
+                thresholds=dict(
+                    gap_rate=round(float(gap_threshold), 4)
+                    if np.isfinite(gap_threshold)
+                    else None,
+                    occupancy=round(float(occupancy_threshold), 4)
+                    if np.isfinite(occupancy_threshold)
+                    else None,
+                    composition_distance=round(float(composition_threshold), 4)
+                    if np.isfinite(composition_threshold)
+                    else None,
+                    long_branch_proxy=round(float(distance_threshold), 4)
+                    if np.isfinite(distance_threshold)
+                    else None,
+                    rcvt=round(float(rcvt_threshold), 4)
+                    if np.isfinite(rcvt_threshold)
+                    else None,
+                    entropy_burden=round(float(entropy_threshold), 4)
+                    if np.isfinite(entropy_threshold)
+                    else None,
+                ),
+                rows=rows,
+                outliers=[],
+            )
 
         rows = []
         outliers = []
