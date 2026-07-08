@@ -242,16 +242,17 @@ class Tree(BaseService):
             return None
 
         clade = root
+        children = root.clades
         while True:
-            try:
-                children = clade.clades
-            except AttributeError:
-                return None
             if not isinstance(children, list):
                 return None
             if not children:
                 return clade.name
             clade = children[0]
+            try:
+                children = clade.clades
+            except AttributeError:
+                return None
 
     @staticmethod
     def calculate_terminal_names_fast(tree):

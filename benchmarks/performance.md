@@ -1395,6 +1395,7 @@ Results:
 | `treeness` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.005941s | 0.003868s | 1.54x |
 | `Tree.calculate_first_terminal_name_fast` direct leftmost descent | balanced depth-17 tree, first terminal lookup, side-by-side previous direct stack helper | 0.000002652s | 0.000001049s | 2.53x |
 | `Tree.calculate_first_terminal_name_fast` direct clades attribute loop | balanced depth-10 / depth-17 trees, 20k repeated first terminal lookups, side-by-side previous `getattr` loop | 0.000006792s / 0.000008355s | 0.000004783s / 0.000006917s | 1.42x / 1.21x |
+| `Tree.calculate_first_terminal_name_fast` reused root child lookup | balanced depth-10 / depth-17 trees, 30k repeated first terminal lookups, side-by-side previous direct-attribute loop | 0.000004545s / 0.000007914s | 0.000004300s / 0.000004996s | 1.06x / 1.58x |
 | `Tree.get_tip_names_from_tree` | balanced 65536-tip tree, terminal name extraction | 0.1356s | 0.0122s | 11.1x |
 | `Tree.calculate_terminal_names_fast` child push loop | balanced 65536-tip tree, terminal name extraction with identical order | 0.018008s | 0.010621s | 1.70x |
 | `Tree.calculate_terminal_names_fast` binary child push | balanced 131072-tip tree, terminal name extraction with identical order, side-by-side previous `reversed(children)` helper | 0.021721s | 0.018765s | 1.16x |
