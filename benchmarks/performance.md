@@ -1005,6 +1005,7 @@ Results:
 | `SpectralDiscordance._parse_gene_trees` path-list existence guard | 50k existing absolute tree paths, tree parsing mocked | 0.263681s | 0.121357s | 2.17x |
 | `spectral_discordance` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized gene-tree parser import | 0.142026s | 0.031427s | 4.52x |
 | `spectral_discordance` module import without eager JSON/plot helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.015141s | 0.007166s | 2.11x |
+| `SpectralDiscordance._LazyPickle` cached copy helpers | 10k / 100k / 1M repeated no-op `loads(dumps(tree, protocol=HIGHEST_PROTOCOL))` calls after first pickle resolution | 0.028888271s / 0.399047709s / 3.385837021s | 0.002766520s / 0.028631167s / 0.540929146s | 10.44x / 13.94x / 6.26x |
 | `spectral_discordance` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006739s | 0.004936s | 1.37x |
 | `spectral_discordance` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005708s | 0.003931s | 1.45x |
 | `SpectralDiscordance._print_text` PC-score rows | 100k gene-tree score rows x 5 PCs, identical stdout text | 0.240505s | 0.197126s | 1.22x |
