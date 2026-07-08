@@ -665,6 +665,7 @@ Results:
 | `Faidx.run` direct sequence mapping | 100k requested FASTA entries x 120 bp, side-by-side previous `_FastaEntry` wrapper allocation/output path | 0.204819s | 0.068155s | 3.01x |
 | `Faidx.run` JSON row construction | 500k requested FASTA entries, identical row dictionaries | 0.181053s | 0.148606s | 1.22x |
 | `Faidx.run` JSON row list comprehension | 500k requested FASTA entries, side-by-side previous append-loop row construction | 0.584529s | 0.477088s | 1.23x |
+| `Faidx._parse_entries` clean entry-list fast path | 500k requested entries, clean comma list / comma-space list, side-by-side previous `map(str.strip, ...)` parser | 0.056012667s / 0.097349250s | 0.045536708s / 0.077652458s | 1.23x / 1.25x |
 | shared `_fasta._clean_sequence` single-line fast path | 80k FASTA records x 120 bp, single-line / wrapped two-line sequences, identical first-token parser output | 0.159723s / 0.209468s | 0.116201s / 0.163365s | 1.37x / 1.28x |
 | `faidx` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.181946s | 0.079052s | 2.30x |
 | `faidx` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006110s | 0.004992s | 1.22x |

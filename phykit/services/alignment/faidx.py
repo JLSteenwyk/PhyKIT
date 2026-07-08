@@ -17,7 +17,7 @@ class Faidx(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        entries = [e for e in map(str.strip, self.entry.split(",")) if e]
+        entries = self._parse_entries(self.entry)
         records = self._fetch_entries(self.fasta, entries)
 
         if self.json_output:
@@ -47,3 +47,14 @@ class Faidx(Alignment):
     @staticmethod
     def _fetch_entries(path: str, entries: list[str]) -> dict[str, str]:
         return read_unique_fasta_entries(path, entries)
+
+    @staticmethod
+    def _parse_entries(entry_arg: str) -> list[str]:
+        if (
+            " " not in entry_arg
+            and "\t" not in entry_arg
+            and "\n" not in entry_arg
+            and "\r" not in entry_arg
+        ):
+            return [entry for entry in entry_arg.split(",") if entry]
+        return [entry for entry in map(str.strip, entry_arg.split(",")) if entry]

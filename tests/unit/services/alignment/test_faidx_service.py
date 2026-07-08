@@ -68,6 +68,12 @@ assert "Bio.AlignIO" not in sys.modules
         assert payload["rows"][1] == {"entry": "2", "name": "2", "sequence": "A-G-AT"}
         assert payload["entries"] == payload["rows"]
 
+    def test_parse_entries_fast_path_preserves_clean_entries(self):
+        assert Faidx._parse_entries("1,2,,3") == ["1", "2", "3"]
+
+    def test_parse_entries_strips_whitespace_fallback(self):
+        assert Faidx._parse_entries(" 1, 2\t,\n3,\r") == ["1", "2", "3"]
+
     def test_fetch_entries_returns_plain_sequences(self, tmp_path):
         path = tmp_path / "alignment.fa"
         path.write_text(">1 description\nA-GTAT\n>2 second\nA-G-AT\n")
