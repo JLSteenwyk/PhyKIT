@@ -37,7 +37,8 @@ class _LazyPhylo:
     def read(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
 
-        return _Phylo.read(*args, **kwargs)
+        self.read = _Phylo.read
+        return self.read(*args, **kwargs)
 
 
 np = _LazyNumpy()
