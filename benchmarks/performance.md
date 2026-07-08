@@ -1599,6 +1599,7 @@ Results:
 | `ltt` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.013677s | 0.006328s | 2.16x |
 | `ltt` module import without `typing` startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006019s | 0.004281s | 1.41x |
 | `TreenessOverRCV.run` read-only treeness setup | balanced 32768-tip cached tree, RCV calculation and output mocked, side-by-side previous copied tree read | 0.241418s | 0.008151s | 29.62x |
+| `TreenessOverRCV._alignment_service` cached Alignment class | 10k / 100k / 500k repeated RCV service setup calls, side-by-side previous per-call import statement path | 0.015633166s / 0.208904209s / 1.782577000s | 0.006310834s / 0.063690500s / 0.884128084s | 2.48x / 3.28x / 2.02x |
 | `treeness_over_rcv` module import | cold subprocess import, defer alignment RCV helper import until run | 0.165134s | 0.150374s | 1.10x |
 | `treeness_over_rcv` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006141s | 0.004849s | 1.27x |
 | `treeness_over_rcv` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006743s | 0.003997s | 1.69x |
@@ -5988,7 +5989,9 @@ Profiling summary:
   annotations. A later run-path pass reads the tree through the unmodified
   cached-tree path and passes it into `calculate_treeness`, avoiding the
   previous pickle copy for the read-only treeness calculation while leaving the
-  alignment RCV calculation unchanged.
+  alignment RCV calculation unchanged. A later setup pass caches the lazily
+  imported `Alignment` class after first use, preserving module-import deferral
+  while avoiding repeated import statements in repeated RCV service setup.
 - `Tree.get_tip_names_from_tree` baseline time materialized terminal clade
   objects through Bio.Phylo before extracting names. The optimized helper walks
   parsed tree or clade objects directly while preserving terminal order and

@@ -57,11 +57,30 @@ def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
 builtins.__import__ = guarded_import
 import phykit.services.tree.treeness_over_rcv as module
 assert callable(module.print_json)
+assert module._Alignment is None
 assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
 assert "typing" not in sys.modules
 """
         subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_alignment_service_reuses_cached_alignment_class(self, monkeypatch):
+        instances = []
+
+        class FakeAlignment:
+            def __init__(self, alignment_file_path):
+                self.alignment_file_path = alignment_file_path
+                instances.append(self)
+
+        monkeypatch.setattr(tor_module, "_Alignment", FakeAlignment)
+
+        first = tor_module._alignment_service("first.fa")
+        second = tor_module._alignment_service("second.fa")
+
+        assert first.alignment_file_path == "first.fa"
+        assert second.alignment_file_path == "second.fa"
+        assert instances == [first, second]
+        assert tor_module._Alignment is FakeAlignment
 
     def test_run_prints_tab_delimited(self, mocker, capsys):
         t = TreenessOverRCV(Namespace(tree="x.tre", alignment="x.fa", json=False))

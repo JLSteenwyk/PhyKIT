@@ -9,6 +9,18 @@ def print_json(*args, **kwargs):
     return _print_json(*args, **kwargs)
 
 
+_Alignment = None
+
+
+def _alignment_service(alignment_file_path):
+    global _Alignment
+    if _Alignment is None:
+        from ..alignment.base import Alignment
+
+        _Alignment = Alignment
+    return _Alignment(alignment_file_path=alignment_file_path)
+
+
 class TreenessOverRCV(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -41,9 +53,7 @@ class TreenessOverRCV(Tree):
         )
 
     def _calculate_rcv(self) -> float:
-        from ..alignment.base import Alignment
-
-        aln = Alignment(alignment_file_path=self.alignment_file_path)
+        aln = _alignment_service(self.alignment_file_path)
         return aln.calculate_rcv()
 
     def process_args(self, args) -> dict[str, str]:
