@@ -75,6 +75,27 @@ def _calculate_small_sequence_statistics(values):
         return _SMALL_STATS_FALLBACK
 
     try:
+        if count >= 64:
+            first_value = values[0]
+            if (
+                type(first_value) is int
+                and first_value == values[-1]
+                and values.count(first_value) == count
+            ):
+                mean = first_value
+                median = first_value
+                quartile = float(first_value)
+                return dict(
+                    mean=mean,
+                    median=median,
+                    twenty_fifth=quartile,
+                    seventy_fifth=quartile,
+                    minimum=first_value,
+                    maximum=first_value,
+                    standard_deviation=0.0,
+                    variance=0.0,
+                )
+
         if count == 2:
             first_value, last_value = values
             all_integer = type(first_value) is int and type(last_value) is int

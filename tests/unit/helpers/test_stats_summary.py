@@ -149,6 +149,24 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(stats['standard_deviation'], 0)
         self.assertEqual(stats['variance'], 0)
 
+    def test_identical_small_list_skips_sort_and_numpy(self):
+        data = [7] * 128
+        with patch(
+            'builtins.sorted',
+            side_effect=AssertionError("constant small lists should not sort"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("constant small lists should avoid NumPy"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 7)
+        self.assertEqual(stats['median'], 7)
+        self.assertEqual(stats['twenty_fifth'], 7.0)
+        self.assertEqual(stats['seventy_fifth'], 7.0)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
     def test_identical_values_skip_percentile_and_variance_reductions(self):
         """Test constant arrays avoid unnecessary summary reductions."""
         data = np.array([3.5, 3.5, 3.5, 3.5])
