@@ -1641,6 +1641,7 @@ Results:
 | `Spr._collect_clade_taxa` reverse-preorder and binary union | balanced 32768-tip tree, descendant taxon cache for SPR regraft descriptions | 0.070923s | 0.054266s | 1.31x |
 | `Spr._print_output_summary` batched summary output | 100k captured SPR output-file summaries, identical stdout text | 0.086666s | 0.051927s | 1.67x |
 | `Spr._print_spr_trees` batched stdout output | 100k generated tree strings, fake writer, captured stdout and identical text | 0.039031s | 0.028162s | 1.39x |
+| `Spr._LazyPhylo.write` cached callable | 10k / 100k / 1M repeated no-op writes after first Bio.Phylo resolution | 0.005688062s / 0.077648917s / 1.443073480s | 0.004899187s / 0.012482271s / 0.282397271s | 1.16x / 6.22x / 5.11x |
 | `spr` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.write` and `Clade` proxies | 0.122829s | 0.025707s | 4.78x |
 | `spr` module import without eager JSON/pickle helpers | median cold subprocess import after lazy JSON wrapper, removing unused `json`, and lazy pickle proxy | 0.007684s | 0.004994s | 1.54x |
 | `spr` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.007167s | 0.004261s | 1.68x |

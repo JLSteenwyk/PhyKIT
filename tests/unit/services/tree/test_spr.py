@@ -8,6 +8,7 @@ import pytest
 from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
+import phykit.services.tree.spr as spr_module
 from phykit.services.tree.spr import Spr
 
 
@@ -46,6 +47,31 @@ assert "Bio.Phylo" not in sys.modules
 assert "numpy" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_phylo_caches_resolved_write(monkeypatch):
+    calls = []
+
+    def cached_write(*args, **kwargs):
+        calls.append((args, kwargs))
+        return 1
+
+    def uncached_write(*_args, **_kwargs):
+        return 2
+
+    lazy_phylo = spr_module._LazyPhylo()
+    monkeypatch.setattr(Phylo, "write", cached_write)
+
+    assert lazy_phylo.write([], "trees.nwk", "newick") == 1
+
+    monkeypatch.setattr(Phylo, "write", uncached_write)
+
+    assert lazy_phylo.write(["tree"], "more.nwk", "newick") == 1
+    assert lazy_phylo.__dict__["write"] is cached_write
+    assert calls == [
+        (([], "trees.nwk", "newick"), {}),
+        ((["tree"], "more.nwk", "newick"), {}),
+    ]
 
 
 class TestSpr:
