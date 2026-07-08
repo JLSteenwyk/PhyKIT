@@ -2832,6 +2832,7 @@ Results:
 | `ThresholdModel._parse_multi_trait_file` streaming parser | 500k-row mixed discrete/continuous TSV with an extra column, all taxa shared | 0.750809s | 0.734721s | 1.02x |
 | `ThresholdModel._parse_multi_trait_file` all-shared parser fast path | 500k-row mixed discrete/continuous TSV with an extra column, all taxa shared | 0.743827s | 0.714690s | 1.04x |
 | `ThresholdModel._parse_multi_trait_file` bounded split and all-shared direct return | 500k-row mixed discrete/continuous TSV with an extra column, all taxa shared, side-by-side previous full-split/filter-copy comparison | 0.710943s | 0.493796s | 1.44x |
+| `ThresholdModel._parse_multi_trait_file` ordered exact parser validation | 500k-row mixed discrete/continuous TSV with an extra column whose row order exactly matches tree tips, side-by-side previous set-equality validation | 1.919382s | 1.312589s | 1.46x |
 | `threshold_model` module import without eager `scipy.stats` | cold process import for threshold-model command module | 0.624578s | 0.362909s | 1.7x |
 | `threshold_model` module import without eager SciPy special/shared linalg | cold process import for threshold-model command module | 0.331525s | 0.144341s | 2.3x |
 | `threshold_model` module import after lazy shared VCV Bio.Phylo | cold subprocess import of threshold-model command module | 0.196941s | 0.121166s | 1.63x |
@@ -9238,7 +9239,9 @@ Profiling summary:
   A later all-shared parser pass bounds row splitting to the header-width
   contract so ignored trailing columns are not fully tokenized, then returns
   the parsed trait dictionaries directly with the same sorted ordered-name list
-  when every parsed taxon is present in the tree.
+  when every parsed taxon is present in the tree. A later ordered-exact parser
+  pass tracks tree-tip row order while reading, preserving the sorted
+  ordered-name output while avoiding the all-shared taxon set.
 - `OUwie._concentrated_ll_bm` and `_fit_bms` baseline time formed explicit VCV
   inverses and log determinants for BM likelihoods. The optimized paths use
   Cholesky factorization, Cholesky log determinants, and triangular solves for

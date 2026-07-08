@@ -290,6 +290,9 @@ class ThresholdModel(Tree):
                 trait1_discrete_values = set() if type1 == "discrete" else None
                 trait2_discrete_values = set() if type2 == "discrete" else None
                 parse_float = float
+                tree_tip_count = len(tree_tips)
+                ordered_tree_tip_match = tree_tip_count >= 3
+                ordered_tree_tip_idx = 0
                 for line_num, line in enumerate(f, 2):
                     line = line.strip()
                     if not line or line[0] == "#":
@@ -304,6 +307,13 @@ class ThresholdModel(Tree):
                             code=2,
                         )
                     taxon = parts[0]
+                    if ordered_tree_tip_match:
+                        if (
+                            ordered_tree_tip_idx >= tree_tip_count
+                            or taxon != tree_tips[ordered_tree_tip_idx]
+                        ):
+                            ordered_tree_tip_match = False
+                        ordered_tree_tip_idx += 1
                     val1_str = parts[idx1]
                     val2_str = parts[idx2]
                     try:
@@ -355,6 +365,14 @@ class ThresholdModel(Tree):
                         ],
                         code=2,
                     )
+
+        if (
+            ordered_tree_tip_match
+            and ordered_tree_tip_idx == tree_tip_count
+            and len(trait1_dict) == tree_tip_count
+            and len(trait2_dict) == tree_tip_count
+        ):
+            return trait1_dict, trait2_dict, sorted(tree_tips)
 
         tree_tip_set = set(tree_tips)
         if (

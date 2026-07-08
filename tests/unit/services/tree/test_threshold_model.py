@@ -275,6 +275,35 @@ class TestParseMultiTraitFile:
         assert t2 == {"A": 1.5, "B": 2.3, "C": 0.8, "D": 3.1}
         assert capsys.readouterr().err == ""
 
+    def test_ordered_exact_continuous_traits_skip_set_validation(
+        self, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tt1\tt2\tnote\n"
+            "B\t2.0\t2.3\tx\n"
+            "A\t1.0\t1.5\tx\n"
+            "C\t3.0\t0.8\tx\n"
+        )
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("exact ordered traits should not build taxon sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        t1, t2, names = ThresholdModel._parse_multi_trait_file(
+            str(trait_file),
+            "t1",
+            "t2",
+            "continuous",
+            "continuous",
+            ["B", "A", "C"],
+        )
+
+        assert names == ["A", "B", "C"]
+        assert t1 == {"B": 2.0, "A": 1.0, "C": 3.0}
+        assert t2 == {"B": 2.3, "A": 1.5, "C": 0.8}
+
     def test_first_two_trait_columns_can_be_requested_in_reverse_order(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
