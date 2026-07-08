@@ -1917,6 +1917,11 @@ class TestModelComparison:
             "exp",
             lambda *args, **kwargs: pytest.fail("AICc weights should use math.exp"),
         )
+        monkeypatch.setattr(
+            ouwie_module.np,
+            "log",
+            lambda *args, **kwargs: pytest.fail("BIC should use one math.log"),
+        )
         results = d["svc"]._compute_model_comparison(results, n)
         weights = [r["aicc_weight"] for r in results]
         np.testing.assert_allclose(sum(weights), 1.0, atol=1e-10)

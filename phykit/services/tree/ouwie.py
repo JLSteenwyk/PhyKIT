@@ -1896,34 +1896,43 @@ class OUwie(Tree):
         x: np.ndarray = None, vcv_total: np.ndarray = None,
         regime_assignments: dict = None, ordered_names: list[str] = None,
     ) -> list[dict]:
+        log_n = math.log(n)
+        min_aic = float("inf")
+        min_bic = float("inf")
         for r in results:
             k = r["k_params"]
             ll = r["log_likelihood"]
-            r["aic"] = -2.0 * ll + 2.0 * k
+            aic = -2.0 * ll + 2.0 * k
+            r["aic"] = aic
             if n - k - 1 > 0:
-                r["aicc"] = r["aic"] + 2.0 * k * (k + 1) / (n - k - 1)
+                r["aicc"] = aic + 2.0 * k * (k + 1) / (n - k - 1)
             else:
                 r["aicc"] = float("inf")
-            r["bic"] = -2.0 * ll + k * np.log(n)
+            bic = -2.0 * ll + k * log_n
+            r["bic"] = bic
+            if aic < min_aic:
+                min_aic = aic
+            if bic < min_bic:
+                min_bic = bic
 
         # Sort by AICc
         results.sort(key=lambda r: r["aicc"])
 
-        min_aic = min(r["aic"] for r in results)
         min_aicc = results[0]["aicc"]
-        min_bic = min(r["bic"] for r in results)
-
-        for r in results:
+        raw_weights = [0.0] * len(results)
+        total = 0.0
+        for idx, r in enumerate(results):
+            delta_aicc = r["aicc"] - min_aicc
             r["delta_aic"] = r["aic"] - min_aic
-            r["delta_aicc"] = r["aicc"] - min_aicc
+            r["delta_aicc"] = delta_aicc
             r["delta_bic"] = r["bic"] - min_bic
-
-        # AICc weights
-        raw_weights = [math.exp(-0.5 * r["delta_aicc"]) for r in results]
-        total = sum(raw_weights)
+            weight = math.exp(-0.5 * delta_aicc)
+            raw_weights[idx] = weight
+            total += weight
         if total > 0.0:
+            inv_total = 1.0 / total
             for r, w in zip(results, raw_weights):
-                r["aicc_weight"] = w / total
+                r["aicc_weight"] = w * inv_total
         else:
             for r in results:
                 r["aicc_weight"] = 0.0
