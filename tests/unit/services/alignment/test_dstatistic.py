@@ -153,6 +153,20 @@ class TestDstatistic:
         assert block_abba.tolist() == [4.0, 0.0]
         assert block_baba.tolist() == [1.0, 1.0]
 
+    def test_count_site_patterns_nonidentical_zero_counts_returns_zero_blocks(self):
+        abba, baba, block_abba, block_baba = Dstatistic._count_site_patterns(
+            "AAAA" * 10,
+            "CCCC" * 10,
+            "GGGG" * 10,
+            "TTTT" * 10,
+            block_size=8,
+        )
+
+        assert abba == 0
+        assert baba == 0
+        assert block_abba.tolist() == [0.0] * 5
+        assert block_baba.tolist() == [0.0] * 5
+
     def test_count_site_patterns_all_valid_ascii_skips_validity_mask(self, mocker):
         mocker.patch.object(
             module.np,

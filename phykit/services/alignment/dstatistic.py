@@ -625,6 +625,9 @@ class Dstatistic(Alignment):
             )
         block_abba = np.zeros(n_blocks)
         block_baba = np.zeros(n_blocks)
+        if abba_count == 0 and baba_count == 0:
+            return abba_count, baba_count, block_abba, block_baba
+
         n_block_sites = n_blocks * block_size
         if abba_mask is not None:
             block_abba = (

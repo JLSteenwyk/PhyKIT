@@ -816,6 +816,7 @@ Results:
 | `Dstatistic._count_site_patterns` identical-ingroup shortcut | 2M sites, P1/P2/P3 identical and outgroup fixed different, block size 1000, identical zero totals and block arrays | 0.008103s | 0.000002s | 4051.5x |
 | `Dstatistic._count_site_patterns` impossible sister-pair shortcut | 5M sites, P1/P2 identical with P3/outgroup different, block size 1000, side-by-side previous byte-array scan path | 0.013529s | 0.000002958s | 4573.80x |
 | `Dstatistic._count_site_patterns` single-pattern mask shortcut | 5M sites, P1/outgroup identical and P2/P3 identical, ABBA possible and BABA impossible, side-by-side previous two-mask vector path | 0.014601s | 0.009187s | 1.59x |
+| `Dstatistic._count_site_patterns` zero-count block shortcut | 5M clean ASCII non-identical quartet with no ABBA/BABA informative sites, block size 1000, identical zero totals and block arrays | 0.022439s | 0.018994s | 1.18x |
 | `Dstatistic._count_site_patterns` short-alignment empty blocks | 200k repeated all-invariant 8-site / 20k repeated informative 8-site clean ASCII counts with block size 100, identical totals and empty float block arrays | 0.433991s / 0.606033s | 0.197659s / 0.380871s | 2.20x / 1.59x |
 | `Dstatistic._count_site_patterns_scalar` direct skip checks | 1M Unicode-containing scalar fallback sites, block size 1000, identical ABBA/BABA totals and block arrays | 0.967857s | 0.443901s | 2.18x |
 | `Dstatistic._count_site_patterns_scalar` list-backed block counters | 500k Unicode-containing scalar fallback sites with sparse skipped sites, block size 1000, interleaved side-by-side timing, identical ABBA/BABA totals and block arrays | 0.413669s | 0.288322s | 1.43x |
@@ -4717,7 +4718,9 @@ Profiling summary:
   A later partial-pattern pass detects aligned quartets where only ABBA or only
   BABA can occur and skips the impossible boolean mask and block aggregation,
   using guarded sequence identity checks to keep mixed-pattern inputs on the
-  two-mask path.
+  two-mask path. Zero-count mixed quartets now return the already allocated
+  zero block arrays after total counting instead of reducing all-false masks
+  across every jackknife block.
 - `Dstatistic._jackknife_d_values` baseline time computed every leave-one-block
   D value in a Python loop. The optimized helper computes all leave-one-out
   ABBA/BABA totals and D values with vectorized NumPy arithmetic, preserving
