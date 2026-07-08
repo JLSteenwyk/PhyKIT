@@ -719,6 +719,15 @@ class StochasticCharacterMap(Tree):
         ]
 
     def _prepare_branch_history_context(self, Q: np.ndarray, k: int):
+        if k == 2:
+            cdf0 = np.array([0.0, 1.0], dtype=float) if Q[0, 1] > 0.0 else None
+            cdf1 = np.array([1.0, 1.0], dtype=float) if Q[1, 0] > 0.0 else None
+            return (
+                -Q.diagonal(),
+                [cdf0, cdf1],
+                [1 if cdf0 is not None else -1, 0 if cdf1 is not None else -1],
+            )
+
         transition_probs_by_state = self._transition_probs_by_state(Q, k)
         return (
             -Q.diagonal(),

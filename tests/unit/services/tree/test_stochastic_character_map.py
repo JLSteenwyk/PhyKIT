@@ -738,6 +738,30 @@ class TestStochasticMapping:
         assert deterministic_targets == [1, 0]
         assert optimized == baseline
 
+    def test_prepare_branch_history_context_binary_fast_path(
+        self, default_args, monkeypatch
+    ):
+        svc = StochasticCharacterMap(default_args)
+        Q = np.array([[0.0, 0.7], [0.0, 0.0]], dtype=float)
+
+        def fail_transition_probs(*_args, **_kwargs):
+            raise AssertionError("binary context should not build transition probs")
+
+        monkeypatch.setattr(
+            svc,
+            "_transition_probs_by_state",
+            fail_transition_probs,
+        )
+
+        rates, transition_cdfs, deterministic_targets = (
+            svc._prepare_branch_history_context(Q, Q.shape[0])
+        )
+
+        np.testing.assert_allclose(rates, -Q.diagonal())
+        np.testing.assert_allclose(transition_cdfs[0], [0.0, 1.0])
+        assert transition_cdfs[1] is None
+        assert deterministic_targets == [1, -1]
+
     def test_prepare_branch_history_context_uses_diagonal_rate_view(
         self, default_args, monkeypatch
     ):
