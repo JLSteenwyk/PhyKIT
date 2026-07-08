@@ -1237,6 +1237,7 @@ Results:
 | `polytomy_test` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006955s | 0.005686s | 1.22x |
 | `polytomy_test` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.007281s | 0.004536s | 1.60x |
 | `polytomy_test` module import without eager file helper | median cold subprocess import after lazy tree-list reader wrapper | 0.031790s | 0.021889s | 1.45x |
+| `PolytomyTest.loop_through_trees_and_examine_sister_support_among_triplets` medium tree-list multiprocessing threshold | 20 small Newick files, three singleton ingroup sets plus one outgroup, side-by-side previous low multiprocessing cutoff | 1.117099s | 0.004926s | 226.77x |
 | `TransferAnnotations.run` taxa validation setup | two balanced 32768-tip trees | 0.1371s | 0.0148s | 9.3x |
 | `TransferAnnotations.run` cached read-only source setup | two balanced 32768-tip trees, taxa validation, annotation extraction, transfer, write, and text output mocked | 0.227289s | 0.148054s | 1.54x |
 | `TransferAnnotations._extract_annotations` + `_transfer` | 1024-tip balanced source/target trees, annotations on all internal source nodes | 0.0585s | 0.0386s | 1.5x |
@@ -5490,9 +5491,12 @@ Profiling summary:
   behavior while avoiding an O(n) allocation for large group maps. The tree-list
   reader now uses a local forwarding wrapper, preserving the module-level patch
   point while avoiding `phykit.helpers.files` during import-only command
-  discovery. The local chi-square wrapper now computes common three-category
-  statistics directly, avoiding a temporary observed list and generic
-  reductions while keeping the generic SciPy-compatible path for other inputs.
+  discovery. The tree-list multiprocessing cutoff is now higher, so medium
+  tree-file lists stay on the sequential path instead of paying process startup
+  and tree-summary pickling overhead. The local chi-square wrapper now computes
+  common three-category statistics directly, avoiding a temporary observed list
+  and generic reductions while keeping the generic SciPy-compatible path for
+  other inputs.
 - `TransferAnnotations.run` taxa validation setup baseline time collected
   target and source taxon sets through `get_terminals()`. The optimized path
   uses the shared direct terminal-name traversal while retaining fallback

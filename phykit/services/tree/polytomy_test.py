@@ -116,7 +116,7 @@ def chisquare(*args, **kwargs):
 
 
 class PolytomyTest(Tree):
-    MP_MIN_TREES = 50
+    MP_MIN_TREES = 128
     MAX_MP_WORKERS = 8
 
     def __init__(self, args) -> None:

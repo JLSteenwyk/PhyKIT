@@ -792,6 +792,36 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         self.assertEqual(self.polytomy.examine_all_triplets_and_sister_pairing.call_count, 2)
 
     @patch('multiprocessing.Pool')
+    @patch('phykit.services.tree.polytomy_test.Phylo.read')
+    def test_loop_through_medium_tree_list_skips_pool(
+        self, mock_phylo_read, mock_pool_class
+    ):
+        """Default processing keeps medium tree lists sequential."""
+        trees = [f"tree{i}.tre" for i in range(20)]
+        mock_tree = Mock()
+        mock_phylo_read.return_value = mock_tree
+        self.polytomy.get_tip_names_from_tree = Mock(return_value=["seq1", "seq2", "seq3"])
+
+        def examine_side_effect(tips, tree_file, summary, groups, outgroup):
+            summary[tree_file] = {"0-1": 1}
+            return summary
+
+        self.polytomy.examine_all_triplets_and_sister_pairing = Mock(
+            side_effect=examine_side_effect
+        )
+
+        groups_of_groups = {"test": [["seq1"], ["seq2"], ["seq3"]]}
+        outgroup_taxa = ["out1"]
+
+        summary = self.polytomy.loop_through_trees_and_examine_sister_support_among_triplets(
+            trees, groups_of_groups, outgroup_taxa
+        )
+
+        mock_pool_class.assert_not_called()
+        self.assertEqual(len(summary), 20)
+        self.assertEqual(self.polytomy.examine_all_triplets_and_sister_pairing.call_count, 20)
+
+    @patch('multiprocessing.Pool')
     @patch('phykit.services.tree.polytomy_test.read_single_column_file_to_list')
     def test_loop_through_trees_parallel(self, mock_read_file, mock_pool_class):
         """Test parallel processing of trees (large dataset)"""
