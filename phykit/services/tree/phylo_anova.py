@@ -847,7 +847,12 @@ class PhyloAnova(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
-        fig.tight_layout()
+        fig.subplots_adjust(
+            left=0.10,
+            right=0.97,
+            top=0.90 if config.show_title else 0.96,
+            bottom=0.14,
+        )
         fig.savefig(output_path, dpi=config.dpi)
         plt.close(fig)
         print(f"Plot saved: {output_path}")
@@ -941,7 +946,12 @@ class PhyloAnova(Tree):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
-        fig.tight_layout()
+        fig.subplots_adjust(
+            left=0.10,
+            right=0.97,
+            top=0.90 if config.show_title else 0.96,
+            bottom=0.13,
+        )
         fig.savefig(output_path, dpi=config.dpi)
         plt.close(fig)
         print(f"Plot saved: {output_path}")

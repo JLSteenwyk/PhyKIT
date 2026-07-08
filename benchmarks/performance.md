@@ -2664,7 +2664,9 @@ Results:
 | `PhyloAnova._prepare_phylomorphospace_overlay` single-pass parent map and child means | balanced 32768-tip tree, parent map and ancestral coordinate setup | 0.198770s | 0.067740s | 2.93x |
 | `PhyloAnova._prepare_phylomorphospace_overlay` binary child-coordinate fast path | balanced 8192 / 32768 / 65536-tip tree, parent map and ancestral coordinate setup, side-by-side previous generic child-coordinate loop | 0.022359s / 0.092461s / 0.396281s | 0.022608s / 0.084433s / 0.264315s | 0.99x / 1.10x / 1.50x |
 | `PhyloAnova._plot_boxplot` vectorized group masks | 500k taxa across 12 groups, univariate plot group-value preparation, side-by-side previous per-group Python list masks | 0.377527s | 0.053611s | 7.04x |
+| `PhyloAnova._plot_boxplot` manual subplot spacing | repeated 16-group ANOVA boxplot PNG render, explicit `Figure.tight_layout()` replaced with fixed `subplots_adjust(...)` margins | 0.501057s | 0.196920s | 2.54x |
 | `PhyloAnova._plot_phylomorphospace` branch rendering | 4096 phylomorphospace branch segments, real Matplotlib Agg line render | 0.699849s | 0.032767s | 21.36x |
+| `PhyloAnova._plot_phylomorphospace` manual subplot spacing | repeated 1280-tip phylomorphospace PNG render with PCA coordinates, branch segments, group scatter, and legend, explicit `Figure.tight_layout()` replaced with fixed `subplots_adjust(...)` margins | 0.560424s | 0.277063s | 2.02x |
 | `PhyloAnova._plot_phylomorphospace` PCA variance total | 2 / 3 / 4 / 8 / 16 / 32 / 128 / 1024 singular values, side-by-side previous `np.sum(S ** 2)` | 0.000005887s / 0.000006054s / 0.000005545s / 0.000005994s / 0.000006021s / 0.000006877s / 0.000004525s / 0.000006631s | 0.000001281s / 0.000001132s / 0.000001423s / 0.000001156s / 0.000001312s / 0.000001259s / 0.000000879s / 0.000001432s | 4.60x / 5.35x / 3.90x / 5.19x / 4.59x / 5.46x / 5.15x / 4.63x |
 | `PhyloAnova._plot_phylomorphospace` vectorized group masks | 500k taxa across 12 groups, scatter coordinate preparation, side-by-side previous per-group Python list masks | 0.396877s | 0.075103s | 5.28x |
 | `PhyloAnova._print_results` batched pairwise text output | 100k pairwise comparison rows, captured stdout and identical text | 0.094132s | 0.077935s | 1.21x |
@@ -8624,6 +8626,10 @@ Profiling summary:
   wrapper and localizes `PlotConfig` to argument processing, avoiding helper
   imports for import-only callers. A follow-up startup pass converts
   annotation-only `typing` aliases to postponed built-in annotations.
+  ANOVA boxplot and phylomorphospace rendering now use fixed subplot margins
+  instead of Matplotlib's `tight_layout()` solver, preserving the same plotting
+  primitives and save options while avoiding redundant layout work on each PNG
+  render.
   Phylomorphospace plotting now batches
   gray parent-child branch segments into one `LineCollection`, preserving branch
   styling while leaving group-colored tip scatter points and labels unchanged.

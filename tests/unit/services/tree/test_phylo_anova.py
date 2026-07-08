@@ -1151,6 +1151,48 @@ class TestPhyloAnova:
         assert converted_groups == 1
         assert (tmp_path / "anova_boxplot.png").exists()
 
+    def test_plot_boxplot_uses_manual_spacing(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib.figure
+
+        original_adjust = matplotlib.figure.Figure.subplots_adjust
+        adjust_calls = []
+
+        def fail_tight_layout(*_args, **_kwargs):
+            raise AssertionError("boxplot should avoid tight_layout")
+
+        def capture_adjust(self, *args, **kwargs):
+            adjust_calls.append(kwargs.copy())
+            return original_adjust(self, *args, **kwargs)
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "tight_layout",
+            fail_tight_layout,
+        )
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "subplots_adjust",
+            capture_adjust,
+        )
+
+        svc = PhyloAnova(
+            _make_args(plot_output=str(tmp_path / "anova_boxplot.png"))
+        )
+        svc._plot_boxplot(
+            None,
+            ["t1", "t2", "t3", "t4"],
+            np.array([[0.1], [1.1], [0.2], [1.2]]),
+            ["a", "b", "a", "b"],
+            ["a", "b"],
+            ["trait"],
+            str(tmp_path / "anova_boxplot.png"),
+        )
+
+        assert adjust_calls
+        assert adjust_calls[-1]["top"] == pytest.approx(0.90)
+        assert (tmp_path / "anova_boxplot.png").exists()
+
     def test_plot_phylomorphospace_creates_file(self, tmp_path):
         """Phylomorphospace is created for MANOVA."""
         out = str(tmp_path / "manova_morpho.png")
@@ -1222,6 +1264,60 @@ class TestPhyloAnova:
             for collection in line_collections
         )
         assert converted_groups == 1
+        assert (tmp_path / "manova_morpho.png").exists()
+
+    def test_plot_phylomorphospace_uses_manual_spacing(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib.figure
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        Y = np.array([
+            [0.0, 0.0],
+            [2.0, 0.0],
+            [0.0, 2.0],
+            [2.0, 2.0],
+        ])
+        groups = ["g1", "g1", "g2", "g2"]
+        original_adjust = matplotlib.figure.Figure.subplots_adjust
+        adjust_calls = []
+
+        def fail_tight_layout(*_args, **_kwargs):
+            raise AssertionError("phylomorphospace should avoid tight_layout")
+
+        def capture_adjust(self, *args, **kwargs):
+            adjust_calls.append(kwargs.copy())
+            return original_adjust(self, *args, **kwargs)
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "tight_layout",
+            fail_tight_layout,
+        )
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "subplots_adjust",
+            capture_adjust,
+        )
+
+        svc = PhyloAnova(
+            _make_args(
+                traits=TRAITS_MULTI,
+                plot_output=str(tmp_path / "manova_morpho.png"),
+            )
+        )
+        svc._plot_phylomorphospace(
+            tree,
+            ordered_names,
+            Y,
+            groups,
+            ["g1", "g2"],
+            ["x", "y"],
+            str(tmp_path / "manova_morpho.png"),
+        )
+
+        assert adjust_calls
+        assert adjust_calls[-1]["bottom"] == pytest.approx(0.13)
         assert (tmp_path / "manova_morpho.png").exists()
 
     def test_reproducible_with_seed(self, capsys):
