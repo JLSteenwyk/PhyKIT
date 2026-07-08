@@ -1982,7 +1982,9 @@ class TestRun:
         assert "BM1" in all_output
         assert "OUM" in all_output
 
-    def test_print_text_output_batches_model_and_parameter_rows(self, svc, mocker):
+    def test_print_text_output_batches_model_and_parameter_rows(
+        self, svc, mocker, monkeypatch
+    ):
         printed = mocker.patch("builtins.print")
         results = [
             {
@@ -1994,7 +1996,7 @@ class TestRun:
                 "delta_aicc": 0.0,
                 "aicc_weight": 0.75,
                 "bic": 35.4,
-                "delta_bic": 0.0,
+                "delta_bic": 1.4,
                 "r_squared": 0.8,
                 "params": {
                     "theta": {"aquatic": 1.25, "terrestrial": 2.5},
@@ -2011,12 +2013,17 @@ class TestRun:
                 "aicc": 41.0,
                 "delta_aicc": 9.8,
                 "aicc_weight": 0.01,
-                "bic": 42.0,
-                "delta_bic": 6.6,
+                "bic": 34.0,
+                "delta_bic": 0.0,
                 "r_squared": 0.1,
                 "params": {},
             },
         ]
+
+        def fail_min(*_args, **_kwargs):
+            raise AssertionError("best BIC should be tracked without min()")
+
+        monkeypatch.setattr(ouwie_module, "min", fail_min, raising=False)
 
         svc._print_text_output(results, 8, ["aquatic", "terrestrial"])
 
@@ -2029,12 +2036,12 @@ class TestRun:
             "Model   k    LL          AIC       AICc      dAICc    AICcW    "
             "BIC       dBIC     R2     \n"
             "OUM     8    -12.346     30.10     31.20     0.00     0.750    "
-            "35.40     0.00     0.800  \n"
+            "35.40     1.40     0.800  \n"
             "BM1     2    -18.000     40.00     41.00     9.80     0.010    "
-            "42.00     6.60     0.100  \n"
+            "34.00     0.00     0.100  \n"
             "\n"
             "Best model (AICc): OUM\n"
-            "Best model (BIC):  OUM\n"
+            "Best model (BIC):  BM1\n"
             "\n"
             "Parameter estimates (OUM):\n"
             "  Theta (trait optima):\n"

@@ -2956,6 +2956,7 @@ Results:
 | `OUwie._build_lineage_info` set-backed tip filter | balanced 8192-tip tree, all ordered tips included in lineage setup, identical lineage output | 0.491299s | 0.072740s | 6.75x |
 | `OUwie` root-to-tip terminal-map setup | balanced 32768 / 131072 / 131072-tip trees with 32768 / 65536 / 1024 requested ordered names, side-by-side previous `get_terminals()` map setup | 0.286544s / 1.941562s / 1.372615s | 0.032084s / 0.081466s / 0.034778s | 8.93x / 23.83x / 39.47x |
 | `OUwie._print_text_output` batched model and parameter rows | 100k regimes, 300k best-model parameter rows, captured stdout and identical text | 0.093383s | 0.061903s | 1.51x |
+| `OUwie._print_text_output` combined model/BIC formatting pass | 300k synthetic model-result rows, identical stdout text and best-BIC model | 2.131553s | 1.833397s | 1.16x |
 | `OUwie._compute_model_comparison` scalar AICc weights | seven synthetic model-result dictionaries, identical normalized weights | 0.000018015s | 0.000006892s | 2.61x |
 | `OUwie._compute_model_comparison` unweighted multi-regime sigma2 average | 25 model-result dictionaries x 100k regime sigma2 values, no regime-tip weights, identical R2 inputs | 0.023221s | 0.014002s | 1.66x |
 | `OUwie._concentrated_ll_bm` | 220 taxa SPD VCV, single continuous trait | 0.0021s | 0.0002s | 10.5x |
@@ -9484,7 +9485,9 @@ Profiling summary:
   state-set traversal instead of running the same Fitch-style pass twice.
   A later state-set pass merges the common two-child case directly; a follow-up
   model-comparison pass computes the small AICc weight vector with scalar
-  `math.exp` calls instead of allocating a NumPy array. A follow-up
+  `math.exp` calls instead of allocating a NumPy array. Text output now tracks
+  the best-BIC model while formatting model rows, preserving stdout text while
+  avoiding a separate scan over large synthetic result tables. A follow-up
   shares the same direct non-binary child state-set merge as
   `RateHeterogeneity`, avoiding a temporary child-set list and slice for
   multifurcations.

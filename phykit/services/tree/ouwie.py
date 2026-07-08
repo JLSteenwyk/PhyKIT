@@ -1990,18 +1990,23 @@ class OUwie(Tree):
         )
         lines.append(header)
 
+        best_bic = results[0]
+        best_bic_value = best_bic["bic"]
         for r in results:
+            bic = r["bic"]
+            if bic < best_bic_value:
+                best_bic = r
+                best_bic_value = bic
             lines.append(
                 f"{r['model']:<8}{r['k_params']:<5}{r['log_likelihood']:<12.3f}"
                 f"{r['aic']:<10.2f}{r['aicc']:<10.2f}"
                 f"{r['delta_aicc']:<9.2f}{r['aicc_weight']:<9.3f}"
-                f"{r['bic']:<10.2f}{r['delta_bic']:<9.2f}"
+                f"{bic:<10.2f}{r['delta_bic']:<9.2f}"
                 f"{r['r_squared']:<7.3f}"
             )
 
         lines.append(f"\nBest model (AICc): {results[0]['model']}")
-        best_bic = min(results, key=lambda r: r["bic"])["model"]
-        lines.append(f"Best model (BIC):  {best_bic}")
+        lines.append(f"Best model (BIC):  {best_bic['model']}")
 
         # Print parameter details for best model
         best = results[0]
