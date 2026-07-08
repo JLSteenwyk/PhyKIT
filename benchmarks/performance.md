@@ -1619,6 +1619,7 @@ Results:
 | `CollapseBranches.run` JSON no-op setup scan | supported balanced 65536-tip tree, no branches below threshold | 0.074100s | 0.046069s | 1.6x |
 | `CollapseBranches.run` non-JSON weak-branch pre-scan | weak-root balanced 262144-tip tree, pre-collapse setup only | 0.054011s | 0.000009708s | 5563.49x |
 | `CollapseBranches._has_collapsible_branch_standard_tree` localized stack scan | supported balanced 65536-tip tree, no branches below threshold, side-by-side previous stack method lookup | 0.374269s | 0.300787s | 1.24x |
+| `CollapseBranches._scan_standard_tree_for_collapse` localized stack scan | 10 / 50 / 100 repeated JSON count-and-weak-support scans on a supported balanced 32768-tip tree, side-by-side previous stack method lookup | 0.083160709s / 0.990988083s / 2.480479166s | 0.074292083s / 0.755266666s / 1.670775500s | 1.12x / 1.31x / 1.48x |
 | `collapse_branches` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006097s | 0.004794s | 1.27x |
 | `collapse_branches` module import without `typing` startup | median cold subprocess import after converting the annotation-only typing alias to a built-in postponed annotation | 0.007718s | 0.004077s | 1.89x |
 | `Spr.run` single-taxon terminal validation and subtree lookup | balanced 65536-tip tree, single terminal subtree | 0.2741s | 0.0171s | 16.0x |
@@ -6106,7 +6107,8 @@ Profiling summary:
   mutating paths while avoiding the pickle copy for unchanged trees.
   JSON no-op setup now combines the standard-tree internal-node count and
   weak-support scan in one traversal while preserving the early-exit scan used
-  by non-JSON runs. A later non-JSON pass routes standard trees directly to
+  by non-JSON runs. A follow-up helper pass localizes stack operations in that
+  combined JSON scan. A later non-JSON pass routes standard trees directly to
   the boolean weak-support scan instead of the JSON count-and-scan helper, so
   runs with an early weak branch can proceed to copy/collapse without counting
   the entire tree first. That non-JSON weak-support scan now localizes stack

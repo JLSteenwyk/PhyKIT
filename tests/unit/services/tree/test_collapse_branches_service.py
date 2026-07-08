@@ -253,6 +253,22 @@ class TestCollapseBranches:
 
         assert service.count_internal_nodes(tree) == 3
 
+    def test_scan_standard_tree_for_collapse_counts_and_flags_weak_support(self):
+        tree = Tree(
+            root=Clade(
+                confidence=100.0,
+                clades=[
+                    Clade(confidence=95.0, clades=[Clade(name="A"), Clade(name="B")]),
+                    Clade(confidence=75.0, clades=[Clade(name="C"), Clade(name="D")]),
+                ],
+            )
+        )
+
+        assert CollapseBranches._scan_standard_tree_for_collapse(tree, 90.0) == (
+            3,
+            True,
+        )
+
     def test_run_json_payload(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", support=90.0, output="/tmp/out.tre", json=True)
         service = CollapseBranches(args)

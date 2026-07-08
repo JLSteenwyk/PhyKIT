@@ -127,16 +127,17 @@ class CollapseBranches(Tree):
         has_collapsible_branch = False
         stack = [root]
         try:
+            pop = stack.pop
+            extend = stack.extend
             while stack:
-                node = stack.pop()
+                node = pop()
                 children = node.clades
                 if children:
                     internal_count += 1
+                    extend(children)
                 confidence = node.confidence
                 if confidence and confidence < support:
                     has_collapsible_branch = True
-                if children:
-                    stack.extend(children)
         except AttributeError:
             return None
         return internal_count, has_collapsible_branch
