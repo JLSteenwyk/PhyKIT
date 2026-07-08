@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from math import comb
@@ -38,6 +39,7 @@ _FDR_VECTOR_MIN_LENGTH = 32
 _EXACT_BINOMIAL_TOTAL_MAX = 64
 
 
+@lru_cache(maxsize=4096)
 def _binomial_two_sided_p_value(successes: int, total: int) -> float:
     tail_count = min(successes, total - successes)
     if tail_count * 2 >= total:

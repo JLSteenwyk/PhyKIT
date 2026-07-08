@@ -71,6 +71,18 @@ def test_binomial_two_sided_p_value_matches_expected_values():
     assert hybridization_module._binomial_two_sided_p_value(1, 1) == pytest.approx(1.0)
 
 
+def test_binomial_two_sided_p_value_reuses_cached_exact_result(monkeypatch):
+    hybridization_module._binomial_two_sided_p_value.cache_clear()
+    expected = hybridization_module._binomial_two_sided_p_value(13, 20)
+
+    def fail_comb(*_args, **_kwargs):
+        raise AssertionError("repeated exact binomial p-values should use cache")
+
+    monkeypatch.setattr(hybridization_module, "comb", fail_comb)
+
+    assert hybridization_module._binomial_two_sided_p_value(13, 20) == expected
+
+
 def test_large_binomial_two_sided_p_value_matches_scipy_fallback():
     from scipy.special import bdtr
 
