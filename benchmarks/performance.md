@@ -2725,6 +2725,7 @@ Results:
 | `OUShiftDetection._gls_profile_likelihood_cholesky` combined RHS solve | 120 repeated 420-taxon SPD VCV x 6-column design matrix GLS likelihood evaluations, SciPy already warm | 0.062531s | 0.058617s | 1.07x |
 | `OUShiftDetection` cached SciPy numerical wrappers | 1k Cholesky factor/solve calls, 1k triangular solves, and 100 bounded `minimize_scalar` calls, SciPy already warm, side-by-side previous import-on-call wrappers | 0.020695s | 0.016566s | 1.25x |
 | `OUShiftDetection._precompute_shared_path_lengths` block shared-path fill | balanced synthetic lineages with 256 / 512 / 1024 tips, side-by-side previous pairwise path-prefix loop with exact matrix/tip-height agreement | 0.017001s / 0.082627s / 0.520482s | 0.002626s / 0.011827s / 0.025712s | 6.47x / 6.99x / 20.24x |
+| `OUShiftDetection._build_ou_vcv_single_alpha_no_regime` block shared-path fill | 1024-tip balanced synthetic lineage, compatibility no-regime OU VCV build with identical covariance matrix | 1.615141s | 0.063699s | 25.36x |
 | `OUShiftDetection._build_indicator_design_matrix` lineage-row cache | 2048-tip balanced synthetic lineage, 80 eight-shift configs | 0.161885s | 0.001258s | 128.6x |
 | `OUShiftDetection._build_shift_weight_matrix` baseline weight total | per-row shifted-regime weight vector with 2 / 3 / 4 / 8 / 16 / 32 / 128 columns, side-by-side previous `np.sum` wrapper | 0.000005610s / 0.000005376s / 0.000005409s / 0.000005934s / 0.000005992s / 0.000005708s / 0.000005718s | 0.000003521s / 0.000003595s / 0.000002428s / 0.000003187s / 0.000002629s / 0.000003032s / 0.000002396s | 1.59x / 1.50x / 2.23x / 1.86x / 2.28x / 1.88x / 2.39x |
 | `OUShiftDetection._extract_lasso_configs` flat coefficient indices | 5000 shift coefficients x 1200 LASSO-path steps, sparse nonzero coefficients, side-by-side previous `np.where(...)[0]` extraction | 0.051099s | 0.034082s | 1.50x |
@@ -8817,6 +8818,9 @@ Profiling summary:
   `np.sum` dispatch on every taxon row. Shared-path precomputation now fills
   branch descendant blocks directly and caches lineage row indices as a byproduct,
   avoiding the pairwise path-prefix loop before repeated OU VCV construction.
+  The compatibility no-regime OU VCV helper now uses that same block shared-path
+  construction and vectorized covariance formula instead of comparing every tip
+  pair's root-to-tip path prefix in Python.
   Indicator design matrix construction now reuses the tip row indices under each
   lineage clade id and fills selected shift columns from those rows, avoiding a
   full root-to-tip path scan for every LASSO candidate configuration. A later pass deferred scikit-learn's

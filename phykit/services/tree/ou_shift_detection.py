@@ -466,10 +466,19 @@ class OUShiftDetection(Tree):
         S[i,j] = total branch length shared between root-to-tip_i and
                   root-to-tip_j paths (= distance from root to their LCA).
         """
-        n = self._n
-        ordered_names = self._ordered_names
-        lineage_info = self._lineage_info
+        S, tip_heights, rows_by_clade_id = self._shared_path_lengths_from_lineage_info(
+            self._ordered_names,
+            self._lineage_info,
+        )
+        self._lineage_rows_by_clade_id = rows_by_clade_id
+        return S, tip_heights
 
+    @staticmethod
+    def _shared_path_lengths_from_lineage_info(
+        ordered_names: list[str],
+        lineage_info: dict,
+    ) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray]]:
+        n = len(ordered_names)
         S = np.zeros((n, n))
         tip_heights = np.zeros(n)
         row_lists = {}
@@ -494,8 +503,7 @@ class OUShiftDetection(Tree):
             else:
                 S[np.ix_(row_idx, row_idx)] += branch_lengths[clade_id]
 
-        self._lineage_rows_by_clade_id = rows_by_clade_id
-        return S, tip_heights
+        return S, tip_heights, rows_by_clade_id
 
     def _build_ou_vcv_fast(self, alpha: float, sigma2: float = 1.0) -> np.ndarray:
         """Vectorized OU VCV matrix using precomputed shared path lengths.
@@ -816,45 +824,18 @@ class OUShiftDetection(Tree):
         self, ordered_names: list[str], lineage_info: dict,
         alpha: float, sigma2: float,
     ) -> np.ndarray:
-        """Build OU VCV matrix without regime labels (loop-based)."""
-        n = len(ordered_names)
-        V = np.zeros((n, n))
+        """Build OU VCV matrix without regime labels."""
+        S, tip_heights, _ = self._shared_path_lengths_from_lineage_info(
+            ordered_names,
+            lineage_info,
+        )
+        if alpha < 1e-10:
+            return sigma2 * S
 
-        tip_heights = {}
-        for name in ordered_names:
-            tip_heights[name] = sum(bl for _, bl, _, _ in lineage_info[name])
-
-        for i in range(n):
-            for j in range(i, n):
-                T_i = tip_heights[ordered_names[i]]
-                T_j = tip_heights[ordered_names[j]]
-
-                if i == j:
-                    s_ij = T_i
-                else:
-                    path_i = lineage_info[ordered_names[i]]
-                    path_j = lineage_info[ordered_names[j]]
-                    s_ij = 0.0
-                    min_len = min(len(path_i), len(path_j))
-                    for s in range(min_len):
-                        if path_i[s][0] == path_j[s][0]:
-                            s_ij += path_i[s][1]
-                        else:
-                            break
-
-                if alpha < 1e-10:
-                    val = sigma2 * s_ij
-                else:
-                    d_i = T_i - s_ij
-                    d_j = T_j - s_ij
-                    val = (sigma2 / (2.0 * alpha)) * np.exp(
-                        -alpha * (d_i + d_j)
-                    ) * (1.0 - np.exp(-2.0 * alpha * s_ij))
-
-                V[i, j] = val
-                V[j, i] = val
-
-        return V
+        D = tip_heights[:, None] + tip_heights[None, :] - 2.0 * S
+        return (sigma2 / (2.0 * alpha)) * np.exp(-alpha * D) * (
+            1.0 - np.exp(-2.0 * alpha * S)
+        )
 
     # ── Design matrices ────────────────────────────────────────────
 

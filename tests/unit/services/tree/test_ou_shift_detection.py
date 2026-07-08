@@ -909,6 +909,43 @@ class TestBuildOUVCVFast:
         V_fast = svc._build_ou_vcv_fast(alpha, 1.0)
         np.testing.assert_allclose(V_fast, V_slow, atol=1e-10)
 
+    def test_no_regime_vcv_uses_block_shared_paths(self):
+        class IterOnlyPath:
+            def __init__(self, items):
+                self.items = items
+
+            def __iter__(self):
+                return iter(self.items)
+
+            def __getitem__(self, _index):
+                raise AssertionError(
+                    "no-regime OU VCV should not use pairwise path indexing"
+                )
+
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        ordered_names = ["a", "b"]
+        lineage_info = {
+            "a": IterOnlyPath([(0, 1.0, 0.0, 1.0), (1, 2.0, 1.0, 3.0)]),
+            "b": IterOnlyPath([(0, 1.0, 0.0, 1.0), (2, 4.0, 1.0, 5.0)]),
+        }
+        alpha = 0.5
+        sigma2 = 2.0
+        shared = np.array([[3.0, 1.0], [1.0, 5.0]])
+        heights = np.array([3.0, 5.0])
+        distance = heights[:, None] + heights[None, :] - 2.0 * shared
+        expected = (sigma2 / (2.0 * alpha)) * np.exp(-alpha * distance) * (
+            1.0 - np.exp(-2.0 * alpha * shared)
+        )
+
+        observed = svc._build_ou_vcv_single_alpha_no_regime(
+            ordered_names,
+            lineage_info,
+            alpha,
+            sigma2,
+        )
+
+        np.testing.assert_allclose(observed, expected, atol=1e-12)
+
     def test_bm_limit(self, precomputed):
         """Alpha near 0 should give BM covariance."""
         svc = precomputed["svc"]
