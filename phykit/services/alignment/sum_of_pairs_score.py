@@ -50,6 +50,8 @@ np = _LazyNumpy()
 
 
 class SumOfPairsScore(Alignment):
+    MP_MIN_PAIRS = 500_000
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(fasta=parsed["fasta"], reference=parsed["reference"])
@@ -335,8 +337,9 @@ class SumOfPairsScore(Alignment):
         if unchanged_result is not None:
             return unchanged_result
 
-        # For small datasets, use sequential processing
-        if len(record_id_pairs) < 50:
+        # For small and medium fallback datasets, multiprocessing overhead
+        # dominates the cached sequential pair kernel.
+        if len(record_id_pairs) < self.MP_MIN_PAIRS:
             number_of_matches = 0
             number_of_total_pairs = 0
             count_nonzero = np.count_nonzero

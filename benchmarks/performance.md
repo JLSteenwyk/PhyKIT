@@ -258,6 +258,7 @@ Results:
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` sequential mixed-length path | 8 taxa x 50k reference sites x 49k query sites, 28 pairs | 0.141108s | 0.000271s | 520.8x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` unchanged incomplete pairs | 49 incomplete mixed-length pair comparisons, 14 taxa x ~50k sites, side-by-side previous sequential array path | 0.000806s | 0.000244s | 3.30x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` cached lazy NumPy attributes | 49 incomplete mixed-length pair comparisons, 14 taxa x ~50k sites, sequential fallback path, side-by-side previous lazy proxy lookup path | 0.000323750s | 0.000294125s | 1.10x |
+| `SumOfPairsScore.determine_number_of_matches_and_total_pairs` fallback multiprocessing threshold | 3153 incomplete mixed-length pair comparisons, 80 taxa x ~2000 sites, side-by-side previous low multiprocessing cutoff | 0.850238s | 0.003587s | 237.02x |
 | `SumOfPairsScore._read_fasta` | 50k FASTA records, mixed-case 120 bp each | 0.1076s | 0.0342s | 3.1x |
 | `SumOfPairsScore._read_fasta` shared unique first-token parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.037212s | 0.033738s | 1.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.1262s | 0.0548s | 2.3x |
@@ -3341,6 +3342,9 @@ Profiling summary:
   unchanged raw query/reference sequences now return
   full-match totals from the requested pair lengths before building arrays or
   entering the multiprocessing fallback.
+  The multiprocessing cutoff for the remaining fallback path is now much higher,
+  so medium incomplete pair sets keep using the cached sequential kernel instead
+  of paying process startup and pickling overhead.
 - `SumOfPairsScore._process_pair_batch` fallback baseline time converted every
   sequence into Unicode character arrays and rebuilt trimmed arrays for
   mixed-length comparisons. The optimized path uses byte-backed sequence arrays

@@ -593,6 +593,7 @@ class TestSumOfPairsScore:
 
         mocker.patch("phykit.services.alignment.sum_of_pairs_score.mp.Pool", DummyPool)
         mocker.patch("phykit.services.alignment.sum_of_pairs_score.mp.cpu_count", return_value=4)
+        mocker.patch.object(sop, "MP_MIN_PAIRS", 50)
 
         matches, pairs = sop.determine_number_of_matches_and_total_pairs(
             record_id_pairs, reference_records, query_records
@@ -606,3 +607,35 @@ class TestSumOfPairsScore:
             + 4 * pairs_with_changed_taxon
         )
         assert pairs == 5 * len(record_id_pairs)
+
+    def test_determine_matches_medium_fallback_skips_pool(self, mocker, args):
+        sop = SumOfPairsScore(args)
+        ids = [f"id{i}" for i in range(13)]
+        reference_records = _make_records({
+            key: "AAAAA" if idx % 2 else "AAAA"
+            for idx, key in enumerate(ids)
+        })
+        query_records = _make_records({
+            key: "AAAT" if idx % 3 == 0 else "AAAA"
+            for idx, key in enumerate(ids)
+        })
+        record_id_pairs = list(itertools.combinations(ids, 2))[:-1]
+        mocked_pool = mocker.patch(
+            "phykit.services.alignment.sum_of_pairs_score.mp.Pool",
+            side_effect=AssertionError("medium fallback should skip pool"),
+        )
+
+        matches, pairs = sop.determine_number_of_matches_and_total_pairs(
+            record_id_pairs,
+            reference_records,
+            query_records,
+        )
+
+        expected_matches, expected_pairs = SumOfPairsScore._process_pair_batch(
+            record_id_pairs,
+            reference_records,
+            query_records,
+        )
+        assert matches == expected_matches
+        assert pairs == expected_pairs
+        mocked_pool.assert_not_called()
