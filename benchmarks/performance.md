@@ -1281,6 +1281,7 @@ Results:
 | `circular_layout.draw_circular_tip_labels` localized lookups | balanced 32768-tip tree, no-op text axis for circular label placement, identical text-call count | 0.023353s | 0.021039s | 1.11x |
 | `circular_layout` module import without `typing` startup | median cold subprocess import after replacing local annotation-only typing aliases with built-in generics | 0.025111s | 0.022998s | 1.09x |
 | `plot_config` module import without `typing` startup | median cold subprocess import after replacing annotation-only typing aliases with built-in generics | 0.031106s | 0.028606s | 1.09x |
+| `plot_config` module import without `dataclasses` startup | median cold subprocess import after replacing the dataclass-generated config container with an explicit initializer | 0.009112s | 0.000595s | 15.31x |
 | `plot_config.build_parent_map` | balanced 65536-tip tree, parent map for shared tree plotting helpers | 0.1946s | 0.0266s | 7.3x |
 | `plot_config.build_parent_map` unordered child push | balanced 131072-tip tree, parent map for shared tree plotting helpers, optimized helper baseline | 0.058822s | 0.047896s | 1.23x |
 | `plot_config.compute_node_positions` phylogram layout | balanced 32768-tip tree, rectangular coordinates for all nodes | 0.3831s | 0.0494s | 7.8x |
@@ -5573,9 +5574,12 @@ Profiling summary:
   traversal for standard Bio.Phylo trees, reducing shared setup time before
   rectangular and circular tree plotting helpers. A startup pass replaces
   annotation-only `typing` aliases with built-in generics, so plot argument
-  processing no longer loads `typing` through this shared helper. A later pass
-  localizes stack operations and pushes children directly because the helper
-  returns a parent map rather than an ordered traversal.
+  processing no longer loads `typing` through this shared helper. Another
+  startup pass replaces the dataclass-generated `PlotConfig` container with an
+  explicit initializer, preserving the same keyword defaults while avoiding the
+  `dataclasses` import for command argument setup. A later pass localizes stack
+  operations and pushes children directly because the helper returns a parent map
+  rather than an ordered traversal.
 - `plot_config.compute_node_positions` applies the same direct traversal pattern
   to shared rectangular phylogram and cladogram layout setup, preserving terminal
   y-order, branch-length x-coordinates, cladogram depth scaling, and internal

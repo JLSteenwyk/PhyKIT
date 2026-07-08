@@ -32,6 +32,19 @@ assert "typing" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_module_import_does_not_import_dataclasses():
+    import subprocess
+    import sys
+
+    code = """
+import sys
+import phykit.helpers.plot_config as module
+assert module.PlotConfig().dpi == 300
+assert "dataclasses" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 def test_assign_internal_y_binary_children_use_indexed_path():
     class IndexedOnlyList(list):
         def __iter__(self):

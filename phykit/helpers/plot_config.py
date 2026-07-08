@@ -1,5 +1,4 @@
 import sys
-from dataclasses import dataclass, field
 
 
 VALID_LEGEND_POSITIONS = frozenset([
@@ -9,23 +8,40 @@ VALID_LEGEND_POSITIONS = frozenset([
 ])
 
 
-@dataclass
 class PlotConfig:
-    fig_width: float | None = None
-    fig_height: float | None = None
-    dpi: int = 300
-    show_title: bool = True
-    title: str | None = None
-    legend_position: str | None = None
-    ylabel_fontsize: float | None = None
-    xlabel_fontsize: float | None = None
-    title_fontsize: float | None = None
-    axis_fontsize: float | None = None
-    colors: list[str] | None = None
-    ladderize: bool = False
-    cladogram: bool = False
-    circular: bool = False
-    color_file: str | None = None
+    def __init__(
+        self,
+        fig_width: float | None = None,
+        fig_height: float | None = None,
+        dpi: int = 300,
+        show_title: bool = True,
+        title: str | None = None,
+        legend_position: str | None = None,
+        ylabel_fontsize: float | None = None,
+        xlabel_fontsize: float | None = None,
+        title_fontsize: float | None = None,
+        axis_fontsize: float | None = None,
+        colors: list[str] | None = None,
+        ladderize: bool = False,
+        cladogram: bool = False,
+        circular: bool = False,
+        color_file: str | None = None,
+    ):
+        self.fig_width = fig_width
+        self.fig_height = fig_height
+        self.dpi = dpi
+        self.show_title = show_title
+        self.title = title
+        self.legend_position = legend_position
+        self.ylabel_fontsize = ylabel_fontsize
+        self.xlabel_fontsize = xlabel_fontsize
+        self.title_fontsize = title_fontsize
+        self.axis_fontsize = axis_fontsize
+        self.colors = colors
+        self.ladderize = ladderize
+        self.cladogram = cladogram
+        self.circular = circular
+        self.color_file = color_file
 
     def validate(self) -> None:
         if self.fig_width is not None and self.fig_width <= 0:
