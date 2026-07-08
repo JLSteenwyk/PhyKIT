@@ -104,6 +104,10 @@ def _build_node_x_cladogram(tree):
     return node_x
 
 
+def _fail_column_stack(*_args, **_kwargs):
+    raise AssertionError("batched circular segments should be preallocated")
+
+
 # Reusable simple tree: ((A:1,B:1):1,(C:1,D:1):1,(E:1,F:1):1);
 NEWICK_6 = "((A:1,B:1):1,(C:1,D:1):1,(E:1,F:1):1);"
 
@@ -345,6 +349,9 @@ class TestDrawBranches:
             raise AssertionError("real axes should use line collections")
 
         monkeypatch.setattr(ax, "plot", fail_plot)
+        monkeypatch.setattr(
+            circular_layout_module.np, "column_stack", _fail_column_stack
+        )
 
         draw_circular_branches(ax, tree, coords, parent_map)
 
@@ -550,6 +557,9 @@ class TestDrawBranches:
         monkeypatch.setattr(
             matplotlib.axes.Axes, "add_collection", count_collection
         )
+        monkeypatch.setattr(
+            circular_layout_module.np, "column_stack", _fail_column_stack
+        )
 
         draw_circular_colored_arcs(ax, arcs)
 
@@ -581,6 +591,9 @@ class TestDrawBranches:
         monkeypatch.setattr(matplotlib.axes.Axes, "plot", fail_plot)
         monkeypatch.setattr(
             matplotlib.axes.Axes, "add_collection", count_collection
+        )
+        monkeypatch.setattr(
+            circular_layout_module.np, "column_stack", _fail_column_stack
         )
 
         draw_circular_scalar_arcs(

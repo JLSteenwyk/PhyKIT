@@ -1294,6 +1294,7 @@ Results:
 | `circular_layout.draw_circular_branches` fallback child push | balanced 8192-tip tree, no-op axis with precomputed circular coordinates, identical plot-call count | 0.045360s | 0.043200s | 1.05x |
 | `circular_layout.draw_circular_branches` batched LineCollections | balanced 2048-tip tree, precomputed circular coordinates, real Matplotlib Agg render | 1.072863s | 0.068903s | 15.57x |
 | `circular_layout.draw_circular_branches` collection child push | balanced 32768 / 65536 / 131072-tip trees, LineCollection traversal and segment setup, side-by-side previous `reversed(children)` stack fill | 0.173421s / 0.280863s / 0.918504s | 0.156428s / 0.250235s / 0.714915s | 1.11x / 1.12x / 1.28x |
+| `circular_layout` preallocated arc segment arrays | 4096 circular arcs x 61 polyline points, side-by-side previous `np.column_stack` segment setup with identical coordinates | 0.144239s | 0.049385s | 2.92x |
 | `circular_layout.circular_branch_points` trig hoist | 100k radial branches x 30 interpolated points | 0.635819s | 0.259429s | 2.45x |
 | `circular_layout.draw_circular_gradient_branch` batched LineCollections | 1024 gradient radial branches x 30 color segments, real Matplotlib Agg render | 5.785908s | 1.013460s | 5.71x |
 | `circular_layout.draw_circular_gradient_branches` whole-tree LineCollection | 1024 gradient radial branches x 30 color segments, real Matplotlib Agg render | 0.973249s | 0.373876s | 2.60x |

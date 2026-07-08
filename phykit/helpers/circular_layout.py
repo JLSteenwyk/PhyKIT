@@ -39,6 +39,13 @@ def _arc_fractions_array():
     return _ARC_FRACTIONS_ARRAY
 
 
+def _arc_segment_array(cx, cy, radius, angles):
+    segment = np.empty((angles.size, 2), dtype=float)
+    segment[:, 0] = cx + radius * np.cos(angles)
+    segment[:, 1] = cy + radius * np.sin(angles)
+    return segment
+
+
 # ---------------------------------------------------------------------------
 # Coordinate computation
 # ---------------------------------------------------------------------------
@@ -602,9 +609,7 @@ def _draw_circular_branches_collections(
             diff -= tau
         angles = start + diff * arc_fractions
         radius = coords_get(cid)["radius"]
-        arc_segments.append(
-            np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
-        )
+        arc_segments.append(_arc_segment_array(0.0, 0.0, radius, angles))
 
     if radial_segments:
         ax.add_collection(
@@ -719,9 +724,7 @@ def draw_circular_colored_arcs(ax, arcs, lw=1.5):
             diff = diff - 2.0 * math.pi
 
         angles = start + diff * arc_fractions
-        xs = cx + radius * np.cos(angles)
-        ys = cy + radius * np.sin(angles)
-        arc_segments.append(np.column_stack((xs, ys)))
+        arc_segments.append(_arc_segment_array(cx, cy, radius, angles))
         colors.append(color)
 
     ax.add_collection(
@@ -771,9 +774,7 @@ def draw_circular_scalar_arcs(ax, arcs, cmap, norm, lw=1.5):
             diff = diff - 2.0 * math.pi
 
         angles = start + diff * arc_fractions
-        xs = cx + radius * np.cos(angles)
-        ys = cy + radius * np.sin(angles)
-        arc_segments.append(np.column_stack((xs, ys)))
+        arc_segments.append(_arc_segment_array(cx, cy, radius, angles))
         values.append(value)
 
     collection = LineCollection(
