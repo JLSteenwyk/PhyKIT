@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from argparse import Namespace
 
 from .base import Alignment
 
@@ -99,6 +98,8 @@ class PlotAlignmentQC(Alignment):
         )
 
     def _get_outlier_result(self, alignment, is_protein: bool) -> dict[str, object]:
+        from argparse import Namespace
+
         svc = AlignmentOutlierTaxa(
             Namespace(
                 alignment=self.alignment_file_path,

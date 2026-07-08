@@ -25,6 +25,7 @@ class TestAlignmentLengthNoGaps(object):
 import sys
 import phykit.services.alignment.alignment_length_no_gaps as module
 assert hasattr(module.np, "__getattr__")
+assert "argparse" not in sys.modules
 assert "typing" not in sys.modules
 assert "numpy" not in sys.modules
 assert "Bio.Align" not in sys.modules

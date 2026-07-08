@@ -328,6 +328,7 @@ Results:
 | `alignment_length_no_gaps` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.116950s | 0.024571s | 4.76x |
 | `alignment_length_no_gaps` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007086s | 0.006015s | 1.18x |
 | `alignment_length_no_gaps` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.004736s | 0.002167s | 2.18x |
+| `alignment_length_no_gaps` module import without eager `argparse` | median cold subprocess import after removing annotation-only `Namespace` import | 0.046084s | 0.040760s | 1.13x |
 | `MaskAlignment.calculate_keep_mask` with entropy threshold | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.1572s | 0.0315s | 5.0x |
 | `MaskAlignment.calculate_keep_mask` gap lookup with entropy threshold | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.070534s | 0.035500s | 1.99x |
 | `MaskAlignment.calculate_keep_mask` protein entropy block counts | 500 taxa x 8000 sites, protein alphabet plus gaps/ambiguous symbols, entropy threshold enabled | 0.114204s | 0.071811s | 1.59x |
@@ -477,6 +478,7 @@ Results:
 | `PlotAlignmentQC.run` manual subplot spacing | repeated 200-taxon QC PNG render, side-by-side previous `Figure.tight_layout(rect=...)` with the same four plotted panels | 5.603241s | 4.358724s | 1.29x |
 | `plot_alignment_qc` module import without eager NumPy/outlier/json/plot helpers | cold subprocess import after lazy NumPy proxy and forwarding helper wrappers | 0.075926s | 0.026252s | 2.89x |
 | `plot_alignment_qc` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.036055s | 0.034670s | 1.04x |
+| `plot_alignment_qc` module import without eager `argparse` | median cold subprocess import after localizing `Namespace` to outlier-service setup | 0.043023s | 0.042746s | 1.01x |
 | `ColumnScore.get_columns_from_alignments` + column matching | 260 taxa x 5000 sites query/reference alignments, alphabet `ACGT-?NX*` | 0.4111s | 0.0232s | 17.7x |
 | `ColumnScore.run` direct byte-column matching | 260 taxa x 5000 sites query/reference FASTA alignments, alphabet `ACGT-?NX*` | 0.122301s | 0.053935s | 2.27x |
 | `ColumnScore._calculate_matches_between_alignments_direct` same-object shortcut | 260 taxa x 5000 sites, alphabet `ACGT-?NX*`, side-by-side previous double-unique/intersection path | 0.008894s | 0.002266s | 3.93x |
@@ -3428,8 +3430,9 @@ Profiling summary:
   keeps JSON output behind a module-level forwarding wrapper, preserving the
   patch point while avoiding JSON helper startup during command discovery. A
   later startup pass removes the runtime `TYPE_CHECKING` dependency and converts
-  annotation-only typing aliases to postponed built-in annotations. The shared
-  alignment reader now uses a lazy forwarding wrapper, preserving the base-class
+  annotation-only typing aliases to postponed built-in annotations. A later
+  startup pass removes the annotation-only `argparse.Namespace` import.
+  The shared alignment reader now uses a lazy forwarding wrapper, preserving the base-class
   helper path while avoiding `phykit.helpers.files` during import-only command
   discovery.
 - `MaskAlignment.calculate_keep_mask` baseline time constructed a Unicode
@@ -3756,7 +3759,9 @@ Profiling summary:
   now caches the imported module and resolved attributes, reducing overhead in repeated
   large-array extent reductions while preserving import deferral. A follow-up
   startup pass converts annotation-only `typing` aliases to postponed built-in
-  annotations, so command discovery no longer loads `typing`.
+  annotations, so command discovery no longer loads `typing`. A later startup
+  pass localizes `argparse.Namespace` to the outlier-service setup path, keeping
+  import-only command discovery free of `argparse`.
 - `ColumnScore.get_columns_from_alignments` baseline time constructed Unicode
   character matrices for query and reference alignments, then joined each
   matrix column into a string. The optimized path uppercases sequence strings

@@ -17,6 +17,7 @@ import phykit.services.alignment.plot_alignment_qc as module
 assert hasattr(module.np, "__getattr__")
 assert callable(module.print_json)
 assert callable(module.AlignmentOutlierTaxa)
+assert "argparse" not in sys.modules
 assert "typing" not in sys.modules
 assert "numpy" not in sys.modules
 assert "json" not in sys.modules

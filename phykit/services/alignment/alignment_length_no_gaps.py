@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from argparse import Namespace
-
 from .base import Alignment
 
 
@@ -99,7 +97,7 @@ class AlignmentLengthNoGaps(Alignment):
 
     def process_args(
         self,
-        args: Namespace,
+        args,
     ) -> dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
