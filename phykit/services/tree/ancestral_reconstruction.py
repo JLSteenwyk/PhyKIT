@@ -47,6 +47,11 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _CHO_FACTOR = None
 _CHO_SOLVE = None
+_BUILD_Q_MATRIX = None
+_MATRIX_EXP = None
+_FELSENSTEIN_PRUNING = None
+_FIT_Q_MATRIX = None
+_PARSE_DISCRETE_TRAITS = None
 _DISCRETE_ASR_PLOT_CACHE = {}
 _DISCRETE_ASR_PLOT_CACHE_MAX = 4
 _DISCRETE_ASR_PLOT_CACHE_MAX_NODES = 5000
@@ -137,35 +142,62 @@ def compute_node_positions(*args, **kwargs):
 
 
 def build_q_matrix(*args, **kwargs):
-    from ...helpers.discrete_models import build_q_matrix as _build_q_matrix
+    global _BUILD_Q_MATRIX
 
-    return _build_q_matrix(*args, **kwargs)
+    if _BUILD_Q_MATRIX is None:
+        from ...helpers.discrete_models import build_q_matrix as _build_q_matrix
+
+        _BUILD_Q_MATRIX = _build_q_matrix
+
+    return _BUILD_Q_MATRIX(*args, **kwargs)
 
 
 def matrix_exp(*args, **kwargs):
-    from ...helpers.discrete_models import matrix_exp as _matrix_exp
+    global _MATRIX_EXP
 
-    return _matrix_exp(*args, **kwargs)
+    if _MATRIX_EXP is None:
+        from ...helpers.discrete_models import matrix_exp as _matrix_exp
+
+        _MATRIX_EXP = _matrix_exp
+
+    return _MATRIX_EXP(*args, **kwargs)
 
 
 def felsenstein_pruning(*args, **kwargs):
-    from ...helpers.discrete_models import (
-        felsenstein_pruning as _felsenstein_pruning,
-    )
+    global _FELSENSTEIN_PRUNING
 
-    return _felsenstein_pruning(*args, **kwargs)
+    if _FELSENSTEIN_PRUNING is None:
+        from ...helpers.discrete_models import (
+            felsenstein_pruning as _felsenstein_pruning,
+        )
+
+        _FELSENSTEIN_PRUNING = _felsenstein_pruning
+
+    return _FELSENSTEIN_PRUNING(*args, **kwargs)
 
 
 def fit_q_matrix(*args, **kwargs):
-    from ...helpers.discrete_models import fit_q_matrix as _fit_q_matrix
+    global _FIT_Q_MATRIX
 
-    return _fit_q_matrix(*args, **kwargs)
+    if _FIT_Q_MATRIX is None:
+        from ...helpers.discrete_models import fit_q_matrix as _fit_q_matrix
+
+        _FIT_Q_MATRIX = _fit_q_matrix
+
+    return _FIT_Q_MATRIX(*args, **kwargs)
 
 
 def parse_discrete_traits(*args, **kwargs):
-    from ...helpers.discrete_models import parse_discrete_traits as _parse_discrete_traits
+    global _PARSE_DISCRETE_TRAITS
 
-    return _parse_discrete_traits(*args, **kwargs)
+    if _PARSE_DISCRETE_TRAITS is None:
+        from ...helpers.discrete_models import (
+            parse_discrete_traits as _parse_discrete_traits,
+        )
+
+        _PARSE_DISCRETE_TRAITS = _parse_discrete_traits
+
+    return _PARSE_DISCRETE_TRAITS(*args, **kwargs)
 
 
 def compute_circular_coords(*args, **kwargs):

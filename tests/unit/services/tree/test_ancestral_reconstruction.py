@@ -79,6 +79,35 @@ def test_lazy_heapq_caches_merge_after_first_use(monkeypatch):
     assert second == first
 
 
+def test_discrete_model_matrix_exp_wrapper_caches_helper(monkeypatch):
+    previous_matrix_exp = ancestral_module._MATRIX_EXP
+    ancestral_module._MATRIX_EXP = None
+    Q = np.array([[-0.5, 0.5], [0.25, -0.25]], dtype=float)
+
+    try:
+        first = ancestral_module.matrix_exp(Q, 0.1)
+        cached_matrix_exp = ancestral_module._MATRIX_EXP
+        assert cached_matrix_exp is not None
+
+        original_import = __import__
+
+        def fail_discrete_models_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "phykit.helpers.discrete_models":
+                raise AssertionError(
+                    "discrete matrix_exp helper should be reused after first resolution"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr("builtins.__import__", fail_discrete_models_import)
+
+        second = ancestral_module.matrix_exp(Q, 0.1)
+
+        assert ancestral_module._MATRIX_EXP is cached_matrix_exp
+        np.testing.assert_allclose(second, first)
+    finally:
+        ancestral_module._MATRIX_EXP = previous_matrix_exp
+
+
 def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
     lazy_pickle = ancestral_module._LazyPickle()
 

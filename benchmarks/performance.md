@@ -2444,6 +2444,7 @@ Results:
 | `ancestral_reconstruction` module import without `typing` startup | median cold subprocess import after removing annotation-only typing import under postponed annotations | 0.006027s | 0.004341s | 1.39x |
 | `ancestral_reconstruction` module import without eager `heapq` | median cold subprocess import after lazy `heapq.merge` proxy for descendant-name merging | 0.005179s | 0.004457s | 1.16x |
 | `AncestralReconstruction._collect_descendant_tip_names` cached `heapq.merge` proxy | 20k unordered two-way descendant-name merges, identical merged tuples | 0.161536s | 0.064915s | 2.49x |
+| `AncestralReconstruction._matrix_exp` cached discrete-model helper wrapper | 16k small matrix exponentials after helper warmup, side-by-side previous import-on-call wrapper | 0.048995s | 0.035244s | 1.39x |
 | `FaithsPD.calculate_faiths_pd` | balanced tree with 2500 tips, 1500-taxon community, `include_root=False` | 0.8434s | 0.4622s | 1.8x |
 | `FaithsPD.calculate_faiths_pd` one-pass traversal | balanced tree with 2500 tips, 1500-taxon community, `include_root=False` | 0.5249s | 0.0213s | 24.6x |
 | `FaithsPD.calculate_faiths_pd` all-tip community fast path | balanced tree with 32768 tips, all tips selected, `include_root=False` | 0.060900s | 0.030831s | 2.0x |
@@ -8127,7 +8128,10 @@ Profiling summary:
   `heapq.merge` behind a lazy proxy so command discovery avoids `heapq` while
   preserving the descendant-name merge patch point. The proxy now replaces
   itself with the resolved `heapq.merge` after first use, avoiding import
-  dispatch across many unordered descendant-name merges. Text and JSON descendant-tip
+  dispatch across many unordered descendant-name merges. Discrete-model
+  call-through wrappers now cache their resolved helper functions after first
+  use, preserving lazy command discovery while avoiding repeated import
+  dispatch in matrix-exponential and Q-matrix fitting loops. Text and JSON descendant-tip
   labels now use the shared direct terminal-name traversal for parsed clades,
   preserving sorted descendant names while avoiding Bio.Phylo terminal object
   materialization for each internal output row. Discrete text output now batches
