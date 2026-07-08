@@ -69,6 +69,10 @@ def _count_informative_sites(counts):
     return sum(counts.values()) - counts["AAAAA"] - counts["BBBBA"]
 
 
+def _informative_pattern_counts(counts):
+    return {pattern: counts[pattern] for pattern in _INFORMATIVE_PATTERNS}
+
+
 # Sign-pattern interpretation table (DFO, DIL, DFI, DOL).
 INTERPRETATIONS = {
     '+++0': 'Introgression: P1 -> P3 (or P3 -> P1)',
@@ -428,7 +432,7 @@ class Dfoil(Alignment):
         # Output
         if self.json_output:
             # Pattern counts excluding AAAAA (always 'AAAAA' key exists)
-            pattern_counts = {k: v for k, v in counts.items() if k not in _UNINFORMATIVE}
+            pattern_counts = _informative_pattern_counts(counts)
 
             payload = {
                 "p1": self.p1,

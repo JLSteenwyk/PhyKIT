@@ -241,6 +241,21 @@ class TestDfoilPatternCounting:
 
         assert dfoil_module._count_informative_sites(counts) == 14
 
+    def test_informative_pattern_counts_uses_cached_pattern_order(self):
+        class Counts(dict):
+            def items(self):
+                raise AssertionError("pattern counts should not scan items")
+
+        counts = Counts({pattern: index for index, pattern in enumerate(PATTERNS)})
+
+        pattern_counts = dfoil_module._informative_pattern_counts(counts)
+
+        assert list(pattern_counts) == list(dfoil_module._INFORMATIVE_PATTERNS)
+        assert pattern_counts == {
+            pattern: counts[pattern]
+            for pattern in dfoil_module._INFORMATIVE_PATTERNS
+        }
+
     def test_large_ascii_with_skips_keeps_loop_validity_mask(self, monkeypatch):
         monkeypatch.setattr(dfoil_module, "_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX", 1)
         monkeypatch.setattr(
