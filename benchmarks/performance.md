@@ -879,6 +879,7 @@ Results:
 | `patristic_distances` module import without eager Bio.Phylo/tqdm | cold subprocess import of patristic-distances command module | 0.199123s | 0.121178s | 1.64x |
 | `patristic_distances` module import without eager stats NumPy | cold subprocess import after lazy shared summary helper | 0.121178s | 0.073601s | 1.65x |
 | `patristic_distances` module import without eager multiprocessing/pickle | cold subprocess import after lazy `mp` and `pickle` proxies plus localized `partial` import | 0.036541s | 0.030312s | 1.21x |
+| `PatristicDistances._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.013849500s / 0.173074625s / 3.002496834s | 0.008454083s / 0.126277167s / 2.331448833s | 1.64x / 1.37x / 1.29x |
 | `PatristicDistances`/`LBScore` lazy pickle proxy | 100k repeated small-object `loads` / `dumps` calls through the command-local pickle proxy, side-by-side previous per-call `import pickle` wrapper | 0.080454s / 0.214621s | 0.064040s / 0.116206s | 1.26x / 1.85x |
 | `patristic_distances` module import without eager stats/json helpers | cold subprocess import after lazy forwarding wrappers for summary and JSON helpers | 0.028098s | 0.022213s | 1.26x |
 | `patristic_distances` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005310s | 0.003553s | 1.49x |
@@ -4702,7 +4703,9 @@ Profiling summary:
   to built-in postponed annotations so command discovery no longer loads
   `typing`. The lazy pickle proxy now caches the imported module and resolved
   `dumps`/`loads` functions on first use, preserving import deferral while
-  avoiding repeated wrapper imports in multiprocessing fallback batches.
+  avoiding repeated wrapper imports in multiprocessing fallback batches. The
+  lazy multiprocessing proxy now likewise caches the imported module while
+  leaving `cpu_count` patchable.
   Non-verbose PatristicDistances text and JSON runs now compute
   distance summaries with a stats-only path that skips pair-label tuple
   allocation while preserving verbose pair output. Deep-tree stats-only

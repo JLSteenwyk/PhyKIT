@@ -40,6 +40,19 @@ def test_lazy_pickle_caches_resolved_attributes():
     assert lazy_pickle.loads(blob) == {"value": 1}
 
 
+def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable(monkeypatch):
+    import multiprocessing
+
+    lazy_mp = patristic_distances_module._LazyMultiprocessing()
+
+    monkeypatch.setattr(multiprocessing, "cpu_count", lambda: 11)
+    assert lazy_mp.cpu_count() == 11
+
+    monkeypatch.setattr(multiprocessing, "cpu_count", lambda: 7)
+    assert lazy_mp.cpu_count() == 7
+    assert lazy_mp._module is multiprocessing
+
+
 @pytest.fixture
 def args():
     kwargs = dict(tree="/some/path/to/file.tre", verbose=None)
