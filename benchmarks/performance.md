@@ -2679,6 +2679,7 @@ Results:
 | `OUShiftDetection._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.049777s | 0.036699s | 1.36x |
 | `OUShiftDetection._parse_trait_file` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.472496s | 0.460270s | 1.03x |
 | `OUShiftDetection._parse_trait_file` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.438335s | 0.237122s | 1.85x |
+| `OUShiftDetection._parse_trait_file` ordered exact taxa validation | 300k two-column trait rows whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 0.638316s | 0.512174s | 1.25x |
 | `OUShiftDetection._parse_trait_file` two-column split fast path | 500k two-column trait rows with comments/blanks, all taxa shared, side-by-side previous partition parser comparison | 0.237912s | 0.228169s | 1.04x |
 | `OUShiftDetection._describe_edge` direct terminal-name traversal | balanced 32768-tip tree, labels for all non-root candidate edges | 0.962313s | 0.129219s | 7.45x |
 | `OUShiftDetection._count_descendants` reverse-preorder postorder helper | balanced 8192-tip tree, descendant counts for all candidate edges | 0.010322s | 0.006827s | 1.51x |
@@ -8665,7 +8666,10 @@ Profiling summary:
   directly from the parsed dictionary. A later parser pass returns immediately
   for exact tree/trait taxon matches after all rows are validated, avoiding
   shared/warning set construction while retaining mismatch warnings for
-  nonidentical taxon sets. Shift-edge descriptions now also use the shared
+  nonidentical taxon sets. A later ordered-exact parser pass checks the common
+  tree-tip-order match before building taxon sets, while preserving the
+  set-backed fallback for reordered and partial trait files. Shift-edge
+  descriptions now also use the shared
   direct terminal-name traversal for parsed clades, preserving existing label
   text while avoiding terminal object materialization for each reported edge. A
   later descendant-count pass builds the direct postorder iterator by reversing
