@@ -449,6 +449,38 @@ class TestFitchDownpass:
         assert id(tree.root) in acctran_states
         assert id(tree.root) in deltran_states
 
+    def test_binary_downpass_uses_small_mask_lookup(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        tip_states = {
+            "A": ["A", "C", "G", "T"],
+            "B": ["A", "G", "G", "T"],
+            "C": ["C", "G", "A", "?"],
+            "D": ["C", "G", "T", "?"],
+        }
+        built_state_counts = []
+        original_lookup_builder = parsimony_module._build_small_mask_set_lookup
+
+        def recording_lookup_builder(states):
+            built_state_counts.append(len(states))
+            return original_lookup_builder(states)
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_build_small_mask_set_lookup",
+            recording_lookup_builder,
+        )
+
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+
+        assert built_state_counts == [2, 2, 3, 1]
+        assert scores == [1, 1, 2, 0]
+        assert node_state_sets[id(tree.root)] == [
+            {"A", "C"},
+            {"G"},
+            {"A", "G", "T"},
+            {"T"},
+        ]
+
     def test_polytomy_tree_after_resolve(self):
         """Works on a resolved polytomy tree."""
         tree = _make_tree("((A:1,B:1):1,((C:1,D:1):1,E:1):1,F:1);")

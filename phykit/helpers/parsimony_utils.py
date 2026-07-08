@@ -277,7 +277,6 @@ def _fitch_downpass_bitmask(
         (1 << len(states)) - 1 if states else 0
         for states in states_by_char
     ]
-    mask_set_caches = [{} for _ in range(n_chars)]
     tip_mask_cache = {}
 
     node_masks: dict[int, list[int]] = {}
@@ -333,42 +332,127 @@ def _fitch_downpass_bitmask(
         n_chars >= 16
         and len(tip_mask_cache) * 4 <= len(tip_states)
     )
+    small_state_chars = [len(states) <= 6 for states in states_by_char]
+
+    if all(small_state_chars):
+        small_mask_set_lookups = [
+            _build_small_mask_set_lookup(states) for states in states_by_char
+        ]
+        if not use_mask_tuple_cache:
+            for cid, masks in node_masks.items():
+                node_state_sets[cid] = [
+                    small_mask_set_lookups[i][mask]
+                    for i, mask in enumerate(masks)
+                ]
+            return node_state_sets, scores
+
+        mask_tuple_cache = {}
+        for cid, masks in node_masks.items():
+            key = tuple(masks)
+            cached_sets = mask_tuple_cache.get(key)
+            if cached_sets is None:
+                cached_sets = tuple(
+                    small_mask_set_lookups[i][mask]
+                    for i, mask in enumerate(masks)
+                )
+                mask_tuple_cache[key] = cached_sets
+            node_state_sets[cid] = list(cached_sets)
+        return node_state_sets, scores
+
+    if not any(small_state_chars):
+        mask_set_caches = [{} for _ in range(n_chars)]
+        if not use_mask_tuple_cache:
+            for cid, masks in node_masks.items():
+                char_sets = []
+                for i, mask in enumerate(masks):
+                    cache = mask_set_caches[i]
+                    state_set = cache.get(mask)
+                    if state_set is None:
+                        states = states_by_char[i]
+                        state_set = frozenset(
+                            states[index]
+                            for index in range(len(states))
+                            if mask & (1 << index)
+                        )
+                        cache[mask] = state_set
+                    char_sets.append(state_set)
+                node_state_sets[cid] = char_sets
+            return node_state_sets, scores
+
+        mask_tuple_cache = {}
+        for cid, masks in node_masks.items():
+            key = tuple(masks)
+            cached_sets = mask_tuple_cache.get(key)
+            if cached_sets is None:
+                char_sets = []
+                for i, mask in enumerate(masks):
+                    cache = mask_set_caches[i]
+                    state_set = cache.get(mask)
+                    if state_set is None:
+                        states = states_by_char[i]
+                        state_set = frozenset(
+                            states[index]
+                            for index in range(len(states))
+                            if mask & (1 << index)
+                        )
+                        cache[mask] = state_set
+                    char_sets.append(state_set)
+                cached_sets = tuple(char_sets)
+                mask_tuple_cache[key] = cached_sets
+            char_sets = list(cached_sets)
+            node_state_sets[cid] = char_sets
+        return node_state_sets, scores
+
+    small_mask_set_lookups = [
+        _build_small_mask_set_lookup(states) if is_small else None
+        for states, is_small in zip(states_by_char, small_state_chars)
+    ]
+    mask_set_caches = [
+        {} if lookup is None else None for lookup in small_mask_set_lookups
+    ]
     if not use_mask_tuple_cache:
         for cid, masks in node_masks.items():
             char_sets = []
             for i, mask in enumerate(masks):
-                cache = mask_set_caches[i]
-                state_set = cache.get(mask)
-                if state_set is None:
-                    states = states_by_char[i]
-                    state_set = frozenset(
-                        states[index]
-                        for index in range(len(states))
-                        if mask & (1 << index)
-                    )
-                    cache[mask] = state_set
+                lookup = small_mask_set_lookups[i]
+                if lookup is not None:
+                    state_set = lookup[mask]
+                else:
+                    cache = mask_set_caches[i]
+                    state_set = cache.get(mask)
+                    if state_set is None:
+                        states = states_by_char[i]
+                        state_set = frozenset(
+                            states[index]
+                            for index in range(len(states))
+                            if mask & (1 << index)
+                        )
+                        cache[mask] = state_set
                 char_sets.append(state_set)
             node_state_sets[cid] = char_sets
         return node_state_sets, scores
 
     mask_tuple_cache = {}
     for cid, masks in node_masks.items():
-        cached_sets = None
         key = tuple(masks)
         cached_sets = mask_tuple_cache.get(key)
         if cached_sets is None:
             char_sets = []
             for i, mask in enumerate(masks):
-                cache = mask_set_caches[i]
-                state_set = cache.get(mask)
-                if state_set is None:
-                    states = states_by_char[i]
-                    state_set = frozenset(
-                        states[index]
-                        for index in range(len(states))
-                        if mask & (1 << index)
-                    )
-                    cache[mask] = state_set
+                lookup = small_mask_set_lookups[i]
+                if lookup is not None:
+                    state_set = lookup[mask]
+                else:
+                    cache = mask_set_caches[i]
+                    state_set = cache.get(mask)
+                    if state_set is None:
+                        states = states_by_char[i]
+                        state_set = frozenset(
+                            states[index]
+                            for index in range(len(states))
+                            if mask & (1 << index)
+                        )
+                        cache[mask] = state_set
                 char_sets.append(state_set)
             cached_sets = tuple(char_sets)
             mask_tuple_cache[key] = cached_sets
@@ -376,6 +460,24 @@ def _fitch_downpass_bitmask(
         node_state_sets[cid] = char_sets
 
     return node_state_sets, scores
+
+
+def _build_small_mask_set_lookup(states: tuple[str, ...]):
+    if len(states) > 6:
+        return None
+
+    lookup = []
+    for mask in range(1 << len(states)):
+        lookup.append(_mask_to_state_set(states, mask))
+    return lookup
+
+
+def _mask_to_state_set(states: tuple[str, ...], mask: int):
+    return frozenset(
+        states[index]
+        for index in range(len(states))
+        if mask & (1 << index)
+    )
 
 
 def fitch_uppass_acctran(
