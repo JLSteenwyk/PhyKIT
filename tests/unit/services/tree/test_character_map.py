@@ -4,6 +4,7 @@ Unit tests for character_map (discrete character mapping on a phylogeny).
 Tests matrix parsing, output modes, plot creation, and edge cases.
 Uses the sample tree and character matrix in tests/sample_files/.
 """
+import builtins
 import json
 import subprocess
 import sys
@@ -140,6 +141,38 @@ class TestParseCharacterMatrix:
 
         assert char_names == ["c0", "c1"]
         assert tip_states == {"A": ["0", "1"], "B": ["1", "0"]}
+
+
+class TestCharacterMapSharedTaxaSetup:
+    def test_ordered_all_shared_returns_original_states_without_sets(self, monkeypatch):
+        tip_states = {"A": ["0"], "B": ["1"], "C": ["0"]}
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("ordered all-shared character data should skip sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        shared_count, tips_to_prune, filtered = (
+            CharacterMap._shared_character_taxa_setup(["A", "B", "C"], tip_states)
+        )
+
+        assert shared_count == 3
+        assert tips_to_prune == []
+        assert filtered is tip_states
+
+    def test_partial_overlap_filters_states_and_preserves_prune_order(self):
+        tip_states = {"A": ["0"], "C": ["1"], "off_tree": ["0"]}
+
+        shared_count, tips_to_prune, filtered = (
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C", "D"],
+                tip_states,
+            )
+        )
+
+        assert shared_count == 2
+        assert tips_to_prune == ["B", "D"]
+        assert filtered == {"A": ["0"], "C": ["1"]}
 
 
 class TestCharacterMapInit:

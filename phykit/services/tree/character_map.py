@@ -107,22 +107,21 @@ class CharacterMap(Tree):
         char_names, tip_states = self._parse_character_matrix(self.data_path)
         n_chars = len(char_names)
 
-        # Compute shared taxa and prune
         tree_tip_names = self.get_tip_names_from_tree(tree)
-        tree_tips = set(tree_tip_names)
-        matrix_taxa = set(tip_states.keys())
-        shared = tree_tips & matrix_taxa
-        if len(shared) < 3:
+        shared_count, tips_to_prune, tip_states = self._shared_character_taxa_setup(
+            tree_tip_names,
+            tip_states,
+        )
+        if shared_count < 3:
             raise PhykitUserError(
                 [
-                    f"Only {len(shared)} shared taxa between tree and character matrix.",
+                    f"Only {shared_count} shared taxa between tree and character matrix.",
                     "At least 3 shared taxa are required.",
                 ],
                 code=2,
             )
 
         preorder_clades = list(self._iter_preorder(tree.root))
-        tips_to_prune = [tip for tip in tree_tip_names if tip not in shared]
         needs_polytomy_resolution = any(
             len(clade.clades) > 2 for clade in preorder_clades
         )
@@ -138,9 +137,6 @@ class CharacterMap(Tree):
             tree = self._fast_copy(tree)
         if tips_to_prune:
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
-
-        # Filter tip_states to shared taxa
-        tip_states = {t: tip_states[t] for t in shared}
 
         # Resolve polytomies
         if needs_polytomy_resolution:
@@ -221,6 +217,24 @@ class CharacterMap(Tree):
                 n_chars, n_informative, tree_length,
                 ci_overall, ri_overall,
             )
+
+    @staticmethod
+    def _shared_character_taxa_setup(tree_tip_names: list[str], tip_states: dict):
+        """Return shared count, tree tips to prune, and filtered states."""
+        state_count = len(tip_states)
+        if state_count >= 3 and len(tree_tip_names) == state_count:
+            if tree_tip_names[0] == next(iter(tip_states)):
+                if tree_tip_names[-1] == next(reversed(tip_states)):
+                    state_names = list(tip_states)
+                    if state_names == tree_tip_names:
+                        return state_count, [], tip_states
+
+        tree_tips = set(tree_tip_names)
+        matrix_taxa = set(tip_states)
+        shared = tree_tips & matrix_taxa
+        tips_to_prune = [tip for tip in tree_tip_names if tip not in shared]
+        filtered_states = {taxon: tip_states[taxon] for taxon in shared}
+        return len(shared), tips_to_prune, filtered_states
 
     @staticmethod
     def _summarize_character_states(

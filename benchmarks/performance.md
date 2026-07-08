@@ -2740,6 +2740,7 @@ Results:
 | `phylo_anova` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.012744s | 0.005728s | 2.22x |
 | `phylo_anova` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.037702s | 0.033729s | 1.12x |
 | `CharacterMap.run` taxon-set setup | balanced 32768-tip tree, all tips shared with character matrix | 0.0695s | 0.0093s | 7.5x |
+| `CharacterMap._shared_character_taxa_setup` ordered all-shared fast path | 300k ordered tree tips and character matrix rows, exact order / tree-only tail tips / extra matrix rows, side-by-side previous set/filter setup | 0.354318s / 0.279240s / 0.312716s | 0.001781s / 0.278743s / 0.336718s | 198.94x / 1.00x / 0.93x |
 | `CharacterMap.run` cached read-only tree setup | balanced 32768-tip cached tree, character parsing, parsimony reconstruction, plotting, and output mocked; protective working copy retained | 1.069391s | 0.600203s | 1.78x |
 | `CharacterMap.run` all-clean read-only setup | balanced 32768-tip cached binary tree, all branch lengths present, character parsing, parsimony/plot/output mocked | 0.522463s | 0.206576s | 2.53x |
 | `CharacterMap._assign_node_labels` direct preorder | balanced 65536-tip tree, node/tip label assignment with identical labels | 2.497245s | 0.370307s | 6.74x |
@@ -8797,7 +8798,11 @@ Profiling summary:
   branch-length filling, and optional ladderizing. A later all-clean run-setup
   pass skips that protective copy entirely when all taxa are shared, the tree
   is already bifurcating, all branch lengths are present, and ladderizing is
-  disabled; the mutating cases still copy before changing the tree. Character
+  disabled; the mutating cases still copy before changing the tree. Ordered
+  all-shared tree tips and character-matrix rows now return the original state
+  mapping before building taxon sets and the filtered shared-state dictionary,
+  while partial-overlap and extra-matrix-taxon inputs keep the set-backed
+  filtering path. Character
   matrix parsing now streams nonblank rows directly from the file handle instead
   of materializing a full filtered line list before splitting, preserving
   logical nonblank row numbering while reducing parse time and peak memory for
