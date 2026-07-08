@@ -1775,6 +1775,7 @@ Results:
 | `discrete_models.parse_discrete_traits` multi-column bounded selected-column split | 300k-row x 24-trait discrete TSV, all taxa shared, selected early trait column, side-by-side previous full row split | 0.284023s | 0.214614s | 1.32x |
 | `discrete_models.parse_discrete_traits` multi-column stripped comment check | 300k-row multi-column discrete trait TSV with whitespace-prefixed comments/blanks, all taxa shared | 0.661861s | 0.541921s | 1.22x |
 | `discrete_models._validate_shared_taxa` ordered all-shared validation | 300k ordered tree tips and parsed discrete-trait rows with identical taxon order, side-by-side previous tree-tip set construction | 0.038864s | 0.008949s | 4.34x |
+| `discrete_models._validate_shared_taxa` guarded exact-order comparison | 100k parsed discrete-trait rows, exact order / middle-reordered same set / edge-reordered same set, side-by-side previous Python `zip` scan | 0.303323s / 1.084141s / 0.902750s | 0.043286s / 1.043330s / 0.850485s | 7.01x / 1.04x / 1.06x |
 | `discrete_models.matrix_exp` cached SciPy expm wrapper | 20k four-state ARD transition matrices, SciPy already warm | 0.136597s | 0.125134s | 1.09x |
 | `discrete_models.matrix_exp` two-state ER analytic path | 20k two-state ER transition matrices | 0.105901s | 0.034737s | 3.05x |
 | `discrete_models.matrix_exp` two-state ARD analytic path | 20k binary unequal-rate transition matrices, side-by-side previous SciPy `expm` path | 0.125131s | 0.042341s | 2.96x |
@@ -6477,7 +6478,11 @@ Profiling summary:
   preflight now pushes child lists directly because it only tests whether any
   branch length is missing. Ordered all-shared parsed states now skip the
   shared-state set construction before pruning while preserving the existing
-  set-backed path for omitted tree tips. Discrete trait parsing now streams both two-column
+  set-backed path for omitted tree tips. A later validation pass checks the first
+  and last parsed trait names before using a C-level list comparison for exact
+  ordered trait maps, avoiding the previous Python `zip` scan while preserving
+  set-backed handling for reordered or omitted taxa.
+  Discrete trait parsing now streams both two-column
   and named multi-column TSV files, avoiding
   `readlines()` materialization while preserving comment/blank filtering,
   logical error line numbers, and shared-taxon validation.

@@ -1337,7 +1337,13 @@ class TestParseDiscreteTraits:
                 "ordered all-shared validation should not build a set"
             )
 
+        def fail_zip(*_args, **_kwargs):
+            raise AssertionError(
+                "ordered all-shared validation should not scan with zip"
+            )
+
         monkeypatch.setattr("builtins.set", fail_set)
+        monkeypatch.setattr("builtins.zip", fail_zip)
 
         assert parse_discrete_traits(str(f), ["A", "B", "C"]) == {
             "A": "carnivore",

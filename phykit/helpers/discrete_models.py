@@ -953,22 +953,26 @@ def _parse_multi_column_stream(
 def _validate_shared_taxa(
     traits: dict[str, str], tree_tips: list[str]
 ) -> dict[str, str]:
-    if len(traits) >= 3 and len(tree_tips) == len(traits):
-        for tip_name, trait_name in zip(tree_tips, traits):
-            if tip_name != trait_name:
-                break
-        else:
-            return traits
+    trait_count = len(traits)
+    trait_names = None
+    if trait_count >= 3 and len(tree_tips) == trait_count:
+        if tree_tips[0] == next(iter(traits)):
+            if tree_tips[-1] == next(reversed(traits)):
+                trait_names = list(traits)
+                if trait_names == tree_tips:
+                    return traits
 
     tree_tip_set = set(tree_tips)
     if (
         len(tree_tip_set) >= 3
-        and len(tree_tip_set) == len(traits)
+        and len(tree_tip_set) == trait_count
         and tree_tip_set == traits.keys()
     ):
         return traits
 
-    trait_taxa_set = set(traits.keys())
+    trait_taxa_set = (
+        set(trait_names) if trait_names is not None else set(traits.keys())
+    )
     shared = tree_tip_set & trait_taxa_set
 
     tree_only = tree_tip_set - trait_taxa_set
