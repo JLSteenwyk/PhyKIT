@@ -1570,6 +1570,7 @@ Results:
 | `NearestNeighborInterchange.get_neighbors` direct level-order nonterminals | balanced 8192-tip tree, NNI generation with tree-copy creation stubbed, side-by-side previous `get_nonterminals(order="level")` loop | 0.021400s | 0.011773s | 1.82x |
 | `NearestNeighborInterchange._resolve_branch_specs` branch-field parser | 300k comma/tab/mixed-whitespace branch rows, identical label/taxon specs | 0.551512s | 0.399353s | 1.38x |
 | `nearest_neighbor_interchange` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.write` proxy and postponed annotations | 0.123042s | 0.025484s | 4.83x |
+| `NearestNeighborInterchange._LazyPhylo.write` cached callable | 10k / 100k / 1M repeated no-op writes after first Bio.Phylo resolution | 0.004565062s / 0.083034146s / 1.235565896s | 0.002162563s / 0.015112250s / 0.293798041s | 2.11x / 5.49x / 4.21x |
 | `nearest_neighbor_interchange` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007619s | 0.006372s | 1.20x |
 | `nearest_neighbor_interchange` module import without eager pickle | median cold subprocess import after lazy pickle proxy | 0.006408s | 0.005053s | 1.27x |
 | `nearest_neighbor_interchange` module import without `typing` startup | median cold subprocess import after converting the runtime branch-spec alias and annotations to built-in generics | 0.028164s | 0.023944s | 1.18x |

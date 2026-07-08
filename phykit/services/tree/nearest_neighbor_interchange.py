@@ -31,7 +31,8 @@ class _LazyPhylo:
     def write(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
 
-        return _Phylo.write(*args, **kwargs)
+        self.write = _Phylo.write
+        return self.write(*args, **kwargs)
 
 
 Phylo = _LazyPhylo()
