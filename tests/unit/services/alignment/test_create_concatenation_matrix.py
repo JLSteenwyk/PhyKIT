@@ -149,6 +149,26 @@ class TestCreateConcatenationMatrix:
         taxa = ccm.get_taxa_names(fastas)
         assert taxa == ["A", "B", "C"]
 
+    def test_get_taxa_names_small_list_skips_process_pool(
+        self, monkeypatch, args
+    ):
+        class FailingExecutor:
+            def __init__(self, *_, **__):
+                raise AssertionError("small taxa lists should stay sequential")
+
+        ccm = CreateConcatenationMatrix(args)
+        monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
+        monkeypatch.setattr(
+            ccm,
+            "_get_taxa_from_alignment",
+            lambda path: {path.split("_")[-1]},
+        )
+
+        paths = [f"gene_{i}" for i in range(11)]
+        taxa = ccm.get_taxa_names(paths)
+
+        assert len(taxa) == 11
+
     def test_get_taxa_names_parallel_fallback(self, monkeypatch, args):
         class FailingExecutor:
             def __init__(self, *_, **__):
@@ -161,6 +181,8 @@ class TestCreateConcatenationMatrix:
                 return False
 
         ccm = CreateConcatenationMatrix(args)
+        monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_FILES", 1)
+        monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_BYTES", 0)
         monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
         monkeypatch.setattr(
             ccm,
@@ -627,9 +649,49 @@ class TestCreateConcatenationMatrix:
         alignment_list.write_text("\n".join(str(p) for p in gene_files) + "\n")
         prefix = tmp_path / "concat_parallel"
 
+        monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_FILES", 1)
+        monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_BYTES", 0)
         monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
         ccm = CreateConcatenationMatrix(
             Namespace(alignment_list=str(alignment_list), prefix=str(prefix), json=False, plot_occupancy=False)
+        )
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        assert Path(f"{prefix}.fa").exists()
+        assert Path(f"{prefix}.occupancy").exists()
+        assert Path(f"{prefix}.partition").exists()
+
+    def test_create_concatenation_matrix_small_list_skips_process_pool(
+        self, tmp_path, monkeypatch
+    ):
+        class FailingExecutor:
+            def __init__(self, *_, **__):
+                raise AssertionError("small concatenation lists should stay sequential")
+
+        gene_files = []
+        for idx, entries in enumerate(
+            [
+                [("A", "AA"), ("B", "CC")],
+                [("A", "GG"), ("C", "TT")],
+                [("B", "TA"), ("C", "AT")],
+            ]
+        ):
+            gene = tmp_path / f"small_g{idx}.fa"
+            _write_fasta(gene, entries)
+            gene_files.append(gene)
+
+        alignment_list = tmp_path / "alignments_small.txt"
+        alignment_list.write_text("\n".join(str(p) for p in gene_files) + "\n")
+        prefix = tmp_path / "concat_small"
+
+        monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=False,
+                plot_occupancy=False,
+            )
         )
         ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
 

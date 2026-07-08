@@ -583,6 +583,7 @@ Results:
 | `CreateConcatenationMatrix` shared missing-taxa list | 600 sequential alignments, 8000 taxa, parser-created records, 80% present per alignment plus occupancy rows | 0.487739s | 0.397005s | 1.23x |
 | `CreateConcatenationMatrix` all-present missing-taxa setup | 600 complete genes x 8000 taxa / 200 complete genes x 30000 taxa, side-by-side previous empty missing-taxa list comprehension | 0.350229s / 0.570883s | 0.000041s / 0.000017s | 8439.30x / 33336.82x |
 | `CreateConcatenationMatrix` ordered append cached taxon lists | 600 ordered alignment dictionaries, 8000 taxa, 80% represented per alignment | 0.221014s | 0.195735s | 1.13x |
+| `CreateConcatenationMatrix` small alignment-list process threshold | 32 FASTA files x 60 taxa x 120 sites, side-by-side previous process-pool path forced by low threshold | 0.473786s | 0.005074s | 93.38x |
 | `CreateConcatenationMatrix.fasta_file_write` batched FASTA rows | 80k taxa x 80 sequence chunks, identical FASTA text via generated `writelines` rows | 0.194861s | 0.177925s | 1.10x |
 | `CreateConcatenationMatrix.fasta_file_write` chunked FASTA row writes | 80k taxa x 80 sequence chunks, identical FASTA text, side-by-side previous generator `writelines` writer | 0.231785s | 0.178997s | 1.29x |
 | `CreateConcatenationMatrix` threshold exclusion text output | 100k excluded taxa rows, captured stdout and identical text | 0.040259s | 0.028425s | 1.42x |
@@ -4114,7 +4115,10 @@ Profiling summary:
   Complete-gene missing-taxa setup now returns the shared empty list result
   directly when the present-taxon count equals the total taxon count, avoiding
   a full sorted-taxa scan before both sequence insertion and occupancy-row
-  formatting.
+  formatting. Small and medium alignment lists now stay on the sequential
+  parser path instead of starting process pools whose startup and result-pickling
+  overhead dominates ordinary FASTA concatenation jobs; the existing pool path
+  remains available behind a large input threshold.
   Threshold filtering now batches the exclusion summary and per-taxon effective
   occupancy rows into one newline-joined print while preserving exact stdout
   text. Excluded-threshold JSON rows now sort taxon names before constructing

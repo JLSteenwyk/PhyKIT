@@ -17,6 +17,8 @@ _OCCUPANCY_INVALID_BYTES = b"-?*XxNn"
 _OCCUPANCY_STATE_LOOKUP = None
 _FASTA_WRITE_CHUNK_ROWS = 4096
 _OCCUPANCY_INVALID_SCAN_BYTES = 4096
+_PARALLEL_MIN_ALIGNMENT_FILES = 512
+_PARALLEL_MIN_ALIGNMENT_BYTES = 64 * 1024 * 1024
 
 
 class _LazyNumpy:
@@ -69,6 +71,20 @@ def _missing_taxa_for_present(
     if len(present_taxa) == total_taxa_count:
         return []
     return [taxon for taxon in sorted_taxa if taxon not in present_taxa]
+
+
+def _should_use_alignment_process_pool(alignment_paths: list[str]) -> bool:
+    if len(alignment_paths) < _PARALLEL_MIN_ALIGNMENT_FILES:
+        return False
+
+    total_size = 0
+    for path in alignment_paths:
+        try:
+            total_size += os.path.getsize(path)
+        except OSError:
+            return True
+
+    return total_size >= _PARALLEL_MIN_ALIGNMENT_BYTES
 
 
 class _LazyMultiprocessing:
@@ -409,8 +425,9 @@ class CreateConcatenationMatrix(Alignment):
         """Get all unique taxa names from alignment files in parallel."""
         taxa = set()
 
-        # Process files in parallel if there are many
-        if len(alignment_paths) > 10:
+        # Process files in parallel only when startup/pickling overhead is likely
+        # to be amortized by a very large input set.
+        if _should_use_alignment_process_pool(alignment_paths):
             try:
                 with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), len(alignment_paths))) as executor:
                     futures = [executor.submit(self._get_taxa_from_alignment, path) for path in alignment_paths]
@@ -716,8 +733,8 @@ class CreateConcatenationMatrix(Alignment):
         present_taxa_by_gene = []
         gene_lengths = []
 
-        # Process alignment files in parallel if there are many
-        if len(alignment_paths) > 2:
+        # Process alignment files in parallel only for very large input sets.
+        if _should_use_alignment_process_pool(alignment_paths):
             try:
                 from functools import partial
 
