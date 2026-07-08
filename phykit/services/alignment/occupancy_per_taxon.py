@@ -159,6 +159,21 @@ def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
     return (valid_count / len(sequence)) if len(sequence) > 0 else 0.0
 
 
+def _occupancy_json_rows(occupancies):
+    if occupancies and occupancies[0][1] == 1.0:
+        return [
+            {
+                "taxon": taxon,
+                "occupancy": 1.0 if occupancy == 1.0 else round(occupancy, 4),
+            }
+            for taxon, occupancy in occupancies
+        ]
+    return [
+        {"taxon": taxon, "occupancy": round(occupancy, 4)}
+        for taxon, occupancy in occupancies
+    ]
+
+
 def _alignment_size(alignment):
     try:
         return len(alignment)
@@ -177,10 +192,7 @@ class OccupancyPerTaxon(Alignment):
         occupancies = self.calculate_occupancy_per_taxon(alignment, is_protein)
 
         if self.json_output:
-            rows = [
-                {"taxon": taxon, "occupancy": round(occupancy, 4)}
-                for taxon, occupancy in occupancies
-            ]
+            rows = _occupancy_json_rows(occupancies)
             print_json(
                 dict(
                     rows=rows,

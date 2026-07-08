@@ -783,6 +783,7 @@ Results:
 | `OccupancyPerTaxon._occupancy_from_ascii_matrix` combined length/identity scan | 1M mixed-symbol DNA records, identical / late-different / late variable-length cases, side-by-side previous sequence-list length pass plus identity pass | 0.288323s / 0.292319s / 0.085046s | 0.138665s / 0.282464s / 0.055508s | 2.08x / 1.03x / 1.53x |
 | `OccupancyPerTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.025741s | 0.019400s | 1.33x |
 | `OccupancyPerTaxon.run` JSON row construction | 500k mocked taxon occupancy rows, identical row dictionaries | 0.757677s | 0.569715s | 1.33x |
+| `OccupancyPerTaxon.run` JSON exact-one occupancy rows | 100k / 500k all-1.0 occupancy rows plus 500k mixed-first-one and non-one controls, side-by-side previous unconditional `round(...)` row formatter | 0.032245s / 0.277185s / 0.362218s / 0.312556s | 0.009229s / 0.074719s / 0.233945s / 0.230207s | 3.49x / 3.71x / 1.55x / 1.36x |
 | `occupancy_per_taxon` module import without eager NumPy/json helpers | cold subprocess import after lazy NumPy proxy, lookup construction, and JSON helper wrapper | 0.081361s | 0.024702s | 3.29x |
 | `occupancy_per_taxon` module import without `typing` startup | median cold subprocess import after removing annotation-only typing aliases under postponed annotations | 0.002602s | 0.000946s | 2.75x |
 | `Dstatistic._run_alignment_mode` | 400k sites, ABBA/BABA/invariant/ambiguous synthetic alignment, block size 1000 | 0.4105s | 0.0089s | 46.1x |
@@ -4555,7 +4556,10 @@ Profiling summary:
   Text-mode
   `run` now batches per-taxon rows into one newline-joined print, preserving
   the same stdout text. JSON row materialization now uses literal dictionaries
-  instead of repeated `dict(...)` calls. A subsequent startup
+  instead of repeated `dict(...)` calls. A follow-up JSON formatter skips
+  redundant rounding for exact `1.0` occupancy values, accelerating all-valid
+  alignment payloads while preserving rounded output for partial occupancies.
+  A subsequent startup
   pass defers NumPy, validity lookup
   construction, and the JSON output helper until occupancy calculation or JSON
   output actually needs them. A follow-up pass caches resolved lazy NumPy

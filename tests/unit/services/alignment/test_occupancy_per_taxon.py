@@ -328,3 +328,31 @@ class TestOccupancyPerTaxon(object):
             {"taxon": "t2", "occupancy": 1.0},
         ]
         assert payload["taxa"] == payload["rows"]
+
+    def test_run_json_output_skips_round_for_exact_one_occupancy(self, mocker):
+        occupancy = OccupancyPerTaxon(Namespace(alignment="x.fa", json=True))
+        mocker.patch.object(
+            OccupancyPerTaxon,
+            "get_alignment_and_format",
+            return_value=(object(), "fasta", False),
+        )
+        mocker.patch.object(
+            OccupancyPerTaxon,
+            "calculate_occupancy_per_taxon",
+            return_value=[("t1", 1.0), ("t2", 1.0)],
+        )
+        mocked_json = mocker.patch(
+            "phykit.services.alignment.occupancy_per_taxon.print_json"
+        )
+        mocker.patch(
+            "builtins.round",
+            side_effect=AssertionError("exact 1.0 occupancy should not round"),
+        )
+
+        occupancy.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["rows"] == [
+            {"taxon": "t1", "occupancy": 1.0},
+            {"taxon": "t2", "occupancy": 1.0},
+        ]
