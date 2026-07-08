@@ -51,6 +51,19 @@ assert "phykit.helpers.plot_config" not in sys.modules
         self.assertIs(first, second)
         self.assertIs(lazy_np.__dict__["count_nonzero"], first)
 
+    def test_lazy_multiprocessing_caches_module_and_keeps_cpu_count_patchable(self):
+        import multiprocessing
+
+        lazy_mp = saturation_module._LazyMultiprocessing()
+
+        with patch.object(multiprocessing, "cpu_count", return_value=13):
+            self.assertEqual(lazy_mp.cpu_count(), 13)
+
+        with patch.object(multiprocessing, "cpu_count", return_value=5):
+            self.assertEqual(lazy_mp.cpu_count(), 5)
+
+        self.assertIs(lazy_mp._module, multiprocessing)
+
     def setUp(self):
         """Set up test fixtures"""
         self.args = Namespace(

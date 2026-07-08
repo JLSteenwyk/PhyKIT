@@ -1915,6 +1915,7 @@ Results:
 | `Saturation._plot_saturation_scatter` redundant tight layout pass | repeated 1000-point saturation PNG render with trendline, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.309373s | 0.233054s | 1.33x |
 | `saturation` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy and annotation-only Biopython imports | 0.144697s | 0.035127s | 4.12x |
 | `saturation` module import without eager multiprocessing | cold subprocess import after lazy multiprocessing proxy and localized `partial` import | 0.035324s | 0.031814s | 1.11x |
+| `Saturation._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.010874958s / 0.293938375s / 3.077265041s | 0.009699000s / 0.243956167s / 2.494884375s | 1.12x / 1.20x / 1.23x |
 | `saturation` module import without eager plot config | cold subprocess import after localizing `PlotConfig` to argument processing | 0.029371s | 0.023684s | 1.24x |
 | `saturation` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006523s | 0.005264s | 1.24x |
 | `saturation` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.006053s | 0.003971s | 1.52x |
@@ -6862,7 +6863,9 @@ Profiling summary:
 - The `saturation` command now keeps the module-level `mp.cpu_count` and
   `mp.Pool` access points through a lazy proxy and imports `functools.partial`
   only when the large-workload multiprocessing branch is used, so command
-  startup no longer initializes `multiprocessing`. A later startup pass
+  startup no longer initializes `multiprocessing`. The lazy multiprocessing
+  proxy now caches the imported module while leaving direct `multiprocessing`
+  patches visible. A later startup pass
   localizes `PlotConfig` to CLI argument processing, keeping plotting helper
   setup out of import-only command discovery. A follow-up startup pass keeps JSON
   output behind a lazy forwarding wrapper, so plain imports avoid the shared JSON
