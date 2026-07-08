@@ -1119,6 +1119,7 @@ Results:
 | `EvoTempoMap._fdr` small-list path without NumPy startup | cold subprocess, 7 p-values through Benjamini-Hochberg helper | 0.071440s | 0.023255s | 3.07x |
 | `evo_tempo_map` module import without eager `scipy.stats` | cold process import for evo-tempo-map command module | 0.690765s | 0.209734s | 3.3x |
 | `evo_tempo_map` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.129755s | 0.031645s | 4.10x |
+| `EvoTempoMap._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.013047604s / 0.127476208s / 1.688590896s | 0.000667666s / 0.018098104s / 0.288722271s | 19.54x / 7.04x / 5.85x |
 | `evo_tempo_map` module import without eager `pathlib` | median cold subprocess import after lazy gene-tree-list `Path` wrapper | 0.040799s | 0.039905s | 1.02x |
 | `evo_tempo_map` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.011676s | 0.004933s | 2.37x |
 | `evo_tempo_map` module import without `typing` startup | median cold subprocess import after replacing annotation-only typing aliases with built-in postponed annotations | 0.035356s | 0.034328s | 1.03x |

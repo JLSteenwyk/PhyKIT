@@ -89,6 +89,30 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_lazy_phylo_caches_resolved_read(monkeypatch):
+    from Bio import Phylo
+
+    calls = []
+
+    def cached_read(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "cached"
+
+    def uncached_read(*_args, **_kwargs):
+        return "uncached"
+
+    lazy_phylo = evo_tempo_map_module._LazyPhylo()
+    monkeypatch.setattr(Phylo, "read", cached_read)
+
+    assert lazy_phylo.read("tree", "newick") == "cached"
+
+    monkeypatch.setattr(Phylo, "read", uncached_read)
+
+    assert lazy_phylo.read("tree2", "newick") == "cached"
+    assert lazy_phylo.__dict__["read"] is cached_read
+    assert calls == [(("tree", "newick"), {}), (("tree2", "newick"), {})]
+
+
 class TestProcessArgs:
     def test_default_args(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
