@@ -1090,6 +1090,7 @@ Results:
 | `ConcordanceAsr._print_text_output` batched estimate output | 100k ancestral-estimate rows, mixed CI/non-CI rows, captured stdout and identical text | 0.167087s | 0.151078s | 1.11x |
 | `concordance_asr` module import without eager NumPy/Bio.Phylo | cold subprocess import after lazy NumPy proxy and lazy Phylo reader | 0.146693s | 0.033499s | 4.38x |
 | `ConcordanceAsr._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.021941417s / 0.121387667s / 1.389472166s | 0.001267708s / 0.011724855s / 0.187132333s | 17.31x / 10.35x / 7.43x |
+| `ConcordanceAsr._LazyPickle` cached copy helpers | 10k / 100k / 1M repeated no-op `loads(dumps(tree, protocol=HIGHEST_PROTOCOL))` calls after first pickle resolution | 0.015697792s / 0.271374958s / 3.041527000s | 0.004406646s / 0.054197791s / 0.426339104s | 3.56x / 5.01x / 7.13x |
 | `concordance_asr` cached lazy NumPy attributes | 1000 / 5000 repeated hot-loop attribute groups (`array`, `zeros`, `asarray`) after NumPy warmup | 0.00373743s / 0.01757531s | 0.00014236s / 0.00075925s | 26.25x / 23.15x |
 | `concordance_asr` module import without eager ASR/plot helpers | cold subprocess import after localizing ASR helper, pickle, and plotting-helper imports | 0.033717s | 0.026711s | 1.26x |
 | `concordance_asr` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006562s | 0.005254s | 1.25x |

@@ -2,6 +2,7 @@ import copy
 import builtins
 import json
 import math
+import pickle as stdlib_pickle
 import subprocess
 import sys
 from argparse import Namespace
@@ -72,6 +73,45 @@ def test_lazy_phylo_caches_resolved_read(monkeypatch):
     assert lazy_phylo.read("tree2", "newick") == "cached"
     assert lazy_phylo.__dict__["read"] is cached_read
     assert calls == [(("tree", "newick"), {}), (("tree2", "newick"), {})]
+
+
+def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
+    calls = []
+
+    def cached_dumps(*args, **kwargs):
+        calls.append(("dumps", args, kwargs))
+        return args[0]
+
+    def cached_loads(*args, **kwargs):
+        calls.append(("loads", args, kwargs))
+        return args[0]
+
+    def uncached_dumps(*_args, **_kwargs):
+        return "uncached-dumps"
+
+    def uncached_loads(*_args, **_kwargs):
+        return "uncached-loads"
+
+    lazy_pickle = concordance_asr_module._LazyPickle()
+    monkeypatch.setattr(stdlib_pickle, "dumps", cached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", cached_loads)
+
+    protocol = lazy_pickle.HIGHEST_PROTOCOL
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree", protocol=protocol)) == "tree"
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", uncached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", uncached_loads)
+
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree2", protocol=protocol)) == "tree2"
+    assert lazy_pickle.__dict__["dumps"] is cached_dumps
+    assert lazy_pickle.__dict__["loads"] is cached_loads
+    assert lazy_pickle.__dict__["HIGHEST_PROTOCOL"] == stdlib_pickle.HIGHEST_PROTOCOL
+    assert calls == [
+        ("dumps", ("tree",), {"protocol": protocol}),
+        ("loads", ("tree",), {}),
+        ("dumps", ("tree2",), {"protocol": protocol}),
+        ("loads", ("tree2",), {}),
+    ]
 
 
 here = Path(__file__).resolve().parent

@@ -46,20 +46,38 @@ Phylo = _LazyPhylo()
 
 
 class _LazyPickle:
-    def __getattr__(self, name):
-        import pickle as _pickle
+    _module = None
 
-        return getattr(_pickle, name)
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+        return module
+
+    def __getattr__(self, name):
+        value = getattr(self._load(), name)
+        setattr(self, name, value)
+        return value
 
     def dumps(self, *args, **kwargs):
-        import pickle as _pickle
+        module = self._load()
+        dumps = module.dumps
+        self.dumps = dumps
+        if "loads" not in self.__dict__:
+            self.loads = module.loads
 
-        return _pickle.dumps(*args, **kwargs)
+        return dumps(*args, **kwargs)
 
     def loads(self, *args, **kwargs):
-        import pickle as _pickle
+        module = self._load()
+        loads = module.loads
+        self.loads = loads
+        if "dumps" not in self.__dict__:
+            self.dumps = module.dumps
 
-        return _pickle.loads(*args, **kwargs)
+        return loads(*args, **kwargs)
 
 
 pickle = _LazyPickle()
