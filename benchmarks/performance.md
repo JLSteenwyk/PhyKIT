@@ -2159,6 +2159,7 @@ Results:
 | `TraitRateMap.run` all-shared read-only setup | balanced 32768-tip cached tree, one trait for every tip, ladderize off, reconstruction/rates/plot/output mocked | 0.283459s | 0.061932s | 4.58x |
 | `TraitRateMap.run` trait count without sorting | 10k / 100k / 500k / 1M trait keys, side-by-side previous `len(sorted(trait_values.keys()))` setup | 0.000100459s / 0.001626542s / 0.008810583s / 0.032654500s | 0.000000083s / 0.000000084s / 0.000000083s / 0.000000083s | 1211.99x / 19298.19x / 105701.58x / 393960.70x |
 | `Phenogram`/`ContMap`/`TraitRateMap` ordered trait prune setup | 300k ordered tree tips with all traits / 75k tree-only tail tips, side-by-side previous dictionary membership scan | 0.031790s / 0.042057s | 0.011724s / 0.010134s | 2.71x / 4.15x |
+| `Phenogram`/`ContMap`/`TraitRateMap` ordered exact trait parser validation | three 300k-row trait files whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 1.606182s | 1.229727s | 1.31x |
 | `TraitRateMap._iter_preorder` binary-child fast path | balanced 131072-tip tree, preorder generator materialized as a list, side-by-side previous `reversed(children)` helper | 0.044759s | 0.035023s | 1.28x |
 | `TraitRateMap._parse_single_trait_data` streaming valid-row parser | 500k two-column trait rows with comments/blanks, all taxa shared | 0.467069s | 0.460840s | 1.01x |
 | `TraitRateMap._parse_single_trait_data` all-shared parser fast path | 500k two-column trait rows with comments/blanks, all taxa shared | 0.435507s | 0.238663s | 1.82x |
@@ -7405,7 +7406,10 @@ Profiling summary:
   avoid `readlines()` plus temporary split lists on valid rows. A later parser
   pass returns immediately for exact tree/trait taxon matches after all rows
   are validated and at least three taxa are shared, avoiding shared/warning set
-  construction while preserving the minimum-shared-taxa error.
+  construction while preserving the minimum-shared-taxa error. A later
+  ordered-exact parser pass recognizes tree-tip-order matches before building
+  taxon sets, preserving the set-backed fallback for reordered and partial
+  trait files.
 - `Phenogram._plot_phenogram` layout and branch setup baseline time rebuilt
   all-node estimates, terminal order, root-distance coordinates, and drawable
   branch iteration with `get_terminals()` plus three preorder `find_clades()`

@@ -320,6 +320,15 @@ class TraitRateMap(Tree):
         self, traits: dict[str, float], tree_tips: list[str]
     ) -> dict[str, float]:
         """Return shared taxa between traits and tree; warn about mismatches."""
+        if (
+            len(tree_tips) >= 3
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return traits
+
         tree_tip_set = set(tree_tips)
         if (
             len(tree_tip_set) >= 3

@@ -1,3 +1,4 @@
+import builtins
 import json
 import os
 import subprocess
@@ -127,6 +128,20 @@ class TestSingleTraitParsing:
         stderr = capsys.readouterr().err
         assert set(traits) == set(tree_tips)
         assert stderr == ""
+
+    def test_ordered_all_shared_trait_file_skips_sets(self, tmp_path, monkeypatch):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nC\t3.0\n")
+        svc = TraitRateMap(_make_args(trait_data=str(trait_file)))
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_single_trait_data(str(trait_file), ["A", "B", "C"])
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert builtins.set is fail_set
 
     def test_extra_columns_error(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
