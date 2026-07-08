@@ -1585,6 +1585,7 @@ Results:
 | `LTT._compute_gamma_and_ltt` shared internal-depth calculation | balanced 32768-tip tree, shared terminal list and depth map, identical gamma/LTT output | 0.028798s | 0.018729s | 1.54x |
 | `LTT._compute_gamma_and_ltt` internal-depth child push | balanced 131072-tip tree, shared terminal list and depth map, identical gamma/LTT output | 0.092145s | 0.078426s | 1.17x |
 | `LTT._compute_gamma_and_ltt` LTT row construction | 1M sorted internal depths, identical LTT rows, side-by-side previous `internal_depths[1:]` loop | 0.363777s | 0.274531s | 1.33x |
+| `LTT._compute_gamma_and_ltt` one-pass standard-tree context | balanced 32768-tip tree, side-by-side previous terminal/depth/internal setup, identical gamma/LTT output | 0.145479s | 0.051929s | 2.80x |
 | `LTT._output_json` LTT row construction | 1M mocked LTT rows, identical row dictionaries | 0.814529s | 0.449677s | 1.81x |
 | `LTT._output_json` bulk numeric series conversion | 100k / 300k / 1M branching-time and internode interval values plus matching LTT rows, identical payload | 0.032307s / 0.151819s / 0.466026s | 0.026169s / 0.060363s / 0.328299s | 1.23x / 2.52x / 1.42x |
 | `LTT._plot_ltt` redundant tight layout pass | repeated 500-point lineage-through-time PNG render with gamma annotation, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 7.964006s | 4.682197s | 1.70x |
@@ -6045,8 +6046,12 @@ Profiling summary:
   standalone and combined gamma/LTT paths. The combined gamma/LTT helper now
   builds LTT rows with an iterator helper instead of slicing
   `internal_depths[1:]`, preserving the same row sequence without copying the
-  sorted internal-depth tail. JSON output now uses literal dictionaries for LTT
-  rows instead of repeated `dict(...)` calls.
+  sorted internal-depth tail. A later combined-path pass collects tip count,
+  maximum tip height, and internal depths in one standard-tree traversal, so
+  `LTT.run` no longer builds separate terminal and depth contexts before
+  computing the shared gamma/LTT result; explicit `tips` or `depth_data`
+  callers keep the existing fallback path. JSON output now uses literal
+  dictionaries for LTT rows instead of repeated `dict(...)` calls.
 - `CollapseBranches.run` baseline time counted internal nodes before and after
   collapsing even for normal text output, where the collapsed branch count is
   not reported. The optimized path performs those count traversals only for

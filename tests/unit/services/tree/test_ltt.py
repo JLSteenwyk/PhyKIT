@@ -356,6 +356,32 @@ class TestGammaStat:
         assert g == expected_g
         assert ltt_data == expected_ltt
 
+    def test_combined_gamma_and_ltt_direct_path_avoids_setup_helpers(
+        self, monkeypatch
+    ):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        expected = LTT._compute_gamma_and_ltt(Phylo.read(StringIO(newick), "newick"))
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_setup(*args, **kwargs):
+            raise AssertionError("combined LTT path should use one direct traversal")
+
+        monkeypatch.setattr(LTT, "_terminal_clades", fail_setup)
+        monkeypatch.setattr(LTT, "_depths_from_root", fail_setup)
+        monkeypatch.setattr(LTT, "_internal_depths_from_root", fail_setup)
+        monkeypatch.setattr(tree, "get_terminals", fail_setup)
+        monkeypatch.setattr(tree, "depths", fail_setup)
+        monkeypatch.setattr(tree, "distance", fail_setup)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_setup)
+
+        observed = LTT._compute_gamma_and_ltt(tree)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == expected[2]
+        assert observed[3] == expected[3]
+        assert observed[4] == expected[4]
+
 
 class TestLTTData:
     def test_ltt_starts_at_two(self):

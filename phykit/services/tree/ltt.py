@@ -61,11 +61,7 @@ class LTT(Tree):
         tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, context="gamma statistic")
 
-        tips = self._terminal_clades(tree)
-        depth_data = self._depths_from_root(tree)
-        gamma, p_value, bt, g, ltt_data = self._compute_gamma_and_ltt(
-            tree, tips=tips, depth_data=depth_data
-        )
+        gamma, p_value, bt, g, ltt_data = self._compute_gamma_and_ltt(tree)
 
         if self.json_output:
             self._output_json(gamma, p_value, ltt_data, bt, g)
@@ -286,6 +282,11 @@ class LTT(Tree):
 
     @staticmethod
     def _compute_gamma_and_ltt(tree, tips=None, depth_data=_DEPTH_DATA_UNSET):
+        if tips is None and depth_data is LTT._DEPTH_DATA_UNSET:
+            result = LTT._compute_gamma_and_ltt_direct(tree)
+            if result is not None:
+                return result
+
         if tips is None:
             tips = LTT._terminal_clades(tree)
         N = len(tips)
@@ -333,6 +334,68 @@ class LTT(Tree):
         stat = stat_sum / (N - 2)
         m = ST / 2
         s = ST * math.sqrt(1.0 / (12 * (N - 2)))
+        gamma = (stat - m) / s
+        p_value = math.erfc(abs(gamma) / math.sqrt(2.0))
+
+        ltt = _ltt_from_internal_depths(internal_depths, max_height)
+
+        return gamma, p_value, bt, g, ltt
+
+    @staticmethod
+    def _compute_gamma_and_ltt_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        n_tips = 0
+        max_height = 0.0
+        internal_depths = []
+        stack = [(root, 0.0)]
+        pop = stack.pop
+        append = stack.append
+        append_internal = internal_depths.append
+        try:
+            while stack:
+                clade, depth = pop()
+                children = clade.clades
+                if children:
+                    append_internal(depth)
+                    child_count = len(children)
+                    if child_count == 2:
+                        child = children[1]
+                        append((child, depth + (child.branch_length or 0.0)))
+                        child = children[0]
+                        append((child, depth + (child.branch_length or 0.0)))
+                    else:
+                        for index in range(child_count - 1, -1, -1):
+                            child = children[index]
+                            append((child, depth + (child.branch_length or 0.0)))
+                else:
+                    n_tips += 1
+                    if depth > max_height:
+                        max_height = depth
+        except (AttributeError, TypeError):
+            return None
+
+        if n_tips < 3:
+            raise PhykitUserError(
+                ["Tree must have at least 3 tips for gamma statistic."],
+                code=2,
+            )
+
+        internal_depths.sort()
+        bt = [max_height - depth for depth in reversed(internal_depths)]
+
+        g_unreversed = [bt[0]] + [bt[i] - bt[i - 1] for i in range(1, len(bt))]
+        g = list(reversed(g_unreversed))
+
+        ST, stat_sum = _gamma_st_and_stat_sum(g, n_tips)
+
+        stat = stat_sum / (n_tips - 2)
+        m = ST / 2
+        s = ST * math.sqrt(1.0 / (12 * (n_tips - 2)))
         gamma = (stat - m) / s
         p_value = math.erfc(abs(gamma) / math.sqrt(2.0))
 
