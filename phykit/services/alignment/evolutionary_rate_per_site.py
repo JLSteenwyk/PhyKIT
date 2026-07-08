@@ -335,7 +335,7 @@ class EvolutionaryRatePerSite(Alignment):
         else:
             counts = np.array(
                 [
-                    np.sum(alignment_array == symbol, axis=0)
+                    (alignment_array == symbol).sum(axis=0)
                     for symbol in valid_symbols
                 ],
                 dtype=np.float64,
