@@ -1205,6 +1205,7 @@ Results:
 | `PolytomyTest.get_triplet_tree` prune-list setup | 200 mocked legacy triplet-tree preparations over 8195 tips, tree read/root/prune mocked | 0.194432s | 0.121392s | 1.60x |
 | `PolytomyTest` triplet group first-identifier lookup | 500k group identifiers, per-lookup median from batched repetitions | 0.033081725s | 0.000000108s | 306771.8x |
 | `polytomy_test` module import without eager Bio.Phylo | cold subprocess import with lazy `Phylo.read` proxy | 0.190013s | 0.095192s | 2.00x |
+| `PolytomyTest._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.006410084s / 0.090864208s / 1.095851354s | 0.000668250s / 0.035503770s / 0.366868062s | 9.59x / 2.56x / 2.99x |
 | `polytomy_test` module import without eager unittest.mock | cold subprocess import after lightweight mock-object detection | 0.056568s | 0.035368s | 1.60x |
 | `polytomy_test` module import without eager concurrency/copy helpers | cold subprocess import after lazy multiprocessing/thread-pool proxies and deferred tree-copy imports | 0.035875s | 0.025992s | 1.38x |
 | `polytomy_test` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006955s | 0.005686s | 1.22x |

@@ -37,6 +37,30 @@ assert "unittest.mock" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_lazy_phylo_caches_resolved_read(monkeypatch):
+    calls = []
+
+    def cached_read(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "cached"
+
+    def uncached_read(*_args, **_kwargs):
+        return "uncached"
+
+    lazy = module._LazyPhylo()
+
+    monkeypatch.setattr(Phylo, "read", cached_read)
+    assert lazy.read("tree", "newick") == "cached"
+    monkeypatch.setattr(Phylo, "read", uncached_read)
+
+    assert lazy.read("tree2", "newick") == "cached"
+    assert lazy.__dict__["read"] is cached_read
+    assert calls == [
+        (("tree", "newick"), {}),
+        (("tree2", "newick"), {}),
+    ]
+
+
 class TestPolytomyTest(unittest.TestCase):
     """Test PolytomyTest class"""
 
