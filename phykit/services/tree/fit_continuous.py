@@ -823,30 +823,35 @@ class FitContinuous(Tree):
 
     def _print_json_output(self, results: list[dict], n: int, vcv_meta=None) -> None:
         models = {}
+        best_bic = results[0]
+        best_bic_value = best_bic["bic"]
         for r in results:
-            models[r["model"]] = dict(
-                param_name=r["param_name"],
-                param_value=r["param_value"],
-                sigma2=r["sigma2"],
-                z0=r["z0"],
-                log_likelihood=r["log_likelihood"],
-                aic=r["aic"],
-                delta_aic=r["delta_aic"],
-                aic_weight=r["aic_weight"],
-                bic=r["bic"],
-                delta_bic=r["delta_bic"],
-                k_params=r["k_params"],
-                r_squared=r["r_squared"],
-            )
+            bic = r["bic"]
+            if bic < best_bic_value:
+                best_bic = r
+                best_bic_value = bic
+            models[r["model"]] = {
+                "param_name": r["param_name"],
+                "param_value": r["param_value"],
+                "sigma2": r["sigma2"],
+                "z0": r["z0"],
+                "log_likelihood": r["log_likelihood"],
+                "aic": r["aic"],
+                "delta_aic": r["delta_aic"],
+                "aic_weight": r["aic_weight"],
+                "bic": bic,
+                "delta_bic": r["delta_bic"],
+                "k_params": r["k_params"],
+                "r_squared": r["r_squared"],
+            }
 
         best_aic = results[0]["model"]
-        best_bic = min(results, key=lambda r: r["bic"])["model"]
 
         payload = dict(
             n_tips=n,
             models=models,
             best_model_aic=best_aic,
-            best_model_bic=best_bic,
+            best_model_bic=best_bic["model"],
         )
         if vcv_meta is not None:
             payload["vcv_metadata"] = vcv_meta

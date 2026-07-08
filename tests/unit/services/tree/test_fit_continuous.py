@@ -947,6 +947,60 @@ class TestRun:
         assert "best_model_aic" in payload
         assert "best_model_bic" in payload
 
+    def test_json_output_tracks_best_bic_during_model_build(self, monkeypatch):
+        svc = FitContinuous.__new__(FitContinuous)
+        captured = {}
+        results = [
+            {
+                "model": "BM",
+                "param_name": None,
+                "param_value": None,
+                "sigma2": 1.0,
+                "z0": 2.0,
+                "log_likelihood": -10.0,
+                "aic": 24.0,
+                "delta_aic": 0.0,
+                "aic_weight": 0.8,
+                "bic": 30.0,
+                "delta_bic": 4.0,
+                "k_params": 2,
+                "r_squared": 0.1,
+            },
+            {
+                "model": "OU",
+                "param_name": "alpha",
+                "param_value": 0.5,
+                "sigma2": 0.8,
+                "z0": 1.5,
+                "log_likelihood": -11.0,
+                "aic": 27.0,
+                "delta_aic": 3.0,
+                "aic_weight": 0.2,
+                "bic": 25.0,
+                "delta_bic": 0.0,
+                "k_params": 3,
+                "r_squared": 0.2,
+            },
+        ]
+
+        def fail_min(*_args, **_kwargs):
+            raise AssertionError("best BIC should be tracked without min()")
+
+        monkeypatch.setattr(fit_continuous_module, "min", fail_min, raising=False)
+        monkeypatch.setattr(
+            fit_continuous_module,
+            "print_json",
+            lambda payload, **_kwargs: captured.setdefault("payload", payload),
+        )
+
+        svc._print_json_output(results, 8)
+
+        payload = captured["payload"]
+        assert payload["best_model_aic"] == "BM"
+        assert payload["best_model_bic"] == "OU"
+        assert list(payload["models"]) == ["BM", "OU"]
+        assert payload["models"]["OU"]["bic"] == 25.0
+
     @patch("builtins.print")
     def test_subset_models(self, mocked_print):
         args = Namespace(

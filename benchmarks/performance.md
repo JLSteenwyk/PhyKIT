@@ -2295,6 +2295,7 @@ Results:
 | `FitContinuous._print_text_output` batched model table | three captured text reports with 100k model rows each, identical stdout text | 0.776887s | 0.714921s | 1.09x |
 | `FitContinuous._print_text_output` row-template formatting | 100k model rows, captured stdout and identical text, side-by-side previous f-string row formatter comparison | 0.235230s | 0.205315s | 1.15x |
 | `FitContinuous._print_text_output` percent row formatting | 100k model rows, captured stdout and identical text, side-by-side previous `.format()` row formatter comparison | 0.192132s | 0.140039s | 1.37x |
+| `FitContinuous._print_json_output` combined model/BIC pass | 500k synthetic model-result rows, identical nested model payload and best-BIC model | 1.413523s | 0.931940s | 1.52x |
 | `FitContinuous._concentrated_ll_cholesky` cached SciPy linalg wrappers | 120 repeated 420-taxon SPD VCV concentrated likelihood evaluations, SciPy already warm, side-by-side previous import-on-call wrappers | 0.077998s | 0.057574s | 1.35x |
 | `PhylogeneticGLM._make_ultrametric` | balanced tree with 2500 tips | 2.2726s | 0.0068s | 336.2x |
 | `PhylogeneticGLM._root_tip_distances` | balanced 65536-tip tree, ordered ultrametric correction distances | 0.1598s | 0.0245s | 6.5x |
@@ -7823,7 +7824,9 @@ Profiling summary:
   scalar `math.exp` calls, avoiding a NumPy array allocation for the fixed
   seven-model comparison. A later formatter pass switches the fixed-width model
   rows from `.format()` to percent formatting, preserving the same padded text
-  with less per-row formatter overhead. Trait parsing now streams directly over the file handle,
+  with less per-row formatter overhead. The JSON formatter now applies the same
+  combined model-copy and best-BIC scan, preserving model order and payload keys
+  while avoiding a second pass over large synthetic result tables. Trait parsing now streams directly over the file handle,
   validates two-column rows with a single tab partition, and builds the trait
   taxa set directly from the parsed dictionary, avoiding full-file
   materialization and temporary split lists on valid rows. A later parser pass
