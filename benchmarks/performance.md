@@ -1163,6 +1163,7 @@ Results:
 | `DiscordanceAsymmetry._canonical_split` size-first complement avoidance | 9k mixed 20-vs-1180, 1180-vs-20, and 600-vs-600 bipartitions over 1200 taxa | 0.269212s | 0.215084s | 1.25x |
 | `Hybridization`/`DiscordanceAsymmetry._count_split_matches` single-pass split counts | 200k gene-tree split sets x 3 target topologies, identical concordant/alt1/alt2 counts | 0.089838s | 0.041921s | 2.14x |
 | `Hybridization`/`DiscordanceAsymmetry._binomial_two_sided_p_value` exact small counts | 100k / 1M mixed small-count asymmetry p-values, side-by-side previous lazy `scipy.special.bdtr` path with identical p-values; cold subprocess five-value helper startup | 0.158465s / 2.939230s; cold 0.684236s | 0.069428s / 1.587812s; cold 0.040252s | 2.28x / 1.85x; cold 17.00x |
+| `DiscordanceAsymmetry._binomial_two_sided_p_value` repeated exact counts | 100k repeated small-count asymmetry p-values over 1,388 distinct `(successes, total)` pairs, identical p-values | 0.210327s | 0.021858s | 9.62x |
 | `Hybridization._count_topologies` species-taxon setup | balanced 32768-tip species tree | 0.0673s | 0.0077s | 8.8x |
 | `Hybridization._parse_gene_trees` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.093972s | 0.070400s | 1.33x |
 | `Hybridization._parse_gene_trees` path-list resolver | 50k relative tree path rows, tree parsing mocked | 0.081335s | 0.014871s | 5.47x |
@@ -5388,7 +5389,11 @@ Profiling summary:
   evaluating the symmetric two-sided binomial test with lazy
   `scipy.special.bdtr`. Small-count binomial asymmetry p-values now use an
   exact Python probability sum and avoid SciPy startup entirely while larger
-  counts retain the `bdtr` fallback. Follow-up startup
+  counts retain the `bdtr` fallback. `DiscordanceAsymmetry` now caches
+  repeated two-sided binomial p-values, which avoids recomputing identical
+  exact small-count tails across branches while preserving deterministic scalar
+  results.
+  Follow-up startup
   passes for `hybridization` and `discordance_asymmetry` defer NumPy behind a
   proxy and import Bio.Phylo only inside gene-tree parsing, leaving command
   discovery free of array and tree-format parser startup. Later startup work
