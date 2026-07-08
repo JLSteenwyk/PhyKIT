@@ -282,18 +282,9 @@ class CompositionalBiasPerSite(Alignment):
             print_json(payload)
             return
 
-        lines = []
-        for idx, (stat_info, pval_cor) in enumerate(
-            zip(stat_res, p_vals_corrected), start=1
-        ):
-            pval_cor_str = "nan" if isinstance(pval_cor, str) else round(float(pval_cor), 4)
-            raw_p = float(stat_info.pvalue)
-            p_val_str = "nan" if isnan(raw_p) else round(raw_p, 4)
-            lines.append(
-                f"{idx}\t{round(float(stat_info.statistic), 4)}\t{pval_cor_str}\t{p_val_str}"
-            )
+        lines = self._format_text_rows(stat_res, p_vals_corrected)
         if lines:
-            print("\n".join(lines))
+            print(lines)
 
         if self.plot:
             print(f"Saved compositional bias plot: {self.plot_output}")
@@ -308,6 +299,30 @@ class CompositionalBiasPerSite(Alignment):
             plot_output=getattr(args, "plot_output", "compositional_bias_per_site_plot.png"),
             plot_config=PlotConfig.from_args(args),
         )
+
+    @staticmethod
+    def _format_text_rows(
+        stat_res: list[Power_divergenceResult],
+        p_vals_corrected: list[float | str],
+    ) -> str:
+        row_count = min(len(stat_res), len(p_vals_corrected))
+        lines = [None] * row_count
+        round_ = round
+        float_ = float
+        isnan_ = isnan
+        for idx in range(row_count):
+            stat_info = stat_res[idx]
+            pval_cor = p_vals_corrected[idx]
+            pval_cor_str = (
+                "nan" if isinstance(pval_cor, str) else round_(float_(pval_cor), 4)
+            )
+            raw_p = float_(stat_info.pvalue)
+            p_val_str = "nan" if isnan_(raw_p) else round_(raw_p, 4)
+            lines[idx] = (
+                f"{idx + 1}\t{round_(float_(stat_info.statistic), 4)}"
+                f"\t{pval_cor_str}\t{p_val_str}"
+            )
+        return "\n".join(lines)
 
     def _build_rows(
         self,

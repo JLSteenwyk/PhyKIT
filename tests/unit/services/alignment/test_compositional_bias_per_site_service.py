@@ -374,6 +374,17 @@ assert "numpy" not in sys.modules
         out, _ = capsys.readouterr()
         assert out == "1\t2.0\t0.1234\t0.0456\n2\t0.0\tnan\tnan\n"
 
+    def test_format_text_rows_preserves_order_rounding_and_nan_values(self):
+        rows = CompositionalBiasPerSite._format_text_rows(
+            [
+                cbps_module.Power_divergenceResult(2.12345, 0.04567),
+                cbps_module.Power_divergenceResult(0.0, np.nan),
+            ],
+            [0.12345, "nan"],
+        )
+
+        assert rows == "1\t2.1235\t0.1235\t0.0457\n2\t0.0\tnan\tnan"
+
     def test_process_args_defaults(self):
         parsed = CompositionalBiasPerSite(Namespace(alignment="x.fa")).process_args(
             Namespace(alignment="x.fa")

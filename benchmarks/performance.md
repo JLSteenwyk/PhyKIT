@@ -420,6 +420,7 @@ Results:
 | `CompositionalBiasPerSite._build_rows` bound append | 500k site rows with mixed valid and `"nan"` corrected p-values, side-by-side previous unbound `rows.append` loop | 1.427984s | 1.333329s | 1.07x |
 | `CompositionalBiasPerSite.run` batched text output | 100k site rows, mocked alignment/read and identical stdout text | 0.072149s | 0.061021s | 1.18x |
 | `CompositionalBiasPerSite.run` direct terminal text output | 100k site rows, mocked alignment/read and identical stdout text | 0.200112s | 0.168921s | 1.18x |
+| `CompositionalBiasPerSite._format_text_rows` preallocated text rows | 100k site rows with mixed valid and `"nan"` corrected p-values, side-by-side previous append-loop formatter with identical text | 0.437195s | 0.377504s | 1.16x |
 | `CompositionalBiasPerSite.run` plot-only series preparation | 1M corrected p-values with interleaved `"nan"` slots, identical rounded plotted site/value arrays without temporary row dictionaries | 0.935595s | 0.241023s | 3.88x |
 | `CompositionalBiasPerSite._plot_compositional_bias_manhattan` redundant tight layout pass | repeated 100-site compositional-bias PNG render with legend, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 2.664707s | 1.771738s | 1.50x |
 | `compositional_bias_per_site` module import | cold subprocess import, avoid eager `scipy.stats` import | 0.610058s | 0.141978s | 4.3x |
