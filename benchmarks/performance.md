@@ -946,6 +946,7 @@ Results:
 | `RobinsonFouldsDistance._get_all_bipartition_id_sets_direct` reverse-preorder postorder | balanced 32768-tip tree, compact rooted descendant split ids, side-by-side binary-union helper | 0.037405s | 0.033784s | 1.11x |
 | `RobinsonFouldsDistance._get_all_bipartition_id_sets_direct` preorder child push | balanced 32768-tip synthetic tree, compact rooted descendant split ids, side-by-side previous `stack.extend(clade.clades)` preorder setup | 0.250958s | 0.214371s | 1.17x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` same-object shortcut | balanced 32768-tip tree compared to itself, side-by-side previous compact split-id path and unchanged RF normalization denominator | 1.189548s | 0.004597s | 258.79x |
+| `RobinsonFouldsDistance.calculate_multiple_rf_distances` multiprocessing threshold | 20 small Bio.Phylo tree pairs, side-by-side previous low process-pool cutoff | 0.023194s | 0.000164s | 141.32x |
 | `rf_distance` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.138859s | 0.043381s | 3.20x |
 | `rf_distance` module import without eager concurrent futures | cold subprocess import after lazy `ProcessPoolExecutor` proxy | 0.043023s | 0.025542s | 1.68x |
 | `rf_distance` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007791s | 0.006287s | 1.24x |
@@ -6129,7 +6130,9 @@ Profiling summary:
   0.033784s. The direct terminal-count helper used for RF normalization now
   localizes stack operations, shaving balanced 262144-tip count time from
   0.027284s to 0.026463s. Another startup pass removes the annotation-only
-  `typing` import by using postponed built-in collection annotations.
+  `typing` import by using postponed built-in collection annotations. The
+  multiple-tree multiprocessing cutoff is now higher, so medium batches stay
+  sequential instead of paying process startup and tree-pickling overhead.
 - `TreenessOverRCV` now defers importing the alignment RCV helper until `run()`
   computes the alignment component, reducing cold command-module import cost
   while preserving text and JSON output. A follow-up startup pass keeps JSON

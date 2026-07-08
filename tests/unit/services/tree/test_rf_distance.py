@@ -316,8 +316,27 @@ class TestRobinsonFouldsDistance(object):
         assert mock_calc.call_count == len(tree_pairs)
         assert results == expected
 
+    def test_calculate_multiple_rf_distances_medium_input_skips_executor(self, mocker, args):
+        rf = RobinsonFouldsDistance(args)
+
+        tree_pairs = [("tree_zero", "tree_one") for _ in range(20)]
+        expected = [(idx, idx / 10.0) for idx in range(len(tree_pairs))]
+        mock_calc = mocker.patch.object(
+            rf,
+            "calculate_robinson_foulds_distance",
+            side_effect=expected,
+        )
+        mocked_executor = mocker.patch("phykit.services.tree.rf_distance.ProcessPoolExecutor")
+
+        results = rf.calculate_multiple_rf_distances(tree_pairs)
+
+        assert mock_calc.call_count == len(tree_pairs)
+        assert results == expected
+        mocked_executor.assert_not_called()
+
     def test_calculate_multiple_rf_distances_parallel_path(self, mocker, args):
         rf = RobinsonFouldsDistance(args)
+        rf.MP_MIN_TREE_PAIRS = 5
 
         class _DummyTree:
             def __init__(self, bipartitions, tip_count):

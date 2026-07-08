@@ -54,6 +54,9 @@ pickle = _LazyPickle()
 
 
 class RobinsonFouldsDistance(Tree):
+    MP_MIN_TREE_PAIRS = 128
+    MAX_MP_WORKERS = 4
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(
@@ -379,8 +382,9 @@ class RobinsonFouldsDistance(Tree):
         tree_pairs: list[tuple],
     ) -> list[tuple[int, float]]:
         """Calculate RF distances for multiple tree pairs in parallel."""
-        if len(tree_pairs) < 5:
-            # Sequential for small datasets
+        if len(tree_pairs) < self.MP_MIN_TREE_PAIRS:
+            # Sequential for small/medium datasets where process startup and
+            # tree-pickling overhead dominate.
             results = []
             for tree_zero, tree_one in tree_pairs:
                 plain_rf, normalized_rf = self.calculate_robinson_foulds_distance(tree_zero, tree_one)
@@ -391,7 +395,7 @@ class RobinsonFouldsDistance(Tree):
         batch_size = max(2, len(tree_pairs) // 4)
         batches = [tree_pairs[i:i + batch_size] for i in range(0, len(tree_pairs), batch_size)]
 
-        with ProcessPoolExecutor(max_workers=min(4, len(batches))) as executor:
+        with ProcessPoolExecutor(max_workers=min(self.MAX_MP_WORKERS, len(batches))) as executor:
             futures = []
             for batch in batches:
                 batch_pickle = pickle.dumps(batch)
