@@ -550,6 +550,7 @@ Results:
 | `streaming` module import without `typing` startup | median cold subprocess import after replacing annotation-only typing aliases with built-in annotations | 0.022866s | 0.021220s | 1.08x |
 | `parallel` module import without eager multiprocessing/NumPy/executors | cold subprocess import after lazy worker, array, and executor proxies | 0.070840s | 0.001929s | 36.72x |
 | `parallel` module import without `typing` startup | median cold subprocess import after converting annotation-only collection/callable/optional aliases to built-in postponed annotations | 0.024022s | 0.020614s | 1.17x |
+| `parallel._LazyExecutor` cached executor class | 250k repeated fake `ThreadPoolExecutor` constructions through the lazy proxy, side-by-side previous import/getattr resolution on every call | 0.162230s | 0.139939s | 1.16x |
 | `ParallelProcessor.get_optimal_workers` cached CPU count | 500k repeated worker-selection calls with varying data sizes, identical worker counts | 2.401188s | 0.699817s | 3.43x |
 | `ParallelProcessor.get_optimal_workers` small-job early return | 50k batched worker selections for data sizes 0 / 5 / 10 with `min_chunk_size=10`, side-by-side previous unconditional CPU-count lookup | 0.000000423s / 0.000000358s / 0.000000304s | 0.000000090s / 0.000000094s / 0.000000185s | 4.69x / 3.79x / 1.64x |
 | `NumpyParallel.parallel_pairwise_operation` explicit sequential symmetric path | 1200 items, symmetric pairwise absolute-difference matrix, `num_workers=1`, identical matrix output | 0.328311s | 0.157943s | 2.08x |
@@ -4087,7 +4088,10 @@ Profiling summary:
   sequential calls, avoiding pair-list construction before `parallel_map` falls
   back to sequential execution. The shared lazy NumPy proxy now caches the
   imported module and resolved attributes after first use, preserving import
-  laziness while reducing repeated direct matrix setup overhead.
+  laziness while reducing repeated direct matrix setup overhead. The lazy
+  executor proxies now cache the resolved executor class after first
+  construction, keeping import deferral while avoiding repeated
+  `concurrent.futures` resolution in repeated batch dispatches.
 - `CreateConcatenationMatrix._compute_effective_occupancy` baseline time
   checked every concatenated character in Python when threshold filtering was
   enabled. The optimized path counts each fixed invalid symbol with C-level

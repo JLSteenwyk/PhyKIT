@@ -34,11 +34,15 @@ class _LazyNumpy:
 class _LazyExecutor:
     def __init__(self, name: str) -> None:
         self._name = name
+        self._executor_class = None
 
     def __call__(self, *args, **kwargs):
-        from concurrent import futures
+        executor_class = self._executor_class
+        if executor_class is None:
+            from concurrent import futures
 
-        executor_class = getattr(futures, self._name)
+            executor_class = getattr(futures, self._name)
+            self._executor_class = executor_class
         return executor_class(*args, **kwargs)
 
 

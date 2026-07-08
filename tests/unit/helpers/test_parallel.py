@@ -52,6 +52,44 @@ def test_lazy_numpy_caches_module_and_attributes():
     assert numpy_imports == 1
 
 
+def test_lazy_executor_caches_resolved_executor_class():
+    class DummyExecutor:
+        calls = []
+
+        def __init__(self, *args, **kwargs):
+            self.calls.append((args, kwargs))
+
+    class DummyFutures:
+        ThreadPoolExecutor = DummyExecutor
+
+    class DummyConcurrent:
+        futures = DummyFutures
+
+    proxy = parallel_module._LazyExecutor("ThreadPoolExecutor")
+    real_import = builtins.__import__
+    concurrent_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal concurrent_imports
+        if name == "concurrent" and fromlist == ("futures",):
+            concurrent_imports += 1
+            return DummyConcurrent
+        return real_import(name, globals, locals, fromlist, level)
+
+    with patch("builtins.__import__", side_effect=counting_import):
+        first = proxy(max_workers=2)
+        second = proxy(max_workers=4)
+
+    assert isinstance(first, DummyExecutor)
+    assert isinstance(second, DummyExecutor)
+    assert concurrent_imports == 1
+    assert proxy._executor_class is DummyExecutor
+    assert DummyExecutor.calls == [
+        ((), {"max_workers": 2}),
+        ((), {"max_workers": 4}),
+    ]
+
+
 class TestParallelProcessor(unittest.TestCase):
     """Test ParallelProcessor class"""
 
