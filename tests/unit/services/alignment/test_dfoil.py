@@ -230,6 +230,17 @@ class TestDfoilPatternCounting:
         assert counts["AABAA"] == 2
         assert counts["AABBA"] == 3
 
+    def test_count_informative_sites_uses_fixed_uninformative_keys(self):
+        class Counts(dict):
+            def items(self):
+                raise AssertionError("informative total should not scan items")
+
+        counts = Counts(dict.fromkeys(PATTERNS, 1))
+        counts["AAAAA"] = 5
+        counts["BBBBA"] = 7
+
+        assert dfoil_module._count_informative_sites(counts) == 14
+
     def test_large_ascii_with_skips_keeps_loop_validity_mask(self, monkeypatch):
         monkeypatch.setattr(dfoil_module, "_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX", 1)
         monkeypatch.setattr(

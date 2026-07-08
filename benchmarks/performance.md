@@ -835,6 +835,7 @@ Results:
 | `Dfoil._count_site_patterns` clean result dictionary | 20k repeated 100-site / 30 repeated 100k-site / 10 repeated 1M-site clean ASCII counts, skip-code path retained | 2.880642s / 0.053227s / 0.570126s | 2.139669s / 0.049479s / 0.366274s | 1.35x / 1.08x / 1.56x |
 | `Dfoil._count_site_patterns` small skip-code lookup mask | 1k / 5k / 10k / 100k ASCII sites with 2% skip codes, side-by-side previous six-code validity loop | 2.403774s / 1.269534s / 0.692042s / 0.224607s | 1.063043s / 0.773009s / 0.649486s / 0.209380s | 2.26x / 1.64x / 1.07x / 1.07x |
 | `Dfoil._count_site_patterns` skip-code result dictionary | 100 / 1000 / 10k / 100k ASCII sites with skip codes, side-by-side previous indexed result-dictionary construction | 0.00002542s / 0.00003558s / 0.00011915s / 0.00383773s | 0.00002596s / 0.00003525s / 0.00010835s / 0.00198642s | 0.98x / 1.01x / 1.10x / 1.93x |
+| `Dfoil.run` informative-site total | 250k repeated 16-pattern count dictionaries, side-by-side previous `items()` membership scan | 1.003864s | 0.209843s | 4.78x |
 | `Dstatistic._count_site_patterns` small skip-code lookup mask | 512 / 1000 ASCII sites with sparse skip codes, side-by-side previous six-code validity loop | 0.228495791s / 0.075854083s | 0.101425458s / 0.032493250s | 2.25x / 2.33x |
 | `Dfoil._count_site_patterns` all-invariant shortcut | 2M sites, P1/P2/P3/P4 identical to outgroup, identical all-zero pattern dictionary | 0.028345s | 0.000002s | 14172.5x |
 | `Dfoil._count_site_patterns` all-zero pattern template | 500k repeated 200-site / 200k repeated 10k-site all-identical DFOIL counts, fresh mutable result preserved | 2.190396s / 0.995680s | 0.287203s / 0.313775s | 7.63x / 3.17x |
@@ -4789,10 +4790,13 @@ Profiling summary:
   cached byte lookup table, while longer alignments retain the previous
   six-code vector loop that remains faster at larger sizes. Skip-code result
   dictionaries now use the same direct pattern/count zip as clean ASCII counts,
-  avoiding indexed NumPy scalar conversion. A later scalar fallback pass reuses
-  a module-level skip-character constant, scans the five sequences as zipped
-  rows, and caches the pattern table locally to avoid repeated per-call set
-  construction and global lookups on Unicode-containing alignments.
+  avoiding indexed NumPy scalar conversion. `Dfoil.run` now computes the
+  informative-site total from the fixed uninformative pattern keys instead of
+  scanning every pattern item with a membership test. A later scalar fallback
+  pass reuses a module-level skip-character constant, scans the five sequences
+  as zipped rows, and caches the pattern table locally to avoid repeated
+  per-call set construction and global lookups on Unicode-containing
+  alignments.
 - `Dstatistic` alignment-mode and gene-tree-mode text report baselines emitted
   each report line through separate `print()` calls. The optimized helpers build
   the same lines and emit each report with one `print()`, preserving captured

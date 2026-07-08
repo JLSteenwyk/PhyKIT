@@ -64,6 +64,11 @@ _SKIP_SCAN_BYTES = 4096
 _SKIP_LOOKUP_SMALL_ALIGNMENT_MAX = 8192
 _SKIP_LOOKUP = None
 
+
+def _count_informative_sites(counts):
+    return sum(counts.values()) - counts["AAAAA"] - counts["BBBBA"]
+
+
 # Sign-pattern interpretation table (DFO, DIL, DFI, DOL).
 INTERPRETATIONS = {
     '+++0': 'Introgression: P1 -> P3 (or P3 -> P1)',
@@ -370,9 +375,7 @@ class Dfoil(Alignment):
         counts = self._count_site_patterns(seq_p1, seq_p2, seq_p3, seq_p4, seq_o)
 
         # Count informative sites (exclude AAAAA and BBBBA)
-        informative_sites = sum(
-            v for k, v in counts.items() if k not in _UNINFORMATIVE
-        )
+        informative_sites = _count_informative_sites(counts)
 
         # Compute the four D-statistics
         dfo_left = counts['AAABA'] + counts['ABABA'] + counts['BABAA'] + counts['BBBAA']
