@@ -4,10 +4,19 @@ from .base import Alignment
 
 
 class _LazyAlignIO:
-    def read(self, *args, **kwargs):
-        from Bio import AlignIO as _AlignIO
+    _module = None
 
-        return _AlignIO.read(*args, **kwargs)
+    def read(self, *args, **kwargs):
+        module = self._module
+        if module is None:
+            from Bio import AlignIO as _AlignIO
+
+            module = _AlignIO
+            self._module = module
+
+        read = module.read
+        self.read = read
+        return read(*args, **kwargs)
 
 
 AlignIO = _LazyAlignIO()

@@ -39,6 +39,39 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_lazy_alignio_caches_resolved_read():
+    lazy_alignio = module._LazyAlignIO()
+
+    from Bio import AlignIO as real_alignio
+
+    original_read = real_alignio.read
+    calls = []
+
+    def fake_read(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "alignment"
+
+    try:
+        real_alignio.read = fake_read
+
+        assert lazy_alignio.read("query.fa", "fasta") == "alignment"
+        cached_read = lazy_alignio.__dict__["read"]
+
+        def changed_read(*args, **kwargs):
+            return "changed"
+
+        real_alignio.read = changed_read
+
+        assert lazy_alignio.read("reference.fa", "fasta") == "alignment"
+        assert lazy_alignio.__dict__["read"] is cached_read
+        assert calls == [
+            (("query.fa", "fasta"), {}),
+            (("reference.fa", "fasta"), {}),
+        ]
+    finally:
+        real_alignio.read = original_read
+
+
 @pytest.fixture
 def args():
     return Namespace(fasta="/some/path/to/query.fa", reference="/some/path/to/ref.fa")

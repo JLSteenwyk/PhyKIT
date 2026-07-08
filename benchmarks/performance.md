@@ -488,6 +488,7 @@ Results:
 | `ColumnScore._calculate_matches_between_alignments_direct` taxon-count mismatch shortcut | 260-reference-taxon x 5000-site alignment against one-query-taxon x 5000-site alignment, side-by-side previous sequence materialization before zero-match result | 0.001336417s | 0.000003041s | 439.43x |
 | `ColumnScore._repeated_sequence_symbols_ascii` no-slice row scan | 2M repeated ASCII rows, side-by-side previous `sequences[1:]` equality scan | 0.238253s | 0.085275s | 2.79x |
 | `ColumnScore._calculate_matches_between_alignments_direct` cached lazy NumPy attributes | 20 repeated direct matches on 300 x 1000 reference/query ASCII alignments, side-by-side previous uncached lazy proxy, identical `(matches, total)` result | 0.163849s | 0.113724s | 1.44x |
+| `ColumnScore._LazyAlignIO.read` cached Bio.AlignIO read proxy | 10k / 100k / 1M repeated no-op `read` calls after warm Bio.AlignIO import, side-by-side previous import-on-each-call proxy | 0.004486792s / 0.058358667s / 1.435402625s | 0.001072167s / 0.009674250s / 0.119082666s | 4.18x / 6.03x / 12.05x |
 | `column_score` module import without eager NumPy/Bio.AlignIO | cold subprocess import after lazy NumPy, AlignIO, annotation, and JSON helpers | 0.124730s | 0.022308s | 5.59x |
 | `column_score` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002598s | 0.000871s | 2.98x |
 | `DNAThreader.normalize_p_seq` local append triplication | 240k amino-acid string with mixed amino acids, gaps, stop, and unknown symbols, side-by-side previous generator join | 0.049809s | 0.041313s | 1.21x |
@@ -3785,6 +3786,9 @@ Profiling summary:
   the existing zero-match result from the query alignment length before sequence
   materialization. A cached lazy NumPy proxy keeps repeated direct-matcher calls
   from paying import/getattr proxy overhead after the first resolved attribute.
+  The lazy Bio.AlignIO proxy now caches the resolved `read` callable after the
+  first runtime read, preserving import deferral and the service-level patch
+  point while removing repeated import/proxy overhead.
   A startup pass defers NumPy, Bio.AlignIO, annotation-only Bio.Align, and JSON
   helper imports behind module-level proxies/wrappers while preserving existing
   test patch points. A follow-up startup pass removes the runtime
