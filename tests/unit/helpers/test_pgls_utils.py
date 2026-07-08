@@ -308,6 +308,9 @@ def test_estimate_lambda_restores_diagonal_directly(monkeypatch):
     def fail_fill_diagonal(*_args, **_kwargs):
         raise AssertionError("estimate_lambda should restore diagonal directly")
 
+    def fail_linspace(*_args, **_kwargs):
+        raise AssertionError("estimate_lambda should build scalar intervals directly")
+
     def fake_likelihood(_y, _X, C_lam):
         nonlocal likelihood_calls
         likelihood_calls += 1
@@ -321,6 +324,7 @@ def test_estimate_lambda_restores_diagonal_directly(monkeypatch):
 
     monkeypatch.setattr(pgls_utils.np, "diag", fail_diag)
     monkeypatch.setattr(pgls_utils.np, "fill_diagonal", fail_fill_diagonal)
+    monkeypatch.setattr(pgls_utils.np, "linspace", fail_linspace)
     monkeypatch.setattr(pgls_utils, "pgls_log_likelihood", fake_likelihood)
     monkeypatch.setattr(pgls_utils, "minimize_scalar", fake_minimize_scalar)
 

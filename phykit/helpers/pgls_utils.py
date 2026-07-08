@@ -279,12 +279,13 @@ def estimate_lambda(
         except (np.linalg.LinAlgError, FloatingPointError, ValueError):
             return 1e10
 
-    bounds_lo = np.linspace(0, max_lam - max_lam / niter, niter)
-    bounds_hi = np.linspace(max_lam / niter, max_lam, niter)
+    interval_width = max_lam / niter
 
     best_ll = -np.inf
     lambda_hat = 0.0
-    for lo, hi in zip(bounds_lo, bounds_hi):
+    for interval_index in range(niter):
+        lo = interval_index * interval_width
+        hi = lo + interval_width
         res = minimize_scalar(neg_ll, bounds=(lo, hi), method="bounded")
         ll_val = -res.fun
         if ll_val > best_ll:
