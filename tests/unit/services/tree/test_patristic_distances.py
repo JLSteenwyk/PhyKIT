@@ -108,6 +108,29 @@ class TestPatristicDistances(object):
         expected_distances = [tree.distance(*combo) for combo in expected_combos]
         assert patristic_distances == expected_distances
 
+    def test_calculate_distance_batch_accepts_iterable_pairs(self, args):
+        class Pair:
+            def __init__(self, tip_a, tip_b):
+                self.tip_a = tip_a
+                self.tip_b = tip_b
+
+            def __iter__(self):
+                yield self.tip_a
+                yield self.tip_b
+
+            def __getitem__(self, _idx):
+                raise AssertionError("distance batches should unpack pairs directly")
+
+        t = PatristicDistances(args)
+        tree_pickle = patristic_distances_module.pickle.dumps(_IndexedDummyTree())
+
+        observed = t._calculate_distance_batch(
+            tree_pickle,
+            [Pair("tip0", "tip2"), Pair("tip2", "tip5")],
+        )
+
+        assert observed == [2, 3]
+
     def test_calculate_distance_between_pairs_fast_matches_biopython(self, mocker, args):
         t = PatristicDistances(args)
         tips = [f"tip{i}" for i in range(12)]

@@ -215,7 +215,10 @@ class PatristicDistances(Tree):
     def _calculate_distance_batch(self, tree_pickle, combo_batch):
         """Helper function to calculate distances for a batch of combinations."""
         tree = pickle.loads(tree_pickle)
-        return [tree.distance(combo[0], combo[1]) for combo in combo_batch]
+        return [
+            tree.distance(tip_a, tip_b)
+            for tip_a, tip_b in combo_batch
+        ]
 
     @staticmethod
     def _batched_tip_pairs(tips: list[str], batch_size: int):
@@ -243,7 +246,8 @@ class PatristicDistances(Tree):
         # For small datasets, use the original single-threaded approach
         if len(combos) < 100:
             patristic_distances = [
-                tree.distance(combo[0], combo[1]) for combo in combos
+                tree.distance(tip_a, tip_b)
+                for tip_a, tip_b in combos
             ]
         else:
             # Use multiprocessing for larger datasets

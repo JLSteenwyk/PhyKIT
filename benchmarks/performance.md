@@ -867,6 +867,7 @@ Results:
 | `PatristicDistances.calculate_pairwise_tip_distance_values_fast` child push | balanced 768-tip tree, stats-only pair distances, side-by-side previous `reversed(children)` setup | 0.505635s | 0.377701s | 1.34x |
 | `PatristicDistances.calculate_pairwise_tip_distance_values_fast` deep-tree LCA index | pectinate 1200-tip tree, 719400 stats-only pair distances, copied old path baseline | 6.610513s | 0.820027s | 8.06x |
 | `PatristicDistances.calculate_distance_values_between_pairs` stats-only fallback streaming pairs | 2000 nonstandard-tree tips, 1,999,000 pair values, side-by-side previous returned-combo path setup | 1.020654s | 0.610121s | 1.67x |
+| `PatristicDistances._calculate_distance_batch` tuple-unpacked fallback pairs | 1k / 100k / 1M fallback pair distances through the batch helper, side-by-side previous per-pair tuple indexing expression | 0.000138500s / 0.013927875s / 0.220907542s | 0.000136916s / 0.012310125s / 0.185569041s | 1.01x / 1.13x / 1.19x |
 | `PatristicDistances.run` verbose text output | 200k pairwise distance rows, mocked tree/read and identical stdout text | 0.134971s | 0.111984s | 1.21x |
 | `PatristicDistances.run` verbose fast output rows | balanced 256 / 512 / 1024-tip trees, verbose pairwise rows, side-by-side previous combo-plus-summary run setup | 0.072206s / 0.674436s / 1.511996s | 0.058325s / 0.567457s / 1.248277s | 1.24x / 1.19x / 1.21x |
 | `PatristicDistances.run` verbose JSON row construction | 500k mocked pair/distance rows, identical row dictionaries | 0.752742s | 0.671511s | 1.12x |
@@ -4667,7 +4668,9 @@ Profiling summary:
   as well as distances. Cached read-only PatristicDistances run setup now uses
   the explicit unmodified tree read helper, avoiding a defensive copy of the
   cached parsed tree before dispatching to the pairwise distance/statistics
-  routines.
+  routines. Fallback multiprocessing batches now unpack pair tuples once in the
+  comprehension instead of indexing each pair twice, preserving fallback output
+  while reducing large nonstandard-tree batch overhead.
 - `SpuriousSequence.get_branch_lengths_and_their_names` baseline time
   materialized every terminal clade through Bio.Phylo before collecting terminal
   branch lengths. The optimized path uses a direct stack traversal for standard
