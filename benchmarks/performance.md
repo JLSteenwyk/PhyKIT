@@ -64,6 +64,7 @@ Results:
 | `trait_parsing.response_predictor_arrays` selected-column design matrix | 180k taxa x 10 parsed trait columns, one response plus four predictors | 0.147410s | 0.060780s | 2.43x |
 | `trait_parsing.response_predictor_arrays` narrow design matrix | 180k taxa x 20 parsed trait columns, one response plus one predictor | 0.063154s | 0.024249s | 2.60x |
 | `trait_parsing.response_predictor_arrays` narrow single-pass row fill | 180k taxa x 20 parsed trait columns, one response plus 1 / 2 / 3 / 4 predictors, side-by-side previous per-column `fromiter` fill | 0.153337s / 0.309945s / 0.625781s / 0.704461s | 0.139701s / 0.171461s / 0.233177s / 0.273237s | 1.10x / 1.81x / 2.68x / 2.58x |
+| `trait_parsing.response_predictor_arrays` intercept-only response vector | 120k / 180k / 240k parsed taxa x 3 trait columns, no predictors, identical `y` and intercept-only `X` arrays | 0.029554s / 0.066253s / 0.056640s | 0.019719s / 0.037781s / 0.047371s | 1.50x / 1.75x / 1.20x |
 | Regression-style trait-name index resolution | 40k parsed trait columns, one response plus 800 predictors, first duplicate index preserved | 0.461402s | 0.002792s | 165.26x |
 | `trait_parsing.subset_traits_to_ordered_shared_taxa` ordered shared comparison | 300k ordered taxa, all shared / 150k shared subset, avoiding set allocation | 0.026659s / 0.034705s | 0.000216s / 0.015925s | 123.5x / 2.18x |
 | `phykit.phykit` CLI startup without registry `typing` imports | median cold subprocess import after converting registry/factory annotation-only aliases to built-in annotations | 0.035697s | 0.032062s | 1.11x |
@@ -2919,7 +2920,10 @@ Profiling summary:
   intercept matrix directly; one-to-four-predictor designs then moved from one
   `np.fromiter()` pass per selected column to a single row-fill pass, avoiding
   repeated taxon dictionary lookups while still skipping the temporary tuple
-  matrix. Wider designs retain the faster `itemgetter` matrix path. PhylogeneticRegression,
+  matrix. The intercept-only/null-model path now builds the response vector from
+  a list-backed NumPy array rather than a generator-backed `fromiter` call, which
+  reduces lookup overhead for GLM null fits while keeping the same intercept-only
+  design matrix. Wider designs retain the faster `itemgetter` matrix path. PhylogeneticRegression,
   PhyloLogistic, and PhylogeneticGLM use the helper. Their run paths now build
   a first-occurrence trait-name index map once before validation and column
   extraction, preserving `list.index()` behavior for duplicate names while

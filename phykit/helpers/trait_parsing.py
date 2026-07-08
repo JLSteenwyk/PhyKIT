@@ -214,10 +214,9 @@ def response_predictor_arrays(
 
     n_rows = len(ordered_names)
     if not predictor_indices:
-        y = np.fromiter(
-            (traits[name][response_index] for name in ordered_names),
+        y = np.array(
+            [traits[name][response_index] for name in ordered_names],
             dtype=float,
-            count=n_rows,
         )
         return y, np.ones((n_rows, 1), dtype=float)
 

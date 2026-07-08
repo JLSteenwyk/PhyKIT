@@ -267,6 +267,33 @@ def test_response_predictor_arrays_handles_no_predictors():
     assert X.tolist() == [[1.0], [1.0]]
 
 
+def test_response_predictor_arrays_intercept_only_avoids_fromiter(monkeypatch):
+    import numpy as np
+
+    traits = {
+        "taxon_b": [2.0, 20.0],
+        "taxon_a": [1.0, 10.0],
+        "taxon_c": [3.0, 30.0],
+    }
+
+    def fail_fromiter(*_args, **_kwargs):
+        raise AssertionError(
+            "intercept-only GLM arrays should use list-backed array construction"
+        )
+
+    monkeypatch.setattr(np, "fromiter", fail_fromiter)
+
+    y, X = response_predictor_arrays(
+        traits,
+        ["taxon_a", "taxon_b", "taxon_c"],
+        1,
+        [],
+    )
+
+    assert y.tolist() == [10.0, 20.0, 30.0]
+    assert X.tolist() == [[1.0], [1.0], [1.0]]
+
+
 def test_subset_traits_to_ordered_shared_taxa_returns_original_when_all_shared():
     traits = {"A": [1.0], "B": [2.0], "C": [3.0]}
     ordered_names = ["A", "B", "C"]
