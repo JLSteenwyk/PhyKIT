@@ -1169,6 +1169,7 @@ Results:
 | `DiscordanceAsymmetry._plot` repeated asymmetry-ratio color cache | balanced 2048-tip tree, rectangular Agg plot with labels/title/legend disabled and repeated per-internal-node asymmetry ratio | 0.482074s | 0.427223s | 1.13x |
 | `DiscordanceAsymmetry._plot` scalar asymmetry-ratio branch collections | 4096 synthetic rectangular branches with mixed missing and unique numeric asymmetry ratios, side-by-side previous per-ratio `cmap(norm(ratio))` materialization before `LineCollection` construction | 0.923057s | 0.026015s | 35.48x |
 | `DiscordanceAsymmetry._plot` rectangular redundant tight layout pass | repeated 96-tip rectangular discordance-asymmetry PNG render with per-internal-node branch results, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.017128s | 0.667054s | 1.52x |
+| `DiscordanceAsymmetry._plot` circular redundant tight layout pass | repeated 128-tip circular discordance-asymmetry PNG render with per-internal-node branch results, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 1.342600s | 0.671082s | 2.00x |
 | `Hybridization`/`DiscordanceAsymmetry` plot setup | balanced 4096-tip species tree, rectangular branch-result lookup setup | 0.1725s | 0.0696s | 2.5x |
 | `Hybridization`/`DiscordanceAsymmetry` child-y coordinate mean | balanced 32768-tip species tree, postorder node-y coordinate setup with identical positions | 0.466845s | 0.046268s | 10.09x |
 | `PolytomyTest._evaluate_tree_triplets_fast` | balanced 1024-tip tree, 8k group triplets | 5.0266s | 0.0481s | 104.4x |
@@ -5261,11 +5262,10 @@ Profiling summary:
   the same ratio. A follow-up `DiscordanceAsymmetry._plot` pass splits missing
   gray branches from numeric-ratio branches and attaches scalar ratio arrays to
   the scored `LineCollection`s, preserving gray fallback styling while avoiding
-  per-ratio RGBA materialization. The rectangular plot path also skips the
-  explicit `Figure.tight_layout()` call before saving because
+  per-ratio RGBA materialization. Both rectangular and circular plot paths skip
+  the explicit `Figure.tight_layout()` call before saving because
   `savefig(..., bbox_inches="tight")` already performs the saved-bounds
-  calculation; the circular path keeps its layout call because the same
-  benchmark did not show a reliable speedup there.
+  calculation.
   Both plotters now compute tiny child-y coordinate means with Python arithmetic
   during postorder setup, preserving node positions while avoiding one NumPy
   dispatch per internal branch.
