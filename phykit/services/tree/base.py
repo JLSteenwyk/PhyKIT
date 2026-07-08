@@ -199,8 +199,8 @@ class Tree(BaseService):
 
         n_values = len(values)
         if n_values >= min_ordered_size and len(tree_tips) >= n_values:
-            for index, key in enumerate(values):
-                if tree_tips[index] != key:
+            for tip, key in zip(tree_tips, values):
+                if tip != key:
                     break
             else:
                 return tree_tips[n_values:]

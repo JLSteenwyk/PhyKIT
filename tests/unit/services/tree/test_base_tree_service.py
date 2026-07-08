@@ -581,6 +581,23 @@ class TestTreeBase:
             min_ordered_size=0,
         ) == ["d", "e"]
 
+    def test_tips_to_prune_for_ordered_mapping_iterates_prefix(self):
+        class NoIntegerIndexList(list):
+            def __getitem__(self, key):
+                if isinstance(key, int):
+                    raise AssertionError(
+                        "ordered prefix comparison should not index tree tips"
+                    )
+                return super().__getitem__(key)
+
+        values = {"a": 1.0, "b": 2.0, "c": 3.0}
+
+        assert Tree._tips_to_prune_for_ordered_mapping(
+            NoIntegerIndexList(["a", "b", "c", "d", "e"]),
+            values,
+            min_ordered_size=0,
+        ) == ["d", "e"]
+
     def test_tips_to_prune_for_ordered_mapping_falls_back_for_interleaved_tips(self):
         values = {"a": 1.0, "b": 2.0, "c": 3.0}
 
