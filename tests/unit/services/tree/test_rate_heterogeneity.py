@@ -307,6 +307,21 @@ class TestRegimeParsing:
         assert len(regimes) == 8
         assert regimes["raccoon"] == "A"
 
+    def test_ordered_all_shared_regime_file_skips_sets(
+        self, service, tmp_path, monkeypatch
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("A\tr1\nB\tr2\nC\tr1\n")
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact regime path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        regimes = service._parse_regime_file(str(regime_file), ["A", "B", "C"])
+
+        assert regimes == {"A": "r1", "B": "r2", "C": "r1"}
+        assert builtins.set is fail_set
+
     def test_missing_file(self, service):
         tree = service.read_tree_file()
         tree_tips = service.get_tip_names_from_tree(tree)
@@ -389,6 +404,21 @@ class TestTraitParsing:
         stderr = capsys.readouterr().err
         assert set(traits) == set(tree_tips)
         assert stderr == ""
+
+    def test_ordered_all_shared_trait_file_skips_sets(
+        self, service, tmp_path, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nC\t3.0\n")
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact trait path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = service._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert builtins.set is fail_set
 
     def test_extra_columns_error(self, service, tmp_path):
         trait_file = tmp_path / "traits.tsv"

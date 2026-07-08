@@ -2646,6 +2646,7 @@ Results:
 | `RateHeterogeneity._parse_trait_file` stripped comment check | 500k two-column trait rows with whitespace-prefixed comments/blanks, all taxa shared | 1.014449s | 0.882941s | 1.15x |
 | `RateHeterogeneity._parse_regime_file` all-shared parser fast path | 500k two-column regime rows with comments/blanks, all taxa shared, randomized old/new measurement order | 0.397329s | 0.232471s | 1.71x |
 | `RateHeterogeneity._parse_regime_file` binary strict split row parsing | 500k two-column regime rows with comments/blanks, all taxa shared, identical regime assignments and error column counts | 0.487937s | 0.352139s | 1.39x |
+| `RateHeterogeneity` ordered exact trait/regime parser validation | 300k trait rows plus 300k binary regime rows whose taxon order exactly matches tree tips, side-by-side previous set-equality validation | 1.028435s | 0.652907s | 1.58x |
 | `RateHeterogeneity._print_text_output` batched regime rows | 100k regime sigma rows, captured stdout and identical text | 0.047003s | 0.036191s | 1.30x |
 | `RateHeterogeneity._count_regime_tips` one-pass counts | 1M tip-regime assignments x 64 regimes, identical per-regime counts including absent regimes | 1.537367s | 0.051320s | 29.96x |
 | `RateHeterogeneity._assign_branch_regimes` binary state-set merge | balanced 65536-tip tree, three alternating regimes, side-by-side previous generic child-set merge | 0.224014s | 0.182105s | 1.23x |
@@ -8605,7 +8606,10 @@ Profiling summary:
   warning set construction while retaining mismatch warnings for nonidentical
   taxon sets. Trait-file parsing now uses the same exact-match shortcut after
   all rows are validated, retaining mismatch warnings and shared-taxa errors
-  for partial overlaps and nonidentical tree/trait taxon sets. Regime
+  for partial overlaps and nonidentical tree/trait taxon sets. A later
+  ordered-exact parser pass recognizes tree-tip-order matches before building
+  taxon sets for both trait and regime files, preserving the set-backed fallback
+  for reordered and partial files. Regime
   effect-size weighting now counts tip regimes in
   one `Counter` pass instead of rescanning all assignments once per regime,
   preserving zero counts for regimes with no assigned tips.
