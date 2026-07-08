@@ -1467,6 +1467,13 @@ class TestRun:
         )
         monkeypatch.setattr(
             svc,
+            "_count_missing_tip_states",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("run should use ordered prune-target setup")
+            ),
+        )
+        monkeypatch.setattr(
+            svc,
             "_prune_tree_to_tip_states",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(
                 AssertionError("no-prune path should skip pruning")
@@ -1503,6 +1510,20 @@ class TestRun:
             svc,
             "_parse_discrete_trait_file",
             lambda *_args, **_kwargs: tip_states,
+        )
+        monkeypatch.setattr(
+            svc,
+            "_count_missing_tip_states",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("run should use ordered prune-target setup")
+            ),
+        )
+        monkeypatch.setattr(
+            svc,
+            "_prune_tree_to_tip_states",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("run should prune from precomputed tip names")
+            ),
         )
         monkeypatch.setattr(svc, "_fast_copy", copy_spy)
         self._stub_expensive_run_tail(svc, monkeypatch, captured_tree)

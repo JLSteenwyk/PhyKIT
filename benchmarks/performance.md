@@ -2817,6 +2817,7 @@ Results:
 | `StochasticCharacterMap._prune_tree_to_tip_states` | balanced 2048-tip tree, prune 1024 tips before SIMMAP setup | 0.6334s | 0.4164s | 1.5x |
 | `StochasticCharacterMap._prune_tree_to_tip_states` batch standard-tree pruning | balanced 2048-tip tree, prune 1024 tips before SIMMAP setup | 0.4293s | 0.0240s | 17.9x |
 | `StochasticCharacterMap._prune_tree_to_tip_states` target scan child push | balanced 262144-tip tree, collect 131072 missing-tip targets, side-by-side previous `reversed(children)` scan | 0.092651s | 0.081674s | 1.13x |
+| `StochasticCharacterMap.run` ordered prune-target setup | balanced 32768-tip / 131072-tip synthetic trees with all traits, tree-only tail traits, and interleaved missing traits; side-by-side previous full-tree missing-state scan after tip-name extraction | 0.009305s / 0.016619s / 0.017929s; 0.245941s / 0.111075s / 0.213820s | 0.002696s / 0.001955s / 0.002717s; 0.096929s / 0.027386s / 0.009495s | 3.45x / 8.50x / 6.60x; 2.54x / 4.06x / 22.52x |
 | `StochasticCharacterMap.run` all-tip-state read-only setup | balanced 32768-tip cached tree, trait data for every tip, fitting/simulation/output mocked | 0.248931s | 0.047217s | 5.27x |
 | `SimmapSummary` branch label generation | balanced 2048-tip tree, labels for all clades in text/JSON/CSV output | 0.0395s | 0.0076s | 5.2x |
 | `QuartetPie._plot_quartet_pie` rectangular setup | balanced 32768-tip tree, precomputed proportions and branch labels | 0.3998s | 0.1165s | 3.4x |

@@ -76,11 +76,11 @@ class StochasticCharacterMap(Tree):
             )
 
         copied_tree = False
-        missing_tip_state_count = self._count_missing_tip_states(tree, tip_states)
-        if missing_tip_state_count is None or missing_tip_state_count:
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(tree_tips, tip_states)
+        if tips_to_prune:
             tree = self._fast_copy(tree)
             copied_tree = True
-            self._prune_tree_to_tip_states(tree, tip_states)
+            tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
 
         if self.plot_config.ladderize:
             if not copied_tree:
