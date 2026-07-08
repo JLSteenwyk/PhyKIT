@@ -828,10 +828,10 @@ class PhyloPath(Tree):
         except BrokenPipeError:
             return
 
-    def _print_json(self, ranked, avg_coefs, coef_label, variables, n):
-        models = []
-        for name, r in ranked:
-            models.append({
+    @staticmethod
+    def _format_json_payload(ranked, avg_coefs, coef_label, variables, n):
+        models = [
+            {
                 "model": name,
                 "k": r["k"],
                 "q": r["q"],
@@ -845,13 +845,16 @@ class PhyloPath(Tree):
                     k: {kk: round(vv, 4) for kk, vv in v.items()}
                     for k, v in r["coefficients"].items()
                 },
-            })
+            }
+            for name, r in ranked
+        ]
 
-        coefs = {}
-        for edge, vals in sorted(avg_coefs.items()):
-            coefs[edge] = {k: round(v, 4) for k, v in vals.items()}
+        coefs = {
+            edge: {k: round(v, 4) for k, v in vals.items()}
+            for edge, vals in sorted(avg_coefs.items())
+        }
 
-        payload = {
+        return {
             "n_taxa": n,
             "variables": variables,
             "n_models": len(ranked),
@@ -860,6 +863,15 @@ class PhyloPath(Tree):
             "path_coefficients": coefs,
             "coefficient_type": coef_label,
         }
+
+    def _print_json(self, ranked, avg_coefs, coef_label, variables, n):
+        payload = self._format_json_payload(
+            ranked,
+            avg_coefs,
+            coef_label,
+            variables,
+            n,
+        )
         print_json(payload, sort_keys=False)
 
     def _write_csv(self, ranked, avg_coefs, csv_path):

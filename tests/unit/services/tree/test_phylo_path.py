@@ -852,6 +852,83 @@ class TestPhyloPath:
         assert "path_coefficients" in payload
         assert len(payload["model_comparison"]) == 3
 
+    def test_format_json_payload_preserves_order_sorting_and_rounding(self):
+        ranked = [
+            (
+                "best",
+                {
+                    "k": 2,
+                    "q": 1,
+                    "C": 1.23456,
+                    "CICc": 2.34567,
+                    "delta": 0.0,
+                    "weight": 0.98765,
+                    "p": 0.01234,
+                    "edges": [("body_mass", "brain_size")],
+                    "coefficients": {
+                        "body_mass -> brain_size": {
+                            "coef": 1.11115,
+                            "se": 0.22225,
+                        }
+                    },
+                },
+            ),
+            (
+                "second",
+                {
+                    "k": 3,
+                    "q": 2,
+                    "C": 3.45678,
+                    "CICc": 4.56789,
+                    "delta": 2.12345,
+                    "weight": 0.12345,
+                    "p": 0.54321,
+                    "edges": [("longevity", "brain_size")],
+                    "coefficients": {},
+                },
+            ),
+        ]
+        avg_coefs = {
+            "z path": {"coef": 2.22225, "se": 0.33335},
+            "a path": {"coef": -1.55555, "se": 0.44445},
+        }
+
+        payload = PhyloPath._format_json_payload(
+            ranked,
+            avg_coefs,
+            "model-averaged",
+            ["body_mass", "brain_size", "longevity"],
+            8,
+        )
+
+        assert payload["best_model"] == "best"
+        assert [row["model"] for row in payload["model_comparison"]] == [
+            "best",
+            "second",
+        ]
+        assert payload["model_comparison"][0] == {
+            "model": "best",
+            "k": 2,
+            "q": 1,
+            "C": 1.2346,
+            "CICc": 2.3457,
+            "delta_CICc": 0.0,
+            "weight": 0.9877,
+            "p": 0.0123,
+            "edges": ["body_mass->brain_size"],
+            "coefficients": {
+                "body_mass -> brain_size": {
+                    "coef": 1.1112,
+                    "se": 0.2223,
+                }
+            },
+        }
+        assert list(payload["path_coefficients"]) == ["a path", "z path"]
+        assert payload["path_coefficients"]["a path"] == {
+            "coef": -1.5555,
+            "se": 0.4445,
+        }
+
     def test_ciccs_are_finite(self, capsys):
         """CICc values should be finite numbers."""
         svc = PhyloPath(_make_args(json=True))

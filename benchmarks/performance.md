@@ -2579,6 +2579,7 @@ Results:
 | `PhyloPath._print_text` batched report output | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text | 0.299066s | 0.269681s | 1.11x |
 | `PhyloPath._print_text` row-template formatting | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text, side-by-side previous f-string row formatter comparison | 0.286284s | 0.260257s | 1.10x |
 | `PhyloPath._print_text` percent row formatting | 100k ranked model rows plus 100k path coefficient rows, captured stdout and identical text, side-by-side previous `.format()` row formatter comparison | 0.267401s | 0.174840s | 1.53x |
+| `PhyloPath._format_json_payload` comprehension row assembly | 100k ranked model dictionaries plus 100k path coefficient dictionaries, identical nested payload | 2.904860s | 2.345235s | 1.24x |
 | `PhyloPath._plot_dag` node circle rendering | 4096 data-coordinate node circles, real Matplotlib Agg render | 3.024579s | 0.155128s | 19.50x |
 | `PhyloPath._plot_dag` redundant tight layout pass | repeated 12-node path DAG PNG render with coefficient arrows and labels, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 0.334388s | 0.255598s | 1.31x |
 | `PhyloPath._parse_trait_file` streaming valid-row parser | 300k-row multi-trait TSV, 3 numeric trait columns, 100k shared taxa | 0.654959s | 0.457753s | 1.43x |
