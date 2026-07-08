@@ -1443,6 +1443,7 @@ Results:
 | `RelativeRateTest._output_batch` batched text output | 100k pair summary rows, captured stdout and identical text | 0.121325s | 0.109700s | 1.11x |
 | `RelativeRateTest._output_batch` gene-result summary | 100k taxon-pair result groups x 8 gene results, identical reject counts and median chi-square values | 0.116062s | 0.107860s | 1.08x |
 | `RelativeRateTest._output_batch` JSON row literals | 10k / 100k / 300k taxon-pair result groups x 8 gene results, side-by-side previous `dict(...)` row builder | 0.062690s / 2.368385s / 3.820434s | 0.044605s / 1.816282s / 3.865931s | 1.41x / 1.30x / 0.99x |
+| `RelativeRateTest._output_batch` JSON key-sort preallocation | 10k / 100k / 300k taxon-pair result groups x 8 gene results, identical sorted payload rows, side-by-side previous `sorted(all_results.items())` append loop | 0.053896s / 1.559399s / 4.886082s | 0.033667s / 0.893282s / 3.538424s | 1.60x / 1.75x / 1.38x |
 | `RelativeRateTest.run` batch list cleanup | 500k alignment-list rows with comments/blanks, cleanup before per-alignment analysis | 0.088629s | 0.067571s | 1.31x |
 | `RelativeRateTest.run` stripped batch list cleanup | 800k alignment-list rows with whitespace-prefixed comments/blanks, cleanup before per-alignment analysis | 0.338586s | 0.212526s | 1.59x |
 | `RelativeRateTest.run` batch list path resolver | 100k relative alignment-list rows, alignment analysis mocked | 0.461438s | 0.029321s | 15.74x |

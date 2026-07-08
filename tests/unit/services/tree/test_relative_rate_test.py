@@ -755,6 +755,43 @@ class TestTextOutput:
             ],
         })
 
+    def test_output_batch_json_sorts_keys_without_items_materialization(
+        self,
+        mocker,
+    ):
+        class NoItemsDict(dict):
+            def items(self):
+                raise AssertionError("batch JSON output should sort keys directly")
+
+        svc = RelativeRateTest(_make_args(json=True))
+        print_json = mocker.patch.object(relative_rate_test_module, "print_json")
+        all_results = NoItemsDict({
+            ("B", "C"): [{"p_value": 0.80, "chi2": 1.0}],
+            ("A", "B"): [{"p_value": 0.01, "chi2": 4.0}],
+        })
+
+        svc._output_batch("O", 2, all_results)
+
+        payload = print_json.call_args.args[0]
+        assert payload["pairs"] == [
+            {
+                "taxon1": "A",
+                "taxon2": "B",
+                "n_reject": 1,
+                "n_total": 1,
+                "pct_reject": 100.0,
+                "median_chi2": 4.0,
+            },
+            {
+                "taxon1": "B",
+                "taxon2": "C",
+                "n_reject": 0,
+                "n_total": 1,
+                "pct_reject": 0.0,
+                "median_chi2": 1.0,
+            },
+        ]
+
     def test_summarize_batch_gene_results_matches_output_summary(self):
         gene_results = [
             {"p_value": 0.01, "chi2": 6.0},

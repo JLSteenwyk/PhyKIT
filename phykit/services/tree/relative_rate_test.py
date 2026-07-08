@@ -749,21 +749,24 @@ class RelativeRateTest(Tree):
 
     def _output_batch(self, outgroup: str, n_alignments: int, all_results: dict):
         if self.json_output:
-            pairs = []
-            append = pairs.append
+            pair_keys = list(all_results)
+            pair_keys.sort()
+            pairs = [None] * len(pair_keys)
             round_ = round
-            for (t1, t2), gene_results in sorted(all_results.items()):
+            get_results = all_results.__getitem__
+            for idx, (t1, t2) in enumerate(pair_keys):
+                gene_results = get_results((t1, t2))
                 n_reject, n_total, pct_reject, median_chi2 = (
                     self._summarize_batch_gene_results(gene_results)
                 )
-                append({
+                pairs[idx] = {
                     "taxon1": t1,
                     "taxon2": t2,
                     "n_reject": n_reject,
                     "n_total": n_total,
                     "pct_reject": round_(pct_reject, 1),
                     "median_chi2": round_(median_chi2, 4),
-                })
+                }
             print_json(dict(
                 outgroup=outgroup,
                 n_alignments=n_alignments,
