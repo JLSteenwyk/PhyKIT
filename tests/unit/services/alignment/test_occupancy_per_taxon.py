@@ -184,6 +184,24 @@ class TestOccupancyPerTaxon(object):
             is_protein=False,
         ) == 1.0
 
+    def test_occupancy_for_sequence_unicode_fallback_avoids_upper_copy(self):
+        class NoUpperString(str):
+            def upper(self):
+                raise AssertionError(
+                    "Unicode fallback should count mixed-case symbols directly"
+                )
+
+        sequence = NoUpperString("AΩnX-")
+
+        assert occupancy_per_taxon_module._occupancy_for_sequence(
+            sequence,
+            is_protein=False,
+        ) == 2 / 5
+        assert occupancy_per_taxon_module._occupancy_for_sequence(
+            sequence,
+            is_protein=True,
+        ) == 3 / 5
+
     def test_invalid_byte_scan_short_buffers_avoid_slice_checks(self):
         class NoSliceBytes(bytes):
             def __getitem__(self, key):

@@ -24,6 +24,8 @@ _DNA_VALID_LOOKUP = None
 _PROTEIN_VALID_LOOKUP = None
 _DNA_INVALID_BYTES = b"-?*XNxn"
 _PROTEIN_INVALID_BYTES = b"-?*Xx"
+_DNA_INVALID_COUNT_CHARS = "-?*XNxn"
+_PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
 
 
@@ -139,10 +141,8 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
 
 def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
     if is_protein:
-        invalid_chars = {"-", "?", "*", "X"}
         invalid_bytes = _PROTEIN_INVALID_BYTES
     else:
-        invalid_chars = {"-", "?", "*", "X", "N"}
         invalid_bytes = _DNA_INVALID_BYTES
 
     try:
@@ -152,9 +152,13 @@ def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
         else:
             valid_count = len(seq_bytes)
     except UnicodeEncodeError:
-        sequence = sequence.upper()
+        invalid_count_chars = (
+            _PROTEIN_INVALID_COUNT_CHARS
+            if is_protein
+            else _DNA_INVALID_COUNT_CHARS
+        )
         valid_count = len(sequence) - sum(
-            sequence.count(char) for char in invalid_chars
+            sequence.count(char) for char in invalid_count_chars
         )
     return (valid_count / len(sequence)) if len(sequence) > 0 else 0.0
 
