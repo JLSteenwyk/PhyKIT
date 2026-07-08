@@ -7,9 +7,11 @@ from types import SimpleNamespace
 import pytest
 
 from phykit.helpers.files import (
+    _FILE_FORMAT_VALUES,
     _cached_alignment_read,
     _cached_detect_format_by_content,
     _detect_format_by_content,
+    FileFormat,
     _get_file_hash,
     get_alignment_and_format,
     is_protein_alignment,
@@ -47,6 +49,11 @@ class TestFileErrorHandling:
 
 
 class TestFormatDetection:
+    def test_cached_file_format_values_match_file_format_enum(self):
+        assert _FILE_FORMAT_VALUES == tuple(
+            file_format.value for file_format in FileFormat
+        )
+
     def test_detect_format_fasta(self, tmp_path: Path):
         aln = tmp_path / "test.fa"
         aln.write_text(">a\nACGT\n>b\nACGT\n")

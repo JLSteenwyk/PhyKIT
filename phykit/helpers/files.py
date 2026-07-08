@@ -24,6 +24,9 @@ class FileFormat(Enum):
     stockholm = "stockholm"
 
 
+_FILE_FORMAT_VALUES = tuple(file_format.value for file_format in FileFormat)
+
+
 def _get_file_hash(file_path: str) -> str:
     """Calculate a hash for file content to use as cache key."""
     # Use file path, size, and modification time for cache key
@@ -105,16 +108,16 @@ def get_alignment_and_format(
             pass
 
     # Fall back to trying all formats
-    for fileFormat in FileFormat:
+    for file_format in _FILE_FORMAT_VALUES:
         # Skip the already tried format
-        if detected_format and fileFormat.value == detected_format:
+        if detected_format and file_format == detected_format:
             continue
 
         try:
             alignment, is_protein = _cached_alignment_read(
-                file_hash, alignment_file_path, fileFormat.value
+                file_hash, alignment_file_path, file_format
             )
-            return alignment, fileFormat.value, is_protein
+            return alignment, file_format, is_protein
         except (ValueError, AssertionError):
             continue
 
