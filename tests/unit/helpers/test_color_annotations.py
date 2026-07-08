@@ -363,6 +363,17 @@ class TestGetCladeTipIds:
 
         assert get_clade_tip_ids(mrca) == expected
 
+    def test_get_clade_tip_ids_handles_mixed_child_counts(self, monkeypatch):
+        tree = _make_tree("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);")
+        expected = {id(tip) for tip in _terminal_clades(tree.root)}
+
+        def fail_get_terminals(self):
+            raise AssertionError("standard clades should not use get_terminals")
+
+        monkeypatch.setattr(Clade, "get_terminals", fail_get_terminals)
+
+        assert get_clade_tip_ids(tree.root) == expected
+
     def test_terminal_clades_preserves_mixed_child_order(self, monkeypatch):
         tree = _make_tree("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);")
 

@@ -153,7 +153,26 @@ def _terminal_clades(clade):
 
 def get_clade_tip_ids(clade) -> set:
     """Return ``{id(tip) for tip in clade.get_terminals()}``."""
-    return {id(tip) for tip in _terminal_clades(clade)}
+    try:
+        clade.clades
+    except AttributeError:
+        return {id(tip) for tip in clade.get_terminals()}
+
+    ids = set()
+    stack = [clade]
+    pop = stack.pop
+    extend = stack.extend
+    add = ids.add
+    while stack:
+        node = pop()
+        children = getattr(node, "clades", None)
+        if not isinstance(children, list):
+            return {id(tip) for tip in clade.get_terminals()}
+        if children:
+            extend(children)
+        else:
+            add(id(node))
+    return ids
 
 
 def get_clade_branch_ids(tree, clade, parent_map) -> set:
