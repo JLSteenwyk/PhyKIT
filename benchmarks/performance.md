@@ -45,6 +45,7 @@ Results:
 | `to_builtin_json_types` builtin scalar fast path | 300k builtin row dictionaries plus one NumPy scalar summary, side-by-side previous scalar NumPy provenance check | 0.526141s | 0.376409s | 1.40x |
 | `to_builtin_json_types` copy-on-write containers | 300k builtin row dictionaries plus one NumPy scalar summary, side-by-side previous eager container allocation | 0.402334s | 0.362144s | 1.11x |
 | `to_builtin_json_types` cached scalar type tuple | 300k nested builtin row dictionaries plus NumPy scalar summary, identical converted payload | 1.241023s | 1.149813s | 1.08x |
+| `to_builtin_json_types` scalar container recursion skip | 500k builtin scalar tuple values, identical converted list | 0.123278s | 0.086667s | 1.42x |
 | `json_output` module import without eager NumPy | cold subprocess import of shared JSON output helper | 0.088862s | 0.058492s | 1.52x |
 | `json_output` module import without eager stdlib JSON | cold subprocess import of shared JSON output helper, serialization still imports JSON on demand | 0.019455s | 0.018319s | 1.06x |
 | `helpers.caching` module import without eager serialization/cache setup | median cold subprocess import after lazy pickle/json and lazy global caches | 0.012563s | 0.004362s | 2.88x |
@@ -3002,7 +3003,9 @@ Profiling summary:
   duplicate of large JSON-native row blocks. JSON-native scalar leaves now
   return before the NumPy provenance checks, preserving NumPy scalar/array
   conversion while reducing recursive conversion overhead for mixed payloads
-  dominated by builtin rows.
+  dominated by builtin rows. A follow-up pass applies the same scalar-leaf skip
+  inside dict, list, and tuple containers, preserving tuple-to-list conversion
+  while avoiding recursive helper calls for JSON-native scalar values.
 - `helpers.caching` baseline import time eagerly imported `json` and `pickle`
   and constructed global cache instances, which also initialized the default
   temporary cache directory. The optimized helper defers JSON and pickle until

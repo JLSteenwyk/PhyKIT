@@ -7,7 +7,10 @@ def to_builtin_json_types(value):
     if isinstance(value, dict):
         converted = None
         for key, sub_value in value.items():
-            converted_value = to_builtin_json_types(sub_value)
+            if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
+                converted_value = sub_value
+            else:
+                converted_value = to_builtin_json_types(sub_value)
             if converted is None:
                 if converted_value is sub_value:
                     continue
@@ -21,7 +24,10 @@ def to_builtin_json_types(value):
     if isinstance(value, list):
         converted = None
         for index, sub_value in enumerate(value):
-            converted_value = to_builtin_json_types(sub_value)
+            if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
+                converted_value = sub_value
+            else:
+                converted_value = to_builtin_json_types(sub_value)
             if converted is None:
                 if converted_value is sub_value:
                     continue
@@ -29,7 +35,18 @@ def to_builtin_json_types(value):
             converted.append(converted_value)
         return value if converted is None else converted
     if isinstance(value, tuple):
-        return [to_builtin_json_types(sub_value) for sub_value in value]
+        converted = None
+        for index, sub_value in enumerate(value):
+            if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
+                converted_value = sub_value
+            else:
+                converted_value = to_builtin_json_types(sub_value)
+            if converted is None:
+                if converted_value is sub_value:
+                    continue
+                converted = list(value[:index])
+            converted.append(converted_value)
+        return list(value) if converted is None else converted
 
     value_type_module = type(value).__module__
     if value_type_module == "numpy" or value_type_module.startswith("numpy."):

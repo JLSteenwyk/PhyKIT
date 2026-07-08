@@ -72,6 +72,13 @@ class TestJsonOutput:
         assert converted is not payload
         assert converted[0] is unchanged_row
 
+    def test_to_builtin_json_types_handles_builtin_scalar_containers(self):
+        list_payload = [None, True, 7, 1.25, "value"]
+        tuple_payload = (None, True, 7, 1.25, "value")
+
+        assert to_builtin_json_types(list_payload) is list_payload
+        assert to_builtin_json_types(tuple_payload) == list(list_payload)
+
     @patch("builtins.print")
     def test_print_json(self, mocked_print):
         payload = {"a": np.int64(1), "b": np.float64(2.5)}
