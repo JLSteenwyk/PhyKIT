@@ -1731,6 +1731,7 @@ Results:
 | `IndependentContrasts.run` | balanced 32768-tip tree with one trait value per tip, JSON output captured | 0.9886s | 0.8625s | 1.1x |
 | `IndependentContrasts.run` tip-name setup | balanced 32768-tip tree, all tips shared with trait data | 0.0692s | 0.0091s | 7.6x |
 | `IndependentContrasts._print_json` direct serialization | 32767 contrasts with descendant-tip lists, stdout captured | 0.160804s | 0.051197s | 3.1x |
+| `IndependentContrasts._print_json` reused summary ndarray | 300k contrast payload rows, identical nested payload, printing excluded | 0.539565s | 0.478061s | 1.13x |
 | `IndependentContrasts._compute_pic` scalar/label merge traversal | balanced tree with 32768 tips, full descendant-tip labels | 0.094674s | 0.072704s | 1.3x |
 | `IndependentContrasts._resolve_polytomies` direct no-op traversal | balanced 32768-tip binary tree, no polytomies to resolve | 0.106671s | 0.009941s | 10.7x |
 | `IndependentContrasts.run` direct polytomy traversal | balanced 32768-tip tree with one trait value per tip, JSON output captured | 0.645442s | 0.502745s | 1.3x |

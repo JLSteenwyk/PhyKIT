@@ -14,6 +14,7 @@ import numpy as np
 import subprocess
 import sys
 import builtins
+import json
 from argparse import Namespace
 from pathlib import Path
 from Bio.Phylo.BaseTree import TreeMixin
@@ -701,3 +702,34 @@ class TestPICRun:
         # Sum of squared contrasts matches R
         ss = sum(c["contrast"] ** 2 for c in payload["contrasts"])
         assert ss == pytest.approx(0.307253, abs=0.001)
+
+    def test_print_json_reuses_contrast_array_for_summary(
+        self, monkeypatch, capsys, args
+    ):
+        ic = IndependentContrasts(args)
+        original_asarray = ic_module.np.asarray
+        asarray_calls = []
+
+        def counting_asarray(*call_args, **kwargs):
+            asarray_calls.append((call_args, kwargs))
+            return original_asarray(*call_args, **kwargs)
+
+        monkeypatch.setattr(ic_module.np, "asarray", counting_asarray)
+
+        ic._print_json(
+            [1.0, -3.0],
+            [["A", "B"], ["C", "D"]],
+            {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0},
+        )
+
+        payload = json.loads(capsys.readouterr().out)
+
+        assert len(asarray_calls) == 1
+        assert payload["n_taxa"] == 4
+        assert payload["n_contrasts"] == 2
+        assert payload["mean_absolute_contrast"] == 2.0
+        assert payload["variance_of_contrasts"] == 8.0
+        assert payload["contrasts"] == [
+            {"node": 1, "contrast": 1.0, "tips": ["A", "B"]},
+            {"node": 2, "contrast": -3.0, "tips": ["C", "D"]},
+        ]

@@ -42,6 +42,10 @@ np = _LazyNumpy()
 
 def _contrast_summary_stats(contrasts) -> tuple[float, float]:
     contrast_values = np.asarray(contrasts, dtype=float)
+    return _contrast_summary_stats_from_array(contrast_values)
+
+
+def _contrast_summary_stats_from_array(contrast_values) -> tuple[float, float]:
     mean_abs = float(np.abs(contrast_values).mean())
     variance = float(contrast_values.var(ddof=1))
     return mean_abs, variance
@@ -630,7 +634,7 @@ class IndependentContrasts(Tree):
 
     def _print_json(self, contrasts, node_labels, tip_traits):
         contrast_values = np.asarray(contrasts, dtype=float)
-        mean_abs, variance = _contrast_summary_stats(contrast_values)
+        mean_abs, variance = _contrast_summary_stats_from_array(contrast_values)
         nodes = [
             {
                 "node": i + 1,
