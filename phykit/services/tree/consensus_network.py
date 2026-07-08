@@ -53,6 +53,16 @@ def _all_tip_sets_identical(tip_sets) -> bool:
     return True
 
 
+def _shared_tip_set(tip_sets) -> set[str]:
+    iterator = iter(tip_sets)
+    shared = set(next(iterator, ()))
+    for tip_set in iterator:
+        shared.intersection_update(tip_set)
+        if not shared:
+            break
+    return shared
+
+
 class _LazyPhylo:
     def read(self, *args, **kwargs):
         from Bio import Phylo as _Phylo
@@ -199,7 +209,7 @@ class ConsensusNetwork(Tree):
             return trees, False, union_taxa
 
         # shared mode
-        shared_taxa = set.intersection(*tip_sets)
+        shared_taxa = _shared_tip_set(tip_sets)
         if len(shared_taxa) < 3:
             raise PhykitUserError(
                 [

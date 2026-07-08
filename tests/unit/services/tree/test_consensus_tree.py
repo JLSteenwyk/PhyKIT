@@ -36,6 +36,16 @@ assert "numpy" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_shared_tip_set_stops_when_empty():
+    class FailIfScanned(set):
+        def __iter__(self):
+            raise AssertionError("empty shared taxa should stop intersection")
+
+    assert consensus_tree_module._shared_tip_set(
+        [{"A", "B"}, {"C", "D"}, FailIfScanned({"A"})]
+    ) == set()
+
+
 def test_lazy_phylo_caches_resolved_read(monkeypatch):
     calls = []
 

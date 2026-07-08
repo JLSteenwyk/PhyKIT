@@ -1856,6 +1856,7 @@ Results:
 | `ConsensusTree._tips` / `ConsensusNetwork._tips` | 40 balanced 4096-tip trees, taxon-set extraction | 0.3272s | 0.0356s | 9.2x |
 | `ConsensusTree` / `ConsensusNetwork` / `QuartetNetwork` `_normalize_taxa` identical taxon sets | 80 precomputed taxon sets x 1024 shared taxa, defer shared intersection until needed | 2.673776s | 0.475789s | 5.62x |
 | `ConsensusTree` / `ConsensusNetwork` / `QuartetNetwork` `_normalize_taxa` identical tip-set no-slice scan | 1M precomputed tip sets, identical / early-different / late-different cases, side-by-side previous `tip_sets[1:]` shortcut predicate | 0.267546s / 0.006743s / 0.105294s | 0.226317s / 0.000000208s / 0.077291s | 1.18x / 32392.41x / 1.36x |
+| `ConsensusTree` / `ConsensusNetwork` / `QuartetNetwork` `_normalize_taxa` empty shared-tip intersection | 200k precomputed tip sets where the first two sets share no taxa, side-by-side previous `set.intersection(*tip_sets)`; all-shared compatibility case also checked | 0.042712083s | 0.000001083s | 39450.97x |
 | `ConsensusTree._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.090417s | 0.067520s | 1.34x |
 | `ConsensusTree`/`ConsensusNetwork`/`QuartetNetwork._parse_trees_from_source` stripped comment cleanup | 600k path-like rows with whitespace-prefixed comments/blanks, source cleanup before tree parsing | 0.267016s | 0.239204s | 1.12x |
 | `ConsensusTree._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
@@ -6796,7 +6797,10 @@ Profiling summary:
   for pruning modes after a mismatch is found. Consensus tree, consensus
   network, and quartet network now perform that identical-set check with an
   iterator loop instead of allocating `tip_sets[1:]`, preserving early mismatch
-  exits without copying the remaining taxon-set list.
+  exits without copying the remaining taxon-set list. Shared-mode intersection
+  now updates one retained set and stops when it becomes empty, avoiding a full
+  `set.intersection(*tip_sets)` scan for incompatible tree batches while
+  preserving the same low-shared-taxa validation errors.
 - `ConsensusNetwork._count_splits` baseline time extracted each tree's splits
   by calling `clade.get_terminals()` for every internal clade. The optimized
   split extractor computes descendant tip sets once in postorder and applies the
