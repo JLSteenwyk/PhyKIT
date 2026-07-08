@@ -2547,6 +2547,7 @@ Results:
 | `PhyloPath._is_dag` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.095966s | 0.011607s | 8.27x |
 | `PhyloPath._topological_order` queue cursor | 40k-variable wide acyclic DAG with 20k roots and 20k dependent nodes | 0.099320s | 0.014319s | 6.94x |
 | `PhyloPath._basis_set` precomputed parent sets | 350-variable sparse DAG, 60,782 d-separation basis statements | 1.211617s | 0.057178s | 21.19x |
+| `PhyloPath._basis_set` empty-parent conditioning shortcut | 500 root variables / 1200-variable chain DAG, side-by-side previous parent-set union for every non-adjacent pair | 0.038062s / 0.569463s | 0.025799s / 0.361093s | 1.48x / 1.58x |
 | `PhyloPath._model_average` edge-indexed coefficient accumulation | 8k candidate models, 4k unique path coefficients, 12 coefficients per model | 1.562250s | 0.034478s | 45.31x |
 | `PhyloPath._model_average` combined weight/coefficient sums | 12 coefficient entries for one edge, side-by-side previous three generator passes | 0.000007119s | 0.000002185s | 3.26x |
 | `PhyloPath.run` model-variable trait-name index resolution | 40k parsed trait columns, 1200 model variables, first duplicate index preserved | 0.684638s | 0.002820s | 242.76x |

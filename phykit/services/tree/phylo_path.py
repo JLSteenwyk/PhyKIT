@@ -547,7 +547,11 @@ class PhyloPath(Tree):
                 if (vi, vj) in adjacent:
                     continue
                 # Conditioning set: parents of both, excluding i and j
-                cond = (parents_i | parents[vj]) - {vi, vj}
+                parents_j = parents[vj]
+                if parents_i or parents_j:
+                    cond = (parents_i | parents_j) - {vi, vj}
+                else:
+                    cond = set()
                 basis.append((vi, vj, cond))
 
         return basis

@@ -414,6 +414,20 @@ class TestPhyloPath:
             ("B", "C", {"A"}),
         ]
 
+    def test_basis_set_root_pairs_have_empty_conditioning_sets(self):
+        svc = PhyloPath(_make_args())
+        variables = ["A", "B", "C", "D"]
+        adj = {variable: set() for variable in variables}
+
+        assert svc._basis_set(adj, variables) == [
+            ("A", "B", set()),
+            ("A", "C", set()),
+            ("A", "D", set()),
+            ("B", "C", set()),
+            ("B", "D", set()),
+            ("C", "D", set()),
+        ]
+
     def test_model_average_indexes_coefficients_by_edge(self):
         class NoContainsDict(dict):
             def __contains__(self, key):
