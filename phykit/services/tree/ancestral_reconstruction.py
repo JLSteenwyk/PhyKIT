@@ -94,7 +94,9 @@ class _LazyHeapq:
     def merge(self, *args, **kwargs):
         import heapq as _heapq
 
-        return _heapq.merge(*args, **kwargs)
+        merge = _heapq.merge
+        self.merge = merge
+        return merge(*args, **kwargs)
 
 
 heapq = _LazyHeapq()

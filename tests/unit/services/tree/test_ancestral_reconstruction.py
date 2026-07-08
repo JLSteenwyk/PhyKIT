@@ -57,6 +57,28 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_lazy_heapq_caches_merge_after_first_use(monkeypatch):
+    lazy_heapq = ancestral_module._LazyHeapq()
+
+    first = tuple(lazy_heapq.merge(("B", "D"), ("A", "C")))
+    cached_merge = lazy_heapq.merge
+    assert first == ("A", "B", "C", "D")
+
+    original_import = __import__
+
+    def fail_heapq_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "heapq":
+            raise AssertionError("heapq.merge should be reused after first resolution")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr("builtins.__import__", fail_heapq_import)
+
+    second = tuple(lazy_heapq.merge(("B", "D"), ("A", "C")))
+
+    assert lazy_heapq.merge is cached_merge
+    assert second == first
+
+
 def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
     lazy_pickle = ancestral_module._LazyPickle()
 
