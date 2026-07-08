@@ -243,7 +243,10 @@ class Tree(BaseService):
 
         clade = root
         while True:
-            children = getattr(clade, "clades", None)
+            try:
+                children = clade.clades
+            except AttributeError:
+                return None
             if not isinstance(children, list):
                 return None
             if not children:

@@ -323,7 +323,10 @@ class RobinsonFouldsDistance(Tree):
 
         clade = root
         while True:
-            children = getattr(clade, "clades", None)
+            try:
+                children = clade.clades
+            except AttributeError:
+                return tree.get_terminals()[0].name
             if not isinstance(children, list):
                 return tree.get_terminals()[0].name
             if not children:

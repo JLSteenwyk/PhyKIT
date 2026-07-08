@@ -940,6 +940,7 @@ Results:
 | `RobinsonFouldsDistance.run` rooting-tip setup | balanced 65536-tip tree, first terminal lookup before rooting | 0.1232s | 0.000005s | 27122.6x |
 | `RobinsonFouldsDistance.run` same-path shortcut | balanced 32768-tip cached tree passed as both inputs, RF calculation and output isolated | 4.477090s | 0.039716s | 112.73x |
 | `RobinsonFouldsDistance._first_terminal_name` direct leftmost descent | balanced depth-17 tree, first terminal lookup, side-by-side previous direct stack helper | 0.000002650s | 0.000001039s | 2.55x |
+| `RobinsonFouldsDistance._first_terminal_name` direct clades attribute loop | balanced depth-10 / depth-17 trees, 20k repeated first terminal lookups, side-by-side previous `getattr` loop | 0.000005913s / 0.000009457s | 0.000003461s / 0.000004225s | 1.71x / 2.24x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` | balanced 256-tip tree pair, rooted descendant-set RF semantics | 0.2184s | 0.0022s | 101.6x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` direct terminal count | balanced 4096-tip identical tree pair, rooted descendant-set RF semantics | 0.068054s | 0.055135s | 1.23x |
 | `RobinsonFouldsDistance._terminal_count_direct` localized stack operations | balanced 262144-tip tree, terminal count for RF normalization, side-by-side previous direct helper | 0.027284s | 0.026463s | 1.03x |
@@ -1393,6 +1394,7 @@ Results:
 | `treeness` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006082s | 0.004897s | 1.24x |
 | `treeness` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.005941s | 0.003868s | 1.54x |
 | `Tree.calculate_first_terminal_name_fast` direct leftmost descent | balanced depth-17 tree, first terminal lookup, side-by-side previous direct stack helper | 0.000002652s | 0.000001049s | 2.53x |
+| `Tree.calculate_first_terminal_name_fast` direct clades attribute loop | balanced depth-10 / depth-17 trees, 20k repeated first terminal lookups, side-by-side previous `getattr` loop | 0.000006792s / 0.000008355s | 0.000004783s / 0.000006917s | 1.42x / 1.21x |
 | `Tree.get_tip_names_from_tree` | balanced 65536-tip tree, terminal name extraction | 0.1356s | 0.0122s | 11.1x |
 | `Tree.calculate_terminal_names_fast` child push loop | balanced 65536-tip tree, terminal name extraction with identical order | 0.018008s | 0.010621s | 1.70x |
 | `Tree.calculate_terminal_names_fast` binary child push | balanced 131072-tip tree, terminal name extraction with identical order, side-by-side previous `reversed(children)` helper | 0.021721s | 0.018765s | 1.16x |

@@ -667,6 +667,16 @@ class TestTreeBase:
 
         assert Tree.calculate_first_terminal_name_fast(NonstandardClade()) is None
 
+    def test_calculate_first_terminal_name_fast_fallback_for_inner_nonstandard_clade(self):
+        class InnerNonstandardClade:
+            name = "ignored"
+            clades = ("not", "a", "list")
+
+        class RootClade:
+            clades = [InnerNonstandardClade()]
+
+        assert Tree.calculate_first_terminal_name_fast(RootClade()) is None
+
     def test_calculate_terminal_names_fast_preserves_tree_and_clade_order(self):
         tree = Phylo.read(StringIO("((a:1,b:1):1,(c:1,d:1):1);"), "newick")
 

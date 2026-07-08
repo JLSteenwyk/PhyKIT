@@ -300,6 +300,23 @@ class TestRobinsonFouldsDistance(object):
 
         assert RobinsonFouldsDistance._first_terminal_name(NonstandardTree()) == "fallback"
 
+    def test_first_terminal_name_falls_back_for_inner_nonstandard_clade_container(self):
+        class InnerNonstandardClade:
+            name = "ignored"
+            clades = ("not", "a", "list")
+
+        class RootClade:
+            clades = [InnerNonstandardClade()]
+
+        class NonstandardTree:
+            root = RootClade()
+
+            def get_terminals(self):
+                terminal = type("Terminal", (), {"name": "fallback"})()
+                return [terminal]
+
+        assert RobinsonFouldsDistance._first_terminal_name(NonstandardTree()) == "fallback"
+
     def test_calculate_multiple_rf_distances_sequential_path(self, mocker, args):
         rf = RobinsonFouldsDistance(args)
 
