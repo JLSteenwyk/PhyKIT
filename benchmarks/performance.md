@@ -428,6 +428,7 @@ Results:
 | `evolutionary_rate_per_site` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.114353s | 0.029664s | 3.86x |
 | `evolutionary_rate_per_site` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.013219s | 0.005953s | 2.22x |
 | `evolutionary_rate_per_site` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002573s | 0.000905s | 2.84x |
+| `EvolutionaryRatePerSite.process_args` no-plot config elision | `python -m timeit`, 7 repeats of 2000 no-plot `EvolutionaryRatePerSite` constructions, text and JSON CLI stdout/stderr matched previous commit | 0.000002870s | 0.000000621s | 4.62x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.6591s | 0.0349s | 18.9x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` gap lookup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.086270s | 0.038467s | 2.24x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` protein ASCII counts | 1000 taxa x 5000 sites, 20 amino-acid symbols | 0.078547s | 0.050084s | 1.57x |
