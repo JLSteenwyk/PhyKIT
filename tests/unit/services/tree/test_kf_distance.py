@@ -216,6 +216,24 @@ class TestKuhnerFelsensteinDistance:
             frozenset({"C"}): 7.0,
         }
 
+    def test_postorder_clades_direct_preserves_biopython_postorder(self, args):
+        kf = KuhnerFelsensteinDistance(args)
+        tree = Phylo.read(StringIO("((A:2,B:3):5,C:7);"), "newick")
+
+        direct_names = [
+            clade.name for clade in kf._postorder_clades_direct(tree)
+        ]
+        biopython_names = [
+            clade.name for clade in tree.find_clades(order="postorder")
+        ]
+
+        assert direct_names == biopython_names
+
+    def test_postorder_clades_direct_falls_back_for_nonstandard_tree(self, args):
+        kf = KuhnerFelsensteinDistance(args)
+
+        assert kf._postorder_clades_direct(object()) is None
+
     def test_get_splits_with_lengths_handles_mixed_child_counts(self, args):
         kf = KuhnerFelsensteinDistance(args)
         tree = Phylo.read(

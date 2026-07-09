@@ -988,6 +988,7 @@ Results:
 | `KuhnerFelsensteinDistance.calculate_kf_distance` | balanced 1024-tip tree pair, branch score split map | 0.0472s | 0.0105s | 4.5x |
 | `KuhnerFelsensteinDistance._get_splits_with_lengths` direct postorder | balanced 32768-tip tree, identical branch-score split map | 0.299108s | 0.200414s | 1.49x |
 | `KuhnerFelsensteinDistance._get_splits_with_lengths` binary child union | balanced 32768-tip tree, branch-score split map, side-by-side previous direct split helper | 0.049567s | 0.035310s | 1.40x |
+| `KuhnerFelsensteinDistance._postorder_clades_direct` localized stack operations | balanced 131072-tip tree, identical direct postorder clade list | 0.049084s | 0.032811s | 1.50x |
 | `KuhnerFelsensteinDistance.calculate_kf_distance` same-object shortcut | balanced 8192-tip tree compared to itself, side-by-side previous double split-map path | 0.508294s | 0.000000s | >1e6x |
 | `KuhnerFelsensteinDistance.calculate_kf_distance` split accumulation | balanced 16384-tip tree pair, same topology with perturbed branch lengths, side-by-side previous split-map union accumulation | 0.388520s | 0.204482s | 1.90x |
 | `kf_distance` module import without eager Bio.Phylo | cold subprocess import of KF-distance command module | 0.164549s | 0.066013s | 2.49x |
@@ -5090,6 +5091,9 @@ Profiling summary:
   binary child unions with direct frozenset `|` operations and keeps explicit
   single-child and multifurcating paths, preserving split-key overwrite behavior
   while reducing balanced 32768-tip split-map time from 0.049567s to 0.035310s.
+  The direct postorder helper now localizes stack and output-list operations,
+  preserving Bio.Phylo postorder for standard trees while reducing traversal
+  overhead inside split extraction.
   A later startup pass converts annotation-only `typing` aliases to built-in
   postponed annotations, so command discovery no longer loads `typing`.
   Same-object method calls now return `(0.0, 0.0)` before split extraction;

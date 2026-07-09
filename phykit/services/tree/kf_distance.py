@@ -126,11 +126,14 @@ class KuhnerFelsensteinDistance(Tree):
 
         clades = []
         stack = [root]
+        append_clade = clades.append
+        pop = stack.pop
+        extend = stack.extend
         try:
             while stack:
-                clade = stack.pop()
-                clades.append(clade)
-                stack.extend(clade.clades)
+                clade = pop()
+                append_clade(clade)
+                extend(clade.clades)
         except AttributeError:
             return None
         clades.reverse()
