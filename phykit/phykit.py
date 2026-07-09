@@ -62,6 +62,55 @@ _DEDENTED_VERSION_BANNER = None
 _FIXED_WIDTH_FORMATTER_CLASS = None
 
 
+class _PairwiseIdentityDefaultArgs:
+    __slots__ = (
+        "alignment",
+        "verbose",
+        "exclude_gaps",
+        "plot",
+        "plot_output",
+        "json",
+        "fig_width",
+        "fig_height",
+        "dpi",
+        "no_title",
+        "title",
+        "legend_position",
+        "ylabel_fontsize",
+        "xlabel_fontsize",
+        "title_fontsize",
+        "axis_fontsize",
+        "colors",
+        "ladderize",
+        "cladogram",
+        "circular",
+        "color_file",
+    )
+
+    def __init__(self, alignment: str) -> None:
+        self.alignment = alignment
+        self.verbose = False
+        self.exclude_gaps = False
+        self.plot = False
+        self.plot_output = "pairwise_identity_heatmap.png"
+        self.json = False
+        self.fig_width = None
+        self.fig_height = None
+        self.dpi = 300
+        self.no_title = False
+        self.title = None
+        self.legend_position = None
+        self.ylabel_fontsize = None
+        self.xlabel_fontsize = None
+        self.title_fontsize = None
+        self.axis_fontsize = None
+        self.colors = None
+        self.ladderize = False
+        self.cladogram = False
+        self.circular = False
+        self.color_file = None
+
+
 def _dedent(text: str) -> str:
     from textwrap import dedent
 
@@ -1474,6 +1523,18 @@ class Phykit:
 
     @staticmethod
     def pairwise_identity(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            try:
+                PairwiseIdentity(_PairwiseIdentityDefaultArgs(argv[0])).run()
+            except PhykitUserError as err:
+                try:
+                    for message in err.messages:
+                        print(message)
+                except BrokenPipeError:
+                    pass
+                raise SystemExit(err.code)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
