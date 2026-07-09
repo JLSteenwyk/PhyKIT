@@ -183,6 +183,35 @@ class TestRenameFastaEntries:
             "CCCC\n"
         )
 
+    def test_replace_ids_in_file_and_write_writes_two_line_sequences_directly(
+        self, tmp_path, args
+    ):
+        service = RenameFastaEntries(args)
+        input_file = tmp_path / "input.fa"
+        output_file = tmp_path / "renamed.fa"
+        input_file.write_text(
+            ">a original description\n"
+            f"{'A' * 120}\n"
+            ">b original description\n"
+            f"{'C' * 61}\n"
+        )
+
+        renamed_count, total_records = service.replace_ids_in_file_and_write(
+            str(output_file),
+            str(input_file),
+            {"a": "renamed_a"},
+        )
+
+        assert (renamed_count, total_records) == (1, 2)
+        assert output_file.read_text() == (
+            ">renamed_a\n"
+            f"{'A' * 60}\n"
+            f"{'A' * 60}\n"
+            ">b original description\n"
+            f"{'C' * 60}\n"
+            "C\n"
+        )
+
     def test_replace_ids_in_file_and_write_batches_large_sequences(
         self, tmp_path, args, monkeypatch
     ):

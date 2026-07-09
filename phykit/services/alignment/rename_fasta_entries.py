@@ -110,6 +110,7 @@ class RenameFastaEntries(Alignment):
         with open(fasta_path) as input_file, open(output_file_path, "w") as output_file:
             write = output_file.write
             width = _FASTA_WRAP_WIDTH
+            two_line_limit = width * 2
             batch_min_length = _WRAPPED_FASTA_BATCH_MIN_LENGTH
             for title, sequence in SimpleFastaParser(input_file):
                 total_records += 1
@@ -125,6 +126,8 @@ class RenameFastaEntries(Alignment):
                     write(f">{header}\n")
                 elif sequence_length <= width:
                     write(f">{header}\n{sequence}\n")
+                elif sequence_length <= two_line_limit:
+                    write(f">{header}\n{sequence[:width]}\n{sequence[width:]}\n")
                 elif sequence_length >= batch_min_length:
                     write(f">{header}\n")
                     self._write_wrapped_fasta_sequence(output_file, sequence, width)
