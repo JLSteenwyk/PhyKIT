@@ -1,3 +1,5 @@
+from math import log2
+
 from .base import Alignment
 
 
@@ -28,8 +30,11 @@ np = _LazyNumpy()
 _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
 _PROTEIN_GAP_BYTES = b"-?*X"
+_DNA_GAP_CHARS = frozenset("-?*XN")
+_PROTEIN_GAP_CHARS = frozenset("-?*X")
 _PLOT_DIRECT_MAX_LIMIT = 100_000
 _ASCII_ENTROPY_BLOCK_SIZE = 512
+_ENTROPY_SCALAR_MAX_CELLS = 8192
 
 
 def _get_gap_codes(is_protein: bool):
@@ -114,6 +119,38 @@ def _entropy_from_counts(counts, totals):
 
     entropies = _entropy_columns_from_probabilities(probs, log_probs)
     entropies[totals == 0] = 0.0
+    return entropies
+
+
+def _site_entropies_scalar(
+    sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+) -> list[float] | None:
+    if not sequences or (len(sequences) * aln_len) > _ENTROPY_SCALAR_MAX_CELLS:
+        return None
+    if any(len(sequence) != aln_len for sequence in sequences):
+        return None
+
+    gap_chars = _PROTEIN_GAP_CHARS if is_protein else _DNA_GAP_CHARS
+    entropies = []
+    for column_idx in range(aln_len):
+        counts = {}
+        total = 0
+        for sequence in sequences:
+            char = sequence[column_idx]
+            if char in gap_chars:
+                continue
+            counts[char] = counts.get(char, 0) + 1
+            total += 1
+        if total <= 1 or len(counts) <= 1:
+            entropies.append(0.0)
+            continue
+        entropy = 0.0
+        for count in counts.values():
+            probability = count / total
+            entropy -= probability * log2(probability)
+        entropies.append(entropy)
     return entropies
 
 
@@ -344,6 +381,10 @@ class AlignmentEntropy(Alignment):
         else:
             return [0.0] * aln_len
         sequences = [sequence.upper() for sequence in raw_sequences]
+
+        scalar_entropies = _site_entropies_scalar(sequences, aln_len, is_protein)
+        if scalar_entropies is not None:
+            return scalar_entropies
 
         try:
             alignment_bytes = "".join(sequences).encode("ascii")

@@ -138,7 +138,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert isclose(entropies[1], 1.0, rel_tol=0.001)
 
     def test_site_entropies_ascii_small_alphabet_counts_with_count_nonzero(
-        self, mocker
+        self, mocker, monkeypatch
     ):
         from Bio.Seq import Seq
         from Bio.SeqRecord import SeqRecord
@@ -149,6 +149,7 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("ATGT"), id="t2"),
             SeqRecord(Seq("TCGT"), id="t3"),
         ]
+        monkeypatch.setattr(alignment_entropy_module, "_ENTROPY_SCALAR_MAX_CELLS", 0)
         count_nonzero_spy = mocker.spy(
             alignment_entropy_module.np,
             "count_nonzero",
@@ -163,7 +164,9 @@ assert "Bio.AlignIO" not in sys.modules
             for call in count_nonzero_spy.call_args_list
         )
 
-    def test_site_entropies_ascii_path_uses_gap_code_reduction(self, mocker):
+    def test_site_entropies_ascii_path_uses_gap_code_reduction(
+        self, mocker, monkeypatch
+    ):
         from Bio.Seq import Seq
         from Bio.SeqRecord import SeqRecord
 
@@ -173,6 +176,7 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("a-"), id="t2"),
             SeqRecord(Seq("tt"), id="t3"),
         ]
+        monkeypatch.setattr(alignment_entropy_module, "_ENTROPY_SCALAR_MAX_CELLS", 0)
         gap_codes_spy = mocker.spy(alignment_entropy_module, "_get_gap_codes")
 
         entropies = entropy.calculate_site_entropies(alignment, is_protein=False)
@@ -347,7 +351,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert entropies == [0.0, 0.0, 0.0, 0.0]
 
     def test_site_entropies_small_alphabet_uses_entropy_list_helper(
-        self, mocker
+        self, mocker, monkeypatch
     ):
         from Bio.Seq import Seq
         from Bio.SeqRecord import SeqRecord
@@ -358,6 +362,7 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("BABA"), id="t2"),
             SeqRecord(Seq("ABBA"), id="t3"),
         ]
+        monkeypatch.setattr(alignment_entropy_module, "_ENTROPY_SCALAR_MAX_CELLS", 0)
         helper_spy = mocker.spy(
             alignment_entropy_module,
             "_entropy_values_to_list",
@@ -367,6 +372,37 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert len(entropies) == 4
         assert helper_spy.call_count == 1
+
+    def test_site_entropies_small_alignment_uses_scalar_path(self, mocker):
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        entropy = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False))
+        alignment = [
+            SeqRecord(Seq("aN-"), id="t1"),
+            SeqRecord(Seq("AN?"), id="t2"),
+            SeqRecord(Seq("tNX"), id="t3"),
+        ]
+        mocker.patch(
+            "phykit.services.alignment.alignment_entropy.np.frombuffer",
+            side_effect=AssertionError(
+                "small entropy calculations should avoid NumPy setup"
+            ),
+        )
+
+        entropies = entropy.calculate_site_entropies(alignment, is_protein=False)
+
+        assert len(entropies) == 3
+        assert isclose(entropies[0], 0.918295, rel_tol=0.001)
+        assert entropies[1] == 0.0
+        assert entropies[2] == 0.0
+
+    def test_site_entropies_scalar_rejects_uneven_lengths(self):
+        assert alignment_entropy_module._site_entropies_scalar(
+            ["ACGT", "ACG"],
+            4,
+            False,
+        ) is None
 
     def test_site_entropies_identical_sequences_return_zeroes_before_matrix(
         self, mocker
@@ -578,7 +614,9 @@ assert "Bio.AlignIO" not in sys.modules
         assert len(observed) == alignment_array.shape[1]
         assert observed[-1] == 0.0
 
-    def test_site_entropies_protein_uses_chunked_ascii_counts(self, mocker):
+    def test_site_entropies_protein_uses_chunked_ascii_counts(
+        self, mocker, monkeypatch
+    ):
         from Bio.Seq import Seq
         from Bio.SeqRecord import SeqRecord
 
@@ -588,6 +626,7 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("LMNPQRSTV"), id="t2"),
             SeqRecord(Seq("WYACDEFGH"), id="t3"),
         ]
+        monkeypatch.setattr(alignment_entropy_module, "_ENTROPY_SCALAR_MAX_CELLS", 0)
         spy = mocker.spy(alignment_entropy_module, "_entropy_from_ascii_codes")
 
         entropies = entropy.calculate_site_entropies(alignment, is_protein=True)
