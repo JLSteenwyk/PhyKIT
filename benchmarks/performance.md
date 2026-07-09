@@ -319,6 +319,7 @@ Results:
 | `composition_per_taxon` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085520s | 0.023586s | 3.63x |
 | `composition_per_taxon` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006286s | 0.004998s | 1.26x |
 | `composition_per_taxon` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.002980s | 0.001067s | 2.79x |
+| `Phykit.composition_per_taxon` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `composition_per_taxon simple.fa`, 15 runs after 3 warmups, text/JSON stdout matched previous branch | 0.494809s / 0.053938s | 0.000392s / 0.047208s | 1262.27x / 1.14x |
 | `alignment_outlier_taxa` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.003062s | 0.001096s | 2.79x |
 | `GCContent.calculate_gc_per_sequence_data` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.0698s | 0.0106s | 6.6x |
 | `GCContent.calculate_gc_total_value` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.0704s | 0.0101s | 7.0x |
