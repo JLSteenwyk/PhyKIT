@@ -1,5 +1,6 @@
 from phykit.services.alignment._fasta import (
     _clean_sequence,
+    read_unique_fasta_entries,
     read_fasta_first_tokens,
     read_fasta_first_token_set,
 )
@@ -38,3 +39,37 @@ def test_read_fasta_first_tokens_uses_binary_header_scan(tmp_path):
     )
 
     assert read_fasta_first_tokens(str(fasta)) == ["taxon_a", "taxon_b"]
+
+
+def test_read_unique_fasta_entries_cleans_requested_sequences(tmp_path):
+    fasta = tmp_path / "aln.fa"
+    fasta.write_bytes(
+        b">taxon_a description words\n"
+        b"AC GT\r\n"
+        b"TA\n"
+        b">taxon_b other words\n"
+        b"GG\n"
+    )
+
+    assert read_unique_fasta_entries(str(fasta), ["taxon_a"]) == {
+        "taxon_a": "ACGTTA",
+    }
+
+
+def test_read_unique_fasta_entries_scans_later_duplicates(tmp_path):
+    fasta = tmp_path / "aln.fa"
+    fasta.write_text(
+        ">taxon_a\n"
+        "ACGT\n"
+        ">taxon_b\n"
+        "GGGG\n"
+        ">taxon_a duplicate\n"
+        "TTTT\n"
+    )
+
+    try:
+        read_unique_fasta_entries(str(fasta), ["taxon_a"])
+    except ValueError as exc:
+        assert "Duplicate key 'taxon_a'" in str(exc)
+    else:
+        raise AssertionError("expected duplicate requested entry to be detected")

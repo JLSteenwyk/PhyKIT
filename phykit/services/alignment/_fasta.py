@@ -10,6 +10,18 @@ def _clean_sequence(sequence_parts: list[str]) -> str:
     return sequence
 
 
+def _clean_sequence_bytes(sequence_parts: list[bytes]) -> str:
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = b"".join(sequence_parts)
+    if b" " in sequence:
+        sequence = sequence.replace(b" ", b"")
+    if b"\r" in sequence:
+        sequence = sequence.replace(b"\r", b"")
+    return sequence.decode()
+
+
 def _clean_upper_sequence(sequence_parts: list[str]) -> str:
     return _clean_sequence(sequence_parts).upper()
 
@@ -106,28 +118,30 @@ def read_unique_fasta_entries(
     path: str,
     entries: list[str],
 ) -> dict[str, str]:
-    wanted = set(entries)
+    wanted = {entry.encode(): entry for entry in entries}
     records = {}
     seen = set()
-    with open(path) as handle:
+    clean_sequence = _clean_sequence_bytes
+    with open(path, "rb") as handle:
         record_id = None
         wanted_record = False
         sequence_parts = []
         for line in handle:
-            if line[0] == ">":
+            if line and line[0] == 62:
                 if record_id is not None and wanted_record:
-                    records[record_id] = _clean_sequence(sequence_parts)
-                record_id = line[1:].split(None, 1)[0]
-                if record_id in seen:
-                    raise ValueError(f"Duplicate key '{record_id}'")
-                seen.add(record_id)
-                wanted_record = record_id in wanted
+                    records[record_id] = clean_sequence(sequence_parts)
+                token = line[1:].split(None, 1)[0]
+                if token in seen:
+                    raise ValueError(f"Duplicate key '{token.decode()}'")
+                seen.add(token)
+                record_id = wanted.get(token)
+                wanted_record = record_id is not None
                 sequence_parts = []
             elif record_id is not None and wanted_record:
                 sequence_parts.append(line.rstrip())
 
         if record_id is not None and wanted_record:
-            records[record_id] = _clean_sequence(sequence_parts)
+            records[record_id] = clean_sequence(sequence_parts)
 
     for entry in entries:
         if entry not in records:
