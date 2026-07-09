@@ -87,6 +87,22 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "internal_branch_stats",
         ("internal_branch_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
     ),
+    (
+        "monophyly_check_true",
+        (
+            "monophyly_check",
+            str(SAMPLES / "small_Aspergillus_tree.tre"),
+            str(SAMPLES / "small_Aspergillus_tree.monophyly_check.true.txt"),
+        ),
+    ),
+    (
+        "monophyly_check_false",
+        (
+            "monophyly_check",
+            str(SAMPLES / "small_Aspergillus_tree.tre"),
+            str(SAMPLES / "small_Aspergillus_tree.monophyly_check.false.txt"),
+        ),
+    ),
 )
 
 

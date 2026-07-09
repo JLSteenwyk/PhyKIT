@@ -37,6 +37,14 @@ class MonophylyCheck(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
+        simple_tree = self._scan_simple_newick_tree(self.tree_file_path)
+        if simple_tree is not None:
+            taxa = read_single_column_file_to_list(self.list_of_taxa)
+            res_arr = self._resolve_simple_newick_monophyly(simple_tree, taxa)
+            if res_arr is not None:
+                self.print_results(res_arr)
+                return
+
         tree = self.read_tree_file_unmodified()
         taxa = read_single_column_file_to_list(self.list_of_taxa)
 
@@ -96,6 +104,220 @@ class MonophylyCheck(Tree):
         clade = mutable_tree.common_ancestor(shared_tree_tips)
         common_ancestor_tips = frozenset(self.get_tip_names_from_tree(clade))
         return clade, common_ancestor_tips
+
+    @staticmethod
+    def _scan_simple_newick_tree(file_path: str):
+        try:
+            with open(file_path) as handle:
+                text = handle.read()
+        except OSError:
+            return None
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return text[start:index], index
+
+        def parse_branch_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in ",);"
+                and text[index] not in whitespace
+            ):
+                index += 1
+            if start == index:
+                return None
+            try:
+                float(text[start:index])
+            except ValueError:
+                return None
+            return skip_ws(index)
+
+        def parse_support(label):
+            if not label:
+                return None
+            try:
+                support = float(label)
+            except ValueError:
+                return None
+            if support.is_integer() and label.isdecimal():
+                return int(support)
+            return support
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                children = []
+                tips = []
+                tip_set = set()
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child, index = parsed
+                    children.append(child)
+                    tips.extend(child["tips"])
+                    tip_set.update(child["tip_set"])
+
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    if text[index] == ",":
+                        index += 1
+                        continue
+                    if text[index] == ")":
+                        index += 1
+                        break
+                    return None
+
+                label, index = parse_label(index)
+                index = parse_branch_length(index)
+                if index is None:
+                    return None
+                return (
+                    {
+                        "children": children,
+                        "support": parse_support(label),
+                        "tips": tips,
+                        "tip_set": frozenset(tip_set),
+                    },
+                    index,
+                )
+
+            label, index = parse_label(index)
+            if not label:
+                return None
+            index = parse_branch_length(index)
+            if index is None:
+                return None
+            return (
+                {
+                    "children": [],
+                    "support": None,
+                    "tips": [label],
+                    "tip_set": frozenset([label]),
+                },
+                index,
+            )
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+        root, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+        if len(root["tips"]) != len(root["tip_set"]):
+            return None
+        return root
+
+    @staticmethod
+    def _resolve_simple_newick_monophyly(simple_tree, taxa):
+        tree_tips = simple_tree["tip_set"]
+        taxa_of_interest = frozenset(taxa).intersection(tree_tips)
+        if len(taxa_of_interest) <= 1:
+            sys.exit(2)
+
+        clade = None
+        common_ancestor_tips = None
+        if taxa_of_interest == tree_tips:
+            clade = simple_tree
+            common_ancestor_tips = tree_tips
+        else:
+            stack = [simple_tree]
+            while stack:
+                node = stack.pop()
+                if node["tip_set"] == taxa_of_interest:
+                    clade = node
+                    common_ancestor_tips = taxa_of_interest
+                    break
+                stack.extend(node["children"])
+
+        if clade is None:
+            lca = MonophylyCheck._find_simple_newick_lca(
+                simple_tree,
+                taxa_of_interest,
+            )
+            if lca is not simple_tree:
+                return None
+            clade = simple_tree
+            common_ancestor_tips = tree_tips
+
+        diff_tips = list(taxa_of_interest.symmetric_difference(common_ancestor_tips))
+        support_values = MonophylyCheck._collect_simple_newick_supports(clade)
+        if len(support_values) <= 1:
+            return None
+        stats = calculate_summary_statistics_from_arr(support_values)
+        status = "monophyletic" if not diff_tips else "not_monophyletic"
+        return [
+            [
+                status,
+                stats["mean"],
+                stats["maximum"],
+                stats["minimum"],
+                stats["standard_deviation"],
+                diff_tips,
+            ]
+        ]
+
+    @staticmethod
+    def _find_simple_newick_lca(node, taxa_of_interest):
+        for child in node["children"]:
+            if taxa_of_interest.issubset(child["tip_set"]):
+                return MonophylyCheck._find_simple_newick_lca(
+                    child,
+                    taxa_of_interest,
+                )
+        return node
+
+    @staticmethod
+    def _collect_simple_newick_supports(node):
+        support_values = []
+        stack = [node]
+        append = support_values.append
+        extend = stack.extend
+        while stack:
+            current = stack.pop()
+            if current["children"]:
+                support = current["support"]
+                if support is not None:
+                    append(support)
+                extend(current["children"])
+        return support_values
 
     @staticmethod
     def _find_exact_clade_by_taxa(tree, taxa):

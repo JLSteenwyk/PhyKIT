@@ -1638,6 +1638,8 @@ Results:
 | `last_common_ancestor_subtree` module import without eager file helper | median cold subprocess import after lazy taxa-list reader wrapper | 0.044738s | 0.022908s | 1.95x |
 | `MonophylyCheck.run` exact-clade path | balanced 4096-tip tree, 1024-taxon exact clade, output stubbed | 3.4868s | 0.0199s | 174.9x |
 | `MonophylyCheck.run` cached read-only tree setup | balanced 32768-tip cached tree, taxa read, clade resolution, bootstrap stats, and output mocked | 0.095587s | 0.001858s | 51.4x |
+| `MonophylyCheck.run` simple Newick exact-clade scan | side-by-side direct command timing, 5 runs after 1 warmup, `small_Aspergillus_tree.tre` with true taxa list, stdout/stderr matched previous commit | 0.477087s | 0.052931s | 9.01x |
+| `MonophylyCheck.run` simple Newick root-LCA scan | side-by-side direct command timing, 5 runs after 1 warmup, `small_Aspergillus_tree.tre` with false taxa list, stdout/stderr matched previous commit | 0.528414s | 0.047956s | 11.02x |
 | `MonophylyCheck._find_exact_clade_by_taxa` count-based lookup | balanced 32768-tip tree, all 32768 taxa exactly matching root clade | 0.182382s | 0.126754s | 1.44x |
 | `MonophylyCheck._find_exact_clade_by_taxa` direct count traversal | balanced 65536-tip tree, all taxa exactly matching root clade, side-by-side previous generic postorder count path | 0.364151s | 0.098613s | 3.69x |
 | `MonophylyCheck._find_exact_clade_by_taxa_direct` stack-frame counts | balanced 65536-tip tree, first-quarter exact clade, side-by-side previous dictionary-backed direct count path | 0.032201s | 0.015213s | 2.12x |

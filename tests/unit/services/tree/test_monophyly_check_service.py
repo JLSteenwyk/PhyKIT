@@ -199,6 +199,59 @@ class TestMonophylyCheck:
         read_unmodified.assert_called_once_with()
         resolve.assert_called_once_with(tree, taxa, frozenset({"a", "b", "c"}))
 
+    def test_run_uses_simple_newick_fast_path(self, tmp_path, mocker):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("(((A:1,B:1)90:1,(C:1,D:1)80:1)95:1,E:1)100;\n")
+        args = Namespace(tree=str(tree_file), list_of_taxa="/some/path/to/taxa.txt")
+        service = MonophylyCheck(args)
+        mocker.patch(
+            "phykit.services.tree.monophyly_check.read_single_column_file_to_list",
+            return_value=["A", "B", "C", "D"],
+        )
+        mocker.patch.object(
+            service,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+        mocked_print = mocker.patch.object(service, "print_results")
+
+        service.run()
+
+        rows = mocked_print.call_args.args[0]
+        assert rows == [["monophyletic", 88.33333333333333, 95, 80, 7.637626158259734, []]]
+
+    def test_simple_newick_monophyly_root_nonmonophyletic(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:1)90:1,(C:1,D:1)80:1)95;\n")
+        simple_tree = MonophylyCheck._scan_simple_newick_tree(str(tree_file))
+
+        rows = MonophylyCheck._resolve_simple_newick_monophyly(
+            simple_tree,
+            ["A", "C"],
+        )
+
+        assert rows[0][0] == "not_monophyletic"
+        assert rows[0][1:5] == [88.33333333333333, 95, 80, 7.637626158259734]
+        assert sorted(rows[0][5]) == ["B", "D"]
+
+    def test_simple_newick_monophyly_falls_back_for_nonroot_partial_lca(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("(((A:1,C:1,E:1)90:1,B:1)80:1,D:1)95;\n")
+        simple_tree = MonophylyCheck._scan_simple_newick_tree(str(tree_file))
+
+        rows = MonophylyCheck._resolve_simple_newick_monophyly(
+            simple_tree,
+            ["A", "C"],
+        )
+
+        assert rows is None
+
+    def test_simple_newick_tree_scan_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:1)90[comment]:1,C:1);\n")
+
+        assert MonophylyCheck._scan_simple_newick_tree(str(tree_file)) is None
+
     def test_resolve_interest_clade_copies_before_reroot(self, mocker, args):
         service = MonophylyCheck(args)
         cached_tree = mocker.Mock()
