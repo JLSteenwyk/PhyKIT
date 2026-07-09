@@ -622,6 +622,45 @@ class TestCreateConcatenationMatrix:
         assert str(gene1) in occupancy_text
         assert str(gene2) in occupancy_text
 
+    def test_create_concatenation_matrix_sequential_reads_records_once(
+        self, tmp_path, monkeypatch
+    ):
+        gene1 = tmp_path / "g1.fa"
+        gene2 = tmp_path / "g2.fa"
+        _write_fasta(gene1, [("A", "ACGT"), ("B", "A-GT")])
+        _write_fasta(gene2, [("A", "TT"), ("C", "TA")])
+
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{gene1}\n{gene2}\n")
+        prefix = tmp_path / "concat"
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=True,
+                plot_occupancy=False,
+            )
+        )
+        original_reader = ccm.get_list_of_taxa_and_records
+        read_paths = []
+
+        def tracking_reader(path):
+            read_paths.append(path)
+            return original_reader(path)
+
+        monkeypatch.setattr(ccm, "get_list_of_taxa_and_records", tracking_reader)
+        monkeypatch.setattr(
+            ccm,
+            "get_taxa_names",
+            lambda _paths: (_ for _ in ()).throw(
+                AssertionError("sequential concatenation should reuse record parse")
+            ),
+        )
+
+        ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        assert read_paths == [str(gene1), str(gene2)]
+
     def test_create_concatenation_matrix_parallel_fallback(self, tmp_path, monkeypatch):
         class FailingExecutor:
             def __init__(self, *_, **__):

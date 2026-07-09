@@ -473,6 +473,18 @@ class CreateConcatenationMatrix(Alignment):
     ) -> tuple[set, list[object]]:
         return read_fasta_first_token_records(alignment_path, _ParsedFastaRecord)
 
+    def _read_sequential_alignment_records(
+        self,
+        alignment_paths: list[str],
+    ) -> tuple[list[str], list[tuple[str, set, list[object]]]]:
+        taxa = set()
+        alignment_data = []
+        for alignment_path in alignment_paths:
+            present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
+            taxa.update(present_taxa)
+            alignment_data.append((alignment_path, present_taxa, records))
+        return sorted(taxa), alignment_data
+
     def create_missing_seq_str(self, records: list[object]) -> tuple[str, int]:
         """Create a placeholder string for sequences with missing taxa."""
         if not records:
@@ -707,7 +719,14 @@ class CreateConcatenationMatrix(Alignment):
 
     def create_concatenation_matrix(self, alignment_list_path: str, prefix: str) -> None:
         alignment_paths = self.read_alignment_paths(alignment_list_path)
-        taxa = self.get_taxa_names(alignment_paths)
+        use_process_pool = _should_use_alignment_process_pool(alignment_paths)
+        sequential_alignment_data = None
+        if use_process_pool:
+            taxa = self.get_taxa_names(alignment_paths)
+        else:
+            taxa, sequential_alignment_data = self._read_sequential_alignment_records(
+                alignment_paths,
+            )
         sorted_taxa = taxa
         taxa_set = set(taxa)
         total_taxa_count = len(taxa)
@@ -734,7 +753,7 @@ class CreateConcatenationMatrix(Alignment):
         gene_lengths = []
 
         # Process alignment files in parallel only for very large input sets.
-        if _should_use_alignment_process_pool(alignment_paths):
+        if use_process_pool:
             try:
                 from functools import partial
 
@@ -811,8 +830,7 @@ class CreateConcatenationMatrix(Alignment):
                     )
         else:
             # Process sequentially for small datasets
-            for alignment_path in alignment_paths:
-                present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
+            for alignment_path, present_taxa, records in sequential_alignment_data:
                 missing_seq, og_len = self.create_missing_seq_str(records)
                 missing_taxa = _missing_taxa_for_present(
                     sorted_taxa,
