@@ -7874,6 +7874,19 @@ class Phykit:
 
     @staticmethod
     def kf_distance(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TwoTreeJsonDefaultArgs(argv[0], argv[1]),
+                KuhnerFelsensteinDistance,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

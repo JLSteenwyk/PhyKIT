@@ -1091,6 +1091,63 @@ def test_rf_distance_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+def test_kf_distance_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default kf_distance should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "KuhnerFelsensteinDistance", Runner)
+
+    phykit_module.Phykit.kf_distance(["tree_a.tre", "tree_b.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree_zero == "tree_a.tre"
+    assert args.tree_one == "tree_b.tre"
+    assert args.json is False
+
+
+def test_kf_distance_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "KuhnerFelsensteinDistance", Runner)
+
+    phykit_module.Phykit.kf_distance(["tree_a.tre", "tree_b.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree_a.tre", "tree_b.tre", "--json"]
+    assert calls["ran"] is True
+
+
 def test_lb_score_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 

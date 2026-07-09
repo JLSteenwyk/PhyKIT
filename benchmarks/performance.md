@@ -1071,6 +1071,7 @@ Results:
 | `kf_distance` module import without eager Bio.Phylo | cold subprocess import of KF-distance command module | 0.164549s | 0.066013s | 2.49x |
 | `kf_distance` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006883s | 0.005195s | 1.32x |
 | `kf_distance` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005886s | 0.004585s | 1.28x |
+| `kf_distance` default CLI parser bypass | direct dispatch of `kf_distance tree_a tree_b` into a no-op service, 1000 calls; direct command timing against sample tree pair, 30 runs after 5 warmups | 1.114851s; 0.464546s mean | 0.000455s; 0.428268s mean | 2450.22x; 1.08x |
 | `TreeSpace._get_shared_taxa` terminal-name intersections | 80 balanced trees x 512 shared taxa | 0.0770s | 0.0095s | 8.1x |
 | `TreeSpace`/`SpectralDiscordance._get_shared_taxa` no-slice gene-tree scan | 200k cached-tip gene-tree objects, identical 64 shared taxa, side-by-side previous `gene_trees[1:]` loop | 2.905650s | 2.567368s | 1.13x |
 | `TreeSpace`/`SpectralDiscordance._get_shared_taxa` in-place intersection | 200k cached-tip gene-tree objects, identical 64 shared taxa, side-by-side previous temporary-set update | 0.819285s | 0.385707s | 2.12x |
