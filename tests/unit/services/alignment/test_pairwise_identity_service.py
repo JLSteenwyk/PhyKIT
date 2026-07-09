@@ -344,6 +344,10 @@ class TestPairwiseIdentity:
             "_calculate_pairwise_identities_matrix",
             return_value=None,
         )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
+        )
         should_use_mp = mocker.patch.object(
             PairwiseIdentity, "_should_use_multiprocessing", return_value=False
         )
@@ -392,6 +396,10 @@ class TestPairwiseIdentity:
                 SeqRecord(Seq("TCGT"), id="c"),
             ]
         )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
+        )
         mocker.patch.object(
             PairwiseIdentity,
             "_process_pair_batch",
@@ -417,6 +425,10 @@ class TestPairwiseIdentity:
                 SeqRecord(Seq("N--G"), id="c"),
             ]
         )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
+        )
         mocker.patch.object(
             PairwiseIdentity,
             "_process_pair_batch",
@@ -433,6 +445,74 @@ class TestPairwiseIdentity:
         assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.75}
         assert stats["mean"] == pytest.approx(2 / 3)
 
+    def test_calculate_pairwise_identities_small_alignment_uses_scalar_result(
+        self, args, mocker
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="a"),
+                SeqRecord(Seq("ACGA"), id="b"),
+                SeqRecord(Seq("TCGA"), id="c"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.frombuffer",
+            side_effect=AssertionError(
+                "small full-result pairwise identity should avoid matrix setup"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.squareform",
+            side_effect=AssertionError(
+                "small full-result pairwise identity should avoid squareform"
+            ),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.75}
+        assert stats["mean"] == pytest.approx(2 / 3)
+
+    def test_calculate_pairwise_identities_scalar_result_preserves_gap_semantics(
+        self, args, mocker
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--T"), id="a"),
+                SeqRecord(Seq("A--G"), id="b"),
+                SeqRecord(Seq("N--G"), id="c"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.frombuffer",
+            side_effect=AssertionError(
+                "small full-result pairwise identity should avoid matrix setup"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.squareform",
+            side_effect=AssertionError(
+                "small full-result pairwise identity should avoid squareform"
+            ),
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            alignment,
+            exclude_gaps=True,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.25, "a-c": 0.0, "b-c": 0.25}
+        assert stats["mean"] == pytest.approx(1 / 6)
+
     def test_calculate_pairwise_identities_identical_sequences_skip_matrix(
         self, mocker, args
     ):
@@ -443,6 +523,10 @@ class TestPairwiseIdentity:
                 SeqRecord(Seq("a--t"), id="b"),
                 SeqRecord(Seq("A--T"), id="c"),
             ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
         )
         mocker.patch(
             "phykit.services.alignment.pairwise_identity.np.frombuffer",
@@ -480,6 +564,10 @@ class TestPairwiseIdentity:
             ]
         )
         mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS",
+            0,
+        )
+        mocker.patch(
             "phykit.services.alignment.pairwise_identity.np.frombuffer",
             side_effect=AssertionError("identical alignments should skip matrix setup"),
         )
@@ -509,6 +597,10 @@ class TestPairwiseIdentity:
                 SeqRecord(Seq("ACGA"), id="b"),
                 SeqRecord(Seq("TCGT"), id="c"),
             ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
         )
         mocker.patch.object(
             PairwiseIdentity,
@@ -612,6 +704,10 @@ class TestPairwiseIdentity:
         self, args, mocker
     ):
         service = PairwiseIdentity(args)
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
+        )
         alignment = MultipleSeqAlignment(
             [
                 SeqRecord(Seq("ACGT"), id="a"),
@@ -786,6 +882,10 @@ class TestPairwiseIdentity:
 
     def test_matrix_pairwise_identity_matches_batch_reference(self, mocker, args):
         service = PairwiseIdentity(args)
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity._PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            0,
+        )
         alignment = MultipleSeqAlignment(
             [
                 SeqRecord(Seq("AnXT"), id="a"),
