@@ -129,24 +129,37 @@ class RobinsonFouldsDistance(Tree):
             return 0, 0 / (2 * (tip_count - 3))
 
         try:
-            id_result_zero = self._get_all_bipartition_id_sets_direct(tree_zero)
-            if id_result_zero is None:
-                bipartitions_zero = self.get_all_bipartitions(tree_zero)
-                bipartitions_one = self.get_all_bipartitions(tree_one)
-                plain_rf = len(bipartitions_zero ^ bipartitions_one)
-            else:
-                bipartitions_zero, tip_index = id_result_zero
-                id_result_one = self._get_all_bipartition_id_sets_direct(
+            plain_rf = None
+            bitmask_result_zero = self._get_all_bipartition_bitmasks_direct(tree_zero)
+            if bitmask_result_zero is not None:
+                bipartitions_zero, tip_bits = bitmask_result_zero
+                bitmask_result_one = self._get_all_bipartition_bitmasks_direct(
                     tree_one,
-                    tip_index,
+                    tip_bits,
                 )
-                if id_result_one is None:
+                if bitmask_result_one is not None:
+                    bipartitions_one, _ = bitmask_result_one
+                    plain_rf = len(bipartitions_zero ^ bipartitions_one)
+
+            if plain_rf is None:
+                id_result_zero = self._get_all_bipartition_id_sets_direct(tree_zero)
+                if id_result_zero is None:
                     bipartitions_zero = self.get_all_bipartitions(tree_zero)
                     bipartitions_one = self.get_all_bipartitions(tree_one)
                     plain_rf = len(bipartitions_zero ^ bipartitions_one)
                 else:
-                    bipartitions_one, _ = id_result_one
-                    plain_rf = len(bipartitions_zero ^ bipartitions_one)
+                    bipartitions_zero, tip_index = id_result_zero
+                    id_result_one = self._get_all_bipartition_id_sets_direct(
+                        tree_one,
+                        tip_index,
+                    )
+                    if id_result_one is None:
+                        bipartitions_zero = self.get_all_bipartitions(tree_zero)
+                        bipartitions_one = self.get_all_bipartitions(tree_one)
+                        plain_rf = len(bipartitions_zero ^ bipartitions_one)
+                    else:
+                        bipartitions_one, _ = id_result_one
+                        plain_rf = len(bipartitions_zero ^ bipartitions_one)
         except (AttributeError, TypeError):
             plain_rf = 0
             plain_rf = self.compare_trees_optimized(plain_rf, tree_zero, tree_one)
@@ -312,6 +325,58 @@ class RobinsonFouldsDistance(Tree):
             return None
 
         return bipartitions, tip_index
+
+    @staticmethod
+    def _get_all_bipartition_bitmasks_direct(tree: Newick.Tree, tip_bits=None):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        if tip_bits is None:
+            tip_bits = {}
+        clade_masks: dict[int, int] = {}
+        bipartitions: set[int] = set()
+        preorder = []
+        stack = [root]
+        append_preorder = preorder.append
+        pop_stack = stack.pop
+        extend_stack = stack.extend
+
+        try:
+            while stack:
+                clade = pop_stack()
+                append_preorder(clade)
+                extend_stack(clade.clades)
+
+            for clade in reversed(preorder):
+                children = clade.clades
+                if children:
+                    child_count = len(children)
+                    if child_count == 2:
+                        tip_mask = (
+                            clade_masks[id(children[0])]
+                            | clade_masks[id(children[1])]
+                        )
+                    elif child_count == 1:
+                        tip_mask = clade_masks[id(children[0])]
+                    else:
+                        tip_mask = 0
+                        for child in children:
+                            tip_mask |= clade_masks[id(child)]
+                    if clade is not root:
+                        bipartitions.add(tip_mask)
+                else:
+                    tip_mask = tip_bits.get(clade.name)
+                    if tip_mask is None:
+                        tip_mask = 1 << len(tip_bits)
+                        tip_bits[clade.name] = tip_mask
+                clade_masks[id(clade)] = tip_mask
+        except (AttributeError, TypeError):
+            return None
+
+        return bipartitions, tip_bits
 
     @staticmethod
     def _first_terminal_name(tree: Newick.Tree) -> str:

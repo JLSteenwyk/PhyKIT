@@ -181,6 +181,23 @@ class TestRobinsonFouldsDistance(object):
 
         assert named_sets == rf.get_all_bipartitions(tree)
 
+    def test_bipartition_bitmasks_match_public_bipartitions(self, args):
+        rf = RobinsonFouldsDistance(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        bitmasks, tip_bits = rf._get_all_bipartition_bitmasks_direct(tree)
+        bit_to_tip = {bit: tip for tip, bit in tip_bits.items()}
+        named_sets = {
+            frozenset(
+                tip
+                for bit, tip in bit_to_tip.items()
+                if split_mask & bit
+            )
+            for split_mask in bitmasks
+        }
+
+        assert named_sets == rf.get_all_bipartitions(tree)
+
     def test_direct_bipartitions_handle_mixed_child_counts(self, args):
         rf = RobinsonFouldsDistance(args)
         tree = Phylo.read(
@@ -214,6 +231,30 @@ class TestRobinsonFouldsDistance(object):
             frozenset({"A", "B", "C", "D"}),
         }
 
+    def test_direct_bipartition_bitmasks_handle_mixed_child_counts(self, args):
+        rf = RobinsonFouldsDistance(args)
+        tree = Phylo.read(
+            StringIO("(((A:1):1,(B:1,C:1,D:1):1):1,E:1);"),
+            "newick",
+        )
+
+        bitmasks, tip_bits = rf._get_all_bipartition_bitmasks_direct(tree)
+        bit_to_tip = {bit: tip for tip, bit in tip_bits.items()}
+        named_sets = {
+            frozenset(
+                tip
+                for bit, tip in bit_to_tip.items()
+                if split_mask & bit
+            )
+            for split_mask in bitmasks
+        }
+
+        assert named_sets == {
+            frozenset({"A"}),
+            frozenset({"B", "C", "D"}),
+            frozenset({"A", "B", "C", "D"}),
+        }
+
     def test_direct_bipartition_helpers_fallback_on_malformed_clade(self):
         class MalformedChild:
             name = "A"
@@ -228,6 +269,7 @@ class TestRobinsonFouldsDistance(object):
 
         assert RobinsonFouldsDistance._get_all_bipartitions_direct(tree) is None
         assert RobinsonFouldsDistance._get_all_bipartition_id_sets_direct(tree) is None
+        assert RobinsonFouldsDistance._get_all_bipartition_bitmasks_direct(tree) is None
 
     def test_calculate_robinson_foulds_distance_uses_cached_bipartitions(
         self, mocker, tree_simple, tree_simple_other, args
@@ -250,6 +292,31 @@ class TestRobinsonFouldsDistance(object):
 
         assert plain_rf == 8
         assert normalized_rf == pytest.approx(0.8)
+
+    def test_calculate_robinson_foulds_distance_uses_bitmask_splits(
+        self, mocker, args
+    ):
+        rf = RobinsonFouldsDistance(args)
+        tree_zero = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree_one = Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick")
+        mocker.patch.object(
+            rf,
+            "_get_all_bipartition_id_sets_direct",
+            side_effect=AssertionError("standard trees should use bitmask splits"),
+        )
+        mocker.patch.object(
+            rf,
+            "get_all_bipartitions",
+            side_effect=AssertionError("standard trees should use bitmask splits"),
+        )
+
+        plain_rf, normalized_rf = rf.calculate_robinson_foulds_distance(
+            tree_zero,
+            tree_one,
+        )
+
+        assert plain_rf == 4
+        assert normalized_rf == pytest.approx(2.0)
 
     def test_calculate_robinson_foulds_distance_uses_direct_terminal_count(
         self, monkeypatch, args
