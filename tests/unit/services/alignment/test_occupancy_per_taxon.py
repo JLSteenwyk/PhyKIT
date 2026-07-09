@@ -228,10 +228,13 @@ class TestOccupancyPerTaxon(object):
             ("c", "ACGTN-?X*"),
         ]
 
-        assert occupancy_per_taxon_module._occupancy_from_ascii_matrix(
+        result = occupancy_per_taxon_module._occupancy_from_ascii_matrix(
             record_data,
             is_protein=False,
-        ) == [("a", 4 / 9), ("b", 4 / 9), ("c", 4 / 9)]
+        )
+
+        assert result == [("a", 4 / 9), ("b", 4 / 9), ("c", 4 / 9)]
+        assert result.shared_occupancy == 4 / 9
 
     def test_occupancy_ascii_matrix_identical_all_valid_skips_translate(self):
         class NoTranslateBytes(bytes):
@@ -251,10 +254,13 @@ class TestOccupancyPerTaxon(object):
             ("c", sequence),
         ]
 
-        assert occupancy_per_taxon_module._occupancy_from_ascii_matrix(
+        result = occupancy_per_taxon_module._occupancy_from_ascii_matrix(
             record_data,
             is_protein=False,
-        ) == [("a", 1.0), ("b", 1.0), ("c", 1.0)]
+        )
+
+        assert result == [("a", 1.0), ("b", 1.0), ("c", 1.0)]
+        assert result.shared_occupancy == 1.0
 
     def test_occupancy_ascii_matrix_variable_lengths_return_none(self):
         record_data = [
@@ -322,6 +328,28 @@ class TestOccupancyPerTaxon(object):
         out, _ = capsys.readouterr()
         assert out == "t1\t0.5\nt2\t1.0\n"
 
+    def test_run_text_output_reuses_shared_occupancy(self, mocker, capsys):
+        occupancy = OccupancyPerTaxon(Namespace(alignment="x.fa", json=False))
+        rows = occupancy_per_taxon_module._identical_occupancy_rows(
+            [("t1", ""), ("t2", "")],
+            4 / 9,
+        )
+        mocker.patch.object(
+            OccupancyPerTaxon,
+            "get_alignment_and_format",
+            return_value=(object(), "fasta", False),
+        )
+        mocker.patch.object(
+            OccupancyPerTaxon,
+            "calculate_occupancy_per_taxon",
+            return_value=rows,
+        )
+
+        occupancy.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "t1\t0.4444\nt2\t0.4444\n"
+
     def test_run_json_output_rows(self, mocker):
         occupancy = OccupancyPerTaxon(Namespace(alignment="x.fa", json=True))
         mocker.patch.object(
@@ -344,6 +372,35 @@ class TestOccupancyPerTaxon(object):
         assert payload["rows"] == [
             {"taxon": "t1", "occupancy": 0.5556},
             {"taxon": "t2", "occupancy": 1.0},
+        ]
+        assert payload["taxa"] == payload["rows"]
+
+    def test_run_json_output_reuses_shared_occupancy(self, mocker):
+        occupancy = OccupancyPerTaxon(Namespace(alignment="x.fa", json=True))
+        rows = occupancy_per_taxon_module._identical_occupancy_rows(
+            [("t1", ""), ("t2", "")],
+            4 / 9,
+        )
+        mocker.patch.object(
+            OccupancyPerTaxon,
+            "get_alignment_and_format",
+            return_value=(object(), "fasta", False),
+        )
+        mocker.patch.object(
+            OccupancyPerTaxon,
+            "calculate_occupancy_per_taxon",
+            return_value=rows,
+        )
+        mocked_json = mocker.patch(
+            "phykit.services.alignment.occupancy_per_taxon.print_json"
+        )
+
+        occupancy.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["rows"] == [
+            {"taxon": "t1", "occupancy": 0.4444},
+            {"taxon": "t2", "occupancy": 0.4444},
         ]
         assert payload["taxa"] == payload["rows"]
 

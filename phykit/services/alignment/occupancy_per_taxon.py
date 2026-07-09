@@ -29,6 +29,14 @@ _PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
 
 
+class _IdenticalOccupancyRows(list):
+    __slots__ = ("shared_occupancy",)
+
+    def __init__(self, rows, shared_occupancy):
+        super().__init__(rows)
+        self.shared_occupancy = shared_occupancy
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -70,6 +78,13 @@ def _has_invalid_bytes(sequence_bytes: bytes, invalid_bytes: bytes) -> bool:
     return has_invalid
 
 
+def _identical_occupancy_rows(record_data, occupancy):
+    return _IdenticalOccupancyRows(
+        ((record_id, occupancy) for record_id, _ in record_data),
+        occupancy,
+    )
+
+
 def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
     if not record_data:
         return []
@@ -91,19 +106,13 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
             return None
         invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
         if not _has_invalid_bytes(sequence_bytes, invalid_bytes):
-            return [
-                (record_id, 1.0)
-                for record_id, _ in record_data
-            ]
+            return _identical_occupancy_rows(record_data, 1.0)
         occupancy = (
             0.0
             if seq_len == 0
             else len(sequence_bytes.translate(None, invalid_bytes)) / seq_len
         )
-        return [
-            (record_id, occupancy)
-            for record_id, _ in record_data
-        ]
+        return _identical_occupancy_rows(record_data, occupancy)
 
     sequences = [sequence for _, sequence in record_data]
     try:
@@ -114,10 +123,7 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
     if not any(code in alignment_bytes for code in invalid_bytes):
         occupancy = 0.0 if seq_len == 0 else 1.0
-        return [
-            (record_id, occupancy)
-            for record_id, _ in record_data
-        ]
+        return _identical_occupancy_rows(record_data, occupancy)
 
     try:
         alignment_array = np.frombuffer(
@@ -164,6 +170,14 @@ def _occupancy_for_sequence(sequence: str, is_protein: bool) -> float:
 
 
 def _occupancy_json_rows(occupancies):
+    shared_occupancy = getattr(occupancies, "shared_occupancy", None)
+    if shared_occupancy is not None:
+        occupancy = 1.0 if shared_occupancy == 1.0 else round(shared_occupancy, 4)
+        return [
+            {"taxon": taxon, "occupancy": occupancy}
+            for taxon, _ in occupancies
+        ]
+
     if occupancies and occupancies[0][1] == 1.0:
         return [
             {
@@ -205,10 +219,15 @@ class OccupancyPerTaxon(Alignment):
             )
             return
 
-        lines = [
-            f"{taxon}\t{round(occupancy, 4)}"
-            for taxon, occupancy in occupancies
-        ]
+        shared_occupancy = getattr(occupancies, "shared_occupancy", None)
+        if shared_occupancy is None:
+            lines = [
+                f"{taxon}\t{round(occupancy, 4)}"
+                for taxon, occupancy in occupancies
+            ]
+        else:
+            occupancy = round(shared_occupancy, 4)
+            lines = [f"{taxon}\t{occupancy}" for taxon, _ in occupancies]
         if lines:
             print("\n".join(lines))
 
