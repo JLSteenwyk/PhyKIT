@@ -76,6 +76,31 @@ def test_parse_multi_trait_file_all_shared_emits_no_warnings(tmp_path, capsys):
     assert capsys.readouterr().err == ""
 
 
+def test_parse_multi_trait_file_four_trait_fast_path(tmp_path, capsys):
+    trait_file = tmp_path / "traits.tsv"
+    trait_file.write_text(
+        "\n".join(
+            [
+                "taxon\ta\tb\tc\td",
+                "A\t1.0\t2.0\t3.0\t4.0",
+                "B\t5.0\t6.0\t7.0\t8.0",
+                "C\t9.0\t10.0\t11.0\t12.0",
+            ]
+        )
+        + "\n"
+    )
+
+    trait_names, traits = parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
+
+    assert trait_names == ["a", "b", "c", "d"]
+    assert traits == {
+        "A": [1.0, 2.0, 3.0, 4.0],
+        "B": [5.0, 6.0, 7.0, 8.0],
+        "C": [9.0, 10.0, 11.0, 12.0],
+    }
+    assert capsys.readouterr().err == ""
+
+
 def test_parse_multi_trait_file_ordered_all_shared_skips_set_validation(
     tmp_path, monkeypatch, capsys
 ):

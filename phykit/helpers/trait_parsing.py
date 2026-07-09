@@ -85,6 +85,7 @@ def parse_multi_trait_file(
             traits = {}
             saw_data = False
             data_line_idx = 2
+            to_float = float
             for line in f:
                 stripped = line.strip()
                 if not stripped or stripped[0] == "#":
@@ -103,20 +104,24 @@ def parse_multi_trait_file(
                 taxon = parts[0]
                 try:
                     if trait_count == 1:
-                        values = [float(parts[1])]
+                        values = [to_float(parts[1])]
                     elif trait_count == 2:
-                        values = [float(parts[1]), float(parts[2])]
+                        values = [to_float(parts[1]), to_float(parts[2])]
                     elif trait_count == 3:
-                        values = [float(parts[1]), float(parts[2]), float(parts[3])]
+                        values = [
+                            to_float(parts[1]),
+                            to_float(parts[2]),
+                            to_float(parts[3]),
+                        ]
                     elif trait_count == 4:
                         values = [
-                            float(parts[1]),
-                            float(parts[2]),
-                            float(parts[3]),
-                            float(parts[4]),
+                            to_float(parts[1]),
+                            to_float(parts[2]),
+                            to_float(parts[3]),
+                            to_float(parts[4]),
                         ]
                     else:
-                        values = [float(val_str) for val_str in parts[1:]]
+                        values = [to_float(val_str) for val_str in parts[1:]]
                 except ValueError:
                     values = _parse_float_values_detailed(
                         parts[1:],

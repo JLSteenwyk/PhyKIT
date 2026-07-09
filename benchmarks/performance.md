@@ -67,6 +67,7 @@ Results:
 | `trait_parsing.parse_multi_trait_file` narrow-row float conversion | 300k-row multi-trait TSV, 3 numeric trait columns, all taxa shared, identical parsed traits and nonnumeric fallback messages | 0.367998s | 0.331910s | 1.11x |
 | `trait_parsing.parse_multi_trait_file` stripped comment check | 300k-row multi-trait TSV, 3 numeric trait columns, whitespace-prefixed comments/blanks, all taxa shared | 1.205110s | 1.025197s | 1.18x |
 | `trait_parsing.parse_multi_trait_file` guarded exact-order validation | 300k parsed trait rows, exact order / middle-reordered same set / edge-reordered same set, side-by-side previous tree-tip set construction | 0.515189s / 0.554313s / 0.747297s | 0.031889s / 0.481783s / 0.768279s | 16.16x / 1.15x / 0.97x |
+| `trait_parsing.parse_multi_trait_file` local float converter | 300k-row exact-order multi-trait TSV, 3 numeric trait columns, identical parsed traits | 1.449768s | 1.314707s | 1.10x |
 | `trait_parsing.trait_column_from_rows` direct column vector | 120k taxa x 12 parsed trait columns, one selected trait column | 0.013424s | 0.007369s | 1.82x |
 | `trait_parsing.trait_matrix_from_rows` direct row matrix | 120k taxa x 12 numeric traits, ordered trait rows to NumPy matrix | 0.137167s | 0.038031s | 3.61x |
 | `trait_parsing.response_predictor_arrays` selected-column design matrix | 180k taxa x 10 parsed trait columns, one response plus four predictors | 0.147410s | 0.060780s | 2.43x |
@@ -3138,7 +3139,8 @@ Profiling summary:
   non-numeric trait messages while reducing valid-row overhead. A follow-up
   narrow-row pass converts common one-to-four-trait rows with direct float calls
   while still routing conversion failures through the detailed per-column error
-  helper. The shared
+  helper. A later parser pass binds the float converter once per parse call,
+  avoiding repeated global lookup in the valid numeric hot loop. The shared
   trait-matrix builder now passes parsed trait rows directly to NumPy instead of
   copying each row with an inner trait-column loop; TraitCorrelation,
   PhylogeneticOrdination, and multivariate PhylogeneticSignal use the helper.
