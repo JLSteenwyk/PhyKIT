@@ -56,6 +56,7 @@ class TestTipLabels:
         )
 
         service = TipLabels(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         service.run()
 
         assert capsys.readouterr().out == "a\nb\nc\n"
@@ -63,6 +64,7 @@ class TestTipLabels:
     def test_run_uses_unmodified_tree_read(self, mocker, args):
         tree = _Tree(["a", "b"])
         service = TipLabels(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         read_tree = mocker.patch.object(
             service,
             "read_tree_file_unmodified",
@@ -85,6 +87,7 @@ class TestTipLabels:
         mocked_json = mocker.patch("phykit.services.tree.tip_labels.print_json")
 
         service = TipLabels(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         service.run()
 
         payload = mocked_json.call_args.args[0]
@@ -102,8 +105,25 @@ class TestTipLabels:
         mocked_write = mocker.patch("phykit.services.tree.tip_labels.sys.stdout.write")
 
         service = TipLabels(Namespace(tree="x.tre"))
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         service.run()
 
+        mocked_write.assert_called_once_with("a\nb\nc\n")
+
+    def test_run_uses_simple_newick_summary(self, mocker, tmp_path):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("((a:1,b:1):1,c:2);")
+        service = TipLabels(Namespace(tree=str(tree_path)))
+        read_tree = mocker.patch.object(
+            service,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should use summary path"),
+        )
+        mocked_write = mocker.patch("phykit.services.tree.tip_labels.sys.stdout.write")
+
+        service.run()
+
+        read_tree.assert_not_called()
         mocked_write.assert_called_once_with("a\nb\nc\n")
 
     def test_run_ignores_broken_pipe(self, mocker, args):
@@ -118,4 +138,5 @@ class TestTipLabels:
         )
 
         service = TipLabels(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         service.run()

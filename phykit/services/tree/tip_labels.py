@@ -18,8 +18,15 @@ class TipLabels(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file_unmodified()
-        tips = self.get_tip_names_from_tree(tree)
+        summary = self._get_simple_newick_summary(
+            self.tree_file_path,
+            "tree_file_path",
+        )
+        if summary is None:
+            tree = self.read_tree_file_unmodified()
+            tips = self.get_tip_names_from_tree(tree)
+        else:
+            tips = list(summary[0])
         if self.json_output:
             rows = [{"taxon": tip} for tip in tips]
             print_json(dict(rows=rows, tips=tips))

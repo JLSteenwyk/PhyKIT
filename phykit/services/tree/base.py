@@ -97,6 +97,11 @@ class Tree(BaseService):
         return Phylo.read(file_path, tree_format)
 
     @staticmethod
+    @lru_cache(maxsize=32)
+    def _cached_simple_newick_summary(file_path: str, file_hash: str):
+        return Tree._scan_simple_newick_summary(file_path)
+
+    @staticmethod
     def _get_file_hash(file_path: str) -> str:
         """Get a hash based on file path, size, and modification time."""
         try:
@@ -167,6 +172,94 @@ class Tree(BaseService):
             # Uses pickle instead of deepcopy to avoid RecursionError on
             # deeply nested trees.
             return self._fast_copy(tree)
+        except FileNotFoundError:
+            path = getattr(self, attr_name)
+            raise PhykitUserError(
+                [
+                    f"{path} corresponds to no such file or directory.",
+                    "Please check filename and pathing",
+                ],
+                code=2,
+            )
+
+    @staticmethod
+    def _scan_simple_newick_summary(file_path: str):
+        with open(file_path) as handle:
+            text = handle.read()
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        tip_names = []
+        total_len = 0.0
+        internal_len = 0.0
+        prev_sig = None
+        i = 0
+        text_len = len(text)
+        delimiters = "(),:;"
+        whitespace = " \t\r\n"
+
+        while i < text_len:
+            char = text[i]
+            if char in whitespace:
+                i += 1
+                continue
+
+            if char == "(":
+                prev_sig = "("
+                i += 1
+                continue
+            if char == ",":
+                prev_sig = ","
+                i += 1
+                continue
+            if char == ")":
+                prev_sig = ")"
+                i += 1
+                continue
+            if char == ";":
+                return tuple(tip_names), total_len, internal_len
+
+            if char == ":":
+                i += 1
+                start = i
+                while i < text_len and text[i] not in ",);":
+                    if text[i] in whitespace:
+                        break
+                    i += 1
+                number = text[start:i]
+                if not number:
+                    return None
+                try:
+                    branch_length = float(number)
+                except ValueError:
+                    return None
+                total_len += branch_length
+                if prev_sig in (")", "internal_label"):
+                    internal_len += branch_length
+                prev_sig = "branch_length"
+                continue
+
+            start = i
+            while i < text_len and text[i] not in delimiters and text[i] not in whitespace:
+                i += 1
+            token = text[start:i]
+            if not token:
+                return None
+            if prev_sig in ("(", ",", None):
+                tip_names.append(token)
+                prev_sig = "terminal_label"
+            elif prev_sig == ")":
+                prev_sig = "internal_label"
+            else:
+                return None
+
+        return None
+
+    def _get_simple_newick_summary(self, tree_path: str, attr_name: str):
+        try:
+            file_hash = self._get_file_hash(tree_path)
+            return self._cached_simple_newick_summary(tree_path, file_hash)
         except FileNotFoundError:
             path = getattr(self, attr_name)
             raise PhykitUserError(

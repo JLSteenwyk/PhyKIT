@@ -16,8 +16,16 @@ class TotalTreeLength(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file_unmodified()
-        total_tree_length = round(self.calculate_total_tree_length(tree), 4)
+        summary = self._get_simple_newick_summary(
+            self.tree_file_path,
+            "tree_file_path",
+        )
+        if summary is None:
+            tree = self.read_tree_file_unmodified()
+            total_tree_length = round(self.calculate_total_tree_length(tree), 4)
+        else:
+            _, total_len, _ = summary
+            total_tree_length = round(total_len, 4)
         if self.json_output:
             print_json(dict(total_tree_length=total_tree_length))
             return

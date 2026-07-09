@@ -61,6 +61,7 @@ class TestTreeness(object):
 
     def test_run_prints_value(self, mocker, capsys):
         t = Treeness(Namespace(tree="x.tre", json=False))
+        mocker.patch.object(t, "_get_simple_newick_summary", return_value=None)
         mocker.patch.object(Treeness, "read_tree_file_unmodified", return_value=object())
         mocker.patch.object(Treeness, "calculate_treeness", return_value=0.987654)
         t.run()
@@ -70,6 +71,7 @@ class TestTreeness(object):
     def test_run_uses_unmodified_tree_read(self, mocker):
         tree = object()
         t = Treeness(Namespace(tree="x.tre", json=False))
+        mocker.patch.object(t, "_get_simple_newick_summary", return_value=None)
         read_tree = mocker.patch.object(
             t,
             "read_tree_file_unmodified",
@@ -84,8 +86,25 @@ class TestTreeness(object):
 
     def test_run_json(self, mocker):
         t = Treeness(Namespace(tree="x.tre", json=True))
+        mocker.patch.object(t, "_get_simple_newick_summary", return_value=None)
         mocker.patch.object(Treeness, "read_tree_file_unmodified", return_value=object())
         mocker.patch.object(Treeness, "calculate_treeness", return_value=0.11111)
         mocked_json = mocker.patch.object(treeness_module, "print_json")
         t.run()
         mocked_json.assert_called_once_with({"treeness": 0.1111})
+
+    def test_run_uses_simple_newick_summary(self, mocker, tmp_path, capsys):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("(a:1,(b:2,c:3):4);")
+        t = Treeness(Namespace(tree=str(tree_path), json=False))
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should use summary path"),
+        )
+
+        t.run()
+
+        read_tree.assert_not_called()
+        out, _ = capsys.readouterr()
+        assert out.strip() == "0.4"
