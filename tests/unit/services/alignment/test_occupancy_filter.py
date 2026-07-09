@@ -263,6 +263,30 @@ class TestOccupancyFilter:
 
         assert output_fasta.read_text() == "ABC\nDEF\nG\n"
 
+    def test_write_wrapped_fasta_sequence_batches_large_sequence(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            occupancy_filter_module,
+            "_WRAPPED_FASTA_BATCH_MIN_LENGTH",
+            1,
+        )
+        monkeypatch.setattr(
+            occupancy_filter_module,
+            "_WRAPPED_FASTA_BATCH_CHUNKS",
+            1,
+        )
+
+        output_fasta = tmp_path / "wrapped_batched.fa"
+        with open(output_fasta, "w") as handle:
+            OccupancyFilter._write_wrapped_fasta_sequence(
+                handle,
+                "ABCDEFGHIJKL",
+                width=5,
+            )
+
+        assert output_fasta.read_text() == "ABCDE\nFGHIJ\nKL\n"
+
     def test_filtered_tree_has_correct_taxa(self, tmp_path):
         """Filtered tree should not contain removed taxa."""
         from Bio import Phylo

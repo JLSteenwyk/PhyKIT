@@ -16,6 +16,9 @@ from ...errors import PhykitUserError
 
 
 _path_exists = os.path.exists
+_FASTA_WRAP_WIDTH = 60
+_WRAPPED_FASTA_BATCH_CHUNKS = 8_192
+_WRAPPED_FASTA_BATCH_MIN_LENGTH = 1_000_000
 
 
 def print_json(*args, **kwargs):
@@ -317,17 +320,39 @@ class OccupancyFilter:
         return kept, total - kept
 
     @staticmethod
-    def _write_wrapped_fasta_sequence(handle, sequence: str, width: int = 60) -> None:
-        if not sequence:
+    def _write_wrapped_fasta_sequence(
+        handle,
+        sequence: str,
+        width: int = _FASTA_WRAP_WIDTH,
+    ) -> None:
+        sequence_length = len(sequence)
+        if sequence_length == 0:
             return
-        if len(sequence) <= width:
+        if sequence_length <= width:
             handle.write(sequence)
             handle.write("\n")
             return
+
+        if sequence_length >= _WRAPPED_FASTA_BATCH_MIN_LENGTH:
+            write = handle.write
+            batch_size = width * _WRAPPED_FASTA_BATCH_CHUNKS
+            for start in range(0, sequence_length, batch_size):
+                stop = min(start + batch_size, sequence_length)
+                write(
+                    "\n".join(
+                        [
+                            sequence[idx:idx + width]
+                            for idx in range(start, stop, width)
+                        ]
+                    )
+                )
+                write("\n")
+            return
+
         handle.write(
             "\n".join(
                 sequence[idx:idx + width]
-                for idx in range(0, len(sequence), width)
+                for idx in range(0, sequence_length, width)
             )
         )
         handle.write("\n")
