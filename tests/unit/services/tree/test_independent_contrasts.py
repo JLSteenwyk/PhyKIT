@@ -47,6 +47,19 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_small_contrast_summary_does_not_import_numpy():
+    code = """
+import sys
+from phykit.services.tree.independent_contrasts import _contrast_summary_stats
+
+mean_abs, variance = _contrast_summary_stats([1.0, -2.0, 3.0])
+assert round(mean_abs, 6) == 2.0
+assert round(variance, 6) == 6.333333
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 @pytest.fixture
 def args():
     return Namespace(
@@ -652,13 +665,13 @@ class TestPICRun:
             "Variance of contrasts:  8.000000\n"
         )
 
-    def test_contrast_summary_stats_use_ndarray_reductions(self, monkeypatch):
+    def test_small_contrast_summary_stats_avoid_numpy_wrappers(self, monkeypatch):
         contrasts = [1.0, -3.0, 5.0, -7.0]
         expected_mean_abs = float(np.mean(np.abs(contrasts)))
         expected_variance = float(np.var(contrasts, ddof=1))
 
         def fail_wrapper(*_args, **_kwargs):
-            raise AssertionError("summary stats should use ndarray reductions")
+            raise AssertionError("small summary stats should use scalar reductions")
 
         monkeypatch.setattr(ic_module.np, "mean", fail_wrapper)
         monkeypatch.setattr(ic_module.np, "var", fail_wrapper)
@@ -674,7 +687,7 @@ class TestPICRun:
         ic = IndependentContrasts(args)
 
         def fail_wrapper(*_args, **_kwargs):
-            raise AssertionError("text summary should use shared ndarray helper")
+            raise AssertionError("small text summary should use scalar reductions")
 
         monkeypatch.setattr(ic_module.np, "mean", fail_wrapper)
         monkeypatch.setattr(ic_module.np, "var", fail_wrapper)
@@ -703,7 +716,7 @@ class TestPICRun:
         ss = sum(c["contrast"] ** 2 for c in payload["contrasts"])
         assert ss == pytest.approx(0.307253, abs=0.001)
 
-    def test_print_json_reuses_contrast_array_for_summary(
+    def test_print_json_uses_scalar_summary_for_small_outputs(
         self, monkeypatch, capsys, args
     ):
         ic = IndependentContrasts(args)
@@ -724,7 +737,7 @@ class TestPICRun:
 
         payload = json.loads(capsys.readouterr().out)
 
-        assert len(asarray_calls) == 1
+        assert asarray_calls == []
         assert payload["n_taxa"] == 4
         assert payload["n_contrasts"] == 2
         assert payload["mean_absolute_contrast"] == 2.0
@@ -733,3 +746,22 @@ class TestPICRun:
             {"node": 1, "contrast": 1.0, "tips": ["A", "B"]},
             {"node": 2, "contrast": -3.0, "tips": ["C", "D"]},
         ]
+
+    def test_large_contrast_summary_uses_numpy_array_path(
+        self, monkeypatch, args
+    ):
+        ic = IndependentContrasts(args)
+        original_asarray = ic_module.np.asarray
+        asarray_calls = []
+
+        def counting_asarray(*call_args, **kwargs):
+            asarray_calls.append((call_args, kwargs))
+            return original_asarray(*call_args, **kwargs)
+
+        monkeypatch.setattr(ic_module.np, "asarray", counting_asarray)
+
+        mean_abs, variance = ic_module._contrast_summary_stats([1.0] * 300)
+
+        assert len(asarray_calls) == 1
+        assert mean_abs == 1.0
+        assert variance == 0.0
