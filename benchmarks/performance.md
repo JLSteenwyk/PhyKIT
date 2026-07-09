@@ -1893,6 +1893,7 @@ Results:
 | `Tree.prune_tree_using_taxa_list` | balanced 2048-tip tree, prune 1024 named tips | 0.2327s | 0.2070s | 1.1x |
 | `Tree.prune_tree_using_taxa_list` batch standard-tree pruning | balanced 2048-tip tree, prune 1024 resolved terminal targets | 0.2030s | 0.0022s | 91.9x |
 | `Tree._prune_terminal_objects_batch_standard_tree` reverse-preorder pass | balanced 2048-tip tree, prune 1024 resolved terminal targets | 0.001459s | 0.001125s | 1.30x |
+| `Tree._prune_terminal_objects_batch_standard_tree` localized traversal setup | 25 repeated 2048-tip batch-prune helpers with 1024 resolved terminal targets, side-by-side previous stack/list method lookup | 0.273522458s | 0.114099875s | 2.40x |
 | `Tree.prune_tree_using_taxa_list` terminal target setup | balanced 8192-tip tree, resolve 512 named prune targets | 0.0283s | 0.0040s | 7.0x |
 | `Tree.prune_tree_using_taxa_list` selected target setup | balanced 65536-tip tree, resolve 512 named prune targets | 0.024874s | 0.018461s | 1.35x |
 | `Tree._terminal_targets_and_count_fast` unordered child push | balanced 131072-tip tree, resolve 512 named prune targets, optimized helper baseline | 0.024863s | 0.014603s | 1.70x |
@@ -6899,7 +6900,10 @@ Profiling summary:
   preorder and reversing it, avoiding visited-flag stack entries while
   preserving branch-length collapse output. A target-setup pass now stores only
   requested terminal objects while still counting all terminals for the all-tip
-  guard, avoiding dictionary entries for unrelated tips. A later setup pass
+  guard, avoiding dictionary entries for unrelated tips. The batch-prune helper
+  now localizes its stack and clade-list operations while preserving the same
+  reverse-preorder mutation order and branch-length collapse behavior for
+  binary and multifurcating trees. A later setup pass
   localizes stack operations and pushes children directly because the helpers
   only expose name-indexed maps, selected targets in caller order, and terminal
   counts; traversal order is not externally visible.

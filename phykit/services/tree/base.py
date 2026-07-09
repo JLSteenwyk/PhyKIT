@@ -986,12 +986,15 @@ class Tree(BaseService):
         clades = []
         stack = [root]
         try:
+            pop = stack.pop
+            extend = stack.extend
+            append_clade = clades.append
             while stack:
-                clade = stack.pop()
-                clades.append(clade)
+                clade = pop()
+                append_clade(clade)
                 children = clade.clades
                 if children:
-                    stack.extend(children)
+                    extend(children)
 
             clades.reverse()
             for clade in clades:

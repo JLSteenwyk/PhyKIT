@@ -929,6 +929,34 @@ class TestTreeBase:
         Phylo.write(actual, actual_out, "newick")
         assert actual_out.getvalue() == expected_out.getvalue()
 
+    def test_batch_prune_helper_handles_multifurcating_standard_tree(
+        self, monkeypatch
+    ):
+        newick = "((a:1,b:2,c:3):4,(d:5,e:6,g:7):8,h:9);"
+        expected = Phylo.read(StringIO(newick), "newick")
+        actual = Phylo.read(StringIO(newick), "newick")
+        taxa_to_prune = {"a", "c", "e", "h"}
+        expected_by_name = {tip.name: tip for tip in expected.get_terminals()}
+        for taxon in taxa_to_prune:
+            expected.prune(expected_by_name[taxon])
+        target_ids = {
+            id(tip) for tip in actual.get_terminals() if tip.name in taxa_to_prune
+        }
+
+        def fail_generic_path(*_args, **_kwargs):
+            raise AssertionError("batch helper should not use generic tree methods")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_path)
+        monkeypatch.setattr(TreeMixin, "prune", fail_generic_path)
+
+        assert Tree._prune_terminal_objects_batch_standard_tree(actual, target_ids)
+
+        expected_out = StringIO()
+        actual_out = StringIO()
+        Phylo.write(expected, expected_out, "newick")
+        Phylo.write(actual, actual_out, "newick")
+        assert actual_out.getvalue() == expected_out.getvalue()
+
     def test_prune_tree_using_taxa_list_preserves_all_tip_prune_error(self):
         service = Tree()
         tree = Phylo.read(StringIO("(a:1,b:1);"), "newick")
