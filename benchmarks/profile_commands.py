@@ -113,6 +113,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "terminal_branch_stats",
         ("terminal_branch_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
     ),
+    (
+        "compositional_bias_per_site",
+        ("compositional_bias_per_site", str(SAMPLES / "simple.fa")),
+    ),
 )
 
 

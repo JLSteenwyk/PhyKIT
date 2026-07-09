@@ -456,6 +456,80 @@ assert "numpy" not in sys.modules
         assert all(np.isnan(result.pvalue) for result in stat_res)
         assert corrected == ["nan", "nan", "nan", "nan"]
 
+    def test_calculate_compositional_bias_per_site_small_alignment_uses_scalar_path(
+        self, mocker, args
+    ):
+        service = CompositionalBiasPerSite(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTAC"), id="t1"),
+                SeqRecord(Seq("A-GTCC"), id="t2"),
+                SeqRecord(Seq("TCGTAG"), id="t3"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.compositional_bias_per_site.np.frombuffer",
+            side_effect=AssertionError("small alignments should use scalar counts"),
+        )
+
+        stat_res, corrected = service.calculate_compositional_bias_per_site(
+            alignment,
+            is_protein=False,
+        )
+
+        assert [round(float(result.statistic), 4) for result in stat_res] == [
+            0.3333,
+            0.0,
+            0.0,
+            0.0,
+            0.3333,
+            0.3333,
+        ]
+        assert corrected[1] == "nan"
+        assert all(
+            value == pytest.approx(0.5637028616507729)
+            for value in corrected
+            if value != "nan"
+        )
+
+    def test_scalar_compositional_bias_matches_vector_path_for_small_input(self, args):
+        service = CompositionalBiasPerSite(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTAC"), id="t1"),
+                SeqRecord(Seq("A-GTCC"), id="t2"),
+                SeqRecord(Seq("TCGTAG"), id="t3"),
+            ]
+        )
+        raw_sequences = [str(record.seq) for record in alignment]
+        scalar_stat, scalar_corrected = cbps_module._calculate_compositional_bias_scalar(
+            raw_sequences,
+            alignment.get_alignment_length(),
+            is_protein=False,
+        )
+        original_limit = cbps_module._SCALAR_CELL_MAX
+        cbps_module._SCALAR_CELL_MAX = 0
+        try:
+            vector_stat, vector_corrected = service.calculate_compositional_bias_per_site(
+                alignment,
+                is_protein=False,
+            )
+        finally:
+            cbps_module._SCALAR_CELL_MAX = original_limit
+
+        assert [result.statistic for result in scalar_stat] == pytest.approx(
+            [result.statistic for result in vector_stat]
+        )
+        assert [result.pvalue for result in scalar_stat] == pytest.approx(
+            [result.pvalue for result in vector_stat],
+            nan_ok=True,
+        )
+        for scalar_value, vector_value in zip(scalar_corrected, vector_corrected):
+            if scalar_value == "nan" or vector_value == "nan":
+                assert scalar_value == vector_value
+            else:
+                assert scalar_value == pytest.approx(vector_value)
+
     def test_corrected_p_values_keep_interleaved_nan_positions(self, args):
         service = CompositionalBiasPerSite(args)
         alignment = MultipleSeqAlignment(

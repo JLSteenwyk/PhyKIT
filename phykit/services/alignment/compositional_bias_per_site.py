@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from math import erfc, isnan, pi, sqrt
+from math import erfc, exp, isnan, pi, sqrt
 
 
 from .base import Alignment
@@ -35,6 +35,7 @@ _PROTEIN_GAP_LOOKUP = None
 _FDR_VECTOR_MIN_LENGTH = 32
 _PLOT_DIRECT_MAX_LIMIT = 100_000
 _ASCII_COUNT_BLOCK_SIZE = 512
+_SCALAR_CELL_MAX = 4096
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -106,6 +107,30 @@ def _chi2_sf_for_integer_df(statistics: np.ndarray, degrees_of_freedom: int) -> 
         total += term
         current_shape += 1.0
     return np.clip(total, 0.0, 1.0)
+
+
+def _chi2_sf_scalar(statistic: float, degrees_of_freedom: int) -> float:
+    y_value = statistic * 0.5
+    if degrees_of_freedom % 2 == 0:
+        term = exp(-y_value)
+        total = term
+        for idx in range(1, degrees_of_freedom // 2):
+            term = term * y_value / idx
+            total += term
+        return min(max(total, 0.0), 1.0)
+
+    total = erfc(sqrt(y_value))
+    if degrees_of_freedom == 1:
+        return total
+
+    term = exp(-y_value) * 2.0 * sqrt(y_value) / sqrt(pi)
+    total += term
+    current_shape = 0.5
+    for _ in range(1, degrees_of_freedom // 2):
+        term = term * y_value / (current_shape + 1.0)
+        total += term
+        current_shape += 1.0
+    return min(max(total, 0.0), 1.0)
 
 
 def _chi2_sf(statistics: np.ndarray, degrees_of_freedom: np.ndarray) -> np.ndarray:
@@ -249,6 +274,59 @@ def _column_count_stats_from_ascii_codes(
         sum_squares[slc] = _column_sum_squares(counts)
 
     return category_counts, totals, sum_squares
+
+
+def _calculate_compositional_bias_scalar(
+    raw_sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+) -> tuple[list[Power_divergenceResult], list[float | str]] | None:
+    if (
+        is_protein
+        or not raw_sequences
+        or len(raw_sequences) * aln_len > _SCALAR_CELL_MAX
+    ):
+        return None
+
+    gap_chars = {"-", "?", "*", "X", "N"}
+    result_type = Power_divergenceResult
+    stat_res = []
+    valid_p_values = []
+    valid_indices = []
+
+    for site_idx in range(aln_len):
+        counts = {}
+        for sequence in raw_sequences:
+            char = sequence[site_idx].upper()
+            if char not in gap_chars:
+                counts[char] = counts.get(char, 0) + 1
+
+        category_count = len(counts)
+        total = sum(counts.values())
+        if not total:
+            statistic = 0.0
+            p_value = float("nan")
+        else:
+            sum_squares = sum(count * count for count in counts.values())
+            statistic = category_count * sum_squares / total - total
+            if category_count > 1:
+                p_value = _chi2_sf_scalar(statistic, category_count - 1)
+                valid_indices.append(site_idx)
+                valid_p_values.append(p_value)
+            else:
+                p_value = float("nan")
+
+        stat_res.append(result_type(float(statistic), float(p_value)))
+
+    if valid_p_values:
+        corrected_valid = _false_discovery_control(valid_p_values)
+        corrected: list[float | str] = ["nan"] * aln_len
+        for site_idx, value in zip(valid_indices, corrected_valid):
+            corrected[site_idx] = value
+    else:
+        corrected = ["nan"] * aln_len
+
+    return stat_res, corrected
 
 
 class CompositionalBiasPerSite(Alignment):
@@ -490,6 +568,15 @@ class CompositionalBiasPerSite(Alignment):
                 for _ in range(aln_len)
             ]
             return stat_res, ["nan"] * aln_len
+
+        scalar_result = _calculate_compositional_bias_scalar(
+            raw_sequences,
+            aln_len,
+            is_protein,
+        )
+        if scalar_result is not None:
+            return scalar_result
+
         sequences = [sequence.upper() for sequence in raw_sequences]
 
         gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
