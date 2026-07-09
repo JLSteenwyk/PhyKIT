@@ -1592,6 +1592,7 @@ Results:
 | `LastCommonAncestorSubtree._find_parent_depth_lca` root early return | balanced 65536-tip tree, 4096 dispersed target clades whose MRCA reaches root after the first pair | 0.045236s | 0.000006875s | 6579.81x |
 | `LastCommonAncestorSubtree._find_lca_subtree` unique target scan | balanced 32768-tip tree, 2048 unique taxa / same taxa repeated 40x, side-by-side previous raw-taxa target list | 0.696373s / 0.206490s | 0.533814s / 0.144736s | 1.30x / 1.43x |
 | `LastCommonAncestorSubtree._find_lca_subtree` all-tip root shortcut | balanced 1024 / 32768 / 131072-tip trees, every tip selected, side-by-side previous parent-depth LCA target build | 0.000820708s / 0.077062208s / 0.491124708s | 0.000532646s / 0.054512333s / 0.391170896s | 1.54x / 1.41x / 1.26x |
+| `LastCommonAncestorSubtree._find_parent_depth_lca` two-target merge | balanced 32768-tip tree, 200k repeated opposite-tip / adjacent-tip / late same-side target merges, side-by-side previous generic target loop | 0.343056s / 0.078785s / 0.210699s | 0.207319s / 0.051706s / 0.212287s | 1.65x / 1.52x / 0.99x |
 | `last_common_ancestor_subtree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006235s | 0.005155s | 1.21x |
 | `last_common_ancestor_subtree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006208s | 0.004222s | 1.47x |
 | `last_common_ancestor_subtree` module import without eager file helper | median cold subprocess import after lazy taxa-list reader wrapper | 0.044738s | 0.022908s | 1.95x |
@@ -6136,7 +6137,9 @@ Profiling summary:
   depth zero, because no remaining target can move the MRCA below the root.
   Duplicate requested taxa are now collapsed for the final parent-depth target
   scan, preserving the selected-name validation and MRCA while avoiding repeated
-  ancestor comparisons for duplicate-heavy taxa files.
+  ancestor comparisons for duplicate-heavy taxa files. Two-target parent-depth
+  merges now use a direct branch that avoids the generic target loop, improving
+  common two-tip subtree queries while leaving multi-target behavior unchanged.
   JSON output now also counts subtree terminals with the shared direct terminal
   count helper before falling back to `count_terminals()`.
   The cached read-only setup follow-up switches `run()` to

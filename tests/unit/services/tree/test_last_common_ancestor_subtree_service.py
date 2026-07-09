@@ -103,6 +103,43 @@ def test_find_parent_depth_lca_does_not_slice_targets():
     )
 
 
+def test_find_parent_depth_lca_specializes_two_targets():
+    class NoIterAfterSecond(list):
+        def __getitem__(self, key):
+            if key > 1:
+                raise AssertionError("two-target LCA should not scan beyond index 1")
+            return super().__getitem__(key)
+
+    root = object()
+    left_parent = object()
+    right_parent = object()
+    left = object()
+    right = object()
+    parent_by_clade = {
+        root: None,
+        left_parent: root,
+        right_parent: root,
+        left: left_parent,
+        right: right_parent,
+    }
+    depth_by_clade = {
+        root: 0,
+        left_parent: 1,
+        right_parent: 1,
+        left: 2,
+        right: 2,
+    }
+
+    assert (
+        module._find_parent_depth_lca(
+            NoIterAfterSecond([left, right]),
+            parent_by_clade,
+            depth_by_clade,
+        )
+        is root
+    )
+
+
 def test_find_parent_depth_lca_returns_when_lca_reaches_root():
     root = object()
     left = object()

@@ -22,6 +22,21 @@ def read_single_column_file_to_list(*args, **kwargs):
 def _find_parent_depth_lca(targets, parent_by_clade, depth_by_clade):
     lca = targets[0]
     lca_depth = depth_by_clade[lca]
+    if len(targets) == 2:
+        current = targets[1]
+        current_depth = depth_by_clade[current]
+
+        while lca_depth > current_depth:
+            lca = parent_by_clade[lca]
+            lca_depth -= 1
+        while current_depth > lca_depth:
+            current = parent_by_clade[current]
+            current_depth -= 1
+        while lca is not current:
+            lca = parent_by_clade[lca]
+            current = parent_by_clade[current]
+        return lca
+
     for idx in range(1, len(targets)):
         current = targets[idx]
         current_depth = depth_by_clade[current]
