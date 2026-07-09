@@ -1537,6 +1537,21 @@ class TestPhyloGwas:
             frozenset({"A", "B", "C"}),
         }
 
+    def test_build_phylo_pattern_index_can_restrict_to_shared_taxa(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        newick = "(((A,X),(B,Y)),(C,D));"
+        shared_taxa = {"A", "B", "C", "D"}
+        tree = Phylo.read(StringIO(newick), "newick")
+        pruned = Phylo.read(StringIO(newick), "newick")
+        PhyloGwas._prune_tree_to_taxa(pruned, shared_taxa)
+
+        assert PhyloGwas._build_phylo_pattern_index(
+            tree,
+            shared_taxa,
+        ) == PhyloGwas._build_phylo_pattern_index(pruned)
+
     def test_prune_tree_to_taxa_uses_direct_terminal_pass(self, monkeypatch):
         from Bio import Phylo
         from Bio.Phylo.BaseTree import TreeMixin

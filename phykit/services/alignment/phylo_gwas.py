@@ -733,9 +733,9 @@ class PhyloGwas(Alignment):
         return [shared_taxa[index] for index in matching_rows]
 
     @staticmethod
-    def _build_phylo_pattern_index(tree) -> set:
+    def _build_phylo_pattern_index(tree, taxa: Optional[set[str]] = None) -> set:
         """Return descendant taxon sets for all clades in one postorder pass."""
-        direct_result = PhyloGwas._build_phylo_pattern_index_direct(tree)
+        direct_result = PhyloGwas._build_phylo_pattern_index_direct(tree, taxa)
         if direct_result is not None:
             return direct_result
 
@@ -743,17 +743,21 @@ class PhyloGwas(Alignment):
         monophyletic_sets = set()
         for clade in tree.find_clades(order="postorder"):
             if clade.is_terminal():
-                tips = frozenset([clade.name])
+                if taxa is not None and clade.name not in taxa:
+                    tips = frozenset()
+                else:
+                    tips = frozenset([clade.name])
             else:
                 tips = frozenset().union(
                     *(clade_tips[id(child)] for child in clade.clades)
                 )
             clade_tips[id(clade)] = tips
-            monophyletic_sets.add(tips)
+            if tips:
+                monophyletic_sets.add(tips)
         return monophyletic_sets
 
     @staticmethod
-    def _build_phylo_pattern_index_direct(tree):
+    def _build_phylo_pattern_index_direct(tree, taxa: Optional[set[str]] = None):
         try:
             root = tree.root
             root.clades
@@ -802,9 +806,13 @@ class PhyloGwas(Alignment):
                             *(clade_tips[id(child)] for child in children)
                         )
                 else:
-                    tips = frozenset([clade.name])
+                    if taxa is not None and clade.name not in taxa:
+                        tips = frozenset()
+                    else:
+                        tips = frozenset([clade.name])
                 clade_tips[id(clade)] = tips
-                monophyletic_sets.add(tips)
+                if tips:
+                    monophyletic_sets.add(tips)
         except (AttributeError, KeyError, TypeError):
             return None
 
@@ -1010,10 +1018,13 @@ class PhyloGwas(Alignment):
             from Bio import Phylo
 
             tree = Phylo.read(self.tree_path, "newick")
-            # Prune tree to shared taxa
-            self._prune_tree_to_taxa(tree, set(shared_taxa))
+            shared_taxa_set = set(shared_taxa)
+        else:
+            shared_taxa_set = None
         monophyletic_sets = (
-            self._build_phylo_pattern_index(tree) if tree is not None else None
+            self._build_phylo_pattern_index(tree, shared_taxa_set)
+            if tree is not None
+            else None
         )
 
         # Parse partitions if provided

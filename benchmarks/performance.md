@@ -815,6 +815,7 @@ Results:
 | `PhyloGwas._write_csv` required-field fast path | 100k categorical GWAS rows with ignored extra fields and quoted gene names, side-by-side previous `get()` row writer with incomplete-row fallback preserved | 0.698594s | 0.646321s | 1.08x |
 | `PhyloGwas.run` ASCII biallelic column prefilter | 400 taxa x 50,000 sites, continuous phenotype scan, 90% invariant / 5% multiallelic / 5% biallelic ASCII columns | 0.352346s | 0.119668s | 2.94x |
 | `PhyloGwas.run` phylo-pattern minor-taxa scan | 400 taxa x 50,000 sites with 5000 significant tree-classified sites, side-by-side previous temporary allele-list filter | 2.555218s | 1.682205s | 1.52x |
+| `PhyloGwas.run` tree phylo-pattern setup without pruning | 8192-tip balanced tree with every 64th tip absent from shared alignment/phenotype taxa, side-by-side previous `tree.prune()` plus clade-index build | 1.118381s | 0.116832s | 9.57x |
 | `PhyloGwas.run` shared-taxon setup | 1M alignment taxa x 1M phenotype taxa with 750k overlap, identical sorted shared taxa | 3.113728s | 2.794556s | 1.11x |
 | `PhyloGwas.run` exact shared-taxon setup | 500k alignment taxa x 500k phenotype taxa with identical taxon sets, side-by-side previous intersection-set construction | 0.570533s | 0.099172s | 5.75x |
 | `PhyloGwas._read_phenotype` byte partition parser | 500k phenotype TSV rows with ignored third columns, identical parsed phenotype mapping | 0.673884s | 0.346062s | 1.95x |
@@ -4662,7 +4663,10 @@ Profiling summary:
   Exact alignment/phenotype taxon matches now return sorted alignment keys
   directly after a key-view equality check, preserving partial-overlap
   intersection behavior while avoiding a large temporary intersection set for
-  common all-shared GWAS inputs.
+  common all-shared GWAS inputs. Phylogenetic pattern setup now builds the
+  monophyletic descendant-set index restricted to shared taxa directly, avoiding
+  repeated `tree.prune()` calls for tree tips absent from the shared
+  alignment/phenotype taxa while preserving prune-equivalent clade sets.
 - `PhyloGwas` allele extraction baseline time performed one dictionary lookup
   per taxon per tested alignment column. The optimized path builds one ASCII
   byte matrix for shared taxa, extracts columns through `tobytes().decode()`,
