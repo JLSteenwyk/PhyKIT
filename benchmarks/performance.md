@@ -1858,6 +1858,7 @@ Results:
 | `discrete_models._felsenstein_loglik_er_rate` small-state scalar rows | balanced 32768-tip ER likelihoods with 3 / 4 states, side-by-side previous per-node `np.ones` row update, identical underflow guard result | 3.621080s / 3.527726s | 1.669703s / 1.754470s | 2.17x / 2.01x |
 | `FitDiscrete.run` shared pruning context | balanced 8192-tip tree, ER/SYM/ARD setup context reuse | 0.045272s | 0.014442s | 3.13x |
 | `FitDiscrete.run` all-shared read-only setup | balanced 32768-tip cached tree, trait state for every tip, model fitting/output mocked | 0.319352s | 0.102667s | 3.11x |
+| `FitDiscrete._needs_default_branch_lengths` binary child push | balanced 32768-tip / 131072-tip trees, repeated complete branch-length preflight scans, side-by-side previous `extend(children)` helper | 0.585337500s / 0.675896959s | 0.291841000s / 0.361148417s | 2.01x / 1.87x |
 | `FitDiscrete.run` ordered state prune-target setup | 300k ordered tree tips and parsed discrete states with identical taxon order, side-by-side previous shared-state set construction | 0.051580s | 0.018092s | 2.85x |
 | `FitDiscrete.run` small real-eigensystem transitions | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous SciPy `expm` transition path with identical stdout | 5.374444s | 3.653641s | 1.47x |
 | `FitDiscrete.run` multi-state ER rate objective | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous ER objective path, identical stdout | 3.350152s | 2.758701s | 1.21x |

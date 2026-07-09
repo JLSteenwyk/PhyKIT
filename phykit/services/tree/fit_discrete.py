@@ -141,7 +141,7 @@ class FitDiscrete(Tree):
 
         stack = [root]
         pop = stack.pop
-        extend = stack.extend
+        append = stack.append
         try:
             while stack:
                 clade = pop()
@@ -149,7 +149,13 @@ class FitDiscrete(Tree):
                 if clade is not root and clade.branch_length is None:
                     return True
                 if children:
-                    extend(children)
+                    child_count = len(children)
+                    if child_count == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            append(children[idx])
         except AttributeError:
             return True
 

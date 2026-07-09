@@ -125,6 +125,30 @@ class TestDiscreteModelsShared:
         tree.root.clades[2].clades[1].branch_length = None
         assert FitDiscrete._needs_default_branch_lengths(tree) is True
 
+    def test_default_branch_length_scan_handles_deep_ladder(self, monkeypatch):
+        from Bio.Phylo.BaseTree import Clade, Tree, TreeMixin
+
+        root = Clade()
+        current = root
+        for index in range(1200):
+            next_internal = Clade(branch_length=1.0)
+            current.clades = [
+                Clade(branch_length=1.0, name=f"T{index}"),
+                next_internal,
+            ]
+            current = next_internal
+        current.clades = [Clade(branch_length=1.0, name="T1200")]
+        tree = Tree(root=root)
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree scan should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        assert FitDiscrete._needs_default_branch_lengths(tree) is False
+        current.clades[0].branch_length = None
+        assert FitDiscrete._needs_default_branch_lengths(tree) is True
+
     def test_build_q_matrix_er(self):
         Q = build_q_matrix([0.5], 3, "ER")
         assert Q.shape == (3, 3)
