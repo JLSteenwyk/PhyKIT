@@ -210,6 +210,23 @@ class TestSitesMode:
             [0, 1, 2, 5, 7, 8]
         ) == [(0, 3), (5, 6), (7, 9)]
 
+    def test_selected_index_ranges_does_not_slice_large_index_lists(self):
+        class NoSliceList(list):
+            def __getitem__(self, item):
+                if isinstance(item, slice):
+                    raise AssertionError(
+                        "_selected_index_ranges should not copy index slices"
+                    )
+                return super().__getitem__(item)
+
+        indices = NoSliceList([0, 1, 2, 50, 51, 100])
+
+        assert AlignmentSubsample._selected_index_ranges(indices) == [
+            (0, 3),
+            (50, 52),
+            (100, 101),
+        ]
+
     def test_select_site_ranges_joins_sequence_slices(self):
         assert AlignmentSubsample._select_site_ranges(
             "ACGTACGT",

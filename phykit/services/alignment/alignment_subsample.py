@@ -322,19 +322,19 @@ class AlignmentSubsample(Alignment):
 
     @staticmethod
     def _selected_index_ranges(indices: list[int]) -> list[tuple[int, int]]:
-        if not indices:
+        iterator = iter(indices)
+        try:
+            start = previous = next(iterator)
+        except StopIteration:
             return []
 
         ranges: list[tuple[int, int]] = []
-        start = indices[0]
-        previous = start
-        for index in indices[1:]:
+        for index in iterator:
             if index == previous + 1:
                 previous = index
                 continue
             ranges.append((start, previous + 1))
-            start = index
-            previous = index
+            start = previous = index
         ranges.append((start, previous + 1))
         return ranges
 
