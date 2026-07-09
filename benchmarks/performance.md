@@ -1468,6 +1468,7 @@ Results:
 | `InternalBranchStats.run` verbose JSON row construction | 500k mocked internal-branch rows, identical row dictionaries | 0.490565s | 0.424206s | 1.16x |
 | `InternalBranchStats.run` cached read-only tree path | balanced 32768-tip cached tree with varied internal lengths, non-verbose summary output mocked | 0.111553s | 0.003668s | 30.41x |
 | `InternalBranchStats.run` simple Newick internal-branch scan | side-by-side direct command timing, 5 runs after 1 warmup, plain Newick input `small_Aspergillus_tree.tre`, summary and verbose output matched previous commit | 0.504775s | 0.047634s | 10.60x |
+| `Phykit.internal_branch_stats` default parser bypass | direct dispatch 1000 mocked service calls; command profiler `internal_branch_stats`, 60 runs after 8 warmups | 1.286976s / 0.061978s | 0.000393s / 0.051439s | 3274.75x / 1.20x |
 | `internal_branch_stats` module import without eager Bio.Phylo | cold subprocess import of internal-branch-stats command module | 0.172597s | 0.113385s | 1.52x |
 | `internal_branch_stats` module import without eager stats NumPy | cold subprocess import after lazy shared summary helper | 0.113385s | 0.069735s | 1.63x |
 | `internal_branch_stats` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.011026s | 0.008896s | 1.24x |

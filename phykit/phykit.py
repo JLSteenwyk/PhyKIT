@@ -3828,6 +3828,13 @@ class Phykit:
 
     @staticmethod
     def internal_branch_stats(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0]),
+                InternalBranchStats,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
