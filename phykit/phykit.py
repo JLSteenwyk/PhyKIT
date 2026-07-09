@@ -128,6 +128,15 @@ class _FastaVerboseJsonDefaultArgs:
         self.json = False
 
 
+class _TreeTaxaJsonDefaultArgs:
+    __slots__ = ("tree", "list_of_taxa", "json")
+
+    def __init__(self, tree: str, list_of_taxa: str) -> None:
+        self.tree = tree
+        self.list_of_taxa = list_of_taxa
+        self.json = False
+
+
 def _dedent(text: str) -> str:
     from textwrap import dedent
 
@@ -3877,6 +3886,19 @@ class Phykit:
 
     @staticmethod
     def monophyly_check(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[1]
+            and argv[0][0] != "-"
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeTaxaJsonDefaultArgs(argv[0], argv[1]),
+                MonophylyCheck,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
