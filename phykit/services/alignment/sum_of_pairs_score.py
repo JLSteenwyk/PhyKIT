@@ -313,20 +313,23 @@ class SumOfPairsScore(Alignment):
         batch_matches = 0
         batch_total = 0
         count_nonzero = np.count_nonzero
+        logical_and = np.logical_and
         seq_masks = SumOfPairsScore._sequence_match_masks_for_pairs(
             pair_batch,
             reference_records,
             query_records,
         )
+        scratch_len = max((length for length, _ in seq_masks.values()), default=0)
+        scratch = np.empty(scratch_len, dtype=np.bool_)
 
         for first_in_pair, second_in_pair in pair_batch:
             len1, matches1 = seq_masks[first_in_pair]
             len2, matches2 = seq_masks[second_in_pair]
             min_len = min(len1, len2)
             if min_len > 0:
-                batch_matches += count_nonzero(
-                    matches1[:min_len] & matches2[:min_len]
-                )
+                out = scratch[:min_len]
+                logical_and(matches1[:min_len], matches2[:min_len], out=out)
+                batch_matches += int(count_nonzero(out))
                 batch_total += min_len
 
         return int(batch_matches), batch_total
@@ -359,20 +362,23 @@ class SumOfPairsScore(Alignment):
             number_of_matches = 0
             number_of_total_pairs = 0
             count_nonzero = np.count_nonzero
+            logical_and = np.logical_and
             seq_masks = self._sequence_match_masks_for_pairs(
                 record_id_pairs,
                 reference_records,
                 query_records,
             )
+            scratch_len = max((length for length, _ in seq_masks.values()), default=0)
+            scratch = np.empty(scratch_len, dtype=np.bool_)
 
             for first_in_pair, second_in_pair in record_id_pairs:
                 len1, matches1 = seq_masks[first_in_pair]
                 len2, matches2 = seq_masks[second_in_pair]
                 min_len = min(len1, len2)
                 if min_len > 0:
-                    number_of_matches += int(
-                        count_nonzero(matches1[:min_len] & matches2[:min_len])
-                    )
+                    out = scratch[:min_len]
+                    logical_and(matches1[:min_len], matches2[:min_len], out=out)
+                    number_of_matches += int(count_nonzero(out))
                     number_of_total_pairs += min_len
 
             return int(number_of_matches), number_of_total_pairs

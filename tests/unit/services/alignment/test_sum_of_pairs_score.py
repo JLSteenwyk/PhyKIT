@@ -570,6 +570,39 @@ class TestSumOfPairsScore:
         assert matches == expected_matches
         assert pairs == expected_pairs
 
+    def test_process_pair_batch_reuses_logical_and_output(self, monkeypatch):
+        reference_records = _make_records({
+            "id1": "ACGT",
+            "id2": "ACG",
+            "id3": "A-GT",
+        })
+        query_records = _make_records({
+            "id1": "ACGA",
+            "id2": "ATG",
+            "id3": "A-G",
+        })
+        pair_batch = [("id1", "id2"), ("id1", "id3"), ("id2", "id3")]
+        original_logical_and = module.np.logical_and
+        out_shapes = []
+
+        def logical_and_spy(left, right, *args, **kwargs):
+            out = kwargs.get("out")
+            assert out is not None
+            out_shapes.append(out.shape)
+            return original_logical_and(left, right, *args, **kwargs)
+
+        monkeypatch.setattr(module.np, "logical_and", logical_and_spy)
+
+        matches, pairs = SumOfPairsScore._process_pair_batch(
+            pair_batch,
+            reference_records,
+            query_records,
+        )
+
+        assert matches == 7
+        assert pairs == 9
+        assert out_shapes == [(3,), (3,), (3,)]
+
     def test_sequence_match_masks_for_pairs_cache_per_taxon(self, mocker):
         reference_records = _make_records({
             "id1": "ACGT",
