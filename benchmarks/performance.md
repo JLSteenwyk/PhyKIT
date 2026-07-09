@@ -564,6 +564,7 @@ Results:
 | `column_score` module import without eager NumPy/Bio.AlignIO | cold subprocess import after lazy NumPy, AlignIO, annotation, and JSON helpers | 0.124730s | 0.022308s | 5.59x |
 | `column_score` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002598s | 0.000871s | 2.98x |
 | `column_score` direct simple FASTA path | side-by-side command profiler, 5 runs after 1 warmup, `simple.fa` and `simple_reference.fa`, text and JSON stdout/stderr matched previous commit | 0.075780s | 0.061155s | 1.24x |
+| `Phykit.column_score` default reference parser bypass | direct dispatch 1000 mocked service calls; command profiler `column_score`, 30 runs after 5 warmups | 1.374724s / 0.059238s | 0.000495s / 0.047514s | 2777.22x / 1.25x |
 | `DNAThreader.normalize_p_seq` local append triplication | 240k amino-acid string with mixed amino acids, gaps, stop, and unknown symbols, side-by-side previous generator join | 0.049809s | 0.041313s | 1.21x |
 | `DNAThreader.normalize_n_seq` | 96k amino acids with gaps/stops/unknowns, 288k nucleotide output | 0.0467s | 0.0133s | 3.5x |
 | `DNAThreader.normalize_n_seq` direct codon offsets | 96k mixed amino acids / 140k gap-heavy amino acids with partial trailing codons, side-by-side previous pre-split codon list | 0.039377s / 0.033592s | 0.032828s / 0.022330s | 1.20x / 1.50x |

@@ -1058,6 +1058,20 @@ class Phykit:
 
     @staticmethod
     def column_score(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-r", "--reference")
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _FastaReferenceJsonDefaultArgs(argv[0], argv[2]),
+                ColumnScore,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
