@@ -42,6 +42,18 @@ np = _LazyNumpy()
 _SMALL_TAXON_COLUMN_SET_MAX = 8
 
 
+def _clean_fasta_sequence(sequence_parts: list[str]) -> str:
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
+    if " " in sequence:
+        sequence = sequence.replace(" ", "")
+    if "\r" in sequence:
+        sequence = sequence.replace("\r", "")
+    return sequence.upper()
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -75,6 +87,18 @@ class ColumnScore(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
+        direct_result = self._calculate_fasta_paths_direct(self.reference, self.fasta)
+        if direct_result is not None:
+            number_of_matches, number_of_total_columns = direct_result
+            score = round(number_of_matches / number_of_total_columns, 4)
+
+            if self.json_output:
+                print_json(dict(column_score=score))
+                return
+
+            print(score)
+            return
+
         query_records, query_format, _ = get_alignment_and_format(self.fasta)
         if query_format != "fasta":
             query_records = AlignIO.read(self.fasta, "fasta")
@@ -141,6 +165,43 @@ class ColumnScore(Alignment):
         return len(matches), len(query_columns)
 
     @staticmethod
+    def _read_fasta_sequences_upper(path: str) -> list[str] | None:
+        sequences = []
+        expected_length = None
+        with open(path) as handle:
+            record_seen = False
+            sequence_parts = []
+            for line in handle:
+                if not line:
+                    continue
+                if line[0] == ">":
+                    if record_seen:
+                        sequence = _clean_fasta_sequence(sequence_parts)
+                        sequence_length = len(sequence)
+                        if expected_length is None:
+                            expected_length = sequence_length
+                        elif sequence_length != expected_length:
+                            return None
+                        sequences.append(sequence)
+                    record_seen = True
+                    sequence_parts = []
+                elif record_seen:
+                    sequence_parts.append(line.rstrip())
+                else:
+                    return None
+
+            if record_seen:
+                sequence = _clean_fasta_sequence(sequence_parts)
+                sequence_length = len(sequence)
+                if expected_length is None:
+                    expected_length = sequence_length
+                elif sequence_length != expected_length:
+                    return None
+                sequences.append(sequence)
+
+        return sequences or None
+
+    @staticmethod
     def _unique_column_count_ascii(sequences: list[str], seq_len: int) -> int | None:
         column_set = ColumnScore._small_ascii_column_set(sequences)
         if column_set is not None:
@@ -190,6 +251,87 @@ class ColumnScore(Alignment):
         return frozenset(first_sequence)
 
     @staticmethod
+    def _calculate_matches_between_sequence_lists(
+        ref_sequences: list[str],
+        query_sequences: list[str],
+    ) -> tuple[int, int] | None:
+        if not ref_sequences or not query_sequences:
+            return None
+
+        ref_len = len(ref_sequences[0])
+        query_len = len(query_sequences[0])
+        if len(ref_sequences) != len(query_sequences):
+            return 0, query_len
+
+        ref_symbols = ColumnScore._repeated_sequence_symbols_ascii(ref_sequences)
+        query_symbols = ColumnScore._repeated_sequence_symbols_ascii(query_sequences)
+        if ref_symbols is not None and query_symbols is not None:
+            return len(ref_symbols.intersection(query_symbols)), query_len
+
+        if ref_sequences == query_sequences:
+            unique_column_count = ColumnScore._unique_column_count_ascii(
+                query_sequences,
+                query_len,
+            )
+            if unique_column_count is None:
+                return None
+            return unique_column_count, query_len
+
+        n_taxa = len(ref_sequences)
+        if n_taxa <= _SMALL_TAXON_COLUMN_SET_MAX:
+            ref_columns = ColumnScore._small_ascii_column_set(ref_sequences)
+            query_columns = ColumnScore._small_ascii_column_set(query_sequences)
+            if ref_columns is not None and query_columns is not None:
+                return len(ref_columns.intersection(query_columns)), query_len
+
+        try:
+            ref_matrix = np.frombuffer(
+                "".join(ref_sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(n_taxa, ref_len)
+            query_matrix = np.frombuffer(
+                "".join(query_sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(n_taxa, query_len)
+        except UnicodeEncodeError:
+            return None
+
+        column_dtype = np.dtype((np.void, n_taxa))
+        ref_unique = np.unique(
+            np.ascontiguousarray(ref_matrix.T).view(column_dtype).ravel()
+        )
+        query_unique = np.unique(
+            np.ascontiguousarray(query_matrix.T).view(column_dtype).ravel()
+        )
+        matches = np.intersect1d(ref_unique, query_unique, assume_unique=True)
+        return int(matches.size), query_len
+
+    @staticmethod
+    def _calculate_fasta_paths_direct(
+        reference_path: str,
+        query_path: str,
+    ) -> tuple[int, int] | None:
+        try:
+            query_sequences = ColumnScore._read_fasta_sequences_upper(query_path)
+            if query_sequences is None:
+                return None
+            if reference_path == query_path:
+                reference_sequences = query_sequences
+            else:
+                reference_sequences = ColumnScore._read_fasta_sequences_upper(
+                    reference_path
+                )
+                if reference_sequences is None:
+                    return None
+        except OSError:
+            return None
+
+        return ColumnScore._calculate_matches_between_sequence_lists(
+            reference_sequences,
+            query_sequences,
+        )
+
+    @staticmethod
     def _calculate_matches_between_alignments_direct(
         reference_records: MultipleSeqAlignment,
         query_records: MultipleSeqAlignment,
@@ -203,19 +345,10 @@ class ColumnScore(Alignment):
             if any(len(seq) != query_len for seq in query_sequences):
                 return None
 
-            query_symbols = ColumnScore._repeated_sequence_symbols_ascii(
-                query_sequences
-            )
-            if query_symbols is not None:
-                return len(query_symbols), query_len
-
-            unique_column_count = ColumnScore._unique_column_count_ascii(
+            return ColumnScore._calculate_matches_between_sequence_lists(
                 query_sequences,
-                query_len,
+                query_sequences,
             )
-            if unique_column_count is None:
-                return None
-            return unique_column_count, query_len
 
         ref_size = _alignment_size(reference_records)
         query_size = _alignment_size(query_records)
@@ -246,45 +379,7 @@ class ColumnScore(Alignment):
         if len(ref_sequences) != len(query_sequences):
             return 0, query_len
 
-        n_taxa = len(ref_sequences)
-        ref_symbols = ColumnScore._repeated_sequence_symbols_ascii(ref_sequences)
-        query_symbols = ColumnScore._repeated_sequence_symbols_ascii(query_sequences)
-        if ref_symbols is not None and query_symbols is not None:
-            return len(ref_symbols.intersection(query_symbols)), query_len
-
-        if ref_sequences == query_sequences:
-            unique_column_count = ColumnScore._unique_column_count_ascii(
-                query_sequences,
-                query_len,
-            )
-            if unique_column_count is None:
-                return None
-            return unique_column_count, query_len
-
-        if n_taxa <= _SMALL_TAXON_COLUMN_SET_MAX:
-            ref_columns = ColumnScore._small_ascii_column_set(ref_sequences)
-            query_columns = ColumnScore._small_ascii_column_set(query_sequences)
-            if ref_columns is not None and query_columns is not None:
-                return len(ref_columns.intersection(query_columns)), query_len
-
-        try:
-            ref_matrix = np.frombuffer(
-                "".join(ref_sequences).encode("ascii"),
-                dtype=np.uint8,
-            ).reshape(n_taxa, ref_len)
-            query_matrix = np.frombuffer(
-                "".join(query_sequences).encode("ascii"),
-                dtype=np.uint8,
-            ).reshape(n_taxa, query_len)
-        except UnicodeEncodeError:
-            return None
-
-        column_dtype = np.dtype((np.void, n_taxa))
-        ref_unique = np.unique(
-            np.ascontiguousarray(ref_matrix.T).view(column_dtype).ravel()
+        return ColumnScore._calculate_matches_between_sequence_lists(
+            ref_sequences,
+            query_sequences,
         )
-        query_unique = np.unique(
-            np.ascontiguousarray(query_matrix.T).view(column_dtype).ravel()
-        )
-        matches = np.intersect1d(ref_unique, query_unique, assume_unique=True)
-        return int(matches.size), query_len

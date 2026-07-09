@@ -324,6 +324,57 @@ class TestColumnScore:
             query,
         ) == (0, 5)
 
+    def test_calculate_fasta_paths_direct_uses_sequence_lists(self, tmp_path):
+        query = tmp_path / "query.fa"
+        reference = tmp_path / "reference.fa"
+        query.write_text(
+            ">1\nA-GTAT\n"
+            ">2\nA-G-AT\n"
+            ">3\nA-G-TA\n"
+            ">4\nAGA-TA\n"
+            ">5\nACa-T-\n"
+        )
+        reference.write_text(
+            ">1\nA-G-TAT\n"
+            ">2\nA-G--AT\n"
+            ">3\nA-G--TA\n"
+            ">4\nAG-A-TA\n"
+            ">5\nAC-a-T-\n"
+        )
+
+        assert ColumnScore._calculate_fasta_paths_direct(
+            str(reference),
+            str(query),
+        ) == (5, 6)
+
+    def test_calculate_fasta_paths_direct_falls_back_for_non_fasta(self, tmp_path):
+        query = tmp_path / "query.phy"
+        reference = tmp_path / "reference.fa"
+        query.write_text("2 4\nr1 ACGT\nr2 ACGT\n")
+        reference.write_text(">1\nACGT\n")
+
+        assert ColumnScore._calculate_fasta_paths_direct(
+            str(reference),
+            str(query),
+        ) is None
+
+    def test_run_uses_direct_fasta_path(self, mocker, tmp_path):
+        query = tmp_path / "query.fa"
+        reference = tmp_path / "reference.fa"
+        query.write_text(">1\nACGTAC\n>2\nTGCATG\n")
+        reference.write_text(">1\nACGTAA\n>2\nTGCATT\n")
+        args = Namespace(fasta=str(query), reference=str(reference), json=False)
+        service = ColumnScore(args)
+        mocker.patch(
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            side_effect=AssertionError("simple FASTA should use the direct path"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        mocked_print.assert_called_once_with(0.6667)
+
     def test_direct_column_matching_falls_back_for_unicode(self, args):
         service = ColumnScore(args)
         reference = [type("Record", (), {"seq": "AΩ"})()]
