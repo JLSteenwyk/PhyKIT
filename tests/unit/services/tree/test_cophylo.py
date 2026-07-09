@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from unittest.mock import call
 
 import pytest
 from argparse import Namespace
@@ -120,7 +121,7 @@ class TestMappingParsing:
 
 
 class TestRun:
-    def test_run_reads_tree2_through_cached_reader(self, mocker):
+    def test_run_prepares_both_trees_without_forcing_rectangular_copies(self, mocker):
         args = Namespace(
             tree1=TREE1,
             tree2=TREE2,
@@ -133,11 +134,11 @@ class TestRun:
         tree2 = object()
         tips = ["A", "B"]
 
-        mocker.patch.object(svc, "read_tree_file", return_value=tree1)
-        read_tree2 = mocker.patch.object(
-            svc, "_read_tree_with_error", return_value=tree2
+        prepare_tree = mocker.patch.object(
+            svc,
+            "_read_prepared_tree",
+            side_effect=[tree1, tree2],
         )
-        mocker.patch.object(svc, "_validate_tree")
         mocker.patch.object(
             svc, "get_tip_names_from_tree", side_effect=[tips, tips]
         )
@@ -151,7 +152,10 @@ class TestRun:
 
         svc.run()
 
-        read_tree2.assert_called_once_with(TREE2, "tree2_file_path")
+        assert prepare_tree.call_args_list == [
+            call(TREE1, "tree_file_path", "tree1", force_copy=False),
+            call(TREE2, "tree2_file_path", "tree2", force_copy=False),
+        ]
 
     def test_run_default_mapping_scans_tip_names_once(self, mocker):
         class CountingList(list):
@@ -176,9 +180,11 @@ class TestRun:
         tips1 = CountingList(["A", "B", "C"])
         tips2 = CountingList(["A", "B", "C"])
 
-        mocker.patch.object(svc, "read_tree_file", return_value=tree1)
-        mocker.patch.object(svc, "_read_tree_with_error", return_value=tree2)
-        mocker.patch.object(svc, "_validate_tree")
+        mocker.patch.object(
+            svc,
+            "_read_prepared_tree",
+            side_effect=[tree1, tree2],
+        )
         mocker.patch.object(
             svc,
             "get_tip_names_from_tree",
@@ -196,6 +202,89 @@ class TestRun:
 
         assert tips1.iterations == 1
         assert tips2.iterations == 1
+
+    def test_run_rectangular_branch_length_trees_skip_fast_copy(
+        self, mocker, tmp_path
+    ):
+        tree1_path = tmp_path / "tree1.tre"
+        tree2_path = tmp_path / "tree2.tre"
+        tree1_path.write_text("((A:1,B:1):1,(C:1,D:1):1);\n")
+        tree2_path.write_text("((C:1,D:1):1,(A:1,B:1):1);\n")
+        args = Namespace(
+            tree1=str(tree1_path),
+            tree2=str(tree2_path),
+            output=str(tmp_path / "out.png"),
+            mapping=None,
+            json=False,
+        )
+        svc = Cophylo(args)
+        mocker.patch.object(
+            svc,
+            "_fast_copy",
+            side_effect=AssertionError(
+                "rectangular cophylo should use read-only trees when possible"
+            ),
+        )
+        mocker.patch.object(svc, "_plot_cophylo")
+        mocker.patch("builtins.print")
+
+        svc.run()
+
+    def test_read_prepared_tree_fills_missing_lengths_on_copy(self, tmp_path):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("((A,B),(C,D));\n")
+        svc = Cophylo(
+            Namespace(
+                tree1=str(tree_path),
+                tree2=str(tree_path),
+                output=str(tmp_path / "out.png"),
+                mapping=None,
+                json=False,
+            )
+        )
+
+        prepared = svc._read_prepared_tree(
+            str(tree_path),
+            "tree_file_path",
+            "tree1",
+        )
+        cached = svc._read_tree_with_error(
+            str(tree_path),
+            "tree_file_path",
+            copy_tree=False,
+        )
+
+        assert all(
+            clade.branch_length == 1.0
+            for clade in prepared.root.clades
+        )
+        assert all(
+            clade.branch_length is None
+            for clade in cached.root.clades
+        )
+
+    def test_nonmutating_rotated_tip_order_matches_mutating_rotation(self):
+        svc = Cophylo.__new__(Cophylo)
+        tree_mutating = Phylo.read(StringIO("((C,D),(A,B));"), "newick")
+        tree_readonly = Phylo.read(StringIO("((C,D),(A,B));"), "newick")
+        original_child_order = [
+            child.clades[0].name for child in tree_readonly.root.clades
+        ]
+        target_order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        reverse_mapping = {name: name for name in target_order}
+
+        svc._rotate_tree(tree_mutating, target_order, reverse_mapping)
+        mutating_order = svc._get_tip_order(tree_mutating)
+        readonly_order = svc._get_rotated_tip_order(
+            tree_readonly,
+            target_order,
+            reverse_mapping,
+        )
+
+        assert readonly_order == mutating_order
+        assert [
+            child.clades[0].name for child in tree_readonly.root.clades
+        ] == original_child_order
 
     def test_validate_tree_uses_direct_standard_tree_traversal(self, monkeypatch):
         svc = Cophylo.__new__(Cophylo)

@@ -47,13 +47,22 @@ class Cophylo(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree1 = self.read_tree_file()
-        self._validate_tree(tree1, "tree1")
+        needs_mutable_tree1 = self.plot_config.ladderize
+        needs_mutable_tree2 = self.plot_config.ladderize or self.plot_config.circular
+
+        tree1 = self._read_prepared_tree(
+            self.tree_file_path,
+            "tree_file_path",
+            "tree1",
+            force_copy=needs_mutable_tree1,
+        )
 
         try:
-            tree2 = self._read_tree_with_error(
+            tree2 = self._read_prepared_tree(
                 self.tree2_file_path,
                 "tree2_file_path",
+                "tree2",
+                force_copy=needs_mutable_tree2,
             )
         except Exception:
             raise PhykitUserError(
@@ -63,7 +72,6 @@ class Cophylo(Tree):
                 ],
                 code=2,
             )
-        self._validate_tree(tree2, "tree2")
 
         tips1 = self.get_tip_names_from_tree(tree1)
         tips2 = self.get_tip_names_from_tree(tree2)
@@ -110,7 +118,10 @@ class Cophylo(Tree):
 
         # Optimize tip ordering to reduce line crossings
         tree1_order, tree2_order = self._optimize_tip_order(
-            tree1, tree2, mapping_valid
+            tree1,
+            tree2,
+            mapping_valid,
+            mutate_tree2=needs_mutable_tree2,
         )
 
         # Plot
@@ -161,23 +172,77 @@ class Cophylo(Tree):
             plot_config=PlotConfig.from_args(args),
         )
 
-    def _validate_tree(self, tree, label: str) -> None:
-        tip_count = self._validate_standard_tree(tree)
+    def _read_prepared_tree(
+        self,
+        tree_path: str,
+        attr_name: str,
+        label: str,
+        force_copy: bool = False,
+    ):
+        tree = self._read_tree_with_error(
+            tree_path,
+            attr_name,
+            copy_tree=False,
+        )
+        missing_lengths = self._validate_tree(
+            tree,
+            label,
+            fill_missing_branch_lengths=False,
+        )
+        if not force_copy and not missing_lengths:
+            return tree
+
+        tree = self._fast_copy(tree)
+        self._validate_tree(tree, label)
+        return tree
+
+    def _validate_tree(
+        self,
+        tree,
+        label: str,
+        fill_missing_branch_lengths: bool = True,
+    ) -> bool:
+        missing_lengths = False
+        standard_result = self._validate_standard_tree_with_missing_lengths(
+            tree,
+            fill_missing_branch_lengths=fill_missing_branch_lengths,
+        )
+        if standard_result is None:
+            tip_count = None
+        else:
+            tip_count, missing_lengths = standard_result
+
         if tip_count is None:
             tips = list(tree.get_terminals())
             tip_count = len(tips)
             for clade in tree.find_clades():
                 if clade.branch_length is None and clade != tree.root:
-                    clade.branch_length = 1.0
+                    missing_lengths = True
+                    if fill_missing_branch_lengths:
+                        clade.branch_length = 1.0
 
         if tip_count < 2:
             raise PhykitUserError(
                 [f"{label} must have at least 2 tips."],
                 code=2,
             )
+        return missing_lengths
 
     @staticmethod
-    def _validate_standard_tree(tree):
+    def _validate_standard_tree(tree, fill_missing_branch_lengths: bool = True):
+        result = Cophylo._validate_standard_tree_with_missing_lengths(
+            tree,
+            fill_missing_branch_lengths=fill_missing_branch_lengths,
+        )
+        if result is None:
+            return None
+        return result[0]
+
+    @staticmethod
+    def _validate_standard_tree_with_missing_lengths(
+        tree,
+        fill_missing_branch_lengths: bool = True,
+    ):
         try:
             root = tree.root
             root.clades
@@ -186,6 +251,7 @@ class Cophylo(Tree):
 
         tip_count = 0
         stack = [root]
+        missing_lengths = False
         pop = stack.pop
         extend = stack.extend
         try:
@@ -193,7 +259,9 @@ class Cophylo(Tree):
                 clade = pop()
                 children = clade.clades
                 if clade is not root and clade.branch_length is None:
-                    clade.branch_length = 1.0
+                    missing_lengths = True
+                    if fill_missing_branch_lengths:
+                        clade.branch_length = 1.0
                 if children:
                     extend(children)
                 else:
@@ -201,7 +269,7 @@ class Cophylo(Tree):
         except AttributeError:
             return None
 
-        return tip_count
+        return tip_count, missing_lengths
 
     def _parse_mapping_file(self, path: str) -> dict[str, str]:
         try:
@@ -356,7 +424,11 @@ class Cophylo(Tree):
         return self.get_tip_names_from_tree(tree)
 
     def _optimize_tip_order(
-        self, tree1, tree2, mapping: dict[str, str],
+        self,
+        tree1,
+        tree2,
+        mapping: dict[str, str],
+        mutate_tree2: bool = True,
     ) -> tuple[dict[str, int], dict[str, int]]:
         """Compute tip y-positions for both trees.
 
@@ -374,12 +446,91 @@ class Cophylo(Tree):
         reverse_mapping = {v: k for k, v in mapping.items()}
 
         # Rotate tree2 nodes to minimize crossings
-        self._rotate_tree(tree2, tree1_order, reverse_mapping)
-
-        tips2 = self._get_tip_order(tree2)
+        if mutate_tree2:
+            self._rotate_tree(tree2, tree1_order, reverse_mapping)
+            tips2 = self._get_tip_order(tree2)
+        else:
+            tips2 = self._get_rotated_tip_order(
+                tree2,
+                tree1_order,
+                reverse_mapping,
+            )
         tree2_order = {name: i for i, name in enumerate(tips2)}
 
         return tree1_order, tree2_order
+
+    def _get_rotated_tip_order(
+        self,
+        tree,
+        target_order: dict[str, int],
+        reverse_mapping: dict[str, str],
+    ) -> list[str]:
+        """Return the tip order produced by _rotate_tree without mutating tree."""
+        position_sums = {}
+        position_counts = {}
+
+        for clade in self._postorder_clades(tree):
+            children = clade.clades
+            if not children:
+                partner = reverse_mapping.get(clade.name)
+                if partner and partner in target_order:
+                    position_sum = target_order[partner]
+                    position_count = 1
+                else:
+                    position_sum = 0.0
+                    position_count = 0
+            else:
+                position_sum = 0.0
+                position_count = 0
+                for child in children:
+                    child_id = id(child)
+                    position_sum += position_sums[child_id]
+                    position_count += position_counts[child_id]
+
+            position_sums[id(clade)] = position_sum
+            position_counts[id(clade)] = position_count
+
+        ordered_tips = []
+        stack = [tree.root]
+        append_tip = ordered_tips.append
+        append_stack = stack.append
+        pop = stack.pop
+        while stack:
+            clade = pop()
+            children = clade.clades
+            if not children:
+                append_tip(clade.name)
+                continue
+
+            child_count = len(children)
+            if child_count == 2:
+                child0, child1 = children
+                child0_id = id(child0)
+                child1_id = id(child1)
+                child0_count = position_counts[child0_id]
+                child1_count = position_counts[child1_id]
+                pos0 = (
+                    position_sums[child0_id] / child0_count
+                    if child0_count
+                    else 0.0
+                )
+                pos1 = (
+                    position_sums[child1_id] / child1_count
+                    if child1_count
+                    else 0.0
+                )
+                if pos0 > pos1:
+                    append_stack(child0)
+                    append_stack(child1)
+                else:
+                    append_stack(child1)
+                    append_stack(child0)
+                continue
+
+            for index in range(child_count - 1, -1, -1):
+                append_stack(children[index])
+
+        return ordered_tips
 
     def _rotate_tree(
         self, tree, target_order: dict[str, int],
