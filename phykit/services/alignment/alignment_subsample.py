@@ -347,32 +347,43 @@ class AlignmentSubsample(Alignment):
         sequences: dict[str, str],
         selected: list[tuple[str, int, int]],
     ) -> tuple[dict[str, str], list[tuple[str, int, int]]]:
-        selected_ranges: list[tuple[int, int]] = []
+        selected_slices: list[slice] = []
         new_partitions: list[tuple[str, int, int]] = []
         current_pos = 1
         name_counts: dict[str, int] = {}
 
         for name, start, end in selected:
             start_idx = start - 1
-            selected_ranges.append((start_idx, end))
+            selected_slices.append(slice(start_idx, end))
             part_len = end - start_idx
 
-            if name in name_counts:
-                name_counts[name] += 1
-                display_name = f"{name}_dup{name_counts[name]}"
+            count = name_counts.get(name, 0)
+            if count:
+                display_name = f"{name}_dup{count}"
             else:
-                name_counts[name] = 0
                 display_name = name
+            name_counts[name] = count + 1
 
             new_partitions.append(
                 (display_name, current_pos, current_pos + part_len - 1)
             )
             current_pos += part_len
 
-        new_sequences = {
-            taxon: "".join([seq[start:end] for start, end in selected_ranges])
-            for taxon, seq in sequences.items()
-        }
+        if not selected_slices:
+            new_sequences = {taxon: "" for taxon in sequences}
+        elif len(selected_slices) == 1:
+            selected_slice = selected_slices[0]
+            new_sequences = {
+                taxon: seq[selected_slice] for taxon, seq in sequences.items()
+            }
+        else:
+            from operator import itemgetter
+
+            slice_selector = itemgetter(*selected_slices)
+            new_sequences = {
+                taxon: "".join(slice_selector(seq))
+                for taxon, seq in sequences.items()
+            }
         return new_sequences, new_partitions
 
     @staticmethod

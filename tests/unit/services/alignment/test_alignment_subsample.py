@@ -472,6 +472,24 @@ class TestSitesMode:
 # ---------------------------------------------------------------------------
 
 class TestPartitionsMode:
+    def test_assemble_partition_subsample_handles_empty_selection(self):
+        new_sequences, new_partitions = AlignmentSubsample._assemble_partition_subsample(
+            {"t1": "AAACCC", "t2": "TTTGGG"},
+            [],
+        )
+
+        assert new_sequences == {"t1": "", "t2": ""}
+        assert new_partitions == []
+
+    def test_assemble_partition_subsample_handles_single_partition(self):
+        new_sequences, new_partitions = AlignmentSubsample._assemble_partition_subsample(
+            {"t1": "AAACCCGGG", "t2": "TTTGGGCCC"},
+            [("gene2", 4, 6)],
+        )
+
+        assert new_sequences == {"t1": "CCC", "t2": "GGG"}
+        assert new_partitions == [("gene2", 1, 3)]
+
     def test_assemble_partition_subsample_preserves_selection_and_duplicates(self):
         sequences = {"t1": "AAACCCGGG", "t2": "TTTGGGCCC"}
         selected = [
