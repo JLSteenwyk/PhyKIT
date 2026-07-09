@@ -101,6 +101,7 @@ Results:
 | `IdentityMatrix._compute_identity_matrix` BLAS-backed float products | 700 taxa x 900 sites, alphabet `ACGT-?NX*` | 0.829083s | 0.069862s | 11.9x |
 | `IdentityMatrix` clustered heatmap linkage setup | 1200 taxa, precomputed identity matrix and `--sort cluster` | 0.0311s | 0.0164s | 1.9x |
 | `IdentityMatrix._determine_order` tree terminal-name extraction | parsed balanced 65536-tip tree, `--sort tree` terminal order | 0.1344s | 0.0126s | 10.7x |
+| `IdentityMatrix._determine_order` simple Newick tree-order scan | 4096 taxa, precomputed identity matrix, valid plain Newick `--sort tree` file, side-by-side previous `Bio.Phylo.read` tree parse | 0.094067s | 0.058721s | 1.60x |
 | `IdentityMatrix._compute_partition_identities` | 220 taxa x 5000 sites split into 20 partitions, alphabet `ACGT-?NX*` | 2.9923s | 0.5447s | 5.5x |
 | `IdentityMatrix._compute_partition_identities` precomputed valid float mask | 260 taxa x 6000 sites split into 30 partitions, alphabet `ACGT-?NX*`, identical partition identity array | 0.139126s | 0.128939s | 1.08x |
 | `IdentityMatrix._compute_partition_identities` condensed partition extraction | 700 taxa x 30 partitions, representative compared/matches matrices, side-by-side previous reused `np.triu_indices` extraction | 0.839308s | 0.487465s | 1.72x |
@@ -3242,7 +3243,9 @@ Profiling summary:
   Unicode fallback behavior while avoiding a general reduction. The lazy NumPy
   proxy now caches resolved attributes, reducing repeated import/getattr
   dispatch during identity-matrix calculations while preserving lazy import
-  behavior and module-level patch points.
+  behavior and module-level patch points. Tree sorting now scans simple Newick
+  tip labels directly before falling back to `Bio.Phylo.read`, preserving
+  complex-tree compatibility while reducing ordinary `--sort tree` setup.
 - `IdentityMatrix` clustered heatmap setup baseline time computed the same
   hierarchical linkage once for taxon ordering and again for dendrogram
   plotting. The optimized run path returns the linkage from ordering and passes

@@ -785,11 +785,14 @@ class IdentityMatrix(Alignment):
                     file=sys.stderr,
                 )
                 raise SystemExit(2)
-            from Bio import Phylo
             from ..tree.base import Tree
 
-            tree = Phylo.read(self.tree_path, "newick")
-            tip_order = Tree.calculate_terminal_names_fast(tree)
+            tip_order = Tree._scan_simple_newick_tip_names(self.tree_path)
+            if tip_order is None:
+                from Bio import Phylo
+
+                tree = Phylo.read(self.tree_path, "newick")
+                tip_order = Tree.calculate_terminal_names_fast(tree)
             if tip_order is None:
                 tip_order = [tip.name for tip in tree.get_terminals()]
             # Map tree tip order to matrix indices

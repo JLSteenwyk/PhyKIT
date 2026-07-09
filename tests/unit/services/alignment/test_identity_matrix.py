@@ -885,9 +885,13 @@ class TestIdentityMatrixUnit:
         sequences, taxa_names, _ = service._parse_alignment()
         matrix = service._compute_identity_matrix(sequences, taxa_names)
 
+        def fail_read(*_args, **_kwargs):
+            raise AssertionError("simple Newick tree order should not use Phylo.read")
+
         def fail_get_terminals(*_args, **_kwargs):
             raise AssertionError("generic terminal traversal should not be used")
 
+        monkeypatch.setattr("Bio.Phylo.read", fail_read)
         monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
 
         _, ordered_labels = service._determine_order(
