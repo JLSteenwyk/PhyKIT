@@ -164,7 +164,9 @@ assert "phykit.helpers.files" not in sys.modules
             ("b", 0.0),
         ]
 
-    def test_calculate_gc_per_sequence_data_uses_ascii_matrix_path(self, args, mocker):
+    def test_calculate_gc_per_sequence_data_uses_ascii_matrix_path(
+        self, args, mocker, monkeypatch
+    ):
         service = GCContent(args)
         records = _alignment(
             [
@@ -172,6 +174,7 @@ assert "phykit.helpers.files" not in sys.modules
                 SeqRecord(Seq("AT??"), id="b"),
             ]
         )
+        monkeypatch.setattr(gc_content_module, "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES", 0)
         mocker.patch.object(
             gc_content_module.np,
             "sum",
@@ -184,7 +187,7 @@ assert "phykit.helpers.files" not in sys.modules
         ]
 
     def test_calculate_gc_per_sequence_data_no_gap_ascii_skips_valid_lookup(
-        self, args, mocker
+        self, args, mocker, monkeypatch
     ):
         service = GCContent(args)
         records = _alignment(
@@ -193,6 +196,7 @@ assert "phykit.helpers.files" not in sys.modules
                 SeqRecord(Seq("ATAT"), id="b"),
             ]
         )
+        monkeypatch.setattr(gc_content_module, "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES", 0)
         mocker.patch(
             "phykit.services.alignment.gc_content._get_valid_lookup",
             side_effect=AssertionError(
@@ -206,7 +210,7 @@ assert "phykit.helpers.files" not in sys.modules
         ]
 
     def test_calculate_gc_per_sequence_data_identical_sequences_skip_matrix(
-        self, args, mocker
+        self, args, mocker, monkeypatch
     ):
         service = GCContent(args)
         records = _alignment(
@@ -216,6 +220,7 @@ assert "phykit.helpers.files" not in sys.modules
                 SeqRecord(Seq("acgtGCNN--??XX"), id="c"),
             ]
         )
+        monkeypatch.setattr(gc_content_module, "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES", 0)
         mocker.patch(
             "phykit.services.alignment.gc_content.np.frombuffer",
             side_effect=AssertionError(
@@ -230,13 +235,14 @@ assert "phykit.helpers.files" not in sys.modules
         ]
 
     def test_calculate_gc_per_sequence_data_variable_length_uses_byte_counts(
-        self, args, mocker
+        self, args, mocker, monkeypatch
     ):
         service = GCContent(args)
         records = [
             SimpleNamespace(seq="GCN-", id="a"),
             SimpleNamespace(seq="A-C", id="b"),
         ]
+        monkeypatch.setattr(gc_content_module, "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES", 0)
         mocker.patch.object(
             gc_content_module.np,
             "frombuffer",
@@ -248,6 +254,34 @@ assert "phykit.helpers.files" not in sys.modules
         assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
             ("a", 1.0),
             ("b", 0.5),
+        ]
+
+    def test_calculate_gc_per_sequence_data_small_ascii_avoids_numpy(
+        self, args, mocker
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("gcN-"), id="a"),
+                SeqRecord(Seq("AT??"), id="b"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content._gc_counts_from_ascii_matrix",
+            side_effect=AssertionError(
+                "small verbose GC rows should avoid matrix setup"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content.np.frombuffer",
+            side_effect=AssertionError(
+                "small verbose GC rows should avoid NumPy setup"
+            ),
+        )
+
+        assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
+            ("a", 1.0),
+            ("b", 0.0),
         ]
 
     def test_calculate_gc_total_value_uses_ascii_flat_path(self, args, mocker):

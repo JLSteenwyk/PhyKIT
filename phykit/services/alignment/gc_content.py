@@ -46,6 +46,7 @@ _DNA_INVALID_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
 _GC_TOTAL_SCALAR_MAX_BYTES = 8192
+_GC_PER_SEQUENCE_SCALAR_MAX_BYTES = 8192
 _GC_TOTAL_BYTE_COUNT_MIN_BYTES = 2_000_000
 
 
@@ -144,6 +145,36 @@ def _gc_counts_from_ascii_bytes(
         + sequence_bytes.count(b"c")
     )
     return valid_count, gc_count
+
+
+def _gc_per_sequence_data_scalar(records, is_protein: bool):
+    record_data = []
+    total_bytes = 0
+    for record in records:
+        sequence = str(record.seq)
+        total_bytes += len(sequence)
+        if total_bytes > _GC_PER_SEQUENCE_SCALAR_MAX_BYTES:
+            return None
+        record_data.append((record.id, sequence))
+
+    output = []
+    for record_id, sequence in record_data:
+        try:
+            valid_len, gc_count = _gc_counts_from_ascii_bytes(
+                sequence.encode("ascii"),
+                is_protein,
+            )
+        except UnicodeEncodeError:
+            valid_len, gc_count = _gc_counts_from_mixed_sequence(
+                sequence,
+                is_protein,
+            )
+        if valid_len > 0:
+            gc_content = gc_count / valid_len
+        else:
+            gc_content = 0.0
+        output.append((record_id, float(gc_content)))
+    return output
 
 
 def _common_upper_sequence(sequences: list[str]) -> str | None:
@@ -297,6 +328,10 @@ class GCContent(Alignment):
     def calculate_gc_per_sequence_data(
         self, records: MultipleSeqAlignment, is_protein: bool = False
     ) -> list[tuple[str, float]]:
+        scalar_rows = _gc_per_sequence_data_scalar(records, is_protein)
+        if scalar_rows is not None:
+            return scalar_rows
+
         record_data, valid_counts, gc_counts = _gc_counts_from_ascii_matrix(
             records,
             is_protein,

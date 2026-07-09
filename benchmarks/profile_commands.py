@@ -26,6 +26,10 @@ SAMPLES = ROOT / "tests" / "sample_files"
 COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("alignment_length", ("alignment_length", str(SAMPLES / "test_alignment_0.fa"))),
     ("gc_content", ("gc_content", str(SAMPLES / "test_alignment_0.fa"))),
+    (
+        "gc_content_verbose",
+        ("gc_content", str(SAMPLES / "test_alignment_0.fa"), "--verbose"),
+    ),
     ("variable_sites", ("variable_sites", str(SAMPLES / "test_alignment_0.fa"))),
     (
         "parsimony_informative_sites",
