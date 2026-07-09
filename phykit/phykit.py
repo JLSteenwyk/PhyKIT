@@ -4261,6 +4261,13 @@ class Phykit:
 
     @staticmethod
     def patristic_distances(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0]),
+                PatristicDistances,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

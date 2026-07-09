@@ -995,6 +995,7 @@ Results:
 | `PatristicDistances.run` verbose fast output rows | balanced 256 / 512 / 1024-tip trees, verbose pairwise rows, side-by-side previous combo-plus-summary run setup | 0.072206s / 0.674436s / 1.511996s | 0.058325s / 0.567457s / 1.248277s | 1.24x / 1.19x / 1.21x |
 | `PatristicDistances.run` verbose JSON row construction | 500k mocked pair/distance rows, identical row dictionaries | 0.752742s | 0.671511s | 1.12x |
 | `PatristicDistances.run` simple Newick distance scan | side-by-side direct command timing, 5 runs after 1 warmup, plain Newick input `tree_simple.tre`, summary/verbose/JSON stdout and stderr matched previous commit | 0.647537s | 0.079295s | 8.17x |
+| `Phykit.patristic_distances` default parser bypass | direct dispatch 1000 mocked service calls; command profiler `patristic_distances`, 60 runs after 8 warmups | 0.558657s / 0.059402s | 0.000398s / 0.052155s | 1403.66x / 1.14x |
 | `patristic_distances` module import without eager Bio.Phylo/tqdm | cold subprocess import of patristic-distances command module | 0.199123s | 0.121178s | 1.64x |
 | `patristic_distances` module import without eager stats NumPy | cold subprocess import after lazy shared summary helper | 0.121178s | 0.073601s | 1.65x |
 | `patristic_distances` module import without eager multiprocessing/pickle | cold subprocess import after lazy `mp` and `pickle` proxies plus localized `partial` import | 0.036541s | 0.030312s | 1.21x |

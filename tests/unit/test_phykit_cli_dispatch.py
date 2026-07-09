@@ -977,6 +977,63 @@ def test_terminal_branch_stats_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+def test_patristic_distances_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default patristic_distances should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PatristicDistances", Runner)
+
+    phykit_module.Phykit.patristic_distances(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is False
+    assert args.json is False
+
+
+def test_patristic_distances_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "PatristicDistances", Runner)
+
+    phykit_module.Phykit.patristic_distances(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
 def test_lb_score_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 
