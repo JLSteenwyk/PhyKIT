@@ -253,6 +253,27 @@ class TestCollapseBranches:
 
         assert service.count_internal_nodes(tree) == 3
 
+    def test_count_internal_nodes_direct_traversal_handles_multifurcations(
+        self, args, monkeypatch
+    ):
+        service = CollapseBranches(args)
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(name="A"),
+                    Clade(clades=[Clade(name="B"), Clade(name="C")]),
+                    Clade(clades=[Clade(name="D"), Clade(name="E")]),
+                ],
+            )
+        )
+
+        def fail_get_nonterminals(*_args, **_kwargs):
+            raise AssertionError("generic internal-node traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        assert service.count_internal_nodes(tree) == 3
+
     def test_scan_standard_tree_for_collapse_counts_and_flags_weak_support(self):
         tree = Tree(
             root=Clade(

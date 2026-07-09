@@ -1747,6 +1747,7 @@ Results:
 | `CollapseBranches.run` non-JSON weak-branch pre-scan | weak-root balanced 262144-tip tree, pre-collapse setup only | 0.054011s | 0.000009708s | 5563.49x |
 | `CollapseBranches._has_collapsible_branch_standard_tree` localized stack scan | supported balanced 65536-tip tree, no branches below threshold, side-by-side previous stack method lookup | 0.374269s | 0.300787s | 1.24x |
 | `CollapseBranches._scan_standard_tree_for_collapse` localized stack scan | 10 / 50 / 100 repeated JSON count-and-weak-support scans on a supported balanced 32768-tip tree, side-by-side previous stack method lookup | 0.083160709s / 0.990988083s / 2.480479166s | 0.074292083s / 0.755266666s / 1.670775500s | 1.12x / 1.31x / 1.48x |
+| `CollapseBranches._count_standard_tree_internal_nodes` localized stack scan | 50 repeated JSON final-count scans on a balanced 65536-tip tree, side-by-side previous stack method lookup | 0.858443625s | 0.806450083s | 1.06x |
 | `collapse_branches` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006097s | 0.004794s | 1.27x |
 | `collapse_branches` module import without `typing` startup | median cold subprocess import after converting the annotation-only typing alias to a built-in postponed annotation | 0.007718s | 0.004077s | 1.89x |
 | `Spr.run` single-taxon terminal validation and subtree lookup | balanced 65536-tip tree, single terminal subtree | 0.2741s | 0.0171s | 16.0x |
@@ -6463,7 +6464,11 @@ Profiling summary:
   combined JSON scan. A later non-JSON pass routes standard trees directly to
   the boolean weak-support scan instead of the JSON count-and-scan helper, so
   runs with an early weak branch can proceed to copy/collapse without counting
-  the entire tree first. That non-JSON weak-support scan now localizes stack
+  the entire tree first.
+  JSON final-count scans now also localize stack operations, preserving the
+  direct standard-tree count and fallback behavior while shaving method lookups
+  from the post-collapse count path.
+  That non-JSON weak-support scan now localizes stack
   operations for the full-tree no-collapse case while leaving the JSON combined
   count-and-scan traversal unchanged. A follow-up startup pass keeps JSON output
   behind a module-level forwarding wrapper, preserving the patch point while

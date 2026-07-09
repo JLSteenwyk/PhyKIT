@@ -153,12 +153,14 @@ class CollapseBranches(Tree):
         count = 0
         stack = [root]
         try:
+            pop = stack.pop
+            extend = stack.extend
             while stack:
-                node = stack.pop()
+                node = pop()
                 children = node.clades
                 if children:
                     count += 1
-                    stack.extend(children)
+                    extend(children)
         except AttributeError:
             return None
         return count
