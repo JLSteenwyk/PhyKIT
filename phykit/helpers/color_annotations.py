@@ -99,7 +99,11 @@ def _valid_mrca_taxa(root, taxa):
     append = stack.append
     while stack:
         node = pop()
-        children = getattr(node, "clades", None)
+        try:
+            children = node.clades
+        except AttributeError:
+            tip_names = {tip.name for tip in _terminal_clades(root)}
+            return [t for t in taxa if t in tip_names]
         if not isinstance(children, list):
             tip_names = {tip.name for tip in _terminal_clades(root)}
             return [t for t in taxa if t in tip_names]

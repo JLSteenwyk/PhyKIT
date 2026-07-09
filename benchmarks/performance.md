@@ -1316,6 +1316,7 @@ Results:
 | `color_annotations.get_clade_branch_ids` | balanced 32768-tip clade, collect highlighted clade descendant node ids | 0.098573s | 0.013878s | 7.10x |
 | `color_annotations.get_clade_branch_ids` unordered child push | balanced 32768-tip clade, descendant id set for highlighted clades, optimized helper baseline | 0.009671s | 0.007221s | 1.34x |
 | `color_annotations.resolve_mrca` early-stop taxa validation | balanced 32768-tip tree, MRCA lookup for first two tips | 0.014703s | 0.0000155s | 946.92x |
+| `color_annotations._valid_mrca_taxa` direct clades attribute access | balanced 4096-tip early and late requested taxa, 32768-tip mixed requested taxa, 131072-tip late requested taxa; side-by-side previous per-node `getattr` lookup with identical valid-taxa order | 0.000436s / 0.066720s / 0.251465s / 0.194514s | 0.000384s / 0.051790s / 0.244890s / 0.112703s | 1.14x / 1.29x / 1.03x / 1.73x |
 | `color_annotations._terminal_clades` order-preserving child push | balanced 131072-tip clade, terminal list for highlighted ranges/clades, optimized helper baseline | 0.038837s | 0.034347s | 1.13x |
 | `color_annotations._terminal_clades` direct standard-clade attribute access | balanced 1024 / 4096 / 32768 / 131072-tip clades, side-by-side previous per-node `getattr`/type-check traversal | 0.001021s / 0.001940s / 0.013842s / 0.052693s | 0.000636s / 0.001067s / 0.013635s / 0.041805s | 1.61x / 1.82x / 1.02x / 1.26x |
 | `color_annotations._valid_mrca_taxa` order-preserving child push | balanced 131072-tip tree, validate first and last requested taxa, optimized helper baseline | 0.040392s | 0.037106s | 1.09x |
@@ -5707,9 +5708,11 @@ Profiling summary:
   retaining the original fallback for nonstandard clade objects. Highlighted
   clade tip-id collection now uses direct `node.clades` access in the standard
   path, avoiding per-node `getattr` dispatch while preserving the non-list
-  clade fallback. A later pass collects highlighted clade branch ids with a
-  direct descendant-node traversal, keeping `find_clades(order="preorder")`
-  only as the fallback. A
+  clade fallback. MRCA taxa validation now uses the same direct `node.clades`
+  access in the standard path, preserving the non-list fallback while avoiding
+  per-node `getattr` dispatch for large highlighted clade lookups. A later pass
+  collects highlighted clade branch ids with a direct descendant-node traversal,
+  keeping `find_clades(order="preorder")` only as the fallback. A
   follow-up branch-id pass localizes stack operations and pushes child lists
   directly because the helper returns a set rather than an ordered traversal.
   A later ordered-traversal pass avoids `reversed(children)` iterator allocation

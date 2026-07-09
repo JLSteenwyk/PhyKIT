@@ -331,6 +331,22 @@ class TestResolveMrca:
 
         assert valid == ["F", "A", "C"]
 
+    def test_valid_mrca_taxa_falls_back_for_clades_without_attribute(self):
+        class Terminal:
+            def __init__(self, name):
+                self.name = name
+
+        class NonstandardClade:
+            def __init__(self, terminals):
+                self._terminals = terminals
+
+            def get_terminals(self):
+                return self._terminals
+
+        root = NonstandardClade([Terminal("A"), Terminal("B")])
+
+        assert _valid_mrca_taxa(root, ["B", "missing", "A"]) == ["B", "A"]
+
 
 # ---------------------------------------------------------------------------
 # get_clade_tip_ids
