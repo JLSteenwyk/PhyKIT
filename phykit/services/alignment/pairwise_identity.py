@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 import sys
 import os
+from math import sqrt
 
 from .base import Alignment
 
@@ -77,10 +78,32 @@ def calculate_summary_statistics_from_arr(*args, **kwargs):
     return _calculate_summary_statistics_from_arr(*args, **kwargs)
 
 
-def print_summary_statistics(*args, **kwargs):
-    from ...helpers.stats_summary import print_summary_statistics as _print_summary_statistics
-
-    return _print_summary_statistics(*args, **kwargs)
+def print_summary_statistics(stats):
+    try:
+        print(
+            (
+                "mean: %s\n"
+                "median: %s\n"
+                "25th percentile: %s\n"
+                "75th percentile: %s\n"
+                "minimum: %s\n"
+                "maximum: %s\n"
+                "standard deviation: %s\n"
+                "variance: %s"
+            )
+            % (
+                round(stats["mean"], 4),
+                round(stats["median"], 4),
+                round(stats["twenty_fifth"], 4),
+                round(stats["seventy_fifth"], 4),
+                round(stats["minimum"], 4),
+                round(stats["maximum"], 4),
+                round(stats["standard_deviation"], 4),
+                round(stats["variance"], 4),
+            )
+        )
+    except BrokenPipeError:
+        pass
 
 
 def print_json(*args, **kwargs):
@@ -204,6 +227,57 @@ def _all_sequences_identical(sequences: list[str]) -> bool:
     return True
 
 
+def _linear_percentile(sorted_values, position):
+    lower = int(position)
+    upper = lower + 1
+    if upper >= len(sorted_values):
+        return sorted_values[lower]
+    fraction = position - lower
+    if fraction == 0:
+        return sorted_values[lower]
+    return sorted_values[lower] * (1.0 - fraction) + sorted_values[upper] * fraction
+
+
+def _summary_statistics_from_small_values(values: list[float]) -> dict[str, float] | None:
+    count = len(values)
+    if count < 2:
+        return calculate_summary_statistics_from_arr(values)
+    sorted_values = sorted(values)
+    minimum = sorted_values[0]
+    maximum = sorted_values[-1]
+    if minimum == maximum:
+        return dict(
+            mean=minimum,
+            median=minimum,
+            twenty_fifth=minimum,
+            seventy_fifth=minimum,
+            minimum=minimum,
+            maximum=maximum,
+            standard_deviation=0.0,
+            variance=0.0,
+        )
+
+    mean = sum(sorted_values) / count
+    median = _linear_percentile(sorted_values, (count - 1) * 0.5)
+    twenty_fifth = _linear_percentile(sorted_values, (count - 1) * 0.25)
+    seventy_fifth = _linear_percentile(sorted_values, (count - 1) * 0.75)
+    sum_squared_deviations = 0.0
+    for value in sorted_values:
+        delta = value - mean
+        sum_squared_deviations += delta * delta
+    variance = sum_squared_deviations / (count - 1)
+    return dict(
+        mean=mean,
+        median=median,
+        twenty_fifth=twenty_fifth,
+        seventy_fifth=seventy_fifth,
+        minimum=minimum,
+        maximum=maximum,
+        standard_deviation=sqrt(variance),
+        variance=variance,
+    )
+
+
 def _pairwise_identity_stats_scalar(records, is_protein: bool, exclude_gaps: bool):
     raw_sequences = []
     total_cells = 0
@@ -246,7 +320,7 @@ def _pairwise_identity_stats_scalar(records, is_protein: bool, exclude_gaps: boo
                         matches += 1
             identities.append(matches / denominator if aln_len > 0 else 0.0)
 
-    return calculate_summary_statistics_from_arr(identities)
+    return _summary_statistics_from_small_values(identities)
 
 
 def _pairwise_identities_scalar(records, is_protein: bool, exclude_gaps: bool):
@@ -297,7 +371,7 @@ def _pairwise_identities_scalar(records, is_protein: bool, exclude_gaps: bool):
             pairwise_identities[f"{left_id}-{right_id}"] = identity
             identities.append(identity)
 
-    stats = calculate_summary_statistics_from_arr(identities)
+    stats = _summary_statistics_from_small_values(identities)
     return pair_ids, pairwise_identities, stats
 
 

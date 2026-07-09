@@ -75,6 +75,16 @@ def test_all_sequences_identical_does_not_slice():
     )
 
 
+def test_small_value_summary_matches_shared_helper():
+    from phykit.helpers.stats_summary import calculate_summary_statistics_from_arr
+
+    values = [0.8888888888888888, 0.7777777777777778, 0.5555555555555556]
+
+    assert pairwise_identity_module._summary_statistics_from_small_values(
+        values
+    ) == pytest.approx(calculate_summary_statistics_from_arr(values))
+
+
 def test_module_import_does_not_import_scipy_clustering(monkeypatch):
     module_name = "phykit.services.alignment.pairwise_identity"
     previous = sys.modules.pop(module_name, None)
@@ -676,6 +686,13 @@ class TestPairwiseIdentity:
             "phykit.services.alignment.pairwise_identity.squareform",
             side_effect=AssertionError(
                 "small summary-only pairwise identity should avoid squareform"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity."
+            "calculate_summary_statistics_from_arr",
+            side_effect=AssertionError(
+                "small summary-only pairwise identity should summarize locally"
             ),
         )
 
