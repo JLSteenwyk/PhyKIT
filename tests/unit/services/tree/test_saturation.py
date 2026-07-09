@@ -659,6 +659,42 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         self.assertEqual(distances, [0.25, 0.25, 0.5])
 
+    def test_standard_no_gap_row_distances_preserve_upper_triangle_order(self):
+        seq_matrix = np.vstack([
+            self.saturation._sequence_to_array("ATCG"),
+            self.saturation._sequence_to_array("ATGG"),
+            self.saturation._sequence_to_array("AACG"),
+            self.saturation._sequence_to_array("TTCG"),
+        ])
+
+        distances = self.saturation._standard_upper_triangle_no_gap_row_distances(
+            seq_matrix
+        )
+
+        self.assertEqual(distances, [0.25, 0.25, 0.25, 0.5, 0.5, 0.5])
+
+    def test_standard_no_gap_large_matrix_uses_row_distance_path(self):
+        seq_matrix = np.vstack([
+            self.saturation._sequence_to_array("ATCG"),
+            self.saturation._sequence_to_array("ATGG"),
+            self.saturation._sequence_to_array("AACG"),
+        ])
+        original_row_distances = (
+            self.saturation._standard_upper_triangle_no_gap_row_distances
+        )
+
+        with patch.object(Saturation, "ROW_NO_GAP_DISTANCE_MIN_TAXA", 3), patch.object(
+            Saturation,
+            "_standard_upper_triangle_no_gap_row_distances",
+            side_effect=original_row_distances,
+        ) as row_distance_spy:
+            distances = self.saturation._standard_upper_triangle_no_gap_distances(
+                seq_matrix
+            )
+
+        row_distance_spy.assert_called_once()
+        self.assertEqual(distances, [0.25, 0.25, 0.5])
+
     def test_calculate_uncorrected_distances_exclude_gaps_clean_alignment_uses_no_gap_path(self):
         seq_arrays = {
             "seq1": self.saturation._sequence_to_array("ATCG"),

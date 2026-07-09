@@ -82,6 +82,7 @@ class Saturation(Tree):
     MP_MIN_COMBOS = 2000
     MAX_MP_WORKERS = 8
     MAX_MATRIX_DISTANCE_TAXA = 1000
+    ROW_NO_GAP_DISTANCE_MIN_TAXA = 256
     _BYTE_GAP_LOOKUP_CACHE = {}
 
     def __init__(self, args) -> None:
@@ -484,9 +485,12 @@ class Saturation(Tree):
             for tip_a, tip_b in combos
         ]
 
-    @staticmethod
-    def _standard_upper_triangle_no_gap_distances(seq_matrix) -> list[float]:
+    @classmethod
+    def _standard_upper_triangle_no_gap_distances(cls, seq_matrix) -> list[float]:
         n_tips, seq_len = seq_matrix.shape
+        if n_tips >= cls.ROW_NO_GAP_DISTANCE_MIN_TAXA:
+            return cls._standard_upper_triangle_no_gap_row_distances(seq_matrix)
+
         target_bytes = 16 * 1024 * 1024
         block_size = max(
             1,
@@ -505,6 +509,21 @@ class Saturation(Tree):
             block_distances = 1.0 - (identity_counts / denominator)
             for local_idx in range(stop - start):
                 extend(block_distances[local_idx, local_idx:].tolist())
+
+        return distances
+
+    @staticmethod
+    def _standard_upper_triangle_no_gap_row_distances(seq_matrix) -> list[float]:
+        n_tips, seq_len = seq_matrix.shape
+        denominator = float(seq_len)
+        distances = []
+        extend = distances.extend
+
+        for idx in range(n_tips - 1):
+            identity_counts = (
+                seq_matrix[idx] == seq_matrix[idx + 1:]
+            ).sum(axis=1, dtype=np.int32)
+            extend((1.0 - (identity_counts / denominator)).tolist())
 
         return distances
 
