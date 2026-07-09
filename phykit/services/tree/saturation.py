@@ -57,6 +57,52 @@ def _all_sequences_identical(sequences) -> bool:
     return True
 
 
+class _StandardTipPairs:
+    __slots__ = ("tips", "_length")
+
+    def __init__(self, tips):
+        self.tips = list(tips)
+        n_tips = len(self.tips)
+        self._length = n_tips * (n_tips - 1) // 2
+
+    def __len__(self):
+        return self._length
+
+    def __iter__(self):
+        tips = self.tips
+        n_tips = len(tips)
+        for idx in range(n_tips - 1):
+            tip_a = tips[idx]
+            for tip_b_idx in range(idx + 1, n_tips):
+                yield tip_a, tips[tip_b_idx]
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            start, stop, step = index.indices(self._length)
+            return [self[idx] for idx in range(start, stop, step)]
+
+        if index < 0:
+            index += self._length
+        if index < 0 or index >= self._length:
+            raise IndexError(index)
+
+        tips = self.tips
+        n_tips = len(tips)
+        low = 0
+        high = n_tips - 1
+        while low < high:
+            mid = (low + high + 1) // 2
+            pairs_before_mid = mid * ((2 * n_tips) - mid - 1) // 2
+            if pairs_before_mid <= index:
+                low = mid
+            else:
+                high = mid - 1
+
+        row_start = low * ((2 * n_tips) - low - 1) // 2
+        tip_b_index = low + 1 + (index - row_start)
+        return tips[low], tips[tip_b_index]
+
+
 class _LazyMultiprocessing:
     _module = None
 
@@ -110,6 +156,9 @@ class Saturation(Tree):
         combos: list[tuple[str, str]],
         standard_combo_order: bool = False,
     ) -> list[str]:
+        if standard_combo_order and isinstance(combos, _StandardTipPairs):
+            return combos.tips
+
         if standard_combo_order:
             combo_count = len(combos)
             if combo_count == 0:
@@ -144,7 +193,7 @@ class Saturation(Tree):
         tree = self.read_tree_file_unmodified()
 
         tips = self.get_tip_names_from_tree(tree)
-        combos = list(itertools.combinations(tips, 2))
+        combos = _StandardTipPairs(tips)
 
         (
             patristic_distances,

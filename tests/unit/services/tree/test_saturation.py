@@ -113,6 +113,79 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         self.assertEqual(observed, ["seq2", "seq3", "seq1", "seq4"])
 
+    def test_standard_tip_pairs_preserve_combination_order(self):
+        tips = ["seq1", "seq2", "seq3", "seq4"]
+        pairs = saturation_module._StandardTipPairs(tips)
+
+        self.assertEqual(len(pairs), 6)
+        self.assertEqual(pairs[0], ("seq1", "seq2"))
+        self.assertEqual(pairs[3], ("seq2", "seq3"))
+        self.assertEqual(pairs[-1], ("seq3", "seq4"))
+        self.assertEqual(
+            list(pairs),
+            [
+                ("seq1", "seq2"),
+                ("seq1", "seq3"),
+                ("seq1", "seq4"),
+                ("seq2", "seq3"),
+                ("seq2", "seq4"),
+                ("seq3", "seq4"),
+            ],
+        )
+        self.assertEqual(
+            pairs[1:4],
+            [("seq1", "seq3"), ("seq1", "seq4"), ("seq2", "seq3")],
+        )
+
+    def test_standard_combo_tip_derivation_reuses_lazy_pair_tips(self):
+        pairs = saturation_module._StandardTipPairs(["seq1", "seq2", "seq3"])
+
+        observed = Saturation._combo_tips_from_pairs(
+            pairs,
+            standard_combo_order=True,
+        )
+
+        self.assertEqual(observed, ["seq1", "seq2", "seq3"])
+
+    def test_run_uses_lazy_standard_tip_pairs(self):
+        alignment = Align.MultipleSeqAlignment([
+            SeqRecord(Seq("ATCG"), id="seq1", name="seq1"),
+            SeqRecord(Seq("ATGG"), id="seq2", name="seq2"),
+            SeqRecord(Seq("AACG"), id="seq3", name="seq3"),
+        ])
+        tree = Tree(root=Clade(clades=[
+            Clade(name="seq1"),
+            Clade(name="seq2"),
+            Clade(name="seq3"),
+        ]))
+        self.saturation.get_tip_names_from_tree = Mock(
+            return_value=["seq1", "seq2", "seq3"]
+        )
+        self.saturation.read_tree_file_unmodified = Mock(return_value=tree)
+        self.saturation.loop_through_combos_and_calculate_pds_and_pis = Mock(
+            return_value=([1.0, 2.0, 3.0], [0.25, 0.25, 0.5])
+        )
+        self.saturation.print_res = Mock()
+
+        with patch(
+            "phykit.services.tree.saturation.get_alignment_and_format_helper",
+            return_value=(alignment, "fasta", False),
+        ):
+            self.saturation.run()
+
+        combos = (
+            self.saturation
+            .loop_through_combos_and_calculate_pds_and_pis
+            .call_args
+            .args[0]
+        )
+        self.assertIsInstance(combos, saturation_module._StandardTipPairs)
+        self.assertEqual(list(combos), [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq2", "seq3"),
+        ])
+
     def test_process_args(self):
         """Test argument processing"""
         args = Namespace(
@@ -1038,7 +1111,7 @@ assert "phykit.helpers.plot_config" not in sys.modules
         self.saturation.print_res.assert_called_once()
         args = self.saturation.print_res.call_args.args
         self.assertEqual(args[0], self.saturation.verbose)
-        self.assertEqual(args[1], [('seq1', 'seq2')])
+        self.assertEqual(list(args[1]), [('seq1', 'seq2')])
         self.assertEqual(args[2], [0.25])
         self.assertEqual(args[3], [0.15])
         self.assertAlmostEqual(args[4], 0.25 / 0.15, places=6)
