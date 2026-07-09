@@ -47,6 +47,7 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 _SQUAREFORM = None
+_PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS = 8192
 
 
 def squareform(*args, **kwargs):
@@ -200,6 +201,51 @@ def _all_sequences_identical(sequences: list[str]) -> bool:
         if sequence != first_sequence:
             return False
     return True
+
+
+def _pairwise_identity_stats_scalar(records, is_protein: bool, exclude_gaps: bool):
+    raw_sequences = []
+    total_cells = 0
+    aln_len = None
+    for record in records:
+        sequence = str(record.seq)
+        if aln_len is None:
+            aln_len = len(sequence)
+        elif len(sequence) != aln_len:
+            return None
+        total_cells += len(sequence)
+        if total_cells > _PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS:
+            return None
+        raw_sequences.append(sequence.upper())
+
+    num_records = len(raw_sequences)
+    if num_records < 2:
+        return None
+    if aln_len is None:
+        return None
+
+    gap_chars = frozenset("-?*X" if is_protein else "-?*XN")
+    denominator = float(aln_len)
+    identities = []
+    for idx1 in range(num_records - 1):
+        seq_one = raw_sequences[idx1]
+        for idx2 in range(idx1 + 1, num_records):
+            seq_two = raw_sequences[idx2]
+            matches = 0
+            if exclude_gaps:
+                for char_one, char_two in zip(seq_one, seq_two):
+                    if (
+                        char_one == char_two
+                        and (char_one not in gap_chars or char_two not in gap_chars)
+                    ):
+                        matches += 1
+            else:
+                for char_one, char_two in zip(seq_one, seq_two):
+                    if char_one == char_two:
+                        matches += 1
+            identities.append(matches / denominator if aln_len > 0 else 0.0)
+
+    return calculate_summary_statistics_from_arr(identities)
 
 
 class PairwiseIdentity(Alignment):
@@ -676,6 +722,15 @@ class PairwiseIdentity(Alignment):
         alignment_size = _alignment_size(alignment)
         if alignment_size is not None and alignment_size < 2:
             return _empty_pairwise_identity_stats()
+
+        if alignment_size is not None:
+            scalar_stats = _pairwise_identity_stats_scalar(
+                alignment,
+                is_protein,
+                exclude_gaps,
+            )
+            if scalar_stats is not None:
+                return scalar_stats
 
         matrix_stats = self._calculate_pairwise_identity_stats_matrix(
             alignment,

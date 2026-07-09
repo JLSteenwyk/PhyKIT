@@ -36,6 +36,7 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("composition_per_taxon", str(SAMPLES / "test_alignment_0.fa")),
     ),
     ("alignment_entropy", ("alignment_entropy", str(SAMPLES / "test_alignment_0.fa"))),
+    ("pairwise_identity", ("pairwise_identity", str(SAMPLES / "test_alignment_0.fa"))),
     (
         "parsimony_informative_sites",
         ("parsimony_informative_sites", str(SAMPLES / "test_alignment_0.fa")),

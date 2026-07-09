@@ -156,6 +156,7 @@ Results:
 | `PairwiseIdentity.calculate_pairwise_identity_stats` clean ASCII exclude-gaps shortcut | 400 taxa x 1000 sites, alphabet `ACGT`, summary-only stats path | 0.263493s | 0.031507s | 8.36x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` matrix block index reuse | 700 taxa x 900 sites, alphabet `ACGT-?NX*`, side-by-side previous per-block column index allocation | 0.131023s | 0.100191s | 1.31x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` gappy matrix condensed extraction | 1800 taxa x 1200 sites synthetic identity-count matrix, side-by-side previous `np.triu_indices` stats extraction | 0.141980s | 0.058894s | 2.41x |
+| `PairwiseIdentity.calculate_pairwise_identity_stats` small scalar stats path | command profiler, 5 runs after 1 warmup, `test_alignment_0.fa` summary-only output | 0.505204s | 0.113659s | 4.44x |
 | `PairwiseIdentity.calculate_pairwise_identities` identical-sequence shortcut | 400 taxa x 1000 identical DNA sites with gaps/ambiguous symbols, `exclude_gaps=True`, lowercase/uppercase variants, side-by-side previous matrix path | 0.299976s | 0.014772s | 20.31x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` identical-sequence shortcut | 400 taxa x 1000 identical DNA sites with gaps/ambiguous symbols, `exclude_gaps=True`, summary-only stats path | 0.297837s | 0.000242s | 1231.58x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` raw-identical normalization scan | 300k raw-identical DNA rows x 32 sites, `exclude_gaps=True`, side-by-side previous eager uppercase sequence setup with constant summary stats | 0.127326s | 0.066485s | 1.92x |
@@ -3308,7 +3309,11 @@ Profiling summary:
   avoiding per-pair NumPy call overhead. Non-verbose, non-plot runs now use a
   stats-only matrix path that summarizes upper-triangle identities directly,
   avoiding pair-label and dictionary construction while preserving the full
-  result path for verbose, JSON-row, and heatmap outputs. Fully identical
+  result path for verbose, JSON-row, and heatmap outputs. Small summary-only
+  runs now use a scalar pair loop below an 8 KiB cell threshold, preserving
+  full-length denominator and `--exclude-gaps` semantics while avoiding NumPy,
+  SciPy squareform, pair-label, and dictionary setup for tiny command inputs.
+  Fully identical
   normalized alignments now compute the constant identity from one sequence
   before matrix construction, preserving the full-length denominator and
   double-gap exclusion behavior for `--exclude-gaps`; summary-only runs return

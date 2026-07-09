@@ -562,6 +562,52 @@ class TestPairwiseIdentity:
 
         assert stats_only == pytest.approx(full_stats)
 
+    def test_calculate_pairwise_identity_stats_small_alignment_uses_scalar_path(
+        self, args, mocker
+    ):
+        service = PairwiseIdentity(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ATG-GAGAT"), id="a"),
+                SeqRecord(Seq("ATGAGAGAT"), id="b"),
+                SeqRecord(Seq("ATGAGACAT"), id="c"),
+                SeqRecord(Seq("ATTA-ACAT"), id="d"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.np.frombuffer",
+            side_effect=AssertionError(
+                "small summary-only pairwise identity should avoid matrix setup"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.squareform",
+            side_effect=AssertionError(
+                "small summary-only pairwise identity should avoid squareform"
+            ),
+        )
+
+        stats = service.calculate_pairwise_identity_stats(
+            alignment,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert stats["mean"] == pytest.approx(0.7592592592592592)
+        assert stats["median"] == pytest.approx(0.7777777777777778)
+
+    def test_pairwise_identity_stats_scalar_rejects_uneven_lengths(self):
+        records = [
+            SimpleNamespace(seq="ACGT", id="a"),
+            SimpleNamespace(seq="ACG", id="b"),
+        ]
+
+        assert pairwise_identity_module._pairwise_identity_stats_scalar(
+            records,
+            is_protein=False,
+            exclude_gaps=False,
+        ) is None
+
     def test_calculate_pairwise_identities_matrix_summarizes_condensed_values(
         self, args, mocker
     ):
@@ -596,7 +642,7 @@ class TestPairwiseIdentity:
         assert stats["mean"] == pytest.approx(2 / 3)
 
     def test_calculate_pairwise_identity_stats_gappy_matrix_uses_squareform(
-        self, args, mocker
+        self, args, mocker, monkeypatch
     ):
         service = PairwiseIdentity(args)
         alignment = MultipleSeqAlignment(
@@ -612,6 +658,11 @@ class TestPairwiseIdentity:
             exclude_gaps=True,
             is_protein=False,
         )[2]
+        monkeypatch.setattr(
+            pairwise_identity_module,
+            "_PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS",
+            0,
+        )
         mocked_squareform = mocker.spy(pairwise_identity_module, "squareform")
         mocker.patch(
             "phykit.services.alignment.pairwise_identity.np.triu_indices",
@@ -630,9 +681,14 @@ class TestPairwiseIdentity:
         assert stats_only == pytest.approx(full_stats)
 
     def test_calculate_pairwise_identity_stats_matrix_matches_full_result_multiblock(
-        self, args
+        self, args, monkeypatch
     ):
         service = PairwiseIdentity(args)
+        monkeypatch.setattr(
+            pairwise_identity_module,
+            "_PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS",
+            0,
+        )
         alphabet = "ACGT"
         alignment = MultipleSeqAlignment(
             [
