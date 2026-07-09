@@ -174,6 +174,38 @@ class TestColumnScore:
         ) == (1, 4)
         intersect_spy.assert_not_called()
 
+    def test_direct_column_matching_small_taxon_sets_skip_numpy_matrix(
+        self, mocker, args
+    ):
+        service = ColumnScore(args)
+        reference = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTAC"), id="r1"),
+                SeqRecord(Seq("TGCATG"), id="r2"),
+                SeqRecord(Seq("AAAAAA"), id="r3"),
+                SeqRecord(Seq("CCCCCC"), id="r4"),
+            ]
+        )
+        query = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTAA"), id="q1"),
+                SeqRecord(Seq("TGCATT"), id="q2"),
+                SeqRecord(Seq("AAAACC"), id="q3"),
+                SeqRecord(Seq("CCCCGG"), id="q4"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.column_score.np.frombuffer",
+            side_effect=AssertionError("small taxon sets should use column sets"),
+        )
+
+        assert service._calculate_matches_between_alignments_direct(
+            reference, query
+        ) == (4, 6)
+
+    def test_small_ascii_column_set_rejects_unicode(self):
+        assert ColumnScore._small_ascii_column_set(["AΩ", "AT"]) is None
+
     def test_direct_column_matching_repeated_rows_intersects_symbols(
         self, mocker, args
     ):

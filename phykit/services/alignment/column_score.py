@@ -39,6 +39,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_SMALL_TAXON_COLUMN_SET_MAX = 4
 
 
 def print_json(*args, **kwargs):
@@ -128,6 +129,10 @@ class ColumnScore(Alignment):
 
     @staticmethod
     def _unique_column_count_ascii(sequences: list[str], seq_len: int) -> int | None:
+        column_set = ColumnScore._small_ascii_column_set(sequences)
+        if column_set is not None:
+            return len(column_set)
+
         try:
             sequence_matrix = np.frombuffer(
                 "".join(sequences).encode("ascii"),
@@ -141,6 +146,17 @@ class ColumnScore(Alignment):
             np.ascontiguousarray(sequence_matrix.T).view(column_dtype).ravel()
         )
         return int(unique_columns.size)
+
+    @staticmethod
+    def _small_ascii_column_set(sequences: list[str]) -> set[tuple[str, ...]] | None:
+        if len(sequences) > _SMALL_TAXON_COLUMN_SET_MAX:
+            return None
+        try:
+            for sequence in sequences:
+                sequence.encode("ascii")
+        except UnicodeEncodeError:
+            return None
+        return set(zip(*sequences))
 
     @staticmethod
     def _repeated_sequence_symbols_ascii(sequences: list[str]) -> frozenset[str] | None:
@@ -211,6 +227,7 @@ class ColumnScore(Alignment):
         if len(ref_sequences) != len(query_sequences):
             return 0, query_len
 
+        n_taxa = len(ref_sequences)
         ref_symbols = ColumnScore._repeated_sequence_symbols_ascii(ref_sequences)
         query_symbols = ColumnScore._repeated_sequence_symbols_ascii(query_sequences)
         if ref_symbols is not None and query_symbols is not None:
@@ -225,7 +242,12 @@ class ColumnScore(Alignment):
                 return None
             return unique_column_count, query_len
 
-        n_taxa = len(ref_sequences)
+        if n_taxa <= _SMALL_TAXON_COLUMN_SET_MAX:
+            ref_columns = ColumnScore._small_ascii_column_set(ref_sequences)
+            query_columns = ColumnScore._small_ascii_column_set(query_sequences)
+            if ref_columns is not None and query_columns is not None:
+                return len(ref_columns.intersection(query_columns)), query_len
+
         try:
             ref_matrix = np.frombuffer(
                 "".join(ref_sequences).encode("ascii"),
