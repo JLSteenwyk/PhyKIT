@@ -1,5 +1,6 @@
 _JSON_SCALAR_TYPES = (str, int, float, bool)
 _LARGE_DICT_COPY_THRESHOLD = 50_000
+_JSON_DUMPS = None
 
 
 def to_builtin_json_types(value):
@@ -81,10 +82,16 @@ def _json_default(value):
 
 
 def print_json(payload, sort_keys=True):
-    import json
+    global _JSON_DUMPS
+    dumps = _JSON_DUMPS
+    if dumps is None:
+        import json
+
+        dumps = json.dumps
+        _JSON_DUMPS = dumps
 
     try:
-        output = json.dumps(
+        output = dumps(
             payload,
             sort_keys=sort_keys,
             default=_json_default,

@@ -165,6 +165,29 @@ class TestJsonOutput:
             "summary": {"n": 2},
         }
 
+    @patch("builtins.print")
+    def test_print_json_uses_cached_json_dumps(self, mocked_print, monkeypatch):
+        calls = []
+
+        def fake_dumps(payload, **kwargs):
+            calls.append((payload, kwargs))
+            return '{"cached": true}'
+
+        monkeypatch.setattr(json_output_module, "_JSON_DUMPS", fake_dumps)
+
+        print_json({"value": 1}, sort_keys=False)
+
+        assert mocked_print.call_args.args[0] == '{"cached": true}'
+        assert calls == [
+            (
+                {"value": 1},
+                {
+                    "sort_keys": False,
+                    "default": json_output_module._json_default,
+                },
+            )
+        ]
+
     def test_print_json_raises_type_error_for_unknown_objects(self):
         class Unknown:
             pass

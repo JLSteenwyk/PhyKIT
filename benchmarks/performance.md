@@ -42,6 +42,7 @@ Results:
 | `stats_summary` sized no-value early return | 20k empty/single array and dictionary summary requests, identical diagnostic text | 0.023061s / 0.039072s / 0.039999s / 0.073569s | 0.008748s / 0.007520s / 0.005851s / 0.007079s | 2.64x / 5.20x / 6.84x / 10.39x |
 | `print_json` builtin payload serialization | 100k row dictionaries with nested builtin lists | 0.268362s | 0.062000s | 4.3x |
 | `print_json` mixed builtin/NumPy default hook | 100k builtin row dictionaries plus NumPy scalar summary values, identical serialized JSON | 0.541561s | 0.109570s | 4.94x |
+| `print_json` cached `json.dumps` callable | 100k repeated small builtin payload serializations, side-by-side previous per-call `import json` and `json.dumps` lookup | 0.000022398s | 0.000018516s | 1.21x |
 | `to_builtin_json_types` mixed builtin/NumPy payload | 300k builtin row dictionaries plus one NumPy scalar summary, identical converted payload | 1.133849s | 0.801193s | 1.42x |
 | `to_builtin_json_types` builtin scalar fast path | 300k builtin row dictionaries plus one NumPy scalar summary, side-by-side previous scalar NumPy provenance check | 0.526141s | 0.376409s | 1.40x |
 | `to_builtin_json_types` copy-on-write containers | 300k builtin row dictionaries plus one NumPy scalar summary, side-by-side previous eager container allocation | 0.402334s | 0.362144s | 1.11x |
@@ -3058,7 +3059,10 @@ Profiling summary:
   conversion while reducing recursive conversion overhead for mixed payloads
   dominated by builtin rows. A follow-up pass applies the same scalar-leaf skip
   inside dict, list, and tuple containers, preserving tuple-to-list conversion
-  while avoiding recursive helper calls for JSON-native scalar values.
+  while avoiding recursive helper calls for JSON-native scalar values. A later
+  pass caches the resolved `json.dumps` callable after first serialization,
+  preserving lazy stdlib JSON import while avoiding repeated import and
+  attribute lookup in repeated JSON output calls.
 - `helpers.caching` baseline import time eagerly imported `json` and `pickle`
   and constructed global cache instances, which also initialized the default
   temporary cache directory. The optimized helper defers JSON and pickle until
