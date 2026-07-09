@@ -111,6 +111,7 @@ class LastCommonAncestorSubtree(Tree):
         terminal_by_name = {}
         parent_by_clade = {root: None}
         depth_by_clade = {root: 0}
+        has_unselected_tip = False
         stack = [root]
         pop = stack.pop
         append = stack.append
@@ -143,10 +144,14 @@ class LastCommonAncestorSubtree(Tree):
                                 selected_count
                                 and len(terminal_by_name) == selected_count
                             ):
+                                if not stack and not has_unselected_tip:
+                                    return root
                                 stack.clear()
                                 break
+                        else:
+                            has_unselected_tip = True
                     except TypeError:
-                        pass
+                        has_unselected_tip = True
             targets = [terminal_by_name[taxon] for taxon in selected_names]
         except (AttributeError, KeyError, TypeError):
             return tree.common_ancestor(taxa)

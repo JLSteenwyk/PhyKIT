@@ -1580,6 +1580,7 @@ Results:
 | `LastCommonAncestorSubtree.run` no-copy large-tree LCA setup | balanced 32768-tip cached tree, opposite terminal MRCA lookup, side-by-side previous pickle-copy `common_ancestor` core | 0.182315s | 0.013709s | 13.30x |
 | `LastCommonAncestorSubtree._find_parent_depth_lca` root early return | balanced 65536-tip tree, 4096 dispersed target clades whose MRCA reaches root after the first pair | 0.045236s | 0.000006875s | 6579.81x |
 | `LastCommonAncestorSubtree._find_lca_subtree` unique target scan | balanced 32768-tip tree, 2048 unique taxa / same taxa repeated 40x, side-by-side previous raw-taxa target list | 0.696373s / 0.206490s | 0.533814s / 0.144736s | 1.30x / 1.43x |
+| `LastCommonAncestorSubtree._find_lca_subtree` all-tip root shortcut | balanced 1024 / 32768 / 131072-tip trees, every tip selected, side-by-side previous parent-depth LCA target build | 0.000820708s / 0.077062208s / 0.491124708s | 0.000532646s / 0.054512333s / 0.391170896s | 1.54x / 1.41x / 1.26x |
 | `last_common_ancestor_subtree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006235s | 0.005155s | 1.21x |
 | `last_common_ancestor_subtree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006208s | 0.004222s | 1.47x |
 | `last_common_ancestor_subtree` module import without eager file helper | median cold subprocess import after lazy taxa-list reader wrapper | 0.044738s | 0.022908s | 1.95x |

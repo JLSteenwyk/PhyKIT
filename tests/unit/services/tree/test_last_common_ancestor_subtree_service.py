@@ -273,6 +273,37 @@ class TestLastCommonAncestorSubtree:
 
         assert sorted(t.name for t in subtree.clades) == ["A", "B"]
 
+    def test_find_lca_subtree_all_tips_returns_root_without_lca_scan(
+        self, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        def fail_parent_depth_lca(*_args, **_kwargs):
+            raise AssertionError("all-tip LCA should be the root")
+
+        monkeypatch.setattr(module, "_find_parent_depth_lca", fail_parent_depth_lca)
+
+        subtree = LastCommonAncestorSubtree._find_lca_subtree(
+            tree,
+            ["A", "B", "C", "D"],
+        )
+
+        assert subtree is tree.root
+
+    def test_find_lca_subtree_partial_clade_does_not_use_root_shortcut(
+        self, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        def fail_common_ancestor(*args, **kwargs):
+            raise AssertionError("partial direct LCA should not fall back")
+
+        monkeypatch.setattr(tree, "common_ancestor", fail_common_ancestor)
+
+        subtree = LastCommonAncestorSubtree._find_lca_subtree(tree, ["A", "B"])
+
+        assert subtree is tree.root.clades[0]
+
     def test_find_lca_subtree_single_taxon_uses_direct_terminal_lookup(
         self, monkeypatch
     ):
