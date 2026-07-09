@@ -327,6 +327,7 @@ Results:
 | `GCContent` Unicode mixed-case count helper | 30 repeated 250k-site Unicode DNA / protein sequences, side-by-side previous full uppercase copy plus valid/GC counts | 0.073486s / 0.074741s | 0.042227s / 0.045933s | 1.74x / 1.63x |
 | `GCContent._gc_total_from_ascii` raw-identical normalized shortcut | 500k identical DNA records with ambiguous/gap symbols, side-by-side previous per-row uppercase equality scan | 0.384826s | 0.095858s | 4.01x |
 | `GCContent._has_invalid_bytes` short clean scan | 50 / 1000 / 4096-byte all-valid DNA buffers, side-by-side previous prefix/tail/full repeated scan | 0.000006159s / 0.000012970s / 0.000021196s | 0.000001571s / 0.000007444s / 0.000001744s | 3.92x / 1.74x / 12.16x |
+| `GCContent.calculate_gc_total_value` small ASCII scalar counts | command profiler, 3 runs after 1 warmup, `test_alignment_0.fa` nonverbose total GC | 0.353862s | 0.070450s | 5.02x |
 | `GCContent.calculate_gc_per_sequence` batched text output | 50k sequence rows, mocked per-sequence data and identical stdout text | 0.025783s | 0.019660s | 1.31x |
 | `GCContent.run` verbose JSON row construction | 500k mocked per-sequence GC rows, identical payload dictionaries | 0.636805s | 0.571975s | 1.11x |
 | `GCContent.run` verbose JSON local round | 500k mocked per-sequence GC rows, identical payload dictionaries, side-by-side previous global `round` lookup | 0.608651s | 0.547883s | 1.11x |
@@ -3614,7 +3615,10 @@ Profiling summary:
   later invalid-byte scan pass checks short ASCII buffers once instead of
   scanning the same prefix, suffix, and full buffer when all symbols are valid,
   while preserving the sampled long-buffer path and byte-translate fallback
-  for invalid symbols. A
+  for invalid symbols. Small aggregate ASCII GC summaries now use direct byte
+  counts below an 8 KiB threshold, preserving the NumPy flat-count path for
+  larger alignments while avoiding NumPy startup for tiny nonverbose command
+  inputs. A
   follow-up identical-row pass checks raw string equality before normalizing
   each row, avoiding repeated uppercase allocations for already-identical rows
   while preserving case-insensitive matching. A

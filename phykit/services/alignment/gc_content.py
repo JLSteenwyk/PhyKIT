@@ -45,6 +45,7 @@ _PROTEIN_INVALID_CHARS = "-?*X"
 _DNA_INVALID_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
+_GC_TOTAL_SCALAR_MAX_BYTES = 8192
 _GC_TOTAL_BYTE_COUNT_MIN_BYTES = 2_000_000
 
 
@@ -216,8 +217,11 @@ def _gc_total_from_ascii(records, is_protein: bool):
         return None
 
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
-    seq_array = np.frombuffer(alignment_bytes, dtype=np.uint8)
     has_invalid_bytes = _has_invalid_bytes(alignment_bytes, invalid_bytes)
+    if len(alignment_bytes) <= _GC_TOTAL_SCALAR_MAX_BYTES:
+        return _gc_counts_from_ascii_bytes(alignment_bytes, is_protein)
+
+    seq_array = np.frombuffer(alignment_bytes, dtype=np.uint8)
     if (
         has_invalid_bytes
         and len(alignment_bytes) >= _GC_TOTAL_BYTE_COUNT_MIN_BYTES

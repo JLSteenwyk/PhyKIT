@@ -269,6 +269,30 @@ assert "phykit.helpers.files" not in sys.modules
             4,
         )
 
+    def test_calculate_gc_total_value_small_ascii_avoids_numpy(
+        self,
+        args,
+        mocker,
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("GCGT"), id="a"),
+                SeqRecord(Seq("ATAT"), id="b"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.gc_content.np.frombuffer",
+            side_effect=AssertionError(
+                "small ASCII total GC should use scalar byte counts"
+            ),
+        )
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            3 / 8,
+            4,
+        )
+
     def test_calculate_gc_total_value_invalid_ascii_uses_byte_counts(
         self, args, monkeypatch, mocker
     ):
