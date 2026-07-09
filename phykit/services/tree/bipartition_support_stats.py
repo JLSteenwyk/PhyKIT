@@ -42,6 +42,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
+_NUMPY_SINGLE_THRESHOLD_STATS_MIN_VALUES = 100_000
 _NUMPY_THRESHOLD_STATS_MIN_VALUES = 4096
 _NUMPY_THRESHOLD_STATS_MIN_THRESHOLDS = 16
 
@@ -159,6 +160,10 @@ class BipartitionSupportStats(Tree):
             threshold = thresholds[0]
             if is_numpy_values:
                 count_below = int(np.count_nonzero(bs_vals < threshold))
+            elif total >= _NUMPY_SINGLE_THRESHOLD_STATS_MIN_VALUES:
+                count_below = int(
+                    np.count_nonzero(np.asarray(bs_vals, dtype=float) < threshold)
+                )
             else:
                 count_below = 0
                 for val in bs_vals:

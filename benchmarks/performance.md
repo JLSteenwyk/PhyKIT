@@ -1358,6 +1358,7 @@ Results:
 | `BipartitionSupportStats.calculate_threshold_stats` single NumPy threshold | 2M NumPy support values, one threshold cutoff | 0.175425s | 0.000868s | 202.1x |
 | `BipartitionSupportStats.calculate_threshold_stats` large single-threshold Python list | 1M support values, one threshold cutoff, side-by-side previous Python generator count | 0.034144s | 0.028985s | 1.18x |
 | `BipartitionSupportStats.calculate_threshold_stats` single-threshold list counter | 1M Python support values, one threshold cutoff, side-by-side previous list-to-NumPy count path | 0.029898s | 0.025747s | 1.16x |
+| `BipartitionSupportStats.calculate_threshold_stats` very-large single-threshold list cutoff | 100k / 1M Python support values, one threshold cutoff, side-by-side previous scalar loop with identical result dictionaries | 0.092514s / 0.475281s | 0.079280s / 0.382972s | 1.17x / 1.24x |
 | `BipartitionSupportStats.calculate_threshold_stats` many-threshold Python list | 500k support values, 1000 thresholds | 0.133931s | 0.036207s | 3.70x |
 | `BipartitionSupportStats.calculate_threshold_stats` cached NumPy attribute proxy | 500k Python support values, 1000 thresholds, side-by-side previous uncached lazy NumPy proxy | 0.164383s | 0.152822s | 1.08x |
 | `BipartitionSupportStats.calculate_threshold_stats` empty thresholds | 2M support values, default no-threshold path, side-by-side previous unnecessary sort | 2.736035s | 0.000004s | 691083.37x |
@@ -5814,8 +5815,10 @@ Profiling summary:
   many thresholds, preserving the Python fallbacks for small inputs to avoid
   unnecessary NumPy startup and conversion. A later list-specific pass keeps
   the NumPy-array fast path but counts a single Python-list cutoff with a
-  scalar loop, avoiding list-to-array allocation. Repeated many-threshold
-  calculations now cache resolved NumPy attributes on the lazy proxy,
+  scalar loop below the large-list cutoff, avoiding list-to-array allocation.
+  Very large Python lists now use NumPy for one cutoff once conversion cost is
+  repaid. Repeated many-threshold calculations now cache resolved NumPy
+  attributes on the lazy proxy,
   preserving deferred import while avoiding repeated import and attribute
   dispatch around sort/searchsorted.
 - `InternalBranchStats.get_internal_branch_lengths` used the same repeated
