@@ -62,6 +62,41 @@ class TestJsonOutput:
         assert converted["rows"][0] is unchanged_row
         assert converted["summary"] is not payload["summary"]
 
+    def test_to_builtin_json_types_large_dict_preserves_unchanged_branches(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(json_output_module, "_LARGE_DICT_COPY_THRESHOLD", 4)
+        unchanged_tail = {"a": 1}
+        payload = {
+            "a": 1,
+            "b": 2,
+            "converted": np.int64(3),
+            "tail": unchanged_tail,
+        }
+
+        converted = to_builtin_json_types(payload)
+
+        assert converted == {
+            "a": 1,
+            "b": 2,
+            "converted": 3,
+            "tail": {"a": 1},
+        }
+        assert converted is not payload
+        assert converted["tail"] is unchanged_tail
+
+    def test_to_builtin_json_types_custom_dict_uses_lazy_prefix_copy(
+        self, monkeypatch
+    ):
+        class NoCopyDict(dict):
+            def copy(self):
+                raise AssertionError("custom dict conversion should not use copy()")
+
+        monkeypatch.setattr(json_output_module, "_LARGE_DICT_COPY_THRESHOLD", 1)
+        payload = NoCopyDict({"a": 1, "converted": np.int64(2)})
+
+        assert to_builtin_json_types(payload) == {"a": 1, "converted": 2}
+
     def test_to_builtin_json_types_preserves_unchanged_list_prefix(self):
         unchanged_row = {"a": 1, "b": [2, 3]}
         payload = [unchanged_row, np.int64(4)]

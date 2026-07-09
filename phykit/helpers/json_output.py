@@ -1,4 +1,5 @@
 _JSON_SCALAR_TYPES = (str, int, float, bool)
+_LARGE_DICT_COPY_THRESHOLD = 50_000
 
 
 def to_builtin_json_types(value):
@@ -6,6 +7,9 @@ def to_builtin_json_types(value):
         return value
     if isinstance(value, dict):
         converted = None
+        use_copy_on_convert = (
+            type(value) is dict and len(value) >= _LARGE_DICT_COPY_THRESHOLD
+        )
         for key, sub_value in value.items():
             if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
                 converted_value = sub_value
@@ -14,11 +18,14 @@ def to_builtin_json_types(value):
             if converted is None:
                 if converted_value is sub_value:
                     continue
-                converted = {}
-                for previous_key, previous_value in value.items():
-                    if previous_key == key:
-                        break
-                    converted[previous_key] = previous_value
+                if use_copy_on_convert:
+                    converted = value.copy()
+                else:
+                    converted = {}
+                    for previous_key, previous_value in value.items():
+                        if previous_key == key:
+                            break
+                        converted[previous_key] = previous_value
             converted[key] = converted_value
         return value if converted is None else converted
     if isinstance(value, list):
