@@ -126,6 +126,7 @@ Results:
 | `helpers.files.is_protein_alignment` ASCII nucleotide detection | five scans of 50k records x 112 bp lowercase nucleotide alignment | 0.171807s | 0.049896s | 3.44x |
 | `helpers.files.read_single_column_file_to_list` bulk splitlines trim | 1M single-column rows with leading/trailing spaces, identical stripped list | 0.072114s | 0.052382s | 1.38x |
 | `helpers.files.read_single_column_file_to_list` streaming trim | 2M single-column rows with leading/trailing spaces, identical stripped list from real file I/O | 0.577303s | 0.491627s | 1.17x |
+| `helpers.files.read_single_column_file_to_list` streaming file iteration | 1M single-column rows with leading/trailing tabs/spaces, identical stripped list from temp file I/O | 0.422823s | 0.328832s | 1.29x |
 | `helpers.files._detect_format_by_content` PHYLIP header split | 1M mixed first-line headers, identical detected formats | 2.294802s | 1.625386s | 1.41x |
 | `helpers.files._detect_format_by_content` non-digit PHYLIP split guard | 1.1M mixed / 1.2M unknown alphabetic / 1.2M PHYLIP-like first-line headers, side-by-side previous unconditional fallback split | 0.645016s / 1.085943s / 0.794824s | 0.597260s / 0.906384s / 0.799032s | 1.08x / 1.20x / 0.99x |
 | `helpers.files._detect_format_by_content` cached first-character dispatch | 1.2M mixed first-line headers, identical detected formats | 1.137648s | 0.920282s | 1.24x |
@@ -9730,3 +9731,7 @@ Profiling summary:
   0.028562s (1.38x); `120 x 100,000` with mixed invalid symbols, 0.052064s ->
   0.034978s (1.49x); and `100 x 500,000` with 5% invalid symbols, 0.287356s ->
   0.215638s (1.33x).
+- `helpers.files.read_single_column_file_to_list` now streams file lines
+  directly instead of bulk-reading and splitting the full file. This preserves
+  stripped blank-line entries and missing-final-newline behavior while reducing
+  large taxa/list-file parsing time and peak temporary string/list pressure.
