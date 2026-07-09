@@ -64,6 +64,7 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _ZSCORE_FAST_MAX_SIZE = 100_000
 _PLOT_DIRECT_EXTREMA_LIMIT = 1_000
+_OUTLIER_SMALL_LIST_MAX_SIZE = 32
 
 
 def _plot_min(values):
@@ -358,6 +359,25 @@ class CovaryingEvolutionaryRates(Tree):
         create index for branch lengths that
         have an absolute value greater than 5
         """
+        if (
+            type(corr_branch_lengths) in (list, tuple)
+            and len(corr_branch_lengths) <= _OUTLIER_SMALL_LIST_MAX_SIZE
+        ):
+            try:
+                new_outliers = []
+                append = new_outliers.append
+                for index, value in enumerate(corr_branch_lengths):
+                    if value > 5 or value < -5 or value != value:
+                        append(index)
+                if not outlier_indices:
+                    return new_outliers
+
+                all_outliers = set(outlier_indices)
+                all_outliers.update(new_outliers)
+                return list(all_outliers)
+            except TypeError:
+                pass
+
         # Convert to numpy array for vectorized operations
         arr = np.array(corr_branch_lengths, dtype=float)
 

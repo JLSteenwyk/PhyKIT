@@ -306,6 +306,26 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertIn(2, result)  # New (7.0 > 5)
         self.assertIn(4, result)  # Existing
 
+    def test_small_list_outlier_detection_does_not_import_numpy(self):
+        with patch.object(
+            cer_module.np,
+            "array",
+            side_effect=AssertionError("small numeric lists should scan directly"),
+        ):
+            result = self.cov_rates.get_indices_of_outlier_branch_lengths(
+                [1.0, 6.0, float("nan"), -7.0],
+                [0],
+            )
+
+        self.assertEqual(set(result), {0, 1, 2, 3})
+
+    def test_small_list_outlier_detection_falls_back_for_string_numbers(self):
+        values = ["1.0", "6.0", "nan", "-7.0"]
+
+        result = self.cov_rates.get_indices_of_outlier_branch_lengths(values, [])
+
+        self.assertEqual(result, [1, 2, 3])
+
     def test_remove_outliers_based_on_indices(self):
         """Test outlier removal"""
         # Test with numeric list
