@@ -422,6 +422,21 @@ class IdentityMatrix(Alignment):
                 if not line or line[0] == "#":
                     continue
                 # Format: AUTO, name=start-end  OR  DNA, name=start-end
+                try:
+                    _model, rest = line.split(", ", 1)
+                    name, range_str = rest.split("=", 1)
+                    start_str, end_str = range_str.split("-", 1)
+                    if (
+                        name
+                        and " " not in name
+                        and start_str.isdigit()
+                        and end_str.isdigit()
+                    ):
+                        append((name, int(start_str) - 1, int(end_str)))
+                        continue
+                except ValueError:
+                    pass
+
                 if "=" in line and "-" in line:
                     name_range, sep, rest = line.partition(",")
                     if sep:
