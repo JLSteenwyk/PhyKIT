@@ -82,6 +82,11 @@ class TestFormatDetection:
         aln.write_text("2 4 extra\n")
         assert _detect_format_by_content(str(aln)) is None
 
+    def test_detect_format_digit_start_non_phylip_header(self, tmp_path: Path):
+        aln = tmp_path / "test.phy"
+        aln.write_text("2 taxa 4 sites\n")
+        assert _detect_format_by_content(str(aln)) is None
+
     def test_detect_format_unknown(self, tmp_path: Path):
         aln = tmp_path / "test.txt"
         aln.write_text("hello world\n")

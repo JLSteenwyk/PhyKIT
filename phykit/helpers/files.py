@@ -38,19 +38,20 @@ def _detect_format_by_content(file_path: str) -> str | None:
     """Attempt to detect file format by examining file content."""
     with open(file_path) as f:
         first_line = f.readline().strip()
+        first_char = first_line[:1]
 
         # Quick format detection based on first line
-        if first_line.startswith('>'):
+        if first_char == '>':
             return 'fasta'
         elif first_line.startswith('CLUSTAL'):
             return 'clustal'
-        elif first_line.startswith('#'):
+        elif first_char == '#':
             # Could be Stockholm
             if 'STOCKHOLM' in first_line:
                 return 'stockholm'
         elif first_line.isdigit():
             return 'phylip'
-        elif first_line[:1] in "0123456789":
+        elif first_char and "0" <= first_char <= "9":
             parts = first_line.split(None, 2)
             if len(parts) == 2 and parts[0].isdigit():
                 return 'phylip'
