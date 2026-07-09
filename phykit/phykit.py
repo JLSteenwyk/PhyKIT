@@ -194,6 +194,16 @@ class _TreeTaxaOutputJsonDefaultArgs:
         self.json = False
 
 
+class _TreeFactorOutputJsonDefaultArgs:
+    __slots__ = ("tree", "factor", "output", "json")
+
+    def __init__(self, tree: str, factor: float) -> None:
+        self.tree = tree
+        self.factor = factor
+        self.output = None
+        self.json = False
+
+
 class _TwoTreeJsonDefaultArgs:
     __slots__ = ("tree_zero", "tree_one", "json")
 
@@ -3499,6 +3509,24 @@ class Phykit:
 
     @staticmethod
     def branch_length_multiplier(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-f", "--factor")
+            and argv[2]
+        ):
+            try:
+                factor = float(argv[2])
+            except ValueError:
+                pass
+            else:
+                _run_service_with_args(
+                    _TreeFactorOutputJsonDefaultArgs(argv[0], factor),
+                    BranchLengthMultiplier,
+                )
+                return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

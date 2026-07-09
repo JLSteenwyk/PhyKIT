@@ -1727,6 +1727,7 @@ Results:
 | `BranchLengthMultiplier._multiply_standard_tree_branch_lengths` localized stack operations | balanced 131072-tip tree, multiply every branch by 2.5, side-by-side previous direct helper median | 0.068762s | 0.055513s | 1.24x |
 | `BranchLengthMultiplier.run` factor-one read-only cached tree path | balanced 32768-tip cached tree, factor `1.0`, output stubbed | 0.212082s | 0.000031s | 6841.35x |
 | `BranchLengthMultiplier._count_standard_tree_branch_lengths` localized stack operations | balanced 131072-tip tree, factor-one JSON branch count, side-by-side previous direct helper median | 0.015458s | 0.014903s | 1.04x |
+| `branch_length_multiplier` default CLI parser bypass | direct dispatch of `branch_length_multiplier tree -f/--factor 2` into a no-op service, 1000 calls; direct command timing against a temp copy of `tree_simple.tre`, 30 runs after 5 warmups | 1.108700s / 1.342680s; 0.621901s mean | 0.000500s / 0.000492s; 0.429873s mean | 2217.40x / 2729.02x; 1.45x |
 | `branch_length_multiplier` module import without eager Bio.Phylo/NumPy | cold subprocess import of branch-length multiplier command module | 0.169961s | 0.065100s | 2.61x |
 | `branch_length_multiplier` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006216s | 0.004949s | 1.26x |
 | `branch_length_multiplier` module import without `typing` startup | median cold subprocess import after converting the remaining annotation-only typing alias to a built-in postponed annotation | 0.006049s | 0.003979s | 1.52x |

@@ -807,6 +807,72 @@ def test_bipartition_support_stats_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+@pytest.mark.parametrize("factor_flag", ["-f", "--factor"])
+def test_branch_length_multiplier_default_invocation_bypasses_parser(
+    monkeypatch,
+    factor_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default branch_length_multiplier should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "BranchLengthMultiplier", Runner)
+
+    phykit_module.Phykit.branch_length_multiplier(["tree.tre", factor_flag, "2"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.factor == 2.0
+    assert args.output is None
+    assert args.json is False
+
+
+def test_branch_length_multiplier_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "BranchLengthMultiplier", Runner)
+
+    phykit_module.Phykit.branch_length_multiplier(
+        ["tree.tre", "-f", "2", "-o", "out.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-f", "2", "-o", "out.tre"]
+    assert calls["ran"] is True
+
+
 def test_evolutionary_rate_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 
