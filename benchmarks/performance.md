@@ -708,6 +708,7 @@ Results:
 | `AlignmentSubsample._parse_partition_file` split parser | 100k RAxML-style partition rows, preserving comments/invalid-row skips and trailing text tolerance | 0.264859s | 0.155592s | 1.70x |
 | `AlignmentSubsample._parse_partition_file` stripped comment check | 250k RAxML-style partition rows with whitespace-prefixed comments/blanks and invalid rows | 0.782216s | 0.546225s | 1.43x |
 | `AlignmentSubsample._read_list_file` stripped comment check | 250k taxa/gene list rows with whitespace-prefixed comments/blanks | 0.222545s | 0.206451s | 1.08x |
+| `AlignmentSubsample._select_site_ranges` single contiguous range | 1000 repeated selections of a 900k-site block from a 1M-site sequence, side-by-side previous one-item list join | 0.032215s | 0.025845s | 1.25x |
 | `alignment_subsample` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.188059s | 0.110484s | 1.70x |
 | `alignment_subsample` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.008061s | 0.006792s | 1.19x |
 | `alignment_subsample` module import without eager random | median cold subprocess import after localizing command-run sampling import | 0.007269s | 0.005914s | 1.23x |
@@ -4477,8 +4478,10 @@ Profiling summary:
   path. A later pass sends that original sequence mapping directly to the FASTA
   writer instead of copying it first. Site-range selection now joins a concrete
   list of selected slices, reducing generator overhead for many short sampled
-  ranges while preserving the same selected sequence text. Length validation now
-  compares each sequence to the first observed sequence length directly,
+  ranges while preserving the same selected sequence text; a single contiguous
+  sampled range now returns the source slice directly instead of allocating a
+  one-item slice list. Length validation now compares each sequence to the first
+  observed sequence length directly,
   avoiding a temporary length set and stopping at the first mismatch while
   preserving the empty-alignment user error. Sparse million-site and bootstrap
   sampling now pass `range(aln_len)` directly to `random`, avoiding a full

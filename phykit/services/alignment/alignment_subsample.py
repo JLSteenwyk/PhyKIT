@@ -345,6 +345,9 @@ class AlignmentSubsample(Alignment):
 
     @staticmethod
     def _select_site_ranges(seq: str, ranges: list[tuple[int, int]]) -> str:
+        if len(ranges) == 1:
+            start, stop = ranges[0]
+            return seq[start:stop]
         return "".join([seq[start:stop] for start, stop in ranges])
 
     @staticmethod

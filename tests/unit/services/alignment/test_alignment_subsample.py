@@ -233,6 +233,12 @@ class TestSitesMode:
             [(0, 2), (4, 8)],
         ) == "ACACGT"
 
+    def test_select_site_ranges_single_range_returns_slice(self):
+        assert AlignmentSubsample._select_site_ranges(
+            "ACGTACGT",
+            [(2, 7)],
+        ) == "GTACG"
+
     def test_select_site_ranges_handles_many_short_ranges(self):
         sequence = "ACGT" * 100
         ranges = [(idx, idx + 1) for idx in range(0, len(sequence), 2)]
